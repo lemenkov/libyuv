@@ -16,7 +16,7 @@
       'include_dirs': [
         'include',
         'common',
-        
+
       ],
       'sources': [
         # includes
@@ -27,26 +27,26 @@
 
         # headers
         'common/basic_types.h',
-        'common/common.h', 
+        'common/common.h',
         'common/constructor_magic.h',
-        'source/cpu_id.h',        
+        'source/cpu_id.h',
         'source/row.h',
         'source/video_common.h',
-        
+
         # sources
         'source/convert.cc',
         'source/general.cc',
         'source/scale.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
-        'source/planar_functions.cc',    
-        'source/row_posix.cc',    
-        'source/row_table.cc',    
-        'source/video_common.cc',   
-     
+        'source/planar_functions.cc',
+        'source/row_posix.cc',
+        'source/row_table.cc',
+        'source/video_common.cc',
+
       ],
     },
-   ], # targets
+  ], # targets
 }
 
 # Local Variables:
