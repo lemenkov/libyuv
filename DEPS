@@ -18,10 +18,6 @@ deps = {
 
 
 hooks = [
-  {
-    "pattern": ".",
-    "action": ["svn", "export", Var("libyuv_trunk"), "--force"],
-  },
   # A change to a .gyp, .gypi, or to GYP itself should run the generator.
   {
     "pattern": ".",
