@@ -7,6 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'includes': [
+    'build/common.gypi',
+  ],
   'targets': [
     {
       'target_name': 'libyuv',
@@ -45,6 +48,35 @@
         'source/video_common.cc',
 
       ],
+    },
+    {
+     'target_name': 'libyuvUnitTest',
+      'type': 'executable',
+      'dependencies': [
+        'libyuv',
+        # The tests are based on gtest
+        'testing/gtest.gyp:gtest',
+        'testing/gtest.gyp:gtest_main',
+      ],
+      'sources': [
+
+        # headers
+        'unit_test/unit_test.h',
+
+        # sources
+        'unit_test/unit_test.cc',
+
+      ], # source
+
+      'conditions': [
+
+        ['OS=="linux"', {
+          'cflags': [
+            '-fexceptions',
+          ],
+        }],
+
+      ], # conditions
     },
   ], # targets
 }
