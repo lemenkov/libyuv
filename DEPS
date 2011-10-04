@@ -8,7 +8,15 @@ vars = {
 }
 
 deps = {
- 
+  "trunk/build":
+    Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
+
+  "trunk/testing":
+    Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),
+
+  "trunk/testing/gtest":
+    (Var("googlecode_url") % "googletest") + "/trunk@573",
+
    "trunk/tools/gyp":
     (Var("googlecode_url") % "gyp") + "/trunk@985",
 
@@ -21,6 +29,6 @@ hooks = [
   # A change to a .gyp, .gypi, or to GYP itself should run the generator.
   {
     "pattern": ".",
-    "action": ["python", "trunk/tools/gyp/gyp", "--depth=.", "trunk/libyuv.gyp"],
+    "action": ["python", "trunk/build/gyp_chromium", "--depth=trunk", "trunk/libyuv.gyp"],
   },
 ]
