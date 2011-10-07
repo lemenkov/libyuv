@@ -7,20 +7,20 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
-  'includes': [
-    'build/common.gypi',
-  ],
   'targets': [
     {
       'target_name': 'libyuv',
       'type': 'static_library',
-      'dependencies': [
-      ],
       'include_dirs': [
-        'include',
         'common',
-
+        'include',
       ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          'common',
+          'include',
+        ],
+      },
       'sources': [
         # includes
         'include/convert.h',
@@ -38,45 +38,15 @@
 
         # sources
         'source/convert.cc',
-        'source/general.cc',
-        'source/scale.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
+        'source/general.cc',
         'source/planar_functions.cc',
         'source/row_posix.cc',
         'source/row_table.cc',
+        'source/scale.cc',
         'source/video_common.cc',
-
       ],
-    },
-    {
-     'target_name': 'libyuvUnitTest',
-      'type': 'executable',
-      'dependencies': [
-        'libyuv',
-        # The tests are based on gtest
-        'testing/gtest.gyp:gtest',
-        'testing/gtest.gyp:gtest_main',
-      ],
-      'sources': [
-
-        # headers
-        'unit_test/unit_test.h',
-
-        # sources
-        'unit_test/unit_test.cc',
-
-      ], # source
-
-      'conditions': [
-
-        ['OS=="linux"', {
-          'cflags': [
-            '-fexceptions',
-          ],
-        }],
-
-      ], # conditions
     },
   ], # targets
 }
