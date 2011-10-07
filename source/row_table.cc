@@ -16,14 +16,14 @@ extern "C" {
   static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
   static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
   static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  0 \
+  static_cast<int16>(256 * 64 - 1) \
 }
 
 #define RGBU(i) { \
   static_cast<int16>(2.018 * 64 * (i - 128) + 0.5), \
   static_cast<int16>(-0.391 * 64 * (i - 128) + 0.5), \
   0, \
-  static_cast<int16>(256 * 64 - 1) \
+  0 \
 }
 
 #define RGBV(i) { \

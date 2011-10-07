@@ -22,6 +22,16 @@ void FastConvertYUVToRGB32Row(const uint8* y_buf,
                               uint8* rgb_buf,
                               int width);
 
+void FastConvertYUV444ToRGB32Row(const uint8* y_buf,
+                                 const uint8* u_buf,
+                                 const uint8* v_buf,
+                                 uint8* rgb_buf,
+                                 int width);
+
+void FastConvertYToRGB32Row(const uint8* y_buf,
+                            uint8* rgb_buf,
+                            int width);
+
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 #else
@@ -67,6 +77,7 @@ extern SIMD_ALIGNED(const int16 _kCoefficientsRgbY[768][4]);
 #else
 #define EMMS()
 #endif
+
 
 }  // extern "C"
 
