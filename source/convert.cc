@@ -764,7 +764,7 @@ ConvertI420ToUYVY(const uint8* src_yplane, int src_ystride,
 #ifndef SCALEOPT
     for (; i < (src_height >> 1);i++)
     {
-        for (uint32 j = 0; j < (src_width >> 1) ;j++)
+        for (int j = 0; j < (src_width >> 1) ;j++)
         {
             out1[0] = *u;
             out1[1] = y1[0];

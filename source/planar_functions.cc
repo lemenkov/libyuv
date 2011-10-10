@@ -357,7 +357,7 @@ static void X420ToI420(const uint8* src_y,
   int halfwidth = (width + 1) >> 1;
   void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITUV_NEON)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasNEON) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasNEON) &&
       (halfwidth % 16 == 0) &&
       IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
       IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
@@ -365,7 +365,7 @@ static void X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_NEON;
   } else
 #elif defined(HAS_SPLITUV_SSSE3)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSSE3) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
       (halfwidth % 16 == 0) &&
       IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
       IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
@@ -373,7 +373,7 @@ static void X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_SSSE3;
   } else
 #elif defined(HAS_SPLITUV_SSE2)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
       (halfwidth % 16 == 0) &&
       IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
       IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
@@ -552,7 +552,7 @@ void PlanarFunctions::Q420ToI420(const uint8* src_y, int src_pitch_y,
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_yuy2, 16) && (src_pitch_yuy2 % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
@@ -931,7 +931,7 @@ void PlanarFunctions::YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
                          uint8* dst_y, int pix);
 #if defined(HAS_YUY2TOI420ROW_SSE2)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_yuy2, 16) && (src_pitch_yuy2 % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
@@ -971,7 +971,7 @@ void PlanarFunctions::UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
   void (*UYVYToI420RowY)(const uint8* src_uyvy,
                          uint8* dst_y, int pix);
 #if defined(HAS_UYVYTOI420ROW_SSE2)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_uyvy, 16) && (src_pitch_uyvy % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
@@ -1152,7 +1152,7 @@ void PlanarFunctions::I400ToARGB(const uint8* src_y, int src_pitch_y,
                                  int width, int height) {
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix);
 #if defined(HAS_I400TOARGBROW_SSE2)
-  if (talk_base::CpuInfo::TestCpuFlag(talk_base::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
       (width % 8 == 0) &&
       IS_ALIGNED(src_y, 8) && (src_pitch_y % 8 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_pitch_argb % 16 == 0)) {
