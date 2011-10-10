@@ -12,6 +12,7 @@
 #include "format_conversion.h"
 
 #include "common.h"
+#include "cpu_id.h"
 #include "video_common.h"
 
 namespace libyuv {
