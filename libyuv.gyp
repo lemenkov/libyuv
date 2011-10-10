@@ -42,11 +42,21 @@
         'source/format_conversion.cc',
         'source/general.cc',
         'source/planar_functions.cc',
-        'source/row_posix.cc',
         'source/row_table.cc',
         'source/scale.cc',
         'source/video_common.cc',
       ],
+       'conditions': [
+         ['OS=="win"', {
+          'sources': [
+            'source/row_win.cc',
+          ],
+         },{ # else
+         'sources': [
+            'source/row_posix.cc',
+          ],
+         }],
+       ]
     },
   ], # targets
 }
