@@ -23,36 +23,33 @@ namespace libyuv {
 // Supported rotation
 enum VideoRotationMode
 {
-    kRotateNone = 0,
-    kRotateClockwise = 90,
-    kRotateAntiClockwise = -90,
-    kRotate180 = 180,
+  kRotateNone = 0,
+  kRotateClockwise = 90,
+  kRotateCounterClockwise = -90,
+  kRotate180 = 180,
 };
 
-// Mirror functions
-// The following 2 functions perform mirroring on an image (LeftRight/UpDown)
-// Input:
-//    - width       : Image width in pixels.
-//    - height      : Image height in pixels.
-//    - inFrame     : Reference to input image.
-//    - outFrame    : Reference to converted image.
-// Return value: 0 if OK, < 0 otherwise.
+// I420  mirror
 int
-MirrorI420LeftRight(const uint8* src_frame, int src_stride,
-                     uint8* dst_frame, int dst_stride,
-                     int src_width, int src_height);
+I420Mirror(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int width, int height);
 
-// Cut/Pad I420 frame to match desird dimensions.
+// Crop/Pad I420 frame to match required dimensions.
 int
-CutPadI420Frame(const uint8* inFrame, int inWidth,
-                  int inHeight, uint8* outFrame,
-                  int outWidth, int outHeight);
+I420CropPad(const uint8* src_frame, int src_width,
+           int src_height, uint8* dst_frame,
+           int dst_width, int dst_height);
 
-// I420 Cut - make a center cut
+// I420 Crop - make a center cut
 int
-CutI420Frame(uint8* frame, int fromWidth,
-             int fromHeight, int toWidth,
-             int toHeight);
+I420Cut(uint8* frame,
+        int src_width, int src_height,
+        int dst_width, int dst_height);
 
 
 } // namespace libyuv

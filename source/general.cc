@@ -10,329 +10,299 @@
 
 #include "general.h"
 
-#include <assert.h>
 #include <string.h>     // memcpy(), memset()
-
-#include "video_common.h"
 
 namespace libyuv {
 
-
 int
-MirrorI420LeftRight( const uint8* src_frame,uint8* dst_frame,
-                     int src_width, int src_height)
+I420Mirror(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int width, int height)
 {
-    if (src_width < 1 || src_height < 1)
-    {
-        return -1;
+  if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
+      dst_yplane == NULL || dst_uplane == NULL || dst_vplane == NULL)
+    return -1;
+
+  int indO = 0;
+  int indS  = 0;
+  int wind, hind;
+  uint8 tmpVal, tmpValU, tmpValV;
+  // Will swap two values per iteration
+  const int halfWidth = (width + 1) >> 1;
+
+  // Y
+  for (wind = 0; wind < halfWidth; wind++){
+   for (hind = 0; hind < height; hind++){
+     indO = hind * src_ystride + wind;
+     indS = hind * dst_ystride + (width - wind - 1);
+     tmpVal = src_yplane[indO];
+     dst_yplane[indO] = src_yplane[indS];
+     dst_yplane[indS] = tmpVal;
     }
+  }
 
-    assert(src_width % 2 == 0 &&  src_height % 2 == 0);
+  const int halfHeight = (height + 1) >> 1;
+  const int halfSrcuvStride = (height + 1) >> 1;
+  const int halfuvWidth = (width + 1) >> 2;
 
-    int indO = 0;
-    int indS  = 0;
-    int wind, hind;
-    uint8 tmpVal;
-    // Will swap two values per iteration
-    const int halfW = src_width >> 1;
-    const int halfStride = src_width >> 1;
-    // Y
-    for (wind = 0; wind < halfW; wind++ )
-    {
-        for (hind = 0; hind < src_height; hind++ )
-        {
-            indO = hind * src_width + wind;
-            indS = hind * src_width + (src_width - wind - 1); // swapping index
-            tmpVal = src_frame[indO];
-            dst_frame[indO] = src_frame[indS];
-            dst_frame[indS] = tmpVal;
-        } // end for (height)
-    } // end for(width)
-    const int lengthW = src_width >> 2;
-    const int lengthH = src_height >> 1;
-    // V
-    int zeroInd = src_width * src_height;
-    for (wind = 0; wind < lengthW; wind++ )
-    {
-        for (hind = 0; hind < lengthH; hind++ )
-        {
-            indO = zeroInd + hind * halfW + wind;
-            indS = zeroInd + hind * halfW + (halfW - wind - 1);// swapping index
-            tmpVal = src_frame[indO];
-            dst_frame[indO] = src_frame[indS];
-            dst_frame[indS] = tmpVal;
-        } // end for (height)
-    } // end for(width)
-
-    // U
-    zeroInd += src_width * src_height >> 2;
-    for (wind = 0; wind < lengthW; wind++ )
-    {
-        for (hind = 0; hind < lengthH; hind++ )
-        {
-            indO = zeroInd + hind * halfW + wind;
-            indS = zeroInd + hind * halfW + (halfW - wind - 1);// swapping index
-            tmpVal = src_frame[indO];
-            dst_frame[indO] = src_frame[indS];
-            dst_frame[indS] = tmpVal;
-        } // end for (height)
-    } // end for(width)
-
-    return 0;
+  for (wind = 0; wind < halfuvWidth; wind++){
+   for (hind = 0; hind < halfHeight; hind++){
+     indO = hind * halfSrcuvStride + wind;
+     indS = hind * halfSrcuvStride + (halfuvWidth - wind - 1);
+     // U
+     tmpValU = src_uplane[indO];
+     dst_uplane[indO] = src_uplane[indS];
+     dst_uplane[indS] = tmpValU;
+     // V
+     tmpValV = src_vplane[indO];
+     dst_vplane[indO] = src_vplane[indS];
+     dst_vplane[indS] = tmpValV;
+   }
+  }
+  return 0;
 }
-
 
 // Make a center cut
 int
-CutI420Frame(uint8* frame,
-             int fromWidth, int fromHeight,
-             int toWidth, int toHeight)
+I420Cut(uint8* frame,
+        int src_width, int src_height,
+        int dst_width, int dst_height)
 {
-    if (toWidth < 1 || fromWidth < 1 || toHeight < 1 || fromHeight < 1 )
-    {
-        return -1;
-    }
-    if (toWidth == fromWidth && toHeight == fromHeight)
-    {
-        // Nothing to do
-      return 3 * toHeight * toWidth / 2;
-    }
-    if (toWidth > fromWidth || toHeight > fromHeight)
-    {
-        // error
-        return -1;
-    }
-    int i = 0;
-    int m = 0;
-    int loop = 0;
-    int halfToWidth = toWidth / 2;
-    int halfToHeight = toHeight / 2;
-    int halfFromWidth = fromWidth / 2;
-    int halfFromHeight= fromHeight / 2;
-    int cutHeight = ( fromHeight - toHeight ) / 2;
-    int cutWidth = ( fromWidth - toWidth ) / 2;
+  if (frame == NULL)
+    return -1;
 
-    for (i = fromWidth * cutHeight + cutWidth; loop < toHeight ;
-        loop++, i += fromWidth)
-    {
-        memcpy(&frame[m],&frame[i],toWidth);
-        m += toWidth;
-    }
-    i = fromWidth * fromHeight; // ilum
-    loop = 0;
-    for ( i += (halfFromWidth * cutHeight / 2 + cutWidth / 2);
-          loop < halfToHeight; loop++,i += halfFromWidth)
-    {
-        memcpy(&frame[m],&frame[i],halfToWidth);
-        m += halfToWidth;
-    }
-    loop = 0;
-    i = fromWidth * fromHeight + halfFromHeight * halfFromWidth; // ilum + Cr
-    for ( i += (halfFromWidth * cutHeight / 2 + cutWidth / 2);
-          loop < halfToHeight; loop++, i += halfFromWidth)
-    {
-        memcpy(&frame[m],&frame[i],halfToWidth);
-        m += halfToWidth;
-    }
-    return halfToWidth * toHeight * 3;
+  if (src_width == dst_width && src_height == dst_height){
+      // Nothing to do
+    return 3 * dst_height * dst_width / 2;
+  }
+  if (dst_width > src_width || dst_height > src_height){
+      // error
+      return -1;
+  }
+  int i = 0;
+  int m = 0;
+  int loop = 0;
+  int half_dst_width = dst_width / 2;
+  int halfdst_height = dst_height / 2;
+  int halfsrc_width = src_width / 2;
+  int half_dst_height= src_height / 2;
+  int crop_height = ( src_height - dst_height ) / 2;
+  int crop_width = ( src_width - dst_width ) / 2;
+
+  for (i = src_width * crop_height + crop_width; loop < dst_height ;
+      loop++, i += src_width){
+    memcpy(&frame[m],&frame[i],dst_width);
+    m += dst_width;
+  }
+  i = src_width * src_height; // ilum
+  loop = 0;
+  for ( i += (halfsrc_width * crop_height / 2 + crop_width / 2);
+        loop < halfdst_height; loop++,i += halfsrc_width){
+    memcpy(&frame[m],&frame[i],half_dst_width);
+    m += half_dst_width;
+  }
+  loop = 0;
+  i = src_width * src_height + half_dst_height * halfsrc_width; // ilum + Cr
+  for ( i += (halfsrc_width * crop_height / 2 + crop_width / 2);
+        loop < halfdst_height; loop++, i += halfsrc_width){
+    memcpy(&frame[m],&frame[i],half_dst_width);
+    m += half_dst_width;
+  }
+  return 0;
 }
 
+
 int
-CutPadI420Frame(const uint8* inFrame, int inWidth,
-                int inHeight, uint8* outFrame,
-                int outWidth, int outHeight)
+I420CropPad(const uint8* src_frame, int src_width,
+           int src_height, uint8* dst_frame,
+           int dst_width, int dst_height)
 {
-    if (inWidth < 1 || outWidth < 1 || inHeight < 1 || outHeight < 1 )
-    {
-        return -1;
-    }
-    if (inWidth == outWidth && inHeight == outHeight)
-    {
-        memcpy(outFrame, inFrame, 3 * outWidth * (outHeight >> 1));
+  if (src_width < 1 || dst_width < 1 || src_height < 1 || dst_height < 1 )
+    return -1;
+  if (src_width == dst_width && src_height == dst_height)
+    memcpy(dst_frame, src_frame, 3 * dst_width * (dst_height >> 1));
+  else
+  {
+    if ( src_height < dst_height){
+      // pad height
+      int pad_height = dst_height - src_height;
+      int i = 0;
+      int pad_width = 0;
+      int crop_width = 0;
+      int width = src_width;
+      if (src_width < dst_width){
+        // pad width
+        pad_width = dst_width - src_width;
+      } else{
+      // cut width
+      crop_width = src_width - dst_width;
+      width = dst_width;
+      }
+      if (pad_height){
+        memset(dst_frame, 0, dst_width * (pad_height >> 1));
+        dst_frame +=  dst_width * (pad_height >> 1);
+      }
+      for (i = 0; i < src_height;i++)
+      {
+          if (pad_width)
+          {
+              memset(dst_frame, 0, pad_width / 2);
+              dst_frame +=  pad_width / 2;
+          }
+          src_frame += crop_width >> 1; // in case we have a cut
+          memcpy(dst_frame,src_frame ,width);
+          src_frame += crop_width >> 1;
+          dst_frame += width;
+          src_frame += width;
+          if (pad_width)
+          {
+            memset(dst_frame, 0, pad_width / 2);
+            dst_frame +=  pad_width / 2;
+          }
+      }
+      if (pad_height)
+      {
+          memset(dst_frame, 0, dst_width * (pad_height >> 1));
+          dst_frame +=  dst_width * (pad_height >> 1);
+      }
+      if (pad_height)
+      {
+        memset(dst_frame, 127, (dst_width >> 2) * (pad_height >> 1));
+        dst_frame +=  (dst_width >> 2) * (pad_height >> 1);
+      }
+      for (i = 0; i < (src_height >> 1); i++)
+      {
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+        src_frame += crop_width >> 2; // in case we have a cut
+        memcpy(dst_frame, src_frame,width >> 1);
+        src_frame += crop_width >> 2;
+        dst_frame += width >> 1;
+        src_frame += width >> 1;
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+      }
+      if (pad_height)
+      {
+        memset(dst_frame, 127, (dst_width >> 1) * (pad_height >> 1));
+        dst_frame +=  (dst_width >> 1) * (pad_height >> 1);
+      }
+      for (i = 0; i < (src_height >> 1); i++)
+      {
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+        src_frame += crop_width >> 2; // in case we have a cut
+        memcpy(dst_frame, src_frame,width >> 1);
+        src_frame += crop_width >> 2;
+        dst_frame += width >> 1;
+        src_frame += width >> 1;
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame += pad_width >> 2;
+        }
+      }
+      if (pad_height)
+      {
+        memset(dst_frame, 127, (dst_width >> 2) * (pad_height >> 1));
+        dst_frame +=  (dst_width >> 2) * (pad_height >> 1);
+      }
     }
     else
     {
-        if ( inHeight < outHeight)
-        {
-            // pad height
-            int padH = outHeight - inHeight;
-            int i = 0;
-            int padW = 0;
-            int cutW = 0;
-            int width = inWidth;
-            if (inWidth < outWidth)
-            {
-                // pad width
-                padW = outWidth - inWidth;
-            }
-            else
-            {
-              // cut width
-              cutW = inWidth - outWidth;
-              width = outWidth;
-            }
-            if (padH)
-            {
-                memset(outFrame, 0, outWidth * (padH >> 1));
-                outFrame +=  outWidth * (padH >> 1);
-            }
-            for (i = 0; i < inHeight;i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 0, padW / 2);
-                    outFrame +=  padW / 2;
-                }
-                inFrame += cutW >> 1; // in case we have a cut
-                memcpy(outFrame,inFrame ,width);
-                inFrame += cutW >> 1;
-                outFrame += width;
-                inFrame += width;
-                if (padW)
-                {
-                    memset(outFrame, 0, padW / 2);
-                    outFrame +=  padW / 2;
-                }
-            }
-            if (padH)
-            {
-                memset(outFrame, 0, outWidth * (padH >> 1));
-                outFrame +=  outWidth * (padH >> 1);
-            }
-            if (padH)
-            {
-                memset(outFrame, 127, (outWidth >> 2) * (padH >> 1));
-                outFrame +=  (outWidth >> 2) * (padH >> 1);
-            }
-            for (i = 0; i < (inHeight >> 1); i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-                inFrame += cutW >> 2; // in case we have a cut
-                memcpy(outFrame, inFrame,width >> 1);
-                inFrame += cutW >> 2;
-                outFrame += width >> 1;
-                inFrame += width >> 1;
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-            }
-            if (padH)
-            {
-                memset(outFrame, 127, (outWidth >> 1) * (padH >> 1));
-                outFrame +=  (outWidth >> 1) * (padH >> 1);
-            }
-            for (i = 0; i < (inHeight >> 1); i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-                inFrame += cutW >> 2; // in case we have a cut
-                memcpy(outFrame, inFrame,width >> 1);
-                inFrame += cutW >> 2;
-                outFrame += width >> 1;
-                inFrame += width >> 1;
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame += padW >> 2;
-                }
-            }
-            if (padH)
-            {
-                memset(outFrame, 127, (outWidth >> 2) * (padH >> 1));
-                outFrame +=  (outWidth >> 2) * (padH >> 1);
-            }
-        }
-        else
-        {
-            // cut height
-            int i = 0;
-            int padW = 0;
-            int cutW = 0;
-            int width = inWidth;
+      // cut height
+      int i = 0;
+      int pad_width = 0;
+      int crop_width = 0;
+      int width = src_width;
 
-            if (inWidth < outWidth)
-            {
-                // pad width
-                padW = outWidth - inWidth;
-            } else
-            {
-                // cut width
-                cutW = inWidth - outWidth;
-                width = outWidth;
-            }
-            int diffH = inHeight - outHeight;
-            inFrame += inWidth * (diffH >> 1);  // skip top I
+      if (src_width < dst_width)
+      {
+        // pad width
+        pad_width = dst_width - src_width;
+      } else
+      {
+        // cut width
+        crop_width = src_width - dst_width;
+        width = dst_width;
+      }
+      int diff_height = src_height - dst_height;
+      src_frame += src_width * (diff_height >> 1);  // skip top I
 
-            for (i = 0; i < outHeight; i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 0, padW / 2);
-                    outFrame +=  padW / 2;
-                }
-                inFrame += cutW >> 1; // in case we have a cut
-                memcpy(outFrame,inFrame ,width);
-                inFrame += cutW >> 1;
-                outFrame += width;
-                inFrame += width;
-                if (padW)
-                {
-                    memset(outFrame, 0, padW / 2);
-                    outFrame +=  padW / 2;
-                }
-            }
-            inFrame += inWidth * (diffH >> 1);  // skip end I
-            inFrame += (inWidth >> 2) * (diffH >> 1); // skip top of Cr
-            for (i = 0; i < (outHeight >> 1); i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-                inFrame += cutW >> 2; // in case we have a cut
-                memcpy(outFrame, inFrame,width >> 1);
-                inFrame += cutW >> 2;
-                outFrame += width >> 1;
-                inFrame += width >> 1;
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-            }
-            inFrame += (inWidth >> 2) * (diffH >> 1); // skip end of Cr
-            inFrame += (inWidth >> 2) * (diffH >> 1); // skip top of Cb
-            for (i = 0; i < (outHeight >> 1); i++)
-            {
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-                inFrame += cutW >> 2; // in case we have a cut
-                memcpy(outFrame, inFrame, width >> 1);
-                inFrame += cutW >> 2;
-                outFrame += width >> 1;
-                inFrame += width >> 1;
-                if (padW)
-                {
-                    memset(outFrame, 127, padW >> 2);
-                    outFrame +=  padW >> 2;
-                }
-            }
+      for (i = 0; i < dst_height; i++)
+      {
+        if (pad_width)
+        {
+          memset(dst_frame, 0, pad_width / 2);
+          dst_frame +=  pad_width / 2;
         }
+        src_frame += crop_width >> 1; // in case we have a cut
+        memcpy(dst_frame,src_frame ,width);
+        src_frame += crop_width >> 1;
+        dst_frame += width;
+        src_frame += width;
+        if (pad_width)
+        {
+          memset(dst_frame, 0, pad_width / 2);
+          dst_frame +=  pad_width / 2;
+        }
+      }
+      src_frame += src_width * (diff_height >> 1);  // skip end I
+      src_frame += (src_width >> 2) * (diff_height >> 1); // skip top of Cr
+      for (i = 0; i < (dst_height >> 1); i++)
+      {
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+        src_frame += crop_width >> 2; // in case we have a cut
+        memcpy(dst_frame, src_frame,width >> 1);
+        src_frame += crop_width >> 2;
+        dst_frame += width >> 1;
+        src_frame += width >> 1;
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+      }
+      src_frame += (src_width >> 2) * (diff_height >> 1); // skip end of Cr
+      src_frame += (src_width >> 2) * (diff_height >> 1); // skip top of Cb
+      for (i = 0; i < (dst_height >> 1); i++)
+      {
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+        src_frame += crop_width >> 2; // in case we have a cut
+        memcpy(dst_frame, src_frame, width >> 1);
+        src_frame += crop_width >> 2;
+        dst_frame += width >> 1;
+        src_frame += width >> 1;
+        if (pad_width)
+        {
+          memset(dst_frame, 127, pad_width >> 2);
+          dst_frame +=  pad_width >> 2;
+        }
+      }
     }
-    return 3 * outWidth * (outHeight >> 1);
+  }
+  return 0;
 }
 
 } // nmaespace libyuv
