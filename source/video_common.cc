@@ -17,6 +17,8 @@
 
 namespace libyuv {
 
+#define ARRAY_SIZE(x) (static_cast<int>((sizeof(x)/sizeof(x[0]))))
+
 struct FourCCAliasEntry {
   uint32 alias;
   uint32 canonical;

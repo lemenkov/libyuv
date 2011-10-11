@@ -10,8 +10,8 @@
 
 #include "scale.h"
 
+#include <assert.h>
 #include <string.h>
-#include "common.h"
 
 #include "cpu_id.h"
 
@@ -1923,7 +1923,7 @@ static void ScaleRowDown8_C(const uint8* iptr, int32,
 static void ScaleRowDown8Int_C(const uint8* iptr, int32 istride,
                                uint8* dst, int32 owidth) {
   ALIGN16(uint8 irow[kMaxRow12 * 2]);
-  ASSERT(owidth <= kMaxOutputWidth);
+  assert(owidth <= kMaxOutputWidth);
   ScaleRowDown4Int_C(iptr, istride, irow, owidth * 2);
   ScaleRowDown4Int_C(iptr + istride * 4, istride, irow + kMaxOutputWidth,
                      owidth * 2);
@@ -1932,7 +1932,7 @@ static void ScaleRowDown8Int_C(const uint8* iptr, int32 istride,
 
 static void ScaleRowDown34_C(const uint8* iptr, int32,
                              uint8* dst, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   uint8* dend = dst + owidth;
   do {
     dst[0] = iptr[0];
@@ -1946,7 +1946,7 @@ static void ScaleRowDown34_C(const uint8* iptr, int32,
 // Filter rows 0 and 1 together, 3 : 1
 static void ScaleRowDown34_0_Int_C(const uint8* iptr, int32 istride,
                                    uint8* d, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   uint8* dend = d + owidth;
   const uint8* s = iptr;
   const uint8* t = iptr + istride;
@@ -1969,7 +1969,7 @@ static void ScaleRowDown34_0_Int_C(const uint8* iptr, int32 istride,
 // Filter rows 1 and 2 together, 1 : 1
 static void ScaleRowDown34_1_Int_C(const uint8* iptr, int32 istride,
                                    uint8* d, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   uint8* dend = d + owidth;
   const uint8* s = iptr;
   const uint8* t = iptr + istride;
@@ -2069,7 +2069,7 @@ static void ScaleRowDown34_1_Int_SSE2(const uint8* iptr, int32 istride,
 
 static void ScaleRowDown38_C(const uint8* iptr, int32,
                              uint8* dst, int32 owidth) {
-  ASSERT(owidth % 3 == 0);
+  assert(owidth % 3 == 0);
   for (int x = 0; x < owidth; x += 3) {
     dst[0] = iptr[0];
     dst[1] = iptr[3];
@@ -2082,7 +2082,7 @@ static void ScaleRowDown38_C(const uint8* iptr, int32,
 // 8x3 -> 3x1
 static void ScaleRowDown38_3_Int_C(const uint8* iptr, int32 istride,
                                    uint8* optr, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   for (int i = 0; i < owidth; i+=3) {
     optr[0] = (iptr[0] + iptr[1] + iptr[2] +
         iptr[istride + 0] + iptr[istride + 1] + iptr[istride + 2] +
@@ -2104,7 +2104,7 @@ static void ScaleRowDown38_3_Int_C(const uint8* iptr, int32 istride,
 // 8x2 -> 3x1
 static void ScaleRowDown38_2_Int_C(const uint8* iptr, int32 istride,
                                    uint8* optr, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   for (int i = 0; i < owidth; i+=3) {
     optr[0] = (iptr[0] + iptr[1] + iptr[2] +
         iptr[istride + 0] + iptr[istride + 1] + iptr[istride + 2]) *
@@ -2124,7 +2124,7 @@ static void ScaleRowDown38_2_Int_C(const uint8* iptr, int32 istride,
 static void ScaleFilterRows_C(uint8* optr,
                               const uint8* iptr0, int32 istride,
                               int owidth, int source_y_fraction) {
-  ASSERT(owidth > 0);
+  assert(owidth > 0);
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* iptr1 = iptr0 + istride;
@@ -2147,8 +2147,8 @@ static void ScaleFilterRows_C(uint8* optr,
 
 void ScaleAddRows_C(const uint8* iptr, int32 istride,
                     uint16* orow, int32 iwidth, int32 iheight) {
-  ASSERT(iwidth > 0);
-  ASSERT(iheight > 0);
+  assert(iwidth > 0);
+  assert(iheight > 0);
   for (int x = 0; x < iwidth; ++x) {
     const uint8* s = iptr + x;
     int sum = 0;
@@ -2172,8 +2172,8 @@ static void ScalePlaneDown2(int32 iwidth, int32 iheight,
                             int32 istride, int32 ostride,
                             const uint8 *iptr, uint8 *optr,
                             bool interpolate) {
-  ASSERT(iwidth % 2 == 0);
-  ASSERT(iheight % 2 == 0);
+  assert(iwidth % 2 == 0);
+  assert(iheight % 2 == 0);
   void (*ScaleRowDown2)(const uint8* iptr, int32 istride,
                         uint8* orow, int32 owidth);
 
@@ -2212,8 +2212,8 @@ static void ScalePlaneDown4(int32 iwidth, int32 iheight,
                             int32 istride, int32 ostride,
                             const uint8 *iptr, uint8 *optr,
                             bool interpolate) {
-  ASSERT(iwidth % 4 == 0);
-  ASSERT(iheight % 4 == 0);
+  assert(iwidth % 4 == 0);
+  assert(iheight % 4 == 0);
   void (*ScaleRowDown4)(const uint8* iptr, int32 istride,
                         uint8* orow, int32 owidth);
 
@@ -2247,8 +2247,8 @@ static void ScalePlaneDown8(int32 iwidth, int32 iheight,
                             int32 istride, int32 ostride,
                             const uint8 *iptr, uint8 *optr,
                             bool interpolate) {
-  ASSERT(iwidth % 8 == 0);
-  ASSERT(iheight % 8 == 0);
+  assert(iwidth % 8 == 0);
+  assert(iheight % 8 == 0);
   void (*ScaleRowDown8)(const uint8* iptr, int32 istride,
                         uint8* orow, int32 owidth);
 #if defined(HAS_SCALEROWDOWN8_SSE2)
@@ -2281,7 +2281,7 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
                              int32 istride, int32 ostride,
                              const uint8* iptr, uint8* optr,
                              bool interpolate) {
-  ASSERT(owidth % 3 == 0);
+  assert(owidth % 3 == 0);
   void (*ScaleRowDown34_0)(const uint8* iptr, int32 istride,
                            uint8* orow, int32 owidth);
   void (*ScaleRowDown34_1)(const uint8* iptr, int32 istride,
@@ -2362,7 +2362,7 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
                              int32 istride, int32 ostride,
                              const uint8* iptr, uint8* optr,
                              bool interpolate) {
-  ASSERT(owidth % 3 == 0);
+  assert(owidth % 3 == 0);
   void (*ScaleRowDown38_3)(const uint8* iptr, int32 istride,
                            uint8* orow, int32 owidth);
   void (*ScaleRowDown38_2)(const uint8* iptr, int32 istride,
@@ -2411,8 +2411,8 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
 
 inline static uint32 SumBox(int32 iboxwidth, int32 iboxheight,
                             int32 istride, const uint8 *iptr) {
-  ASSERT(iboxwidth > 0);
-  ASSERT(iboxheight > 0);
+  assert(iboxwidth > 0);
+  assert(iboxheight > 0);
   uint32 sum = 0u;
   for (int y = 0; y < iboxheight; ++y) {
     for (int x = 0; x < iboxwidth; ++x) {
@@ -2437,7 +2437,7 @@ static void ScalePlaneBoxRow(int32 owidth, int32 boxheight,
 }
 
 inline static uint32 SumPixels(int32 iboxwidth, const uint16 *iptr) {
-  ASSERT(iboxwidth > 0);
+  assert(iboxwidth > 0);
   uint32 sum = 0u;
   for (int x = 0; x < iboxwidth; ++x) {
     sum += iptr[x];
@@ -2485,8 +2485,8 @@ static void ScalePlaneBox(int32 iwidth, int32 iheight,
                           int32 owidth, int32 oheight,
                           int32 istride, int32 ostride,
                           const uint8 *iptr, uint8 *optr) {
-  ASSERT(owidth > 0);
-  ASSERT(oheight > 0);
+  assert(owidth > 0);
+  assert(oheight > 0);
   int dy = (iheight << 16) / oheight;
   int dx = (iwidth << 16) / owidth;
   if ((iwidth % 16 != 0) || (iwidth > kMaxInputWidth) ||
@@ -2592,8 +2592,8 @@ static void ScalePlaneBilinear(int32 iwidth, int32 iheight,
                                int32 owidth, int32 oheight,
                                int32 istride, int32 ostride,
                                const uint8 *iptr, uint8 *optr) {
-  ASSERT(owidth > 0);
-  ASSERT(oheight > 0);
+  assert(owidth > 0);
+  assert(oheight > 0);
   int dy = (iheight << 16) / oheight;
   int dx = (iwidth << 16) / owidth;
   if ((iwidth % 8 != 0) || (iwidth > kMaxInputWidth)) {

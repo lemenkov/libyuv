@@ -11,6 +11,8 @@
 
 #include "format_conversion.h"
 
+#include <assert.h>
+
 #include "common.h"
 #include "cpu_id.h"
 #include "video_common.h"
@@ -72,7 +74,7 @@ static FORCE_INLINE uint32 FourCcToBayerPixelColourMap(uint32 fourcc) {
   // four pixels in each 2x2 grid, in left-to-right and top-to-bottom order.
   switch (fourcc) {
     default:
-      ASSERT(false);
+      assert(false);
     case FOURCC_RGGB:
       return FOURCC(RED, GREEN_BETWEEN_RED, GREEN_BETWEEN_BLUE, BLUE);
     case FOURCC_BGGR:
@@ -278,8 +280,8 @@ void BayerRGBToI420(const uint8* src, int src_pitch, uint32 src_fourcc,
                     uint8* u, int u_pitch,
                     uint8* v, int v_pitch,
                     int width, int height) {
-  ASSERT(width % 2 == 0);
-  ASSERT(height % 2 == 0);
+  assert(width % 2 == 0);
+  assert(height % 2 == 0);
 
   uint32 colour_map = FourCcToBayerPixelColourMap(src_fourcc);
 
@@ -434,7 +436,7 @@ void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
                      uint8* dst_bayer, int dst_pitch_bayer,
                      uint32 dst_fourcc_bayer,
                      int width, int height) {
-  ASSERT(width % 2 == 0);
+  assert(width % 2 == 0);
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
@@ -449,7 +451,7 @@ void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
     ARGBToBayerRow = ARGBToBayerRow_C;
   }
 
-  ASSERT(src_fourcc_rgb == FOURCC_ARGB);
+  assert(src_fourcc_rgb == FOURCC_ARGB);
   int blue_index = 0;
   int green_index = 1;
   int red_index = 2;
@@ -459,7 +461,7 @@ void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
   uint32 index_map[2];
   switch (dst_fourcc_bayer) {
     default:
-      ASSERT(false);
+      assert(false);
     case FOURCC_RGGB:
       index_map[0] = GenerateSelector(red_index, green_index);
       index_map[1] = GenerateSelector(green_index, blue_index);

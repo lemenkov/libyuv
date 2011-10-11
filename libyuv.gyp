@@ -46,17 +46,17 @@
         'source/scale.cc',
         'source/video_common.cc',
       ],
-       'conditions': [
-         ['OS=="win"', {
-          'sources': [
-            'source/row_win.cc',
-          ],
-         },{ # else
+      'conditions': [
+        ['OS=="win"', {
+         'sources': [
+           'source/row_win.cc',
+         ],
+        },{ # else
          'sources': [
             'source/row_posix.cc',
           ],
-         }],
-       ]
+        }],
+      ]
     },
   ], # targets
 }
