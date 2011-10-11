@@ -1992,7 +1992,7 @@ static void ScaleRowDown34_1_Int_C(const uint8* iptr, int32 istride,
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 // Filter row to 3/4
 static void ScaleFilterCols34_C(uint8* optr, const uint8* iptr, int owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   uint8* dend = optr + owidth;
   const uint8* s = iptr;
   do {
@@ -2028,7 +2028,7 @@ static const int kMaxInputWidth = 2560;
 // Filter rows 0 and 1 together, 3 : 1
 static void ScaleRowDown34_0_Int_SSE2(const uint8* iptr, int32 istride,
                                       uint8* d, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   ALIGN16(uint8 row[kMaxInputWidth]);
 #ifdef TEST_RSTSC
   uint64 t1 = __rdtsc();
@@ -2049,7 +2049,7 @@ static void ScaleRowDown34_0_Int_SSE2(const uint8* iptr, int32 istride,
 // Filter rows 1 and 2 together, 1 : 1
 static void ScaleRowDown34_1_Int_SSE2(const uint8* iptr, int32 istride,
                                       uint8* d, int32 owidth) {
-  ASSERT((owidth % 3 == 0) && (owidth > 0));
+  assert((owidth % 3 == 0) && (owidth > 0));
   ALIGN16(uint8 row[kMaxInputWidth]);
 #ifdef TEST_RSTSC
   uint64 t1 = __rdtsc();
