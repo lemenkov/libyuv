@@ -969,7 +969,6 @@ Convert::RGB24ToI420(const uint8* src_frame, int src_stride,
   const uint8* inpPtr2;
   int h, w;
 
-  // Assuming RGB in a bottom up orientation.
   yStartPtr = dst_yplane;
   yStartPtr2 = yStartPtr + dst_ystride;
   uStartPtr = dst_uplane;
@@ -1032,7 +1031,6 @@ Convert::RAWToI420(const uint8* src_frame, int src_stride,
   const uint8* inpPtr2;
   int h, w;
 
-  // Assuming RGB in a bottom up orientation.
   yStartPtr = dst_yplane;
   yStartPtr2 = yStartPtr + dst_ystride;
   uStartPtr = dst_uplane;
@@ -1080,6 +1078,133 @@ Convert::RAWToI420(const uint8* src_frame, int src_stride,
 
 
 int
+Convert::BGRAToI420(const uint8* src_frame, int src_stride,
+                     uint8* dst_yplane, int dst_ystride,
+                     uint8* dst_uplane, int dst_ustride,
+                     uint8* dst_vplane, int dst_vstride,
+                     int src_width, int src_height)
+{
+  if (src_frame == NULL || dst_yplane == NULL ||
+      dst_vplane == NULL || dst_vplane == NULL)
+    return -1;
+
+  uint8* yStartPtr;
+  uint8* yStartPtr2;
+  uint8* uStartPtr;
+  uint8* vStartPtr;
+  const uint8* inpPtr;
+  const uint8* inpPtr2;
+  int h, w;
+
+  // Assuming RGB in a bottom up orientation.
+  yStartPtr = dst_yplane;
+  yStartPtr2 = yStartPtr + dst_ystride;
+  uStartPtr = dst_uplane;
+  vStartPtr = dst_vplane;
+  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
+  inpPtr2 = inpPtr - 3 * src_stride;
+
+  for (h = 0; h < ((src_height + 1) >> 1); h++ ){
+    for (w = 0; w < ((src_width + 1) >> 1); w++){
+      // Y
+      yStartPtr[0] =  (uint8)((66 * inpPtr[1] + 129 * inpPtr[2]
+                                      + 25 * inpPtr[3] + 128) >> 8) + 16;
+      yStartPtr2[0] = (uint8)((66 * inpPtr2[1] + 129 * inpPtr2[2]
+                                      + 25 * inpPtr2[3] + 128) >> 8) + 16;
+      // Moving to next column
+      yStartPtr[1] = (uint8)((66 * inpPtr[5] + 129 * inpPtr[6]
+                                     + 25 * inpPtr[7]  + 128) >> 8) + 16;
+      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[6]
+                                      + 25 * inpPtr2[7] + 128) >> 8 ) + 16;
+      // U
+      uStartPtr[0] = (uint8)((-38 * inpPtr[1] - 74 * inpPtr[2] +
+                                      112 * inpPtr[3] + 128) >> 8) + 128;
+      // V
+      vStartPtr[0] = (uint8)((112 * inpPtr[1] -94 * inpPtr[2] -
+                                     18 * inpPtr[3] + 128) >> 8) + 128;
+
+      yStartPtr += 2;
+      yStartPtr2 += 2;
+      uStartPtr++;
+      vStartPtr++;
+      inpPtr += 6;
+      inpPtr2 += 6;
+    } // end for w
+    yStartPtr += dst_ystride + dst_ystride - src_width;
+    yStartPtr2 += dst_ystride + dst_ystride - src_width;
+    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
+    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
+    inpPtr -= 3 * (2 * src_stride + src_width);
+    inpPtr2 -= 3 * (2 * src_stride + src_width);
+  } // end for h
+  return 0;
+}
+
+
+int
+Convert::ARGBToI420(const uint8* src_frame, int src_stride,
+                     uint8* dst_yplane, int dst_ystride,
+                     uint8* dst_uplane, int dst_ustride,
+                     uint8* dst_vplane, int dst_vstride,
+                     int src_width, int src_height)
+{
+  if (src_frame == NULL || dst_yplane == NULL ||
+      dst_vplane == NULL || dst_vplane == NULL)
+    return -1;
+
+  uint8* yStartPtr;
+  uint8* yStartPtr2;
+  uint8* uStartPtr;
+  uint8* vStartPtr;
+  const uint8* inpPtr;
+  const uint8* inpPtr2;
+  int h, w;
+
+  yStartPtr = dst_yplane;
+  yStartPtr2 = yStartPtr + dst_ystride;
+  uStartPtr = dst_uplane;
+  vStartPtr = dst_vplane;
+  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
+  inpPtr2 = inpPtr - 3 * src_stride;
+
+  for (h = 0; h < ((src_height + 1) >> 1); h++ ){
+    for (w = 0; w < ((src_width + 1) >> 1); w++){
+      // Y
+      yStartPtr[0] =  (uint8)((66 * inpPtr[2] + 129 * inpPtr[1]
+                                      + 25 * inpPtr[0] + 128) >> 8) + 16;
+      yStartPtr2[0] = (uint8)((66 * inpPtr2[2] + 129 * inpPtr2[1]
+                                      + 25 * inpPtr2[0] + 128) >> 8) + 16;
+      // Moving to next column
+      yStartPtr[1] = (uint8)((66 * inpPtr[6] + 129 * inpPtr[5]
+                                     + 25 * inpPtr[4]  + 128) >> 8) + 16;
+      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[4]
+                                      + 25 * inpPtr2[3] + 128) >> 8 ) + 16;
+      // U
+      uStartPtr[0] = (uint8)((-38 * inpPtr[2] - 74 * inpPtr[1] +
+                                      112 * inpPtr[0] + 128) >> 8) + 128;
+      // V
+      vStartPtr[0] = (uint8)((112 * inpPtr[2] -94 * inpPtr[1] -
+                                     18 * inpPtr[0] + 128) >> 8) + 128;
+
+      yStartPtr += 2;
+      yStartPtr2 += 2;
+      uStartPtr++;
+      vStartPtr++;
+      inpPtr += 6;
+      inpPtr2 += 6;
+    } // end for w
+    yStartPtr += dst_ystride + dst_ystride - src_width;
+    yStartPtr2 += dst_ystride + dst_ystride - src_width;
+    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
+    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
+    inpPtr -= 3 * (2 * src_stride + src_width);
+    inpPtr2 -= 3 * (2 * src_stride + src_width);
+  } // end for h
+  return 0;
+}
+
+
+int
 Convert::ABGRToI420(const uint8* src_frame, int src_stride,
                     uint8* dst_yplane, int dst_ystride,
                     uint8* dst_uplane, int dst_ustride,
@@ -1105,24 +1230,26 @@ Convert::ABGRToI420(const uint8* src_frame, int src_stride,
   inpPtr = src_frame;
   inpPtr2 = inpPtr + 4 * src_stride;
   int h, w;
+
+  // RGBA in memory
   for (h = 0; h < ((src_height + 1) >> 1); h++){
     for (w = 0; w < ((src_width + 1) >> 1); w++){
       // Y
-      yStartPtr[0]  = (uint8)((66 * inpPtr[1] + 129 * inpPtr[2]
-                               + 25 * inpPtr[3] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[1] + 129 * inpPtr2[2]
-                               + 25 * inpPtr2[3] + 128) >> 8) + 16;
+      yStartPtr[0]  = (uint8)((66 * inpPtr[0] + 129 * inpPtr[1]
+                               + 25 * inpPtr[2] + 128) >> 8) + 16;
+      yStartPtr2[0] = (uint8)((66 * inpPtr2[0] + 129 * inpPtr2[1]
+                               + 25 * inpPtr2[2] + 128) >> 8) + 16;
       // Moving to next column
-      yStartPtr[1] =  (uint8)((66 * inpPtr[5] + 129 * inpPtr[6]
-                               + 25 * inpPtr[7] + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[6]
-                                + 25 * inpPtr2[7] + 128) >> 8) + 16;
+      yStartPtr[1] =  (uint8)((66 * inpPtr[4] + 129 * inpPtr[5]
+                               + 25 * inpPtr[6] + 128) >> 8) + 16;
+      yStartPtr2[1] = (uint8)((66 * inpPtr2[4] + 129 * inpPtr2[5]
+                                + 25 * inpPtr2[6] + 128) >> 8) + 16;
       // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[1] - 74 * inpPtr[2]
-                              + 112 * inpPtr[3] + 128) >> 8) + 128;
+      uStartPtr[0] = (uint8)((-38 * inpPtr[0] - 74 * inpPtr[1]
+                              + 112 * inpPtr[2] + 128) >> 8) + 128;
       // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[1] - 94 * inpPtr[2]
-                              - 18 * inpPtr[3] + 128) >> 8) + 128;
+      vStartPtr[0] = (uint8)((112 * inpPtr[0] - 94 * inpPtr[1]
+                              - 18 * inpPtr[2] + 128) >> 8) + 128;
 
       yStartPtr += 2;
       yStartPtr2 += 2;

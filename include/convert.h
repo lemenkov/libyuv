@@ -59,6 +59,7 @@ class Convert {
              const uint8* src_vplane, int src_vstride,
              uint8* dst_frame, int dst_stride,
              int src_width, int src_height);
+
   static int
   I420ToUYVY(const uint8* src_yplane, int src_ystride,
              const uint8* src_uplane, int src_ustride,
@@ -97,17 +98,33 @@ class Convert {
              uint8* dst_uplane, int dst_ustride,
              uint8* dst_vplane, int dst_vstride,
              int src_width, int src_height);
+
   static int
   I420ToABGR(const uint8* src_yplane, int src_ystride,
              const uint8* src_uplane, int src_ustride,
              const uint8* src_vplane, int src_vstride,
              uint8* dst_frame, int dst_stride,
              int src_width, int src_height);
-  int
+
+  static int
   I420ToBGRA(const uint8* src_yplane, int src_ystride,
              const uint8* src_uplane, int src_ustride,
              const uint8* src_vplane, int src_vstride,
              uint8* dst_frame, int dst_stride,
+             int src_width, int src_height);
+
+  static int`
+  BGRAToI420(const uint8* src_frame, int src_stride,
+             uint8* dst_yplane, int dst_ystride,
+             uint8* dst_uplane, int dst_ustride,
+             uint8* dst_vplane, int dst_vstride,
+             int src_width, int src_height);
+
+  int static
+  ARGBToI420(const uint8* src_frame, int src_stride,
+             uint8* dst_yplane, int dst_ystride,
+             uint8* dst_uplane, int dst_ustride,
+             uint8* dst_vplane, int dst_vstride,
              int src_width, int src_height);
 
   static int
