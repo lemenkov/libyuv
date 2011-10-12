@@ -249,13 +249,13 @@ static void I420CopyPlane2(const uint8* src, int src_pitch_0, int src_pitch_1,
 
 // Helper function to copy yuv data without scaling.  Used
 // by our jpeg conversion callbacks to incrementally fill a yuv image.
-void PlanarFunctions::I420Copy(const uint8* src_y, int src_pitch_y,
-                               const uint8* src_u, int src_pitch_u,
-                               const uint8* src_v, int src_pitch_v,
-                               uint8* dst_y, int dst_pitch_y,
-                               uint8* dst_u, int dst_pitch_u,
-                               uint8* dst_v, int dst_pitch_v,
-                               int width, int height) {
+void I420Copy(const uint8* src_y, int src_pitch_y,
+              const uint8* src_u, int src_pitch_u,
+              const uint8* src_v, int src_pitch_v,
+              uint8* dst_y, int dst_pitch_y,
+              uint8* dst_u, int dst_pitch_u,
+              uint8* dst_v, int dst_pitch_v,
+              int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -276,13 +276,13 @@ void PlanarFunctions::I420Copy(const uint8* src_y, int src_pitch_y,
 
 // Helper function to copy yuv data without scaling.  Used
 // by our jpeg conversion callbacks to incrementally fill a yuv image.
-void PlanarFunctions::I422ToI420(const uint8* src_y, int src_pitch_y,
-                                 const uint8* src_u, int src_pitch_u,
-                                 const uint8* src_v, int src_pitch_v,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void I422ToI420(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -399,11 +399,11 @@ static void X420ToI420(const uint8* src_y,
 }
 
 // Convert M420 to I420.
-void PlanarFunctions::M420ToI420(const uint8* src_m420, int src_pitch_m420,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void M420ToI420(const uint8* src_m420, int src_pitch_m420,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   X420ToI420(src_m420, src_pitch_m420, src_pitch_m420 * 2,
              src_m420 + src_pitch_m420 * 2, src_pitch_m420 * 3,
              dst_y, dst_pitch_y, dst_u, dst_pitch_u, dst_v, dst_pitch_v,
@@ -411,13 +411,13 @@ void PlanarFunctions::M420ToI420(const uint8* src_m420, int src_pitch_m420,
 }
 
 // Convert NV12 to I420.
-void PlanarFunctions::NV12ToI420(const uint8* src_y,
-                                 const uint8* src_uv,
-                                 int src_pitch,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void NV12ToI420(const uint8* src_y,
+                const uint8* src_uv,
+                int src_pitch,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   X420ToI420(src_y, src_pitch, src_pitch,
              src_uv, src_pitch,
              dst_y, dst_pitch_y, dst_u, dst_pitch_u, dst_v, dst_pitch_v,
@@ -543,12 +543,12 @@ static void SplitYUY2_C(const uint8* src_yuy2,
 
 // Convert Q420 to I420.
 // Format is rows of YY/YUYV
-void PlanarFunctions::Q420ToI420(const uint8* src_y, int src_pitch_y,
-                                 const uint8* src_yuy2, int src_pitch_yuy2,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void Q420ToI420(const uint8* src_y, int src_pitch_y,
+                const uint8* src_yuy2, int src_pitch_yuy2,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
@@ -921,11 +921,11 @@ void UYVYToI420RowY_C(const uint8* src_uyvy,
 }
 
 // Convert YUY2 to I420.
-void PlanarFunctions::YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   void (*YUY2ToI420RowUV)(const uint8* src_yuy2, int src_pitch_yuy2,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
@@ -961,11 +961,11 @@ void PlanarFunctions::YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
 }
 
 // Convert UYVY to I420.
-void PlanarFunctions::UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
-                                 uint8* dst_y, int dst_pitch_y,
-                                 uint8* dst_u, int dst_pitch_u,
-                                 uint8* dst_v, int dst_pitch_v,
-                                 int width, int height) {
+void UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
+                uint8* dst_y, int dst_pitch_y,
+                uint8* dst_u, int dst_pitch_u,
+                uint8* dst_v, int dst_pitch_v,
+                int width, int height) {
   void (*UYVYToI420RowUV)(const uint8* src_uyvy, int src_pitch_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*UYVYToI420RowY)(const uint8* src_uyvy,
@@ -1002,11 +1002,11 @@ void PlanarFunctions::UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
 
 // Convert I420 to ARGB.
 // TODO(fbarchard): Add SSSE3 version and supply C version for fallback.
-void PlanarFunctions::I420ToARGB(const uint8* src_y, int src_pitch_y,
-                                 const uint8* src_u, int src_pitch_u,
-                                 const uint8* src_v, int src_pitch_v,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void I420ToARGB(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_pitch_argb;
@@ -1020,12 +1020,48 @@ void PlanarFunctions::I420ToARGB(const uint8* src_y, int src_pitch_y,
   EMMS();
 }
 
+// Convert I420 to BGRA.
+void I420ToBGRA(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToBGRARow(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_pitch_argb;
+    src_y += src_pitch_y;
+    if (y & 1) {
+      src_u += src_pitch_u;
+      src_v += src_pitch_v;
+    }
+  }
+  EMMS();
+}
+
+// Convert I420 to BGRA.
+void I420ToABGR(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToABGRRow(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_pitch_argb;
+    src_y += src_pitch_y;
+    if (y & 1) {
+      src_u += src_pitch_u;
+      src_v += src_pitch_v;
+    }
+  }
+  EMMS();
+}
+
 // Convert I422 to ARGB.
-void PlanarFunctions::I422ToARGB(const uint8* src_y, int src_pitch_y,
-                                 const uint8* src_u, int src_pitch_u,
-                                 const uint8* src_v, int src_pitch_v,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void I422ToARGB(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_pitch_argb;
@@ -1038,11 +1074,11 @@ void PlanarFunctions::I422ToARGB(const uint8* src_y, int src_pitch_y,
 }
 
 // Convert I444 to ARGB.
-void PlanarFunctions::I444ToARGB(const uint8* src_y, int src_pitch_y,
-                                 const uint8* src_u, int src_pitch_u,
-                                 const uint8* src_v, int src_pitch_v,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void I444ToARGB(const uint8* src_y, int src_pitch_y,
+                const uint8* src_u, int src_pitch_u,
+                const uint8* src_v, int src_pitch_v,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUV444ToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_pitch_argb;
@@ -1055,9 +1091,9 @@ void PlanarFunctions::I444ToARGB(const uint8* src_y, int src_pitch_y,
 }
 
 // Convert I400 to ARGB.
-void PlanarFunctions::I400ToARGB_Reference(const uint8* src_y, int src_pitch_y,
-                                           uint8* dst_argb, int dst_pitch_argb,
-                                           int width, int height) {
+void I400ToARGB_Reference(const uint8* src_y, int src_pitch_y,
+                          uint8* dst_argb, int dst_pitch_argb,
+                          int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYToRGB32Row(src_y, dst_argb, width);
     dst_argb += dst_pitch_argb;
@@ -1147,9 +1183,9 @@ static void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
 }
 
 // Convert I400 to ARGB.
-void PlanarFunctions::I400ToARGB(const uint8* src_y, int src_pitch_y,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void I400ToARGB(const uint8* src_y, int src_pitch_y,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix);
 #if defined(HAS_I400TOARGBROW_SSE2)
   if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
@@ -1182,9 +1218,9 @@ static void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
 }
 
 // Convert RAW to ARGB.
-void PlanarFunctions::RAWToARGB(const uint8* src_raw, int src_pitch_raw,
-                                uint8* dst_argb, int dst_pitch_argb,
-                                int width, int height) {
+void RAWToARGB(const uint8* src_raw, int src_pitch_raw,
+               uint8* dst_argb, int dst_pitch_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     RAWToARGBRow_C(src_raw, dst_argb, width);
     src_raw += src_pitch_raw;
@@ -1204,9 +1240,9 @@ static void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix) {
 }
 
 // Convert BG24 to ARGB.
-void PlanarFunctions::BG24ToARGB(const uint8* src_bg24, int src_pitch_bg24,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void BG24ToARGB(const uint8* src_bg24, int src_pitch_bg24,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   for (int y = 0; y < height; ++y) {
     BG24ToARGBRow_C(src_bg24, dst_argb, width);
     src_bg24 += src_pitch_bg24;
@@ -1226,9 +1262,9 @@ static void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
 }
 
 // Convert ABGR to ARGB.
-void PlanarFunctions::ABGRToARGB(const uint8* src_abgr, int src_pitch_abgr,
-                                 uint8* dst_argb, int dst_pitch_argb,
-                                 int width, int height) {
+void ABGRToARGB(const uint8* src_abgr, int src_pitch_abgr,
+                uint8* dst_argb, int dst_pitch_argb,
+                int width, int height) {
   for (int y = 0; y < height; ++y) {
     ABGRToARGBRow_C(src_abgr, dst_argb, width);
     src_abgr += src_pitch_abgr;

@@ -7,13 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
- 
- 
-#include "row.h"
 
-#define kCoefficientsRgbY _kCoefficientsRgbY + 0
-#define kCoefficientsRgbU _kCoefficientsRgbY + 2048
-#define kCoefficientsRgbV _kCoefficientsRgbY + 4096
+#include "row.h"
 
 extern "C" {
 
@@ -25,24 +20,106 @@ void FastConvertYUVToRGB32Row(const uint8* y_buf,
                               int width) {
   __asm {
     pushad
-    mov       edx, [esp + 32 + 4]   // Y
-    mov       edi, [esp + 32 + 8]   // U
-    mov       esi, [esp + 32 + 12]  // V
-    mov       ebp, [esp + 32 + 16]  // rgb
-    mov       ecx, [esp + 32 + 20]  // width
+    mov       edx, [esp + 32 + 4]
+    mov       edi, [esp + 32 + 8]
+    mov       esi, [esp + 32 + 12]
+    mov       ebp, [esp + 32 + 16]
+    mov       ecx, [esp + 32 + 20]
 
  convertloop :
     movzx     eax, byte ptr [edi]
     lea       edi, [edi + 1]
     movzx     ebx, byte ptr [esi]
     lea       esi, [esi + 1]
-    movq      mm0, [kCoefficientsRgbU + 8 * eax]
+    movq      mm0, [_kCoefficientsRgbY + 2048 + 8 * eax]
     movzx     eax, byte ptr [edx]
-    paddsw    mm0, [kCoefficientsRgbV + 8 * ebx]
+    paddsw    mm0, [_kCoefficientsRgbY + 4096 + 8 * ebx]
     movzx     ebx, byte ptr [edx + 1]
-    movq      mm1, [kCoefficientsRgbY + 8 * eax]
+    movq      mm1, [_kCoefficientsRgbY + 8 * eax]
     lea       edx, [edx + 2]
-    movq      mm2, [kCoefficientsRgbY + 8 * ebx]
+    movq      mm2, [_kCoefficientsRgbY + 8 * ebx]
+    paddsw    mm1, mm0
+    paddsw    mm2, mm0
+    psraw     mm1, 6
+    psraw     mm2, 6
+    packuswb  mm1, mm2
+    movntq    [ebp], mm1
+    lea       ebp, [ebp + 8]
+    sub       ecx, 2
+    ja        convertloop
+
+    popad
+    ret
+  }
+}
+
+__declspec(naked)
+void FastConvertYUVToBGRARow(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  __asm {
+    pushad
+    mov       edx, [esp + 32 + 4]
+    mov       edi, [esp + 32 + 8]
+    mov       esi, [esp + 32 + 12]
+    mov       ebp, [esp + 32 + 16]
+    mov       ecx, [esp + 32 + 20]
+
+ convertloop :
+    movzx     eax, byte ptr [edi]
+    lea       edi, [edi + 1]
+    movzx     ebx, byte ptr [esi]
+    lea       esi, [esi + 1]
+    movq      mm0, [_kCoefficientsBgraY + 2048 + 8 * eax]
+    movzx     eax, byte ptr [edx]
+    paddsw    mm0, [_kCoefficientsBgraY + 4096 + 8 * ebx]
+    movzx     ebx, byte ptr [edx + 1]
+    movq      mm1, [_kCoefficientsBgraY + 8 * eax]
+    lea       edx, [edx + 2]
+    movq      mm2, [_kCoefficientsBgraY + 8 * ebx]
+    paddsw    mm1, mm0
+    paddsw    mm2, mm0
+    psraw     mm1, 6
+    psraw     mm2, 6
+    packuswb  mm1, mm2
+    movntq    [ebp], mm1
+    lea       ebp, [ebp + 8]
+    sub       ecx, 2
+    ja        convertloop
+
+    popad
+    ret
+  }
+}
+
+__declspec(naked)
+void FastConvertYUVToABGRRow(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  __asm {
+    pushad
+    mov       edx, [esp + 32 + 4]
+    mov       edi, [esp + 32 + 8]
+    mov       esi, [esp + 32 + 12]
+    mov       ebp, [esp + 32 + 16]
+    mov       ecx, [esp + 32 + 20]
+
+ convertloop :
+    movzx     eax, byte ptr [edi]
+    lea       edi, [edi + 1]
+    movzx     ebx, byte ptr [esi]
+    lea       esi, [esi + 1]
+    movq      mm0, [_kCoefficientsAbgrY + 2048 + 8 * eax]
+    movzx     eax, byte ptr [edx]
+    paddsw    mm0, [_kCoefficientsAbgrY + 4096 + 8 * ebx]
+    movzx     ebx, byte ptr [edx + 1]
+    movq      mm1, [_kCoefficientsAbgrY + 8 * eax]
+    lea       edx, [edx + 2]
+    movq      mm2, [_kCoefficientsAbgrY + 8 * ebx]
     paddsw    mm1, mm0
     paddsw    mm2, mm0
     psraw     mm1, 6
@@ -77,11 +154,11 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,
     lea       edi, [edi + 1]
     movzx     ebx, byte ptr [esi]
     lea       esi, [esi + 1]
-    movq      mm0, [kCoefficientsRgbU + 8 * eax]
+    movq      mm0, [_kCoefficientsRgbY + 2048 + 8 * eax]
     movzx     eax, byte ptr [edx]
-    paddsw    mm0, [kCoefficientsRgbV + 8 * ebx]
+    paddsw    mm0, [_kCoefficientsRgbY + 4096 + 8 * ebx]
     lea       edx, [edx + 1]
-    paddsw    mm0, [kCoefficientsRgbY + 8 * eax]
+    paddsw    mm0, [_kCoefficientsRgbY + 8 * eax]
     psraw     mm0, 6
     packuswb  mm0, mm0
     movd      [ebp], mm0
@@ -106,10 +183,10 @@ void FastConvertYToRGB32Row(const uint8* y_buf,
 
  convertloop :
     movzx     ebx, byte ptr [eax]
-    movq      mm0, [kCoefficientsRgbY + 8 * ebx]
+    movq      mm0, [_kCoefficientsRgbY + 8 * ebx]
     psraw     mm0, 6
     movzx     ebx, byte ptr [eax + 1]
-    movq      mm1, [kCoefficientsRgbY + 8 * ebx]
+    movq      mm1, [_kCoefficientsRgbY + 8 * ebx]
     psraw     mm1, 6
     packuswb  mm0, mm1
     lea       eax, [eax + 2]

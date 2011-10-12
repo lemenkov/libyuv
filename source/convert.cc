@@ -37,11 +37,11 @@ void *memcpy_8(void * dest, const void * src, size_t n);
 
 
 int
-Convert::I420ToRGB24(const uint8* src_yplane, int src_ystride,
-                     const uint8* src_uplane, int src_ustride,
-                     const uint8* src_vplane, int src_vstride,
-                     uint8* dst_frame, int dst_stride,
-                     int src_width, int src_height)
+I420ToRGB24(const uint8* src_yplane, int src_ystride,
+            const uint8* src_uplane, int src_ustride,
+            const uint8* src_vplane, int src_vstride,
+            uint8* dst_frame, int dst_stride,
+            int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL)
@@ -106,168 +106,13 @@ Convert::I420ToRGB24(const uint8* src_yplane, int src_ystride,
   return 0;
 }
 
-
-int
-Convert::I420ToARGB(const uint8* src_yplane, int src_ystride,
-                    const uint8* src_uplane, int src_ustride,
-                    const uint8* src_vplane, int src_vstride,
-                    uint8* dst_frame, int dst_stride,
-                    int src_width, int src_height)
-{
-  if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_frame == NULL){
-      return -1;
-    }
-
-  uint8* out1 = dst_frame;
-  uint8* out2 = out1 + dst_stride * 4;
-  const uint8 *y1,*y2, *u, *v;
-  y1 = src_yplane;
-  y2 = src_yplane + src_ystride;
-  u = src_uplane;
-  v = src_vplane;
-  int h, w;
-  int tmpR, tmpG, tmpB;
-
-  for (h = ((src_height + 1) >> 1); h > 0; h--){
-    // Do 2 rows at the time
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out1[0] = Clip(tmpB);
-      out1[1] = Clip(tmpG);
-      out1[2] = Clip(tmpR);
-      out1[3] = 0xff;
-
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out1[4] = Clip(tmpB);
-      out1[5] = Clip(tmpG);
-      out1[6] = Clip(tmpR);
-      out1[7] = 0xff;
-
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = Clip(tmpB);
-      out2[1] = Clip(tmpG);
-      out2[2] = Clip(tmpR);
-      out2[3] = 0xff;
-
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[4] = Clip(tmpB);
-      out2[5] = Clip(tmpG);
-      out2[6] = Clip(tmpR);
-      out2[7] = 0xff;
-
-      out1 += 8;
-      out2 += 8;
-      y1 += 2;
-      y2 += 2;
-      u++;
-      v++;
-    }
-  y1 += 2 * src_ystride - src_width;
-  y2 += 2 * src_ystride - src_width;
-  u += src_ustride - ((src_width + 1) >> 1);
-  v += src_vstride - ((src_width + 1) >> 1);
-  out1 += (2 * dst_stride - src_width) * 4;
-  out2 += (2 * dst_stride - src_width) * 4;
-  } // end height for
-  return 0;
-}
-
-
-int
-Convert::I420ToBGRA(const uint8* src_yplane, int src_ystride,
-                    const uint8* src_uplane, int src_ustride,
-                    const uint8* src_vplane, int src_vstride,
-                    uint8* dst_frame, int dst_stride,
-                    int src_width, int src_height)
-{
-  if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_frame == NULL){
-      return -1;
-    }
-
-  uint8* out1 = dst_frame;
-  uint8* out2 = out1 + dst_stride * 4;
-  const uint8 *y1,*y2, *u, *v;
-  y1 = src_yplane;
-  y2 = src_yplane + src_ystride;
-  u = src_uplane;
-  v = src_vplane;
-  int h, w;
-  int tmpR, tmpG, tmpB;
-
-  for (h = ((src_height + 1) >> 1); h > 0; h--){
-    // Do 2 rows at the time
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out1[0] = 0xff;
-      out1[1] = Clip(tmpR);
-      out1[2] = Clip(tmpG);
-      out1[3] = Clip(tmpB);
-
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out1[4] = 0xff;
-      out1[5] = Clip(tmpR);
-      out1[6] = Clip(tmpG);
-      out1[7] = Clip(tmpB);
-
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = 0xff;
-      out2[1] = Clip(tmpR);
-      out2[2] = Clip(tmpG);
-      out2[3] = Clip(tmpB);
-
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[4] = 0xff;
-      out2[5] = Clip(tmpR);
-      out2[6] = Clip(tmpG);
-      out2[7] = Clip(tmpB);
-
-      out1 += 8;
-      out2 += 8;
-      y1 += 2;
-      y2 += 2;
-      u++;
-      v++;
-    }
-  y1 += 2 * src_ystride - src_width;
-  y2 += 2 * src_ystride - src_width;
-  u += src_ustride - ((src_width + 1) >> 1);
-  v += src_vstride - ((src_width + 1) >> 1);
-  out1 += (2 * dst_stride - src_width) * 4;
-  out2 += (2 * dst_stride - src_width) * 4;
-  } // end height for
-  return 0;
-}
-
-
 // Little Endian...
 int
-Convert::I420ToARGB4444(const uint8* src_yplane, int src_ystride,
-                        const uint8* src_uplane, int src_ustride,
-                        const uint8* src_vplane, int src_vstride,
-                        uint8* dst_frame, int dst_stride,
-                        int src_width, int src_height)
+I420ToARGB4444(const uint8* src_yplane, int src_ystride,
+               const uint8* src_uplane, int src_ustride,
+               const uint8* src_vplane, int src_vstride,
+               uint8* dst_frame, int dst_stride,
+               int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -332,11 +177,11 @@ Convert::I420ToARGB4444(const uint8* src_yplane, int src_ystride,
 
 
 int
-Convert::I420ToRGB565(const uint8* src_yplane, int src_ystride,
-                      const uint8* src_uplane, int src_ustride,
-                      const uint8* src_vplane, int src_vstride,
-                      uint8* dst_frame, int dst_stride,
-                      int src_width, int src_height)
+I420ToRGB565(const uint8* src_yplane, int src_ystride,
+             const uint8* src_uplane, int src_ustride,
+             const uint8* src_vplane, int src_vstride,
+             uint8* dst_frame, int dst_stride,
+             int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -414,11 +259,11 @@ Convert::I420ToRGB565(const uint8* src_yplane, int src_ystride,
 
 
 int
-Convert::I420ToARGB1555(const uint8* src_yplane, int src_ystride,
-                        const uint8* src_uplane, int src_ustride,
-                        const uint8* src_vplane, int src_vstride,
-                        uint8* dst_frame, int dst_stride,
-                        int src_width, int src_height)
+I420ToARGB1555(const uint8* src_yplane, int src_ystride,
+               const uint8* src_uplane, int src_ustride,
+               const uint8* src_vplane, int src_vstride,
+               uint8* dst_frame, int dst_stride,
+               int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -485,11 +330,11 @@ Convert::I420ToARGB1555(const uint8* src_yplane, int src_ystride,
 
 
 int
-Convert::I420ToYUY2(const uint8* src_yplane, int src_ystride,
-                    const uint8* src_uplane, int src_ustride,
-                    const uint8* src_vplane, int src_vstride,
-                    uint8* dst_frame, int dst_stride,
-                    int src_width, int src_height)
+I420ToYUY2(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_frame, int dst_stride,
+           int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -601,11 +446,11 @@ Convert::I420ToYUY2(const uint8* src_yplane, int src_ystride,
 }
 
 int
-Convert::I420ToUYVY(const uint8* src_yplane, int src_ystride,
-                    const uint8* src_uplane, int src_ustride,
-                    const uint8* src_vplane, int src_vstride,
-                    uint8* dst_frame, int dst_stride,
-                    int src_width, int src_height)
+I420ToUYVY(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_frame, int dst_stride,
+           int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -717,10 +562,10 @@ loop0:
 
 
 int
-Convert::NV12ToRGB565(const uint8* src_yplane, int src_ystride,
-                      const  uint8* src_uvplane, int src_uvstride,
-                      uint8* dst_frame, int dst_stride,
-                      int src_width, int src_height)
+NV12ToRGB565(const uint8* src_yplane, int src_ystride,
+             const  uint8* src_uvplane, int src_uvstride,
+             uint8* dst_frame, int dst_stride,
+             int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uvplane == NULL || dst_frame == NULL){
      return -1;
@@ -788,11 +633,11 @@ Convert::NV12ToRGB565(const uint8* src_yplane, int src_ystride,
 }
 
 int
-Convert::I420ToABGR(const uint8* src_yplane, int src_ystride,
-                    const uint8* src_uplane, int src_ustride,
-                    const uint8* src_vplane, int src_vstride,
-                    uint8* dst_frame, int dst_stride,
-                    int src_width, int src_height)
+I420ToABGR(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_frame, int dst_stride,
+           int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
        dst_frame == NULL){
@@ -872,56 +717,10 @@ Convert::I420ToABGR(const uint8* src_yplane, int src_ystride,
   return 0;
 }
 
-
 int
-Convert::UYVYToI420(const uint8* src_frame, int src_stride,
-                    uint8* dst_yplane, int dst_ystride,
-                    uint8* dst_uplane, int dst_ustride,
-                    uint8* dst_vplane, int dst_vstride,
-                    int src_width, int src_height)
-{
-  if (dst_yplane == NULL || dst_uplane == NULL || dst_vplane == NULL ||
-      src_frame == NULL){
-     return -1;
-  }
-
-  int i, j;
-  uint8* outI = dst_yplane;
-  uint8* outU = dst_uplane;
-  uint8* outV = dst_vplane;
-
-  // U0Y0V0Y1..U2Y2V2Y3.....
-
-  for (i = 0; i < ((src_height + 1) >> 1); i++){
-    for (j = 0; j < ((src_width + 1) >> 1); j++){
-      outI[0] = src_frame[1];
-      *outU = src_frame[0];
-      outI[1] = src_frame[3];
-      *outV = src_frame[2];
-      src_frame += 4;
-      outI += 2;
-      outU++;
-      outV++;
-    }
-    for (j = 0; j < ((src_width + 1) >> 1); j++)
-    {
-      outI[0] = src_frame[1];
-      outI[1] = src_frame[3];
-      src_frame += 4;
-      outI += 2;
-    }
-    outI += dst_ystride - src_width;
-    outU += dst_ustride - ((src_width + 1) << 1);
-    outV += dst_vstride - ((src_width + 1) << 1);
-  }
-  return 0;
-}
-
-
-int
-Convert::RGB24ToARGB(const uint8* src_frame, int src_stride,
-                     uint8* dst_frame, int dst_stride,
-                     int src_width, int src_height)
+RGB24ToARGB(const uint8* src_frame, int src_stride,
+            uint8* dst_frame, int dst_stride,
+            int src_width, int src_height)
 {
   if (src_frame == NULL || dst_frame == NULL){
     return -1;
@@ -936,7 +735,7 @@ Convert::RGB24ToARGB(const uint8* src_frame, int src_stride,
   {
     for (j = 0; j < src_width; j++)
     {
-      offset = j*4;
+      offset = j * 4;
       outFrame[0 + offset] = inFrame[0];
       outFrame[1 + offset] = inFrame[1];
       outFrame[2 + offset] = inFrame[2];
@@ -949,324 +748,188 @@ Convert::RGB24ToARGB(const uint8* src_frame, int src_stride,
   return 0;
 }
 
+// ARGBToI420Row_C etc row functions use the following macro, generating
+// code with RGB offsets/strides different for each version.  Less error
+// prone than duplicating the code.
+// template could be used, but macro method works for C and asm and this is
+// performance critical code.
 
-int
-Convert::RGB24ToI420(const uint8* src_frame, int src_stride,
+#define MAKEROWRGBTOI420(NAME,R,G,B,BPP) \
+static void \
+NAME(const uint8* src_row0, const uint8* src_row1, \
+         uint8* dst_yplane0, uint8* dst_yplane1, \
+         uint8* dst_uplane, \
+         uint8* dst_vplane, \
+         int src_width) { \
+  for (int x = 0; x < src_width - 1; x += 2) { \
+    dst_yplane0[0] = (uint8)((src_row0[R] * 66 + \
+                              src_row0[G] * 129 + \
+                              src_row0[B] * 25 + 128) >> 8) + 16; \
+    dst_yplane0[1] = (uint8)((src_row0[R + BPP] * 66 + \
+                              src_row0[G + BPP] * 129 + \
+                              src_row0[B + BPP] * 25 + 128) >> 8) + 16; \
+    dst_yplane1[0] = (uint8)((src_row1[R] * 66 + \
+                              src_row1[G] * 129 + \
+                              src_row1[B] * 25 + 128) >> 8) + 16; \
+    dst_yplane1[1] = (uint8)((src_row1[R + BPP] * 66 + \
+                              src_row1[G + BPP] * 129 + \
+                              src_row1[B + BPP] * 25 + 128) >> 8) + 16; \
+    dst_uplane[0] = (uint8)(((src_row0[R] + src_row0[R + BPP] + \
+                              src_row1[R] + src_row1[R + BPP]) * -38 + \
+                             (src_row0[G] + src_row0[G + BPP] + \
+                              src_row1[G] + src_row1[G + BPP]) * -74 + \
+                             (src_row0[B] + src_row0[B + BPP] + \
+                              src_row1[B] + src_row1[B + BPP]) * 112 + \
+                              + 512) >> 10) + 128; \
+    dst_vplane[0] = (uint8)(((src_row0[R] + src_row0[R + BPP] + \
+                              src_row1[R] + src_row1[R + BPP]) * 112 + \
+                             (src_row0[G] + src_row0[G + BPP] + \
+                              src_row1[G] + src_row1[G + BPP]) * -94 + \
+                             (src_row0[B] + src_row0[B + BPP] + \
+                              src_row1[B] + src_row1[B + BPP]) * -18 + \
+                              + 512) >> 10) + 128; \
+    dst_yplane0 += 2; \
+    dst_yplane1 += 2; \
+    ++dst_uplane; \
+    ++dst_vplane; \
+    src_row0 += BPP * 2; \
+    src_row1 += BPP * 2; \
+  } \
+  if (src_width & 1) { \
+    dst_yplane0[0] = (uint8)((src_row0[R] * 66 + \
+                              src_row0[G] * 129 + \
+                              src_row0[B] * 25 + 128) >> 8) + 16; \
+    dst_yplane1[0] = (uint8)((src_row1[R] * 66 + \
+                              src_row1[G] * 129 + \
+                              src_row1[B] * 25 + 128) >> 8) + 16; \
+    dst_uplane[0] = (uint8)(((src_row0[R] + \
+                              src_row1[R]) * -38 + \
+                             (src_row0[G] + \
+                              src_row1[G]) * -74 + \
+                             (src_row0[B] + \
+                              src_row1[B]) * 112 + \
+                              + 256) >> 9) + 128; \
+    dst_vplane[0] = (uint8)(((src_row0[R] + \
+                              src_row1[R]) * 112 + \
+                             (src_row0[G] + \
+                              src_row1[G]) * -94 + \
+                             (src_row0[B] + \
+                              src_row1[B]) * -18 + \
+                              + 256) >> 9) + 128; \
+  } \
+}
+
+// Generate variations of RGBToI420.  Parameters are r,g,b offsets within a
+// pixel, and number of bytes per pixel.
+MAKEROWRGBTOI420(ARGBToI420Row_C, 2, 1, 0, 4)
+MAKEROWRGBTOI420(BGRAToI420Row_C, 1, 2, 3, 4)
+MAKEROWRGBTOI420(ABGRToI420Row_C, 0, 1, 2, 4)
+MAKEROWRGBTOI420(RGB24ToI420Row_C, 2, 1, 0, 3)
+MAKEROWRGBTOI420(RAWToI420Row_C, 0, 1, 2, 3)
+
+static int RGBToI420(const uint8* src_frame, int src_stride,
                      uint8* dst_yplane, int dst_ystride,
                      uint8* dst_uplane, int dst_ustride,
                      uint8* dst_vplane, int dst_vstride,
-                     int src_width, int src_height)
-{
+                     int src_width, int src_height,
+                     void (*RGBToI420Row)(const uint8* src_row0,
+                                          const uint8* src_row1,
+                                          uint8* dst_yplane0,
+                                          uint8* dst_yplane1,
+                                          uint8* dst_uplane,
+                                          uint8* dst_vplane,
+                                          int src_width)) {
   if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL)
-    return -1;
-
-  uint8* yStartPtr;
-  uint8* yStartPtr2;
-  uint8* uStartPtr;
-  uint8* vStartPtr;
-  const uint8* inpPtr;
-  const uint8* inpPtr2;
-  int h, w;
-
-  yStartPtr = dst_yplane;
-  yStartPtr2 = yStartPtr + dst_ystride;
-  uStartPtr = dst_uplane;
-  vStartPtr = dst_vplane;
-  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
-  inpPtr2 = inpPtr - 3 * src_stride;
-
-  for (h = 0; h < ((src_height + 1) >> 1); h++ ){
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Y
-      yStartPtr[0] =  (uint8)((66 * inpPtr[2] + 129 * inpPtr[1]
-                                      + 25 * inpPtr[0] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[2] + 129 * inpPtr2[1]
-                                      + 25 * inpPtr2[0] + 128) >> 8) + 16;
-      // Moving to next column
-      yStartPtr[1] = (uint8)((66 * inpPtr[5] + 129 * inpPtr[4]
-                                     + 25 * inpPtr[3]  + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[4]
-                                      + 25 * inpPtr2[3] + 128) >> 8 ) + 16;
-      // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[2] - 74 * inpPtr[1] +
-                                      112 * inpPtr[0] + 128) >> 8) + 128;
-      // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[2] -94 * inpPtr[1] -
-                                     18 * inpPtr[0] + 128) >> 8) + 128;
-
-      yStartPtr += 2;
-      yStartPtr2 += 2;
-      uStartPtr++;
-      vStartPtr++;
-      inpPtr += 6;
-      inpPtr2 += 6;
-    } // end for w
-    yStartPtr += dst_ystride + dst_ystride - src_width;
-    yStartPtr2 += dst_ystride + dst_ystride - src_width;
-    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
-    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
-    inpPtr -= 3 * (2 * src_stride + src_width);
-    inpPtr2 -= 3 * (2 * src_stride + src_width);
-  } // end for h
-  return 0;
-}
-
-int
-Convert::RAWToI420(const uint8* src_frame, int src_stride,
-                   uint8* dst_yplane, int dst_ystride,
-                   uint8* dst_uplane, int dst_ustride,
-                   uint8* dst_vplane, int dst_vstride,
-                   int src_width, int src_height)
-{
-  if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL)
-    return -1;
-
-  uint8* yStartPtr;
-  uint8* yStartPtr2;
-  uint8* uStartPtr;
-  uint8* vStartPtr;
-  const uint8* inpPtr;
-  const uint8* inpPtr2;
-  int h, w;
-
-  yStartPtr = dst_yplane;
-  yStartPtr2 = yStartPtr + dst_ystride;
-  uStartPtr = dst_uplane;
-  vStartPtr = dst_vplane;
-  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
-  inpPtr2 = inpPtr - 3 * src_stride;
-
-  // Same as RGB24 - reverse ordering
-
-  for (h = 0; h < ((src_height + 1) >> 1); h++){
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Y
-      yStartPtr[0] =  (uint8)((66 * inpPtr[0] + 129 * inpPtr[1]
-                                      + 25 * inpPtr[2] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[2] + 129 * inpPtr2[1]
-                                      + 25 * inpPtr2[0] + 128) >> 8) + 16;
-      // Moving to next column
-      yStartPtr[1] = (uint8)((66 * inpPtr[3] + 129 * inpPtr[4]
-                                     + 25 * inpPtr[5]  + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[3] + 129 * inpPtr2[4]
-                                      + 25 * inpPtr2[5] + 128) >> 8 ) + 16;
-      // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[0] - 74 * inpPtr[1] +
-                                      112 * inpPtr[2] + 128) >> 8) + 128;
-      // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[0] -94 * inpPtr[1] -
-                                     18 * inpPtr[2] + 128) >> 8) + 128;
-
-      yStartPtr += 2;
-      yStartPtr2 += 2;
-      uStartPtr++;
-      vStartPtr++;
-      inpPtr += 6;
-      inpPtr2 += 6;
-    } // end for w
-    yStartPtr += dst_ystride + dst_ystride - src_width;
-    yStartPtr2 += dst_ystride + dst_ystride - src_width;
-    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
-    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
-    inpPtr -= 3 * (2 * src_stride + src_width);
-    inpPtr2 -= 3 * (2 * src_stride + src_width);
-  } // end for h
-  return 0;
-}
-
-
-int
-Convert::BGRAToI420(const uint8* src_frame, int src_stride,
-                     uint8* dst_yplane, int dst_ystride,
-                     uint8* dst_uplane, int dst_ustride,
-                     uint8* dst_vplane, int dst_vstride,
-                     int src_width, int src_height)
-{
-  if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL)
-    return -1;
-
-  uint8* yStartPtr;
-  uint8* yStartPtr2;
-  uint8* uStartPtr;
-  uint8* vStartPtr;
-  const uint8* inpPtr;
-  const uint8* inpPtr2;
-  int h, w;
-
-  // Assuming RGB in a bottom up orientation.
-  yStartPtr = dst_yplane;
-  yStartPtr2 = yStartPtr + dst_ystride;
-  uStartPtr = dst_uplane;
-  vStartPtr = dst_vplane;
-  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
-  inpPtr2 = inpPtr - 3 * src_stride;
-
-  for (h = 0; h < ((src_height + 1) >> 1); h++ ){
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Y
-      yStartPtr[0] =  (uint8)((66 * inpPtr[1] + 129 * inpPtr[2]
-                                      + 25 * inpPtr[3] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[1] + 129 * inpPtr2[2]
-                                      + 25 * inpPtr2[3] + 128) >> 8) + 16;
-      // Moving to next column
-      yStartPtr[1] = (uint8)((66 * inpPtr[5] + 129 * inpPtr[6]
-                                     + 25 * inpPtr[7]  + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[6]
-                                      + 25 * inpPtr2[7] + 128) >> 8 ) + 16;
-      // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[1] - 74 * inpPtr[2] +
-                                      112 * inpPtr[3] + 128) >> 8) + 128;
-      // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[1] -94 * inpPtr[2] -
-                                     18 * inpPtr[3] + 128) >> 8) + 128;
-
-      yStartPtr += 2;
-      yStartPtr2 += 2;
-      uStartPtr++;
-      vStartPtr++;
-      inpPtr += 6;
-      inpPtr2 += 6;
-    } // end for w
-    yStartPtr += dst_ystride + dst_ystride - src_width;
-    yStartPtr2 += dst_ystride + dst_ystride - src_width;
-    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
-    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
-    inpPtr -= 3 * (2 * src_stride + src_width);
-    inpPtr2 -= 3 * (2 * src_stride + src_width);
-  } // end for h
-  return 0;
-}
-
-
-int
-Convert::ARGBToI420(const uint8* src_frame, int src_stride,
-                     uint8* dst_yplane, int dst_ystride,
-                     uint8* dst_uplane, int dst_ustride,
-                     uint8* dst_vplane, int dst_vstride,
-                     int src_width, int src_height)
-{
-  if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL)
-    return -1;
-
-  uint8* yStartPtr;
-  uint8* yStartPtr2;
-  uint8* uStartPtr;
-  uint8* vStartPtr;
-  const uint8* inpPtr;
-  const uint8* inpPtr2;
-  int h, w;
-
-  yStartPtr = dst_yplane;
-  yStartPtr2 = yStartPtr + dst_ystride;
-  uStartPtr = dst_uplane;
-  vStartPtr = dst_vplane;
-  inpPtr = src_frame + src_stride * src_height * 3 - 3 * src_height;
-  inpPtr2 = inpPtr - 3 * src_stride;
-
-  for (h = 0; h < ((src_height + 1) >> 1); h++ ){
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Y
-      yStartPtr[0] =  (uint8)((66 * inpPtr[2] + 129 * inpPtr[1]
-                                      + 25 * inpPtr[0] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[2] + 129 * inpPtr2[1]
-                                      + 25 * inpPtr2[0] + 128) >> 8) + 16;
-      // Moving to next column
-      yStartPtr[1] = (uint8)((66 * inpPtr[6] + 129 * inpPtr[5]
-                                     + 25 * inpPtr[4]  + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[5] + 129 * inpPtr2[4]
-                                      + 25 * inpPtr2[3] + 128) >> 8 ) + 16;
-      // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[2] - 74 * inpPtr[1] +
-                                      112 * inpPtr[0] + 128) >> 8) + 128;
-      // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[2] -94 * inpPtr[1] -
-                                     18 * inpPtr[0] + 128) >> 8) + 128;
-
-      yStartPtr += 2;
-      yStartPtr2 += 2;
-      uStartPtr++;
-      vStartPtr++;
-      inpPtr += 6;
-      inpPtr2 += 6;
-    } // end for w
-    yStartPtr += dst_ystride + dst_ystride - src_width;
-    yStartPtr2 += dst_ystride + dst_ystride - src_width;
-    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
-    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
-    inpPtr -= 3 * (2 * src_stride + src_width);
-    inpPtr2 -= 3 * (2 * src_stride + src_width);
-  } // end for h
-  return 0;
-}
-
-
-int
-Convert::ABGRToI420(const uint8* src_frame, int src_stride,
-                    uint8* dst_yplane, int dst_ystride,
-                    uint8* dst_uplane, int dst_ustride,
-                    uint8* dst_vplane, int dst_vstride,
-                    int src_width, int src_height)
-{
-  if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL){
+      dst_vplane == NULL || dst_vplane == NULL) {
     return -1;
   }
-
-  uint8* yStartPtr;
-  uint8* yStartPtr2;
-  uint8* uStartPtr;
-  uint8* vStartPtr;
-  const uint8* inpPtr;
-  const uint8* inpPtr2;
-
-  yStartPtr = dst_yplane;
-  yStartPtr2 = yStartPtr + dst_ystride;
-  uStartPtr = dst_uplane;
-  vStartPtr = dst_vplane;
-  inpPtr = src_frame;
-  inpPtr2 = inpPtr + 4 * src_stride;
-  int h, w;
-
-  // RGBA in memory
-  for (h = 0; h < ((src_height + 1) >> 1); h++){
-    for (w = 0; w < ((src_width + 1) >> 1); w++){
-      // Y
-      yStartPtr[0]  = (uint8)((66 * inpPtr[0] + 129 * inpPtr[1]
-                               + 25 * inpPtr[2] + 128) >> 8) + 16;
-      yStartPtr2[0] = (uint8)((66 * inpPtr2[0] + 129 * inpPtr2[1]
-                               + 25 * inpPtr2[2] + 128) >> 8) + 16;
-      // Moving to next column
-      yStartPtr[1] =  (uint8)((66 * inpPtr[4] + 129 * inpPtr[5]
-                               + 25 * inpPtr[6] + 128) >> 8) + 16;
-      yStartPtr2[1] = (uint8)((66 * inpPtr2[4] + 129 * inpPtr2[5]
-                                + 25 * inpPtr2[6] + 128) >> 8) + 16;
-      // U
-      uStartPtr[0] = (uint8)((-38 * inpPtr[0] - 74 * inpPtr[1]
-                              + 112 * inpPtr[2] + 128) >> 8) + 128;
-      // V
-      vStartPtr[0] = (uint8)((112 * inpPtr[0] - 94 * inpPtr[1]
-                              - 18 * inpPtr[2] + 128) >> 8) + 128;
-
-      yStartPtr += 2;
-      yStartPtr2 += 2;
-      uStartPtr++;
-      vStartPtr++;
-      inpPtr += 8;
-      inpPtr2 += 8;
-    }
-
-    yStartPtr += 2 * dst_ystride - src_width;
-    yStartPtr2 += 2 * dst_ystride - src_width;
-    uStartPtr += dst_ustride + dst_ustride - ((src_width + 1) >> 1);
-    vStartPtr += dst_vstride + dst_vstride - ((src_width + 1) >> 1);
-    inpPtr += 4 * (2 * src_stride - src_width);
-    inpPtr2 += 4 * (2 * src_stride - src_width);
+  if (src_height < 0) {
+    src_height = -src_height;
+    src_frame = src_frame + src_stride * (src_height -1);
+    src_stride = -src_stride;
+  }
+  for (int y = 0; y < src_height - 1; y += 2) {
+    RGBToI420Row(src_frame, src_frame + src_stride,
+                 dst_yplane, dst_yplane + dst_ystride,
+                 dst_uplane, dst_vplane,
+                 src_width);
+    src_frame += src_stride * 2;
+    dst_yplane += dst_ystride * 2;
+    dst_uplane += dst_ustride;
+    dst_vplane += dst_vstride;
+  }
+  if (src_height & 1) {
+    RGBToI420Row(src_frame, src_frame,
+                 dst_yplane, dst_yplane,
+                 dst_uplane, dst_vplane,
+                 src_width);
   }
   return 0;
+}
+
+int
+ARGBToI420(const uint8* src_frame, int src_stride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int src_width, int src_height) {
+  return RGBToI420(src_frame, src_stride,
+                   dst_yplane, dst_ystride,
+                   dst_uplane, dst_ustride,
+                   dst_vplane, dst_vstride,
+                   src_width, src_height, ARGBToI420Row_C);
+}
+
+int
+BGRAToI420(const uint8* src_frame, int src_stride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int src_width, int src_height) {
+  return RGBToI420(src_frame, src_stride,
+                   dst_yplane, dst_ystride,
+                   dst_uplane, dst_ustride,
+                   dst_vplane, dst_vstride,
+                   src_width, src_height, BGRAToI420Row_C);
+}
+
+int
+ABGRToI420(const uint8* src_frame, int src_stride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int src_width, int src_height) {
+  return RGBToI420(src_frame, src_stride,
+                   dst_yplane, dst_ystride,
+                   dst_uplane, dst_ustride,
+                   dst_vplane, dst_vstride,
+                   src_width, src_height, ABGRToI420Row_C);
+}
+
+int
+RGB24ToI420(const uint8* src_frame, int src_stride,
+            uint8* dst_yplane, int dst_ystride,
+            uint8* dst_uplane, int dst_ustride,
+            uint8* dst_vplane, int dst_vstride,
+            int src_width, int src_height) {
+  return RGBToI420(src_frame, src_stride,
+                   dst_yplane, dst_ystride,
+                   dst_uplane, dst_ustride,
+                   dst_vplane, dst_vstride,
+                   src_width, src_height, RGB24ToI420Row_C);
+}
+
+int
+RAWToI420(const uint8* src_frame, int src_stride,
+          uint8* dst_yplane, int dst_ystride,
+          uint8* dst_uplane, int dst_ustride,
+          uint8* dst_vplane, int dst_vstride,
+          int src_width, int src_height) {
+  return RGBToI420(src_frame, src_stride,
+                   dst_yplane, dst_ystride,
+                   dst_uplane, dst_ustride,
+                   dst_vplane, dst_vstride,
+                   src_width, src_height, RAWToI420Row_C);
 }
 
 inline
@@ -1328,4 +991,3 @@ void
 #endif
 
 } // namespace libyuv
-

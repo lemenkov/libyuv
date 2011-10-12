@@ -14,13 +14,23 @@
 #include "basic_types.h"
 
 extern "C" {
-// Can only do 1x.
-// This is the second fastest of the scalers.
 void FastConvertYUVToRGB32Row(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
                               int width);
+
+void FastConvertYUVToBGRARow(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width);
+
+void FastConvertYUVToABGRRow(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width);
 
 void FastConvertYUV444ToRGB32Row(const uint8* y_buf,
                                  const uint8* u_buf,
@@ -39,8 +49,12 @@ void FastConvertYToRGB32Row(const uint8* y_buf,
 #endif
 #ifdef OSX
 extern SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
+extern SIMD_ALIGNED(const int16 kCoefficientsBgraY[768][4]);
+extern SIMD_ALIGNED(const int16 kCoefficientsAbgrY[768][4]);
 #else
 extern SIMD_ALIGNED(const int16 _kCoefficientsRgbY[768][4]);
+extern SIMD_ALIGNED(const int16 _kCoefficientsBgraY[768][4]);
+extern SIMD_ALIGNED(const int16 _kCoefficientsAbgrY[768][4]);
 #endif
 
 // Method to force C version.

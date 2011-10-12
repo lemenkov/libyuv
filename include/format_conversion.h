@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LIBYUV_INCLUDE_FORMAT_CONVERSION_H_
-#define LIBYUV_INCLUDE_FORMAT_CONVERSION_H_
+
+#ifndef LIBYUV_INCLUDE_FORMATCONVERSION_H_
+#define LIBYUV_INCLUDE_FORMATCONVERSION_H_
 
 #include "basic_types.h"
 
@@ -23,14 +24,18 @@ void BayerRGBToI420(const uint8* src_bayer, int src_pitch_bayer,
                     uint8* dst_v, int dst_pitch_v,
                     int width, int height);
 
-// Converts any 32 bit ARGB to any Bayer RGB format.
-void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
-                     uint32 src_fourcc_rgb,
-                     uint8* dst_bayer, int dst_pitch_bayer,
-                     uint32 dst_fourcc_bayer,
-                     int width, int height);
+// Converts any Bayer RGB format to ARGB.
+void BayerRGBToARGB(const uint8* src_bayer, int src_pitch_bayer,
+                    uint32 src_fourcc_bayer,
+                    uint8* dst_rgb, int dst_pitch_rgb,
+                    int width, int height);
 
+// Converts ARGB to any Bayer RGB format.
+void ARGBToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
+                    uint8* dst_bayer, int dst_pitch_bayer,
+                    uint32 dst_fourcc_bayer,
+                    int width, int height);
 
 }  // namespace libyuv
 
-#endif  // LIBYUV_INCLUDE_FORMAT_CONVERSION_H_
+#endif  // LIBYUV_INCLUDE_FORMATCONVERSION_H_

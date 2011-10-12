@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-#include "format_conversion.h"
-
 #include <assert.h>
 
 #include "common.h"
@@ -18,6 +15,9 @@
 #include "video_common.h"
 
 namespace libyuv {
+
+// Most code in here is inspired by the material at
+// http://www.siliconimaging.com/RGB%20Bayer.htm
 
 enum {
   RED = 0,
@@ -274,6 +274,65 @@ static FORCE_INLINE void InterpolateBayerRGBCenter(uint8* r,
   }
 }
 
+// Converts any Bayer RGB format to ARGB.
+void BayerRGBToARGB(const uint8* src, int src_pitch, uint32 src_fourcc,
+                    uint8* dst, int dst_pitch,
+                    int width, int height) {
+  assert(width % 2 == 0);
+  assert(height % 2 == 0);
+
+  uint32 colour_map = FourCcToBayerPixelColourMap(src_fourcc);
+  int src_row_inc = src_pitch * 2 - width;
+  int dst_row_inc = dst_pitch * 2 - width * 4;
+
+  // Iterate over the 2x2 grids.
+  for (int y1 = 0; y1 < height; y1 += 2) {
+    for (int x1 = 0; x1 < width; x1 += 2) {
+      uint32 colours = colour_map;
+      // Iterate over the four pixels within them.
+      for (int y2 = 0; y2 < 2; ++y2) {
+        for (int x2 = 0; x2 < 2; ++x2) {
+          uint8 r, g, b;
+          // The low-order byte of the colour map is the current colour.
+          uint8 current_colour = static_cast<uint8>(colours);
+          colours >>= 8;
+          Position pos = GetPosition(x1 + x2, y1 + y2, width, height);
+          const uint8* src_pixel = &src[y2 * src_pitch + x2];
+          const uint8* dst_pixel = &dst[y2 * dst_pitch + x2 * 4];
+
+          // Convert from Bayer RGB to regular RGB.
+          if (pos == MIDDLE) {
+            // 99% of the image is the middle.
+            InterpolateBayerRGBCenter(&r, &g, &b,
+                                      src_pixel, src_pitch,
+                                      current_colour);
+          } else if (pos >= LEFT_EDGE) {
+            // Next most frequent is edges.
+            InterpolateBayerRGBEdge(&r, &g, &b,
+                                    src_pixel, src_pitch, pos,
+                                    current_colour);
+          } else {
+            // Last is the corners. There are only 4.
+            InterpolateBayerRGBCorner(&r, &g, &b,
+                                      src_pixel, src_pitch, pos,
+                                      current_colour);
+          }
+
+          // Store ARGB
+          dst[0] = b;
+          dst[1] = g;
+          dst[2] = r;
+          dst[3] = 255u;
+        }
+      }
+      src += 2;
+      dst += 2 * 4;
+    }
+    src += src_row_inc;
+    dst += dst_row_inc;
+  }
+}
+
 // Converts any Bayer RGB format to I420.
 void BayerRGBToI420(const uint8* src, int src_pitch, uint32 src_fourcc,
                     uint8* y, int y_pitch,
@@ -430,17 +489,16 @@ static uint32 GenerateSelector(int select0, int select1) {
          static_cast<uint32>((select1 + 12) << 24);
 }
 
-// Converts any 32 bit ARGB to any Bayer RGB format.
-void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
-                     uint32 src_fourcc_rgb,
-                     uint8* dst_bayer, int dst_pitch_bayer,
-                     uint32 dst_fourcc_bayer,
-                     int width, int height) {
+// Converts 32 bit ARGB to any Bayer RGB format.
+void ARGBToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
+                    uint8* dst_bayer, int dst_pitch_bayer,
+                    uint32 dst_fourcc_bayer,
+                    int width, int height) {
   assert(width % 2 == 0);
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (CpuInfo::TestCpuFlag(CpuInfo::kCpuHasSSSE3) &&
+  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_rgb, 16) && (src_pitch_rgb % 16 == 0) &&
       IS_ALIGNED(dst_bayer, 4) && (dst_pitch_bayer % 4 == 0)) {
@@ -451,7 +509,6 @@ void RGB32ToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
     ARGBToBayerRow = ARGBToBayerRow_C;
   }
 
-  assert(src_fourcc_rgb == FOURCC_ARGB);
   int blue_index = 0;
   int green_index = 1;
   int red_index = 2;

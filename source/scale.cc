@@ -46,8 +46,12 @@ namespace libyuv {
 // NOT the optimized versions. Useful for debugging and
 // when comparing the quality of the resulting YUV planes
 // as produced by the optimized and non-optimized versions.
-bool YuvScaler::use_reference_impl_ = false;
 
+bool use_reference_impl_ = false;
+
+void SetUseReferenceImpl(bool use) {
+  use_reference_impl_ = use;
+}
 
 /**
  * NEON downscalers with interpolation.
@@ -2790,13 +2794,13 @@ static void ScalePlane(const uint8 *in, int32 istride,
  * suitable for handling the desired resolutions.
  *
  */
-bool YuvScaler::Scale(const uint8 *inY, const uint8 *inU, const uint8 *inV,
-                      int32 istrideY, int32 istrideU, int32 istrideV,
-                      int32 iwidth, int32 iheight,
-                      uint8 *outY, uint8 *outU, uint8 *outV,
-                      int32 ostrideY, int32 ostrideU, int32 ostrideV,
-                      int32 owidth, int32 oheight,
-                      bool interpolate) {
+bool Scale(const uint8 *inY, const uint8 *inU, const uint8 *inV,
+           int32 istrideY, int32 istrideU, int32 istrideV,
+           int32 iwidth, int32 iheight,
+           uint8 *outY, uint8 *outU, uint8 *outV,
+           int32 ostrideY, int32 ostrideU, int32 ostrideV,
+           int32 owidth, int32 oheight,
+           bool interpolate) {
   if (!inY || !inU || !inV || iwidth <= 0 || iheight <= 0 ||
       !outY || !outU || !outV || owidth <= 0 || oheight <= 0) {
     return false;
@@ -2818,9 +2822,9 @@ bool YuvScaler::Scale(const uint8 *inY, const uint8 *inU, const uint8 *inV,
   return true;
 }
 
-bool YuvScaler::Scale(const uint8 *in, int32 iwidth, int32 iheight,
-                      uint8 *out, int32 owidth, int32 oheight, int32 ooffset,
-                      bool interpolate) {
+bool Scale(const uint8 *in, int32 iwidth, int32 iheight,
+           uint8 *out, int32 owidth, int32 oheight, int32 ooffset,
+           bool interpolate) {
   if (!in || iwidth <= 0 || iheight <= 0 ||
       !out || owidth <= 0 || oheight <= 0 || ooffset < 0 ||
       ooffset >= oheight) {
