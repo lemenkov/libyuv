@@ -298,7 +298,7 @@ void BayerRGBToARGB(const uint8* src, int src_pitch, uint32 src_fourcc,
           colours >>= 8;
           Position pos = GetPosition(x1 + x2, y1 + y2, width, height);
           const uint8* src_pixel = &src[y2 * src_pitch + x2];
-          const uint8* dst_pixel = &dst[y2 * dst_pitch + x2 * 4];
+          uint8* dst_pixel = &dst[y2 * dst_pitch + x2 * 4];
 
           // Convert from Bayer RGB to regular RGB.
           if (pos == MIDDLE) {
@@ -319,10 +319,10 @@ void BayerRGBToARGB(const uint8* src, int src_pitch, uint32 src_fourcc,
           }
 
           // Store ARGB
-          dst[0] = b;
-          dst[1] = g;
-          dst[2] = r;
-          dst[3] = 255u;
+          dst_pixel[0] = b;
+          dst_pixel[1] = g;
+          dst_pixel[2] = r;
+          dst_pixel[3] = 255u;
         }
       }
       src += 2;
