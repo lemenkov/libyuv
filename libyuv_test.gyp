@@ -23,6 +23,7 @@
 
          # sources
          'unit_test/unit_test.cc',
+         'unit_test/rotate_test.cc',
       ], # source
       'conditions': [
         ['OS=="linux"', {

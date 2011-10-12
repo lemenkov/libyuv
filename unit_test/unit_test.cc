@@ -20,7 +20,9 @@ class libyuvEnvironment : public ::testing::Environment {
   }
 };
 
-libyuvTest::libyuvTest()
+libyuvTest::libyuvTest() :
+  _rotate_max_w(128),
+  _rotate_max_h(128)
 {
 }
 
