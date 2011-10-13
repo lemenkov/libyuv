@@ -498,7 +498,7 @@ void ARGBToBayerRGB(const uint8* src_rgb, int src_pitch_rgb,
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_rgb, 16) && (src_pitch_rgb % 16 == 0) &&
       IS_ALIGNED(dst_bayer, 4) && (dst_pitch_bayer % 4 == 0)) {

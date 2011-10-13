@@ -2182,14 +2182,14 @@ static void ScalePlaneDown2(int32 iwidth, int32 iheight,
                         uint8* orow, int32 owidth);
 
 #if defined(HAS_SCALEROWDOWN2_NEON)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasNEON) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
       (owidth % 16 == 0) && (istride % 16 == 0) && (ostride % 16 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
     ScaleRowDown2 = interpolate ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSE2)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (owidth % 16 == 0) && IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
     ScaleRowDown2 = interpolate ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
   } else
@@ -2222,7 +2222,7 @@ static void ScalePlaneDown4(int32 iwidth, int32 iheight,
                         uint8* orow, int32 owidth);
 
 #if defined(HAS_SCALEROWDOWN4_SSE2)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (owidth % 8 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
     ScaleRowDown4 = interpolate ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
@@ -2256,7 +2256,7 @@ static void ScalePlaneDown8(int32 iwidth, int32 iheight,
   void (*ScaleRowDown8)(const uint8* iptr, int32 istride,
                         uint8* orow, int32 owidth);
 #if defined(HAS_SCALEROWDOWN8_SSE2)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (owidth % 16 == 0) && owidth <= kMaxOutputWidth &&
       (istride % 16 == 0) && (ostride % 16 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
@@ -2291,7 +2291,7 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
   void (*ScaleRowDown34_1)(const uint8* iptr, int32 istride,
                            uint8* orow, int32 owidth);
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
     if (!interpolate) {
@@ -2304,7 +2304,7 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSE2)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8) &&
       interpolate) {
@@ -2372,7 +2372,7 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
   void (*ScaleRowDown38_2)(const uint8* iptr, int32 istride,
                            uint8* orow, int32 owidth);
 #if defined(HAS_SCALEROWDOWN38_SSSE3)
-  if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
       IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
     if (!interpolate) {
@@ -2520,7 +2520,7 @@ static void ScalePlaneBox(int32 iwidth, int32 iheight,
     void (*ScaleAddCols)(int32 owidth, int32 boxheight, int dx,
                          const uint16 *iptr, uint8 *optr);
 #if defined(HAS_SCALEADDROWS_SSE2)
-    if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+    if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
         (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
       ScaleAddRows = ScaleAddRows_SSE2;
     } else
@@ -2611,13 +2611,13 @@ static void ScalePlaneBilinear(int32 iwidth, int32 iheight,
     void (*ScaleFilterCols)(uint8* optr, const uint8* iptr,
                             int owidth, int dx);
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
-    if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSSE3) &&
+    if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
         (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
       ScaleFilterRows = ScaleFilterRows_SSSE3;
     } else
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
-    if (libyuv::CpuInfo::TestCpuFlag(libyuv::CpuInfo::kCpuHasSSE2) &&
+    if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
         (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
     } else
