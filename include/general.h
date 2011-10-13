@@ -9,128 +9,50 @@
  */
 
 
-#ifndef LIBYUV_INCLUDE_PLANAR_FUNCTIONS_H_
-#define LIBYUV_INCLUDE_PLANAR_FUNCTIONS_H_
+/*
+ * General operations on YUV images.
+ */
+
+#ifndef LIBYUV_INCLUDE_GENERAL_H_
+#define LIBYUV_INCLUDE_GENERAL_H_
 
 #include "basic_types.h"
 
 namespace libyuv {
 
-// Copy I420 to I420.
-void I420Copy(const uint8* src_y, int src_pitch_y,
-              const uint8* src_u, int src_pitch_u,
-              const uint8* src_v, int src_pitch_v,
-              uint8* dst_y, int dst_pitch_y,
-              uint8* dst_u, int dst_pitch_u,
-              uint8* dst_v, int dst_pitch_v,
-              int width, int height);
+// Supported rotation
+enum VideoRotationMode
+{
+  kRotateNone = 0,
+  kRotateClockwise = 90,
+  kRotateCounterClockwise = -90,
+  kRotate180 = 180,
+};
 
-// Convert I422 to I420.  Used by MJPG.
-void I422ToI420(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
+// I420  mirror
+int
+I420Mirror(const uint8* src_yplane, int src_ystride,
+           const uint8* src_uplane, int src_ustride,
+           const uint8* src_vplane, int src_vstride,
+           uint8* dst_yplane, int dst_ystride,
+           uint8* dst_uplane, int dst_ustride,
+           uint8* dst_vplane, int dst_vstride,
+           int width, int height);
 
-// Convert M420 to I420.
-void M420ToI420(const uint8* src_m420, int src_pitch_m420,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
+// Crop/Pad I420 frame to match required dimensions.
+int
+I420CropPad(const uint8* src_frame, int src_width,
+           int src_height, uint8* dst_frame,
+           int dst_width, int dst_height);
 
-// Convert Q420 to I420.
-void Q420ToI420(const uint8* src_y, int src_pitch_y,
-                const uint8* src_yuy2, int src_pitch_yuy2,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
+// I420 Crop - make a center cut
+int
+I420Crop(uint8* frame,
+         int src_width, int src_height,
+         int dst_width, int dst_height);
 
-// Convert NV12 to I420.  Also used for NV21.
-void NV12ToI420(const uint8* src_y,
-                const uint8* src_uv, int src_pitch,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
 
-// Convert YUY2 to I420.
-void YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
+} // namespace libyuv
 
-// Convert UYVY to I420.
-void UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height);
 
-// Convert I420 to ARGB.
-void I420ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I420 to BGRA.
-void I420ToBGRA(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I420 to ABGR.
-void I420ToABGR(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I422 to ARGB.
-void I422ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I444 to ARGB.
-void I444ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I400 to ARGB.
-void I400ToARGB(const uint8* src_y, int src_pitch_y,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert I400 to ARGB.
-void I400ToARGB_Reference(const uint8* src_y, int src_pitch_y,
-                          uint8* dst_argb, int dst_pitch_argb,
-                          int width, int height);
-
-// Convert RAW to ARGB.
-void RAWToARGB(const uint8* src_raw, int src_pitch_raw,
-               uint8* dst_argb, int dst_pitch_argb,
-               int width, int height);
-
-// Convert BG24 to ARGB.
-void BG24ToARGB(const uint8* src_bg24, int src_pitch_bg24,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-// Convert ABGR to ARGB.
-void ABGRToARGB(const uint8* src_abgr, int src_pitch_abgr,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height);
-
-}  // namespace libyuv
-
-#endif  // LIBYUV_INCLUDE_PLANAR_FUNCTIONS_H_
+#endif // LIBYUV_INCLUDE_GENERAL_H_

@@ -68,9 +68,9 @@ I420Mirror(const uint8* src_yplane, int src_ystride,
 
 // Make a center cut
 int
-I420Cut(uint8* frame,
-        int src_width, int src_height,
-        int dst_width, int dst_height)
+I420Crop(uint8* frame,
+         int src_width, int src_height,
+         int dst_width, int dst_height)
 {
   if (frame == NULL)
     return -1;
