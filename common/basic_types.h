@@ -21,8 +21,6 @@
 #include "config.h"
 #endif
 
-#include "constructor_magic.h"
-
 
 #ifndef INT_TYPES_DEFINED
 #define INT_TYPES_DEFINED
