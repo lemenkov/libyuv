@@ -11,8 +11,6 @@
 #ifndef LIBYUV_SOURCE_COMMON_H_
 #define LIBYUV_SOURCE_COMMON_H_
 
-#include "constructor_magic.h"
-
 #if defined(_MSC_VER)
 // warning C4355: 'this' : used in base member initializer list
 #pragma warning(disable:4355)
