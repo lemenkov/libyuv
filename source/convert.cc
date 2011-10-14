@@ -10,6 +10,7 @@
 
 
 #include "convert.h"
+#include "basic_types.h"
 
 #include <string.h>     // memcpy(), memset()
 #include <assert.h>

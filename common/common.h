@@ -29,9 +29,11 @@
 
 #endif // !ENABLE_DEBUG
 
-#ifdef __GNUC__
 // Forces compiler to inline, even against its better judgement. Use wisely.
+#if defined(__GNUC__)
 #define FORCE_INLINE __attribute__((always_inline))
+#elif defined(WIN32)
+#define FORCE_INLINE __forceinline
 #else
 #define FORCE_INLINE
 #endif
