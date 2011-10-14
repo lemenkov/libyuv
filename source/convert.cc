@@ -8,13 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "libyuv/convert.h"
 
-#include "convert.h"
-#include "basic_types.h"
-
-#include <string.h>     // memcpy(), memset()
-#include <assert.h>
-#include <stdlib.h>     // abs
+#include "libyuv/basic_types.h"
+#include "conversion_tables.h"
 
 //#define SCALEOPT //Currently for windows only. June 2010
 
@@ -22,20 +19,16 @@
 #include <emmintrin.h>
 #endif
 
-#include "conversion_tables.h"
+namespace libyuv {
 
-namespace libyuv
-{
-
-
-// Clip value to [0,255]
-inline uint8 Clip(int32 val);
-
-#ifdef SCALEOPT
-void *memcpy_16(void * dest, const void * src, size_t n);
-void *memcpy_8(void * dest, const void * src, size_t n);
-#endif
-
+static inline uint8 Clip(int32 val) {
+  if (val < 0) {
+    return (uint8) 0;
+  } else if (val > 255){
+    return (uint8) 255;
+  }
+  return (uint8) val;
+}
 
 int
 I420ToRGB24(const uint8* src_yplane, int src_ystride,
@@ -344,8 +337,8 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
 
   const uint8* in1 = src_yplane;
   const uint8* in2 = src_yplane + src_ystride ;
-  const uint8* inU = src_uplane;
-  const uint8* inV = src_vplane;
+  const uint8* src_u = src_uplane;
+  const uint8* src_v = src_vplane;
 
   uint8* out1 = dst_frame;
   uint8* out2 = dst_frame + 2 * dst_stride;
@@ -356,25 +349,25 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
   for (int i = 0; i < ((src_height + 1) >> 1); i++){
     for (int j = 0; j < ((src_width + 1) >> 1); j++){
       out1[0] = in1[0];
-      out1[1] = *inU;
+      out1[1] = *src_u;
       out1[2] = in1[1];
-      out1[3] = *inV;
+      out1[3] = *src_v;
 
       out2[0] = in2[0];
-      out2[1] = *inU;
+      out2[1] = *src_u;
       out2[2] = in2[1];
-      out2[3] = *inV;
+      out2[3] = *src_v;
       out1 += 4;
       out2 += 4;
-      inU++;
-      inV++;
+      src_u++;
+      src_v++;
       in1 += 2;
       in2 += 2;
     }
     in1 += 2 * src_ystride - src_width;
     in2 += 2 * src_ystride - src_width;
-    inU += src_ustride - ((src_width + 1) >> 1);
-    inV += src_vstride - ((src_width + 1) >> 1);
+    src_u += src_ustride - ((src_width + 1) >> 1);
+    src_v += src_vstride - ((src_width + 1) >> 1);
     out1 += 2 * dst_stride + 2 * (dst_stride - src_width);
     out2 += 2 * dst_stride + 2 * (dst_stride - src_width);
   }
@@ -387,34 +380,34 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
       ;pusha
       mov       eax, DWORD PTR [in1]                       ;1939.33
       mov       ecx, DWORD PTR [in2]                       ;1939.33
-      mov       ebx, DWORD PTR [inU]                       ;1939.33
-      mov       edx, DWORD PTR [inV]                       ;1939.33
+      mov       ebx, DWORD PTR [src_u]                       ;1939.33
+      mov       edx, DWORD PTR [src_v]                       ;1939.33
       loop0:
-      movq      xmm6, QWORD PTR [ebx]          ;inU
-      movq      xmm0, QWORD PTR [edx]          ;inV
-      punpcklbw xmm6, xmm0                     ;inU, inV mix
+      movq      xmm6, QWORD PTR [ebx]          ;src_u
+      movq      xmm0, QWORD PTR [edx]          ;src_v
+      punpcklbw xmm6, xmm0                     ;src_u, src_v mix
       ;movdqa    xmm1, xmm6
       ;movdqa    xmm2, xmm6
       ;movdqa    xmm4, xmm6
 
       movdqu    xmm3, XMMWORD PTR [eax]        ;in1
       movdqa    xmm1, xmm3
-      punpcklbw xmm1, xmm6                     ;in1, inU, in1, inV
+      punpcklbw xmm1, xmm6                     ;in1, src_u, in1, src_v
       mov       esi, DWORD PTR [out1]
       movdqu    XMMWORD PTR [esi], xmm1        ;write to out1
 
       movdqu    xmm5, XMMWORD PTR [ecx]        ;in2
       movdqa    xmm2, xmm5
-      punpcklbw xmm2, xmm6                     ;in2, inU, in2, inV
+      punpcklbw xmm2, xmm6                     ;in2, src_u, in2, src_v
       mov       edi, DWORD PTR [out2]
       movdqu    XMMWORD PTR [edi], xmm2        ;write to out2
 
-      punpckhbw xmm3, xmm6                     ;in1, inU, in1, inV again
+      punpckhbw xmm3, xmm6                     ;in1, src_u, in1, src_v again
       movdqu    XMMWORD PTR [esi+16], xmm3     ;write to out1 again
       add       esi, 32
       mov       DWORD PTR [out1], esi
 
-      punpckhbw xmm5, xmm6                     ;inU, in2, inV again
+      punpckhbw xmm5, xmm6                     ;src_u, in2, src_v again
       movdqu    XMMWORD PTR [edi+16], xmm5     ;write to out2 again
       add       edi, 32
       mov       DWORD PTR [out2], edi
@@ -431,8 +424,8 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
 
       mov       DWORD PTR [in1], eax                       ;1939.33
       mov       DWORD PTR [in2], ecx                       ;1939.33
-      mov       DWORD PTR [inU], ebx                       ;1939.33
-      mov       DWORD PTR [inV], edx                       ;1939.33
+      mov       DWORD PTR [src_u], ebx                       ;1939.33
+      mov       DWORD PTR [src_v], edx                       ;1939.33
 
       ;popa
       emms
@@ -504,32 +497,32 @@ I420ToUYVY(const uint8* src_yplane, int src_ystride,
       ;pusha
       mov       eax, DWORD PTR [in1]                       ;1939.33
       mov       ecx, DWORD PTR [in2]                       ;1939.33
-      mov       ebx, DWORD PTR [inU]                       ;1939.33
-      mov       edx, DWORD PTR [inV]                       ;1939.33
+      mov       ebx, DWORD PTR [src_u]                       ;1939.33
+      mov       edx, DWORD PTR [src_v]                       ;1939.33
 loop0:
-      movq      xmm6, QWORD PTR [ebx]          ;inU
-      movq      xmm0, QWORD PTR [edx]          ;inV
-      punpcklbw xmm6, xmm0                     ;inU, inV mix
+      movq      xmm6, QWORD PTR [ebx]          ;src_u
+      movq      xmm0, QWORD PTR [edx]          ;src_v
+      punpcklbw xmm6, xmm0                     ;src_u, src_v mix
       movdqa    xmm1, xmm6
       movdqa    xmm2, xmm6
       movdqa    xmm4, xmm6
 
       movdqu    xmm3, XMMWORD PTR [eax]        ;in1
-      punpcklbw xmm1, xmm3                     ;inU, in1, inV
+      punpcklbw xmm1, xmm3                     ;src_u, in1, src_v
       mov       esi, DWORD PTR [out1]
       movdqu    XMMWORD PTR [esi], xmm1        ;write to out1
 
       movdqu    xmm5, XMMWORD PTR [ecx]        ;in2
-      punpcklbw xmm2, xmm5                     ;inU, in2, inV
+      punpcklbw xmm2, xmm5                     ;src_u, in2, src_v
       mov       edi, DWORD PTR [out2]
       movdqu    XMMWORD PTR [edi], xmm2        ;write to out2
 
-      punpckhbw xmm4, xmm3                     ;inU, in1, inV again
+      punpckhbw xmm4, xmm3                     ;src_u, in1, src_v again
       movdqu    XMMWORD PTR [esi+16], xmm4     ;write to out1 again
       add       esi, 32
       mov       DWORD PTR [out1], esi
 
-      punpckhbw xmm6, xmm5                     ;inU, in2, inV again
+      punpckhbw xmm6, xmm5                     ;src_u, in2, src_v again
       movdqu    XMMWORD PTR [edi+16], xmm6     ;write to out2 again
       add       edi, 32
       mov       DWORD PTR [out2], edi
@@ -546,8 +539,8 @@ loop0:
 
       mov       DWORD PTR [in1], eax                       ;1939.33
       mov       DWORD PTR [in2], ecx                       ;1939.33
-      mov       DWORD PTR [inU], ebx                       ;1939.33
-      mov       DWORD PTR [inV], edx                       ;1939.33
+      mov       DWORD PTR [src_u], ebx                       ;1939.33
+      mov       DWORD PTR [src_v], edx                       ;1939.33
 
       ;popa
       emms
@@ -847,63 +840,5 @@ RAWToI420(const uint8* src_frame, int src_stride,
                    dst_vplane, dst_vstride,
                    src_width, src_height, RAWToI420Row_C);
 }
-
-inline
-uint8 Clip(int32 val)
-{
-  if (val < 0){
-    return (uint8)0;
-  } else if (val > 255){
-    return (uint8)255;
-  }
-  return (uint8)val;
-}
-
-#ifdef SCALEOPT
-//memcpy_16 assumes that width is an integer multiple of 16!
-void
-*memcpy_16(void * dest, const void * src, size_t n)
-{
-  _asm
-  {
-    mov eax, dword ptr [src]
-    mov ebx, dword ptr [dest]
-    mov ecx, dword ptr [n]
-
-  loop0:
-
-    movdqu    xmm0, XMMWORD PTR [eax]
-    movdqu    XMMWORD PTR [ebx], xmm0
-    add       eax, 16
-    add       ebx, 16
-    sub       ecx, 16
-    jg        loop0
-  }
-}
-
-// memcpy_8 assumes that width is an integer multiple of 8!
-void
-*memcpy_8(void * dest, const void * src, size_t n)
-{
-  _asm
-  {
-    mov eax, dword ptr [src]
-    mov ebx, dword ptr [dest]
-    mov ecx, dword ptr [n]
-
-  loop0:
-
-    movq    mm0, QWORD PTR [eax]
-    movq    QWORD PTR [ebx], mm0
-    add       eax, 8
-    add       ebx, 8
-    sub       ecx, 8
-    jg        loop0
-  emms
-  }
-
-}
-
-#endif
 
 } // namespace libyuv

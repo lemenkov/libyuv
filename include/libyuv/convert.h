@@ -9,10 +9,10 @@
  */
 
 
-#ifndef LIBYUV_INCLUDE_CONVERT_H_
-#define LIBYUV_INCLUDE_CONVERT_H_
+#ifndef INCLUDE_LIBYUV_CONVERT_H_
+#define INCLUDE_LIBYUV_CONVERT_H_
 
-#include "basic_types.h"
+#include "libyuv/basic_types.h"
 
 namespace libyuv {
 
@@ -106,4 +106,4 @@ NV12ToRGB565(const uint8* src_yplane, int src_ystride,
 
 } //  namespace libyuv
 
-#endif // LIBYUV_INCLUDE_CONVERT_H_
+#endif // INCLUDE_LIBYUV_CONVERT_H_

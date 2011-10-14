@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "basic_types.h"
+#include "libyuv/basic_types.h"
 
 namespace libyuv {
 
@@ -31,16 +31,6 @@ namespace libyuv {
 #define FOURCC(a, b, c, d) (\
     (static_cast<uint32>(a)) | (static_cast<uint32>(b) << 8) | \
     (static_cast<uint32>(c) << 16) | (static_cast<uint32>(d) << 24))
-
-// Get the name, that is, string with four characters, of a fourcc code.
-inline std::string GetFourccName(uint32 fourcc) {
-  std::string name;
-  name.push_back(static_cast<char>(fourcc & 0xFF));
-  name.push_back(static_cast<char>((fourcc >> 8) & 0xFF));
-  name.push_back(static_cast<char>((fourcc >> 16) & 0xFF));
-  name.push_back(static_cast<char>((fourcc >> 24) & 0xFF));
-  return name;
-}
 
 // Some good pages discussing FourCC codes:
 //   http://developer.apple.com/quicktime/icefloe/dispatch020.html
@@ -86,88 +76,6 @@ enum FourCC {
 
 // Converts fourcc aliases into canonical ones.
 uint32 CanonicalFourCC(uint32 fourcc);
-
-//////////////////////////////////////////////////////////////////////////////
-// Definition of VideoFormat.
-//////////////////////////////////////////////////////////////////////////////
-
-static const int64 kNumNanosecsPerSec = 1000000000;
-
-struct VideoFormat {
-  static const int64 kMinimumInterval = kNumNanosecsPerSec / 10000;  // 10k fps
-
-  VideoFormat() : width(0), height(0), interval(0), fourcc(0) {}
-
-  VideoFormat(int w, int h, int64 interval_ns, uint32 cc)
-      : width(w),
-        height(h),
-        interval(interval_ns),
-        fourcc(cc) {
-  }
-
-  VideoFormat(const VideoFormat& format)
-      : width(format.width),
-        height(format.height),
-        interval(format.interval),
-        fourcc(format.fourcc) {
-  }
-
-  static int64 FpsToInterval(int fps) {
-    return fps ? kNumNanosecsPerSec / fps : kMinimumInterval;
-  }
-
-  static int IntervalToFps(int64 interval) {
-    // Normalize the interval first.
-    interval = libyuv::_max(interval, kMinimumInterval);
-    return static_cast<int>(kNumNanosecsPerSec / interval);
-  }
-
-  bool operator==(const VideoFormat& format) const {
-    return width == format.width && height == format.height &&
-        interval == format.interval && fourcc == format.fourcc;
-  }
-
-  bool operator!=(const VideoFormat& format) const {
-    return !(*this == format);
-  }
-
-  bool operator<(const VideoFormat& format) const {
-    return (fourcc < format.fourcc) ||
-        (fourcc == format.fourcc && width < format.width) ||
-        (fourcc == format.fourcc && width == format.width &&
-            height < format.height) ||
-        (fourcc == format.fourcc && width == format.width &&
-            height == format.height && interval > format.interval);
-  }
-
-  int framerate() const { return IntervalToFps(interval); }
-
-  // Check if both width and height are 0.
-  bool IsSize0x0() const { return 0 == width && 0 == height; }
-
-  // Check if this format is less than another one by comparing the resolution
-  // and frame rate.
-  bool IsPixelRateLess(const VideoFormat& format) const {
-    return width * height * framerate() <
-        format.width * format.height * format.framerate();
-  }
-
-  // Get a string presentation in the form of "fourcc width x height x fps"
-  std::string ToString() const;
-
-  int    width;     // in number of pixels
-  int    height;    // in number of pixels
-  int64  interval;  // in nanoseconds
-  uint32 fourcc;    // color space. FOURCC_ANY means that any color space is OK.
-};
-
-// Result of video capturer start.
-enum CaptureResult {
-  CR_SUCCESS,    // The capturer starts successfully.
-  CR_PENDING,    // The capturer is pending to start the capture device.
-  CR_FAILURE,    // The capturer fails to start.
-  CR_NO_DEVICE,  // The capturer has no device and fails to start.
-};
 
 }  // namespace libyuv
 

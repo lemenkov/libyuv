@@ -27,40 +27,40 @@ void ReverseLine_di_NEON(const uint8* src,
                          uint8* dst_a, uint8* dst_b,
                          int width);
 void SaveRegisters_NEON(unsigned long long *store);
-void Transpose_di_wx8_NEON(const uint8* src, int src_pitch,
-                           uint8* dst_a, int dst_pitch_a,
-                           uint8* dst_b, int dst_pitch_b,
+void Transpose_di_wx8_NEON(const uint8* src, int src_stride,
+                           uint8* dst_a, int dst_stride_a,
+                           uint8* dst_b, int dst_stride_b,
                            int width);
 }  // extern "C"
 #endif
 
-static void Transpose_di_wx8_C(const uint8* src, int src_pitch,
-                               uint8* dst_a, int dst_pitch_a,
-                               uint8* dst_b, int dst_pitch_b,
+static void Transpose_di_wx8_C(const uint8* src, int src_stride,
+                               uint8* dst_a, int dst_stride_a,
+                               uint8* dst_b, int dst_stride_b,
                                int w) {
   int i, j;
   for (i = 0; i < w*2; i += 2)
     for (j = 0; j < 8; ++j) {
-      dst_a[j + (i>>1)*dst_pitch_a] = src[i + j*src_pitch];
-      dst_b[j + (i>>1)*dst_pitch_b] = src[i + j*src_pitch + 1];
+      dst_a[j + (i>>1)*dst_stride_a] = src[i + j*src_stride];
+      dst_b[j + (i>>1)*dst_stride_b] = src[i + j*src_stride + 1];
     }
 }
 
-static void Transpose_di_wxh_C(const uint8* src, int src_pitch,
-                               uint8* dst_a, int dst_pitch_a,
-                               uint8* dst_b, int dst_pitch_b,
+static void Transpose_di_wxh_C(const uint8* src, int src_stride,
+                               uint8* dst_a, int dst_stride_a,
+                               uint8* dst_b, int dst_stride_b,
                                int w, int h) {
   int i, j;
   for (i = 0; i < w*2; i += 2)
     for (j = 0; j < h; ++j) {
-      dst_a[j + (i>>1)*dst_pitch_a] = src[i + j*src_pitch];
-      dst_b[j + (i>>1)*dst_pitch_b] = src[i + j*src_pitch + 1];
+      dst_a[j + (i>>1)*dst_stride_a] = src[i + j*src_stride];
+      dst_b[j + (i>>1)*dst_stride_b] = src[i + j*src_stride + 1];
     }
 }
 
-void Transpose_deinterleave(const uint8* src, int src_pitch,
-                            uint8* dst_a, int dst_pitch_a,
-                            uint8* dst_b, int dst_pitch_b,
+void Transpose_deinterleave(const uint8* src, int src_stride,
+                            uint8* dst_a, int dst_stride_a,
+                            uint8* dst_b, int dst_stride_b,
                             int width, int height) {
   int i = height;
   rotate_wx8func Transpose_wx8;
@@ -81,20 +81,20 @@ void Transpose_deinterleave(const uint8* src, int src_pitch,
 
   // work across the source in 8x8 tiles
   do {
-    Transpose_wx8(src, src_pitch,
-                  dst_a, dst_pitch_a,
-                  dst_b, dst_pitch_b,
+    Transpose_wx8(src, src_stride,
+                  dst_a, dst_stride_a,
+                  dst_b, dst_stride_b,
                   width);
 
-    src   += 8 * src_pitch;
+    src   += 8 * src_stride;
     dst_a += 8;
     dst_b += 8;
     i     -= 8;
   } while (i >= 8);
 
-  Transpose_wxh(src, src_pitch,
-                dst_a, dst_pitch_a,
-                dst_b, dst_pitch_b,
+  Transpose_wxh(src, src_stride,
+                dst_a, dst_stride_a,
+                dst_b, dst_stride_b,
                 width, i);
 
 #ifdef __ARM_NEON__
@@ -102,31 +102,31 @@ void Transpose_deinterleave(const uint8* src, int src_pitch,
 #endif
 }
 
-void Rotate90_deinterleave(const uint8* src, int src_pitch,
-                           uint8* dst_a, int dst_pitch_a,
-                           uint8* dst_b, int dst_pitch_b,
+void Rotate90_deinterleave(const uint8* src, int src_stride,
+                           uint8* dst_a, int dst_stride_a,
+                           uint8* dst_b, int dst_stride_b,
                             int width, int height) {
-  src += src_pitch*(height-1);
-  src_pitch = -src_pitch;
+  src += src_stride*(height-1);
+  src_stride = -src_stride;
 
-  Transpose_deinterleave(src, src_pitch,
-                         dst_a, dst_pitch_a,
-                         dst_b, dst_pitch_b,
+  Transpose_deinterleave(src, src_stride,
+                         dst_a, dst_stride_a,
+                         dst_b, dst_stride_b,
                          width, height);
 }
 
-void Rotate270_deinterleave(const uint8* src, int src_pitch,
-                            uint8* dst_a, int dst_pitch_a,
-                            uint8* dst_b, int dst_pitch_b,
+void Rotate270_deinterleave(const uint8* src, int src_stride,
+                            uint8* dst_a, int dst_stride_a,
+                            uint8* dst_b, int dst_stride_b,
                             int width, int height) {
-  dst_a += dst_pitch_a*((width>>1)-1);
-  dst_b += dst_pitch_b*((width>>1)-1);
-  dst_pitch_a = -dst_pitch_a;
-  dst_pitch_b = -dst_pitch_b;
+  dst_a += dst_stride_a*((width>>1)-1);
+  dst_b += dst_stride_b*((width>>1)-1);
+  dst_stride_a = -dst_stride_a;
+  dst_stride_b = -dst_stride_b;
 
-  Transpose_deinterleave(src, src_pitch,
-                         dst_a, dst_pitch_a,
-                         dst_b, dst_pitch_b,
+  Transpose_deinterleave(src, src_stride,
+                         dst_a, dst_stride_a,
+                         dst_b, dst_stride_b,
                          width, height);
 }
 
@@ -140,9 +140,9 @@ static void ReverseLine_di_C(const uint8* src,
   }
 }
 
-void Rotate180_deinterleave(const uint8* src, int src_pitch,
-                            uint8* dst_a, int dst_pitch_a,
-                            uint8* dst_b, int dst_pitch_b,
+void Rotate180_deinterleave(const uint8* src, int src_stride,
+                            uint8* dst_a, int dst_stride_a,
+                            uint8* dst_b, int dst_stride_b,
                             int width, int height) {
   int i;
   reverse_func ReverseLine;
@@ -154,17 +154,17 @@ void Rotate180_deinterleave(const uint8* src, int src_pitch,
   ReverseLine = ReverseLine_di_C;
 #endif
 
-  dst_a += dst_pitch_a*(height-1);
-  dst_b += dst_pitch_b*(height-1);
+  dst_a += dst_stride_a*(height-1);
+  dst_b += dst_stride_b*(height-1);
 
   width >>= 1;
 
   for (i = 0; i < height; ++i) {
     ReverseLine(src, dst_a, dst_b, width);
 
-    src   += src_pitch;
-    dst_a -= dst_pitch_a;
-    dst_b -= dst_pitch_b;
+    src   += src_stride;
+    dst_a -= dst_stride_a;
+    dst_b -= dst_stride_b;
   }
 }
 

@@ -11,7 +11,7 @@
 #ifndef LIBYUV_SOURCE_ROW_H_
 #define LIBYUV_SOURCE_ROW_H_
 
-#include "basic_types.h"
+#include "libyuv/basic_types.h"
 
 extern "C" {
 void FastConvertYUVToRGB32Row(const uint8* y_buf,

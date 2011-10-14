@@ -22,8 +22,7 @@ class libyuvEnvironment : public ::testing::Environment {
 
 libyuvTest::libyuvTest() :
   _rotate_max_w(128),
-  _rotate_max_h(128)
-{
+  _rotate_max_h(128) {
 }
 
 void libyuvTest::SetUp() {

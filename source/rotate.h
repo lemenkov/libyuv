@@ -11,34 +11,35 @@
 #ifndef LIBYUV_SOURCE_ROTATE_H_
 #define LIBYUV_SOURCE_ROTATE_H_
 
-#include "basic_types.h"
+#include "libyuv/basic_types.h"
 
 namespace libyuv {
-void Rotate90(const uint8* src, int src_pitch,
-              uint8* dst, int dst_pitch,
+
+void Rotate90(const uint8* src, int src_stride,
+              uint8* dst, int dst_stride,
               int width, int height);
-void Rotate180(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Rotate180(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height);
-void Rotate270(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Rotate270(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height);
 
-void Rotate90_deinterleave(const uint8* src, int src_pitch,
-                           uint8* dst_a, int dst_pitch_a,
-                           uint8* dst_b, int dst_pitch_b,
+void Rotate90_deinterleave(const uint8* src, int src_stride,
+                           uint8* dst_a, int dst_stride_a,
+                           uint8* dst_b, int dst_stride_b,
                            int width, int height);
-void Rotate180_deinterleave(const uint8* src, int src_pitch,
-                            uint8* dst_a, int dst_pitch_a,
-                            uint8* dst_b, int dst_pitch_b,
+void Rotate180_deinterleave(const uint8* src, int src_stride,
+                            uint8* dst_a, int dst_stride_a,
+                            uint8* dst_b, int dst_stride_b,
                             int width, int height);
-void Rotate270_deinterleave(const uint8* src, int src_pitch,
-                            uint8* dst_a, int dst_pitch_a,
-                            uint8* dst_b, int dst_pitch_b,
+void Rotate270_deinterleave(const uint8* src, int src_stride,
+                            uint8* dst_a, int dst_stride_a,
+                            uint8* dst_b, int dst_stride_b,
                             int width, int height);
 
-void Transpose(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Transpose(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height);
 }  // namespace libyuv
 

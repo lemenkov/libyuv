@@ -8,36 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "scale.h"
+#include "libyuv/scale.h"
 
 #include <assert.h>
 #include <string.h>
 
-#include "cpu_id.h"
+#include "libyuv/cpu_id.h"
+
+#if defined(_MSC_VER)
+#define ALIGN16(var) __declspec(align(16)) var
+#else
+#define ALIGN16(var) var __attribute__((aligned(16)))
+#endif
 
 // Note: A Neon reference manual
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0204j/CJAJIIGG.html
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
-
-// TODO(fbarchard): Remove once performance is known
-//#define TEST_RSTSC
-
-#if defined(TEST_RSTSC)
-#include <iomanip>
-#include <iostream>
-#ifdef _MSC_VER
-#include <emmintrin.h>
-#endif
-
-#if defined(__GNUC__) && defined(__i386__)
-static inline uint64 __rdtsc(void) {
-  uint32_t a, d;
-  __asm__ volatile("rdtsc" : "=a" (a), "=d" (d));
-  return ((uint64)d << 32) + a;
-}
-#endif
-#endif
 
 namespace libyuv {
 
@@ -47,7 +34,7 @@ namespace libyuv {
 // when comparing the quality of the resulting YUV planes
 // as produced by the optimized and non-optimized versions.
 
-bool use_reference_impl_ = false;
+static bool use_reference_impl_ = false;
 
 void SetUseReferenceImpl(bool use) {
   use_reference_impl_ = use;
@@ -62,8 +49,8 @@ void SetUseReferenceImpl(bool use) {
 
 #if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
 #define HAS_SCALEROWDOWN2_NEON
-void ScaleRowDown2_NEON(const uint8* iptr, int32 /* istride */,
-                        uint8* dst, int32 owidth) {
+void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
+                        uint8* dst, int dst_width) {
   __asm__ volatile
   (
     "1:\n"
@@ -72,13 +59,13 @@ void ScaleRowDown2_NEON(const uint8* iptr, int32 /* istride */,
     "subs       %2, %2, #16       \n"  // 16 processed per loop
     "bhi        1b                \n"
     :                                    // Output registers
-    : "r"(iptr), "r"(dst), "r"(owidth)   // Input registers
+    : "r"(src_ptr), "r"(dst), "r"(dst_width)   // Input registers
     : "r4", "q0", "q1"                   // Clobber List
   );
 }
 
-void ScaleRowDown2Int_NEON(const uint8* iptr, int32 istride,
-                           uint8* dst, int32 owidth) {
+void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
+                           uint8* dst, int dst_width) {
   __asm__ volatile
   (
     "mov        r4, #2            \n"  // rounding constant
@@ -99,7 +86,7 @@ void ScaleRowDown2Int_NEON(const uint8* iptr, int32 istride,
     "subs       %3, %3, #16       \n"  // 16 processed per loop
     "bhi        1b                \n"
     :                                                 // Output registers
-    : "r"(iptr), "r"(istride), "r"(dst), "r"(owidth)  // Input registers
+    : "r"(src_ptr), "r"(src_stride), "r"(dst), "r"(dst_width)  // Input registers
     : "r4", "q0", "q1", "q2", "q3", "q4"              // Clobber List
    );
 }
@@ -201,15 +188,15 @@ extern "C" TALIGN16(const uint16, scaleab2[8]) =
 
 #define HAS_SCALEROWDOWN2_SSE2
 // Reads 32 pixels, throws half away and writes 16 pixels.
-// Alignment requirement: iptr 16 byte aligned, optr 16 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 16 byte aligned.
 __declspec(naked)
-static void ScaleRowDown2_SSE2(const uint8* iptr, int32 istride,
-                               uint8* optr, int32 owidth) {
+static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
+                               uint8* optr, int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        // iptr
-                                     // istride ignored
+    mov        eax, [esp + 4]        // src_ptr
+                                     // src_stride ignored
     mov        edx, [esp + 12]       // optr
-    mov        ecx, [esp + 16]       // owidth
+    mov        ecx, [esp + 16]       // dst_width
     pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
     psrlw      xmm7, 8
 
@@ -229,16 +216,16 @@ static void ScaleRowDown2_SSE2(const uint8* iptr, int32 istride,
   }
 }
 // Blends 32x2 rectangle to 16x1.
-// Alignment requirement: iptr 16 byte aligned, optr 16 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 16 byte aligned.
 __declspec(naked)
-static void ScaleRowDown2Int_SSE2(const uint8* iptr, int32 istride,
-                                  uint8* optr, int32 owidth) {
+static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+                                  uint8* optr, int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    // iptr
-    mov        esi, [esp + 4 + 8]    // istride
+    mov        eax, [esp + 4 + 4]    // src_ptr
+    mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // optr
-    mov        ecx, [esp + 4 + 16]   // owidth
+    mov        ecx, [esp + 4 + 16]   // dst_width
     pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
     psrlw      xmm7, 8
 
@@ -273,16 +260,16 @@ static void ScaleRowDown2Int_SSE2(const uint8* iptr, int32 istride,
 
 #define HAS_SCALEROWDOWN4_SSE2
 // Point samples 32 pixels to 8 pixels.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleRowDown4_SSE2(const uint8* iptr, int32 istride,
-                               uint8* orow, int32 owidth) {
+static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
+                               uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-                                     // istride ignored
+    mov        esi, [esp + 32 + 4]   // src_ptr
+                                     // src_stride ignored
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     pcmpeqb    xmm7, xmm7            // generate mask 0x000000ff
     psrld      xmm7, 24
 
@@ -305,19 +292,19 @@ static void ScaleRowDown4_SSE2(const uint8* iptr, int32 istride,
 }
 
 // Blends 32x4 rectangle to 8x1.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleRowDown4Int_SSE2(const uint8* iptr, int32 istride,
-                                  uint8* orow, int32 owidth) {
+static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
+                                  uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        ebx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        ebx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
     psrlw      xmm7, 8
-    lea        edx, [ebx + ebx * 2]  // istride * 3
+    lea        edx, [ebx + ebx * 2]  // src_stride * 3
 
   wloop:
     movdqa     xmm0, [esi]
@@ -364,17 +351,17 @@ static void ScaleRowDown4Int_SSE2(const uint8* iptr, int32 istride,
 
 #define HAS_SCALEROWDOWN8_SSE2
 // Point samples 32 pixels to 4 pixels.
-// Alignment requirement: iptr 16 byte aligned, optr 4 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 4 byte aligned.
 __declspec(naked)
-static void ScaleRowDown8_SSE2(const uint8* iptr, int32 istride,
-                               uint8* orow, int32 owidth) {
+static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
+                               uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-                                     // istride ignored
+    mov        esi, [esp + 32 + 4]   // src_ptr
+                                     // src_stride ignored
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
-    pcmpeqb    xmm7, xmm7            // generate mask isolating 1 in 8 bytes
+    mov        ecx, [esp + 32 + 16]  // dst_width
+    pcmpeqb    xmm7, xmm7            // generate mask isolating 1 src 8 bytes
     psrlq      xmm7, 56
 
   wloop:
@@ -397,17 +384,17 @@ static void ScaleRowDown8_SSE2(const uint8* iptr, int32 istride,
 }
 
 // Blends 32x8 rectangle to 4x1.
-// Alignment requirement: iptr 16 byte aligned, optr 4 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 4 byte aligned.
 __declspec(naked)
-static void ScaleRowDown8Int_SSE2(const uint8* iptr, int32 istride,
-                                  uint8* orow, int32 owidth) {
+static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
+                                  uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        ebx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        ebx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
-    lea        edx, [ebx + ebx * 2]  // istride * 3
+    mov        ecx, [esp + 32 + 16]  // dst_width
+    lea        edx, [ebx + ebx * 2]  // src_stride * 3
     pxor       xmm7, xmm7
 
   wloop:
@@ -470,16 +457,16 @@ static void ScaleRowDown8Int_SSE2(const uint8* iptr, int32 istride,
 // Then shuffled to do the scaling.
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleRowDown34_SSSE3(const uint8* iptr, int32 istride,
-                                 uint8* orow, int32 owidth) {
+static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
+                                 uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-                                     // istride ignored
+    mov        esi, [esp + 32 + 4]   // src_ptr
+                                     // src_stride ignored
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm3, _shuf0
     movdqa     xmm4, _shuf1
     movdqa     xmm5, _shuf2
@@ -520,16 +507,16 @@ static void ScaleRowDown34_SSSE3(const uint8* iptr, int32 istride,
 // xmm7 round34
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleRowDown34_1_Int_SSSE3(const uint8* iptr, int32 istride,
-                                       uint8* orow, int32 owidth) {
+static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                       uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        ebx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        ebx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm2, _shuf01
     movdqa     xmm3, _shuf11
     movdqa     xmm4, _shuf21
@@ -577,16 +564,16 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* iptr, int32 istride,
 }
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleRowDown34_0_Int_SSSE3(const uint8* iptr, int32 istride,
-                                       uint8* orow, int32 owidth) {
+static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                       uint8* orow, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        ebx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        ebx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm2, _shuf01
     movdqa     xmm3, _shuf11
     movdqa     xmm4, _shuf21
@@ -641,14 +628,14 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* iptr, int32 istride,
 
 // Scale 32 pixels to 12
 __declspec(naked)
-static void ScaleRowDown38_SSSE3(const uint8* iptr, int32 istride,
-                                 uint8* optr, int32 owidth) {
+static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
+                                 uint8* optr, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        edx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        edx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // optr
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm5, _shuf38a
     movdqa     xmm6, _shuf38b
     pxor       xmm7, xmm7
@@ -675,14 +662,14 @@ static void ScaleRowDown38_SSSE3(const uint8* iptr, int32 istride,
 
 // Scale 16x3 pixels to 6x1 with interpolation
 __declspec(naked)
-static void ScaleRowDown38_3_Int_SSSE3(const uint8* iptr, int32 istride,
-                                       uint8* optr, int32 owidth) {
+static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                       uint8* optr, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        edx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        edx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // optr
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm4, _shufac0
     movdqa     xmm5, _shufac3
     movdqa     xmm6, _scaleac3
@@ -739,14 +726,14 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* iptr, int32 istride,
 
 // Scale 16x2 pixels to 6x1 with interpolation
 __declspec(naked)
-static void ScaleRowDown38_2_Int_SSSE3(const uint8* iptr, int32 istride,
-                                       uint8* optr, int32 owidth) {
+static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                       uint8* optr, int dst_width) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        edx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        edx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // optr
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     movdqa     xmm4, _shufab0
     movdqa     xmm5, _shufab1
     movdqa     xmm6, _shufab2
@@ -784,14 +771,14 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* iptr, int32 istride,
 
 // Reads 8xN bytes and produces 16 shorts at a time.
 __declspec(naked)
-static void ScaleAddRows_SSE2(const uint8* iptr, int32 istride,
-                              uint16* orow, int32 iwidth, int32 iheight) {
+static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+                              uint16* orow, int src_width, int src_height) {
   __asm {
     pushad
-    mov        esi, [esp + 32 + 4]   // iptr
-    mov        edx, [esp + 32 + 8]   // istride
+    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        edx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // orow
-    mov        ecx, [esp + 32 + 16]  // owidth
+    mov        ecx, [esp + 32 + 16]  // dst_width
     mov        ebx, [esp + 32 + 20]  // height
     pxor       xmm7, xmm7
     dec        ebx
@@ -833,15 +820,15 @@ static void ScaleAddRows_SSE2(const uint8* iptr, int32 istride,
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
 #define HAS_SCALEFILTERROWS_SSE2
 __declspec(naked)
-static void ScaleFilterRows_SSE2(uint8* optr, const uint8* iptr0, int32 istride,
-                                 int owidth, int source_y_fraction) {
+static void ScaleFilterRows_SSE2(uint8* optr, const uint8* iptr0, int src_stride,
+                                 int dst_width, int source_y_fraction) {
   __asm {
     push       esi
     push       edi
     mov        edi, [esp + 8 + 4]   // optr
     mov        esi, [esp + 8 + 8]   // iptr0
-    mov        edx, [esp + 8 + 12]  // istride
-    mov        ecx, [esp + 8 + 16]  // owidth
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     cmp        eax, 0
     je         xloop1
@@ -923,15 +910,15 @@ static void ScaleFilterRows_SSE2(uint8* optr, const uint8* iptr0, int32 istride,
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version.
 #define HAS_SCALEFILTERROWS_SSSE3
 __declspec(naked)
-static void ScaleFilterRows_SSSE3(uint8* optr, const uint8* iptr0, int32 istride,
-                                  int owidth, int source_y_fraction) {
+static void ScaleFilterRows_SSSE3(uint8* optr, const uint8* iptr0, int src_stride,
+                                  int dst_width, int source_y_fraction) {
   __asm {
     push       esi
     push       edi
     mov        edi, [esp + 8 + 4]   // optr
     mov        esi, [esp + 8 + 8]   // iptr0
-    mov        edx, [esp + 8 + 12]  // istride
-    mov        ecx, [esp + 8 + 16]  // owidth
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     cmp        eax, 0
     je         xloop1
@@ -1003,14 +990,14 @@ static void ScaleFilterRows_SSSE3(uint8* optr, const uint8* iptr0, int32 istride
 }
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: iptr 16 byte aligned, optr 8 byte aligned.
+// Alignment requirement: src_ptr 16 byte aligned, optr 8 byte aligned.
 __declspec(naked)
-static void ScaleFilterCols34_SSSE3(uint8* optr, const uint8* iptr,
-                                    int owidth) {
+static void ScaleFilterCols34_SSSE3(uint8* optr, const uint8* src_ptr,
+                                    int dst_width) {
   __asm {
     mov        edx, [esp + 4]    // optr
-    mov        eax, [esp + 8]    // iptr
-    mov        ecx, [esp + 12]   // owidth
+    mov        eax, [esp + 8]    // src_ptr
+    mov        ecx, [esp + 12]   // dst_width
     movdqa     xmm1, _round34
     movdqa     xmm2, _shuf01
     movdqa     xmm3, _shuf11
@@ -1056,8 +1043,8 @@ static void ScaleFilterCols34_SSSE3(uint8* optr, const uint8* iptr,
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
 #define HAS_SCALEROWDOWN2_SSE2
-extern "C" void ScaleRowDown2_SSE2(const uint8* iptr, int32 istride,
-                                   uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
+                                   uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1087,8 +1074,8 @@ extern "C" void ScaleRowDown2_SSE2(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown2Int_SSE2(const uint8* iptr, int32 istride,
-                                      uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+                                      uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1132,8 +1119,8 @@ extern "C" void ScaleRowDown2Int_SSE2(const uint8* iptr, int32 istride,
 );
 
 #define HAS_SCALEROWDOWN4_SSE2
-extern "C" void ScaleRowDown4_SSE2(const uint8* iptr, int32 istride,
-                                   uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
+                                   uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1166,8 +1153,8 @@ extern "C" void ScaleRowDown4_SSE2(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown4Int_SSE2(const uint8* iptr, int32 istride,
-                                      uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
+                                      uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1225,8 +1212,8 @@ extern "C" void ScaleRowDown4Int_SSE2(const uint8* iptr, int32 istride,
 );
 
 #define HAS_SCALEROWDOWN8_SSE2
-extern "C" void ScaleRowDown8_SSE2(const uint8* iptr, int32 istride,
-                                   uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
+                                   uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1260,8 +1247,8 @@ extern "C" void ScaleRowDown8_SSE2(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown8Int_SSE2(const uint8* iptr, int32 istride,
-                                      uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
+                                      uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1331,8 +1318,8 @@ extern "C" void ScaleRowDown8Int_SSE2(const uint8* iptr, int32 istride,
 // fpic is used for magiccam plugin
 #if !defined(__PIC__)
 #define HAS_SCALEROWDOWN34_SSSE3
-extern "C" void ScaleRowDown34_SSSE3(const uint8* iptr, int32 istride,
-                                     uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
+                                     uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1369,8 +1356,8 @@ extern "C" void ScaleRowDown34_SSSE3(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* iptr, int32 istride,
-                                           uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                           uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1430,8 +1417,8 @@ extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* iptr, int32 istride,
-                                           uint8* orow, int32 owidth);
+extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                           uint8* orow, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1494,8 +1481,8 @@ extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* iptr, int32 istride,
 );
 
 #define HAS_SCALEROWDOWN38_SSSE3
-extern "C" void ScaleRowDown38_SSSE3(const uint8* iptr, int32 istride,
-                                     uint8* optr, int32 owidth);
+extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
+                                     uint8* optr, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1531,8 +1518,8 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* iptr, int32 istride,
-                                           uint8* optr, int32 owidth);
+extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                           uint8* optr, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1595,8 +1582,8 @@ extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* iptr, int32 istride,
     "ret\n"
 );
 
-extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* iptr, int32 istride,
-                                           uint8* optr, int32 owidth);
+extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
+                                           uint8* optr, int dst_width);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1641,8 +1628,8 @@ extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* iptr, int32 istride,
 #endif // __PIC__
 
 #define HAS_SCALEADDROWS_SSE2
-extern "C" void ScaleAddRows_SSE2(const uint8* iptr, int32 istride,
-                                  uint16* orow, int32 iwidth, int32 iheight);
+extern "C" void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+                                  uint16* orow, int src_width, int src_height);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1692,8 +1679,8 @@ extern "C" void ScaleAddRows_SSE2(const uint8* iptr, int32 istride,
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2
 extern "C" void ScaleFilterRows_SSE2(uint8* optr,
-                                     const uint8* iptr0, int32 istride,
-                                     int owidth, int source_y_fraction);
+                                     const uint8* iptr0, int src_stride,
+                                     int dst_width, int source_y_fraction);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1787,8 +1774,8 @@ extern "C" void ScaleFilterRows_SSE2(uint8* optr,
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3
 extern "C" void ScaleFilterRows_SSSE3(uint8* optr,
-                                      const uint8* iptr0, int32 istride,
-                                      int owidth, int source_y_fraction);
+                                      const uint8* iptr0, int src_stride,
+                                      int dst_width, int source_y_fraction);
   asm(
     ".text\n"
 #if defined(OSX)
@@ -1870,42 +1857,42 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* optr,
 #endif
 
 // CPU agnostic row functions
-static void ScaleRowDown2_C(const uint8* iptr, int32,
-                            uint8* dst, int32 owidth) {
-  for (int x = 0; x < owidth; ++x) {
-    *dst++ = *iptr;
-    iptr += 2;
+static void ScaleRowDown2_C(const uint8* src_ptr, int,
+                            uint8* dst, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    *dst++ = *src_ptr;
+    src_ptr += 2;
   }
 }
 
-static void ScaleRowDown2Int_C(const uint8* iptr, int32 istride,
-                               uint8* dst, int32 owidth) {
-  for (int x = 0; x < owidth; ++x) {
-    *dst++ = (iptr[0] + iptr[1] +
-              iptr[istride] + iptr[istride + 1] + 2) >> 2;
-    iptr += 2;
+static void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
+                               uint8* dst, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    *dst++ = (src_ptr[0] + src_ptr[1] +
+              src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
+    src_ptr += 2;
   }
 }
 
-static void ScaleRowDown4_C(const uint8* iptr, int32,
-                            uint8* dst, int32 owidth) {
-  for (int x = 0; x < owidth; ++x) {
-    *dst++ = *iptr;
-    iptr += 4;
+static void ScaleRowDown4_C(const uint8* src_ptr, int,
+                            uint8* dst, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    *dst++ = *src_ptr;
+    src_ptr += 4;
   }
 }
 
-static void ScaleRowDown4Int_C(const uint8* iptr, int32 istride,
-                               uint8* dst, int32 owidth) {
-  for (int x = 0; x < owidth; ++x) {
-    *dst++ = (iptr[0] + iptr[1] + iptr[2] + iptr[3] +
-              iptr[istride + 0] + iptr[istride + 1] +
-              iptr[istride + 2] + iptr[istride + 3] +
-              iptr[istride * 2 + 0] + iptr[istride * 2 + 1] +
-              iptr[istride * 2 + 2] + iptr[istride * 2 + 3] +
-              iptr[istride * 3 + 0] + iptr[istride * 3 + 1] +
-              iptr[istride * 3 + 2] + iptr[istride * 3 + 3] + 8) >> 4;
-    iptr += 4;
+static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
+                               uint8* dst, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    *dst++ = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
+              src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
+              src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
+              src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
+              src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
+              src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
+              src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] + 8) >> 4;
+    src_ptr += 4;
   }
 }
 
@@ -1914,46 +1901,46 @@ static void ScaleRowDown4Int_C(const uint8* iptr, int32 istride,
 static const int kMaxOutputWidth = 640;
 static const int kMaxRow12 = kMaxOutputWidth * 2;
 
-static void ScaleRowDown8_C(const uint8* iptr, int32,
-                            uint8* dst, int32 owidth) {
-  for (int x = 0; x < owidth; ++x) {
-    *dst++ = *iptr;
-    iptr += 8;
+static void ScaleRowDown8_C(const uint8* src_ptr, int,
+                            uint8* dst, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    *dst++ = *src_ptr;
+    src_ptr += 8;
   }
 }
 
 // Note calling code checks width is less than max and if not
 // uses ScaleRowDown8_C instead.
-static void ScaleRowDown8Int_C(const uint8* iptr, int32 istride,
-                               uint8* dst, int32 owidth) {
+static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
+                               uint8* dst, int dst_width) {
   ALIGN16(uint8 irow[kMaxRow12 * 2]);
-  assert(owidth <= kMaxOutputWidth);
-  ScaleRowDown4Int_C(iptr, istride, irow, owidth * 2);
-  ScaleRowDown4Int_C(iptr + istride * 4, istride, irow + kMaxOutputWidth,
-                     owidth * 2);
-  ScaleRowDown2Int_C(irow, kMaxOutputWidth, dst, owidth);
+  assert(dst_width <= kMaxOutputWidth);
+  ScaleRowDown4Int_C(src_ptr, src_stride, irow, dst_width * 2);
+  ScaleRowDown4Int_C(src_ptr + src_stride * 4, src_stride, irow + kMaxOutputWidth,
+                     dst_width * 2);
+  ScaleRowDown2Int_C(irow, kMaxOutputWidth, dst, dst_width);
 }
 
-static void ScaleRowDown34_C(const uint8* iptr, int32,
-                             uint8* dst, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  uint8* dend = dst + owidth;
+static void ScaleRowDown34_C(const uint8* src_ptr, int,
+                             uint8* dst, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  uint8* dend = dst + dst_width;
   do {
-    dst[0] = iptr[0];
-    dst[1] = iptr[1];
-    dst[2] = iptr[3];
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[1];
+    dst[2] = src_ptr[3];
     dst += 3;
-    iptr += 4;
+    src_ptr += 4;
   } while (dst < dend);
 }
 
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_C(const uint8* iptr, int32 istride,
-                                   uint8* d, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  uint8* dend = d + owidth;
-  const uint8* s = iptr;
-  const uint8* t = iptr + istride;
+static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
+                                   uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  uint8* dend = d + dst_width;
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
   do {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -1971,12 +1958,12 @@ static void ScaleRowDown34_0_Int_C(const uint8* iptr, int32 istride,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_C(const uint8* iptr, int32 istride,
-                                   uint8* d, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  uint8* dend = d + owidth;
-  const uint8* s = iptr;
-  const uint8* t = iptr + istride;
+static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
+                                   uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  uint8* dend = d + dst_width;
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
   do {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -1995,10 +1982,10 @@ static void ScaleRowDown34_1_Int_C(const uint8* iptr, int32 istride,
 
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 // Filter row to 3/4
-static void ScaleFilterCols34_C(uint8* optr, const uint8* iptr, int owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  uint8* dend = optr + owidth;
-  const uint8* s = iptr;
+static void ScaleFilterCols34_C(uint8* optr, const uint8* src_ptr, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  uint8* dend = optr + dst_width;
+  const uint8* s = src_ptr;
   do {
     optr[0] = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     optr[1] = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -2009,130 +1996,103 @@ static void ScaleFilterCols34_C(uint8* optr, const uint8* iptr, int owidth) {
 }
 #endif
 
-static void ScaleFilterCols_C(uint8* optr, const uint8* iptr,
-                              int owidth, int dx) {
+static void ScaleFilterCols_C(uint8* optr, const uint8* src_ptr,
+                              int dst_width, int dx) {
   int x = 0;
-  for (int j = 0; j < owidth; ++j) {
+  for (int j = 0; j < dst_width; ++j) {
     int xi = x >> 16;
     int xf1 = x & 0xffff;
     int xf0 = 65536 - xf1;
 
-    *optr++ = (iptr[xi] * xf0 + iptr[xi + 1] * xf1) >> 16;
+    *optr++ = (src_ptr[xi] * xf0 + src_ptr[xi + 1] * xf1) >> 16;
     x += dx;
   }
 }
-
-#ifdef TEST_RSTSC
-uint64 timers34[4] = { 0, };
-#endif
 
 static const int kMaxInputWidth = 2560;
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 #define HAS_SCALEROWDOWN34_SSE2
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_SSE2(const uint8* iptr, int32 istride,
-                                      uint8* d, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
+static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
+                                      uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
   ALIGN16(uint8 row[kMaxInputWidth]);
-#ifdef TEST_RSTSC
-  uint64 t1 = __rdtsc();
-#endif
-  ScaleFilterRows_SSE2(row, iptr, istride, owidth * 4 / 3, 256 / 4);
-#ifdef TEST_RSTSC
-  uint64 t2 = __rdtsc();
-#endif
-  ScaleFilterCols34_C(d, row, owidth);
-
-#ifdef TEST_RSTSC
-  uint64 t3 = __rdtsc();
-  timers34[0] += t2 - t1;
-  timers34[1] += t3 - t2;
-#endif
+  ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 4);
+  ScaleFilterCols34_C(d, row, dst_width);
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_SSE2(const uint8* iptr, int32 istride,
-                                      uint8* d, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
+static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr, int src_stride,
+                                      uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
   ALIGN16(uint8 row[kMaxInputWidth]);
-#ifdef TEST_RSTSC
-  uint64 t1 = __rdtsc();
-#endif
-  ScaleFilterRows_SSE2(row, iptr, istride, owidth * 4 / 3, 256 / 2);
-#ifdef TEST_RSTSC
-  uint64 t2 = __rdtsc();
-#endif
-  ScaleFilterCols34_C(d, row, owidth);
-#ifdef TEST_RSTSC
-  uint64 t3 = __rdtsc();
-  timers34[2] += t2 - t1;
-  timers34[3] += t3 - t2;
-#endif
+  ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 2);
+  ScaleFilterCols34_C(d, row, dst_width);
 }
 #endif
 
-static void ScaleRowDown38_C(const uint8* iptr, int32,
-                             uint8* dst, int32 owidth) {
-  assert(owidth % 3 == 0);
-  for (int x = 0; x < owidth; x += 3) {
-    dst[0] = iptr[0];
-    dst[1] = iptr[3];
-    dst[2] = iptr[6];
+static void ScaleRowDown38_C(const uint8* src_ptr, int,
+                             uint8* dst, int dst_width) {
+  assert(dst_width % 3 == 0);
+  for (int x = 0; x < dst_width; x += 3) {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[3];
+    dst[2] = src_ptr[6];
     dst += 3;
-    iptr += 8;
+    src_ptr += 8;
   }
 }
 
 // 8x3 -> 3x1
-static void ScaleRowDown38_3_Int_C(const uint8* iptr, int32 istride,
-                                   uint8* optr, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  for (int i = 0; i < owidth; i+=3) {
-    optr[0] = (iptr[0] + iptr[1] + iptr[2] +
-        iptr[istride + 0] + iptr[istride + 1] + iptr[istride + 2] +
-        iptr[istride * 2 + 0] + iptr[istride * 2 + 1] + iptr[istride * 2 + 2]) *
+static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
+                                   uint8* optr, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (int i = 0; i < dst_width; i+=3) {
+    optr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
+        src_ptr[src_stride + 0] + src_ptr[src_stride + 1] + src_ptr[src_stride + 2] +
+        src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] + src_ptr[src_stride * 2 + 2]) *
         (65536 / 9) >> 16;
-    optr[1] = (iptr[3] + iptr[4] + iptr[5] +
-        iptr[istride + 3] + iptr[istride + 4] + iptr[istride + 5] +
-        iptr[istride * 2 + 3] + iptr[istride * 2 + 4] + iptr[istride * 2 + 5]) *
+    optr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
+        src_ptr[src_stride + 3] + src_ptr[src_stride + 4] + src_ptr[src_stride + 5] +
+        src_ptr[src_stride * 2 + 3] + src_ptr[src_stride * 2 + 4] + src_ptr[src_stride * 2 + 5]) *
         (65536 / 9) >> 16;
-    optr[2] = (iptr[6] + iptr[7] +
-        iptr[istride + 6] + iptr[istride + 7] +
-        iptr[istride * 2 + 6] + iptr[istride * 2 + 7]) *
+    optr[2] = (src_ptr[6] + src_ptr[7] +
+        src_ptr[src_stride + 6] + src_ptr[src_stride + 7] +
+        src_ptr[src_stride * 2 + 6] + src_ptr[src_stride * 2 + 7]) *
         (65536 / 6) >> 16;
-    iptr += 8;
+    src_ptr += 8;
     optr += 3;
   }
 }
 
 // 8x2 -> 3x1
-static void ScaleRowDown38_2_Int_C(const uint8* iptr, int32 istride,
-                                   uint8* optr, int32 owidth) {
-  assert((owidth % 3 == 0) && (owidth > 0));
-  for (int i = 0; i < owidth; i+=3) {
-    optr[0] = (iptr[0] + iptr[1] + iptr[2] +
-        iptr[istride + 0] + iptr[istride + 1] + iptr[istride + 2]) *
+static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
+                                   uint8* optr, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (int i = 0; i < dst_width; i+=3) {
+    optr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
+        src_ptr[src_stride + 0] + src_ptr[src_stride + 1] + src_ptr[src_stride + 2]) *
         (65536 / 6) >> 16;
-    optr[1] = (iptr[3] + iptr[4] + iptr[5] +
-        iptr[istride + 3] + iptr[istride + 4] + iptr[istride + 5]) *
+    optr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
+        src_ptr[src_stride + 3] + src_ptr[src_stride + 4] + src_ptr[src_stride + 5]) *
         (65536 / 6) >> 16;
-    optr[2] = (iptr[6] + iptr[7] +
-        iptr[istride + 6] + iptr[istride + 7]) *
+    optr[2] = (src_ptr[6] + src_ptr[7] +
+        src_ptr[src_stride + 6] + src_ptr[src_stride + 7]) *
         (65536 / 4) >> 16;
-    iptr += 8;
+    src_ptr += 8;
     optr += 3;
   }
 }
 
 // C version 8x2 -> 8x1
 static void ScaleFilterRows_C(uint8* optr,
-                              const uint8* iptr0, int32 istride,
-                              int owidth, int source_y_fraction) {
-  assert(owidth > 0);
+                              const uint8* iptr0, int src_stride,
+                              int dst_width, int source_y_fraction) {
+  assert(dst_width > 0);
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
-  const uint8* iptr1 = iptr0 + istride;
-  uint8* end = optr + owidth;
+  const uint8* iptr1 = iptr0 + src_stride;
+  uint8* end = optr + dst_width;
   do {
     optr[0] = (iptr0[0] * y0_fraction + iptr1[0] * y1_fraction) >> 8;
     optr[1] = (iptr0[1] * y0_fraction + iptr1[1] * y1_fraction) >> 8;
@@ -2149,16 +2109,16 @@ static void ScaleFilterRows_C(uint8* optr,
   optr[0] = optr[-1];
 }
 
-void ScaleAddRows_C(const uint8* iptr, int32 istride,
-                    uint16* orow, int32 iwidth, int32 iheight) {
-  assert(iwidth > 0);
-  assert(iheight > 0);
-  for (int x = 0; x < iwidth; ++x) {
-    const uint8* s = iptr + x;
+void ScaleAddRows_C(const uint8* src_ptr, int src_stride,
+                    uint16* orow, int src_width, int src_height) {
+  assert(src_width > 0);
+  assert(src_height > 0);
+  for (int x = 0; x < src_width; ++x) {
+    const uint8* s = src_ptr + x;
     int sum = 0;
-    for (int y = 0; y < iheight; ++y) {
+    for (int y = 0; y < src_height; ++y) {
       sum += s[0];
-      s += istride;
+      s += src_stride;
     }
     orow[x] = sum;
   }
@@ -2171,36 +2131,36 @@ void ScaleAddRows_C(const uint8* iptr, int32 istride,
  * its original size.
  *
  */
-static void ScalePlaneDown2(int32 iwidth, int32 iheight,
-                            int32 owidth, int32 oheight,
-                            int32 istride, int32 ostride,
-                            const uint8 *iptr, uint8 *optr,
-                            bool interpolate) {
-  assert(iwidth % 2 == 0);
-  assert(iheight % 2 == 0);
-  void (*ScaleRowDown2)(const uint8* iptr, int32 istride,
-                        uint8* orow, int32 owidth);
+static void ScalePlaneDown2(int src_width, int src_height,
+                            int dst_width, int dst_height,
+                            int src_stride, int ostride,
+                            const uint8* src_ptr, uint8* optr,
+                            FilterMode filtering) {
+  assert(src_width % 2 == 0);
+  assert(src_height % 2 == 0);
+  void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
+                        uint8* orow, int dst_width);
 
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (owidth % 16 == 0) && (istride % 16 == 0) && (ostride % 16 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
-    ScaleRowDown2 = interpolate ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
+      (dst_width % 16 == 0) && (src_stride % 16 == 0) && (ostride % 16 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 16)) {
+    ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-      (owidth % 16 == 0) && IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
-    ScaleRowDown2 = interpolate ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
+      (dst_width % 16 == 0) && IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 16)) {
+    ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
   } else
 #endif
   {
-    ScaleRowDown2 = interpolate ? ScaleRowDown2Int_C : ScaleRowDown2_C;
+    ScaleRowDown2 = filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
   }
 
-  for (int y = 0; y < oheight; ++y) {
-    ScaleRowDown2(iptr, istride, optr, owidth);
-    iptr += (istride << 1);
+  for (int y = 0; y < dst_height; ++y) {
+    ScaleRowDown2(src_ptr, src_stride, optr, dst_width);
+    src_ptr += (src_stride << 1);
     optr += ostride;
   }
 }
@@ -2211,30 +2171,30 @@ static void ScalePlaneDown2(int32 iwidth, int32 iheight,
  * This is an optimized version for scaling down a plane to 1/4 of
  * its original size.
  */
-static void ScalePlaneDown4(int32 iwidth, int32 iheight,
-                            int32 owidth, int32 oheight,
-                            int32 istride, int32 ostride,
-                            const uint8 *iptr, uint8 *optr,
-                            bool interpolate) {
-  assert(iwidth % 4 == 0);
-  assert(iheight % 4 == 0);
-  void (*ScaleRowDown4)(const uint8* iptr, int32 istride,
-                        uint8* orow, int32 owidth);
+static void ScalePlaneDown4(int src_width, int src_height,
+                            int dst_width, int dst_height,
+                            int src_stride, int ostride,
+                            const uint8* src_ptr, uint8* optr,
+                            FilterMode filtering) {
+  assert(src_width % 4 == 0);
+  assert(src_height % 4 == 0);
+  void (*ScaleRowDown4)(const uint8* src_ptr, int src_stride,
+                        uint8* orow, int dst_width);
 
 #if defined(HAS_SCALEROWDOWN4_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-      (owidth % 8 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
-    ScaleRowDown4 = interpolate ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
+      (dst_width % 8 == 0) && (src_stride % 16 == 0) && (ostride % 8 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 8)) {
+    ScaleRowDown4 = filtering ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
   } else
 #endif
   {
-    ScaleRowDown4 = interpolate ? ScaleRowDown4Int_C : ScaleRowDown4_C;
+    ScaleRowDown4 = filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
   }
 
-  for (int y = 0; y < oheight; ++y) {
-    ScaleRowDown4(iptr, istride, optr, owidth);
-    iptr += (istride << 2);
+  for (int y = 0; y < dst_height; ++y) {
+    ScaleRowDown4(src_ptr, src_stride, optr, dst_width);
+    src_ptr += (src_stride << 2);
     optr += ostride;
   }
 }
@@ -2246,30 +2206,30 @@ static void ScalePlaneDown4(int32 iwidth, int32 iheight,
  * of its original size.
  *
  */
-static void ScalePlaneDown8(int32 iwidth, int32 iheight,
-                            int32 owidth, int32 oheight,
-                            int32 istride, int32 ostride,
-                            const uint8 *iptr, uint8 *optr,
-                            bool interpolate) {
-  assert(iwidth % 8 == 0);
-  assert(iheight % 8 == 0);
-  void (*ScaleRowDown8)(const uint8* iptr, int32 istride,
-                        uint8* orow, int32 owidth);
+static void ScalePlaneDown8(int src_width, int src_height,
+                            int dst_width, int dst_height,
+                            int src_stride, int ostride,
+                            const uint8* src_ptr, uint8* optr,
+                            FilterMode filtering) {
+  assert(src_width % 8 == 0);
+  assert(src_height % 8 == 0);
+  void (*ScaleRowDown8)(const uint8* src_ptr, int src_stride,
+                        uint8* orow, int dst_width);
 #if defined(HAS_SCALEROWDOWN8_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-      (owidth % 16 == 0) && owidth <= kMaxOutputWidth &&
-      (istride % 16 == 0) && (ostride % 16 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 16)) {
-    ScaleRowDown8 = interpolate ? ScaleRowDown8Int_SSE2 : ScaleRowDown8_SSE2;
+      (dst_width % 16 == 0) && dst_width <= kMaxOutputWidth &&
+      (src_stride % 16 == 0) && (ostride % 16 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 16)) {
+    ScaleRowDown8 = filtering ? ScaleRowDown8Int_SSE2 : ScaleRowDown8_SSE2;
   } else
 #endif
   {
-    ScaleRowDown8 = interpolate && (owidth <= kMaxOutputWidth) ?
+    ScaleRowDown8 = filtering && (dst_width <= kMaxOutputWidth) ?
         ScaleRowDown8Int_C : ScaleRowDown8_C;
   }
-  for (int y = 0; y < oheight; ++y) {
-    ScaleRowDown8(iptr, istride, optr, owidth);
-    iptr += (istride << 3);
+  for (int y = 0; y < dst_height; ++y) {
+    ScaleRowDown8(src_ptr, src_stride, optr, dst_width);
+    src_ptr += (src_stride << 3);
     optr += ostride;
   }
 }
@@ -2280,21 +2240,21 @@ static void ScalePlaneDown8(int32 iwidth, int32 iheight,
  * Provided by Frank Barchard (fbarchard@google.com)
  *
  */
-static void ScalePlaneDown34(int32 iwidth, int32 iheight,
-                             int32 owidth, int32 oheight,
-                             int32 istride, int32 ostride,
-                             const uint8* iptr, uint8* optr,
-                             bool interpolate) {
-  assert(owidth % 3 == 0);
-  void (*ScaleRowDown34_0)(const uint8* iptr, int32 istride,
-                           uint8* orow, int32 owidth);
-  void (*ScaleRowDown34_1)(const uint8* iptr, int32 istride,
-                           uint8* orow, int32 owidth);
+static void ScalePlaneDown34(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             int src_stride, int ostride,
+                             const uint8* src_ptr, uint8* optr,
+                             FilterMode filtering) {
+  assert(dst_width % 3 == 0);
+  void (*ScaleRowDown34_0)(const uint8* src_ptr, int src_stride,
+                           uint8* orow, int dst_width);
+  void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
+                           uint8* orow, int dst_width);
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
-    if (!interpolate) {
+      (dst_width % 24 == 0) && (src_stride % 16 == 0) && (ostride % 8 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 8)) {
+    if (!filtering) {
       ScaleRowDown34_0 = ScaleRowDown34_SSSE3;
       ScaleRowDown34_1 = ScaleRowDown34_SSSE3;
     } else {
@@ -2305,15 +2265,15 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-      (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8) &&
-      interpolate) {
+      (dst_width % 24 == 0) && (src_stride % 16 == 0) && (ostride % 8 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 8) &&
+      filtering) {
     ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSE2;
     ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSE2;
   } else
 #endif
   {
-    if (!interpolate) {
+    if (!filtering) {
       ScaleRowDown34_0 = ScaleRowDown34_C;
       ScaleRowDown34_1 = ScaleRowDown34_C;
     } else {
@@ -2322,35 +2282,28 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
     }
   }
   int irow = 0;
-  for (int y = 0; y < oheight; ++y) {
+  for (int y = 0; y < dst_height; ++y) {
     switch (irow) {
       case 0:
-        ScaleRowDown34_0(iptr, istride, optr, owidth);
+        ScaleRowDown34_0(src_ptr, src_stride, optr, dst_width);
         break;
 
       case 1:
-        ScaleRowDown34_1(iptr, istride, optr, owidth);
+        ScaleRowDown34_1(src_ptr, src_stride, optr, dst_width);
         break;
 
       case 2:
-        ScaleRowDown34_0(iptr + istride, -istride, optr, owidth);
+        ScaleRowDown34_0(src_ptr + src_stride, -src_stride, optr, dst_width);
         break;
     }
     ++irow;
-    iptr += istride;
+    src_ptr += src_stride;
     optr += ostride;
     if (irow >= 3) {
-      iptr += istride;
+      src_ptr += src_stride;
       irow = 0;
     }
   }
-
-#ifdef TEST_RSTSC
-  std::cout << "Timer34_0 Row " << std::setw(9) << timers34[0]
-            << " Column " << std::setw(9) << timers34[1]
-            << " Timer34_1 Row " << std::setw(9) << timers34[2]
-            << " Column " << std::setw(9) << timers34[3] << std::endl;
-#endif
 }
 
 /**
@@ -2361,21 +2314,21 @@ static void ScalePlaneDown34(int32 iwidth, int32 iheight,
  *
  * Reduces 16x3 to 6x1
  */
-static void ScalePlaneDown38(int32 iwidth, int32 iheight,
-                             int32 owidth, int32 oheight,
-                             int32 istride, int32 ostride,
-                             const uint8* iptr, uint8* optr,
-                             bool interpolate) {
-  assert(owidth % 3 == 0);
-  void (*ScaleRowDown38_3)(const uint8* iptr, int32 istride,
-                           uint8* orow, int32 owidth);
-  void (*ScaleRowDown38_2)(const uint8* iptr, int32 istride,
-                           uint8* orow, int32 owidth);
+static void ScalePlaneDown38(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             int src_stride, int ostride,
+                             const uint8* src_ptr, uint8* optr,
+                             FilterMode filtering) {
+  assert(dst_width % 3 == 0);
+  void (*ScaleRowDown38_3)(const uint8* src_ptr, int src_stride,
+                           uint8* orow, int dst_width);
+  void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
+                           uint8* orow, int dst_width);
 #if defined(HAS_SCALEROWDOWN38_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (owidth % 24 == 0) && (istride % 16 == 0) && (ostride % 8 == 0) &&
-      IS_ALIGNED(iptr, 16) && IS_ALIGNED(optr, 8)) {
-    if (!interpolate) {
+      (dst_width % 24 == 0) && (src_stride % 16 == 0) && (ostride % 8 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(optr, 8)) {
+    if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_SSSE3;
     } else {
@@ -2385,7 +2338,7 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
   } else
 #endif
   {
-    if (!interpolate) {
+    if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_C;
       ScaleRowDown38_2 = ScaleRowDown38_C;
     } else {
@@ -2394,18 +2347,18 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
     }
   }
   int irow = 0;
-  for (int y = 0; y < oheight; ++y) {
+  for (int y = 0; y < dst_height; ++y) {
     switch (irow) {
       case 0:
       case 1:
-        ScaleRowDown38_3(iptr, istride, optr, owidth);
-        iptr += istride * 3;
+        ScaleRowDown38_3(src_ptr, src_stride, optr, dst_width);
+        src_ptr += src_stride * 3;
         ++irow;
         break;
 
       case 2:
-        ScaleRowDown38_2(iptr, istride, optr, owidth);
-        iptr += istride * 2;
+        ScaleRowDown38_2(src_ptr, src_stride, optr, dst_width);
+        src_ptr += src_stride * 2;
         irow = 0;
         break;
     }
@@ -2413,65 +2366,65 @@ static void ScalePlaneDown38(int32 iwidth, int32 iheight,
   }
 }
 
-inline static uint32 SumBox(int32 iboxwidth, int32 iboxheight,
-                            int32 istride, const uint8 *iptr) {
+inline static uint32 SumBox(int iboxwidth, int iboxheight,
+                            int src_stride, const uint8* src_ptr) {
   assert(iboxwidth > 0);
   assert(iboxheight > 0);
   uint32 sum = 0u;
   for (int y = 0; y < iboxheight; ++y) {
     for (int x = 0; x < iboxwidth; ++x) {
-      sum += iptr[x];
+      sum += src_ptr[x];
     }
-    iptr += istride;
+    src_ptr += src_stride;
   }
   return sum;
 }
 
-static void ScalePlaneBoxRow(int32 owidth, int32 boxheight,
-                             int dx, int32 istride,
-                             const uint8 *iptr, uint8 *optr) {
+static void ScalePlaneBoxRow(int dst_width, int boxheight,
+                             int dx, int src_stride,
+                             const uint8* src_ptr, uint8* optr) {
   int x = 0;
-  for (int i = 0; i < owidth; ++i) {
+  for (int i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
     int boxwidth = (x >> 16) - ix;
-    *optr++ = SumBox(boxwidth, boxheight, istride, iptr + ix) /
+    *optr++ = SumBox(boxwidth, boxheight, src_stride, src_ptr + ix) /
         (boxwidth * boxheight);
   }
 }
 
-inline static uint32 SumPixels(int32 iboxwidth, const uint16 *iptr) {
+inline static uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   assert(iboxwidth > 0);
   uint32 sum = 0u;
   for (int x = 0; x < iboxwidth; ++x) {
-    sum += iptr[x];
+    sum += src_ptr[x];
   }
   return sum;
 }
 
-static void ScaleAddCols2_C(int32 owidth, int32 boxheight, int dx,
-                            const uint16 *iptr, uint8 *optr) {
+static void ScaleAddCols2_C(int dst_width, int boxheight, int dx,
+                            const uint16* src_ptr, uint8* optr) {
   int scaletbl[2];
   int minboxwidth = (dx >> 16);
   scaletbl[0] = 65536 / (minboxwidth * boxheight);
   scaletbl[1] = 65536 / ((minboxwidth + 1) * boxheight);
   int *scaleptr = scaletbl - minboxwidth;
   int x = 0;
-  for (int i = 0; i < owidth; ++i) {
+  for (int i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
     int boxwidth = (x >> 16) - ix;
-    *optr++ = SumPixels(boxwidth, iptr + ix) * scaleptr[boxwidth] >> 16;
+    *optr++ = SumPixels(boxwidth, src_ptr + ix) * scaleptr[boxwidth] >> 16;
   }
 }
 
-static void ScaleAddCols1_C(int32 owidth, int32 boxheight, int dx,
-                            const uint16 *iptr, uint8 *optr) {
+static void ScaleAddCols1_C(int dst_width, int boxheight, int dx,
+                            const uint16* src_ptr, uint8* optr) {
   int boxwidth = (dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int x = 0;
-  for (int i = 0; i < owidth; ++i) {
-    *optr++ = SumPixels(boxwidth, iptr + x) * scaleval >> 16;
+  for (int i = 0; i < dst_width; ++i) {
+    *optr++ = SumPixels(boxwidth, src_ptr + x) * scaleval >> 16;
     x += boxwidth;
   }
 }
@@ -2485,43 +2438,43 @@ static void ScaleAddCols1_C(int32 owidth, int32 boxheight, int dx,
  * through source, sampling a box of pixel with simple
  * averaging.
  */
-static void ScalePlaneBox(int32 iwidth, int32 iheight,
-                          int32 owidth, int32 oheight,
-                          int32 istride, int32 ostride,
-                          const uint8 *iptr, uint8 *optr) {
-  assert(owidth > 0);
-  assert(oheight > 0);
-  int dy = (iheight << 16) / oheight;
-  int dx = (iwidth << 16) / owidth;
-  if ((iwidth % 16 != 0) || (iwidth > kMaxInputWidth) ||
-      oheight * 2 > iheight) {
-    uint8 *dst = optr;
-    int dy = (iheight << 16) / oheight;
-    int dx = (iwidth << 16) / owidth;
+static void ScalePlaneBox(int src_width, int src_height,
+                          int dst_width, int dst_height,
+                          int src_stride, int ostride,
+                          const uint8* src_ptr, uint8* optr) {
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  int dy = (src_height << 16) / dst_height;
+  int dx = (src_width << 16) / dst_width;
+  if ((src_width % 16 != 0) || (src_width > kMaxInputWidth) ||
+      dst_height * 2 > src_height) {
+    uint8* dst = optr;
+    int dy = (src_height << 16) / dst_height;
+    int dx = (src_width << 16) / dst_width;
     int y = 0;
-    for (int j = 0; j < oheight; ++j) {
+    for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
-      const uint8 *const src = iptr + iy * istride;
+      const uint8* const src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > (iheight << 16)) {
-        y = (iheight << 16);
+      if (y > (src_height << 16)) {
+        y = (src_height << 16);
       }
       int boxheight = (y >> 16) - iy;
-      ScalePlaneBoxRow(owidth, boxheight,
-                       dx, istride,
+      ScalePlaneBoxRow(dst_width, boxheight,
+                       dx, src_stride,
                        src, dst);
 
       dst += ostride;
     }
   } else {
     ALIGN16(uint16 row[kMaxInputWidth]);
-    void (*ScaleAddRows)(const uint8* iptr, int32 istride,
-                         uint16* orow, int32 iwidth, int32 iheight);
-    void (*ScaleAddCols)(int32 owidth, int32 boxheight, int dx,
-                         const uint16 *iptr, uint8 *optr);
+    void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
+                         uint16* orow, int src_width, int src_height);
+    void (*ScaleAddCols)(int dst_width, int boxheight, int dx,
+                         const uint16* src_ptr, uint8* optr);
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-        (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
+        (src_stride % 16 == 0) && IS_ALIGNED(src_ptr, 16) && (src_width % 16) == 0) {
       ScaleAddRows = ScaleAddRows_SSE2;
     } else
 #endif
@@ -2535,16 +2488,16 @@ static void ScalePlaneBox(int32 iwidth, int32 iheight,
     }
 
     int y = 0;
-    for (int j = 0; j < oheight; ++j) {
+    for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
-      const uint8 *const src = iptr + iy * istride;
+      const uint8* const src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > (iheight << 16)) {
-        y = (iheight << 16);
+      if (y > (src_height << 16)) {
+        y = (src_height << 16);
       }
       int boxheight = (y >> 16) - iy;
-      ScaleAddRows(src, istride, row, iwidth, boxheight);
-      ScaleAddCols(owidth, boxheight, dx, row, optr);
+      ScaleAddRows(src, src_stride, row, src_width, boxheight);
+      ScaleAddCols(dst_width, boxheight, dx, row, optr);
       optr += ostride;
     }
   }
@@ -2553,35 +2506,35 @@ static void ScalePlaneBox(int32 iwidth, int32 iheight,
 /**
  * Scale plane to/from any dimensions, with interpolation.
  */
-static void ScalePlaneBilinearSimple(int32 iwidth, int32 iheight,
-                                     int32 owidth, int32 oheight,
-                                     int32 istride, int32 ostride,
-                                     const uint8 *iptr, uint8 *optr) {
-  uint8 *dst = optr;
-  int dx = (iwidth << 16) / owidth;
-  int dy = (iheight << 16) / oheight;
-  int maxx = ((iwidth - 1) << 16) - 1;
-  int maxy = ((iheight - 1) << 16) - 1;
-  int y = (oheight < iheight) ? 32768 : (iheight << 16) / oheight - 32768;
-  for (int i = 0; i < oheight; ++i) {
+static void ScalePlaneBilinearSimple(int src_width, int src_height,
+                                     int dst_width, int dst_height,
+                                     int src_stride, int ostride,
+                                     const uint8* src_ptr, uint8* optr) {
+  uint8* dst = optr;
+  int dx = (src_width << 16) / dst_width;
+  int dy = (src_height << 16) / dst_height;
+  int maxx = ((src_width - 1) << 16) - 1;
+  int maxy = ((src_height - 1) << 16) - 1;
+  int y = (dst_height < src_height) ? 32768 : (src_height << 16) / dst_height - 32768;
+  for (int i = 0; i < dst_height; ++i) {
     int cy = (y < 0) ? 0 : y;
     int yi = cy >> 16;
     int yf = cy & 0xffff;
-    const uint8 *const src = iptr + yi * istride;
-    int x = (owidth < iwidth) ? 32768 : (iwidth << 16) / owidth - 32768;
-    for (int j = 0; j < owidth; ++j) {
+    const uint8* const src = src_ptr + yi * src_stride;
+    int x = (dst_width < src_width) ? 32768 : (src_width << 16) / dst_width - 32768;
+    for (int j = 0; j < dst_width; ++j) {
       int cx = (x < 0) ? 0 : x;
       int xi = cx >> 16;
       int xf = cx & 0xffff;
       int r0 = (src[xi] * (65536 - xf) + src[xi + 1] * xf) >> 16;
-      int r1 = (src[xi + istride] * (65536 - xf) + src[xi + istride + 1] * xf)
+      int r1 = (src[xi + src_stride] * (65536 - xf) + src[xi + src_stride + 1] * xf)
                 >> 16;
       *dst++ = (r0 * (65536 - yf) + r1 * yf) >> 16;
       x += dx;
       if (x > maxx)
         x = maxx;
     }
-    dst += ostride - owidth;
+    dst += ostride - dst_width;
     y += dy;
     if (y > maxy)
       y = maxy;
@@ -2592,33 +2545,33 @@ static void ScalePlaneBilinearSimple(int32 iwidth, int32 iheight,
  * Scale plane to/from any dimensions, with bilinear
  * interpolation.
  */
-static void ScalePlaneBilinear(int32 iwidth, int32 iheight,
-                               int32 owidth, int32 oheight,
-                               int32 istride, int32 ostride,
-                               const uint8 *iptr, uint8 *optr) {
-  assert(owidth > 0);
-  assert(oheight > 0);
-  int dy = (iheight << 16) / oheight;
-  int dx = (iwidth << 16) / owidth;
-  if ((iwidth % 8 != 0) || (iwidth > kMaxInputWidth)) {
-    ScalePlaneBilinearSimple(iwidth, iheight, owidth, oheight, istride, ostride,
-                             iptr, optr);
+static void ScalePlaneBilinear(int src_width, int src_height,
+                               int dst_width, int dst_height,
+                               int src_stride, int ostride,
+                               const uint8* src_ptr, uint8* optr) {
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  int dy = (src_height << 16) / dst_height;
+  int dx = (src_width << 16) / dst_width;
+  if ((src_width % 8 != 0) || (src_width > kMaxInputWidth)) {
+    ScalePlaneBilinearSimple(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                             src_ptr, optr);
 
   } else {
     ALIGN16(uint8 row[kMaxInputWidth + 1]);
-    void (*ScaleFilterRows)(uint8* optr, const uint8* iptr0, int32 istride,
-                            int owidth, int source_y_fraction);
-    void (*ScaleFilterCols)(uint8* optr, const uint8* iptr,
-                            int owidth, int dx);
+    void (*ScaleFilterRows)(uint8* optr, const uint8* iptr0, int src_stride,
+                            int dst_width, int source_y_fraction);
+    void (*ScaleFilterCols)(uint8* optr, const uint8* src_ptr,
+                            int dst_width, int dx);
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
     if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-        (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
+        (src_stride % 16 == 0) && IS_ALIGNED(src_ptr, 16) && (src_width % 16) == 0) {
       ScaleFilterRows = ScaleFilterRows_SSSE3;
     } else
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
     if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
-        (istride % 16 == 0) && IS_ALIGNED(iptr, 16) && (iwidth % 16) == 0) {
+        (src_stride % 16 == 0) && IS_ALIGNED(src_ptr, 16) && (src_width % 16) == 0) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
     } else
 #endif
@@ -2628,13 +2581,13 @@ static void ScalePlaneBilinear(int32 iwidth, int32 iheight,
     ScaleFilterCols = ScaleFilterCols_C;
 
     int y = 0;
-    int maxy = ((iheight - 1) << 16) - 1; // max is filter of last 2 rows.
-    for (int j = 0; j < oheight; ++j) {
+    int maxy = ((src_height - 1) << 16) - 1; // max is filter of last 2 rows.
+    for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
       int fy = (y >> 8) & 255;
-      const uint8 *const src = iptr + iy * istride;
-      ScaleFilterRows(row, src, istride, iwidth, fy);
-      ScaleFilterCols(optr, row, owidth, dx);
+      const uint8* const src = src_ptr + iy * src_stride;
+      ScaleFilterRows(row, src, src_stride, src_width, fy);
+      ScaleFilterCols(optr, row, dst_width, dx);
       optr += ostride;
       y += dy;
       if (y > maxy) {
@@ -2650,39 +2603,39 @@ static void ScalePlaneBilinear(int32 iwidth, int32 iheight,
  * of x and dx is the integer part of the source position and
  * the lower 16 bits are the fixed decimal part.
  */
-static void ScalePlaneSimple(int32 iwidth, int32 iheight,
-                             int32 owidth, int32 oheight,
-                             int32 istride, int32 ostride,
-                             const uint8 *iptr, uint8 *optr) {
-  uint8 *dst = optr;
-  int dx = (iwidth << 16) / owidth;
-  for (int y = 0; y < oheight; ++y) {
-    const uint8 *const src = iptr + (y * iheight / oheight) * istride;
+static void ScalePlaneSimple(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             int src_stride, int ostride,
+                             const uint8* src_ptr, uint8* optr) {
+  uint8* dst = optr;
+  int dx = (src_width << 16) / dst_width;
+  for (int y = 0; y < dst_height; ++y) {
+    const uint8* const src = src_ptr + (y * src_height / dst_height) * src_stride;
     // TODO(fbarchard): Round X coordinate by setting x=0x8000.
     int x = 0;
-    for (int i = 0; i < owidth; ++i) {
+    for (int i = 0; i < dst_width; ++i) {
       *dst++ = src[x >> 16];
       x += dx;
     }
-    dst += ostride - owidth;
+    dst += ostride - dst_width;
   }
 }
 
 /**
  * Scale plane to/from any dimensions.
  */
-static void ScalePlaneAnySize(int32 iwidth, int32 iheight,
-                              int32 owidth, int32 oheight,
-                              int32 istride, int32 ostride,
-                              const uint8 *iptr, uint8 *optr,
-                              bool interpolate) {
-  if (!interpolate) {
-    ScalePlaneSimple(iwidth, iheight, owidth, oheight, istride, ostride,
-                     iptr, optr);
+static void ScalePlaneAnySize(int src_width, int src_height,
+                              int dst_width, int dst_height,
+                              int src_stride, int ostride,
+                              const uint8* src_ptr, uint8* optr,
+                              FilterMode filtering) {
+  if (!filtering) {
+    ScalePlaneSimple(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                     src_ptr, optr);
   } else {
     // fall back to non-optimized version
-    ScalePlaneBilinear(iwidth, iheight, owidth, oheight, istride, ostride,
-                       iptr, optr);
+    ScalePlaneBilinear(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                       src_ptr, optr);
   }
 }
 
@@ -2694,20 +2647,21 @@ static void ScalePlaneAnySize(int32 iwidth, int32 iheight,
  * reference implementation for e.g. XGA->LowResPAL
  *
  */
-static void ScalePlaneDown(int32 iwidth, int32 iheight,
-                           int32 owidth, int32 oheight,
-                           int32 istride, int32 ostride,
-                           const uint8 *iptr, uint8 *optr,
-                           bool interpolate) {
-  if (!interpolate) {
-    ScalePlaneSimple(iwidth, iheight, owidth, oheight, istride, ostride,
-                     iptr, optr);
-  } else if (iheight * 2 > oheight) {  // between 1/2x and 1x use bilinear
-    ScalePlaneBilinear(iwidth, iheight, owidth, oheight, istride, ostride,
-                       iptr, optr);
+static void ScalePlaneDown(int src_width, int src_height,
+                           int dst_width, int dst_height,
+                           int src_stride, int ostride,
+                           const uint8* src_ptr, uint8* optr,
+                           FilterMode filtering) {
+  if (!filtering) {
+    ScalePlaneSimple(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                     src_ptr, optr);
+  } else if (filtering == kFilterBilinear || src_height * 2 > dst_height) {
+    // between 1/2x and 1x use bilinear
+    ScalePlaneBilinear(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                       src_ptr, optr);
   } else {
-    ScalePlaneBox(iwidth, iheight, owidth, oheight, istride, ostride,
-                  iptr, optr);
+    ScalePlaneBox(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                  src_ptr, optr);
   }
 }
 
@@ -2719,71 +2673,71 @@ static void ScalePlaneDown(int32 iwidth, int32 iheight,
  * compared to the reference implementation.
  *
  */
-static void CopyPlane(int32 iwidth, int32 iheight,
-                      int32 owidth, int32 oheight,
-                      int32 istride, int32 ostride,
-                      const uint8 *iptr, uint8 *optr) {
-  if (istride == iwidth && ostride == owidth) {
+static void CopyPlane(int src_width, int src_height,
+                      int dst_width, int dst_height,
+                      int src_stride, int ostride,
+                      const uint8* src_ptr, uint8* optr) {
+  if (src_stride == src_width && ostride == dst_width) {
     // All contiguous, so can use REALLY fast path.
-    memcpy(optr, iptr, iwidth * iheight);
+    memcpy(optr, src_ptr, src_width * src_height);
   } else {
     // Not all contiguous; must copy scanlines individually
-    const uint8 *src = iptr;
-    uint8 *dst = optr;
-    for (int i = 0; i < iheight; ++i) {
-      memcpy(dst, src, iwidth);
+    const uint8* src = src_ptr;
+    uint8* dst = optr;
+    for (int i = 0; i < src_height; ++i) {
+      memcpy(dst, src, src_width);
       dst += ostride;
-      src += istride;
+      src += src_stride;
     }
   }
 }
 
-static void ScalePlane(const uint8 *in, int32 istride,
-                       int32 iwidth, int32 iheight,
-                       uint8 *out, int32 ostride,
-                       int32 owidth, int32 oheight,
-                       bool interpolate, bool use_ref) {
+static void ScalePlane(const uint8* src, int src_stride,
+                       int src_width, int src_height,
+                       uint8* dst, int ostride,
+                       int dst_width, int dst_height,
+                       FilterMode filtering, bool use_ref) {
   // Use specialized scales to improve performance for common resolutions.
   // For example, all the 1/2 scalings will use ScalePlaneDown2()
-  if (owidth == iwidth && oheight == iheight) {
+  if (dst_width == src_width && dst_height == src_height) {
     // Straight copy.
-    CopyPlane(iwidth, iheight, owidth, oheight, istride, ostride, in, out);
-  } else if (owidth <= iwidth && oheight <= iheight) {
+    CopyPlane(src_width, src_height, dst_width, dst_height, src_stride, ostride, src, dst);
+  } else if (dst_width <= src_width && dst_height <= src_height) {
     // Scale down.
     if (use_ref) {
       // For testing, allow the optimized versions to be disabled.
-      ScalePlaneDown(iwidth, iheight, owidth, oheight, istride, ostride,
-                     in, out, interpolate);
-    } else if (4 * owidth == 3 * iwidth && 4 * oheight == 3 * iheight) {
+      ScalePlaneDown(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                     src, dst, filtering);
+    } else if (4 * dst_width == 3 * src_width && 4 * dst_height == 3 * src_height) {
       // optimized, 3/4
-      ScalePlaneDown34(iwidth, iheight, owidth, oheight, istride, ostride,
-                       in, out, interpolate);
-    } else if (2 * owidth == iwidth && 2 * oheight == iheight) {
+      ScalePlaneDown34(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                       src, dst, filtering);
+    } else if (2 * dst_width == src_width && 2 * dst_height == src_height) {
       // optimized, 1/2
-      ScalePlaneDown2(iwidth, iheight, owidth, oheight, istride, ostride,
-                      in, out, interpolate);
+      ScalePlaneDown2(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                      src, dst, filtering);
     // 3/8 rounded up for odd sized chroma height.
-    } else if (8 * owidth == 3 * iwidth && oheight == ((iheight * 3 + 7) / 8)) {
+    } else if (8 * dst_width == 3 * src_width && dst_height == ((src_height * 3 + 7) / 8)) {
       // optimized, 3/8
-      ScalePlaneDown38(iwidth, iheight, owidth, oheight, istride, ostride,
-                       in, out, interpolate);
-    } else if (4 * owidth == iwidth && 4 * oheight == iheight) {
+      ScalePlaneDown38(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                       src, dst, filtering);
+    } else if (4 * dst_width == src_width && 4 * dst_height == src_height) {
       // optimized, 1/4
-      ScalePlaneDown4(iwidth, iheight, owidth, oheight, istride, ostride,
-                      in, out, interpolate);
-    } else if (8 * owidth == iwidth && 8 * oheight == iheight) {
+      ScalePlaneDown4(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                      src, dst, filtering);
+    } else if (8 * dst_width == src_width && 8 * dst_height == src_height) {
       // optimized, 1/8
-      ScalePlaneDown8(iwidth, iheight, owidth, oheight, istride, ostride,
-                      in, out, interpolate);
+      ScalePlaneDown8(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                      src, dst, filtering);
     } else {
       // Arbitrary downsample
-      ScalePlaneDown(iwidth, iheight, owidth, oheight, istride, ostride,
-                     in, out, interpolate);
+      ScalePlaneDown(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                     src, dst, filtering);
     }
   } else {
     // Arbitrary scale up and/or down.
-    ScalePlaneAnySize(iwidth, iheight, owidth, oheight, istride, ostride,
-                      in, out, interpolate);
+    ScalePlaneAnySize(src_width, src_height, dst_width, dst_height, src_stride, ostride,
+                      src, dst, filtering);
   }
 }
 
@@ -2794,59 +2748,91 @@ static void ScalePlane(const uint8 *in, int32 istride,
  * suitable for handling the desired resolutions.
  *
  */
-bool Scale(const uint8 *inY, const uint8 *inU, const uint8 *inV,
-           int32 istrideY, int32 istrideU, int32 istrideV,
-           int32 iwidth, int32 iheight,
-           uint8 *outY, uint8 *outU, uint8 *outV,
-           int32 ostrideY, int32 ostrideU, int32 ostrideV,
-           int32 owidth, int32 oheight,
-           bool interpolate) {
-  if (!inY || !inU || !inV || iwidth <= 0 || iheight <= 0 ||
-      !outY || !outU || !outV || owidth <= 0 || oheight <= 0) {
-    return false;
-  }
-  int32 halfiwidth = (iwidth + 1) >> 1;
-  int32 halfiheight = (iheight + 1) >> 1;
-  int32 halfowidth = (owidth + 1) >> 1;
-  int32 halfoheight = (oheight + 1) >> 1;
 
-  ScalePlane(inY, istrideY, iwidth, iheight,
-             outY, ostrideY, owidth, oheight,
-             interpolate, use_reference_impl_);
-  ScalePlane(inU, istrideU, halfiwidth, halfiheight,
-             outU, ostrideU, halfowidth, halfoheight,
-             interpolate, use_reference_impl_);
-  ScalePlane(inV, istrideV, halfiwidth, halfiheight,
-             outV, ostrideV, halfowidth, halfoheight,
-             interpolate, use_reference_impl_);
-  return true;
+int I420Scale(const uint8* src_y, int src_stride_y,
+              const uint8* src_u, int src_stride_u,
+              const uint8* src_v, int src_stride_v,
+              int src_width, int src_height,
+              uint8* dst_y, int dst_stride_y,
+              uint8* dst_u, int dst_stride_u,
+              uint8* dst_v, int dst_stride_v,
+              int dst_width, int dst_height,
+              FilterMode filtering) {
+  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height <= 0 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+  int halfiwidth = (src_width + 1) >> 1;
+  int halfiheight = (src_height + 1) >> 1;
+  int halfowidth = (dst_width + 1) >> 1;
+  int halfoheight = (dst_height + 1) >> 1;
+
+  ScalePlane(src_y, src_stride_y, src_width, src_height,
+             dst_y, dst_stride_y, dst_width, dst_height,
+             filtering, use_reference_impl_);
+  ScalePlane(src_u, src_stride_u, halfiwidth, halfiheight,
+             dst_u, dst_stride_u, halfowidth, halfoheight,
+             filtering, use_reference_impl_);
+  ScalePlane(src_v, src_stride_v, halfiwidth, halfiheight,
+             dst_v, dst_stride_v, halfowidth, halfoheight,
+             filtering, use_reference_impl_);
+  return 0;
 }
 
-bool Scale(const uint8 *in, int32 iwidth, int32 iheight,
-           uint8 *out, int32 owidth, int32 oheight, int32 ooffset,
-           bool interpolate) {
-  if (!in || iwidth <= 0 || iheight <= 0 ||
-      !out || owidth <= 0 || oheight <= 0 || ooffset < 0 ||
-      ooffset >= oheight) {
-    return false;
+int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
+          int src_stride_y, int src_stride_u, int src_stride_v,
+          int src_width, int src_height,
+          uint8* dst_y, uint8* dst_u, uint8* dst_v,
+          int dst_stride_y, int dst_stride_u, int dst_stride_v,
+          int dst_width, int dst_height,
+          bool interpolate) {
+  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height <= 0 ||
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
+    return -1;
+  }
+  int halfiwidth = (src_width + 1) >> 1;
+  int halfiheight = (src_height + 1) >> 1;
+  int halfowidth = (dst_width + 1) >> 1;
+  int halfoheight = (dst_height + 1) >> 1;
+  FilterMode filtering = interpolate ? kFilterBox : kFilterNone;
+
+  ScalePlane(src_y, src_stride_y, src_width, src_height,
+             dst_y, dst_stride_y, dst_width, dst_height,
+             filtering, use_reference_impl_);
+  ScalePlane(src_u, src_stride_u, halfiwidth, halfiheight,
+             dst_u, dst_stride_u, halfowidth, halfoheight,
+             filtering, use_reference_impl_);
+  ScalePlane(src_v, src_stride_v, halfiwidth, halfiheight,
+             dst_v, dst_stride_v, halfowidth, halfoheight,
+             filtering, use_reference_impl_);
+  return 0;
+}
+
+int Scale(const uint8* src, int src_width, int src_height,
+          uint8* dst, int dst_width, int dst_height, int ooffset,
+          bool interpolate) {
+  if (!src || src_width <= 0 || src_height <= 0 ||
+      !dst || dst_width <= 0 || dst_height <= 0 || ooffset < 0 ||
+      ooffset >= dst_height) {
+    return -1;
   }
   ooffset = ooffset & ~1;  // chroma requires offset to multiple of 2.
-  int32 halfiwidth = (iwidth + 1) >> 1;
-  int32 halfiheight = (iheight + 1) >> 1;
-  int32 halfowidth = (owidth + 1) >> 1;
-  int32 halfoheight = (oheight + 1) >> 1;
-  int32 aheight = oheight - ooffset * 2;  // actual output height
-  const uint8 *const iyptr = in;
-  uint8 *oyptr = out + ooffset * owidth;
-  const uint8 *const iuptr = in + iwidth * iheight;
-  uint8 *ouptr = out + owidth * oheight + (ooffset >> 1) * halfowidth;
-  const uint8 *const ivptr = in + iwidth * iheight +
+  int halfiwidth = (src_width + 1) >> 1;
+  int halfiheight = (src_height + 1) >> 1;
+  int halfowidth = (dst_width + 1) >> 1;
+  int halfoheight = (dst_height + 1) >> 1;
+  int aheight = dst_height - ooffset * 2;  // actual output height
+  const uint8* const iyptr = src;
+  uint8* oyptr = dst + ooffset * dst_width;
+  const uint8* const iuptr = src + src_width * src_height;
+  uint8* ouptr = dst + dst_width * dst_height + (ooffset >> 1) * halfowidth;
+  const uint8* const ivptr = src + src_width * src_height +
                              halfiwidth * halfiheight;
-  uint8 *ovptr = out + owidth * oheight + halfowidth * halfoheight +
+  uint8* ovptr = dst + dst_width * dst_height + halfowidth * halfoheight +
                  (ooffset >> 1) * halfowidth;
-  return Scale(iyptr, iuptr, ivptr, iwidth, halfiwidth, halfiwidth,
-               iwidth, iheight, oyptr, ouptr, ovptr, owidth,
-               halfowidth, halfowidth, owidth, aheight, interpolate);
+  return Scale(iyptr, iuptr, ivptr, src_width, halfiwidth, halfiwidth,
+               src_width, src_height, oyptr, ouptr, ovptr, dst_width,
+               halfowidth, halfowidth, dst_width, aheight, interpolate);
 }
 
 }  // namespace libyuv

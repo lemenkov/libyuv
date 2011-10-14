@@ -13,23 +13,22 @@
  * General operations on YUV images.
  */
 
-#ifndef LIBYUV_INCLUDE_GENERAL_H_
-#define LIBYUV_INCLUDE_GENERAL_H_
+#ifndef INCLUDE_LIBYUV_GENERAL_H_
+#define INCLUDE_LIBYUV_GENERAL_H_
 
-#include "basic_types.h"
+#include "libyuv/basic_types.h"
 
 namespace libyuv {
 
 // Supported rotation
-enum RotationMode
-{
+enum RotationMode {
   kRotateNone = 0,
   kRotateClockwise = 90,
   kRotateCounterClockwise = 270,
   kRotate180 = 180,
 };
 
-// I420  mirror
+// I420 mirror
 int
 I420Mirror(const uint8* src_yplane, int src_ystride,
            const uint8* src_uplane, int src_ustride,
@@ -45,7 +44,7 @@ I420CropPad(const uint8* src_frame, int src_width,
            int src_height, uint8* dst_frame,
            int dst_width, int dst_height);
 
-// I420 Crop - make a center cut
+// I420 Crop - crop a rectangle from image
 int
 I420Crop(uint8* frame,
          int src_width, int src_height,
@@ -62,8 +61,6 @@ I420Rotate(const uint8* src_yplane, int src_ystride,
            int width, int height,
            RotationMode mode);
 
-
 } // namespace libyuv
 
-
-#endif // LIBYUV_INCLUDE_GENERAL_H_
+#endif // INCLUDE_LIBYUV_GENERAL_H_

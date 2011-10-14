@@ -9,11 +9,11 @@
  */
 
 
-#include "planar_functions.h"
+#include "libyuv/planar_functions.h"
 
 #include <string.h>
 
-#include "cpu_id.h"
+#include "libyuv/cpu_id.h"
 #include "row.h"
 
 namespace libyuv {
@@ -38,19 +38,29 @@ static void SplitUV_NEON(const uint8* src_uv,
   );
 }
 
-#elif (defined(WIN32) || defined(__i386__)) && !defined(COVERAGE_ENABLED) && \
-    !defined(__PIC__) && !TARGET_IPHONE_SIMULATOR
+#elif (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
+    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
-#elif defined(OSX)
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
-#define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
+#define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #endif
 
-// shuffle constant to put even bytes in low 8 and odd bytes in high 8 bytes
-extern "C" TALIGN16(const uint8, shufevenodd[16]) =
-  { 0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15 };
+// Shuffle table for converting ABGR to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskABGRToARGB[16]) =
+  { 2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u };
+
+// Shuffle table for converting BGRA to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) =
+  { 3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u };
+
+// Shuffle table for converting BG24 to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) =
+  { 0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u };
+
+// Shuffle table for converting RAW to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) =
+  { 2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u };
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
@@ -89,118 +99,40 @@ static void SplitUV_SSE2(const uint8* src_uv,
   }
 }
 
-#define HAS_SPLITUV_SSSE3
-__declspec(naked)
-static void SplitUV_SSSE3(const uint8* src_uv,
-                          uint8* dst_u, uint8* dst_v, int pix) {
-  __asm {
-    push       edi
-    mov        eax, [esp + 4 + 4]       // src_uv
-    mov        edx, [esp + 4 + 8]       // dst_u
-    mov        edi, [esp + 4 + 12]      // dst_v
-    mov        ecx, [esp + 4 + 16]      // pix
-    movdqa     xmm7, _shufevenodd
-
-  wloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    lea        eax, [eax + 32]
-    pshufb     xmm0, xmm7               // 8 u's and 8 v's
-    pshufb     xmm1, xmm7               // 8 u's and 8 v's
-    movdqa     xmm2, xmm0
-    punpcklqdq xmm0, xmm1               // 16 u's
-    punpckhqdq xmm2, xmm1               // 16 v's
-    movdqa     [edx], xmm0
-    lea        edx, [edx + 16]
-    movdqa     [edi], xmm2
-    lea        edi, [edi + 16]
-    sub        ecx, 16
-    ja         wloop
-    pop        edi
-    ret
-  }
-}
-#elif defined(__i386__) && !defined(COVERAGE_ENABLED) && \
-    !TARGET_IPHONE_SIMULATOR
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_SPLITUV_SSE2
-extern "C" void SplitUV_SSE2(const uint8* src_uv,
-                             uint8* dst_u, uint8* dst_v, int pix);
+static void SplitUV_SSE2(const uint8* src_uv,
+                         uint8* dst_u, uint8* dst_v, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _SplitUV_SSE2\n"
-"_SplitUV_SSE2:\n"
-#else
-    ".global SplitUV_SSE2\n"
-"SplitUV_SSE2:\n"
-#endif
-    "push   %edi\n"
-    "mov    0x8(%esp),%eax\n"
-    "mov    0xc(%esp),%edx\n"
-    "mov    0x10(%esp),%edi\n"
-    "mov    0x14(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "psrlw  $0x8,%xmm7\n"
-
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "psrlw      $0x8,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "lea    0x20(%eax),%eax\n"
-    "movdqa %xmm0,%xmm2\n"
-    "movdqa %xmm1,%xmm3\n"
-    "pand   %xmm7,%xmm0\n"
-    "pand   %xmm7,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,(%edx)\n"
-    "lea    0x10(%edx),%edx\n"
-    "psrlw  $0x8,%xmm2\n"
-    "psrlw  $0x8,%xmm3\n"
-    "packuswb %xmm3,%xmm2\n"
-    "movdqa %xmm2,(%edi)\n"
-    "lea    0x10(%edi),%edi\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "pop    %edi\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "movdqa     %%xmm0,%%xmm2\n"
+  "movdqa     %%xmm1,%%xmm3\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm7,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "psrlw      $0x8,%%xmm2\n"
+  "psrlw      $0x8,%%xmm3\n"
+  "packuswb   %%xmm3,%%xmm2\n"
+  "movdqa     %%xmm2,(%2)\n"
+  "lea        0x10(%2),%2\n"
+  "sub        $0x10,%3\n"
+  "ja         1b\n"
+  :
+  : "r"(src_uv),     // %0
+    "r"(dst_u),      // %1
+    "r"(dst_v),      // %2
+    "r"(pix)         // %3
+  : "memory"
 );
-
-#define HAS_SPLITUV_SSSE3
-extern "C" void SplitUV_SSSE3(const uint8* src_uv,
-                             uint8* dst_u, uint8* dst_v, int pix);
-  asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _SplitUV_SSSE3\n"
-"_SplitUV_SSSE3:\n"
-#else
-    ".global SplitUV_SSSE3\n"
-"SplitUV_SSSE3:\n"
-#endif
-    "push   %edi\n"
-    "mov    0x8(%esp),%eax\n"
-    "mov    0xc(%esp),%edx\n"
-    "mov    0x10(%esp),%edi\n"
-    "mov    0x14(%esp),%ecx\n"
-    "movdqa _shufevenodd,%xmm7\n"
-
-"1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "lea    0x20(%eax),%eax\n"
-    "pshufb %xmm7,%xmm0\n"
-    "pshufb %xmm7,%xmm1\n"
-    "movdqa %xmm0,%xmm2\n"
-    "punpcklqdq %xmm1,%xmm0\n"
-    "punpckhqdq %xmm1,%xmm2\n"
-    "movdqa %xmm0,(%edx)\n"
-    "lea    0x10(%edx),%edx\n"
-    "movdqa %xmm2,(%edi)\n"
-    "lea    0x10(%edi),%edi\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "pop    %edi\n"
-    "ret\n"
-);
+}
 #endif
 #endif
 
@@ -216,28 +148,28 @@ static void SplitUV_C(const uint8* src_uv,
   }
 }
 
-static void I420CopyPlane(const uint8* src_y, int src_pitch_y,
-                          uint8* dst_y, int dst_pitch_y,
+static void I420CopyPlane(const uint8* src_y, int src_stride_y,
+                          uint8* dst_y, int dst_stride_y,
                           int width, int height) {
   // Copy plane
   for (int y = 0; y < height; ++y) {
     memcpy(dst_y, src_y, width);
-    src_y += src_pitch_y;
-    dst_y += dst_pitch_y;
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
   }
 }
 
-static void I420CopyPlane2(const uint8* src, int src_pitch_0, int src_pitch_1,
-                           uint8* dst, int dst_pitch,
+static void I420CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
+                           uint8* dst, int dst_stride,
                            int width, int height) {
   // Copy plane
   for (int y = 0; y < height; y += 2) {
     memcpy(dst, src, width);
-    src += src_pitch_0;
-    dst += dst_pitch;
+    src += src_stride_0;
+    dst += dst_stride;
     memcpy(dst, src, width);
-    src += src_pitch_1;
-    dst += dst_pitch;
+    src += src_stride_1;
+    dst += dst_stride;
   }
 }
 
@@ -249,81 +181,83 @@ static void I420CopyPlane2(const uint8* src, int src_pitch_0, int src_pitch_1,
 
 // Helper function to copy yuv data without scaling.  Used
 // by our jpeg conversion callbacks to incrementally fill a yuv image.
-void I420Copy(const uint8* src_y, int src_pitch_y,
-              const uint8* src_u, int src_pitch_u,
-              const uint8* src_v, int src_pitch_v,
-              uint8* dst_y, int dst_pitch_y,
-              uint8* dst_u, int dst_pitch_u,
-              uint8* dst_v, int dst_pitch_v,
-              int width, int height) {
+int I420Copy(const uint8* src_y, int src_stride_y,
+             const uint8* src_u, int src_stride_u,
+             const uint8* src_v, int src_stride_v,
+             uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_pitch_y;
-    src_u = src_u + (height - 1) * src_pitch_u;
-    src_v = src_v + (height - 1) * src_pitch_v;
-    src_pitch_y = -src_pitch_y;
-    src_pitch_u = -src_pitch_u;
-    src_pitch_v = -src_pitch_v;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
   }
 
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  I420CopyPlane(src_y, src_pitch_y, dst_y, dst_pitch_y, width, height);
-  I420CopyPlane(src_u, src_pitch_u, dst_u, dst_pitch_u, halfwidth, halfheight);
-  I420CopyPlane(src_v, src_pitch_v, dst_v, dst_pitch_v, halfwidth, halfheight);
+  I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  I420CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
+  I420CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+  return 0;
 }
 
 // Helper function to copy yuv data without scaling.  Used
 // by our jpeg conversion callbacks to incrementally fill a yuv image.
-void I422ToI420(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
+int I422ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    src_y = src_y + (height - 1) * src_pitch_y;
-    src_u = src_u + (height - 1) * src_pitch_u;
-    src_v = src_v + (height - 1) * src_pitch_v;
-    src_pitch_y = -src_pitch_y;
-    src_pitch_u = -src_pitch_u;
-    src_pitch_v = -src_pitch_v;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
   }
 
   // Copy Y plane
-  I420CopyPlane(src_y, src_pitch_y, dst_y, dst_pitch_y, width, height);
+  I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
 
   // SubSample UV planes.
   int x, y;
   int halfwidth = (width + 1) >> 1;
   for (y = 0; y < height; y += 2) {
     const uint8* u0 = src_u;
-    const uint8* u1 = src_u + src_pitch_u;
+    const uint8* u1 = src_u + src_stride_u;
     if ((y + 1) >= height) {
       u1 = u0;
     }
     for (x = 0; x < halfwidth; ++x) {
       dst_u[x] = (u0[x] + u1[x] + 1) >> 1;
     }
-    src_u += src_pitch_u * 2;
-    dst_u += dst_pitch_u;
+    src_u += src_stride_u * 2;
+    dst_u += dst_stride_u;
   }
   for (y = 0; y < height; y += 2) {
     const uint8* v0 = src_v;
-    const uint8* v1 = src_v + src_pitch_v;
+    const uint8* v1 = src_v + src_stride_v;
     if ((y + 1) >= height) {
       v1 = v0;
     }
     for (x = 0; x < halfwidth; ++x) {
       dst_v[x] = (v0[x] + v1[x] + 1) >> 1;
     }
-    src_v += src_pitch_v * 2;
-    dst_v += dst_pitch_v;
+    src_v += src_stride_v * 2;
+    dst_v += dst_stride_v;
   }
+  return 0;
 }
 
 // Support converting from FOURCC_M420
@@ -332,26 +266,26 @@ void I422ToI420(const uint8* src_y, int src_pitch_y,
 // M420 format description:
 // M420 is row biplanar 420: 2 rows of Y and 1 row of VU.
 // Chroma is half width / half height. (420)
-// src_pitch_m420 is row planar.  Normally this will be the width in pixels.
-//   The UV plane is half width, but 2 values, so src_pitch_m420 applies to this
+// src_stride_m420 is row planar.  Normally this will be the width in pixels.
+//   The UV plane is half width, but 2 values, so src_stride_m420 applies to this
 //   as well as the two Y planes.
 // TODO(fbarchard): Do NV21/NV12 formats with this function
-static void X420ToI420(const uint8* src_y,
-                       int src_pitch_y0, int src_pitch_y1,
-                       const uint8* src_uv, int src_pitch_uv,
-                       uint8* dst_y, int dst_pitch_y,
-                       uint8* dst_u, int dst_pitch_u,
-                       uint8* dst_v, int dst_pitch_v,
-                       int width, int height) {
+static int X420ToI420(const uint8* src_y,
+                      int src_stride_y0, int src_stride_y1,
+                      const uint8* src_uv, int src_stride_uv,
+                      uint8* dst_y, int dst_stride_y,
+                      uint8* dst_u, int dst_stride_u,
+                      uint8* dst_v, int dst_stride_v,
+                      int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_y = dst_y + (height - 1) * dst_pitch_y;
-    dst_u = dst_u + (height - 1) * dst_pitch_u;
-    dst_v = dst_v + (height - 1) * dst_pitch_v;
-    dst_pitch_y = -dst_pitch_y;
-    dst_pitch_u = -dst_pitch_u;
-    dst_pitch_v = -dst_pitch_v;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
   }
 
   int halfwidth = (width + 1) >> 1;
@@ -359,25 +293,17 @@ static void X420ToI420(const uint8* src_y,
 #if defined(HAS_SPLITUV_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
       (halfwidth % 16 == 0) &&
-      IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
-      IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
-      IS_ALIGNED(dst_v, 16) && (dst_pitch_v % 16 == 0)) {
+      IS_ALIGNED(src_uv, 16) && (src_stride_uv % 16 == 0) &&
+      IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
+      IS_ALIGNED(dst_v, 16) && (dst_stride_v % 16 == 0)) {
     SplitUV = SplitUV_NEON;
-  } else
-#elif defined(HAS_SPLITUV_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (halfwidth % 16 == 0) &&
-      IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
-      IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
-      IS_ALIGNED(dst_v, 16) && (dst_pitch_v % 16 == 0)) {
-    SplitUV = SplitUV_SSSE3;
   } else
 #elif defined(HAS_SPLITUV_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (halfwidth % 16 == 0) &&
-      IS_ALIGNED(src_uv, 16) && (src_pitch_uv % 16 == 0) &&
-      IS_ALIGNED(dst_u, 16) && (dst_pitch_u % 16 == 0) &&
-      IS_ALIGNED(dst_v, 16) && (dst_pitch_v % 16 == 0)) {
+      IS_ALIGNED(src_uv, 16) && (src_stride_uv % 16 == 0) &&
+      IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
+      IS_ALIGNED(dst_v, 16) && (dst_stride_v % 16 == 0)) {
     SplitUV = SplitUV_SSE2;
   } else
 #endif
@@ -385,43 +311,48 @@ static void X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_C;
   }
 
-  I420CopyPlane2(src_y, src_pitch_y0, src_pitch_y1, dst_y, dst_pitch_y,
+  I420CopyPlane2(src_y, src_stride_y0, src_stride_y1, dst_y, dst_stride_y,
                  width, height);
 
   int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
     // Copy a row of UV.
     SplitUV(src_uv, dst_u, dst_v, halfwidth);
-    dst_u += dst_pitch_u;
-    dst_v += dst_pitch_v;
-    src_uv += src_pitch_uv;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+    src_uv += src_stride_uv;
   }
+  return 0;
 }
 
 // Convert M420 to I420.
-void M420ToI420(const uint8* src_m420, int src_pitch_m420,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
-  X420ToI420(src_m420, src_pitch_m420, src_pitch_m420 * 2,
-             src_m420 + src_pitch_m420 * 2, src_pitch_m420 * 3,
-             dst_y, dst_pitch_y, dst_u, dst_pitch_u, dst_v, dst_pitch_v,
-             width, height);
+int M420ToI420(const uint8* src_m420, int src_stride_m420,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  return X420ToI420(src_m420, src_stride_m420, src_stride_m420 * 2,
+                    src_m420 + src_stride_m420 * 2, src_stride_m420 * 3,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height);
 }
 
 // Convert NV12 to I420.
-void NV12ToI420(const uint8* src_y,
-                const uint8* src_uv,
-                int src_pitch,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
-  X420ToI420(src_y, src_pitch, src_pitch,
-             src_uv, src_pitch,
-             dst_y, dst_pitch_y, dst_u, dst_pitch_u, dst_v, dst_pitch_v,
-             width, height);
+int NV12ToI420(const uint8* src_y,
+               const uint8* src_uv,
+               int src_stride,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  return X420ToI420(src_y, src_stride, src_stride,
+                    src_uv, src_stride,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height);
 }
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
@@ -471,59 +402,48 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     ret
   }
 }
-#elif defined(__i386__) && !defined(COVERAGE_ENABLED) && \
-    !TARGET_IPHONE_SIMULATOR
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_SPLITYUY2_SSE2
-extern "C" void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
-                               uint8* dst_u, uint8* dst_v, int pix);
+static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
+                           uint8* dst_u, uint8* dst_v, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _SplitYUY2_SSE2\n"
-"_SplitYUY2_SSE2:\n"
-#else
-    ".global SplitYUY2_SSE2\n"
-"SplitYUY2_SSE2:\n"
-#endif
-    "push   %esi\n"
-    "push   %edi\n"
-    "mov    0xc(%esp),%eax\n"
-    "mov    0x10(%esp),%edx\n"
-    "mov    0x14(%esp),%esi\n"
-    "mov    0x18(%esp),%edi\n"
-    "mov    0x1c(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "psrlw  $0x8,%xmm7\n"
-
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "psrlw      $0x8,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "lea    0x20(%eax),%eax\n"
-    "movdqa %xmm0,%xmm2\n"
-    "movdqa %xmm1,%xmm3\n"
-    "pand   %xmm7,%xmm2\n"
-    "pand   %xmm7,%xmm3\n"
-    "packuswb %xmm3,%xmm2\n"
-    "movdqa %xmm2,(%edx)\n"
-    "lea    0x10(%edx),%edx\n"
-    "psrlw  $0x8,%xmm0\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,%xmm1\n"
-    "pand   %xmm7,%xmm0\n"
-    "packuswb %xmm0,%xmm0\n"
-    "movq   %xmm0,(%esi)\n"
-    "lea    0x8(%esi),%esi\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm1\n"
-    "movq   %xmm1,(%edi)\n"
-    "lea    0x8(%edi),%edi\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "pop    %edi\n"
-    "pop    %esi\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "movdqa     %%xmm0,%%xmm2\n"
+  "movdqa     %%xmm1,%%xmm3\n"
+  "pand       %%xmm7,%%xmm2\n"
+  "pand       %%xmm7,%%xmm3\n"
+  "packuswb   %%xmm3,%%xmm2\n"
+  "movdqa     %%xmm2,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "psrlw      $0x8,%%xmm0\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "packuswb   %%xmm0,%%xmm0\n"
+  "movq       %%xmm0,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm1\n"
+  "movq       %%xmm1,(%3)\n"
+  "lea        0x8(%3),%3\n"
+  "sub        $0x10,%4\n"
+  "ja         1b\n"
+  :
+  : "r"(src_yuy2),    // %0
+    "r"(dst_y),       // %1
+    "r"(dst_u),       // %2
+    "r"(dst_v),       // %3
+    "r"(pix)          // %4
+  : "memory"
 );
+}
 #endif
 
 static void SplitYUY2_C(const uint8* src_yuy2,
@@ -543,21 +463,21 @@ static void SplitYUY2_C(const uint8* src_yuy2,
 
 // Convert Q420 to I420.
 // Format is rows of YY/YUYV
-void Q420ToI420(const uint8* src_y, int src_pitch_y,
-                const uint8* src_yuy2, int src_pitch_yuy2,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
+int Q420ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (width % 16 == 0) &&
-      IS_ALIGNED(src_yuy2, 16) && (src_pitch_yuy2 % 16 == 0) &&
-      IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
-      IS_ALIGNED(dst_u, 8) && (dst_pitch_u % 8 == 0) &&
-      IS_ALIGNED(dst_v, 8) && (dst_pitch_v % 8 == 0)) {
+      IS_ALIGNED(src_yuy2, 16) && (src_stride_yuy2 % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
     SplitYUY2 = SplitYUY2_SSE2;
   } else
 #endif
@@ -566,16 +486,17 @@ void Q420ToI420(const uint8* src_y, int src_pitch_y,
   }
   for (int y = 0; y < height; y += 2) {
     memcpy(dst_y, src_y, width);
-    dst_y += dst_pitch_y;
-    src_y += src_pitch_y;
+    dst_y += dst_stride_y;
+    src_y += src_stride_y;
 
     // Copy a row of YUY2.
     SplitYUY2(src_yuy2, dst_y, dst_u, dst_v, width);
-    dst_y += dst_pitch_y;
-    dst_u += dst_pitch_u;
-    dst_v += dst_pitch_v;
-    src_yuy2 += src_pitch_yuy2;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+    src_yuy2 += src_stride_yuy2;
   }
+  return 0;
 }
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
@@ -606,13 +527,13 @@ void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
 }
 
 __declspec(naked)
-void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int pitch_yuy2,
+void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
                           uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]    // src_yuy2
-    mov        esi, [esp + 8 + 8]    // pitch_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
     mov        edx, [esp + 8 + 12]   // dst_u
     mov        edi, [esp + 8 + 16]   // dst_v
     mov        ecx, [esp + 8 + 20]   // pix
@@ -673,13 +594,13 @@ void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
 }
 
 __declspec(naked)
-void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int pitch_uyvy,
+void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
                           uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]    // src_yuy2
-    mov        esi, [esp + 8 + 8]    // pitch_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
     mov        edx, [esp + 8 + 12]   // dst_u
     mov        edi, [esp + 8 + 16]   // dst_v
     mov        ecx, [esp + 8 + 20]   // pix
@@ -714,174 +635,138 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int pitch_uyvy,
     ret
   }
 }
-#elif defined(__i386__) && !defined(COVERAGE_ENABLED) && \
-    !TARGET_IPHONE_SIMULATOR
+
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 
 #define HAS_YUY2TOI420ROW_SSE2
-extern "C" void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
-                                    uint8* dst_y, int pix);
+static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
+                                uint8* dst_y, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _YUY2ToI420RowY_SSE2\n"
-"_YUY2ToI420RowY_SSE2:\n"
-#else
-    ".global YUY2ToI420RowY_SSE2\n"
-"YUY2ToI420RowY_SSE2:\n"
-#endif
-    "mov    0x4(%esp),%eax\n"
-    "mov    0x8(%esp),%edx\n"
-    "mov    0xc(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "psrlw  $0x8,%xmm7\n"
-
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "psrlw      $0x8,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "lea    0x20(%eax),%eax\n"
-    "pand   %xmm7,%xmm0\n"
-    "pand   %xmm7,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,(%edx)\n"
-    "lea    0x10(%edx),%edx\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm7,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_yuy2),  // %0
+    "r"(dst_y),     // %1
+    "r"(pix)        // %2
+  : "memory"
 );
+}
 
-extern "C" void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int pitch_yuy2,
-                                     uint8* dst_u, uint8* dst_y, int pix);
+static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                                 uint8* dst_u, uint8* dst_y, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _YUY2ToI420RowUV_SSE2\n"
-"_YUY2ToI420RowUV_SSE2:\n"
-#else
-    ".global YUY2ToI420RowUV_SSE2\n"
-"YUY2ToI420RowUV_SSE2:\n"
-#endif
-    "push   %esi\n"
-    "push   %edi\n"
-    "mov    0xc(%esp),%eax\n"
-    "mov    0x10(%esp),%esi\n"
-    "mov    0x14(%esp),%edx\n"
-    "mov    0x18(%esp),%edi\n"
-    "mov    0x1c(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "psrlw  $0x8,%xmm7\n"
-
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "psrlw      $0x8,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "movdqa (%eax,%esi,1),%xmm2\n"
-    "movdqa 0x10(%eax,%esi,1),%xmm3\n"
-    "lea    0x20(%eax),%eax\n"
-    "pavgb  %xmm2,%xmm0\n"
-    "pavgb  %xmm3,%xmm1\n"
-    "psrlw  $0x8,%xmm0\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,%xmm1\n"
-    "pand   %xmm7,%xmm0\n"
-    "packuswb %xmm0,%xmm0\n"
-    "movq   %xmm0,(%edx)\n"
-    "lea    0x8(%edx),%edx\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm1\n"
-    "movq   %xmm1,(%edi)\n"
-    "lea    0x8(%edi),%edi\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "pop    %edi\n"
-    "pop    %esi\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     (%0,%1,1),%%xmm2\n"
+  "movdqa     0x10(%0,%1,1),%%xmm3\n"
+  "lea        0x20(%0),%0\n"
+  "pavgb      %%xmm2,%%xmm0\n"
+  "pavgb      %%xmm3,%%xmm1\n"
+  "psrlw      $0x8,%%xmm0\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "packuswb   %%xmm0,%%xmm0\n"
+  "movq       %%xmm0,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm1\n"
+  "movq       %%xmm1,(%3)\n"
+  "lea        0x8(%3),%3\n"
+  "sub        $0x10,%4\n"
+  "ja         1b\n"
+  :
+  : "r"(src_yuy2),    // %0
+    "r"((intptr_t)stride_yuy2),  // %1
+    "r"(dst_u),       // %2
+    "r"(dst_y),       // %3
+    "r"(pix)          // %4
+  : "memory"
 );
-
+}
 #define HAS_UYVYTOI420ROW_SSE2
-extern "C" void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
-                                    uint8* dst_y, int pix);
+static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
+                                uint8* dst_y, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _UYVYToI420RowY_SSE2\n"
-"_UYVYToI420RowY_SSE2:\n"
-#else
-    ".global UYVYToI420RowY_SSE2\n"
-"UYVYToI420RowY_SSE2:\n"
-#endif
-    "mov    0x4(%esp),%eax\n"
-    "mov    0x8(%esp),%edx\n"
-    "mov    0xc(%esp),%ecx\n"
-
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "lea    0x20(%eax),%eax\n"
-    "psrlw  $0x8,%xmm0\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,(%edx)\n"
-    "lea    0x10(%edx),%edx\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "psrlw      $0x8,%%xmm0\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_uyvy),  // %0
+    "r"(dst_y),     // %1
+    "r"(pix)        // %2
+  : "memory"
 );
+}
 
-extern "C" void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int pitch_uyvy,
-                                     uint8* dst_u, uint8* dst_y, int pix);
+static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                                 uint8* dst_u, uint8* dst_y, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _UYVYToI420RowUV_SSE2\n"
-"_UYVYToI420RowUV_SSE2:\n"
-#else
-    ".global UYVYToI420RowUV_SSE2\n"
-"UYVYToI420RowUV_SSE2:\n"
-#endif
-    "push   %esi\n"
-    "push   %edi\n"
-    "mov    0xc(%esp),%eax\n"
-    "mov    0x10(%esp),%esi\n"
-    "mov    0x14(%esp),%edx\n"
-    "mov    0x18(%esp),%edi\n"
-    "mov    0x1c(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "psrlw  $0x8,%xmm7\n"
-
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "psrlw      $0x8,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm0\n"
-    "movdqa 0x10(%eax),%xmm1\n"
-    "movdqa (%eax,%esi,1),%xmm2\n"
-    "movdqa 0x10(%eax,%esi,1),%xmm3\n"
-    "lea    0x20(%eax),%eax\n"
-    "pavgb  %xmm2,%xmm0\n"
-    "pavgb  %xmm3,%xmm1\n"
-    "pand   %xmm7,%xmm0\n"
-    "pand   %xmm7,%xmm1\n"
-    "packuswb %xmm1,%xmm0\n"
-    "movdqa %xmm0,%xmm1\n"
-    "pand   %xmm7,%xmm0\n"
-    "packuswb %xmm0,%xmm0\n"
-    "movq   %xmm0,(%edx)\n"
-    "lea    0x8(%edx),%edx\n"
-    "psrlw  $0x8,%xmm1\n"
-    "packuswb %xmm1,%xmm1\n"
-    "movq   %xmm1,(%edi)\n"
-    "lea    0x8(%edi),%edi\n"
-    "sub    $0x10,%ecx\n"
-    "ja     1b\n"
-    "pop    %edi\n"
-    "pop    %esi\n"
-    "ret\n"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     (%0,%1,1),%%xmm2\n"
+  "movdqa     0x10(%0,%1,1),%%xmm3\n"
+  "lea        0x20(%0),%0\n"
+  "pavgb      %%xmm2,%%xmm0\n"
+  "pavgb      %%xmm3,%%xmm1\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm7,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "pand       %%xmm7,%%xmm0\n"
+  "packuswb   %%xmm0,%%xmm0\n"
+  "movq       %%xmm0,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "psrlw      $0x8,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm1\n"
+  "movq       %%xmm1,(%3)\n"
+  "lea        0x8(%3),%3\n"
+  "sub        $0x10,%4\n"
+  "ja         1b\n"
+  :
+  : "r"(src_uyvy),    // %0
+    "r"((intptr_t)stride_uyvy),  // %1
+    "r"(dst_u),       // %2
+    "r"(dst_y),       // %3
+    "r"(pix)          // %4
+  : "memory"
 );
+}
 #endif
 
-void YUY2ToI420RowUV_C(const uint8* src_yuy2, int src_pitch_yuy2,
+void YUY2ToI420RowUV_C(const uint8* src_yuy2, int src_stride_yuy2,
                        uint8* dst_u, uint8* dst_v, int pix) {
   // Copy a row of yuy2 UV values
   for (int x = 0; x < pix; x += 2) {
-    dst_u[0] = (src_yuy2[1] + src_yuy2[src_pitch_yuy2 + 1] + 1) >> 1;
-    dst_v[0] = (src_yuy2[3] + src_yuy2[src_pitch_yuy2 + 3] + 1) >> 1;
+    dst_u[0] = (src_yuy2[1] + src_yuy2[src_stride_yuy2 + 1] + 1) >> 1;
+    dst_v[0] = (src_yuy2[3] + src_yuy2[src_stride_yuy2 + 3] + 1) >> 1;
     src_yuy2 += 4;
     dst_u += 1;
     dst_v += 1;
@@ -898,12 +783,12 @@ void YUY2ToI420RowY_C(const uint8* src_yuy2,
   }
 }
 
-void UYVYToI420RowUV_C(const uint8* src_uyvy, int src_pitch_uyvy,
+void UYVYToI420RowUV_C(const uint8* src_uyvy, int src_stride_uyvy,
                        uint8* dst_u, uint8* dst_v, int pix) {
   // Copy a row of uyvy UV values
   for (int x = 0; x < pix; x += 2) {
-    dst_u[0] = (src_uyvy[0] + src_uyvy[src_pitch_uyvy + 0] + 1) >> 1;
-    dst_v[0] = (src_uyvy[2] + src_uyvy[src_pitch_uyvy + 2] + 1) >> 1;
+    dst_u[0] = (src_uyvy[0] + src_uyvy[src_stride_uyvy + 0] + 1) >> 1;
+    dst_v[0] = (src_uyvy[2] + src_uyvy[src_stride_uyvy + 2] + 1) >> 1;
     src_uyvy += 4;
     dst_u += 1;
     dst_v += 1;
@@ -921,22 +806,22 @@ void UYVYToI420RowY_C(const uint8* src_uyvy,
 }
 
 // Convert YUY2 to I420.
-void YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
-  void (*YUY2ToI420RowUV)(const uint8* src_yuy2, int src_pitch_yuy2,
+int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  void (*YUY2ToI420RowUV)(const uint8* src_yuy2, int src_stride_yuy2,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
                          uint8* dst_y, int pix);
 #if defined(HAS_YUY2TOI420ROW_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (width % 16 == 0) &&
-      IS_ALIGNED(src_yuy2, 16) && (src_pitch_yuy2 % 16 == 0) &&
-      IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
-      IS_ALIGNED(dst_u, 8) && (dst_pitch_u % 8 == 0) &&
-      IS_ALIGNED(dst_v, 8) && (dst_pitch_v % 8 == 0)) {
+      IS_ALIGNED(src_yuy2, 16) && (src_stride_yuy2 % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
     YUY2ToI420RowY = YUY2ToI420RowY_SSE2;
     YUY2ToI420RowUV = YUY2ToI420RowUV_SSE2;
   } else
@@ -948,35 +833,36 @@ void YUY2ToI420(const uint8* src_yuy2, int src_pitch_yuy2,
   for (int y = 0; y < height; ++y) {
     if ((y & 1) == 0) {
       if (y >= (height - 1) ) {  // last chroma on odd height clamp height
-        src_pitch_yuy2 = 0;
+        src_stride_yuy2 = 0;
       }
-      YUY2ToI420RowUV(src_yuy2, src_pitch_yuy2, dst_u, dst_v, width);
-      dst_u += dst_pitch_u;
-      dst_v += dst_pitch_v;
+      YUY2ToI420RowUV(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
+      dst_u += dst_stride_u;
+      dst_v += dst_stride_v;
     }
     YUY2ToI420RowY(src_yuy2, dst_y, width);
-    dst_y += dst_pitch_y;
-    src_yuy2 += src_pitch_yuy2;
+    dst_y += dst_stride_y;
+    src_yuy2 += src_stride_yuy2;
   }
+  return 0;
 }
 
 // Convert UYVY to I420.
-void UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
-                uint8* dst_y, int dst_pitch_y,
-                uint8* dst_u, int dst_pitch_u,
-                uint8* dst_v, int dst_pitch_v,
-                int width, int height) {
-  void (*UYVYToI420RowUV)(const uint8* src_uyvy, int src_pitch_uyvy,
+int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  void (*UYVYToI420RowUV)(const uint8* src_uyvy, int src_stride_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*UYVYToI420RowY)(const uint8* src_uyvy,
                          uint8* dst_y, int pix);
 #if defined(HAS_UYVYTOI420ROW_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (width % 16 == 0) &&
-      IS_ALIGNED(src_uyvy, 16) && (src_pitch_uyvy % 16 == 0) &&
-      IS_ALIGNED(dst_y, 16) && (dst_pitch_y % 16 == 0) &&
-      IS_ALIGNED(dst_u, 8) && (dst_pitch_u % 8 == 0) &&
-      IS_ALIGNED(dst_v, 8) && (dst_pitch_v % 8 == 0)) {
+      IS_ALIGNED(src_uyvy, 16) && (src_stride_uyvy % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
     UYVYToI420RowY = UYVYToI420RowY_SSE2;
     UYVYToI420RowUV = UYVYToI420RowUV_SSE2;
   } else
@@ -988,119 +874,126 @@ void UYVYToI420(const uint8* src_uyvy, int src_pitch_uyvy,
   for (int y = 0; y < height; ++y) {
     if ((y & 1) == 0) {
       if (y >= (height - 1) ) {  // last chroma on odd height clamp height
-        src_pitch_uyvy = 0;
+        src_stride_uyvy = 0;
       }
-      UYVYToI420RowUV(src_uyvy, src_pitch_uyvy, dst_u, dst_v, width);
-      dst_u += dst_pitch_u;
-      dst_v += dst_pitch_v;
+      UYVYToI420RowUV(src_uyvy, src_stride_uyvy, dst_u, dst_v, width);
+      dst_u += dst_stride_u;
+      dst_v += dst_stride_v;
     }
     UYVYToI420RowY(src_uyvy, dst_y, width);
-    dst_y += dst_pitch_y;
-    src_uyvy += src_pitch_uyvy;
+    dst_y += dst_stride_y;
+    src_uyvy += src_stride_uyvy;
   }
+  return 0;
 }
 
 // Convert I420 to ARGB.
-// TODO(fbarchard): Add SSSE3 version and supply C version for fallback.
-void I420ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+// TODO(fbarchard): Add SSE2 version and supply C version for fallback.
+int I420ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
     if (y & 1) {
-      src_u += src_pitch_u;
-      src_v += src_pitch_v;
+      src_u += src_stride_u;
+      src_v += src_stride_v;
     }
   }
   // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
   EMMS();
+  return 0;
 }
 
 // Convert I420 to BGRA.
-void I420ToBGRA(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int I420ToBGRA(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToBGRARow(src_y, src_u, src_v, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
     if (y & 1) {
-      src_u += src_pitch_u;
-      src_v += src_pitch_v;
+      src_u += src_stride_u;
+      src_v += src_stride_v;
     }
   }
   EMMS();
+  return 0;
 }
 
 // Convert I420 to BGRA.
-void I420ToABGR(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int I420ToABGR(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToABGRRow(src_y, src_u, src_v, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
     if (y & 1) {
-      src_u += src_pitch_u;
-      src_v += src_pitch_v;
+      src_u += src_stride_u;
+      src_v += src_stride_v;
     }
   }
   EMMS();
+  return 0;
 }
 
 // Convert I422 to ARGB.
-void I422ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int I422ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
-    src_u += src_pitch_u;
-    src_v += src_pitch_v;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
   }
   // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
   EMMS();
+  return 0;
 }
 
 // Convert I444 to ARGB.
-void I444ToARGB(const uint8* src_y, int src_pitch_y,
-                const uint8* src_u, int src_pitch_u,
-                const uint8* src_v, int src_pitch_v,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int I444ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYUV444ToRGB32Row(src_y, src_u, src_v, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
-    src_u += src_pitch_u;
-    src_v += src_pitch_v;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
   }
   // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
   EMMS();
+  return 0;
 }
 
 // Convert I400 to ARGB.
-void I400ToARGB_Reference(const uint8* src_y, int src_pitch_y,
-                          uint8* dst_argb, int dst_pitch_argb,
-                          int width, int height) {
+int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
+                         uint8* dst_argb, int dst_stride_argb,
+                         int width, int height) {
   for (int y = 0; y < height; ++y) {
     FastConvertYToRGB32Row(src_y, dst_argb, width);
-    dst_argb += dst_pitch_argb;
-    src_y += src_pitch_y;
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
   }
   // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
   EMMS();
+  return 0;
 }
 
 // TODO(fbarchard): 64 bit version
@@ -1134,64 +1027,312 @@ static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   }
 }
 
-#elif defined(__i386__) && !defined(COVERAGE_ENABLED) && \
-    !TARGET_IPHONE_SIMULATOR
+#define HAS_ABGRTOARGBROW_SSSE3
+__declspec(naked)
+static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
+                                int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_abgr
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm7, byte ptr [_kShuffleMaskABGRToARGB]
 
+ convertloop :
+    movdqa    xmm0, qword ptr [eax]
+    lea       eax, [eax + 16]
+    pshufb    xmm0, xmm7
+    movdqa    [edx], xmm0
+    lea       edx, [edx + 16]
+    sub       ecx, 4
+    ja        convertloop
+    ret
+  }
+}
+
+#define HAS_BGRATOARGBROW_SSSE3
+__declspec(naked)
+static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
+                                int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_bgra
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm7, byte ptr [_kShuffleMaskBGRAToARGB]
+
+ convertloop :
+    movdqa    xmm0, qword ptr [eax]
+    lea       eax, [eax + 16]
+    pshufb    xmm0, xmm7
+    movdqa    [edx], xmm0
+    lea       edx, [edx + 16]
+    sub       ecx, 4
+    ja        convertloop
+    ret
+  }
+}
+
+#define HAS_BG24TOARGBROW_SSSE3
+__declspec(naked)
+static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
+                                int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_bg24
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
+    pslld     xmm7, 24
+    movdqa    xmm6, byte ptr [_kShuffleMaskBG24ToARGB]
+
+ convertloop :
+    movdqa    xmm0, qword ptr [eax]
+    movdqa    xmm1, qword ptr [eax + 16]
+    movdqa    xmm3, qword ptr [eax + 32]
+    lea       eax, [eax + 48]
+    movdqa    xmm2, xmm3
+    palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
+    pshufb    xmm2, xmm6
+    por       xmm2, xmm7
+    palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
+    pshufb    xmm0, xmm6
+    movdqa    [edx + 32], xmm2
+    por       xmm0, xmm7
+    pshufb    xmm1, xmm6
+    movdqa    [edx], xmm0
+    por       xmm1, xmm7
+    palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
+    pshufb    xmm3, xmm6
+    movdqa    [edx + 16], xmm1
+    por       xmm3, xmm7
+    movdqa    [edx + 48], xmm3
+    lea       edx, [edx + 64]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+#define HAS_RAWTOARGBROW_SSSE3
+__declspec(naked)
+static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
+                               int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_raw
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
+    pslld     xmm7, 24
+    movdqa    xmm6, byte ptr [_kShuffleMaskRAWToARGB]
+
+ convertloop :
+    movdqa    xmm0, qword ptr [eax]
+    movdqa    xmm1, qword ptr [eax + 16]
+    movdqa    xmm3, qword ptr [eax + 32]
+    lea       eax, [eax + 48]
+    movdqa    xmm2, xmm3
+    palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
+    pshufb    xmm2, xmm6
+    por       xmm2, xmm7
+    palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
+    pshufb    xmm0, xmm6
+    movdqa    [edx + 32], xmm2
+    por       xmm0, xmm7
+    pshufb    xmm1, xmm6
+    movdqa    [edx], xmm0
+    por       xmm1, xmm7
+    palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
+    pshufb    xmm3, xmm6
+    movdqa    [edx + 16], xmm1
+    por       xmm3, xmm7
+    movdqa    [edx + 48], xmm3
+    lea       edx, [edx + 64]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+
+// TODO(yuche): consider moving ARGB related codes to a separate file.
 #define HAS_I400TOARGBROW_SSE2
-extern "C" void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb,
-                                   int pix);
+static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _I400ToARGBRow_SSE2\n"
-"_I400ToARGBRow_SSE2:\n"
-#else
-    ".global I400ToARGBRow_SSE2\n"
-"I400ToARGBRow_SSE2:\n"
-#endif
-    "mov    0x4(%esp),%eax\n"
-    "mov    0x8(%esp),%edx\n"
-    "mov    0xc(%esp),%ecx\n"
-    "pcmpeqb %xmm7,%xmm7\n"
-    "pslld  $0x18,%xmm7\n"
+  "pcmpeqb    %%xmm7,%%xmm7\n"
+  "pslld      $0x18,%%xmm7\n"
 "1:"
-    "movq   (%eax),%xmm0\n"
-    "lea    0x8(%eax),%eax\n"
-    "punpcklbw %xmm0,%xmm0\n"
-    "movdqa %xmm0,%xmm1\n"
-    "punpcklwd %xmm0,%xmm0\n"
-    "punpckhwd %xmm1,%xmm1\n"
-    "por    %xmm7,%xmm0\n"
-    "por    %xmm7,%xmm1\n"
-    "movdqa %xmm0,(%edx)\n"
-    "movdqa %xmm1,0x10(%edx)\n"
-    "lea    0x20(%edx),%edx\n"
-    "sub    $0x8,%ecx\n"
-    "ja     1b\n"
-    "ret\n"
+  "movq       (%0),%%xmm0\n"
+  "lea        0x8(%0),%0\n"
+  "punpcklbw  %%xmm0,%%xmm0\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "punpcklwd  %%xmm0,%%xmm0\n"
+  "punpckhwd  %%xmm1,%%xmm1\n"
+  "por        %%xmm7,%%xmm0\n"
+  "por        %%xmm7,%%xmm1\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "movdqa     %%xmm1,0x10(%1)\n"
+  "lea        0x20(%1),%1\n"
+  "sub        $0x8,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_y),     // %0
+    "r"(dst_argb),  // %1
+    "r"(pix)        // %2
+  : "memory"
 );
+}
+
+#define HAS_ABGRTOARGBROW_SSSE3
+static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
+                                int pix) {
+  asm(
+  "movdqa     (%3),%%xmm7\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "lea        0x10(%0),%0\n"
+  "pshufb     %%xmm7,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "sub        $0x4,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_abgr),  // %0
+    "r"(dst_argb),  // %1
+    "r"(pix),       // %2
+    "r"(kShuffleMaskABGRToARGB)  // %3
+  : "memory"
+);
+}
+
+#define HAS_BGRATOARGBROW_SSSE3
+static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
+                                int pix) {
+  asm(
+  "movdqa     (%3),%%xmm7\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "lea        0x10(%0),%0\n"
+  "pshufb     %%xmm7,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "sub        $0x4,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_bgra),  // %0
+    "r"(dst_argb),  // %1
+    "r"(pix),       // %2
+    "r"(kShuffleMaskBGRAToARGB)  // %3
+  : "memory"
+);
+}
+
+#define HAS_BG24TOARGBROW_SSSE3
+static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
+                                int pix) {
+  asm(
+  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm7\n"
+  "movdqa     (%3),%%xmm6\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     0x20(%0),%%xmm3\n"
+  "lea        0x30(%0),%0\n"
+  "movdqa     %%xmm3,%%xmm2\n"
+  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm6,%%xmm2\n"
+  "por        %%xmm7,%%xmm2\n"
+  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm6,%%xmm0\n"
+  "movdqa     %%xmm2,0x20(%1)\n"
+  "por        %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm6,%%xmm1\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "por        %%xmm7,%%xmm1\n"
+  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm6,%%xmm3\n"
+  "movdqa     %%xmm1,0x10(%1)\n"
+  "por        %%xmm7,%%xmm3\n"
+  "movdqa     %%xmm3,0x30(%1)\n"
+  "lea        0x40(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_bg24),  // %0
+    "r"(dst_argb),  // %1
+    "r"(pix),       // %2
+    "r"(kShuffleMaskBG24ToARGB)  // %3
+  : "memory"
+);
+}
+
+#define HAS_RAWTOARGBROW_SSSE3
+static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
+                               int pix) {
+  asm(
+  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm7\n"
+  "movdqa     (%3),%%xmm6\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     0x20(%0),%%xmm3\n"
+  "lea        0x30(%0),%0\n"
+  "movdqa     %%xmm3,%%xmm2\n"
+  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm6,%%xmm2\n"
+  "por        %%xmm7,%%xmm2\n"
+  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm6,%%xmm0\n"
+  "movdqa     %%xmm2,0x20(%1)\n"
+  "por        %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm6,%%xmm1\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "por        %%xmm7,%%xmm1\n"
+  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm6,%%xmm3\n"
+  "movdqa     %%xmm1,0x10(%1)\n"
+  "por        %%xmm7,%%xmm3\n"
+  "movdqa     %%xmm3,0x30(%1)\n"
+  "lea        0x40(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  :
+  : "r"(src_raw),   // %0
+    "r"(dst_argb),  // %1
+    "r"(pix),       // %2
+    "r"(kShuffleMaskRAWToARGB)  // %3
+  : "memory"
+);
+}
 #endif
 
 static void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
   // Copy a Y to RGB.
   for (int x = 0; x < pix; ++x) {
-    dst_argb[2] = dst_argb[1] = dst_argb[0] = src_y[0];
+    uint8 y = src_y[0];
+    dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
     dst_argb[3] = 255u;
     dst_argb += 4;
-    src_y += 1;
+    ++src_y;
   }
 }
 
 // Convert I400 to ARGB.
-void I400ToARGB(const uint8* src_y, int src_pitch_y,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int I400ToARGB(const uint8* src_y, int src_stride_y,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix);
 #if defined(HAS_I400TOARGBROW_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (width % 8 == 0) &&
-      IS_ALIGNED(src_y, 8) && (src_pitch_y % 8 == 0) &&
-      IS_ALIGNED(dst_argb, 16) && (dst_pitch_argb % 16 == 0)) {
+      IS_ALIGNED(src_y, 8) && (src_stride_y % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
     I400ToARGBRow = I400ToARGBRow_SSE2;
   } else
 #endif
@@ -1201,16 +1342,21 @@ void I400ToARGB(const uint8* src_y, int src_pitch_y,
 
   for (int y = 0; y < height; ++y) {
     I400ToARGBRow(src_y, dst_argb, width);
-    src_y += src_pitch_y;
-    dst_argb += dst_pitch_argb;
+    src_y += src_stride_y;
+    dst_argb += dst_stride_argb;
   }
+  return 0;
 }
+
 
 static void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
-    dst_argb[0] = src_raw[2];
-    dst_argb[1] = src_raw[1];
-    dst_argb[2] = src_raw[0];
+    uint8 r = src_raw[0];
+    uint8 g = src_raw[1];
+    uint8 b = src_raw[2];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
     dst_argb[3] = 255u;
     dst_argb += 4;
     src_raw += 3;
@@ -1218,21 +1364,44 @@ static void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
 }
 
 // Convert RAW to ARGB.
-void RAWToARGB(const uint8* src_raw, int src_pitch_raw,
-               uint8* dst_argb, int dst_pitch_argb,
-               int width, int height) {
-  for (int y = 0; y < height; ++y) {
-    RAWToARGBRow_C(src_raw, dst_argb, width);
-    src_raw += src_pitch_raw;
-    dst_argb += dst_pitch_argb;
+int RAWToARGB(const uint8* src_raw, int src_stride_raw,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
   }
+  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix);
+#if defined(HAS_RAWTOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_raw, 16) && (src_stride_raw % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    RAWToARGBRow = RAWToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    RAWToARGBRow = RAWToARGBRow_C;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    RAWToARGBRow(src_raw, dst_argb, width);
+    src_raw += src_stride_raw;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
 }
 
 static void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
-    dst_argb[0] = src_bg24[0];
-    dst_argb[1] = src_bg24[1];
-    dst_argb[2] = src_bg24[2];
+    uint8 b = src_bg24[0];
+    uint8 g = src_bg24[1];
+    uint8 r = src_bg24[2];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = 255u;
     dst_argb[3] = 255u;
     dst_argb += 4;
     src_bg24 += 3;
@@ -1240,36 +1409,127 @@ static void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix) {
 }
 
 // Convert BG24 to ARGB.
-void BG24ToARGB(const uint8* src_bg24, int src_pitch_bg24,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
-  for (int y = 0; y < height; ++y) {
-    BG24ToARGBRow_C(src_bg24, dst_argb, width);
-    src_bg24 += src_pitch_bg24;
-    dst_argb += dst_pitch_argb;
+int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_bg24 = src_bg24 + (height - 1) * src_stride_bg24;
+    src_stride_bg24 = -src_stride_bg24;
   }
+  void (*BG24ToARGBRow)(const uint8* src_bg24, uint8* dst_argb, int pix);
+#if defined(HAS_BG24TOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_bg24, 16) && (src_stride_bg24 % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    BG24ToARGBRow = BG24ToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    BG24ToARGBRow = BG24ToARGBRow_C;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    BG24ToARGBRow(src_bg24, dst_argb, width);
+    src_bg24 += src_stride_bg24;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
 }
+
 
 static void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
-    dst_argb[0] = src_abgr[2];
-    dst_argb[1] = src_abgr[1];
-    dst_argb[2] = src_abgr[0];
-    dst_argb[3] = src_abgr[3];
+    // To support in-place conversion.
+    uint8 r = src_abgr[0];
+    uint8 g = src_abgr[1];
+    uint8 b = src_abgr[2];
+    uint8 a = src_abgr[3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
     dst_argb += 4;
     src_abgr += 4;
   }
 }
 
-// Convert ABGR to ARGB.
-void ABGRToARGB(const uint8* src_abgr, int src_pitch_abgr,
-                uint8* dst_argb, int dst_pitch_argb,
-                int width, int height) {
+int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_abgr = src_abgr + (height - 1) * src_stride_abgr;
+    src_stride_abgr = -src_stride_abgr;
+  }
+void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix);
+#if defined(HAS_ABGRTOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 4 == 0) &&
+      IS_ALIGNED(src_abgr, 16) && (src_stride_abgr % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    ABGRToARGBRow = ABGRToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    ABGRToARGBRow = ABGRToARGBRow_C;
+  }
+
   for (int y = 0; y < height; ++y) {
-    ABGRToARGBRow_C(src_abgr, dst_argb, width);
-    src_abgr += src_pitch_abgr;
-    dst_argb += dst_pitch_argb;
+    ABGRToARGBRow(src_abgr, dst_argb, width);
+    src_abgr += src_stride_abgr;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+static void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    // To support in-place conversion.
+    uint8 a = src_bgra[0];
+    uint8 r = src_bgra[1];
+    uint8 g = src_bgra[2];
+    uint8 b = src_bgra[3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    dst_argb += 4;
+    src_bgra += 4;
   }
 }
 
+// Convert BGRA to ARGB.
+int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_bgra = src_bgra + (height - 1) * src_stride_bgra;
+    src_stride_bgra = -src_stride_bgra;
+  }
+  void (*BGRAToARGBRow)(const uint8* src_bgra, uint8* dst_argb, int pix);
+#if defined(HAS_BGRATOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 4 == 0) &&
+      IS_ALIGNED(src_bgra, 16) && (src_stride_bgra % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    BGRAToARGBRow = BGRAToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    BGRAToARGBRow = BGRAToARGBRow_C;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    BGRAToARGBRow(src_bgra, dst_argb, width);
+    src_bgra += src_stride_bgra;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 }  // namespace libyuv
+
+

@@ -19,31 +19,31 @@ typedef void (*rotate_wxhfunc)(const uint8*, int, uint8*, int, int, int);
 #ifdef __ARM_NEON__
 extern "C" {
 void ReverseLine_NEON(const uint8* src, uint8* dst, int width);
-void Transpose_wx8_NEON(const uint8* src, int src_pitch,
-                        uint8* dst, int dst_pitch, int width);
+void Transpose_wx8_NEON(const uint8* src, int src_stride,
+                        uint8* dst, int dst_stride, int width);
 }  // extern "C"
 #endif
 
-static void Transpose_wx8_C(const uint8* src, int src_pitch,
-                            uint8* dst, int dst_pitch,
+static void Transpose_wx8_C(const uint8* src, int src_stride,
+                            uint8* dst, int dst_stride,
                             int w) {
   int i, j;
   for (i = 0; i < w; ++i)
     for (j = 0; j < 8; ++j)
-      dst[i * dst_pitch + j] = src[j * src_pitch + i];
+      dst[i * dst_stride + j] = src[j * src_stride + i];
 }
 
-static void Transpose_wxh_C(const uint8* src, int src_pitch,
-                            uint8* dst, int dst_pitch,
+static void Transpose_wxh_C(const uint8* src, int src_stride,
+                            uint8* dst, int dst_stride,
                             int width, int height) {
   int i, j;
   for (i = 0; i < width; ++i)
     for (j = 0; j < height; ++j)
-      dst[i * dst_pitch + j] = src[j * src_pitch + i];
+      dst[i * dst_stride + j] = src[j * src_stride + i];
 }
 
-void Transpose(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Transpose(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height) {
   int i = height;
   rotate_wx8func Transpose_wx8;
@@ -60,33 +60,33 @@ void Transpose(const uint8* src, int src_pitch,
 
   // work across the source in 8x8 tiles
   do {
-    Transpose_wx8(src, src_pitch, dst, dst_pitch, width);
+    Transpose_wx8(src, src_stride, dst, dst_stride, width);
 
-    src += 8 * src_pitch;
+    src += 8 * src_stride;
     dst += 8;
     i   -= 8;
   } while (i >= 8);
 
 // TODO(frkoenig): Have wx4 and maybe wx2
-  Transpose_wxh(src, src_pitch, dst, dst_pitch, width, i);
+  Transpose_wxh(src, src_stride, dst, dst_stride, width, i);
 }
 
-void Rotate90(const uint8* src, int src_pitch,
-              uint8* dst, int dst_pitch,
+void Rotate90(const uint8* src, int src_stride,
+              uint8* dst, int dst_stride,
               int width, int height) {
-  src += src_pitch*(height-1);
-  src_pitch = -src_pitch;
+  src += src_stride*(height-1);
+  src_stride = -src_stride;
 
-  Transpose(src, src_pitch, dst, dst_pitch, width, height);
+  Transpose(src, src_stride, dst, dst_stride, width, height);
 }
 
-void Rotate270(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Rotate270(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height) {
-  dst += dst_pitch*(width-1);
-  dst_pitch = -dst_pitch;
+  dst += dst_stride*(width-1);
+  dst_stride = -dst_stride;
 
-  Transpose(src, src_pitch, dst, dst_pitch, width, height);
+  Transpose(src, src_stride, dst, dst_stride, width, height);
 }
 
 void ReverseLine_C(const uint8* src, uint8* dst, int width) {
@@ -95,8 +95,8 @@ void ReverseLine_C(const uint8* src, uint8* dst, int width) {
     dst[width-1 - i] = src[i];
 }
 
-void Rotate180(const uint8* src, int src_pitch,
-               uint8* dst, int dst_pitch,
+void Rotate180(const uint8* src, int src_stride,
+               uint8* dst, int dst_stride,
                int width, int height) {
   int i;
   reverse_func ReverseLine;
@@ -108,13 +108,13 @@ void Rotate180(const uint8* src, int src_pitch,
   ReverseLine = ReverseLine_C;
 #endif
 
-  dst += dst_pitch*(height-1);
+  dst += dst_stride*(height-1);
 
   for (i = 0; i < height; ++i) {
     ReverseLine(src, dst, width);
 
-    src += src_pitch;
-    dst -= dst_pitch;
+    src += src_stride;
+    dst -= dst_stride;
   }
 }
 

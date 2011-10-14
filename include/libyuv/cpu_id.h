@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LIBYUV_SOURCE_CPU_ID_H_
-#define LIBYUV_SOURCE_CPU_ID_H_
+#ifndef INCLUDE_LIBYUV_CPU_ID_H_
+#define INCLUDE_LIBYUV_CPU_ID_H_
 
 namespace libyuv {
 
@@ -28,4 +28,4 @@ void MaskCpuFlagsForTest(int enable_flags);
 
 }  // namespace libyuv
 
-#endif  // LIBYUV_SOURCE_CPU_ID_H_
+#endif  // INCLUDE_LIBYUV_CPU_ID_H_

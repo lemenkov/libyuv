@@ -13,8 +13,6 @@
 
 #include <sstream>
 
-#include "common.h"
-
 namespace libyuv {
 
 #define ARRAY_SIZE(x) (static_cast<int>((sizeof(x)/sizeof(x[0]))))
@@ -45,22 +43,6 @@ uint32 CanonicalFourCC(uint32 fourcc) {
   }
   // Not an alias, so return it as-is.
   return fourcc;
-}
-
-std::string VideoFormat::ToString() const {
-  std::string fourcc_name = GetFourccName(fourcc) + " ";
-  for (std::string::const_iterator i = fourcc_name.begin();
-      i < fourcc_name.end(); ++i) {
-    // Test character is printable; Avoid isprint() which asserts on negatives
-    if (*i < 32 || *i >= 127) {
-      fourcc_name = "";
-      break;
-    }
-  }
-
-  std::ostringstream ss;
-  ss << fourcc_name << width << "x" << height << "x" << IntervalToFps(interval);
-  return ss.str();
 }
 
 }  // namespace libyuv

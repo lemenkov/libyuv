@@ -15,11 +15,11 @@
 *
 ***************************************************************/
 
-#ifndef WEBRTC_COMMON_VIDEO_VPLIB_CONVERSION_TABLES
-#define WEBRTC_COMMON_VIDEO_VPLIB_CONVERSION_TABLES
+#ifndef LIBYUV_SOURCE_CONVERSION_TABLES_H_
+#define LIBYUV_SOURCE_CONVERSION_TABLES_H_
 
-namespace libyuv
-{
+namespace libyuv {
+
 /******************************************************************************
 * YUV TO RGB approximation
 *
@@ -96,7 +96,6 @@ namespace libyuv
         Ucg(236),Ucg(237),Ucg(238),Ucg(239),Ucg(240),Ucg(241),Ucg(242),Ucg(243),
         Ucg(244),Ucg(245),Ucg(246),Ucg(247),Ucg(248),Ucg(249),Ucg(250),Ucg(251),
         Ucg(252),Ucg(253),Ucg(254),Ucg(255)};
-
 
    static const int mapUcb[256] = {
         Ucb(0),Ucb(1),Ucb(2),Ucb(3),Ucb(4),Ucb(5),Ucb(6),Ucb(7),Ucb(8),Ucb(9),
@@ -199,5 +198,6 @@ namespace libyuv
         Vcg(252),Vcg(253),Vcg(254),Vcg(255)};
 
 } // namespace libyuv
+
 #endif
 

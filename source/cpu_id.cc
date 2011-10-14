@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "cpu_id.h"
-#include "basic_types.h"  // for CPU_X86
+#include "libyuv/cpu_id.h"
+#include "libyuv/basic_types.h"  // for CPU_X86
 
 #ifdef _MSC_VER
 #include <intrin.h>
