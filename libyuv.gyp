@@ -33,6 +33,7 @@
         'common/common.h',
         'common/constructor_magic.h',
         'source/cpu_id.h',
+        'source/rotate.h'
         'source/row.h',
         'source/video_common.h',
 
@@ -42,6 +43,8 @@
         'source/format_conversion.cc',
         'source/general.cc',
         'source/planar_functions.cc',
+        'source/rotate.cc',
+        'source/rotate_deinterleave.cc',
         'source/row_table.cc',
         'source/scale.cc',
         'source/video_common.cc',
