@@ -44,7 +44,6 @@
         'source/general.cc',
         'source/planar_functions.cc',
         'source/rotate.cc',
-        'source/rotate_deinterleave.cc',
         'source/row_table.cc',
         'source/scale.cc',
         'source/video_common.cc',

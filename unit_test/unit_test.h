@@ -11,7 +11,6 @@
 #ifndef UINIT_TEST_H_
 #define UINIT_TEST_H_
 
-#include "basic_types.h"
 #include <gtest/gtest.h>
 
 class libyuvTest : public ::testing::Test {
@@ -20,8 +19,8 @@ class libyuvTest : public ::testing::Test {
   virtual void SetUp();
   virtual void TearDown();
 
-  const uint32 _rotate_max_w;
-  const uint32 _rotate_max_h;
+  const int _rotate_max_w;
+  const int _rotate_max_h;
 
 };
 

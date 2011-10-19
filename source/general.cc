@@ -13,7 +13,6 @@
 #include <string.h>     // memcpy(), memset()
 
 #include "libyuv/planar_functions.h"
-#include "rotate.h"
 
 namespace libyuv {
 
@@ -280,68 +279,6 @@ I420CropPad(const uint8* src_frame, int src_width,
     }
   }
   return 0;
-}
-
-int
-I420Rotate(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int width, int height,
-           RotationMode mode) {
-  switch (mode) {
-    case kRotateNone:
-      // copy frame
-      return I420Copy(src_yplane, src_ystride,
-                      src_uplane, src_ustride,
-                      src_vplane, src_vstride,
-                      dst_yplane, dst_ystride,
-                      dst_uplane, dst_ustride,
-                      dst_vplane, dst_vstride,
-                      width, height);
-      break;
-    case kRotateClockwise:
-      Rotate90(src_yplane, src_ystride,
-               dst_yplane, dst_ystride,
-               width, height);
-      Rotate90(src_uplane, src_ustride,
-               dst_uplane, dst_ustride,
-               width, height);
-      Rotate90(src_vplane, src_vstride,
-               dst_vplane, dst_vstride,
-               width, height);
-      return 0;
-      break;
-    case kRotateCounterClockwise:
-      Rotate270(src_yplane, src_ystride,
-                dst_yplane, dst_ystride,
-                width, height);
-      Rotate270(src_uplane, src_ustride,
-                dst_uplane, dst_ustride,
-                width, height);
-      Rotate270(src_vplane, src_vstride,
-                dst_vplane, dst_vstride,
-                width, height);
-      return 0;
-      break;
-    case kRotate180:
-      Rotate180(src_yplane, src_ystride,
-                dst_yplane, dst_ystride,
-                width, height);
-      Rotate180(src_uplane, src_ustride,
-                dst_uplane, dst_ustride,
-                width, height);
-      Rotate180(src_vplane, src_vstride,
-                dst_vplane, dst_vstride,
-               width, height);
-      return 0;
-    break;
-  default:
-    return -1;
-    break;
-  }
 }
 
 } // namespace libyuv

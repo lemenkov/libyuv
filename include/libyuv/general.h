@@ -20,14 +20,6 @@
 
 namespace libyuv {
 
-// Supported rotation
-enum RotationMode {
-  kRotateNone = 0,
-  kRotateClockwise = 90,
-  kRotateCounterClockwise = 270,
-  kRotate180 = 180,
-};
-
 // I420 mirror
 int
 I420Mirror(const uint8* src_yplane, int src_ystride,
@@ -49,17 +41,6 @@ int
 I420Crop(uint8* frame,
          int src_width, int src_height,
          int dst_width, int dst_height);
-
-// Rotate I420 frame
-int
-I420Rotate(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int width, int height,
-           RotationMode mode);
 
 } // namespace libyuv
 
