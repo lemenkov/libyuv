@@ -510,7 +510,7 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,
     uint8 u = u_buf[x];
     uint8 v = v_buf[x];
     uint8 y = y_buf[x];
-    YuvPixel(y, u, v, rgb_buf);
+    YuvPixel(y, u, v, rgb_buf, 24, 16, 8, 0);
     rgb_buf += 4;  // Advance 1 pixel.
   }
 }
@@ -520,7 +520,7 @@ void FastConvertYToRGB32Row(const uint8* y_buf,
                             int width) {
   for (int x = 0; x < width; ++x) {
     uint8 y = y_buf[x];
-    YuvPixel(y, 128, 128, rgb_buf);
+    YuvPixel(y, 128, 128, rgb_buf, 24, 16, 8, 0);
     rgb_buf += 4;  // Advance 1 pixel.
   }
 }
