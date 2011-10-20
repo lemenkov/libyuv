@@ -21,7 +21,7 @@ void FastConvertYUVToRGB32Row(const uint8* y_buf,  // rdi
                               const uint8* v_buf,  // rdx
                               uint8* rgb_buf,      // rcx
                               int width) {         // r8
-  asm(
+  asm volatile(
 "1:"
   "movzb  (%1),%%r10\n"
   "lea    1(%1),%1\n"
@@ -44,13 +44,12 @@ void FastConvertYUVToRGB32Row(const uint8* y_buf,  // rdi
   "lea    8(%3),%3\n"
   "sub    $0x2,%4\n"
   "ja     1b\n"
-  :
-  : "r"(y_buf),  // %0
-    "r"(u_buf),  // %1
-    "r"(v_buf),  // %2
-    "r"(rgb_buf),  // %3
-    "r"(width),  // %4
-    "r" (_kCoefficientsRgbY)  // %5
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+r"(width)     // %4
+  : "r" (_kCoefficientsRgbY)  // %5
   : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3"
 );
 }
@@ -60,7 +59,7 @@ void FastConvertYUVToBGRARow(const uint8* y_buf,  // rdi
                              const uint8* v_buf,  // rdx
                              uint8* rgb_buf,      // rcx
                              int width) {         // r8
-  asm(
+  asm volatile(
 "1:"
   "movzb  (%1),%%r10\n"
   "lea    1(%1),%1\n"
@@ -83,13 +82,12 @@ void FastConvertYUVToBGRARow(const uint8* y_buf,  // rdi
   "lea    8(%3),%3\n"
   "sub    $0x2,%4\n"
   "ja     1b\n"
-  :
-  : "r"(y_buf),  // %0
-    "r"(u_buf),  // %1
-    "r"(v_buf),  // %2
-    "r"(rgb_buf),  // %3
-    "r"(width),  // %4
-    "r" (_kCoefficientsBgraY)  // %5
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+r"(width)     // %4
+  : "r" (_kCoefficientsBgraY)  // %5
   : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3"
 );
 }
@@ -99,7 +97,7 @@ void FastConvertYUVToABGRRow(const uint8* y_buf,  // rdi
                              const uint8* v_buf,  // rdx
                              uint8* rgb_buf,      // rcx
                              int width) {         // r8
-  asm(
+  asm volatile(
 "1:"
   "movzb  (%1),%%r10\n"
   "lea    1(%1),%1\n"
@@ -122,13 +120,12 @@ void FastConvertYUVToABGRRow(const uint8* y_buf,  // rdi
   "lea    8(%3),%3\n"
   "sub    $0x2,%4\n"
   "ja     1b\n"
-  :
-  : "r"(y_buf),  // %0
-    "r"(u_buf),  // %1
-    "r"(v_buf),  // %2
-    "r"(rgb_buf),  // %3
-    "r"(width),  // %4
-    "r" (_kCoefficientsAbgrY)  // %5
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+r"(width)     // %4
+  : "r" (_kCoefficientsAbgrY)  // %5
   : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3"
 );
 }
@@ -138,7 +135,7 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,  // rdi
                                  const uint8* v_buf,  // rdx
                                  uint8* rgb_buf,      // rcx
                                  int width) {         // r8
-  asm(
+  asm volatile(
 "1:"
   "movzb  (%1),%%r10\n"
   "lea    1(%1),%1\n"
@@ -158,13 +155,12 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,  // rdi
   "lea    4(%3),%3\n"
   "sub    $0x1,%4\n"
   "ja     1b\n"
-  :
-  : "r"(y_buf),  // %0
-    "r"(u_buf),  // %1
-    "r"(v_buf),  // %2
-    "r"(rgb_buf),  // %3
-    "r"(width),  // %4
-    "r" (_kCoefficientsRgbY)  // %5
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+r"(width)     // %4
+  : "r" (_kCoefficientsRgbY)  // %5
   : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2"
 );
 }
@@ -172,7 +168,7 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,  // rdi
 void FastConvertYToRGB32Row(const uint8* y_buf,  // rdi
                             uint8* rgb_buf,      // rcx
                             int width) {         // r8
-  asm(
+  asm volatile(
 "1:"
   "movzb  (%0),%%r10\n"
   "movzb  0x1(%0),%%r11\n"
@@ -186,11 +182,10 @@ void FastConvertYToRGB32Row(const uint8* y_buf,  // rdi
   "lea    8(%1),%1\n"
   "sub    $0x2,%2\n"
   "ja     1b\n"
-  :
-  : "r"(y_buf),  // %0
-    "r"(rgb_buf),  // %1
-    "r"(width),  // %2
-    "r" (_kCoefficientsRgbY)  // %3
+  : "+r"(y_buf),    // %0
+    "+r"(rgb_buf),  // %1
+    "+r"(width)     // %2
+  : "r" (_kCoefficientsRgbY)  // %3
   : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3"
 );
 }

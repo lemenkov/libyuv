@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #include "libyuv/planar_functions.h"
 
 #include <string.h>
@@ -32,9 +31,12 @@ static void SplitUV_NEON(const uint8* src_uv,
     "vst1.u8    {q1}, [%2]!       \n"  // Store V
     "subs       %3, %3, #16       \n"  // 16 processed per loop
     "bhi        1b                \n"
-    :                                                // Output registers
-    : "r"(src_uv), "r"(dst_u), "r"(dst_v), "r"(pix)  // Input registers
-    : "q0", "q1"                                     // Clobber List
+    : "+r"(src_uv),
+      "+r"(dst_u),
+      "+r"(dst_v),
+      "+r"(pix)             // Output registers
+    :                       // Input registers
+    : "q0", "q1"            // Clobber List
   );
 }
 
@@ -104,7 +106,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
 #define HAS_SPLITUV_SSE2
 static void SplitUV_SSE2(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
-  asm(
+ asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
 "1:"
@@ -125,11 +127,11 @@ static void SplitUV_SSE2(const uint8* src_uv,
   "lea        0x10(%2),%2\n"
   "sub        $0x10,%3\n"
   "ja         1b\n"
+  : "+r"(src_uv),     // %0
+    "+r"(dst_u),      // %1
+    "+r"(dst_v),      // %2
+    "+r"(pix)         // %3
   :
-  : "r"(src_uv),     // %0
-    "r"(dst_u),      // %1
-    "r"(dst_v),      // %2
-    "r"(pix)         // %3
   : "memory"
 );
 }
@@ -191,9 +193,10 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
+    int halfheight = (height + 1) >> 1;
     src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
     src_stride_y = -src_stride_y;
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
@@ -267,9 +270,8 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 // M420 is row biplanar 420: 2 rows of Y and 1 row of VU.
 // Chroma is half width / half height. (420)
 // src_stride_m420 is row planar.  Normally this will be the width in pixels.
-//   The UV plane is half width, but 2 values, so src_stride_m420 applies to this
-//   as well as the two Y planes.
-// TODO(fbarchard): Do NV21/NV12 formats with this function
+//   The UV plane is half width, but 2 values, so src_stride_m420 applies to
+//   this as well as the two Y planes.
 static int X420ToI420(const uint8* src_y,
                       int src_stride_y0, int src_stride_y1,
                       const uint8* src_uv, int src_stride_uv,
@@ -280,9 +282,10 @@ static int X420ToI420(const uint8* src_y,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
+    int halfheight = (height + 1) >> 1;
     dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
+    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
     dst_stride_y = -dst_stride_y;
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
@@ -340,6 +343,21 @@ int M420ToI420(const uint8* src_m420, int src_stride_m420,
 }
 
 // Convert NV12 to I420.
+int NV12ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_uv, int src_stride_uv,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  return X420ToI420(src_y, src_stride_y, src_stride_y,
+                    src_uv, src_stride_uv,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height);
+}
+
+// Convert NV12 to I420.  Deprecated.
 int NV12ToI420(const uint8* src_y,
                const uint8* src_uv,
                int src_stride,
@@ -402,12 +420,13 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     ret
   }
 }
+
 #elif (defined(__x86_64__) || defined(__i386__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
 "1:"
@@ -435,12 +454,12 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
   "lea        0x8(%3),%3\n"
   "sub        $0x10,%4\n"
   "ja         1b\n"
+  : "+r"(src_yuy2),    // %0
+    "+r"(dst_y),       // %1
+    "+r"(dst_u),       // %2
+    "+r"(dst_v),       // %3
+    "+r"(pix)          // %4
   :
-  : "r"(src_yuy2),    // %0
-    "r"(dst_y),       // %1
-    "r"(dst_u),       // %2
-    "r"(dst_v),       // %3
-    "r"(pix)          // %4
   : "memory"
 );
 }
@@ -469,6 +488,17 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
+    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
@@ -642,7 +672,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #define HAS_YUY2TOI420ROW_SSE2
 static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
                                 uint8* dst_y, int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
 "1:"
@@ -656,24 +686,24 @@ static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
   "lea        0x10(%1),%1\n"
   "sub        $0x10,%2\n"
   "ja         1b\n"
+  : "+r"(src_yuy2),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
   :
-  : "r"(src_yuy2),  // %0
-    "r"(dst_y),     // %1
-    "r"(pix)        // %2
   : "memory"
 );
 }
 
 static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
                                  uint8* dst_u, uint8* dst_y, int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     (%0,%1,1),%%xmm2\n"
-  "movdqa     0x10(%0,%1,1),%%xmm3\n"
+  "movdqa     (%0,%4,1),%%xmm2\n"
+  "movdqa     0x10(%0,%4,1),%%xmm3\n"
   "lea        0x20(%0),%0\n"
   "pavgb      %%xmm2,%%xmm0\n"
   "pavgb      %%xmm3,%%xmm1\n"
@@ -683,27 +713,26 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
   "movdqa     %%xmm0,%%xmm1\n"
   "pand       %%xmm7,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
-  "movq       %%xmm0,(%2)\n"
-  "lea        0x8(%2),%2\n"
+  "movq       %%xmm0,(%1)\n"
+  "lea        0x8(%1),%1\n"
   "psrlw      $0x8,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm1\n"
-  "movq       %%xmm1,(%3)\n"
-  "lea        0x8(%3),%3\n"
-  "sub        $0x10,%4\n"
+  "movq       %%xmm1,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "sub        $0x10,%3\n"
   "ja         1b\n"
-  :
-  : "r"(src_yuy2),    // %0
-    "r"((intptr_t)stride_yuy2),  // %1
-    "r"(dst_u),       // %2
-    "r"(dst_y),       // %3
-    "r"(pix)          // %4
+  : "+r"(src_yuy2),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_y),       // %2
+    "+r"(pix)          // %3
+  : "r"(static_cast<intptr_t>(stride_yuy2))  // %4
   : "memory"
 );
 }
 #define HAS_UYVYTOI420ROW_SSE2
 static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
                                 uint8* dst_y, int pix) {
-  asm(
+  asm volatile(
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
@@ -715,24 +744,24 @@ static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
   "lea        0x10(%1),%1\n"
   "sub        $0x10,%2\n"
   "ja         1b\n"
+  : "+r"(src_uyvy),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
   :
-  : "r"(src_uyvy),  // %0
-    "r"(dst_y),     // %1
-    "r"(pix)        // %2
   : "memory"
 );
 }
 
 static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
                                  uint8* dst_u, uint8* dst_y, int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     (%0,%1,1),%%xmm2\n"
-  "movdqa     0x10(%0,%1,1),%%xmm3\n"
+  "movdqa     (%0,%4,1),%%xmm2\n"
+  "movdqa     0x10(%0,%4,1),%%xmm3\n"
   "lea        0x20(%0),%0\n"
   "pavgb      %%xmm2,%%xmm0\n"
   "pavgb      %%xmm3,%%xmm1\n"
@@ -742,28 +771,28 @@ static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
   "movdqa     %%xmm0,%%xmm1\n"
   "pand       %%xmm7,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
-  "movq       %%xmm0,(%2)\n"
-  "lea        0x8(%2),%2\n"
+  "movq       %%xmm0,(%1)\n"
+  "lea        0x8(%1),%1\n"
   "psrlw      $0x8,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm1\n"
-  "movq       %%xmm1,(%3)\n"
-  "lea        0x8(%3),%3\n"
-  "sub        $0x10,%4\n"
+  "movq       %%xmm1,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "sub        $0x10,%3\n"
   "ja         1b\n"
-  :
-  : "r"(src_uyvy),    // %0
-    "r"((intptr_t)stride_uyvy),  // %1
-    "r"(dst_u),       // %2
-    "r"(dst_y),       // %3
-    "r"(pix)          // %4
+  : "+r"(src_uyvy),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_y),       // %2
+    "+r"(pix)          // %3
+  : "r"(static_cast<intptr_t>(stride_uyvy))  // %4
   : "memory"
 );
 }
 #endif
 
+// Filter 2 rows of YUY2 UV's (422) into U and V (420)
 void YUY2ToI420RowUV_C(const uint8* src_yuy2, int src_stride_yuy2,
                        uint8* dst_u, uint8* dst_v, int pix) {
-  // Copy a row of yuy2 UV values
+  // Output a row of UV values, filtering 2 rows of YUY2
   for (int x = 0; x < pix; x += 2) {
     dst_u[0] = (src_yuy2[1] + src_yuy2[src_stride_yuy2 + 1] + 1) >> 1;
     dst_v[0] = (src_yuy2[3] + src_yuy2[src_stride_yuy2 + 3] + 1) >> 1;
@@ -811,6 +840,12 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
+    src_stride_yuy2 = -src_stride_yuy2;
+  }
   void (*YUY2ToI420RowUV)(const uint8* src_yuy2, int src_stride_yuy2,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
@@ -852,6 +887,12 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_uyvy = src_uyvy + (height - 1) * src_stride_uyvy;
+    src_stride_uyvy = -src_stride_uyvy;
+  }
   void (*UYVYToI420RowUV)(const uint8* src_uyvy, int src_stride_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
   void (*UYVYToI420RowY)(const uint8* src_uyvy,
@@ -894,6 +935,12 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -914,6 +961,12 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToBGRARow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -933,6 +986,12 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToABGRRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -952,6 +1011,12 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -970,6 +1035,12 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUV444ToRGB32Row(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -986,6 +1057,12 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
 int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                          uint8* dst_argb, int dst_stride_argb,
                          int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYToRGB32Row(src_y, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -1157,7 +1234,7 @@ __asm {
 // TODO(yuche): consider moving ARGB related codes to a separate file.
 #define HAS_I400TOARGBROW_SSE2
 static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "pslld      $0x18,%%xmm7\n"
 "1:"
@@ -1174,10 +1251,10 @@ static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   "lea        0x20(%1),%1\n"
   "sub        $0x8,%2\n"
   "ja         1b\n"
+  : "+r"(src_y),     // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
   :
-  : "r"(src_y),     // %0
-    "r"(dst_argb),  // %1
-    "r"(pix)        // %2
   : "memory"
 );
 }
@@ -1185,7 +1262,7 @@ static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
 #define HAS_ABGRTOARGBROW_SSSE3
 static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
                                 int pix) {
-  asm(
+  asm volatile(
   "movdqa     (%3),%%xmm7\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
@@ -1195,11 +1272,10 @@ static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
   "lea        0x10(%1),%1\n"
   "sub        $0x4,%2\n"
   "ja         1b\n"
-  :
-  : "r"(src_abgr),  // %0
-    "r"(dst_argb),  // %1
-    "r"(pix),       // %2
-    "r"(kShuffleMaskABGRToARGB)  // %3
+  : "+r"(src_abgr),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskABGRToARGB)  // %3
   : "memory"
 );
 }
@@ -1207,7 +1283,7 @@ static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
 #define HAS_BGRATOARGBROW_SSSE3
 static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
                                 int pix) {
-  asm(
+  asm volatile(
   "movdqa     (%3),%%xmm7\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
@@ -1217,11 +1293,10 @@ static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
   "lea        0x10(%1),%1\n"
   "sub        $0x4,%2\n"
   "ja         1b\n"
-  :
-  : "r"(src_bgra),  // %0
-    "r"(dst_argb),  // %1
-    "r"(pix),       // %2
-    "r"(kShuffleMaskBGRAToARGB)  // %3
+  : "+r"(src_bgra),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskBGRAToARGB)  // %3
   : "memory"
 );
 }
@@ -1229,7 +1304,7 @@ static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
 #define HAS_BG24TOARGBROW_SSSE3
 static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
                                 int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
   "pslld      $0x18,%%xmm7\n"
   "movdqa     (%3),%%xmm6\n"
@@ -1257,11 +1332,10 @@ static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
   "lea        0x40(%1),%1\n"
   "sub        $0x10,%2\n"
   "ja         1b\n"
-  :
-  : "r"(src_bg24),  // %0
-    "r"(dst_argb),  // %1
-    "r"(pix),       // %2
-    "r"(kShuffleMaskBG24ToARGB)  // %3
+  : "+r"(src_bg24),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskBG24ToARGB)  // %3
   : "memory"
 );
 }
@@ -1269,7 +1343,7 @@ static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
 #define HAS_RAWTOARGBROW_SSSE3
 static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
                                int pix) {
-  asm(
+  asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
   "pslld      $0x18,%%xmm7\n"
   "movdqa     (%3),%%xmm6\n"
@@ -1297,11 +1371,10 @@ static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
   "lea        0x40(%1),%1\n"
   "sub        $0x10,%2\n"
   "ja         1b\n"
-  :
-  : "r"(src_raw),   // %0
-    "r"(dst_argb),  // %1
-    "r"(pix),       // %2
-    "r"(kShuffleMaskRAWToARGB)  // %3
+  : "+r"(src_raw),   // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskRAWToARGB)  // %3
   : "memory"
 );
 }
@@ -1530,6 +1603,32 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   return 0;
 }
 
-}  // namespace libyuv
+static void ARGBToI400Row_C(const uint8* src_argb, uint8* dst_y, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    uint32 b = static_cast<uint32>(src_argb[0] * 25u);
+    uint32 g = static_cast<uint32>(src_argb[1] * 129u);
+    uint32 r = static_cast<uint32>(src_argb[2] * 66u);
+    *(dst_y++) = static_cast<uint8>(((b + g + r) >> 8) + 16u);
+    src_argb += 4;
+  }
+}
 
+// Convert ARGB to I400.
+int ARGBToI400(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  for (int y = 0; y < height; ++y) {
+    ARGBToI400Row_C(src_argb, dst_y, width);
+    src_argb += src_stride_argb;
+    dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
+}  // namespace libyuv
 
