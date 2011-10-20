@@ -18,12 +18,12 @@ namespace libyuv {
 
 // Copy I420 to I420.
 int I420Copy(const uint8* src_y, int src_stride_y,
-          const uint8* src_u, int src_stride_u,
-          const uint8* src_v, int src_stride_v,
-          uint8* dst_y, int dst_stride_y,
-          uint8* dst_u, int dst_stride_u,
-          uint8* dst_v, int dst_stride_v,
-          int width, int height);
+             const uint8* src_u, int src_stride_u,
+             const uint8* src_v, int src_stride_v,
+             uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int width, int height);
 
 // Convert I422 to I420.  Used by MJPG.
 int I422ToI420(const uint8* src_y, int src_stride_y,
@@ -34,8 +34,17 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert M420 to I420.
-int M420ToI420(const uint8* src_m420, int src_stride_m420,
+// Convert NV12 to I420.  Also used for NV21.
+int NV12ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_uv, int src_stride_uv,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert NV12 to I420. Deprecated.
+int NV12ToI420(const uint8* src_y,
+               const uint8* src_uv, int src_stride,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
@@ -49,9 +58,8 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert NV12 to I420.  Also used for NV21.
-int NV12ToI420(const uint8* src_y,
-               const uint8* src_uv, int src_stride,
+// Convert M420 to I420.
+int M420ToI420(const uint8* src_m420, int src_stride_m420,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
@@ -111,7 +119,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert I400 to ARGB.
+// Convert I400 to ARGB.  Reverse of ARGBToI400
 int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                          uint8* dst_argb, int dst_stride_argb,
                          int width, int height);
@@ -126,14 +134,19 @@ int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert ABGR to ARGB.
+// Convert ABGR to ARGB. Also used for ARGB to ABGR.
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert BGRA to ARGB.
+// Convert BGRA to ARGB. Also used for ARGB to BGRA.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
+// Convert ARGB to I400.
+int ARGBToI400(const uint8* src_argb, int src_stride_argb,
+               const uint8* dst_y, int dst_stride_y,
                int width, int height);
 
 }  // namespace libyuv
