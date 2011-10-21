@@ -1213,7 +1213,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile(
   "pcmpeqb    %%xmm7,%%xmm7\n"
   "psrlw      $0x8,%%xmm7\n"
-  "lea        (%4,%4,2),%4\n"
+  "lea        (%4,%4,2),%3\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"

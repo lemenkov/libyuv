@@ -24,7 +24,8 @@
          # sources
          'unit_test/unit_test.cc',
          'unit_test/rotate_test.cc',
-      ], # source
+         'unit_test/scale_test.cc',
+      ],
       'conditions': [
         ['OS=="linux"', {
           'cflags': [
