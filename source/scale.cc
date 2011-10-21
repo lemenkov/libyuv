@@ -58,9 +58,11 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
     "vst1.u8    {q0}, [%1]!       \n"  // store even pixels
     "subs       %2, %2, #16       \n"  // 16 processed per loop
     "bhi        1b                \n"
-    : "+r"(src_ptr), "+r"(dst), "+r"(dst_width)   // Output registers
-    :                                  // Input registers
-    : "q0", "q1"                       // Clobber List
+    : "+r"(src_ptr),          // %0
+      "+r"(dst),              // %1
+      "+r"(dst_width)         // %2
+    :
+    : "q0", "q1"              // Clobber List
   );
 }
 
@@ -85,11 +87,85 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
     "vst1.u8    {q0}, [%2]!       \n"
     "subs       %3, %3, #16       \n"  // 16 processed per loop
     "bhi        1b                \n"
-    : "+r"(src_ptr), "+r"(src_stride),
-      "+r"(dst), "+r"(dst_width)                      // Output registers
-    :                                                 // Input registers
+    : "+r"(src_ptr),          // %0
+      "+r"(src_stride),       // %1
+      "+r"(dst),              // %2
+      "+r"(dst_width)         // %3
+    :
     : "r4", "q0", "q1", "q2", "q3", "q4"              // Clobber List
    );
+}
+
+#define HAS_SCALEROWDOWN4_NEON
+// Expecting widths on arm devices to be smaller.  Went with 8x4 blocks
+//  to get most coverage.  Look to back and evaluate 16x4 blocks with
+//  handling of leftovers.
+static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
+                               uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "mov        r4, #4            \n"
+    "1:                           \n"
+    "vld1.u8    {d0[0]}, [%0],r4  \n"   // load up only 2 pixels of data to
+    "vld1.u8    {d0[1]}, [%0],r4  \n"   //  represent the entire 8x4 block
+
+    "vst1.u16   {d0[0]}, [%1]!    \n"
+
+    "subs       %2, #2            \n"   // dst_width -= 2
+    "bhi        1b                \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width)         // %2
+    :
+    : "r4", "q0", "q1", "memory", "cc"
+  );
+}
+
+static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
+                                  uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "1:                           \n"
+    "mov        r4, %0            \n"
+    "vld1.u8    {d0}, [r4],%3     \n"   // load up 8x4 block of input data
+    "vld1.u8    {d1}, [r4],%3     \n"
+    "vld1.u8    {d2}, [r4],%3     \n"
+    "vld1.u8    {d3}, [r4]        \n"
+
+    // data is loaded up int q0 and q1
+    // q0 = a00 a01 a02 a03 b00 b01 b02 b03 a10 a11 a12 a13 b10 b11 b12 b13
+    // q1 = a20 a21 a22 a23 b20 b21 b22 b23 a20 a21 a22 a23 b20 b21 b22 b23
+    // q0 = a00+a01 a02+a03 b00+b01 b02+b03 a10+a11 a12+a13 b10+b11 b12+b13
+    "vpaddl.u8  q0, q0            \n"
+
+    // d0 = a00+a01+a20+a21 a02+a03+a22+a23 b00+b01+b20+b21 b02+b03+b22+b23
+    // d1 = a10+a11+a20+a21 a12+a13+a22+a23 b10+b11+b20+b21 b12+b13+b22+b23
+    "vpadal.u8  q0, q1            \n"
+
+    // d0 = a00+a01+a20+a21+a02+a03+a22+a23 b00+b01+b20+b21+b02+b03+b22+b23
+    // d1 = a10+a11+a20+a21+a12+a13+a22+a23 b10+b11+b20+b21+b12+b13+b22+b23
+    "vpaddl.u16 q0, q0            \n"
+
+
+    // d0 = a00+a01+a20+a21+a02+a03+a22+a23+a10+a11+a20+a21+a12+a13+a22+a23
+    //      b00+b01+b20+b21+b02+b03+b22+b23+b10+b11+b20+b21+b12+b13+b22+b23
+    "vadd.u32   d0, d1            \n"
+
+    "vrshr.u32  d0, d0, #4        \n"   // divide by 16 w/rounding
+
+    "vst1.u8    {d0[0]}, [%1]!    \n"
+    "vst1.u8    {d0[4]}, [%1]!    \n"
+
+    "add        %0, #8            \n"   // move src pointer to next 8 pixels
+    "subs       %2, #2            \n"   // dst_width -= 2
+    "bhi        1b                \n"
+
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width)         // %2
+    : "r"(src_stride)         // %3
+    : "r4", "q0", "q1", "memory", "cc"
+  );
 }
 
 /**
@@ -2704,6 +2780,13 @@ static void ScalePlaneDown4(int src_width, int src_height,
   void (*ScaleRowDown4)(const uint8* src_ptr, int src_stride,
                         uint8* dst_ptr, int dst_width);
 
+#if defined(HAS_SCALEROWDOWN4_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (dst_width % 2 == 0) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(src_ptr, 8)) {
+    ScaleRowDown4 = filtering ? ScaleRowDown4Int_NEON : ScaleRowDown4_NEON;
+  } else
+#endif
 #if defined(HAS_SCALEROWDOWN4_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (dst_width % 8 == 0) && (src_stride % 16 == 0) &&
