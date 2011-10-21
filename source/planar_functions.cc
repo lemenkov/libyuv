@@ -64,6 +64,14 @@ extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) =
 extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) =
   { 2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u };
 
+// Constant multiplication table for converting ARGB to I400.
+extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400[16]) =
+  { 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u,
+    13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u };
+
+extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400_2[16]) =
+  { 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u };
+
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
@@ -1112,10 +1120,10 @@ __asm {
     mov       eax, [esp + 4]   // src_abgr
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm7, byte ptr [_kShuffleMaskABGRToARGB]
+    movdqa    xmm7, _kShuffleMaskABGRToARGB
 
  convertloop :
-    movdqa    xmm0, qword ptr [eax]
+    movdqa    xmm0, [eax]
     lea       eax, [eax + 16]
     pshufb    xmm0, xmm7
     movdqa    [edx], xmm0
@@ -1134,10 +1142,10 @@ __asm {
     mov       eax, [esp + 4]   // src_bgra
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm7, byte ptr [_kShuffleMaskBGRAToARGB]
+    movdqa    xmm7, _kShuffleMaskBGRAToARGB
 
  convertloop :
-    movdqa    xmm0, qword ptr [eax]
+    movdqa    xmm0, [eax]
     lea       eax, [eax + 16]
     pshufb    xmm0, xmm7
     movdqa    [edx], xmm0
@@ -1158,12 +1166,12 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
     pslld     xmm7, 24
-    movdqa    xmm6, byte ptr [_kShuffleMaskBG24ToARGB]
+    movdqa    xmm6, _kShuffleMaskBG24ToARGB
 
  convertloop :
-    movdqa    xmm0, qword ptr [eax]
-    movdqa    xmm1, qword ptr [eax + 16]
-    movdqa    xmm3, qword ptr [eax + 32]
+    movdqa    xmm0, [eax]
+    movdqa    xmm1, [eax + 16]
+    movdqa    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
     palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
@@ -1198,12 +1206,12 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
     pslld     xmm7, 24
-    movdqa    xmm6, byte ptr [_kShuffleMaskRAWToARGB]
+    movdqa    xmm6, _kShuffleMaskRAWToARGB
 
  convertloop :
-    movdqa    xmm0, qword ptr [eax]
-    movdqa    xmm1, qword ptr [eax + 16]
-    movdqa    xmm3, qword ptr [eax + 32]
+    movdqa    xmm0, [eax]
+    movdqa    xmm1, [eax + 16]
+    movdqa    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
     palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
@@ -1223,6 +1231,39 @@ __asm {
     movdqa    [edx + 48], xmm3
     lea       edx, [edx + 64]
     sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+#define HAS_ARGBTOI400ROW_SSSE3
+__declspec(naked)
+static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y,
+                                int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_y
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm7, _kMultiplyMaskARGBToI400
+    movdqa    xmm6, _kMultiplyMaskARGBToI400_2
+    movdqa    xmm5, xmm6
+    psllw     xmm5, 4         // Generate a mask of 0x10 on each byte.
+
+ convertloop :
+    movdqa    xmm0, [eax]
+    pmaddubsw xmm0, xmm7
+    movdqa    xmm1, [eax + 16]
+    psrlw     xmm0, 7
+    pmaddubsw xmm1, xmm7
+    lea       eax, [eax + 32]
+    psrlw     xmm1, 7
+    packuswb  xmm0, xmm1
+    pmaddubsw xmm0, xmm6
+    packuswb  xmm0, xmm0
+    paddb     xmm0, xmm5
+    movq      qword ptr [edx], xmm0
+    lea       edx, [edx + 8]
+    sub       ecx, 8
     ja        convertloop
     ret
   }
@@ -1378,6 +1419,40 @@ static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
   : "memory"
 );
 }
+
+#define HAS_ARGBTOI400ROW_SSSE3
+static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y,
+                                int pix) {
+  asm volatile(
+  "movdqa     (%3),%%xmm7\n"
+  "movdqa     (%4),%%xmm6\n"
+  "movdqa     %%xmm6,%%xmm5\n"
+  "psllw      $0x4,%%xmm5\n"  // Generate a mask of 0x10 on each byte.
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "pmaddubsw  %%xmm7,%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "psrlw      $0x7,%%xmm0\n"
+  "pmaddubsw  %%xmm7,%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "psrlw      $0x7,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "pmaddubsw  %%xmm6,%%xmm0\n"
+  "packuswb   %%xmm0,%%xmm0\n"
+  "paddb      %%xmm5,%%xmm0\n"
+  "movq       %%xmm0,(%1)\n"
+  "lea        0x8(%1),%1\n"
+  "sub        $0x8,%2\n"
+  "ja         1b\n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_y),      // %1
+    "+r"(pix)         // %2
+  : "r"(kMultiplyMaskARGBToI400),    // %3
+    "r"(kMultiplyMaskARGBToI400_2)   // %4
+  : "memory"
+);
+}
+
 #endif
 
 static void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -1605,10 +1680,10 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
 
 static void ARGBToI400Row_C(const uint8* src_argb, uint8* dst_y, int pix) {
   for (int x = 0; x < pix; ++x) {
-    uint32 b = static_cast<uint32>(src_argb[0] * 25u);
-    uint32 g = static_cast<uint32>(src_argb[1] * 129u);
-    uint32 r = static_cast<uint32>(src_argb[2] * 66u);
-    *(dst_y++) = static_cast<uint8>(((b + g + r) >> 8) + 16u);
+    uint32 b = static_cast<uint32>(src_argb[0] * 13u);
+    uint32 g = static_cast<uint32>(src_argb[1] * 64u);
+    uint32 r = static_cast<uint32>(src_argb[2] * 33u);
+    *(dst_y++) = static_cast<uint8>(((b + g + r) >> 7) + 16u);
     src_argb += 4;
   }
 }
@@ -1622,8 +1697,21 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
+void (*ARGBToI400Row)(const uint8* src_argb, uint8* dst_y, int pix);
+#if defined(HAS_ARGBTOI400ROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 4 == 0) &&
+      IS_ALIGNED(src_argb, 16) && (src_stride_argb % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    ARGBToI400Row = ARGBToI400Row_SSSE3;
+  } else
+#endif
+  {
+    ARGBToI400Row = ARGBToI400Row_C;
+  }
+
   for (int y = 0; y < height; ++y) {
-    ARGBToI400Row_C(src_argb, dst_y, width);
+    ARGBToI400Row(src_argb, dst_y, width);
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
   }

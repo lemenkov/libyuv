@@ -12,7 +12,24 @@
 #include "libyuv/rotate.h"
 #include "rotate_priv.h"
 
+#include "libyuv/cpu_id.h"
+
 namespace libyuv {
+
+#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
+    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#if defined(_MSC_VER)
+#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
+#else
+#define TALIGN16(t, var) t var __attribute__((aligned(16)))
+#endif
+// Shuffle table for reversing the bytes.
+extern "C" TALIGN16(const uint8, kShuffleReverse[16]) =
+  { 15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u };
+// Shuffle table for reversing the bytes of UV channels.
+extern "C" TALIGN16(const uint8, kShuffleReverseUV[16]) =
+  { 14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u };
+#endif
 
 typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
 typedef void (*reverse_func)(const uint8*, uint8*, int);
@@ -29,17 +46,200 @@ typedef void (*rotate_wxh_func)(const uint8*, int, uint8*, int, int, int);
 extern "C" {
 void RestoreRegisters_NEON(unsigned long long *restore);
 void SaveRegisters_NEON(unsigned long long *store);
+#define HAS_REVERSE_LINE_NEON
 void ReverseLine_NEON(const uint8* src, uint8* dst, int width);
+#define HAS_REVERSE_LINE_UV_NEON
 void ReverseLineUV_NEON(const uint8* src,
                         uint8* dst_a, uint8* dst_b,
                         int width);
+#define HAS_TRANSPOSE_WX8_NEON
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width);
+#define HAS_TRANSPOSE_UVWX8_NEON
 void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width);
 }  // extern "C"
+#endif
+
+#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#define HAS_TRANSPOSE_WX8_SSSE3
+__declspec(naked)
+static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
+                               uint8* dst, int dst_stride, int width) {
+__asm {
+    push      edi
+    push      esi
+    push      ebp
+    mov       eax, [esp + 12 + 4]   // src
+    mov       edi, [esp + 12 + 8]   // src_stride
+    mov       edx, [esp + 12 + 12]  // dst
+    mov       esi, [esp + 12 + 16]  // dst_stride
+    mov       ecx, [esp + 12 + 20]  // width
+ convertloop :
+    // Read in the data from the source pointer.
+    // First round of bit swap.
+    movq      xmm0, qword ptr [eax]
+    lea       ebp, [eax + 8]
+    movq      xmm1, qword ptr [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    punpcklbw xmm0, xmm1
+    movq      xmm2, qword ptr [eax]
+    movdqa    xmm1, xmm0
+    palignr   xmm1, xmm1, 8
+    movq      xmm3, qword ptr [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    punpcklbw xmm2, xmm3
+    movdqa    xmm3, xmm2
+    movq      xmm4, qword ptr [eax]
+    palignr   xmm3, xmm3, 8
+    movq      xmm5, qword ptr [eax + edi]
+    punpcklbw xmm4, xmm5
+    lea       eax, [eax + 2 * edi]
+    movdqa    xmm5, xmm4
+    movq      xmm6, qword ptr [eax]
+    palignr   xmm5, xmm5, 8
+    movq      xmm7, qword ptr [eax + edi]
+    punpcklbw xmm6, xmm7
+    mov       eax, ebp
+    movdqa    xmm7, xmm6
+    palignr   xmm7, xmm7, 8
+    // Second round of bit swap.
+    punpcklwd xmm0, xmm2
+    punpcklwd xmm1, xmm3
+    movdqa    xmm2, xmm0
+    movdqa    xmm3, xmm1
+    palignr   xmm2, xmm2, 8
+    palignr   xmm3, xmm3, 8
+    punpcklwd xmm4, xmm6
+    punpcklwd xmm5, xmm7
+    movdqa    xmm6, xmm4
+    movdqa    xmm7, xmm5
+    palignr   xmm6, xmm6, 8
+    palignr   xmm7, xmm7, 8
+    // Third round of bit swap.
+    // Write to the destination pointer. 
+    punpckldq xmm0, xmm4
+    movq      qword ptr [edx], xmm0
+    movdqa    xmm4, xmm0
+    palignr   xmm4, xmm4, 8
+    movq      qword ptr [edx + esi], xmm4
+    lea       edx, [edx + 2 * esi]
+    punpckldq xmm2, xmm6
+    movdqa    xmm6, xmm2
+    palignr   xmm6, xmm6, 8
+    movq      qword ptr [edx], xmm2
+    punpckldq xmm1, xmm5
+    movq      qword ptr [edx + esi], xmm6
+    lea       edx, [edx + 2 * esi]
+    movdqa    xmm5, xmm1
+    movq      qword ptr [edx], xmm1
+    palignr   xmm5, xmm5, 8
+    punpckldq xmm3, xmm7
+    movq      qword ptr [edx + esi], xmm5
+    lea       edx, [edx + 2 * esi]
+    movq      qword ptr [edx], xmm3
+    movdqa    xmm7, xmm3
+    palignr   xmm7, xmm7, 8
+    movq      qword ptr [edx + esi], xmm7
+    lea       edx, [edx + 2 * esi]
+    sub       ecx, 8
+    ja        convertloop
+    
+    pop       ebp
+    pop       esi
+    pop       edi
+    ret
+  }
+}
+
+#elif (defined(__i386__) || defined(__x86_64__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_TRANSPOSE_WX8_SSSE3
+static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
+                               uint8* dst, int dst_stride, int width) {
+  asm volatile(
+"1:"
+  // Read in the data from the source pointer.
+  // First round of bit swap.
+  "movq       (%0),%%xmm0\n"
+  "movq       (%0,%3),%%xmm1\n"
+  "lea        (%0,%3,2),%0\n"
+  "punpcklbw  %%xmm1,%%xmm0\n"
+  "movq       (%0),%%xmm2\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "palignr    $0x8,%%xmm1,%%xmm1\n"
+  "movq       (%0,%3),%%xmm3\n"
+  "lea        (%0,%3,2),%0\n"
+  "punpcklbw  %%xmm3,%%xmm2\n"
+  "movdqa     %%xmm2,%%xmm3\n"
+  "movq       (%0),%%xmm4\n"
+  "palignr    $0x8,%%xmm3,%%xmm3\n"
+  "movq       (%0,%3),%%xmm5\n"
+  "lea        (%0,%3,2),%0\n"
+  "punpcklbw  %%xmm5,%%xmm4\n"
+  "movdqa     %%xmm4,%%xmm5\n"
+  "movq       (%0),%%xmm6\n"
+  "palignr    $0x8,%%xmm5,%%xmm5\n"
+  "movq       (%0,%3),%%xmm7\n"
+  "lea        (%0,%3,2),%0\n"
+  "punpcklbw  %%xmm7,%%xmm6\n"
+  "neg        %3\n"
+  "movdqa     %%xmm6,%%xmm7\n"
+  "lea        0x8(%0,%3,8),%0\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  "neg        %3\n"
+   // Second round of bit swap.
+  "punpcklwd  %%xmm2,%%xmm0\n"
+  "punpcklwd  %%xmm3,%%xmm1\n"
+  "movdqa     %%xmm0,%%xmm2\n"
+  "movdqa     %%xmm1,%%xmm3\n"
+  "palignr    $0x8,%%xmm2,%%xmm2\n"
+  "palignr    $0x8,%%xmm3,%%xmm3\n"
+  "punpcklwd  %%xmm6,%%xmm4\n"
+  "punpcklwd  %%xmm7,%%xmm5\n"
+  "movdqa     %%xmm4,%%xmm6\n"
+  "movdqa     %%xmm5,%%xmm7\n"
+  "palignr    $0x8,%%xmm6,%%xmm6\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  // Third round of bit swap.
+  // Write to the destination pointer. 
+  "punpckldq  %%xmm4,%%xmm0\n"
+  "movq       %%xmm0,(%1)\n"
+  "movdqa     %%xmm0,%%xmm4\n"
+  "palignr    $0x8,%%xmm4,%%xmm4\n"
+  "movq       %%xmm4,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm6,%%xmm2\n"
+  "movdqa     %%xmm2,%%xmm6\n"
+  "movq       %%xmm2,(%1)\n"
+  "palignr    $0x8,%%xmm6,%%xmm6\n"
+  "punpckldq  %%xmm5,%%xmm1\n"
+  "movq       %%xmm6,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "movdqa     %%xmm1,%%xmm5\n"
+  "movq       %%xmm1,(%1)\n"
+  "palignr    $0x8,%%xmm5,%%xmm5\n"
+  "movq       %%xmm5,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm7,%%xmm3\n"
+  "movq       %%xmm3,(%1)\n"
+  "movdqa     %%xmm3,%%xmm7\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  "movq       %%xmm7,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "sub        $0x8,%2\n"
+  "ja         1b\n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "r"(static_cast<intptr_t>(src_stride)),  // %3
+    "r"(static_cast<intptr_t>(dst_stride))   // %4
+  : "memory"
+);
+}
+
 #endif
 
 static void TransposeWx8_C(const uint8* src, int src_stride,
@@ -67,14 +267,28 @@ void TransposePlane(const uint8* src, int src_stride,
   rotate_wx8_func TransposeWx8;
   rotate_wxh_func TransposeWxH;
 
-  // do processor detection here.
-#ifdef __ARM_NEON__
-  TransposeWx8 = TransposeWx8_NEON;
-  TransposeWxH = TransposeWxH_C;
-#else
-  TransposeWx8 = TransposeWx8_C;
-  TransposeWxH = TransposeWxH_C;
+#if defined(HAS_TRANSPOSE_WX8_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst, 16) && (dst_stride % 8 == 0)) {
+    TransposeWx8 = TransposeWx8_NEON;
+    TransposeWxH = TransposeWxH_C;
+  } else
 #endif
+#if defined(HAS_TRANSPOSE_WX8_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst, 16) && (dst_stride % 8 == 0)) {
+    TransposeWx8 = TransposeWx8_SSSE3;
+    TransposeWxH = TransposeWxH_C;
+  } else
+#endif
+  {
+    TransposeWx8 = TransposeWx8_C;
+    TransposeWxH = TransposeWxH_C;
+  }
 
   // work across the source in 8x8 tiles
   while (i >= 8) {
@@ -112,7 +326,7 @@ void RotatePlane270(const uint8* src, int src_stride,
   TransposePlane(src, src_stride, dst, dst_stride, width, height);
 }
 
-void ReverseLine_C(const uint8* src, uint8* dst, int width) {
+static void ReverseLine_C(const uint8* src, uint8* dst, int width) {
   int i;
   src += width;
   for (i = 0; i < width; ++i) {
@@ -121,19 +335,78 @@ void ReverseLine_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
+#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#define HAS_REVERSE_LINE_SSSE3
+__declspec(naked)
+static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
+__asm {
+    mov       eax, [esp + 4]   // src
+    mov       edx, [esp + 8]   // dst
+    mov       ecx, [esp + 12]  // width
+    movdqa    xmm7, _kShuffleReverse
+    lea       eax, [eax + ecx - 16]
+ convertloop :
+    movdqa    xmm0, [eax]
+    lea       eax, [eax - 16]
+    pshufb    xmm0, xmm7
+    movdqa    [edx], xmm0
+    lea       edx, [edx + 16]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+#elif (defined(__i386__) || defined(__x86_64__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_REVERSE_LINE_SSSE3
+static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
+  intptr_t temp_width = static_cast<intptr_t>(width);
+  asm volatile(
+  "movdqa     (%3),%%xmm7\n"
+  "lea        -0x10(%0,%2,1),%0\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "lea        -0x10(%0),%0\n"
+  "pshufb     %%xmm7,%%xmm0\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "lea        0x10(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(temp_width)   // %2
+  : "r"(kShuffleReverse)   // %3
+  : "memory"
+);
+}
+#endif
+
 void RotatePlane180(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
   int i;
   reverse_func ReverseLine;
 
-  // TODO(frkoenig): do processor detection here.
-#ifdef __ARM_NEON__
-  ReverseLine = ReverseLine_NEON;
-#else
-  ReverseLine = ReverseLine_C;
+#if defined(HAS_REVERSE_LINE_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst, 16) && (dst_stride % 16 == 0)) {
+    ReverseLine = ReverseLine_NEON;
+  } else
 #endif
-
+#if defined(HAS_REVERSE_LINE_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst, 16) && (dst_stride % 16 == 0)) {
+    ReverseLine = ReverseLine_SSSE3;
+  } else
+#endif
+  {
+    ReverseLine = ReverseLine_C;
+  }
   // Rotate by 180 is a mirror with the destination
   // written in reverse.
   dst += dst_stride * (height - 1);
@@ -178,16 +451,32 @@ void TransposeUV(const uint8* src, int src_stride,
   rotate_uv_wx8_func TransposeWx8;
   rotate_uv_wxh_func TransposeWxH;
 
-  // do processor detection here.
-#ifdef __ARM_NEON__
-  unsigned long long store_reg[8];
-  SaveRegisters_NEON(store_reg);
-  TransposeWx8 = TransposeUVWx8_NEON;
-  TransposeWxH = TransposeUVWxH_C;
-#else
-  TransposeWx8 = TransposeUVWx8_C;
-  TransposeWxH = TransposeUVWxH_C;
+#if defined(HAS_TRANSPOSE_UVWX8_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0)) {
+    unsigned long long store_reg[8];
+    SaveRegisters_NEON(store_reg);
+    TransposeWx8 = TransposeUVWx8_NEON;
+    TransposeWxH = TransposeUVWxH_C;
+  } else
 #endif
+#if defined(HAS_TRANSPOSE_UVWX8_SSE2)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0)) {
+    TransposeWx8 = TransposeUVWx8_SSE2;
+    TransposeWxH = TransposeUVWxH_C;
+  } else
+#endif
+  {
+    TransposeWx8 = TransposeUVWx8_C;
+    TransposeWxH = TransposeUVWxH_C;
+  }
 
   // work through the source in 8x8 tiles
   while (i >= 8) {
@@ -207,8 +496,10 @@ void TransposeUV(const uint8* src, int src_stride,
                dst_b, dst_stride_b,
                width, i);
 
-#ifdef __ARM_NEON__
-  RestoreRegisters_NEON(store_reg);
+#if defined(HAS_TRANSPOSE_UVWX8_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
+    RestoreRegisters_NEON(store_reg);
+  }
 #endif
 }
 
@@ -240,6 +531,66 @@ void RotateUV270(const uint8* src, int src_stride,
               width, height);
 }
 
+#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#define HAS_REVERSE_LINE_UV_SSSE3
+__declspec(naked)
+void ReverseLineUV_SSSE3(const uint8* src,
+                         uint8* dst_a, uint8* dst_b,
+                         int width) {
+__asm {
+    push      edi
+    mov       eax, [esp + 4 + 4]   // src
+    mov       edx, [esp + 4 + 8]   // dst_a
+    mov       edi, [esp + 4 + 12]  // dst_b
+    mov       ecx, [esp + 4 + 16]  // width
+    movdqa    xmm7, _kShuffleReverseUV
+    lea       eax, [eax + 2 * ecx - 16]
+
+ convertloop :
+    movdqa    xmm0, [eax]
+    lea       eax, [eax - 16]
+    pshufb    xmm0, xmm7
+    movlpd    qword ptr [edx], xmm0
+    lea       edx, [edx + 8]
+    movhpd    qword ptr [edi], xmm0
+    lea       edi, [edi + 8]
+    sub       ecx, 8
+    ja        convertloop
+    pop       edi
+    ret
+  }
+}
+
+#elif (defined(__i386__) || defined(__x86_64__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_REVERSE_LINE_UV_SSSE3
+void ReverseLineUV_SSSE3(const uint8* src,
+                         uint8* dst_a, uint8* dst_b,
+                         int width) {
+  intptr_t temp_width = static_cast<intptr_t>(width);
+  asm volatile(
+  "movdqa     (%4),%%xmm7\n"
+  "lea        -0x10(%0,%3,2),%0\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "lea        -0x10(%0),%0\n"
+  "pshufb     %%xmm7,%%xmm0\n"
+  "movlpd     %%xmm0,(%1)\n"
+  "lea        0x8(%1),%1\n"
+  "movhpd     %%xmm0,(%2)\n"
+  "lea        0x8(%2),%2\n"
+  "sub        $0x8,%3\n"
+  "ja         1b\n"
+  : "+r"(src),      // %0
+    "+r"(dst_a),    // %1
+    "+r"(dst_b),    // %2
+    "+r"(temp_width)     // %3
+  : "r"(kShuffleReverseUV)  // %4
+  : "memory"
+);
+}
+#endif
+
 static void ReverseLineUV_C(const uint8* src,
                             uint8* dst_a, uint8* dst_b,
                             int width) {
@@ -260,11 +611,27 @@ void RotateUV180(const uint8* src, int src_stride,
   reverse_uv_func ReverseLine;
 
   // TODO(frkoenig) : do processor detection here.
-#ifdef __ARM_NEON__
-  ReverseLine = ReverseLineUV_NEON;
-#else
-  ReverseLine = ReverseLineUV_C;
+#if defined(HAS_REVERSE_LINE_UV_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0) ) {
+    ReverseLine = ReverseLineUV_NEON;
+  } else
 #endif
+#if defined(HAS_REVERSE_LINE_UV_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0) ) {
+    ReverseLine = ReverseLineUV_SSSE3;
+  } else
+#endif
+  {
+    ReverseLine = ReverseLineUV_C;
+  }
 
   dst_a += dst_stride_a * (height - 1);
   dst_b += dst_stride_b * (height - 1);
