@@ -18,6 +18,7 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/general.h"
 #include "libyuv/planar_functions.h"
+#include "libyuv/rotate.h"
 #include "libyuv/scale.h"
 
 #endif  // LIBYUV_INCLUDE_LIBYUV_H_
