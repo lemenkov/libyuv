@@ -49,28 +49,33 @@ static void SplitUV_NEON(const uint8* src_uv,
 #endif
 
 // Shuffle table for converting ABGR to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskABGRToARGB[16]) =
-  { 2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u };
+extern "C" TALIGN16(const uint8, kShuffleMaskABGRToARGB[16]) = {
+  2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
+};
 
 // Shuffle table for converting BGRA to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) =
-  { 3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u };
+extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) = {
+  3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
+};
 
 // Shuffle table for converting BG24 to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) =
-  { 0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u };
+extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) = {
+  0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
+};
 
 // Shuffle table for converting RAW to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) =
-  { 2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u };
+extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) = {
+  2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
+};
 
 // Constant multiplication table for converting ARGB to I400.
-extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400[16]) =
-  { 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u,
-    13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u };
+extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400[16]) = {
+  13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u
+};
 
-extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400_2[16]) =
-  { 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u };
+extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400_2[16]) = {
+  1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u
+};
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
@@ -169,28 +174,7 @@ static void I420CopyPlane(const uint8* src_y, int src_stride_y,
   }
 }
 
-static void I420CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
-                           uint8* dst, int dst_stride,
-                           int width, int height) {
-  // Copy plane
-  for (int y = 0; y < height; y += 2) {
-    memcpy(dst, src, width);
-    src += src_stride_0;
-    dst += dst_stride;
-    memcpy(dst, src, width);
-    src += src_stride_1;
-    dst += dst_stride;
-  }
-}
-
-// TODO(fbarchard): For biplanar formats (ie NV21), the Y plane is the same
-// as I420, and only the chroma plane varies. Copy the Y plane by reference,
-// and just convert the UV.  This method can be used for NV21, NV12, I420,
-// I422, M422.  8 of the 12 bits is Y, so this would copy 3 times less data,
-// which is approximately how much faster it would be.
-
-// Helper function to copy yuv data without scaling.  Used
-// by our jpeg conversion callbacks to incrementally fill a yuv image.
+// Copy I420 with optional flipping
 int I420Copy(const uint8* src_y, int src_stride_y,
              const uint8* src_u, int src_stride_u,
              const uint8* src_v, int src_stride_v,
@@ -198,6 +182,12 @@ int I420Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
              int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -215,6 +205,137 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   I420CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
   I420CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+  return 0;
+}
+
+// SetRows32 writes 'count' bytes using a 32 bit value repeated
+
+#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#define HAS_SETROW_NEON
+static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
+  __asm__ volatile
+  (
+    "vdup.u32   {q0}, %2          \n"  // duplicate 4 ints
+    "1:\n"
+    "vst1.u32   {q0}, [%0]!       \n"  // store
+    "subs       %1, %1, #16       \n"  // 16 processed per loop
+    "bhi        1b                \n"
+  : "+r"(dst),  // %0
+    "+r"(count) // %1
+  : "r"(v32)    // %2
+  : "q0", "memory"
+  );
+}
+
+#elif defined(WIN32) && !defined(COVERAGE_ENABLED)
+#define HAS_SETROW_SSE2
+__declspec(naked)
+static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
+  __asm {
+    mov        eax, [esp + 4]    // dst
+    movd       xmm7, [esp + 8]   // v32
+    mov        ecx, [esp + 12]   // count
+    pshufd     xmm7, xmm7, 0
+
+  wloop:
+    movdqa     [eax], xmm7
+    lea        eax, [eax + 16]
+    sub        ecx, 16
+    ja         wloop
+    ret
+  }
+}
+
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+
+#define HAS_SETROW_SSE2
+static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
+  asm volatile(
+  "movd       %2, %%xmm7\n"
+  "pshufd     $0x0,%%xmm7,%%xmm7\n"
+"1:"
+  "movdqa     %%xmm7,(%0)\n"
+  "lea        0x10(%0),%0\n"
+  "sub        $0x10,%1\n"
+  "ja         1b\n"
+  : "+r"(dst),  // %0
+    "+r"(count) // %1
+  : "r"(v32)    // %2
+  : "memory"
+);
+}
+#endif
+
+static void SetRow8_C(uint8* dst, uint32 v8, int count) {
+  memset(dst, v8, count);
+}
+
+static void I420SetPlane(uint8* dst_y, int dst_stride_y,
+                         int width, int height,
+                         int value) {
+  void (*SetRow)(uint8* dst, uint32 value, int pix);
+#if defined(HAS_SETROW_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    SetRow = SetRow32_NEON;
+  } else
+#elif defined(HAS_SETROW_SSE2)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    SetRow = SetRow32_SSE2;
+  } else
+#endif
+  {
+    SetRow = SetRow8_C;
+  }
+
+  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
+  // Set plane
+  for (int y = 0; y < height; ++y) {
+    SetRow(dst_y, v32, width);
+    dst_y += dst_stride_y;
+  }
+}
+
+// Draw a rectangle into I420
+int I420Rect(uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int x, int y,
+             int width, int height,
+             int value_y, int value_u, int value_v) {
+  if (!dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0 ||
+      x < 0 || y < 0 ||
+      value_y < 0 || value_y > 255 ||
+      value_u < 0 || value_u > 255 ||
+      value_v < 0 || value_v > 255) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
+    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  uint8* start_y = dst_y + y * dst_stride_y + x;
+  uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
+  uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
+
+  I420SetPlane(start_y, dst_stride_y, width, height, value_y);
+  I420SetPlane(start_u, dst_stride_u, halfwidth, halfheight, value_u);
+  I420SetPlane(start_v, dst_stride_v, halfwidth, halfheight, value_v);
   return 0;
 }
 
@@ -269,6 +390,20 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
     dst_v += dst_stride_v;
   }
   return 0;
+}
+
+static void I420CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
+                           uint8* dst, int dst_stride,
+                           int width, int height) {
+  // Copy plane
+  for (int y = 0; y < height; y += 2) {
+    memcpy(dst, src, width);
+    src += src_stride_0;
+    dst += dst_stride;
+    memcpy(dst, src, width);
+    src += src_stride_1;
+    dst += dst_stride;
+  }
 }
 
 // Support converting from FOURCC_M420
@@ -1238,8 +1373,7 @@ __asm {
 
 #define HAS_ARGBTOI400ROW_SSSE3
 __declspec(naked)
-static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y,
-                                int pix) {
+static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_y

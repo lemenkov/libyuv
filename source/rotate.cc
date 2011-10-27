@@ -119,7 +119,7 @@ __asm {
     palignr   xmm6, xmm6, 8
     palignr   xmm7, xmm7, 8
     // Third round of bit swap.
-    // Write to the destination pointer. 
+    // Write to the destination pointer.
     punpckldq xmm0, xmm4
     movq      qword ptr [edx], xmm0
     movdqa    xmm4, xmm0
@@ -146,7 +146,7 @@ __asm {
     lea       edx, [edx + 2 * esi]
     sub       ecx, 8
     ja        convertloop
-    
+
     pop       ebp
     pop       esi
     pop       edi
@@ -154,6 +154,133 @@ __asm {
   }
 }
 
+#define HAS_TRANSPOSE_UVWX8_SSE2
+__declspec(naked)
+static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
+                                uint8* dst_a, int dst_stride_a,
+                                uint8* dst_b, int dst_stride_b,
+                                int w) {
+__asm {
+    push      ebx
+    push      esi
+    push      edi
+    push      ebp
+    mov       eax, [esp + 16 + 4]   // src
+    mov       edi, [esp + 16 + 8]   // src_stride
+    mov       edx, [esp + 16 + 12]  // dst_a
+    mov       esi, [esp + 16 + 16]  // dst_stride_a
+    mov       ebx, [esp + 16 + 20]  // dst_b
+    mov       ebp, [esp + 16 + 24]  // dst_stride_b
+    mov       ecx, esp
+    sub       esp, 4 + 16
+    and       esp, ~15
+    mov       [esp + 16], ecx
+    mov       ecx, [ecx + 16 + 28]  // w
+ convertloop :
+    // Read in the data from the source pointer.
+    // First round of bit swap.
+    movdqa    xmm0, [eax]
+    movdqa    xmm1, [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    movdqa    xmm7, xmm0  // use xmm7 as temp register.
+    punpcklbw xmm0, xmm1
+    punpckhbw xmm7, xmm1
+    movdqa    xmm1, xmm7
+    movdqa    xmm2, [eax]
+    movdqa    xmm3, [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    movdqa    xmm7, xmm2
+    punpcklbw xmm2, xmm3
+    punpckhbw xmm7, xmm3
+    movdqa    xmm3, xmm7
+    movdqa    xmm4, [eax]
+    movdqa    xmm5, [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    movdqa    xmm7, xmm4
+    punpcklbw xmm4, xmm5
+    punpckhbw xmm7, xmm5
+    movdqa    xmm5, xmm7
+    movdqa    xmm6, [eax]
+    movdqa    xmm7, [eax + edi]
+    lea       eax, [eax + 2 * edi]
+    movdqa    [esp], xmm5  // backup xmm5
+    neg       edi
+    movdqa    xmm5, xmm6   // use xmm5 as temp register.
+    punpcklbw xmm6, xmm7
+    punpckhbw xmm5, xmm7
+    movdqa    xmm7, xmm5
+    lea       eax, [eax + 8 * edi + 16]
+    neg       edi
+    // Second round of bit swap.
+    movdqa    xmm5, xmm0
+    punpcklwd xmm0, xmm2
+    punpckhwd xmm5, xmm2
+    movdqa    xmm2, xmm5
+    movdqa    xmm5, xmm1
+    punpcklwd xmm1, xmm3
+    punpckhwd xmm5, xmm3
+    movdqa    xmm3, xmm5
+    movdqa    xmm5, xmm4
+    punpcklwd xmm4, xmm6
+    punpckhwd xmm5, xmm6
+    movdqa    xmm6, xmm5
+    movdqa    xmm5, [esp]  // restore xmm5
+    movdqa    [esp], xmm6  // backup xmm6
+    movdqa    xmm6, xmm5    // use xmm6 as temp register.
+    punpcklwd xmm5, xmm7
+    punpckhwd xmm6, xmm7
+    movdqa    xmm7, xmm6
+    // Third round of bit swap.
+    // Write to the destination pointer.
+    movdqa    xmm6, xmm0
+    punpckldq xmm0, xmm4
+    punpckhdq xmm6, xmm4
+    movdqa    xmm4, xmm6
+    movdqa    xmm6, [esp]  // restore xmm6
+    movlpd    qword ptr [edx], xmm0
+    movhpd    qword ptr [ebx], xmm0
+    movlpd    qword ptr [edx + esi], xmm4
+    lea       edx, [edx + 2 * esi]
+    movhpd    qword ptr [ebx + ebp], xmm4
+    lea       ebx, [ebx + 2 * ebp]
+    movdqa    xmm0, xmm2   // use xmm0 as the temp register.
+    punpckldq xmm2, xmm6
+    movlpd    qword ptr [edx], xmm2
+    movhpd    qword ptr [ebx], xmm2
+    punpckhdq xmm0, xmm6
+    movlpd    qword ptr [edx + esi], xmm0
+    lea       edx, [edx + 2 * esi]
+    movhpd    qword ptr [ebx + ebp], xmm0
+    lea       ebx, [ebx + 2 * ebp]
+    movdqa    xmm0, xmm1   // use xmm0 as the temp register.
+    punpckldq xmm1, xmm5
+    movlpd    qword ptr [edx], xmm1
+    movhpd    qword ptr [ebx], xmm1
+    punpckhdq xmm0, xmm5
+    movlpd    qword ptr [edx + esi], xmm0
+    lea       edx, [edx + 2 * esi]
+    movhpd    qword ptr [ebx + ebp], xmm0
+    lea       ebx, [ebx + 2 * ebp]
+    movdqa    xmm0, xmm3   // use xmm0 as the temp register.
+    punpckldq xmm3, xmm7
+    movlpd    qword ptr [edx], xmm3
+    movhpd    qword ptr [ebx], xmm3
+    punpckhdq xmm0, xmm7
+    movlpd    qword ptr [edx + esi], xmm0
+    lea       edx, [edx + 2 * esi]
+    movhpd    qword ptr [ebx + ebp], xmm0
+    lea       ebx, [ebx + 2 * ebp]
+    sub       ecx, 8
+    ja        convertloop
+
+    mov       esp, [esp + 16]
+    pop       ebp
+    pop       edi
+    pop       esi
+    pop       ebx
+    ret
+  }
+}
 #elif (defined(__i386__) || defined(__x86_64__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_TRANSPOSE_WX8_SSSE3
@@ -204,7 +331,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
   "palignr    $0x8,%%xmm6,%%xmm6\n"
   "palignr    $0x8,%%xmm7,%%xmm7\n"
   // Third round of bit swap.
-  // Write to the destination pointer. 
+  // Write to the destination pointer.
   "punpckldq  %%xmm4,%%xmm0\n"
   "movq       %%xmm0,(%1)\n"
   "movdqa     %%xmm0,%%xmm4\n"
@@ -240,15 +367,134 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 );
 }
 
+// TODO(fbarchard): Port to 32 bit
+#if defined (__x86_64__)
+#define HAS_TRANSPOSE_UVWX8_SSE2
+static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
+                                uint8* dst_a, int dst_stride_a,
+                                uint8* dst_b, int dst_stride_b,
+                                int w) {
+  asm volatile(
+"1:"
+  // Read in the data from the source pointer.
+  // First round of bit swap.
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     (%0,%4),%%xmm1\n"
+  "lea        (%0,%4,2),%0\n"
+  "movdqa     %%xmm0,%%xmm8\n"
+  "punpcklbw  %%xmm1,%%xmm0\n"
+  "punpckhbw  %%xmm1,%%xmm8\n"
+  "movdqa     %%xmm8,%%xmm1\n"
+  "movdqa     (%0),%%xmm2\n"
+  "movdqa     (%0,%4),%%xmm3\n"
+  "lea        (%0,%4,2),%0\n"
+  "movdqa     %%xmm2,%%xmm8\n"
+  "punpcklbw  %%xmm3,%%xmm2\n"
+  "punpckhbw  %%xmm3,%%xmm8\n"
+  "movdqa     %%xmm8,%%xmm3\n"
+  "movdqa     (%0),%%xmm4\n"
+  "movdqa     (%0,%4),%%xmm5\n"
+  "lea        (%0,%4,2),%0\n"
+  "movdqa     %%xmm4,%%xmm8\n"
+  "punpcklbw  %%xmm5,%%xmm4\n"
+  "punpckhbw  %%xmm5,%%xmm8\n"
+  "movdqa     %%xmm8,%%xmm5\n"
+  "movdqa     (%0),%%xmm6\n"
+  "movdqa     (%0,%4),%%xmm7\n"
+  "lea        (%0,%4,2),%0\n"
+  "movdqa     %%xmm6,%%xmm8\n"
+  "punpcklbw  %%xmm7,%%xmm6\n"
+  "neg        %4\n"
+  "lea        0x10(%0,%4,8),%0\n"
+  "punpckhbw  %%xmm7,%%xmm8\n"
+  "movdqa     %%xmm8,%%xmm7\n"
+  "neg        %4\n"
+   // Second round of bit swap.
+  "movdqa     %%xmm0,%%xmm8\n"
+  "movdqa     %%xmm1,%%xmm9\n"
+  "punpckhwd  %%xmm2,%%xmm8\n"
+  "punpckhwd  %%xmm3,%%xmm9\n"
+  "punpcklwd  %%xmm2,%%xmm0\n"
+  "punpcklwd  %%xmm3,%%xmm1\n"
+  "movdqa     %%xmm8,%%xmm2\n"
+  "movdqa     %%xmm9,%%xmm3\n"
+  "movdqa     %%xmm4,%%xmm8\n"
+  "movdqa     %%xmm5,%%xmm9\n"
+  "punpckhwd  %%xmm6,%%xmm8\n"
+  "punpckhwd  %%xmm7,%%xmm9\n"
+  "punpcklwd  %%xmm6,%%xmm4\n"
+  "punpcklwd  %%xmm7,%%xmm5\n"
+  "movdqa     %%xmm8,%%xmm6\n"
+  "movdqa     %%xmm9,%%xmm7\n"
+  // Third round of bit swap.
+  // Write to the destination pointer.
+  "movdqa     %%xmm0,%%xmm8\n"
+  "punpckldq  %%xmm4,%%xmm0\n"
+  "movlpd     %%xmm0,(%1)\n"  // Write back U channel
+  "movhpd     %%xmm0,(%2)\n"  // Write back V channel
+  "punpckhdq  %%xmm4,%%xmm8\n"
+  "movlpd     %%xmm8,(%1,%5)\n"
+  "lea        (%1,%5,2),%1\n"
+  "movhpd     %%xmm8,(%2,%6)\n"
+  "lea        (%2,%6,2),%2\n"
+  "movdqa     %%xmm2,%%xmm8\n"
+  "punpckldq  %%xmm6,%%xmm2\n"
+  "movlpd     %%xmm2,(%1)\n"
+  "movhpd     %%xmm2,(%2)\n"
+  "punpckhdq  %%xmm6,%%xmm8\n"
+  "movlpd     %%xmm8,(%1,%5)\n"
+  "lea        (%1,%5,2),%1\n"
+  "movhpd     %%xmm8,(%2,%6)\n"
+  "lea        (%2,%6,2),%2\n"
+  "movdqa     %%xmm1,%%xmm8\n"
+  "punpckldq  %%xmm5,%%xmm1\n"
+  "movlpd     %%xmm1,(%1)\n"
+  "movhpd     %%xmm1,(%2)\n"
+  "punpckhdq  %%xmm5,%%xmm8\n"
+  "movlpd     %%xmm8,(%1,%5)\n"
+  "lea        (%1,%5,2),%1\n"
+  "movhpd     %%xmm8,(%2,%6)\n"
+  "lea        (%2,%6,2),%2\n"
+  "movdqa     %%xmm3,%%xmm8\n"
+  "punpckldq  %%xmm7,%%xmm3\n"
+  "movlpd     %%xmm3,(%1)\n"
+  "movhpd     %%xmm3,(%2)\n"
+  "punpckhdq  %%xmm7,%%xmm8\n"
+  "movlpd     %%xmm8,(%1,%5)\n"
+  "lea        (%1,%5,2),%1\n"
+  "movhpd     %%xmm8,(%2,%6)\n"
+  "lea        (%2,%6,2),%2\n"
+  "sub        $0x8,%3\n"
+  "ja         1b\n"
+  : "+r"(src),    // %0
+    "+r"(dst_a),  // %1
+    "+r"(dst_b),  // %2
+    "+r"(w)   // %3
+  : "r"(static_cast<intptr_t>(src_stride)),    // %4
+    "r"(static_cast<intptr_t>(dst_stride_a)),  // %5
+    "r"(static_cast<intptr_t>(dst_stride_b))   // %6
+  : "memory"
+);
+}
+#endif
 #endif
 
 static void TransposeWx8_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int w) {
-  int i, j;
-  for (i = 0; i < w; ++i)
-    for (j = 0; j < 8; ++j)
-      dst[i * dst_stride + j] = src[j * src_stride + i];
+  int i;
+  for (i = 0; i < w; ++i) {
+    dst[0] = src[0 * src_stride];
+    dst[1] = src[1 * src_stride];
+    dst[2] = src[2 * src_stride];
+    dst[3] = src[3 * src_stride];
+    dst[4] = src[4 * src_stride];
+    dst[5] = src[5 * src_stride];
+    dst[6] = src[6 * src_stride];
+    dst[7] = src[7 * src_stride];
+    ++src;
+    dst += dst_stride;
+  }
 }
 
 static void TransposeWxH_C(const uint8* src, int src_stride,
@@ -328,10 +574,10 @@ void RotatePlane270(const uint8* src, int src_stride,
 
 static void ReverseLine_C(const uint8* src, uint8* dst, int width) {
   int i;
-  src += width;
+  src += width - 1;
   for (i = 0; i < width; ++i) {
-    --src;
     dst[i] = src[0];
+    --src;
   }
 }
 
@@ -407,15 +653,13 @@ void RotatePlane180(const uint8* src, int src_stride,
   {
     ReverseLine = ReverseLine_C;
   }
-  // Rotate by 180 is a mirror with the destination
-  // written in reverse.
-  dst += dst_stride * (height - 1);
+  // Rotate by 180 is a mirror and vertical flip
+  src += src_stride * (height - 1);
 
   for (i = 0; i < height; ++i) {
     ReverseLine(src, dst, width);
-
-    src += src_stride;
-    dst -= dst_stride;
+    src -= src_stride;
+    dst += dst_stride;
   }
 }
 
@@ -423,12 +667,28 @@ static void TransposeUVWx8_C(const uint8* src, int src_stride,
                              uint8* dst_a, int dst_stride_a,
                              uint8* dst_b, int dst_stride_b,
                              int w) {
-  int i, j;
-  for (i = 0; i < w * 2; i += 2)
-    for (j = 0; j < 8; ++j) {
-      dst_a[j + ((i >> 1) * dst_stride_a)] = src[i + (j * src_stride)];
-      dst_b[j + ((i >> 1) * dst_stride_b)] = src[i + (j * src_stride) + 1];
-    }
+  int i;
+  for (i = 0; i < w; ++i) {
+    dst_a[0] = src[0 * src_stride + 0];
+    dst_b[0] = src[0 * src_stride + 1];
+    dst_a[1] = src[1 * src_stride + 0];
+    dst_b[1] = src[1 * src_stride + 1];
+    dst_a[2] = src[2 * src_stride + 0];
+    dst_b[2] = src[2 * src_stride + 1];
+    dst_a[3] = src[3 * src_stride + 0];
+    dst_b[3] = src[3 * src_stride + 1];
+    dst_a[4] = src[4 * src_stride + 0];
+    dst_b[4] = src[4 * src_stride + 1];
+    dst_a[5] = src[5 * src_stride + 0];
+    dst_b[5] = src[5 * src_stride + 1];
+    dst_a[6] = src[6 * src_stride + 0];
+    dst_b[6] = src[6 * src_stride + 1];
+    dst_a[7] = src[7 * src_stride + 0];
+    dst_b[7] = src[7 * src_stride + 1];
+    src += 2;
+    dst_a += dst_stride_a;
+    dst_b += dst_stride_b;
+  }
 }
 
 static void TransposeUVWxH_C(const uint8* src, int src_stride,
@@ -436,7 +696,7 @@ static void TransposeUVWxH_C(const uint8* src, int src_stride,
                              uint8* dst_b, int dst_stride_b,
                              int w, int h) {
   int i, j;
-  for (i = 0; i < w*2; i += 2)
+  for (i = 0; i < w * 2; i += 2)
     for (j = 0; j < h; ++j) {
       dst_a[j + ((i >> 1) * dst_stride_a)] = src[i + (j * src_stride)];
       dst_b[j + ((i >> 1) * dst_stride_b)] = src[i + (j * src_stride) + 1];
@@ -452,12 +712,8 @@ void TransposeUV(const uint8* src, int src_stride,
   rotate_uv_wxh_func TransposeWxH;
 
 #if defined(HAS_TRANSPOSE_UVWX8_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (width % 8 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
-      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0)) {
-    unsigned long long store_reg[8];
+  unsigned long long store_reg[8];
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
     SaveRegisters_NEON(store_reg);
     TransposeWx8 = TransposeUVWx8_NEON;
     TransposeWxH = TransposeUVWxH_C;
@@ -466,9 +722,9 @@ void TransposeUV(const uint8* src, int src_stride,
 #if defined(HAS_TRANSPOSE_UVWX8_SSE2)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
       (width % 8 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
-      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0)) {
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 8) && (dst_stride_b % 8 == 0)) {
     TransposeWx8 = TransposeUVWx8_SSE2;
     TransposeWxH = TransposeUVWxH_C;
   } else
@@ -544,7 +800,7 @@ __asm {
     mov       edi, [esp + 4 + 12]  // dst_b
     mov       ecx, [esp + 4 + 16]  // width
     movdqa    xmm7, _kShuffleReverseUV
-    lea       eax, [eax + 2 * ecx - 16]
+    lea       eax, [eax + ecx * 2 - 16]
 
  convertloop :
     movdqa    xmm0, [eax]
@@ -610,13 +866,12 @@ void RotateUV180(const uint8* src, int src_stride,
   int i;
   reverse_uv_func ReverseLine;
 
-  // TODO(frkoenig) : do processor detection here.
 #if defined(HAS_REVERSE_LINE_UV_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
-      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
-      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0) ) {
+      IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 8) && (dst_stride_b % 8 == 0) ) {
     ReverseLine = ReverseLineUV_NEON;
   } else
 #endif
@@ -624,8 +879,8 @@ void RotateUV180(const uint8* src, int src_stride,
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
-      IS_ALIGNED(dst_a, 16) && (dst_stride_a % 8 == 0) &&
-      IS_ALIGNED(dst_b, 16) && (dst_stride_b % 8 == 0) ) {
+      IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
+      IS_ALIGNED(dst_b, 8) && (dst_stride_b % 8 == 0) ) {
     ReverseLine = ReverseLineUV_SSSE3;
   } else
 #endif
@@ -669,7 +924,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
   }
 
   switch (mode) {
-    case kRotateNone:
+    case kRotate0:
       // copy frame
       return I420Copy(src_y, src_stride_y,
                       src_u, src_stride_u,
@@ -678,7 +933,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                       dst_u, dst_stride_u,
                       dst_v, dst_stride_v,
                       width, height);
-    case kRotateClockwise:
+    case kRotate90:
       RotatePlane90(src_y, src_stride_y,
                     dst_y, dst_stride_y,
                     width, height);
@@ -689,7 +944,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                     dst_v, dst_stride_v,
                     halfwidth, halfheight);
       return 0;
-    case kRotateCounterClockwise:
+    case kRotate270:
       RotatePlane270(src_y, src_stride_y,
                      dst_y, dst_stride_y,
                      width, height);
@@ -738,14 +993,14 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
   }
 
   switch (mode) {
-    case kRotateNone:
+    case kRotate0:
       // copy frame
       return NV12ToI420(src_y, src_uv, src_stride_y,
                         dst_y, dst_stride_y,
                         dst_u, dst_stride_u,
                         dst_v, dst_stride_v,
                         width, height);
-    case kRotateClockwise:
+    case kRotate90:
       RotatePlane90(src_y, src_stride_y,
                     dst_y, dst_stride_y,
                     width, height);
@@ -754,7 +1009,7 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                  dst_v, dst_stride_v,
                  halfwidth, halfheight);
       return 0;
-    case kRotateCounterClockwise:
+    case kRotate270:
       RotatePlane270(src_y, src_stride_y,
                      dst_y, dst_stride_y,
                      width, height);

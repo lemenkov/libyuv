@@ -27,396 +27,6 @@ namespace libyuv {
 #define FORCE_INLINE
 #endif
 
-enum {
-  RED = 0,
-  BLUE = 1,
-  GREEN_BETWEEN_RED = 2,
-  GREEN_BETWEEN_BLUE = 3,
-};
-
-enum Position {
-  LEFT = 0,
-  RIGHT = 1,
-  TOP = 2,
-  BOTTOM = 4,
-  CENTER = 6,
-
-  // Due to the choice of the above values, these are all distinct and the
-  // corner values and edge values are each contiguous. This allows us to
-  // figure out the position type of a pixel with a single addition operation
-  // using the above values, rather than having to use a 3x3 nested switch
-  // statement.
-  TOP_LEFT = TOP + LEFT,          // 2
-  TOP_RIGHT = TOP + RIGHT,        // 3
-  BOTTOM_LEFT = BOTTOM + LEFT,    // 4
-  BOTTOM_RIGHT = BOTTOM + RIGHT,  // 5
-  LEFT_EDGE = CENTER + LEFT,      // 6
-  RIGHT_EDGE = CENTER + RIGHT,    // 7
-  TOP_EDGE = TOP + CENTER,        // 8
-  BOTTOM_EDGE = BOTTOM + CENTER,  // 10
-  MIDDLE = CENTER + CENTER,       // 12
-};
-
-static FORCE_INLINE Position GetPosition(int x, int y, int width, int height) {
-  Position xpos = CENTER;
-  Position ypos = CENTER;
-  if (x == 0) {
-    xpos = LEFT;
-  } else if (x == width - 1) {
-    xpos = RIGHT;
-  }
-  if (y == 0) {
-    ypos = TOP;
-  } else if (y == height - 1) {
-    ypos = BOTTOM;
-  }
-  return static_cast<Position>(xpos + ypos);
-}
-
-static FORCE_INLINE bool IsRedBlue(uint8 colour) {
-  return colour <= BLUE;
-}
-
-static FORCE_INLINE uint32 FourCcToBayerPixelColourMap(uint32 fourcc) {
-  // The colour map is a 4-byte array-as-uint32 containing the colours for the
-  // four pixels in each 2x2 grid, in left-to-right and top-to-bottom order.
-  switch (fourcc) {
-    default:
-      assert(false);
-    case FOURCC_RGGB:
-      return FOURCC(RED, GREEN_BETWEEN_RED, GREEN_BETWEEN_BLUE, BLUE);
-    case FOURCC_BGGR:
-      return FOURCC(BLUE, GREEN_BETWEEN_BLUE, GREEN_BETWEEN_RED, RED);
-    case FOURCC_GRBG:
-      return FOURCC(GREEN_BETWEEN_RED, RED, BLUE, GREEN_BETWEEN_BLUE);
-    case FOURCC_GBRG:
-      return FOURCC(GREEN_BETWEEN_BLUE, BLUE, RED, GREEN_BETWEEN_RED);
-  }
-}
-
-static FORCE_INLINE void RGBToYUV(uint8 r, uint8 g, uint8 b,
-                                  uint8* y, uint8* u, uint8* v) {
-  // Taken from http://en.wikipedia.org/wiki/YUV
-  *y = (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
-  *u = ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
-  *v = ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
-}
-
-static FORCE_INLINE void InterpolateBayerRGBCorner(uint8* r,
-                                                   uint8* g,
-                                                   uint8* b,
-                                                   const uint8* src,
-                                                   int src_stride,
-                                                   Position pos,
-                                                   uint8 colour) {
-
-  // Compute the offsets to use for fetching the adjacent pixels.
-
-  int adjacent_row;
-  int adjacent_column;
-  switch (pos) {
-    case TOP_LEFT:
-      adjacent_row = src_stride;
-      adjacent_column = 1;
-      break;
-    case TOP_RIGHT:
-      adjacent_row = src_stride;
-      adjacent_column = -1;
-      break;
-    case BOTTOM_LEFT:
-      adjacent_row = -src_stride;
-      adjacent_column = 1;
-      break;
-    case BOTTOM_RIGHT:
-    default:
-      adjacent_row = -src_stride;
-      adjacent_column = -1;
-      break;
-  }
-
-  // Now interpolate.
-
-  if (IsRedBlue(colour)) {
-    uint8 current_pixel = src[0];
-    // Average of the adjacent green pixels (there's only two).
-    *g = (src[adjacent_column] + src[adjacent_row]) / 2;
-    // Average of the oppositely-coloured corner pixels (there's only one).
-    uint8 corner_average = src[adjacent_row + adjacent_column];
-    if (colour == RED) {
-      *r = current_pixel;
-      *b = corner_average;
-    } else {  // i.e., BLUE
-      *b = current_pixel;
-      *r = corner_average;
-    }
-  } else {  // i.e., GREEN_BETWEEN_*
-    *g = src[0];
-    // Average of the adjacent same-row pixels (there's only one).
-    uint8 row_average = src[adjacent_column];
-    // Average of the adjacent same-column pixels (there's only one).
-    uint8 column_average = src[adjacent_row];
-    if (colour == GREEN_BETWEEN_RED) {
-      *r = row_average;
-      *b = column_average;
-    } else {  // i.e., GREEN_BETWEEN_BLUE
-      *b = row_average;
-      *r = column_average;
-    }
-  }
-}
-
-static FORCE_INLINE void InterpolateBayerRGBEdge(uint8* r,
-                                                 uint8* g,
-                                                 uint8* b,
-                                                 const uint8* src,
-                                                 int src_stride,
-                                                 Position pos,
-                                                 uint8 colour) {
-
-  // Compute the offsets to use for fetching the adjacent pixels.
-
-  // Goes one pixel "in" to the image (i.e. towards the center)
-  int inner;
-  // Goes one pixel to the side (i.e. along the edge) in either the clockwise or
-  // counter-clockwise direction, and its negative value goes in the other
-  // direction.
-  int side;
-
-  switch (pos) {
-    case TOP_EDGE:
-      inner = src_stride;
-      side = 1;
-      break;
-    case RIGHT_EDGE:
-      inner = -1;
-      side = src_stride;
-      break;
-    case BOTTOM_EDGE:
-      inner = -src_stride;
-      side = 1;
-      break;
-    case LEFT_EDGE:
-    default:
-      inner = 1;
-      side = src_stride;
-      break;
-  }
-
-  // Now interpolate.
-
-  if (IsRedBlue(colour)) {
-    uint8 current_pixel = src[0];
-    // Average of the adjacent green pixels (there's only three).
-    *g = (src[inner] + src[side] + src[-side]) / 3;
-    // Average of the oppositely-coloured corner pixels (there's only two).
-    uint8 corner_average = (src[inner + side] + src[inner - side]) / 2;
-    if (colour == RED) {
-      *r = current_pixel;
-      *b = corner_average;
-    } else {  // i.e., BLUE
-      *b = current_pixel;
-      *r = corner_average;
-    }
-  } else {  // i.e., GREEN_BETWEEN_*
-    *g = src[0];
-    // Average of the adjacent side-ways pixels (there's only two).
-    uint8 side_average = (src[side] + src[-side]) / 2;
-    // Average of the adjacent inner-ways pixels (there's only one).
-    uint8 inner_pixel = src[inner];
-    // Including && side == 1 effectively transposes the colour logic for
-    // processing the left/right sides, which is needed since the "T" shape
-    // formed by the pixels is transposed.
-    if (colour == GREEN_BETWEEN_RED && side == 1) {
-      *r = side_average;
-      *b = inner_pixel;
-    } else {  // i.e., GREEN_BETWEEN_BLUE || side != 1
-      *b = side_average;
-      *r = inner_pixel;
-    }
-  }
-}
-
-// We inline this one because it runs 99% of the time, so inlining it is
-// probably beneficial.
-static FORCE_INLINE void InterpolateBayerRGBCenter(uint8* r,
-                                                   uint8* g,
-                                                   uint8* b,
-                                                   const uint8* src,
-                                                   int src_stride,
-                                                   uint8 colour) {
-
-  if (IsRedBlue(colour)) {
-    uint8 current_pixel = src[0];
-    // Average of the adjacent green pixels (there's four).
-    // NOTE(tschmelcher): The material at
-    // http://www.siliconimaging.com/RGB%20Bayer.htm discusses a way to improve
-    // quality here by using only two of the green pixels based on the
-    // correlation to the nearby red/blue pixels, but that is slower and would
-    // result in more edge cases.
-    *g = (src[1] + src[-1] + src[src_stride] + src[-src_stride]) / 4;
-    // Average of the oppositely-coloured corner pixels (there's four).
-    uint8 corner_average = (src[src_stride + 1] +
-                            src[src_stride - 1] +
-                            src[-src_stride + 1] +
-                            src[-src_stride - 1]) / 4;
-    if (colour == RED) {
-      *r = current_pixel;
-      *b = corner_average;
-    } else {  // i.e., BLUE
-      *b = current_pixel;
-      *r = corner_average;
-    }
-  } else {  // i.e., GREEN_BETWEEN_*
-    *g = src[0];
-    // Average of the adjacent same-row pixels (there's two).
-    uint8 row_adjacent = (src[1] + src[-1]) / 2;
-    // Average of the adjacent same-column pixels (there's two).
-    uint8 column_adjacent = (src[src_stride] + src[-src_stride]) / 2;
-    if (colour == GREEN_BETWEEN_RED) {
-      *r = row_adjacent;
-      *b = column_adjacent;
-    } else {  // i.e., GREEN_BETWEEN_BLUE
-      *b = row_adjacent;
-      *r = column_adjacent;
-    }
-  }
-}
-
-// Converts any Bayer RGB format to ARGB.
-int BayerRGBToARGB(const uint8* src, int src_stride, uint32 src_fourcc,
-                   uint8* dst, int dst_stride,
-                   int width, int height) {
-  assert(width % 2 == 0);
-  assert(height % 2 == 0);
-
-  uint32 colour_map = FourCcToBayerPixelColourMap(src_fourcc);
-  int src_row_inc = src_stride * 2 - width;
-  int dst_row_inc = dst_stride * 2 - width * 4;
-
-  // Iterate over the 2x2 grids.
-  for (int y1 = 0; y1 < height; y1 += 2) {
-    for (int x1 = 0; x1 < width; x1 += 2) {
-      uint32 colours = colour_map;
-      // Iterate over the four pixels within them.
-      for (int y2 = 0; y2 < 2; ++y2) {
-        for (int x2 = 0; x2 < 2; ++x2) {
-          uint8 r, g, b;
-          // The low-order byte of the colour map is the current colour.
-          uint8 current_colour = static_cast<uint8>(colours);
-          colours >>= 8;
-          Position pos = GetPosition(x1 + x2, y1 + y2, width, height);
-          const uint8* src_pixel = &src[y2 * src_stride + x2];
-          uint8* dst_pixel = &dst[y2 * dst_stride + x2 * 4];
-
-          // Convert from Bayer RGB to regular RGB.
-          if (pos == MIDDLE) {
-            // 99% of the image is the middle.
-            InterpolateBayerRGBCenter(&r, &g, &b,
-                                      src_pixel, src_stride,
-                                      current_colour);
-          } else if (pos >= LEFT_EDGE) {
-            // Next most frequent is edges.
-            InterpolateBayerRGBEdge(&r, &g, &b,
-                                    src_pixel, src_stride, pos,
-                                    current_colour);
-          } else {
-            // Last is the corners. There are only 4.
-            InterpolateBayerRGBCorner(&r, &g, &b,
-                                      src_pixel, src_stride, pos,
-                                      current_colour);
-          }
-
-          // Store ARGB
-          dst_pixel[0] = b;
-          dst_pixel[1] = g;
-          dst_pixel[2] = r;
-          dst_pixel[3] = 255u;
-        }
-      }
-      src += 2;
-      dst += 2 * 4;
-    }
-    src += src_row_inc;
-    dst += dst_row_inc;
-  }
-  return 0;
-}
-
-// Converts any Bayer RGB format to I420.
-int BayerRGBToI420(const uint8* src, int src_stride, uint32 src_fourcc,
-                   uint8* y, int y_stride,
-                   uint8* u, int u_stride,
-                   uint8* v, int v_stride,
-                   int width, int height) {
-  assert(width % 2 == 0);
-  assert(height % 2 == 0);
-
-  uint32 colour_map = FourCcToBayerPixelColourMap(src_fourcc);
-
-  int src_row_inc = src_stride * 2 - width;
-  int y_row_inc = y_stride * 2 - width;
-  int u_row_inc = u_stride - width / 2;
-  int v_row_inc = v_stride - width / 2;
-
-  // Iterate over the 2x2 grids.
-  for (int y1 = 0; y1 < height; y1 += 2) {
-    for (int x1 = 0; x1 < width; x1 += 2) {
-      uint32 colours = colour_map;
-      int total_u = 0;
-      int total_v = 0;
-      // Iterate over the four pixels within them.
-      for (int y2 = 0; y2 < 2; ++y2) {
-        for (int x2 = 0; x2 < 2; ++x2) {
-          uint8 r, g, b;
-          // The low-order byte of the colour map is the current colour.
-          uint8 current_colour = static_cast<uint8>(colours);
-          colours >>= 8;
-          Position pos = GetPosition(x1 + x2, y1 + y2, width, height);
-          const uint8* src_pixel = &src[y2 * src_stride + x2];
-          uint8* y_pixel = &y[y2 * y_stride + x2];
-
-          // Convert from Bayer RGB to regular RGB.
-
-          if (pos == MIDDLE) {
-            // 99% of the image is the middle.
-            InterpolateBayerRGBCenter(&r, &g, &b,
-                                      src_pixel, src_stride,
-                                      current_colour);
-          } else if (pos >= LEFT_EDGE) {
-            // Next most frequent is edges.
-            InterpolateBayerRGBEdge(&r, &g, &b,
-                                    src_pixel, src_stride, pos,
-                                    current_colour);
-          } else {
-            // Last is the corners. There are only 4.
-            InterpolateBayerRGBCorner(&r, &g, &b,
-                                      src_pixel, src_stride, pos,
-                                      current_colour);
-          }
-
-          // Convert from RGB to YUV.
-
-          uint8 tmp_u, tmp_v;
-          RGBToYUV(r, g, b, y_pixel, &tmp_u, &tmp_v);
-          total_u += tmp_u;
-          total_v += tmp_v;
-        }
-      }
-      src += 2;
-      y += 2;
-      *u = total_u / 4;
-      *v = total_v / 4;
-      ++u;
-      ++v;
-    }
-    src += src_row_inc;
-    y += y_row_inc;
-    u += u_row_inc;
-    v += v_row_inc;
-  }
-  return 0;
-}
-
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
 // and vst would select which 2 components to write.  The low level would need
 // to be ARGBToBG, ARGBToGB, ARGBToRG, ARGBToGR
@@ -429,15 +39,15 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
   __asm {
     mov        eax, [esp + 4]    // src_argb
     mov        edx, [esp + 8]    // dst_bayer
-    movd       xmm0, [esp + 12]  // selector
+    movd       xmm7, [esp + 12]  // selector
     mov        ecx, [esp + 16]   // pix
-    pshufd     xmm0, xmm0, 0
+    pshufd     xmm7, xmm7, 0
 
   wloop:
-    movdqa     xmm1, [eax]
+    movdqa     xmm0, [eax]
     lea        eax, [eax + 16]
-    pshufb     xmm1, xmm0
-    movd       [edx], xmm1
+    pshufb     xmm0, xmm7
+    movd       [edx], xmm0
     lea        edx, [edx + 4]
     sub        ecx, 4
     ja         wloop
@@ -445,37 +55,30 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
   }
 }
 
-#elif defined(__i386__) && !defined(COVERAGE_ENABLED) && \
-    !TARGET_IPHONE_SIMULATOR
+#elif (defined(__x86_64__) || defined(__i386__)) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 
 #define HAS_ARGBTOBAYERROW_SSSE3
-extern "C" void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
-                                     uint32 selector, int pix);
-  asm(
-    ".text\n"
-#if defined(OSX)
-    ".globl _ARGBToBayerRow_SSSE3\n"
-"_ARGBToBayerRow_SSSE3:\n"
-#else
-    ".global ARGBToBayerRow_SSSE3\n"
-"ARGBToBayerRow_SSSE3:\n"
-#endif
-    "mov    0x4(%esp),%eax\n"
-    "mov    0x8(%esp),%edx\n"
-    "movd   0xc(%esp),%xmm0\n"
-    "mov    0x10(%esp),%ecx\n"
-    "pshufd $0x0,%xmm0,%xmm0\n"
-
+static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
+                                 uint32 selector, int pix) {
+  asm volatile(
+    "movd   %3,%%xmm7\n"
+    "pshufd $0x0,%%xmm7,%%xmm7\n"
 "1:"
-    "movdqa (%eax),%xmm1\n"
-    "lea    0x10(%eax),%eax\n"
-    "pshufb %xmm0,%xmm1\n"
-    "movd   %xmm1,(%edx)\n"
-    "lea    0x4(%edx),%edx\n"
-    "sub    $0x4,%ecx\n"
+    "movdqa (%0),%%xmm0\n"
+    "lea    0x10(%0),%0\n"
+    "pshufb %%xmm7,%%xmm0\n"
+    "movd   %%xmm0,(%1)\n"
+    "lea    0x4(%1),%1\n"
+    "sub    $0x4,%2\n"
     "ja     1b\n"
-    "ret\n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_bayer), // %1
+    "+r"(pix)        // %2
+  : "r"(selector)    // %3
+  : "memory"
 );
+}
 #endif
 
 static void ARGBToBayerRow_C(const uint8* src_argb,
@@ -483,11 +86,14 @@ static void ARGBToBayerRow_C(const uint8* src_argb,
   int index0 = selector & 0xff;
   int index1 = (selector >> 8) & 0xff;
   // Copy a row of Bayer.
-  for (int x = 0; x < pix; x += 2) {
+  for (int x = 0; x < (pix - 1); x += 2) {
     dst_bayer[0] = src_argb[index0];
     dst_bayer[1] = src_argb[index1];
     src_argb += 8;
     dst_bayer += 2;
+  }
+  if (pix & 1) {
+    dst_bayer[0] = src_argb[index0];
   }
 }
 
@@ -504,7 +110,11 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
                    uint8* dst_bayer, int dst_stride_bayer,
                    uint32 dst_fourcc_bayer,
                    int width, int height) {
-  assert(width % 2 == 0);
+  if (height < 0) {
+    height = -height;
+    src_rgb = src_rgb + (height - 1) * src_stride_rgb;
+    src_stride_rgb = -src_stride_rgb;
+  }
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
@@ -552,6 +162,279 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
     ARGBToBayerRow(src_rgb, dst_bayer, index_map[y & 1], width);
     src_rgb += src_stride_rgb;
     dst_bayer += dst_stride_bayer;
+  }
+  return 0;
+}
+
+#define AVG(a,b) (((a) + (b)) >> 1)
+
+static void BayerRowBG(const uint8* src_bayer0, int src_stride_bayer,
+                       uint8* dst_rgb, int pix) {
+  const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
+  uint8 g = src_bayer0[1];
+  uint8 r = src_bayer1[1];
+  for (int x = 0; x < (pix - 2); x += 2) {
+    dst_rgb[0] = src_bayer0[0];
+    dst_rgb[1] = AVG(g, src_bayer0[1]);
+    dst_rgb[2] = AVG(r, src_bayer1[1]);
+    dst_rgb[3] = 255U;
+    dst_rgb[4] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_rgb[5] = src_bayer0[1];
+    dst_rgb[6] = src_bayer1[1];
+    dst_rgb[7] = 255U;
+    g = src_bayer0[1];
+    r = src_bayer1[1];
+    src_bayer0 += 2;
+    src_bayer1 += 2;
+    dst_rgb += 8;
+  }
+  dst_rgb[0] = src_bayer0[0];
+  dst_rgb[1] = AVG(g, src_bayer0[1]);
+  dst_rgb[2] = AVG(r, src_bayer1[1]);
+  dst_rgb[3] = 255U;
+  dst_rgb[4] = src_bayer0[0];
+  dst_rgb[5] = src_bayer0[1];
+  dst_rgb[6] = src_bayer1[1];
+  dst_rgb[7] = 255U;
+}
+
+static void BayerRowRG(const uint8* src_bayer0, int src_stride_bayer,
+                       uint8* dst_rgb, int pix) {
+  const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
+  uint8 g = src_bayer0[1];
+  uint8 b = src_bayer1[1];
+  for (int x = 0; x < (pix - 2); x += 2) {
+    dst_rgb[0] = AVG(b, src_bayer1[1]);
+    dst_rgb[1] = AVG(g, src_bayer0[1]);
+    dst_rgb[2] = src_bayer0[0];
+    dst_rgb[3] = 255U;
+    dst_rgb[4] = src_bayer1[1];
+    dst_rgb[5] = src_bayer0[1];
+    dst_rgb[6] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_rgb[7] = 255U;
+    g = src_bayer0[1];
+    b = src_bayer1[1];
+    src_bayer0 += 2;
+    src_bayer1 += 2;
+    dst_rgb += 8;
+  }
+  dst_rgb[0] = AVG(b, src_bayer1[1]);
+  dst_rgb[1] = AVG(g, src_bayer0[1]);
+  dst_rgb[2] = src_bayer0[0];
+  dst_rgb[3] = 255U;
+  dst_rgb[4] = src_bayer1[1];
+  dst_rgb[5] = src_bayer0[1];
+  dst_rgb[6] = src_bayer0[0];
+  dst_rgb[7] = 255U;
+}
+
+static void BayerRowGB(const uint8* src_bayer0, int src_stride_bayer,
+                       uint8* dst_rgb, int pix) {
+  const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
+  uint8 b = src_bayer0[1];
+  for (int x = 0; x < (pix - 2); x += 2) {
+    dst_rgb[0] = AVG(b, src_bayer0[1]);
+    dst_rgb[1] = src_bayer0[0];
+    dst_rgb[2] = src_bayer1[0];
+    dst_rgb[3] = 255U;
+    dst_rgb[4] = src_bayer0[1];
+    dst_rgb[5] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_rgb[6] = AVG(src_bayer1[0], src_bayer1[2]);
+    dst_rgb[7] = 255U;
+    b = src_bayer0[1];
+    src_bayer0 += 2;
+    src_bayer1 += 2;
+    dst_rgb += 8;
+  }
+  dst_rgb[0] = AVG(b, src_bayer0[1]);
+  dst_rgb[1] = src_bayer0[0];
+  dst_rgb[2] = src_bayer1[0];
+  dst_rgb[3] = 255U;
+  dst_rgb[4] = src_bayer0[1];
+  dst_rgb[5] = src_bayer0[0];
+  dst_rgb[6] = src_bayer1[0];
+  dst_rgb[7] = 255U;
+}
+
+static void BayerRowGR(const uint8* src_bayer0, int src_stride_bayer,
+                       uint8* dst_rgb, int pix) {
+  const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
+  uint8 r = src_bayer0[1];
+  for (int x = 0; x < (pix - 2); x += 2) {
+    dst_rgb[0] = src_bayer1[0];
+    dst_rgb[1] = src_bayer0[0];
+    dst_rgb[2] = AVG(r, src_bayer0[1]);
+    dst_rgb[3] = 255U;
+    dst_rgb[4] = AVG(src_bayer1[0], src_bayer1[2]);
+    dst_rgb[5] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_rgb[6] = src_bayer0[1];
+    dst_rgb[7] = 255U;
+    r = src_bayer0[1];
+    src_bayer0 += 2;
+    src_bayer1 += 2;
+    dst_rgb += 8;
+  }
+  dst_rgb[0] = src_bayer1[0];
+  dst_rgb[1] = src_bayer0[0];
+  dst_rgb[2] = AVG(r, src_bayer0[1]);
+  dst_rgb[3] = 255U;
+  dst_rgb[4] = src_bayer1[0];
+  dst_rgb[5] = src_bayer0[0];
+  dst_rgb[6] = src_bayer0[1];
+  dst_rgb[7] = 255U;
+}
+
+// Converts any Bayer RGB format to ARGB.
+int BayerRGBToARGB(const uint8* src_bayer, int src_stride_bayer,
+                   uint32 src_fourcc_bayer,
+                   uint8* dst_rgb, int dst_stride_rgb,
+                   int width, int height) {
+  if (height < 0) {
+    height = -height;
+    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
+    dst_stride_rgb = -dst_stride_rgb;
+  }
+  void (*BayerRow0)(const uint8* src_bayer, int src_stride_bayer,
+                    uint8* dst_rgb, int pix);
+  void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
+                    uint8* dst_rgb, int pix);
+
+  switch (src_fourcc_bayer) {
+    default:
+      assert(false);
+    case FOURCC_RGGB:
+      BayerRow0 = BayerRowRG;
+      BayerRow1 = BayerRowGB;
+      break;
+    case FOURCC_BGGR:
+      BayerRow0 = BayerRowBG;
+      BayerRow1 = BayerRowGR;
+      break;
+    case FOURCC_GRBG:
+      BayerRow0 = BayerRowGR;
+      BayerRow1 = BayerRowBG;
+      break;
+    case FOURCC_GBRG:
+      BayerRow0 = BayerRowGB;
+      BayerRow1 = BayerRowRG;
+      break;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    BayerRow0(src_bayer, src_stride_bayer, dst_rgb, width);
+    BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
+        dst_rgb + dst_stride_rgb, width);
+    src_bayer += src_stride_bayer * 2;
+    dst_rgb += dst_stride_rgb * 2;
+  }
+  if (height & 1) {
+    BayerRow0(src_bayer, -src_stride_bayer, dst_rgb, width);
+  }
+  return 0;
+}
+
+// Taken from http://en.wikipedia.org/wiki/YUV
+static FORCE_INLINE int RGBToY(uint8 r, uint8 g, uint8 b) {
+  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
+}
+
+static FORCE_INLINE int RGBToU(uint8 r, uint8 g, uint8 b) {
+  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
+}
+static FORCE_INLINE int RGBToV(uint8 r, uint8 g, uint8 b) {
+  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
+}
+
+static void ARGBtoYRow(const uint8* src_argb0,
+                       uint8* dst_y, int width) {
+  for (int x = 0; x < width; ++x) {
+    dst_y[0] = RGBToY(src_argb0[2], src_argb0[1], src_argb0[0]);
+    src_argb0 += 4;
+    dst_y += 1;
+  }
+}
+
+static void ARGBtoUVRow(const uint8* src_argb0, int src_stride_argb,
+                        uint8* dst_u,
+                        uint8* dst_v,
+                        int width) {
+  const uint8* src_argb1 = src_argb0 + src_stride_argb;
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 ab = (src_argb0[0] + src_argb0[4] + src_argb1[0] + src_argb1[4]) >> 2;
+    uint8 ag = (src_argb0[1] + src_argb0[5] + src_argb1[1] + src_argb1[5]) >> 2;
+    uint8 ar = (src_argb0[2] + src_argb0[6] + src_argb1[2] + src_argb1[6]) >> 2;
+    dst_u[0] = RGBToU(ar, ag, ab);
+    dst_v[0] = RGBToV(ar, ag, ab);
+    src_argb0 += 8;
+    src_argb1 += 8;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
+
+// Converts any Bayer RGB format to ARGB.
+int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
+                   uint32 src_fourcc_bayer,
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
+    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+  void (*BayerRow0)(const uint8* src_bayer, int src_stride_bayer,
+                    uint8* dst_rgb, int pix);
+  void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
+                    uint8* dst_rgb, int pix);
+
+  switch (src_fourcc_bayer) {
+    default:
+      assert(false);
+    case FOURCC_RGGB:
+      BayerRow0 = BayerRowRG;
+      BayerRow1 = BayerRowGB;
+      break;
+    case FOURCC_BGGR:
+      BayerRow0 = BayerRowBG;
+      BayerRow1 = BayerRowGR;
+      break;
+    case FOURCC_GRBG:
+      BayerRow0 = BayerRowGR;
+      BayerRow1 = BayerRowBG;
+      break;
+    case FOURCC_GBRG:
+      BayerRow0 = BayerRowGB;
+      BayerRow1 = BayerRowRG;
+      break;
+  }
+
+#define kMaxStride 2048 * 4
+  uint8 row[kMaxStride * 2];
+  for (int y = 0; y < (height - 1); y += 2) {
+    BayerRow0(src_bayer, src_stride_bayer, row, width);
+    BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
+              row + kMaxStride, width);
+    ARGBtoYRow(row, dst_y, width);
+    ARGBtoYRow(row + kMaxStride, dst_y + dst_stride_y, width);
+    ARGBtoUVRow(row, kMaxStride, dst_u, dst_v, width);
+    src_bayer += src_stride_bayer * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    BayerRow0(src_bayer, src_stride_bayer, row, width);
+    ARGBtoYRow(row, dst_y, width);
+    ARGBtoUVRow(row, 0, dst_u, dst_v, width);
   }
   return 0;
 }
