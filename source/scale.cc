@@ -168,6 +168,124 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+#define HAS_SCALEROWDOWN34_NEON
+// Down scale from 4 to 3 pixels.  Use the neon multilane read/write
+//  to load up the every 4th pixel into a 4 different registers.
+// Point samples 32 pixels to 24 pixels.
+static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
+                                uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "1:                                   \n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
+    "vmov         d2, d3                  \n" // order needs to be d0, d1, d2
+    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
+    "subs         %2, #24                 \n"
+    "bhi          1b                      \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width)         // %2
+    :
+    : "d0", "d1", "d2", "d3", "memory", "cc"
+  );
+}
+
+static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
+                                      uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "vmov.u8      d16, #3                 \n"
+    "add          %3, %0                  \n"
+    "1:                                   \n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
+    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n" // src line 1
+
+    // filter src line 0 with src line 1
+    // expand chars to shorts to allow for room
+    // when adding lines together
+    "vmovl.u8     q4, d4                  \n"
+    "vmovl.u8     q5, d5                  \n"
+    "vmovl.u8     q6, d6                  \n"
+    "vmovl.u8     q7, d7                  \n"
+
+    // 3 * line_0 + line_1
+    "vmlal.u8     q4, d0, d16             \n"
+    "vmlal.u8     q5, d1, d16             \n"
+    "vmlal.u8     q6, d2, d16             \n"
+    "vmlal.u8     q7, d3, d16             \n"
+
+    // (3 * line_0 + line_1) >> 2
+    "vqrshrn.u16  d0, q4, #2              \n"
+    "vqrshrn.u16  d1, q5, #2              \n"
+    "vqrshrn.u16  d2, q6, #2              \n"
+    "vqrshrn.u16  d3, q7, #2              \n"
+
+    // a0 = (src[0] * 3 + s[1] * 1) >> 2
+    "vmovl.u8     q4, d1                  \n"
+    "vmlal.u8     q4, d0, d16             \n"
+    "vqrshrn.u16  d0, q4, #2              \n"
+
+    // a1 = (src[1] * 1 + s[2] * 1) >> 1
+    "vrhadd.u8    d1, d1, d2              \n"
+
+    // a2 = (src[2] * 1 + s[3] * 3) >> 2
+    "vmovl.u8     q4, d2                  \n"
+    "vmlal.u8     q4, d3, d16             \n"
+    "vqrshrn.u16  d2, q4, #2              \n"
+
+    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
+
+    "subs         %2, #24                 \n"
+    "bhi          1b                      \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width),        // %2
+      "+r"(src_stride)        // %3
+    :
+    : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "d17", "memory", "cc"
+  );
+}
+
+static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
+                                      uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "vmov.u8      d10, #3                 \n"
+    "add          %3, %0                  \n"
+    "1:                                   \n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
+    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n" // src line 1
+
+    // average src line 0 with src line 1
+    "vrhadd.u8    q0, q0, q2              \n"
+    "vrhadd.u8    q1, q1, q3              \n"
+
+    // a0 = (src[0] * 3 + s[1] * 1) >> 2
+    "vmovl.u8     q3, d1                  \n"
+    "vmlal.u8     q3, d0, d10             \n"
+    "vqrshrn.u16  d0, q3, #2              \n"
+
+    // a1 = (src[1] * 1 + s[2] * 1) >> 1
+    "vrhadd.u8    d1, d1, d2              \n"
+
+    // a2 = (src[2] * 1 + s[3] * 3) >> 2
+    "vmovl.u8     q3, d2                  \n"
+    "vmlal.u8     q3, d3, d10             \n"
+    "vqrshrn.u16  d2, q3, #2              \n"
+
+    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
+
+    "subs         %2, #24                 \n"
+    "bhi          1b                      \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width),        // %2
+      "+r"(src_stride)        // %3
+    :
+    : "r4", "q0", "q1", "q2", "q3", "d10", "memory", "cc"
+  );
+}
+
 /**
  * SSE2 downscalers with interpolation.
  *
@@ -2857,6 +2975,18 @@ static void ScalePlaneDown34(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
   void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#if defined(HAS_SCALEROWDOWN34_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (dst_width % 24 == 0) && (dst_stride % 8 == 0)) {
+    if (!filtering) {
+      ScaleRowDown34_0 = ScaleRowDown34_NEON;
+      ScaleRowDown34_1 = ScaleRowDown34_NEON;
+    } else {
+      ScaleRowDown34_0 = ScaleRowDown34_0_Int_NEON;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Int_NEON;
+    }
+  } else
+#endif
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (dst_width % 24 == 0) && (src_stride % 16 == 0) &&
