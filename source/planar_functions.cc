@@ -68,15 +68,6 @@ extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
-// Constant multiplication table for converting ARGB to I400.
-extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400[16]) = {
-  13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u
-};
-
-extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400_2[16]) = {
-  1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u
-};
-
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
@@ -215,7 +206,7 @@ int I420Copy(const uint8* src_y, int src_stride_y,
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   __asm__ volatile
   (
-    "vdup.u32   q0, %2            \n"  // duplicate 4 ints
+    "vdup.u32   {q0}, %2          \n"  // duplicate 4 ints
     "1:\n"
     "vst1.u32   {q0}, [%0]!       \n"  // store
     "subs       %1, %1, #16       \n"  // 16 processed per loop
@@ -393,16 +384,16 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 }
 
 static void I420CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
-                           uint8* dst, int dst_stride,
+                           uint8* dst, int dst_stride_frame,
                            int width, int height) {
   // Copy plane
   for (int y = 0; y < height; y += 2) {
     memcpy(dst, src, width);
     src += src_stride_0;
-    dst += dst_stride;
+    dst += dst_stride_frame;
     memcpy(dst, src, width);
     src += src_stride_1;
-    dst += dst_stride;
+    dst += dst_stride_frame;
   }
 }
 
@@ -503,13 +494,13 @@ int NV12ToI420(const uint8* src_y, int src_stride_y,
 // Convert NV12 to I420.  Deprecated.
 int NV12ToI420(const uint8* src_y,
                const uint8* src_uv,
-               int src_stride,
+               int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  return X420ToI420(src_y, src_stride, src_stride,
-                    src_uv, src_stride,
+  return X420ToI420(src_y, src_stride_frame, src_stride_frame,
+                    src_uv, src_stride_frame,
                     dst_y, dst_stride_y,
                     dst_u, dst_stride_u,
                     dst_v, dst_stride_v,
@@ -1371,38 +1362,6 @@ __asm {
   }
 }
 
-#define HAS_ARGBTOI400ROW_SSSE3
-__declspec(naked)
-static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_argb
-    mov       edx, [esp + 8]   // dst_y
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm7, _kMultiplyMaskARGBToI400
-    movdqa    xmm6, _kMultiplyMaskARGBToI400_2
-    movdqa    xmm5, xmm6
-    psllw     xmm5, 4         // Generate a mask of 0x10 on each byte.
-
- convertloop :
-    movdqa    xmm0, [eax]
-    pmaddubsw xmm0, xmm7
-    movdqa    xmm1, [eax + 16]
-    psrlw     xmm0, 7
-    pmaddubsw xmm1, xmm7
-    lea       eax, [eax + 32]
-    psrlw     xmm1, 7
-    packuswb  xmm0, xmm1
-    pmaddubsw xmm0, xmm6
-    packuswb  xmm0, xmm0
-    paddb     xmm0, xmm5
-    movq      qword ptr [edx], xmm0
-    lea       edx, [edx + 8]
-    sub       ecx, 8
-    ja        convertloop
-    ret
-  }
-}
-
 #elif (defined(__x86_64__) || defined(__i386__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 
@@ -1550,39 +1509,6 @@ static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   : "r"(kShuffleMaskRAWToARGB)  // %3
-  : "memory"
-);
-}
-
-#define HAS_ARGBTOI400ROW_SSSE3
-static void ARGBToI400Row_SSSE3(const uint8* src_argb, uint8* dst_y,
-                                int pix) {
-  asm volatile(
-  "movdqa     (%3),%%xmm7\n"
-  "movdqa     (%4),%%xmm6\n"
-  "movdqa     %%xmm6,%%xmm5\n"
-  "psllw      $0x4,%%xmm5\n"  // Generate a mask of 0x10 on each byte.
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "pmaddubsw  %%xmm7,%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "psrlw      $0x7,%%xmm0\n"
-  "pmaddubsw  %%xmm7,%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "psrlw      $0x7,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "pmaddubsw  %%xmm6,%%xmm0\n"
-  "packuswb   %%xmm0,%%xmm0\n"
-  "paddb      %%xmm5,%%xmm0\n"
-  "movq       %%xmm0,(%1)\n"
-  "lea        0x8(%1),%1\n"
-  "sub        $0x8,%2\n"
-  "ja         1b\n"
-  : "+r"(src_argb),   // %0
-    "+r"(dst_y),      // %1
-    "+r"(pix)         // %2
-  : "r"(kMultiplyMaskARGBToI400),    // %3
-    "r"(kMultiplyMaskARGBToI400_2)   // %4
   : "memory"
 );
 }
@@ -1812,16 +1738,6 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   return 0;
 }
 
-static void ARGBToI400Row_C(const uint8* src_argb, uint8* dst_y, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    uint32 b = static_cast<uint32>(src_argb[0] * 13u);
-    uint32 g = static_cast<uint32>(src_argb[1] * 64u);
-    uint32 r = static_cast<uint32>(src_argb[2] * 33u);
-    *(dst_y++) = static_cast<uint8>(((b + g + r) >> 7) + 16u);
-    src_argb += 4;
-  }
-}
-
 // Convert ARGB to I400.
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
@@ -1831,21 +1747,21 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-void (*ARGBToI400Row)(const uint8* src_argb, uint8* dst_y, int pix);
-#if defined(HAS_ARGBTOI400ROW_SSSE3)
+void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_argb, 16) && (src_stride_argb % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
-    ARGBToI400Row = ARGBToI400Row_SSSE3;
+    ARGBToYRow = ARGBToYRow_SSSE3;
   } else
 #endif
   {
-    ARGBToI400Row = ARGBToI400Row_C;
+    ARGBToYRow = ARGBToYRow_C;
   }
 
   for (int y = 0; y < height; ++y) {
-    ARGBToI400Row(src_argb, dst_y, width);
+    ARGBToYRow(src_argb, dst_y, width);
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
   }

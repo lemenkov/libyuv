@@ -16,93 +16,81 @@
 
 namespace libyuv {
 
-int
-I420ToRGB24(const uint8* src_yplane, int src_ystride,
-            const uint8* src_uplane, int src_ustride,
-            const uint8* src_vplane, int src_vstride,
-            uint8* dst_frame, int dst_stride,
-            int src_width, int src_height);
+int I420ToRGB24(const uint8* src_y, int src_stride_y,
+                const uint8* src_u, int src_stride_u,
+                const uint8* src_v, int src_stride_v,
+                uint8* dst_frame, int dst_stride_frame,
+                int width, int height);
 
-int
-I420ToARGB4444(const uint8* src_yplane, int src_ystride,
-               const uint8* src_uplane, int src_ustride,
-               const uint8* src_vplane, int src_vstride,
-               uint8* dst_frame, int dst_stride,
-               int src_width, int src_height);
+int I420ToARGB4444(const uint8* src_y, int src_stride_y,
+                   const uint8* src_u, int src_stride_u,
+                   const uint8* src_v, int src_stride_v,
+                   uint8* dst_frame, int dst_stride_frame,
+                   int width, int height);
 
-int
-I420ToRGB565(const uint8* src_yplane, int src_ystride,
-             const uint8* src_uplane, int src_ustride,
-             const uint8* src_vplane, int src_vstride,
-             uint8* dst_frame, int dst_stride,
-             int src_width, int src_height);
+int I420ToRGB565(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_frame, int dst_stride_frame,
+                 int width, int height);
 
-int
-I420ToARGB1555(const uint8* src_yplane, int src_ystride,
-               const uint8* src_uplane, int src_ustride,
-               const uint8* src_vplane, int src_vstride,
-               uint8* dst_frame, int dst_stride,
-               int src_width, int src_height);
+int I420ToARGB1555(const uint8* src_y, int src_stride_y,
+                   const uint8* src_u, int src_stride_u,
+                   const uint8* src_v, int src_stride_v,
+                   uint8* dst_frame, int dst_stride_frame,
+                   int width, int height);
 
-int
-I420ToYUY2(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_frame, int dst_stride,
-           int src_width, int src_height);
+int I420ToYUY2(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height);
 
-int
-I420ToUYVY(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_frame, int dst_stride,
-           int src_width, int src_height);
+int I420ToUYVY(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height);
 
-int
-RGB24ToARGB(const uint8* src_frame, int src_stride,
-            uint8* dst_frame, int dst_stride,
-            int src_width, int src_height);
+// TODO(fbarchard): Deprecated - this is same as BG24ToARGB with -height
+int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
+                uint8* dst_frame, int dst_stride_frame,
+                int width, int height);
 
-int
-RGB24ToI420(const uint8* src_frame, int src_stride,
-            uint8* dst_yplane, int dst_ystride,
-            uint8* dst_uplane, int dst_ustride,
-            uint8* dst_vplane, int dst_vstride,
-            int src_width, int src_height);
+int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
+                uint8* dst_y, int dst_stride_y,
+                uint8* dst_u, int dst_stride_u,
+                uint8* dst_v, int dst_stride_v,
+                int width, int height);
 
-int
-RAWToI420(const uint8* src_frame, int src_stride,
-          uint8* dst_yplane, int dst_ystride,
-          uint8* dst_uplane, int dst_ustride,
-          uint8* dst_vplane, int dst_vstride,
-          int src_width, int src_height);
+int RAWToI420(const uint8* src_frame, int src_stride_frame,
+              uint8* dst_y, int dst_stride_y,
+              uint8* dst_u, int dst_stride_u,
+              uint8* dst_v, int dst_stride_v,
+              int width, int height);
 
-int
-ABGRToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height);
+int ABGRToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
 
-int
-BGRAToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height);
+int BGRAToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
 
-int
-ARGBToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height);
+int ARGBToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
 
-int
-NV12ToRGB565(const uint8* src_yplane, int src_ystride,
-             const  uint8* src_uvplane, int src_uvstride,
-             uint8* dst_frame, int dst_stride,
-             int src_width, int src_height);
+int NV12ToRGB565(const uint8* src_y, int src_stride_y,
+                 const uint8* src_uv, int src_stride_uv,
+                 uint8* dst_frame, int dst_stride_frame,
+                 int width, int height);
 
 } //  namespace libyuv
 

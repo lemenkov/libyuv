@@ -12,6 +12,91 @@
 
 extern "C" {
 
+#ifdef HAS_ARGBTOYROW_SSSE3
+
+// Constant multiplication table for converting ARGB to I400.
+extern "C" TALIGN16(const uint8, kMultiplyMaskARGBToI400[16]) = {
+  13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u, 13u, 64u, 33u, 0u
+};
+
+extern "C" TALIGN16(const uint8, kAdd16[16]) = {
+  1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u
+};
+
+void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile(
+  "movdqa     (%3),%%xmm7\n"
+  "movdqa     (%4),%%xmm6\n"
+  "movdqa     %%xmm6,%%xmm5\n"
+  "psllw      $0x4,%%xmm5\n"  // Generate a mask of 0x10 on each byte.
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "pmaddubsw  %%xmm7,%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "psrlw      $0x7,%%xmm0\n"
+  "pmaddubsw  %%xmm7,%%xmm1\n"
+  "lea        0x20(%0),%0\n"
+  "psrlw      $0x7,%%xmm1\n"
+  "packuswb   %%xmm1,%%xmm0\n"
+  "pmaddubsw  %%xmm6,%%xmm0\n"
+  "packuswb   %%xmm0,%%xmm0\n"
+  "paddb      %%xmm5,%%xmm0\n"
+  "movq       %%xmm0,(%1)\n"
+  "lea        0x8(%1),%1\n"
+  "sub        $0x8,%2\n"
+  "ja         1b\n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_y),      // %1
+    "+r"(pix)         // %2
+  : "r"(kMultiplyMaskARGBToI400),    // %3
+    "r"(kAdd16)   // %4
+  : "memory"
+);
+}
+#endif
+
+static inline int RGBToY(uint8 r, uint8 g, uint8 b) {
+  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
+}
+
+static inline int RGBToU(uint8 r, uint8 g, uint8 b) {
+  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
+}
+static inline int RGBToV(uint8 r, uint8 g, uint8 b) {
+  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
+}
+
+void ARGBToYRow_C(const uint8* src_argb0, uint8* dst_y, int width) {
+  for (int x = 0; x < width; ++x) {
+    dst_y[0] = RGBToY(src_argb0[2], src_argb0[1], src_argb0[0]);
+    src_argb0 += 4;
+    dst_y += 1;
+  }
+}
+
+void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width) {
+  const uint8* src_argb1 = src_argb0 + src_stride_argb;
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 ab = (src_argb0[0] + src_argb0[4] + src_argb1[0] + src_argb1[4]) >> 2;
+    uint8 ag = (src_argb0[1] + src_argb0[5] + src_argb1[1] + src_argb1[5]) >> 2;
+    uint8 ar = (src_argb0[2] + src_argb0[6] + src_argb1[2] + src_argb1[6]) >> 2;
+    dst_u[0] = RGBToU(ar, ag, ab);
+    dst_v[0] = RGBToV(ar, ag, ab);
+    src_argb0 += 8;
+    src_argb1 += 8;
+    dst_u += 1;
+    dst_v += 1;
+  }
+  if (width & 1) {
+    uint8 ab = (src_argb0[0] + src_argb1[0]) >> 1;
+    uint8 ag = (src_argb0[1] + src_argb1[1]) >> 1;
+    uint8 ar = (src_argb0[2] + src_argb1[2]) >> 1;
+    dst_u[0] = RGBToU(ar, ag, ab);
+    dst_v[0] = RGBToV(ar, ag, ab);
+  }
+}
+
 #if defined(__x86_64__)
 
 // 64 bit linux gcc version

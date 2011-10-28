@@ -12,20 +12,9 @@
 
 #include "libyuv/cpu_id.h"
 #include "video_common.h"
+#include "row.h"
 
 namespace libyuv {
-
-// Most code in here is inspired by the material at
-// http://www.siliconimaging.com/RGB%20Bayer.htm
-
-// Forces compiler to inline, even against its better judgement. Use wisely.
-#if defined(__GNUC__)
-#define FORCE_INLINE __attribute__((always_inline))
-#elif defined(WIN32)
-#define FORCE_INLINE __forceinline
-#else
-#define FORCE_INLINE
-#endif
 
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
 // and vst would select which 2 components to write.  The low level would need
@@ -333,46 +322,6 @@ int BayerRGBToARGB(const uint8* src_bayer, int src_stride_bayer,
   return 0;
 }
 
-// Taken from http://en.wikipedia.org/wiki/YUV
-static FORCE_INLINE int RGBToY(uint8 r, uint8 g, uint8 b) {
-  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
-}
-
-static FORCE_INLINE int RGBToU(uint8 r, uint8 g, uint8 b) {
-  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
-}
-static FORCE_INLINE int RGBToV(uint8 r, uint8 g, uint8 b) {
-  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
-}
-
-static void ARGBtoYRow(const uint8* src_argb0,
-                       uint8* dst_y, int width) {
-  for (int x = 0; x < width; ++x) {
-    dst_y[0] = RGBToY(src_argb0[2], src_argb0[1], src_argb0[0]);
-    src_argb0 += 4;
-    dst_y += 1;
-  }
-}
-
-static void ARGBtoUVRow(const uint8* src_argb0, int src_stride_argb,
-                        uint8* dst_u,
-                        uint8* dst_v,
-                        int width) {
-  const uint8* src_argb1 = src_argb0 + src_stride_argb;
-  for (int x = 0; x < width - 1; x += 2) {
-    uint8 ab = (src_argb0[0] + src_argb0[4] + src_argb1[0] + src_argb1[4]) >> 2;
-    uint8 ag = (src_argb0[1] + src_argb0[5] + src_argb1[1] + src_argb1[5]) >> 2;
-    uint8 ar = (src_argb0[2] + src_argb0[6] + src_argb1[2] + src_argb1[6]) >> 2;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-    src_argb0 += 8;
-    src_argb1 += 8;
-    dst_u += 1;
-    dst_v += 1;
-  }
-}
-
-
 // Converts any Bayer RGB format to ARGB.
 int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
                    uint32 src_fourcc_bayer,
@@ -395,6 +344,28 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
                     uint8* dst_rgb, int pix);
   void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
                     uint8* dst_rgb, int pix);
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#define kMaxStride (2048 * 4)
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+#if defined(HAS_ARGBTOYROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
+      IS_ALIGNED(dst_y, 8) && (dst_stride_y % 8 == 0)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
+#else
+    ARGBToUVRow = ARGBToUVRow_C;
+#endif
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
+  }
 
   switch (src_fourcc_bayer) {
     default:
@@ -417,24 +388,23 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
       break;
   }
 
-#define kMaxStride 2048 * 4
-  uint8 row[kMaxStride * 2];
   for (int y = 0; y < (height - 1); y += 2) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
               row + kMaxStride, width);
-    ARGBtoYRow(row, dst_y, width);
-    ARGBtoYRow(row + kMaxStride, dst_y + dst_stride_y, width);
-    ARGBtoUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
     src_bayer += src_stride_bayer * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
+  // TODO(fbarchard): Make sure this filters properly
   if (height & 1) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
-    ARGBtoYRow(row, dst_y, width);
-    ARGBtoUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
   }
   return 0;
 }

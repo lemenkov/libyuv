@@ -13,6 +13,16 @@
 
 #include "libyuv/basic_types.h"
 
+#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
+    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_ARGBTOYROW_SSSE3
+#endif
+
+#if defined(WIN32) \
+    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_ARGBTOUVROW_SSSE3
+#endif
+
 extern "C" {
 void FastConvertYUVToRGB32Row(const uint8* y_buf,
                               const uint8* u_buf,
@@ -42,11 +52,24 @@ void FastConvertYToRGB32Row(const uint8* y_buf,
                             uint8* rgb_buf,
                             int width);
 
+#ifdef HAS_ARGBTOYROW_SSSE3
+void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
+#endif
+void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width);
+
+
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
+#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
 #else
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #endif
+
 #ifdef OSX
 extern SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
 extern SIMD_ALIGNED(const int16 kCoefficientsBgraY[768][4]);
