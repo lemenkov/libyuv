@@ -215,7 +215,7 @@ int I420Copy(const uint8* src_y, int src_stride_y,
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   __asm__ volatile
   (
-    "vdup.u32   {q0}, %2          \n"  // duplicate 4 ints
+    "vdup.u32   q0, %2            \n"  // duplicate 4 ints
     "1:\n"
     "vst1.u32   {q0}, [%0]!       \n"  // store
     "subs       %1, %1, #16       \n"  // 16 processed per loop
