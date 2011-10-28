@@ -12,28 +12,29 @@
       'target_name': 'libyuv',
       'type': 'static_library',
       'include_dirs': [
-        'common',
         'include',
+        '.',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
-          'common',
           'include',
+          '.',
         ],
       },
       'sources': [
         # includes
-        'include/convert.h',
-        'include/general.h',
-        'include/scale.h',
-        'include/planar_functions.h',
+        'include/libyuv/basic_types.h',
+        'include/libyuv/convert.h',
+        'include/libyuv/general.h',
+        'include/libyuv/scale.h',
+        'include/libyuv/planar_functions.h',
+        
 
         # headers
-        'common/basic_types.h',
-        'common/common.h',
-        'common/constructor_magic.h',
+         'source/conversion_tables.h',
         'source/cpu_id.h',
-        'source/rotate.h'
+        'source/rotate.h',
+        'source/rotate_priv.h',
         'source/row.h',
         'source/video_common.h',
 

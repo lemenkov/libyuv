@@ -16,70 +16,73 @@
 
 namespace libyuv {
 
-int
-I420Mirror(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int width, int height) {
+int I420Mirror(const uint8* src_yplane, int src_ystride,
+               const uint8* src_uplane, int src_ustride,
+               const uint8* src_vplane, int src_vstride,
+               uint8* dst_yplane, int dst_ystride,
+               uint8* dst_uplane, int dst_ustride,
+               uint8* dst_vplane, int dst_vstride,
+               int width, int height) {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_yplane == NULL || dst_uplane == NULL || dst_vplane == NULL) {
+      dst_yplane == NULL || dst_uplane == NULL || dst_vplane == NULL)
     return -1;
-  }
+
+  // Only accepts positive dimensions
+  if (height < 0 || width < 0 ||  dst_ystride < 0 || dst_ustride < 0 ||
+      dst_vstride < 0)
+    return -1;
 
   int indO = 0;
   int indS  = 0;
   int wind, hind;
-  uint8 tmpVal, tmpValU, tmpValV;
+  uint8 tmp_val;
   // Will swap two values per iteration
-  const int halfWidth = (width + 1) >> 1;
+  const int half_width = (width + 1) >> 1;
 
   // Y
-  for (wind = 0; wind < halfWidth; wind++) {
-   for (hind = 0; hind < height; hind++) {
+  for (wind = 0; wind < half_width; ++wind) {
+   for (hind = 0; hind < height; ++hind) {
      indO = hind * src_ystride + wind;
      indS = hind * dst_ystride + (width - wind - 1);
-     tmpVal = src_yplane[indO];
+     tmp_val = src_yplane[indO];
      dst_yplane[indO] = src_yplane[indS];
-     dst_yplane[indS] = tmpVal;
+     dst_yplane[indS] = tmp_val;
     }
   }
 
-  const int halfHeight = (height + 1) >> 1;
-  const int halfSrcuvStride = (height + 1) >> 1;
-  const int halfuvWidth = (width + 1) >> 2;
+  const int half_height = (height + 1) >> 1;
+  const int half_uv_width = (width + 1) >> 1;
 
-  for (wind = 0; wind < halfuvWidth; wind++) {
-   for (hind = 0; hind < halfHeight; hind++) {
-     indO = hind * halfSrcuvStride + wind;
-     indS = hind * halfSrcuvStride + (halfuvWidth - wind - 1);
+  for (wind = 0; wind < half_uv_width; ++wind) {
+   for (hind = 0; hind < half_height; ++hind) {
      // U
-     tmpValU = src_uplane[indO];
+     indO = hind * dst_ustride + wind;
+     indS = hind * dst_ustride + (half_uv_width - wind - 1);
+     tmp_val = src_uplane[indO];
      dst_uplane[indO] = src_uplane[indS];
-     dst_uplane[indS] = tmpValU;
+     dst_uplane[indS] = tmp_val;
      // V
-     tmpValV = src_vplane[indO];
+     indO = hind * dst_vstride + wind;
+     indS = hind * dst_vstride + (half_uv_width - wind - 1);
+     tmp_val = src_vplane[indO];
      dst_vplane[indO] = src_vplane[indS];
-     dst_vplane[indS] = tmpValV;
+     dst_vplane[indS] = tmp_val;
    }
   }
   return 0;
 }
 
 // Make a center cut
-int
-I420Crop(uint8* frame,
-         int src_width, int src_height,
-         int dst_width, int dst_height)
+int I420Crop(uint8* frame,
+             int src_width, int src_height,
+             int dst_width, int dst_height)
 {
   if (frame == NULL)
     return -1;
 
   if (src_width == dst_width && src_height == dst_height) {
       // Nothing to do
-    return 3 * dst_height * dst_width / 2;
+    return 0;
   }
   if (dst_width > src_width || dst_height > src_height) {
       // error
@@ -118,10 +121,9 @@ I420Crop(uint8* frame,
 }
 
 
-int
-I420CropPad(const uint8* src_frame, int src_width,
-            int src_height, uint8* dst_frame,
-            int dst_width, int dst_height)
+int I420CropPad(const uint8* src_frame, int src_width,
+                int src_height, uint8* dst_frame,
+                int dst_width, int dst_height)
 {
   if (src_width < 1 || dst_width < 1 || src_height < 1 || dst_height < 1) {
     return -1;

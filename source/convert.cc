@@ -30,22 +30,21 @@ static inline uint8 Clip(int32 val) {
   return (uint8) val;
 }
 
-int
-I420ToRGB24(const uint8* src_yplane, int src_ystride,
-            const uint8* src_uplane, int src_ustride,
-            const uint8* src_vplane, int src_vstride,
-            uint8* dst_frame, int dst_stride,
-            int src_width, int src_height)
+int I420ToRGB24(const uint8* src_yplane, int src_ystride,
+                const uint8* src_uplane, int src_ustride,
+                const uint8* src_vplane, int src_vstride,
+                uint8* dst_frame, int dst_stride,
+                int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL)
     return -1;
 
   // RGB orientation - bottom up
-  uint8* out = dst_frame + dst_stride * src_height * 3 - dst_stride * 3;
-  uint8* out2 = out - dst_stride * 3;
+  uint8* out = dst_frame + dst_stride * src_height - dst_stride;
+  uint8* out2 = out - dst_stride;
   int h, w;
-  int tmpR, tmpG, tmpB;
+  int tmp_r, tmp_g, tmp_b;
   const uint8 *y1, *y2 ,*u, *v;
   y1 = src_yplane;
   y2 = y1 + src_ystride;
@@ -55,33 +54,33 @@ I420ToRGB24(const uint8* src_yplane, int src_ystride,
     // 2 rows at a time, 2 y's at a time
     for (w = 0; w < ((src_width + 1) >> 1); w++){
       // Vertical and horizontal sub-sampling
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0] = Clip(tmpB);
-      out[1] = Clip(tmpG);
-      out[2] = Clip(tmpR);
+      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
+      out[0] = Clip(tmp_b);
+      out[1] = Clip(tmp_g);
+      out[2] = Clip(tmp_r);
 
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[3] = Clip(tmpB);
-      out[4] = Clip(tmpG);
-      out[5] = Clip(tmpR);
+      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
+      out[3] = Clip(tmp_b);
+      out[4] = Clip(tmp_g);
+      out[5] = Clip(tmp_r);
 
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = Clip(tmpB);
-      out2[1] = Clip(tmpG);
-      out2[2] = Clip(tmpR);
+      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
+      out2[0] = Clip(tmp_b);
+      out2[1] = Clip(tmp_g);
+      out2[2] = Clip(tmp_r);
 
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[3] = Clip(tmpB);
-      out2[4] = Clip(tmpG);
-      out2[5] = Clip(tmpR);
+      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
+      out2[3] = Clip(tmp_b);
+      out2[4] = Clip(tmp_g);
+      out2[5] = Clip(tmp_r);
 
       out += 6;
       out2 += 6;
@@ -94,28 +93,27 @@ I420ToRGB24(const uint8* src_yplane, int src_ystride,
     y2 += src_ystride + src_ystride - src_width;
     u += src_ustride - ((src_width + 1) >> 1);
     v += src_vstride - ((src_width + 1) >> 1);
-    out -= dst_stride * 9;
-    out2 -= dst_stride * 9;
+    out -= dst_stride * 3;
+    out2 -= dst_stride * 3;
   } // end height for
   return 0;
 }
 
 // Little Endian...
-int
-I420ToARGB4444(const uint8* src_yplane, int src_ystride,
-               const uint8* src_uplane, int src_ustride,
-               const uint8* src_vplane, int src_vstride,
-               uint8* dst_frame, int dst_stride,
-               int src_width, int src_height)
+int I420ToARGB4444(const uint8* src_yplane, int src_ystride,
+                   const uint8* src_uplane, int src_ustride,
+                   const uint8* src_vplane, int src_vstride,
+                   uint8* dst_frame, int dst_stride,
+                   int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_frame == NULL){
+      dst_frame == NULL)
     return -1;
-  }
+
   // RGB orientation - bottom up
-  uint8* out = dst_frame + dst_stride * (src_height - 1) * 2;
-  uint8* out2 = out - (2 * dst_stride);
-  int tmpR, tmpG, tmpB;
+  uint8* out = dst_frame + dst_stride * (src_height - 1);
+  uint8* out2 = out - dst_stride;
+  int tmp_r, tmp_g, tmp_b;
   const uint8 *y1,*y2, *u, *v;
   y1 = src_yplane;
   y2 = y1 + src_ystride;
@@ -128,29 +126,29 @@ I420ToARGB4444(const uint8* src_yplane, int src_ystride,
     for (w = 0; w < ((src_width + 1) >> 1); w++){
         // Vertical and horizontal sub-sampling
         // Convert to RGB888 and re-scale to 4 bits
-        tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-        tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-        out[0] =(uint8)((Clip(tmpG) & 0xf0) + (Clip(tmpB) >> 4));
-        out[1] = (uint8)(0xf0 + (Clip(tmpR) >> 4));
+        tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+        tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+        tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
+        out[0] =(uint8)((Clip(tmp_g) & 0xf0) + (Clip(tmp_b) >> 4));
+        out[1] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
 
-        tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-        tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-        out[2] = (uint8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
-        out[3] = (uint8)(0xf0 + (Clip(tmpR) >> 4));
+        tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+        tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+        tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
+        out[2] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
+        out[3] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
 
-        tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-        tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-        out2[0] = (uint8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
-        out2[1] = (uint8) (0xf0 + (Clip(tmpR) >> 4));
+        tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+        tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+        tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
+        out2[0] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
+        out2[1] = (uint8) (0xf0 + (Clip(tmp_r) >> 4));
 
-        tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-        tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-        out2[2] = (uint8)((Clip(tmpG) & 0xf0 ) + (Clip(tmpB) >> 4));
-        out2[3] = (uint8)(0xf0 + (Clip(tmpR) >> 4));
+        tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+        tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+        tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
+        out2[2] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
+        out2[3] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
 
         out += 4;
         out2 += 4;
@@ -163,24 +161,22 @@ I420ToARGB4444(const uint8* src_yplane, int src_ystride,
     y2 += 2 * src_ystride - src_width;
     u += src_ustride - ((src_width + 1) >> 1);
     v += src_vstride - ((src_width + 1) >> 1);
-    out -= (2 * dst_stride + src_width) * 2;
-    out2 -= (2 * dst_stride + src_width) * 2;
+    out -= (dst_stride + src_width) * 2;
+    out2 -= (dst_stride + src_width) * 2;
   } // end height for
   return 0;
 }
 
 
-int
-I420ToRGB565(const uint8* src_yplane, int src_ystride,
-             const uint8* src_uplane, int src_ustride,
-             const uint8* src_vplane, int src_vstride,
-             uint8* dst_frame, int dst_stride,
-             int src_width, int src_height)
+int I420ToRGB565(const uint8* src_yplane, int src_ystride,
+                 const uint8* src_uplane, int src_ustride,
+                 const uint8* src_vplane, int src_vstride,
+                 uint8* dst_frame, int dst_stride,
+                 int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_frame == NULL){
+      dst_frame == NULL)
     return -1;
-  }
 
   // Negative height means invert the image.
   if (src_height < 0) {
@@ -195,7 +191,7 @@ I420ToRGB565(const uint8* src_yplane, int src_ystride,
   uint16* out = (uint16*)(dst_frame) + dst_stride * (src_height - 1);
   uint16* out2 = out - dst_stride;
 
-  int tmpR, tmpG, tmpB;
+  int tmp_r, tmp_g, tmp_b;
   const uint8 *y1,*y2, *u, *v;
   y1 = src_yplane;
   y2 = y1 + src_ystride;
@@ -210,29 +206,29 @@ I420ToRGB565(const uint8* src_yplane, int src_ystride,
       // 1. Convert to RGB888
       // 2. Shift to adequate location (in the 16 bit word) - RGB 565
 
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0]  = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
+      out[0]  = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[1] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                         & 0xfc) << 3) + (Clip(tmpB ) >> 3);
+      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
+      out[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                         & 0xfc) << 3) + (Clip(tmp_b ) >> 3);
 
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
+      out2[0] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[1] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
+      out2[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
       y1 += 2;
       y2 += 2;
@@ -247,17 +243,16 @@ I420ToRGB565(const uint8* src_yplane, int src_ystride,
     v += src_vstride - ((src_width + 1) >> 1);
     out -= 2 * dst_stride + src_width;
     out2 -=  2 * dst_stride + src_width;
-  } // end height for
+  }
   return 0;
 }
 
 
-int
-I420ToARGB1555(const uint8* src_yplane, int src_ystride,
-               const uint8* src_uplane, int src_ustride,
-               const uint8* src_vplane, int src_vstride,
-               uint8* dst_frame, int dst_stride,
-               int src_width, int src_height)
+int I420ToARGB1555(const uint8* src_yplane, int src_ystride,
+                   const uint8* src_uplane, int src_ustride,
+                   const uint8* src_vplane, int src_vstride,
+                   uint8* dst_frame, int dst_stride,
+                   int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -265,7 +260,7 @@ I420ToARGB1555(const uint8* src_yplane, int src_ystride,
   }
   uint16* out = (uint16*)(dst_frame) + dst_stride * (src_height - 1);
   uint16* out2 = out - dst_stride ;
-  int32 tmpR, tmpG, tmpB;
+  int32 tmp_r, tmp_g, tmp_b;
   const uint8 *y1,*y2, *u, *v;
   int h, w;
 
@@ -281,29 +276,29 @@ I420ToARGB1555(const uint8* src_yplane, int src_ystride,
       // 1. Convert to RGB888
       // 2. Shift to adequate location (in the 16 bit word) - RGB 555
       // 3. Add 1 for alpha value
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0]  = (uint16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
-                ((Clip(tmpG) & 0xf8) << 3) + (Clip(tmpB) >> 3));
+      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
+      out[0]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
+                ((Clip(tmp_g) & 0xf8) << 3) + (Clip(tmp_b) >> 3));
 
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]  + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[1]  = (uint16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
-                ((Clip(tmpG) & 0xf8) << 3)  + (Clip(tmpB) >> 3));
+      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]  + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
+      out[1]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
+                ((Clip(tmp_g) & 0xf8) << 3)  + (Clip(tmp_b) >> 3));
 
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0]  = (uint16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
-                 ((Clip(tmpG) & 0xf8) << 3) + (Clip(tmpB) >> 3));
+      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
+      out2[0]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
+                 ((Clip(tmp_g) & 0xf8) << 3) + (Clip(tmp_b) >> 3));
 
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[1]  = (uint16)(0x8000 + ((Clip(tmpR) & 0xf8) << 10) +
-                 ((Clip(tmpG) & 0xf8) << 3)  + (Clip(tmpB) >> 3));
+      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
+      out2[1]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
+                 ((Clip(tmp_g) & 0xf8) << 3)  + (Clip(tmp_b) >> 3));
 
       y1 += 2;
       y2 += 2;
@@ -318,17 +313,16 @@ I420ToARGB1555(const uint8* src_yplane, int src_ystride,
     v += src_vstride - ((src_width + 1) >> 1);
     out -= 2 * dst_stride + src_width;
     out2 -=  2 * dst_stride + src_width;
-  } // end height for
+  }
   return 0;
 }
 
 
-int
-I420ToYUY2(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_frame, int dst_stride,
-           int src_width, int src_height)
+int I420ToYUY2(const uint8* src_yplane, int src_ystride,
+               const uint8* src_uplane, int src_ustride,
+               const uint8* src_vplane, int src_vstride,
+               uint8* dst_frame, int dst_stride,
+               int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
       dst_frame == NULL){
@@ -341,7 +335,7 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
   const uint8* src_v = src_vplane;
 
   uint8* out1 = dst_frame;
-  uint8* out2 = dst_frame + 2 * dst_stride;
+  uint8* out2 = dst_frame + dst_stride;
 
   // YUY2 - Macro-pixel = 2 image pixels
   // Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
@@ -368,8 +362,8 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
     in2 += 2 * src_ystride - src_width;
     src_u += src_ustride - ((src_width + 1) >> 1);
     src_v += src_vstride - ((src_width + 1) >> 1);
-    out1 += 2 * dst_stride + 2 * (dst_stride - src_width);
-    out2 += 2 * dst_stride + 2 * (dst_stride - src_width);
+    out1 += dst_stride + dst_stride - 2 * src_width;
+    out2 += dst_stride + dst_stride - 2 * src_width;
   }
 #else
   for (WebRtc_UWord32 i = 0; i < ((height + 1) >> 1);i++)
@@ -432,24 +426,23 @@ I420ToYUY2(const uint8* src_yplane, int src_ystride,
     }
     in1 += 2 * src_ystride - src_width;
     in2 += 2 * src_ystride - src_width;
-    out1 += 2 * strideOut + 2 * (strideOut - width);
-    out2 += 2 * strideOut + 2 * (strideOut - width);
+    out1 += dst_stride + dst_stride - 2 * width;
+    out2 += dst_stride + dst_stride - 2 * width;
   }
 #endif
   return 0;
 }
 
-int
-I420ToUYVY(const uint8* src_yplane, int src_ystride,
-           const uint8* src_uplane, int src_ustride,
-           const uint8* src_vplane, int src_vstride,
-           uint8* dst_frame, int dst_stride,
-           int src_width, int src_height)
+int I420ToUYVY(const uint8* src_yplane, int src_ystride,
+               const uint8* src_uplane, int src_ustride,
+               const uint8* src_vplane, int src_vstride,
+               uint8* dst_frame, int dst_stride,
+               int src_width, int src_height)
 {
   if (src_yplane == NULL || src_uplane == NULL || src_vplane == NULL ||
-      dst_frame == NULL){
+      dst_frame == NULL)
     return -1;
-  }
+
   int i = 0;
   const uint8* y1 = src_yplane;
   const uint8* y2 = y1 + src_ystride;
@@ -457,7 +450,7 @@ I420ToUYVY(const uint8* src_yplane, int src_ystride,
   const uint8* v = src_vplane;
 
   uint8* out1 = dst_frame;
-  uint8* out2 = dst_frame + 2 * dst_stride;
+  uint8* out2 = dst_frame + dst_stride;
 
   // Macro-pixel = 2 image pixels
   // U0Y0V0Y1....U2Y2V2Y3...U4Y4V4Y5.....
@@ -485,8 +478,8 @@ I420ToUYVY(const uint8* src_yplane, int src_ystride,
     y2 += 2 * src_ystride - src_width;
     u += src_ustride - ((src_width + 1) >> 1);
     v += src_vstride - ((src_width + 1) >> 1);
-    out1 += 2 * (dst_stride + (dst_stride - src_width));
-    out2 += 2 * (dst_stride + (dst_stride - src_width));
+    out1 += 2 * (dst_stride - src_width);
+    out2 += 2 * (dst_stride - src_width);
   }
 #else
   for (; i < (height >> 1);i++)
@@ -547,29 +540,27 @@ loop0:
     }
     in1 += width;
     in2 += width;
-    out1 += 2 * (strideOut + (strideOut - width));
-    out2 += 2 * (strideOut + (strideOut - width));
+    out1 += 2 * (dst_stride - width);
+    out2 += 2 * (dst_stride - width);
   }
 #endif
   return 0;
 }
 
 
-int
-NV12ToRGB565(const uint8* src_yplane, int src_ystride,
-             const  uint8* src_uvplane, int src_uvstride,
-             uint8* dst_frame, int dst_stride,
-             int src_width, int src_height)
+int NV12ToRGB565(const uint8* src_yplane, int src_ystride,
+                 const  uint8* src_uvplane, int src_uvstride,
+                 uint8* dst_frame, int dst_stride,
+                 int src_width, int src_height)
 {
-  if (src_yplane == NULL || src_uvplane == NULL || dst_frame == NULL){
+  if (src_yplane == NULL || src_uvplane == NULL || dst_frame == NULL)
      return -1;
-  }
 
   // Bi-Planar: Y plane followed by an interlaced U and V plane
   const uint8* interlacedSrc = src_uvplane;
   uint16* out = (uint16*)(src_yplane) + dst_stride * (src_height - 1);
   uint16* out2 = out - dst_stride;
-  int32 tmpR, tmpG, tmpB;
+  int32 tmp_r, tmp_g, tmp_b;
   const uint8 *y1,*y2;
   y1 = src_yplane;
   y2 = y1 + src_ystride;
@@ -582,34 +573,34 @@ NV12ToRGB565(const uint8* src_yplane, int src_ystride,
       // 1. Convert to RGB888
       // 2. Shift to adequate location (in the 16 bit word) - RGB 565
 
-      tmpR = (int32)((mapYc[y1[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[0]] + mapUcg[interlacedSrc[0]]
+      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[interlacedSrc[0]]
                       + mapVcg[interlacedSrc[1]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-      out[0]  = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
+      out[0]  = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
-      tmpR = (int32)((mapYc[y1[1]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y1[1]] + mapUcg[interlacedSrc[0]]
+      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[interlacedSrc[0]]
                       + mapVcg[interlacedSrc[1]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y1[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-      out[1] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                         & 0xfc) << 3) + (Clip(tmpB ) >> 3);
+      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
+      out[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                         & 0xfc) << 3) + (Clip(tmp_b ) >> 3);
 
-      tmpR = (int32)((mapYc[y2[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[0]] + mapUcg[interlacedSrc[0]]
+      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[interlacedSrc[1]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[interlacedSrc[0]]
                       + mapVcg[interlacedSrc[1]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-      out2[0] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
+      out2[0] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
-      tmpR = (int32)((mapYc[y2[1]] + mapVcr[interlacedSrc[1]]
+      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[interlacedSrc[1]]
                       + 128) >> 8);
-      tmpG = (int32)((mapYc[y2[1]] + mapUcg[interlacedSrc[0]]
+      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[interlacedSrc[0]]
                       + mapVcg[interlacedSrc[1]] + 128) >> 8);
-      tmpB = (int32)((mapYc[y2[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
-      out2[1] = (uint16)((Clip(tmpR) & 0xf8) << 8) + ((Clip(tmpG)
-                          & 0xfc) << 3) + (Clip(tmpB) >> 3);
+      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[interlacedSrc[0]] + 128) >> 8);
+      out2[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
+                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
 
       y1 += 2;
       y2 += 2;
@@ -622,28 +613,24 @@ NV12ToRGB565(const uint8* src_yplane, int src_ystride,
     interlacedSrc += src_uvstride - ((src_width + 1) >> 1);
     out -= 3 * dst_stride + dst_stride - src_width;
     out2 -= 3 * dst_stride + dst_stride - src_width;
-  } // end height for
+  }
   return 0;
 }
 
-int
-RGB24ToARGB(const uint8* src_frame, int src_stride,
-            uint8* dst_frame, int dst_stride,
-            int src_width, int src_height)
+int RGB24ToARGB(const uint8* src_frame, int src_stride,
+                uint8* dst_frame, int dst_stride,
+                int src_width, int src_height)
 {
-  if (src_frame == NULL || dst_frame == NULL){
+  if (src_frame == NULL || dst_frame == NULL)
     return -1;
-  }
 
   int i, j, offset;
   uint8* outFrame = dst_frame;
   const uint8* inFrame = src_frame;
 
   outFrame += dst_stride * (src_height - 1) * 4;
-  for (i = 0; i < src_height; i++)
-  {
-    for (j = 0; j < src_width; j++)
-    {
+  for (i = 0; i < src_height; i++){
+    for (j = 0; j < src_width; j++){
       offset = j * 4;
       outFrame[0 + offset] = inFrame[0];
       outFrame[1 + offset] = inFrame[1];
@@ -749,9 +736,9 @@ static int RGBToI420(const uint8* src_frame, int src_stride,
                                           uint8* dst_vplane,
                                           int src_width)) {
   if (src_frame == NULL || dst_yplane == NULL ||
-      dst_vplane == NULL || dst_vplane == NULL) {
+      dst_vplane == NULL || dst_vplane == NULL)
     return -1;
-  }
+
   if (src_height < 0) {
     src_height = -src_height;
     src_frame = src_frame + src_stride * (src_height -1);
@@ -776,12 +763,11 @@ static int RGBToI420(const uint8* src_frame, int src_stride,
   return 0;
 }
 
-int
-ARGBToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height) {
+int ARGBToI420(const uint8* src_frame, int src_stride,
+               uint8* dst_yplane, int dst_ystride,
+               uint8* dst_uplane, int dst_ustride,
+               uint8* dst_vplane, int dst_vstride,
+               int src_width, int src_height) {
   return RGBToI420(src_frame, src_stride,
                    dst_yplane, dst_ystride,
                    dst_uplane, dst_ustride,
@@ -789,12 +775,11 @@ ARGBToI420(const uint8* src_frame, int src_stride,
                    src_width, src_height, ARGBToI420Row_C);
 }
 
-int
-BGRAToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height) {
+int BGRAToI420(const uint8* src_frame, int src_stride,
+               uint8* dst_yplane, int dst_ystride,
+               uint8* dst_uplane, int dst_ustride,
+               uint8* dst_vplane, int dst_vstride,
+               int src_width, int src_height) {
   return RGBToI420(src_frame, src_stride,
                    dst_yplane, dst_ystride,
                    dst_uplane, dst_ustride,
@@ -802,12 +787,11 @@ BGRAToI420(const uint8* src_frame, int src_stride,
                    src_width, src_height, BGRAToI420Row_C);
 }
 
-int
-ABGRToI420(const uint8* src_frame, int src_stride,
-           uint8* dst_yplane, int dst_ystride,
-           uint8* dst_uplane, int dst_ustride,
-           uint8* dst_vplane, int dst_vstride,
-           int src_width, int src_height) {
+int ABGRToI420(const uint8* src_frame, int src_stride,
+               uint8* dst_yplane, int dst_ystride,
+               uint8* dst_uplane, int dst_ustride,
+               uint8* dst_vplane, int dst_vstride,
+               int src_width, int src_height) {
   return RGBToI420(src_frame, src_stride,
                    dst_yplane, dst_ystride,
                    dst_uplane, dst_ustride,
@@ -815,12 +799,11 @@ ABGRToI420(const uint8* src_frame, int src_stride,
                    src_width, src_height, ABGRToI420Row_C);
 }
 
-int
-RGB24ToI420(const uint8* src_frame, int src_stride,
-            uint8* dst_yplane, int dst_ystride,
-            uint8* dst_uplane, int dst_ustride,
-            uint8* dst_vplane, int dst_vstride,
-            int src_width, int src_height) {
+int RGB24ToI420(const uint8* src_frame, int src_stride,
+                uint8* dst_yplane, int dst_ystride,
+                uint8* dst_uplane, int dst_ustride,
+                uint8* dst_vplane, int dst_vstride,
+                int src_width, int src_height) {
   return RGBToI420(src_frame, src_stride,
                    dst_yplane, dst_ystride,
                    dst_uplane, dst_ustride,
@@ -828,12 +811,11 @@ RGB24ToI420(const uint8* src_frame, int src_stride,
                    src_width, src_height, RGB24ToI420Row_C);
 }
 
-int
-RAWToI420(const uint8* src_frame, int src_stride,
-          uint8* dst_yplane, int dst_ystride,
-          uint8* dst_uplane, int dst_ustride,
-          uint8* dst_vplane, int dst_vstride,
-          int src_width, int src_height) {
+int RAWToI420(const uint8* src_frame, int src_stride,
+              uint8* dst_yplane, int dst_ystride,
+              uint8* dst_uplane, int dst_ustride,
+              uint8* dst_vplane, int dst_vstride,
+              int src_width, int src_height) {
   return RGBToI420(src_frame, src_stride,
                    dst_yplane, dst_ystride,
                    dst_uplane, dst_ustride,
