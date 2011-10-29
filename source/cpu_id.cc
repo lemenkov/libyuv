@@ -15,6 +15,9 @@
 #include <intrin.h>
 #endif
 
+// Internal flag to indicate cpuid is initialized.
+static const int kCpuInitialized = 16;
+
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
@@ -39,33 +42,33 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 namespace libyuv {
 
 // CPU detect function for SIMD instruction sets.
-static bool cpu_info_initialized_ = false;
 static int cpu_info_ = 0;
 
-// Global lock for cpu initialization.
+// TODO(fbarchard): (cpu_info[2] & 0x10000000 ? kCpuHasAVX : 0)
 static void InitCpuFlags() {
 #ifdef CPU_X86
   int cpu_info[4];
   __cpuid(cpu_info, 1);
-  cpu_info_ = (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
-              (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0);
+  cpu_info_ = (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0) |
+              (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
+              kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
-  // if code is specifically built for Neon-only, enable the flag.
-  cpu_info_ |= kCpuHasNEON;
+  // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
+  // to disable Neon on devices that do not have it.
+  cpu_info_ = kCpuHasNEON | kCpuInitialized;
 #else
-  cpu_info_ = 0;
+  cpu_info_ = kCpuInitialized;
 #endif
-  cpu_info_initialized_ = true;
 }
 
-void MaskCpuFlagsForTest(int enable_flags) {
+void MaskCpuFlags(int enable_flags) {
   InitCpuFlags();
-  cpu_info_ &= enable_flags;
+  cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
 }
 
 bool TestCpuFlag(int flag) {
-  if (!cpu_info_initialized_) {
+  if (!cpu_info_) {
     InitCpuFlags();
   }
   return cpu_info_ & flag ? true : false;

@@ -17,14 +17,15 @@ namespace libyuv {
 static const int kCpuHasSSE2 = 1;
 static const int kCpuHasSSSE3 = 2;
 
-// SIMD support on ARM processors
+// These flags are only valid on ARM processors
 static const int kCpuHasNEON = 4;
 
 // Detect CPU has SSE2 etc.
 bool TestCpuFlag(int flag);
 
 // For testing, allow CPU flags to be disabled.
-void MaskCpuFlagsForTest(int enable_flags);
+// ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.  -1 to enable all.
+void MaskCpuFlags(int enable_flags);
 
 }  // namespace libyuv
 
