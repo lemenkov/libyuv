@@ -286,6 +286,244 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+#define HAS_SCALEROWDOWN38_NEON
+const uint8 shuf38[16] __attribute__ ((aligned(16))) =
+  { 0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0 };
+const uint8 shuf38_2[16] __attribute__ ((aligned(16))) =
+  { 0, 8, 16, 2, 10, 17, 4, 12, 18, 6, 14, 19, 0, 0, 0, 0 };
+const unsigned short mult38_div6[8] __attribute__ ((aligned(16))) =
+  { 65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12,
+    65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12 };
+const unsigned short mult38_div9[8] __attribute__ ((aligned(16))) =
+  { 65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18,
+    65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18 };
+
+// 32 -> 12
+static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
+                                uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "vld1.u8      {q3}, [%3]                  \n"
+    "1:                                       \n"
+    "vld1.u8      {d0, d1, d2, d3}, [%0]!     \n"
+    "vtbl.u8      d4, {d0, d1, d2, d3}, d6    \n"
+    "vtbl.u8      d5, {d0, d1, d2, d3}, d7    \n"
+    "vst1.u8      {d4}, [%1]!                 \n"
+    "vst1.u32     {d5[0]}, [%1]!              \n"
+    "subs         %2, #12                     \n"
+    "bhi          1b                          \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width)         // %2
+    : "r"(shuf38)             // %3
+    : "d0", "d1", "d2", "d3", "d4", "d5", "memory", "cc"
+  );
+}
+
+// 32x3 -> 12x1
+static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
+                                      uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "vld1.u16     {q4}, [%4]                  \n"
+    "vld1.u8      {q5}, [%5]                  \n"
+    "vld1.u8      {q8}, [%6]                  \n"
+    "add          r4, %0, %3, lsl #1          \n"
+    "add          %3, %0                      \n"
+    "1:                                       \n"
+
+    // d0 = 00 40 01 41 02 42 03 43
+    // d1 = 10 50 11 51 12 52 13 53
+    // d2 = 20 60 21 61 22 62 23 63
+    // d3 = 30 70 31 71 32 72 33 73
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!     \n"
+    "vld4.u8      {d4, d5, d6, d7}, [%3]!     \n"
+    "vld4.u8      {d12, d13, d14, d15}, [r4]! \n"
+
+    // Shuffle the input data around to get align the data
+    //  so adjacent data can be added.  0,1 - 2,3 - 4,5 - 6,7
+    // d0 = 00 10 01 11 02 12 03 13
+    // d1 = 40 50 41 51 42 52 43 53
+    "vtrn.u8      d0, d1                      \n"
+    "vtrn.u8      d4, d5                      \n"
+    "vtrn.u8      d12, d13                    \n"
+
+    // d2 = 20 30 21 31 22 32 23 33
+    // d3 = 60 70 61 71 62 72 63 73
+    "vtrn.u8      d2, d3                      \n"
+    "vtrn.u8      d6, d7                      \n"
+    "vtrn.u8      d14, d15                    \n"
+
+    // d0 = 00+10 01+11 02+12 03+13
+    // d2 = 40+50 41+51 42+52 43+53
+    "vpaddl.u8    q0, q0                      \n"
+    "vpaddl.u8    q2, q2                      \n"
+    "vpaddl.u8    q6, q6                      \n"
+
+    // d3 = 60+70 61+71 62+72 63+73
+    "vpaddl.u8    d3, d3                      \n"
+    "vpaddl.u8    d7, d7                      \n"
+    "vpaddl.u8    d15, d15                    \n"
+
+    // combine source lines
+    "vadd.u16     q0, q2                      \n"
+    "vadd.u16     q0, q6                      \n"
+    "vadd.u16     d4, d3, d7                  \n"
+    "vadd.u16     d4, d15                     \n"
+
+    // dst_ptr[3] = (s[6 + st * 0] + s[7 + st * 0]
+    //             + s[6 + st * 1] + s[7 + st * 1]
+    //             + s[6 + st * 2] + s[7 + st * 2]) / 6
+    "vqrdmulh.s16 q2, q4                      \n"
+    "vmovn.u16    d4, q2                      \n"
+
+    // Shuffle 2,3 reg around so that 2 can be added to the
+    //  0,1 reg and 3 can be added to the 4,5 reg.  This
+    //  requires expanding from u8 to u16 as the 0,1 and 4,5
+    //  registers are already expanded.  Then do transposes
+    //  to get aligned.
+    // q2 = xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
+    "vmovl.u8     q1, d2                      \n"
+    "vmovl.u8     q3, d6                      \n"
+    "vmovl.u8     q7, d14                     \n"
+
+    // combine source lines
+    "vadd.u16     q1, q3                      \n"
+    "vadd.u16     q1, q7                      \n"
+
+    // d4 = xx 20 xx 30 xx 22 xx 32
+    // d5 = xx 21 xx 31 xx 23 xx 33
+    "vtrn.u32     d2, d3                      \n"
+
+    // d4 = xx 20 xx 21 xx 22 xx 23
+    // d5 = xx 30 xx 31 xx 32 xx 33
+    "vtrn.u16     d2, d3                      \n"
+
+    // 0+1+2, 3+4+5
+    "vadd.u16     q0, q1                      \n"
+
+    // Need to divide, but can't downshift as the the value
+    //  isn't a power of 2.  So multiply by 65536 / n
+    //  and take the upper 16 bits.
+    "vqrdmulh.s16 q0, q8                      \n"
+
+    // Align for table lookup, vtbl requires registers to
+    //  be adjacent
+    "vmov.u8      d2, d4                      \n"
+
+    "vtbl.u8      d3, {d0, d1, d2}, d10       \n"
+    "vtbl.u8      d4, {d0, d1, d2}, d11       \n"
+
+    "vst1.u8      {d3}, [%1]!                 \n"
+    "vst1.u32     {d4[0]}, [%1]!              \n"
+    "subs         %2, #12                     \n"
+    "bhi          1b                          \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width),        // %2
+      "+r"(src_stride)        // %3
+    : "r"(mult38_div6),       // %4
+      "r"(shuf38_2),          // %5
+      "r"(mult38_div9)        // %6
+    : "r4", "q0", "q1", "q2", "q3", "q4",
+      "q5", "q6", "q7", "q8", "memory", "cc"
+  );
+}
+
+// 32x2 -> 12x1
+static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
+                                      uint8* dst_ptr, int dst_width) {
+  __asm__ volatile
+  (
+    "vld1.u16     {q4}, [%4]              \n"
+    "vld1.u8      {q5}, [%5]              \n"
+    "add          %3, %0                  \n"
+    "1:                                   \n"
+
+    // d0 = 00 40 01 41 02 42 03 43
+    // d1 = 10 50 11 51 12 52 13 53
+    // d2 = 20 60 21 61 22 62 23 63
+    // d3 = 30 70 31 71 32 72 33 73
+    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n"
+    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n"
+
+    // Shuffle the input data around to get align the data
+    //  so adjacent data can be added.  0,1 - 2,3 - 4,5 - 6,7
+    // d0 = 00 10 01 11 02 12 03 13
+    // d1 = 40 50 41 51 42 52 43 53
+    "vtrn.u8      d0, d1                  \n"
+    "vtrn.u8      d4, d5                  \n"
+
+    // d2 = 20 30 21 31 22 32 23 33
+    // d3 = 60 70 61 71 62 72 63 73
+    "vtrn.u8      d2, d3                  \n"
+    "vtrn.u8      d6, d7                  \n"
+
+    // d0 = 00+10 01+11 02+12 03+13
+    // d2 = 40+50 41+51 42+52 43+53
+    "vpaddl.u8    q0, q0                  \n"
+    "vpaddl.u8    q2, q2                  \n"
+
+    // d3 = 60+70 61+71 62+72 63+73
+    "vpaddl.u8    d3, d3                  \n"
+    "vpaddl.u8    d7, d7                  \n"
+
+    // combine source lines
+    "vadd.u16     q0, q2                  \n"
+    "vadd.u16     d4, d3, d7              \n"
+
+    // dst_ptr[3] = (s[6] + s[7] + s[6+st] + s[7+st]) / 4
+    "vqrshrn.u16  d4, q2, #2              \n"
+
+    // Shuffle 2,3 reg around so that 2 can be added to the
+    //  0,1 reg and 3 can be added to the 4,5 reg.  This
+    //  requires expanding from u8 to u16 as the 0,1 and 4,5
+    //  registers are already expanded.  Then do transposes
+    //  to get aligned.
+    // q2 = xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
+    "vmovl.u8     q1, d2                  \n"
+    "vmovl.u8     q3, d6                  \n"
+
+    // combine source lines
+    "vadd.u16     q1, q3                  \n"
+
+    // d4 = xx 20 xx 30 xx 22 xx 32
+    // d5 = xx 21 xx 31 xx 23 xx 33
+    "vtrn.u32     d2, d3                  \n"
+
+    // d4 = xx 20 xx 21 xx 22 xx 23
+    // d5 = xx 30 xx 31 xx 32 xx 33
+    "vtrn.u16     d2, d3                  \n"
+
+    // 0+1+2, 3+4+5
+    "vadd.u16     q0, q1                  \n"
+
+    // Need to divide, but can't downshift as the the value
+    //  isn't a power of 2.  So multiply by 65536 / n
+    //  and take the upper 16 bits.
+    "vqrdmulh.s16 q0, q4                  \n"
+
+    // Align for table lookup, vtbl requires registers to
+    //  be adjacent
+    "vmov.u8      d2, d4                  \n"
+
+    "vtbl.u8      d3, {d0, d1, d2}, d10   \n"
+    "vtbl.u8      d4, {d0, d1, d2}, d11   \n"
+
+    "vst1.u8      {d3}, [%1]!             \n"
+    "vst1.u32     {d4[0]}, [%1]!          \n"
+    "subs         %2, #12                 \n"
+    "bhi          1b                      \n"
+    : "+r"(src_ptr),          // %0
+      "+r"(dst_ptr),          // %1
+      "+r"(dst_width),        // %2
+      "+r"(src_stride)        // %3
+    : "r"(mult38_div6),       // %4
+      "r"(shuf38_2)           // %5
+    : "q0", "q1", "q2", "q3", "q4", "q5", "memory", "cc"
+  );
+}
+
 /**
  * SSE2 downscalers with interpolation.
  *
@@ -3064,6 +3302,18 @@ static void ScalePlaneDown38(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
   void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+#if defined(HAS_SCALEROWDOWN38_NEON)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+      (dst_width % 24 == 0)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_NEON;
+      ScaleRowDown38_2 = ScaleRowDown38_NEON;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Int_NEON;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Int_NEON;
+    }
+  } else
+#endif
 #if defined(HAS_SCALEROWDOWN38_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (dst_width % 24 == 0) && (src_stride % 16 == 0) &&
