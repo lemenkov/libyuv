@@ -58,16 +58,6 @@ extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
-// Shuffle table for converting BG24 to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) = {
-  0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
-};
-
-// Shuffle table for converting RAW to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) = {
-  2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
-};
-
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
@@ -206,7 +196,7 @@ int I420Copy(const uint8* src_y, int src_stride_y,
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   __asm__ volatile
   (
-    "vdup.u32   {q0}, %2          \n"  // duplicate 4 ints
+    "vdup.u32   q0, %2            \n"  // duplicate 4 ints
     "1:\n"
     "vst1.u32   {q0}, [%0]!       \n"  // store
     "subs       %1, %1, #16       \n"  // 16 processed per loop
@@ -1282,85 +1272,6 @@ __asm {
   }
 }
 
-#define HAS_BG24TOARGBROW_SSSE3
-__declspec(naked)
-static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
-                                int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_bg24
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
-    pslld     xmm7, 24
-    movdqa    xmm6, _kShuffleMaskBG24ToARGB
-
- convertloop :
-    movdqa    xmm0, [eax]
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm3, [eax + 32]
-    lea       eax, [eax + 48]
-    movdqa    xmm2, xmm3
-    palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
-    pshufb    xmm2, xmm6
-    por       xmm2, xmm7
-    palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
-    pshufb    xmm0, xmm6
-    movdqa    [edx + 32], xmm2
-    por       xmm0, xmm7
-    pshufb    xmm1, xmm6
-    movdqa    [edx], xmm0
-    por       xmm1, xmm7
-    palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
-    pshufb    xmm3, xmm6
-    movdqa    [edx + 16], xmm1
-    por       xmm3, xmm7
-    movdqa    [edx + 48], xmm3
-    lea       edx, [edx + 64]
-    sub       ecx, 16
-    ja        convertloop
-    ret
-  }
-}
-
-#define HAS_RAWTOARGBROW_SSSE3
-__declspec(naked)
-static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
-                               int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_raw
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    pcmpeqb   xmm7, xmm7       // generate mask 0xff000000
-    pslld     xmm7, 24
-    movdqa    xmm6, _kShuffleMaskRAWToARGB
-
- convertloop :
-    movdqa    xmm0, [eax]
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm3, [eax + 32]
-    lea       eax, [eax + 48]
-    movdqa    xmm2, xmm3
-    palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
-    pshufb    xmm2, xmm6
-    por       xmm2, xmm7
-    palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
-    pshufb    xmm0, xmm6
-    movdqa    [edx + 32], xmm2
-    por       xmm0, xmm7
-    pshufb    xmm1, xmm6
-    movdqa    [edx], xmm0
-    por       xmm1, xmm7
-    palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
-    pshufb    xmm3, xmm6
-    movdqa    [edx + 16], xmm1
-    por       xmm3, xmm7
-    movdqa    [edx + 48], xmm3
-    lea       edx, [edx + 64]
-    sub       ecx, 16
-    ja        convertloop
-    ret
-  }
-}
 
 #elif (defined(__x86_64__) || defined(__i386__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
@@ -1435,84 +1346,6 @@ static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
 );
 }
 
-#define HAS_BG24TOARGBROW_SSSE3
-static void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb,
-                                int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
-  "pslld      $0x18,%%xmm7\n"
-  "movdqa     (%3),%%xmm6\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm3\n"
-  "lea        0x30(%0),%0\n"
-  "movdqa     %%xmm3,%%xmm2\n"
-  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
-  "pshufb     %%xmm6,%%xmm2\n"
-  "por        %%xmm7,%%xmm2\n"
-  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
-  "pshufb     %%xmm6,%%xmm0\n"
-  "movdqa     %%xmm2,0x20(%1)\n"
-  "por        %%xmm7,%%xmm0\n"
-  "pshufb     %%xmm6,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "por        %%xmm7,%%xmm1\n"
-  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
-  "pshufb     %%xmm6,%%xmm3\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "por        %%xmm7,%%xmm3\n"
-  "movdqa     %%xmm3,0x30(%1)\n"
-  "lea        0x40(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
-  : "+r"(src_bg24),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "r"(kShuffleMaskBG24ToARGB)  // %3
-  : "memory"
-);
-}
-
-#define HAS_RAWTOARGBROW_SSSE3
-static void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
-                               int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
-  "pslld      $0x18,%%xmm7\n"
-  "movdqa     (%3),%%xmm6\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm3\n"
-  "lea        0x30(%0),%0\n"
-  "movdqa     %%xmm3,%%xmm2\n"
-  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
-  "pshufb     %%xmm6,%%xmm2\n"
-  "por        %%xmm7,%%xmm2\n"
-  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
-  "pshufb     %%xmm6,%%xmm0\n"
-  "movdqa     %%xmm2,0x20(%1)\n"
-  "por        %%xmm7,%%xmm0\n"
-  "pshufb     %%xmm6,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "por        %%xmm7,%%xmm1\n"
-  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
-  "pshufb     %%xmm6,%%xmm3\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "por        %%xmm7,%%xmm3\n"
-  "movdqa     %%xmm3,0x30(%1)\n"
-  "lea        0x40(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
-  : "+r"(src_raw),   // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "r"(kShuffleMaskRAWToARGB)  // %3
-  : "memory"
-);
-}
-
 #endif
 
 static void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -1555,97 +1388,6 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
-
-
-static void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    uint8 r = src_raw[0];
-    uint8 g = src_raw[1];
-    uint8 b = src_raw[2];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = 255u;
-    dst_argb += 4;
-    src_raw += 3;
-  }
-}
-
-// Convert RAW to ARGB.
-int RAWToARGB(const uint8* src_raw, int src_stride_raw,
-              uint8* dst_argb, int dst_stride_argb,
-              int width, int height) {
-  if (height < 0) {
-    height = -height;
-    src_raw = src_raw + (height - 1) * src_stride_raw;
-    src_stride_raw = -src_stride_raw;
-  }
-  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix);
-#if defined(HAS_RAWTOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(src_raw, 16) && (src_stride_raw % 16 == 0) &&
-      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
-    RAWToARGBRow = RAWToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    RAWToARGBRow = RAWToARGBRow_C;
-  }
-
-  for (int y = 0; y < height; ++y) {
-    RAWToARGBRow(src_raw, dst_argb, width);
-    src_raw += src_stride_raw;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
-}
-
-static void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    uint8 b = src_bg24[0];
-    uint8 g = src_bg24[1];
-    uint8 r = src_bg24[2];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = 255u;
-    dst_argb[3] = 255u;
-    dst_argb += 4;
-    src_bg24 += 3;
-  }
-}
-
-// Convert BG24 to ARGB.
-int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
-  if (height < 0) {
-    height = -height;
-    src_bg24 = src_bg24 + (height - 1) * src_stride_bg24;
-    src_stride_bg24 = -src_stride_bg24;
-  }
-  void (*BG24ToARGBRow)(const uint8* src_bg24, uint8* dst_argb, int pix);
-#if defined(HAS_BG24TOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(src_bg24, 16) && (src_stride_bg24 % 16 == 0) &&
-      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
-    BG24ToARGBRow = BG24ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    BG24ToARGBRow = BG24ToARGBRow_C;
-  }
-
-  for (int y = 0; y < height; ++y) {
-    BG24ToARGBRow(src_bg24, dst_argb, width);
-    src_bg24 += src_stride_bg24;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
-}
-
 
 static void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
@@ -1764,6 +1506,67 @@ void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
     ARGBToYRow(src_argb, dst_y, width);
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
+
+// Convert RAW to ARGB.
+int RAWToARGB(const uint8* src_raw, int src_stride_raw,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
+  }
+  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix);
+#if defined(HAS_RAWTOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_raw, 16) && (src_stride_raw % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    RAWToARGBRow = RAWToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    RAWToARGBRow = RAWToARGBRow_C;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    RAWToARGBRow(src_raw, dst_argb, width);
+    src_raw += src_stride_raw;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert BG24 to ARGB.
+int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_bg24 = src_bg24 + (height - 1) * src_stride_bg24;
+    src_stride_bg24 = -src_stride_bg24;
+  }
+  void (*BG24ToARGBRow)(const uint8* src_bg24, uint8* dst_argb, int pix);
+#if defined(HAS_BG24TOARGBROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_bg24, 16) && (src_stride_bg24 % 16 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    BG24ToARGBRow = BG24ToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    BG24ToARGBRow = BG24ToARGBRow_C;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    BG24ToARGBRow(src_bg24, dst_argb, width);
+    src_bg24 += src_stride_bg24;
+    dst_argb += dst_stride_argb;
   }
   return 0;
 }

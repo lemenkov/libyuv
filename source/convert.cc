@@ -636,185 +636,6 @@ int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
   return 0;
 }
 
-// ARGBToI420Row_C etc row functions use the following macro, generating
-// code with RGB offsets/strides different for each version.  Less error
-// prone than duplicating the code.
-// template could be used, but macro method works for C and asm and this is
-// performance critical code.
-
-#define MAKEROWRGBTOI420(NAME,R,G,B,BPP) \
-static void \
-NAME(const uint8* src_row0, const uint8* src_row1, \
-         uint8* dst_yplane0, uint8* dst_yplane1, \
-         uint8* dst_u, \
-         uint8* dst_v, \
-         int width) { \
-  for (int x = 0; x < width - 1; x += 2) { \
-    dst_yplane0[0] = (uint8)((src_row0[R] * 66 + \
-                              src_row0[G] * 129 + \
-                              src_row0[B] * 25 + 128) >> 8) + 16; \
-    dst_yplane0[1] = (uint8)((src_row0[R + BPP] * 66 + \
-                              src_row0[G + BPP] * 129 + \
-                              src_row0[B + BPP] * 25 + 128) >> 8) + 16; \
-    dst_yplane1[0] = (uint8)((src_row1[R] * 66 + \
-                              src_row1[G] * 129 + \
-                              src_row1[B] * 25 + 128) >> 8) + 16; \
-    dst_yplane1[1] = (uint8)((src_row1[R + BPP] * 66 + \
-                              src_row1[G + BPP] * 129 + \
-                              src_row1[B + BPP] * 25 + 128) >> 8) + 16; \
-    dst_u[0] = (uint8)(((src_row0[R] + src_row0[R + BPP] + \
-                              src_row1[R] + src_row1[R + BPP]) * -38 + \
-                             (src_row0[G] + src_row0[G + BPP] + \
-                              src_row1[G] + src_row1[G + BPP]) * -74 + \
-                             (src_row0[B] + src_row0[B + BPP] + \
-                              src_row1[B] + src_row1[B + BPP]) * 112 + \
-                              + 512) >> 10) + 128; \
-    dst_v[0] = (uint8)(((src_row0[R] + src_row0[R + BPP] + \
-                              src_row1[R] + src_row1[R + BPP]) * 112 + \
-                             (src_row0[G] + src_row0[G + BPP] + \
-                              src_row1[G] + src_row1[G + BPP]) * -94 + \
-                             (src_row0[B] + src_row0[B + BPP] + \
-                              src_row1[B] + src_row1[B + BPP]) * -18 + \
-                              + 512) >> 10) + 128; \
-    dst_yplane0 += 2; \
-    dst_yplane1 += 2; \
-    ++dst_u; \
-    ++dst_v; \
-    src_row0 += BPP * 2; \
-    src_row1 += BPP * 2; \
-  } \
-  if (width & 1) { \
-    dst_yplane0[0] = (uint8)((src_row0[R] * 66 + \
-                              src_row0[G] * 129 + \
-                              src_row0[B] * 25 + 128) >> 8) + 16; \
-    dst_yplane1[0] = (uint8)((src_row1[R] * 66 + \
-                              src_row1[G] * 129 + \
-                              src_row1[B] * 25 + 128) >> 8) + 16; \
-    dst_u[0] = (uint8)(((src_row0[R] + \
-                              src_row1[R]) * -38 + \
-                             (src_row0[G] + \
-                              src_row1[G]) * -74 + \
-                             (src_row0[B] + \
-                              src_row1[B]) * 112 + \
-                              + 256) >> 9) + 128; \
-    dst_v[0] = (uint8)(((src_row0[R] + \
-                              src_row1[R]) * 112 + \
-                             (src_row0[G] + \
-                              src_row1[G]) * -94 + \
-                             (src_row0[B] + \
-                              src_row1[B]) * -18 + \
-                              + 256) >> 9) + 128; \
-  } \
-}
-
-// Generate variations of RGBToI420.  Parameters are r,g,b offsets within a
-// pixel, and number of bytes per pixel.
-MAKEROWRGBTOI420(ARGBToI420Row_C, 2, 1, 0, 4)
-MAKEROWRGBTOI420(BGRAToI420Row_C, 1, 2, 3, 4)
-MAKEROWRGBTOI420(ABGRToI420Row_C, 0, 1, 2, 4)
-MAKEROWRGBTOI420(RGB24ToI420Row_C, 2, 1, 0, 3)
-MAKEROWRGBTOI420(RAWToI420Row_C, 0, 1, 2, 3)
-
-static int RGBToI420(const uint8* src_frame, int src_stride_frame,
-                     uint8* dst_y, int dst_stride_y,
-                     uint8* dst_u, int dst_stride_u,
-                     uint8* dst_v, int dst_stride_v,
-                     int width, int height,
-                     void (*RGBToI420Row)(const uint8* src_row0,
-                                          const uint8* src_row1,
-                                          uint8* dst_yplane0,
-                                          uint8* dst_yplane1,
-                                          uint8* dst_u,
-                                          uint8* dst_v,
-                                          int width)) {
-  if (src_frame == NULL || dst_y == NULL ||
-      dst_v == NULL || dst_v == NULL)
-    return -1;
-
-  if (height < 0) {
-    height = -height;
-    src_frame = src_frame + src_stride_frame * (height -1);
-    src_stride_frame = -src_stride_frame;
-  }
-  for (int y = 0; y < height - 1; y += 2) {
-    RGBToI420Row(src_frame, src_frame + src_stride_frame,
-                 dst_y, dst_y + dst_stride_y,
-                 dst_u, dst_v,
-                 width);
-    src_frame += src_stride_frame * 2;
-    dst_y += dst_stride_y * 2;
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
-  }
-  if (height & 1) {
-    RGBToI420Row(src_frame, src_frame,
-                 dst_y, dst_y,
-                 dst_u, dst_v,
-                 width);
-  }
-  return 0;
-}
-
-int ARGBToI420_Reference(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  return RGBToI420(src_frame, src_stride_frame,
-                   dst_y, dst_stride_y,
-                   dst_u, dst_stride_u,
-                   dst_v, dst_stride_v,
-                   width, height, ARGBToI420Row_C);
-}
-
-int BGRAToI420(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  return RGBToI420(src_frame, src_stride_frame,
-                   dst_y, dst_stride_y,
-                   dst_u, dst_stride_u,
-                   dst_v, dst_stride_v,
-                   width, height, BGRAToI420Row_C);
-}
-
-int ABGRToI420(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  return RGBToI420(src_frame, src_stride_frame,
-                   dst_y, dst_stride_y,
-                   dst_u, dst_stride_u,
-                   dst_v, dst_stride_v,
-                   width, height, ABGRToI420Row_C);
-}
-
-int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
-                uint8* dst_y, int dst_stride_y,
-                uint8* dst_u, int dst_stride_u,
-                uint8* dst_v, int dst_stride_v,
-                int width, int height) {
-  return RGBToI420(src_frame, src_stride_frame,
-                   dst_y, dst_stride_y,
-                   dst_u, dst_stride_u,
-                   dst_v, dst_stride_v,
-                   width, height, RGB24ToI420Row_C);
-}
-
-int RAWToI420(const uint8* src_frame, int src_stride_frame,
-              uint8* dst_y, int dst_stride_y,
-              uint8* dst_u, int dst_stride_u,
-              uint8* dst_v, int dst_stride_v,
-              int width, int height) {
-  return RGBToI420(src_frame, src_stride_frame,
-                   dst_y, dst_stride_y,
-                   dst_u, dst_stride_u,
-                   dst_v, dst_stride_v,
-                   width, height, RAWToI420Row_C);
-}
-
 int ARGBToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -830,9 +651,9 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (width % 8 == 0) &&
+      (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
-      IS_ALIGNED(dst_y, 8) && (dst_stride_y % 8 == 0)) {
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
     ARGBToYRow = ARGBToYRow_SSSE3;
   } else
 #endif
@@ -841,10 +662,10 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
   }
 #if defined(HAS_ARGBTOUVROW_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (width % 8 == 0) &&
+      (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
-      IS_ALIGNED(dst_u, 4) && (dst_stride_u % 4 == 0) &&
-      IS_ALIGNED(dst_v, 4) && (dst_stride_v % 4 == 0)) {
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
     ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
@@ -853,17 +674,229 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
     ARGBToYRow(src_frame, dst_y, width);
     ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToYRow(src_frame, dst_y, width);
     ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int BGRAToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_BGRATOYROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    ARGBToYRow = BGRAToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = BGRAToYRow_C;
+  }
+#if defined(HAS_BGRATOUVROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+    ARGBToUVRow = BGRAToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = BGRAToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int ABGRToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_ABGRTOYROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    ARGBToYRow = ABGRToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ABGRToYRow_C;
+  }
+#if defined(HAS_ABGRTOUVROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+    ARGBToUVRow = ABGRToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = ABGRToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
+                uint8* dst_y, int dst_stride_y,
+                uint8* dst_u, int dst_stride_u,
+                uint8* dst_v, int dst_stride_v,
+                int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_RGB24TOYROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    ARGBToYRow = RGB24ToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = RGB24ToYRow_C;
+  }
+#if defined(HAS_RGB24TOUVROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+    ARGBToUVRow = RGB24ToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = RGB24ToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int RAWToI420(const uint8* src_frame, int src_stride_frame,
+                uint8* dst_y, int dst_stride_y,
+                uint8* dst_u, int dst_stride_u,
+                uint8* dst_v, int dst_stride_v,
+                int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_RAWTOYROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+    ARGBToYRow = RAWToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = RAWToYRow_C;
+  }
+#if defined(HAS_RAWTOUVROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+    ARGBToUVRow = RAWToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = RAWToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
   }
   return 0;
 }

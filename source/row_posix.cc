@@ -23,6 +23,16 @@ extern "C" TALIGN16(const uint8, kAdd16[16]) = {
   1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u, 1u
 };
 
+// Shuffle table for converting BG24 to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) = {
+  0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
+};
+
+// Shuffle table for converting RAW to ARGB.
+extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) = {
+  2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
+};
+
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile(
   "movdqa     (%3),%%xmm7\n"
@@ -55,47 +65,81 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 #endif
 
-static inline int RGBToY(uint8 r, uint8 g, uint8 b) {
-  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
+#ifdef  HAS_BG24TOARGBROW_SSSE3
+void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
+  asm volatile(
+  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm7\n"
+  "movdqa     (%3),%%xmm6\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     0x20(%0),%%xmm3\n"
+  "lea        0x30(%0),%0\n"
+  "movdqa     %%xmm3,%%xmm2\n"
+  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm6,%%xmm2\n"
+  "por        %%xmm7,%%xmm2\n"
+  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm6,%%xmm0\n"
+  "movdqa     %%xmm2,0x20(%1)\n"
+  "por        %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm6,%%xmm1\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "por        %%xmm7,%%xmm1\n"
+  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm6,%%xmm3\n"
+  "movdqa     %%xmm1,0x10(%1)\n"
+  "por        %%xmm7,%%xmm3\n"
+  "movdqa     %%xmm3,0x30(%1)\n"
+  "lea        0x40(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  : "+r"(src_bg24),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskBG24ToARGB)  // %3
+  : "memory"
+);
 }
 
-static inline int RGBToU(uint8 r, uint8 g, uint8 b) {
-  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
+void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
+  asm volatile(
+  "pcmpeqb    %%xmm7,%%xmm7\n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm7\n"
+  "movdqa     (%3),%%xmm6\n"
+"1:"
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     0x10(%0),%%xmm1\n"
+  "movdqa     0x20(%0),%%xmm3\n"
+  "lea        0x30(%0),%0\n"
+  "movdqa     %%xmm3,%%xmm2\n"
+  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm6,%%xmm2\n"
+  "por        %%xmm7,%%xmm2\n"
+  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm6,%%xmm0\n"
+  "movdqa     %%xmm2,0x20(%1)\n"
+  "por        %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm6,%%xmm1\n"
+  "movdqa     %%xmm0,(%1)\n"
+  "por        %%xmm7,%%xmm1\n"
+  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm6,%%xmm3\n"
+  "movdqa     %%xmm1,0x10(%1)\n"
+  "por        %%xmm7,%%xmm3\n"
+  "movdqa     %%xmm3,0x30(%1)\n"
+  "lea        0x40(%1),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  : "+r"(src_raw),   // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(kShuffleMaskRAWToARGB)  // %3
+  : "memory"
+);
 }
-static inline int RGBToV(uint8 r, uint8 g, uint8 b) {
-  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
-}
-
-void ARGBToYRow_C(const uint8* src_argb0, uint8* dst_y, int width) {
-  for (int x = 0; x < width; ++x) {
-    dst_y[0] = RGBToY(src_argb0[2], src_argb0[1], src_argb0[0]);
-    src_argb0 += 4;
-    dst_y += 1;
-  }
-}
-
-void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
-                   uint8* dst_u, uint8* dst_v, int width) {
-  const uint8* src_argb1 = src_argb0 + src_stride_argb;
-  for (int x = 0; x < width - 1; x += 2) {
-    uint8 ab = (src_argb0[0] + src_argb0[4] + src_argb1[0] + src_argb1[4]) >> 2;
-    uint8 ag = (src_argb0[1] + src_argb0[5] + src_argb1[1] + src_argb1[5]) >> 2;
-    uint8 ar = (src_argb0[2] + src_argb0[6] + src_argb1[2] + src_argb1[6]) >> 2;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-    src_argb0 += 8;
-    src_argb1 += 8;
-    dst_u += 1;
-    dst_v += 1;
-  }
-  if (width & 1) {
-    uint8 ab = (src_argb0[0] + src_argb1[0]) >> 1;
-    uint8 ag = (src_argb0[1] + src_argb1[1]) >> 1;
-    uint8 ar = (src_argb0[2] + src_argb1[2]) >> 1;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-  }
-}
+#endif
 
 #if defined(__x86_64__)
 
@@ -611,4 +655,5 @@ void FastConvertYToRGB32Row(const uint8* y_buf,
 }
 
 #endif
+
 }  // extern "C"

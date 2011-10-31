@@ -10,6 +10,8 @@
 
 #include "row.h"
 
+#define kMaxStride (2048 * 4)
+
 extern "C" {
 
 #define MAKETABLE(NAME) \
@@ -299,6 +301,169 @@ MAKETABLE(_kCoefficientsBgraY)
 MAKETABLE(kCoefficientsAbgrY)
 #else
 MAKETABLE(_kCoefficientsAbgrY)
+#endif
+
+
+void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    uint8 r = src_raw[0];
+    uint8 g = src_raw[1];
+    uint8 b = src_raw[2];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = 255u;
+    dst_argb += 4;
+    src_raw += 3;
+  }
+}
+
+void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    uint8 b = src_bg24[0];
+    uint8 g = src_bg24[1];
+    uint8 r = src_bg24[2];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = 255u;
+    dst_argb[3] = 255u;
+    dst_argb += 4;
+    src_bg24 += 3;
+  }
+}
+
+// C versions do the same
+void RGB24ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  BG24ToARGBRow_C(src_argb, row, pix);
+  ARGBToYRow_C(row, dst_y, pix);
+}
+
+void RAWToYRow_C(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  RAWToARGBRow_C(src_argb, row, pix);
+  ARGBToYRow_C(row, dst_y, pix);
+}
+
+void RGB24ToUVRow_C(const uint8* src_argb, int src_stride_argb,
+                    uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  BG24ToARGBRow_C(src_argb, row, pix);
+  BG24ToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_C(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+void RAWToUVRow_C(const uint8* src_argb, int src_stride_argb,
+                  uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  RAWToARGBRow_C(src_argb, row, pix);
+  RAWToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_C(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+static inline int RGBToY(uint8 r, uint8 g, uint8 b) {
+  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
+}
+
+static inline int RGBToU(uint8 r, uint8 g, uint8 b) {
+  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
+}
+static inline int RGBToV(uint8 r, uint8 g, uint8 b) {
+  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
+}
+
+#define MAKEROWY(NAME,R,G,B) \
+void NAME ## ToYRow_C(const uint8* src_argb0, uint8* dst_y, int width) {       \
+  for (int x = 0; x < width; ++x) {                                            \
+    dst_y[0] = RGBToY(src_argb0[R], src_argb0[G], src_argb0[B]);               \
+    src_argb0 += 4;                                                            \
+    dst_y += 1;                                                                \
+  }                                                                            \
+}                                                                              \
+void NAME ## ToUVRow_C(const uint8* src_rgb0, int src_stride_rgb,              \
+                       uint8* dst_u, uint8* dst_v, int width) {                \
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;                           \
+  for (int x = 0; x < width - 1; x += 2) {                                     \
+    uint8 ab = (src_rgb0[B] + src_rgb0[B + 4] +                                \
+               src_rgb1[B] + src_rgb1[B + 4]) >> 2;                            \
+    uint8 ag = (src_rgb0[G] + src_rgb0[G + 4] +                                \
+               src_rgb1[G] + src_rgb1[G + 4]) >> 2;                            \
+    uint8 ar = (src_rgb0[R] + src_rgb0[R + 4] +                                \
+               src_rgb1[R] + src_rgb1[R + 4]) >> 2;                            \
+    dst_u[0] = RGBToU(ar, ag, ab);                                             \
+    dst_v[0] = RGBToV(ar, ag, ab);                                             \
+    src_rgb0 += 8;                                                             \
+    src_rgb1 += 8;                                                             \
+    dst_u += 1;                                                                \
+    dst_v += 1;                                                                \
+  }                                                                            \
+  if (width & 1) {                                                             \
+    uint8 ab = (src_rgb0[B] + src_rgb1[B]) >> 1;                               \
+    uint8 ag = (src_rgb0[G] + src_rgb1[G]) >> 1;                               \
+    uint8 ar = (src_rgb0[R] + src_rgb1[R]) >> 1;                               \
+    dst_u[0] = RGBToU(ar, ag, ab);                                             \
+    dst_v[0] = RGBToV(ar, ag, ab);                                             \
+  }                                                                            \
+}
+
+MAKEROWY(ARGB,2,1,0)
+MAKEROWY(BGRA,1,2,3)
+MAKEROWY(ABGR,0,1,2)
+
+#if defined(HAS_RAWTOYROW_SSSE3)
+
+void RGB24ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  BG24ToARGBRow_SSSE3(src_argb, row, pix);
+  ARGBToYRow_SSSE3(row, dst_y, pix);
+}
+
+void RAWToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  RAWToARGBRow_SSSE3(src_argb, row, pix);
+  ARGBToYRow_SSSE3(row, dst_y, pix);
+}
+
+#endif
+
+#if defined(HAS_RAWTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+void RGB24ToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
+                        uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  BG24ToARGBRow_SSSE3(src_argb, row, pix);
+  BG24ToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+void RAWToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  RAWToARGBRow_SSSE3(src_argb, row, pix);
+  RAWToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+#else
+
+void RGB24ToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
+                        uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  BG24ToARGBRow_SSSE3(src_argb, row, pix);
+  BG24ToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_C(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+void RAWToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  RAWToARGBRow_SSSE3(src_argb, row, pix);
+  RAWToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_C(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+#endif
 #endif
 
 }  // extern "C"

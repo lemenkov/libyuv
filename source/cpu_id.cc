@@ -15,9 +15,6 @@
 #include <intrin.h>
 #endif
 
-// Internal flag to indicate cpuid is initialized.
-static const int kCpuInitialized = 16;
-
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
@@ -64,11 +61,11 @@ static void InitCpuFlags() {
 
 void MaskCpuFlags(int enable_flags) {
   InitCpuFlags();
-  cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
+  cpu_info_ &= enable_flags;
 }
 
 bool TestCpuFlag(int flag) {
-  if (!cpu_info_) {
+  if (0 == cpu_info_) {
     InitCpuFlags();
   }
   return cpu_info_ & flag ? true : false;

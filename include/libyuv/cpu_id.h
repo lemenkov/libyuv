@@ -20,6 +20,9 @@ static const int kCpuHasSSSE3 = 2;
 // These flags are only valid on ARM processors
 static const int kCpuHasNEON = 4;
 
+// Internal flag to indicate cpuid is initialized.
+static const int kCpuInitialized = 8;
+
 // Detect CPU has SSE2 etc.
 bool TestCpuFlag(int flag);
 

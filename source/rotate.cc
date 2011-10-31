@@ -497,6 +497,143 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 );
 
 #if defined (__x86_64__)
+// 64 bit version has enough registers to do 16x8 to 8x16 at a time.
+#define HAS_TRANSPOSE_WX8_FAST_SSSE3
+static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
+                                    uint8* dst, int dst_stride, int width) {
+  asm volatile(
+"1:"
+  // Read in the data from the source pointer.
+  // First round of bit swap.
+  "movdqa     (%0),%%xmm0\n"
+  "movdqa     (%0,%3),%%xmm1\n"
+  "lea        (%0,%3,2),%0\n"
+  "movdqa     %%xmm0,%%xmm8\n"
+  "punpcklbw  %%xmm1,%%xmm0\n"
+  "punpckhbw  %%xmm1,%%xmm8\n"
+  "movdqa     (%0),%%xmm2\n"
+  "movdqa     %%xmm0,%%xmm1\n"
+  "movdqa     %%xmm8,%%xmm9\n"
+  "palignr    $0x8,%%xmm1,%%xmm1\n"
+  "palignr    $0x8,%%xmm9,%%xmm9\n"
+  "movdqa     (%0,%3),%%xmm3\n"
+  "lea        (%0,%3,2),%0\n"
+  "movdqa     %%xmm2,%%xmm10\n"
+  "punpcklbw  %%xmm3,%%xmm2\n"
+  "punpckhbw  %%xmm3,%%xmm10\n"
+  "movdqa     %%xmm2,%%xmm3\n"
+  "movdqa     %%xmm10,%%xmm11\n"
+  "movdqa     (%0),%%xmm4\n"
+  "palignr    $0x8,%%xmm3,%%xmm3\n"
+  "palignr    $0x8,%%xmm11,%%xmm11\n"
+  "movdqa     (%0,%3),%%xmm5\n"
+  "lea        (%0,%3,2),%0\n"
+  "movdqa     %%xmm4,%%xmm12\n"
+  "punpcklbw  %%xmm5,%%xmm4\n"
+  "punpckhbw  %%xmm5,%%xmm12\n"
+  "movdqa     %%xmm4,%%xmm5\n"
+  "movdqa     %%xmm12,%%xmm13\n"
+  "movdqa     (%0),%%xmm6\n"
+  "palignr    $0x8,%%xmm5,%%xmm5\n"
+  "palignr    $0x8,%%xmm13,%%xmm13\n"
+  "movdqa     (%0,%3),%%xmm7\n"
+  "lea        (%0,%3,2),%0\n"
+  "movdqa     %%xmm6,%%xmm14\n"
+  "punpcklbw  %%xmm7,%%xmm6\n"
+  "punpckhbw  %%xmm7,%%xmm14\n"
+  "neg        %3\n"
+  "movdqa     %%xmm6,%%xmm7\n"
+  "movdqa     %%xmm14,%%xmm15\n"
+  "lea        0x10(%0,%3,8),%0\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  "palignr    $0x8,%%xmm15,%%xmm15\n"
+  "neg        %3\n"
+   // Second round of bit swap.
+  "punpcklwd  %%xmm2,%%xmm0\n"
+  "punpcklwd  %%xmm3,%%xmm1\n"
+  "movdqa     %%xmm0,%%xmm2\n"
+  "movdqa     %%xmm1,%%xmm3\n"
+  "palignr    $0x8,%%xmm2,%%xmm2\n"
+  "palignr    $0x8,%%xmm3,%%xmm3\n"
+  "punpcklwd  %%xmm6,%%xmm4\n"
+  "punpcklwd  %%xmm7,%%xmm5\n"
+  "movdqa     %%xmm4,%%xmm6\n"
+  "movdqa     %%xmm5,%%xmm7\n"
+  "palignr    $0x8,%%xmm6,%%xmm6\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  "punpcklwd  %%xmm10,%%xmm8\n"
+  "punpcklwd  %%xmm11,%%xmm9\n"
+  "movdqa     %%xmm8,%%xmm10\n"
+  "movdqa     %%xmm9,%%xmm11\n"
+  "palignr    $0x8,%%xmm10,%%xmm10\n"
+  "palignr    $0x8,%%xmm11,%%xmm11\n"
+  "punpcklwd  %%xmm14,%%xmm12\n"
+  "punpcklwd  %%xmm15,%%xmm13\n"
+  "movdqa     %%xmm12,%%xmm14\n"
+  "movdqa     %%xmm13,%%xmm15\n"
+  "palignr    $0x8,%%xmm14,%%xmm14\n"
+  "palignr    $0x8,%%xmm15,%%xmm15\n"
+  // Third round of bit swap.
+  // Write to the destination pointer.
+  "punpckldq  %%xmm4,%%xmm0\n"
+  "movq       %%xmm0,(%1)\n"
+  "movdqa     %%xmm0,%%xmm4\n"
+  "palignr    $0x8,%%xmm4,%%xmm4\n"
+  "movq       %%xmm4,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm6,%%xmm2\n"
+  "movdqa     %%xmm2,%%xmm6\n"
+  "movq       %%xmm2,(%1)\n"
+  "palignr    $0x8,%%xmm6,%%xmm6\n"
+  "punpckldq  %%xmm5,%%xmm1\n"
+  "movq       %%xmm6,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "movdqa     %%xmm1,%%xmm5\n"
+  "movq       %%xmm1,(%1)\n"
+  "palignr    $0x8,%%xmm5,%%xmm5\n"
+  "movq       %%xmm5,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm7,%%xmm3\n"
+  "movq       %%xmm3,(%1)\n"
+  "movdqa     %%xmm3,%%xmm7\n"
+  "palignr    $0x8,%%xmm7,%%xmm7\n"
+  "movq       %%xmm7,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm12,%%xmm8\n"
+  "movq       %%xmm8,(%1)\n"
+  "movdqa     %%xmm8,%%xmm12\n"
+  "palignr    $0x8,%%xmm12,%%xmm12\n"
+  "movq       %%xmm12,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm14,%%xmm10\n"
+  "movdqa     %%xmm10,%%xmm14\n"
+  "movq       %%xmm10,(%1)\n"
+  "palignr    $0x8,%%xmm14,%%xmm14\n"
+  "punpckldq  %%xmm13,%%xmm9\n"
+  "movq       %%xmm14,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "movdqa     %%xmm9,%%xmm13\n"
+  "movq       %%xmm9,(%1)\n"
+  "palignr    $0x8,%%xmm13,%%xmm13\n"
+  "movq       %%xmm13,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "punpckldq  %%xmm15,%%xmm11\n"
+  "movq       %%xmm11,(%1)\n"
+  "movdqa     %%xmm11,%%xmm15\n"
+  "palignr    $0x8,%%xmm15,%%xmm15\n"
+  "movq       %%xmm15,(%1,%4)\n"
+  "lea        (%1,%4,2),%1\n"
+  "sub        $0x10,%2\n"
+  "ja         1b\n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "r"(static_cast<intptr_t>(src_stride)),  // %3
+    "r"(static_cast<intptr_t>(dst_stride))   // %4
+  : "memory"
+);
+}
+
 #define HAS_TRANSPOSE_UVWX8_SSE2
 static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                 uint8* dst_a, int dst_stride_a,
@@ -644,17 +781,26 @@ void TransposePlane(const uint8* src, int src_stride,
 #if defined(HAS_TRANSPOSE_WX8_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
       (width % 8 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(dst, 16) && (dst_stride % 8 == 0)) {
+      IS_ALIGNED(src, 8) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
     TransposeWx8 = TransposeWx8_NEON;
+    TransposeWxH = TransposeWxH_C;
+  } else
+#endif
+#if defined(HAS_TRANSPOSE_WX8_FAST_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
+    TransposeWx8 = TransposeWx8_FAST_SSSE3;
     TransposeWxH = TransposeWxH_C;
   } else
 #endif
 #if defined(HAS_TRANSPOSE_WX8_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
       (width % 8 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(dst, 16) && (dst_stride % 8 == 0)) {
+      IS_ALIGNED(src, 8) && (src_stride % 8 == 0) &&
+      IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
     TransposeWx8 = TransposeWx8_SSSE3;
     TransposeWxH = TransposeWxH_C;
   } else

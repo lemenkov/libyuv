@@ -13,17 +13,91 @@
 
 #include "libyuv/basic_types.h"
 
+// The following are available on all x86 platforms
 #if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
     && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_ARGBTOYROW_SSSE3
+#define HAS_BG24TOARGBROW_SSSE3
+#define HAS_RAWTOARGBROW_SSSE3
+#define HAS_RGB24TOYROW_SSSE3
+#define HAS_RAWTOYROW_SSSE3
+#define HAS_RGB24TOUVROW_SSSE3
+#define HAS_RAWTOUVROW_SSSE3
 #endif
 
+// The following are available only on Windows
 #if defined(WIN32) \
     && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_BGRATOYROW_SSSE3
+#define HAS_ABGRTOYROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
+#define HAS_BGRATOUVROW_SSSE3
+#define HAS_ABGRTOUVROW_SSSE3
 #endif
 
 extern "C" {
+#ifdef HAS_ARGBTOYROW_SSSE3
+void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
+void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
+void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
+#endif
+#if defined(HAS_BG24TOARGBROW_SSSE3) && defined(HAS_ARGBTOYROW_SSSE3)
+#define HASRGB24TOYROW_SSSE3
+#endif
+#ifdef HASRGB24TOYROW_SSSE3
+void RGB24ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RAWToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RGB24ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                        uint8* dst_u, uint8* dst_v, int width);
+void RAWToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#endif
+void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void BGRAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void ABGRToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void RGB24ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void RAWToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width);
+void BGRAToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width);
+void ABGRToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width);
+void RGB24ToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                    uint8* dst_u, uint8* dst_v, int width);
+void RAWToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                  uint8* dst_u, uint8* dst_v, int width);
+
+#ifdef HAS_BG24TOARGBROW_SSSE3
+void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix);
+void RAWToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix);
+#endif
+void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix);
+void RAWToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix);
+
+#if defined(_MSC_VER)
+#define SIMD_ALIGNED(var) __declspec(align(16)) var
+#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
+#else
+#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#define TALIGN16(t, var) t var __attribute__((aligned(16)))
+#endif
+
+#ifdef OSX
+extern SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
+extern SIMD_ALIGNED(const int16 kCoefficientsBgraY[768][4]);
+extern SIMD_ALIGNED(const int16 kCoefficientsAbgrY[768][4]);
+#else
+extern SIMD_ALIGNED(const int16 _kCoefficientsRgbY[768][4]);
+extern SIMD_ALIGNED(const int16 _kCoefficientsBgraY[768][4]);
+extern SIMD_ALIGNED(const int16 _kCoefficientsAbgrY[768][4]);
+#endif
 void FastConvertYUVToRGB32Row(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
@@ -51,34 +125,6 @@ void FastConvertYUV444ToRGB32Row(const uint8* y_buf,
 void FastConvertYToRGB32Row(const uint8* y_buf,
                             uint8* rgb_buf,
                             int width);
-
-#ifdef HAS_ARGBTOYROW_SSSE3
-void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
-void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int width);
-#endif
-void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
-void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
-                   uint8* dst_u, uint8* dst_v, int width);
-
-
-#if defined(_MSC_VER)
-#define SIMD_ALIGNED(var) __declspec(align(16)) var
-#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
-#else
-#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
-#endif
-
-#ifdef OSX
-extern SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
-extern SIMD_ALIGNED(const int16 kCoefficientsBgraY[768][4]);
-extern SIMD_ALIGNED(const int16 kCoefficientsAbgrY[768][4]);
-#else
-extern SIMD_ALIGNED(const int16 _kCoefficientsRgbY[768][4]);
-extern SIMD_ALIGNED(const int16 _kCoefficientsBgraY[768][4]);
-extern SIMD_ALIGNED(const int16 _kCoefficientsAbgrY[768][4]);
-#endif
 
 // Method to force C version.
 //#define USE_MMX 0

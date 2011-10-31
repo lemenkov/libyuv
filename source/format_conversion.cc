@@ -14,6 +14,8 @@
 #include "video_common.h"
 #include "row.h"
 
+#define kMaxStride (2048 * 4)
+
 namespace libyuv {
 
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
@@ -329,6 +331,9 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
                    uint8* dst_u, int dst_stride_u,
                    uint8* dst_v, int dst_stride_v,
                    int width, int height) {
+  if (width * 4 > kMaxStride) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -347,23 +352,29 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#define kMaxStride (2048 * 4)
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
-      (width % 8 == 0) &&
+      (width % 16 == 0) &&
       IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
-      IS_ALIGNED(dst_y, 8) && (dst_stride_y % 8 == 0)) {
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
     ARGBToYRow = ARGBToYRow_SSSE3;
-#if defined(HAS_ARGBTOUVROW_SSSE3)
-    ARGBToUVRow = ARGBToUVRow_SSSE3;
-#else
-    ARGBToUVRow = ARGBToUVRow_C;
-#endif
   } else
 #endif
   {
     ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
+      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
+      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
+  } else
+#endif
+  {
     ARGBToUVRow = ARGBToUVRow_C;
   }
 
@@ -392,9 +403,9 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
     BayerRow0(src_bayer, src_stride_bayer, row, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
               row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
     ARGBToYRow(row, dst_y, width);
     ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
-    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
     src_bayer += src_stride_bayer * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
@@ -403,8 +414,8 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   // TODO(fbarchard): Make sure this filters properly
   if (height & 1) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
-    ARGBToYRow(row, dst_y, width);
     ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
