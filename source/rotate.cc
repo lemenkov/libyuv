@@ -368,6 +368,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 }
 
 #if defined (__i386__)
+#define HAS_TRANSPOSE_UVWX8_SSE2
 extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                     uint8* dst_a, int dst_stride_a,
                                     uint8* dst_b, int dst_stride_b,
@@ -495,8 +496,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "pop    %ebx\n"
     "ret\n"
 );
-
-#if defined (__x86_64__)
+#elif defined (__x86_64__)
 // 64 bit version has enough registers to do 16x8 to 8x16 at a time.
 #define HAS_TRANSPOSE_WX8_FAST_SSSE3
 static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
