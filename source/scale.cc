@@ -54,10 +54,10 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
   __asm__ volatile
   (
     "1:\n"
-    "vld2.u8    {q0,q1}, [%0]!    \n"  // load even pixels into q0, odd into q1
-    "vst1.u8    {q0}, [%1]!       \n"  // store even pixels
-    "subs       %2, %2, #16       \n"  // 16 processed per loop
-    "bhi        1b                \n"
+    "vld2.u8    {q0,q1}, [%0]!\n"  // load even pixels into q0, odd into q1
+    "vst1.u8    {q0}, [%1]!\n"  // store even pixels
+    "subs       %2, %2, #16\n"  // 16 processed per loop
+    "bhi        1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst),              // %1
       "+r"(dst_width)         // %2
@@ -70,23 +70,23 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
   __asm__ volatile
   (
-    "mov        r4, #2            \n"  // rounding constant
-    "add        %1, %0            \n"  // change the stride to row 2 pointer
-    "vdup.16    q4, r4            \n"
+    "mov        r4, #2\n"  // rounding constant
+    "add        %1, %0\n"  // change the stride to row 2 pointer
+    "vdup.16    q4, r4\n"
     "1:\n"
-    "vld1.u8    {q0,q1}, [%0]!    \n"  // load row 1 and post increment
-    "vld1.u8    {q2,q3}, [%1]!    \n"  // load row 2 and post increment
-    "vpaddl.u8  q0, q0            \n"  // row 1 add adjacent
-    "vpaddl.u8  q1, q1            \n"
-    "vpadal.u8  q0, q2            \n"  // row 2 add adjacent, add row 1 to row 2
-    "vpadal.u8  q1, q3            \n"
-    "vadd.u16   q0, q4            \n"  // rounding
-    "vadd.u16   q1, q4            \n"
-    "vshrn.u16  d0, q0, #2        \n"  // downshift and pack
-    "vshrn.u16  d1, q1, #2        \n"
-    "vst1.u8    {q0}, [%2]!       \n"
-    "subs       %3, %3, #16       \n"  // 16 processed per loop
-    "bhi        1b                \n"
+    "vld1.u8    {q0,q1}, [%0]!\n"  // load row 1 and post increment
+    "vld1.u8    {q2,q3}, [%1]!\n"  // load row 2 and post increment
+    "vpaddl.u8  q0, q0\n"  // row 1 add adjacent
+    "vpaddl.u8  q1, q1\n"
+    "vpadal.u8  q0, q2\n"  // row 2 add adjacent, add row 1 to row 2
+    "vpadal.u8  q1, q3\n"
+    "vadd.u16   q0, q4\n"  // rounding
+    "vadd.u16   q1, q4\n"
+    "vshrn.u16  d0, q0, #2\n"  // downshift and pack
+    "vshrn.u16  d1, q1, #2\n"
+    "vst1.u8    {q0}, [%2]!\n"
+    "subs       %3, %3, #16\n"  // 16 processed per loop
+    "bhi        1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(src_stride),       // %1
       "+r"(dst),              // %2
@@ -104,15 +104,15 @@ static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
                                uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "mov        r4, #4            \n"
-    "1:                           \n"
-    "vld1.u8    {d0[0]}, [%0],r4  \n"   // load up only 2 pixels of data to
-    "vld1.u8    {d0[1]}, [%0],r4  \n"   //  represent the entire 8x4 block
+    "mov        r4, #4\n"
+    "1:\n"
+    "vld1.u8    {d0[0]}, [%0],r4\n"   // load up only 2 pixels of data to
+    "vld1.u8    {d0[1]}, [%0],r4\n"   //  represent the entire 8x4 block
 
-    "vst1.u16   {d0[0]}, [%1]!    \n"
+    "vst1.u16   {d0[0]}, [%1]!\n"
 
-    "subs       %2, #2            \n"   // dst_width -= 2
-    "bhi        1b                \n"
+    "subs       %2, #2\n"   // dst_width -= 2
+    "bhi        1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -125,40 +125,40 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "1:                           \n"
-    "mov        r4, %0            \n"
-    "vld1.u8    {d0}, [r4],%3     \n"   // load up 8x4 block of input data
-    "vld1.u8    {d1}, [r4],%3     \n"
-    "vld1.u8    {d2}, [r4],%3     \n"
-    "vld1.u8    {d3}, [r4]        \n"
+    "1:\n"
+    "mov        r4, %0\n"
+    "vld1.u8    {d0}, [r4],%3\n"   // load up 8x4 block of input data
+    "vld1.u8    {d1}, [r4],%3\n"
+    "vld1.u8    {d2}, [r4],%3\n"
+    "vld1.u8    {d3}, [r4]\n"
 
     // data is loaded up int q0 and q1
     // q0 = a00 a01 a02 a03 b00 b01 b02 b03 a10 a11 a12 a13 b10 b11 b12 b13
     // q1 = a20 a21 a22 a23 b20 b21 b22 b23 a20 a21 a22 a23 b20 b21 b22 b23
     // q0 = a00+a01 a02+a03 b00+b01 b02+b03 a10+a11 a12+a13 b10+b11 b12+b13
-    "vpaddl.u8  q0, q0            \n"
+    "vpaddl.u8  q0, q0\n"
 
     // d0 = a00+a01+a20+a21 a02+a03+a22+a23 b00+b01+b20+b21 b02+b03+b22+b23
     // d1 = a10+a11+a20+a21 a12+a13+a22+a23 b10+b11+b20+b21 b12+b13+b22+b23
-    "vpadal.u8  q0, q1            \n"
+    "vpadal.u8  q0, q1\n"
 
     // d0 = a00+a01+a20+a21+a02+a03+a22+a23 b00+b01+b20+b21+b02+b03+b22+b23
     // d1 = a10+a11+a20+a21+a12+a13+a22+a23 b10+b11+b20+b21+b12+b13+b22+b23
-    "vpaddl.u16 q0, q0            \n"
+    "vpaddl.u16 q0, q0\n"
 
 
     // d0 = a00+a01+a20+a21+a02+a03+a22+a23+a10+a11+a20+a21+a12+a13+a22+a23
     //      b00+b01+b20+b21+b02+b03+b22+b23+b10+b11+b20+b21+b12+b13+b22+b23
-    "vadd.u32   d0, d1            \n"
+    "vadd.u32   d0, d1\n"
 
-    "vrshr.u32  d0, d0, #4        \n"   // divide by 16 w/rounding
+    "vrshr.u32  d0, d0, #4\n"   // divide by 16 w/rounding
 
-    "vst1.u8    {d0[0]}, [%1]!    \n"
-    "vst1.u8    {d0[4]}, [%1]!    \n"
+    "vst1.u8    {d0[0]}, [%1]!\n"
+    "vst1.u8    {d0[4]}, [%1]!\n"
 
-    "add        %0, #8            \n"   // move src pointer to next 8 pixels
-    "subs       %2, #2            \n"   // dst_width -= 2
-    "bhi        1b                \n"
+    "add        %0, #8\n"   // move src pointer to next 8 pixels
+    "subs       %2, #2\n"   // dst_width -= 2
+    "bhi        1b\n"
 
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
@@ -176,12 +176,12 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
                                 uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "1:                                   \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
-    "vmov         d2, d3                  \n" // order needs to be d0, d1, d2
-    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
-    "subs         %2, #24                 \n"
-    "bhi          1b                      \n"
+    "1:\n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n" // src line 0
+    "vmov         d2, d3\n" // order needs to be d0, d1, d2
+    "vst3.u8      {d0, d1, d2}, [%1]!\n"
+    "subs         %2, #24\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -194,49 +194,49 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vmov.u8      d16, #3                 \n"
-    "add          %3, %0                  \n"
-    "1:                                   \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
-    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n" // src line 1
+    "vmov.u8      d16, #3\n"
+    "add          %3, %0\n"
+    "1:\n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n" // src line 0
+    "vld4.u8      {d4, d5, d6, d7}, [%3]!\n" // src line 1
 
     // filter src line 0 with src line 1
     // expand chars to shorts to allow for room
     // when adding lines together
-    "vmovl.u8     q4, d4                  \n"
-    "vmovl.u8     q5, d5                  \n"
-    "vmovl.u8     q6, d6                  \n"
-    "vmovl.u8     q7, d7                  \n"
+    "vmovl.u8     q4, d4\n"
+    "vmovl.u8     q5, d5\n"
+    "vmovl.u8     q6, d6\n"
+    "vmovl.u8     q7, d7\n"
 
     // 3 * line_0 + line_1
-    "vmlal.u8     q4, d0, d16             \n"
-    "vmlal.u8     q5, d1, d16             \n"
-    "vmlal.u8     q6, d2, d16             \n"
-    "vmlal.u8     q7, d3, d16             \n"
+    "vmlal.u8     q4, d0, d16\n"
+    "vmlal.u8     q5, d1, d16\n"
+    "vmlal.u8     q6, d2, d16\n"
+    "vmlal.u8     q7, d3, d16\n"
 
     // (3 * line_0 + line_1) >> 2
-    "vqrshrn.u16  d0, q4, #2              \n"
-    "vqrshrn.u16  d1, q5, #2              \n"
-    "vqrshrn.u16  d2, q6, #2              \n"
-    "vqrshrn.u16  d3, q7, #2              \n"
+    "vqrshrn.u16  d0, q4, #2\n"
+    "vqrshrn.u16  d1, q5, #2\n"
+    "vqrshrn.u16  d2, q6, #2\n"
+    "vqrshrn.u16  d3, q7, #2\n"
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
-    "vmovl.u8     q4, d1                  \n"
-    "vmlal.u8     q4, d0, d16             \n"
-    "vqrshrn.u16  d0, q4, #2              \n"
+    "vmovl.u8     q4, d1\n"
+    "vmlal.u8     q4, d0, d16\n"
+    "vqrshrn.u16  d0, q4, #2\n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
-    "vrhadd.u8    d1, d1, d2              \n"
+    "vrhadd.u8    d1, d1, d2\n"
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
-    "vmovl.u8     q4, d2                  \n"
-    "vmlal.u8     q4, d3, d16             \n"
-    "vqrshrn.u16  d2, q4, #2              \n"
+    "vmovl.u8     q4, d2\n"
+    "vmlal.u8     q4, d3, d16\n"
+    "vqrshrn.u16  d2, q4, #2\n"
 
-    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
+    "vst3.u8      {d0, d1, d2}, [%1]!\n"
 
-    "subs         %2, #24                 \n"
-    "bhi          1b                      \n"
+    "subs         %2, #24\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -250,33 +250,33 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vmov.u8      d10, #3                 \n"
-    "add          %3, %0                  \n"
-    "1:                                   \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
-    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n" // src line 1
+    "vmov.u8      d10, #3\n"
+    "add          %3, %0\n"
+    "1:\n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n" // src line 0
+    "vld4.u8      {d4, d5, d6, d7}, [%3]!\n" // src line 1
 
     // average src line 0 with src line 1
-    "vrhadd.u8    q0, q0, q2              \n"
-    "vrhadd.u8    q1, q1, q3              \n"
+    "vrhadd.u8    q0, q0, q2\n"
+    "vrhadd.u8    q1, q1, q3\n"
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
-    "vmovl.u8     q3, d1                  \n"
-    "vmlal.u8     q3, d0, d10             \n"
-    "vqrshrn.u16  d0, q3, #2              \n"
+    "vmovl.u8     q3, d1\n"
+    "vmlal.u8     q3, d0, d10\n"
+    "vqrshrn.u16  d0, q3, #2\n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
-    "vrhadd.u8    d1, d1, d2              \n"
+    "vrhadd.u8    d1, d1, d2\n"
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
-    "vmovl.u8     q3, d2                  \n"
-    "vmlal.u8     q3, d3, d10             \n"
-    "vqrshrn.u16  d2, q3, #2              \n"
+    "vmovl.u8     q3, d2\n"
+    "vmlal.u8     q3, d3, d10\n"
+    "vqrshrn.u16  d2, q3, #2\n"
 
-    "vst3.u8      {d0, d1, d2}, [%1]!     \n"
+    "vst3.u8      {d0, d1, d2}, [%1]!\n"
 
-    "subs         %2, #24                 \n"
-    "bhi          1b                      \n"
+    "subs         %2, #24\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -303,15 +303,15 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
                                 uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vld1.u8      {q3}, [%3]                  \n"
-    "1:                                       \n"
-    "vld1.u8      {d0, d1, d2, d3}, [%0]!     \n"
-    "vtbl.u8      d4, {d0, d1, d2, d3}, d6    \n"
-    "vtbl.u8      d5, {d0, d1, d2, d3}, d7    \n"
-    "vst1.u8      {d4}, [%1]!                 \n"
-    "vst1.u32     {d5[0]}, [%1]!              \n"
-    "subs         %2, #12                     \n"
-    "bhi          1b                          \n"
+    "vld1.u8      {q3}, [%3]\n"
+    "1:\n"
+    "vld1.u8      {d0, d1, d2, d3}, [%0]!\n"
+    "vtbl.u8      d4, {d0, d1, d2, d3}, d6\n"
+    "vtbl.u8      d5, {d0, d1, d2, d3}, d7\n"
+    "vst1.u8      {d4}, [%1]!\n"
+    "vst1.u32     {d5[0]}, [%1]!\n"
+    "subs         %2, #12\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -325,57 +325,57 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vld1.u16     {q4}, [%4]                  \n"
-    "vld1.u8      {q5}, [%5]                  \n"
-    "vld1.u8      {q8}, [%6]                  \n"
-    "add          r4, %0, %3, lsl #1          \n"
-    "add          %3, %0                      \n"
-    "1:                                       \n"
+    "vld1.u16     {q4}, [%4]\n"
+    "vld1.u8      {q5}, [%5]\n"
+    "vld1.u8      {q8}, [%6]\n"
+    "add          r4, %0, %3, lsl #1\n"
+    "add          %3, %0\n"
+    "1:\n"
 
     // d0 = 00 40 01 41 02 42 03 43
     // d1 = 10 50 11 51 12 52 13 53
     // d2 = 20 60 21 61 22 62 23 63
     // d3 = 30 70 31 71 32 72 33 73
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!     \n"
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!     \n"
-    "vld4.u8      {d12, d13, d14, d15}, [r4]! \n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n"
+    "vld4.u8      {d4, d5, d6, d7}, [%3]!\n"
+    "vld4.u8      {d12, d13, d14, d15}, [r4]!\n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added.  0,1 - 2,3 - 4,5 - 6,7
     // d0 = 00 10 01 11 02 12 03 13
     // d1 = 40 50 41 51 42 52 43 53
-    "vtrn.u8      d0, d1                      \n"
-    "vtrn.u8      d4, d5                      \n"
-    "vtrn.u8      d12, d13                    \n"
+    "vtrn.u8      d0, d1\n"
+    "vtrn.u8      d4, d5\n"
+    "vtrn.u8      d12, d13\n"
 
     // d2 = 20 30 21 31 22 32 23 33
     // d3 = 60 70 61 71 62 72 63 73
-    "vtrn.u8      d2, d3                      \n"
-    "vtrn.u8      d6, d7                      \n"
-    "vtrn.u8      d14, d15                    \n"
+    "vtrn.u8      d2, d3\n"
+    "vtrn.u8      d6, d7\n"
+    "vtrn.u8      d14, d15\n"
 
     // d0 = 00+10 01+11 02+12 03+13
     // d2 = 40+50 41+51 42+52 43+53
-    "vpaddl.u8    q0, q0                      \n"
-    "vpaddl.u8    q2, q2                      \n"
-    "vpaddl.u8    q6, q6                      \n"
+    "vpaddl.u8    q0, q0\n"
+    "vpaddl.u8    q2, q2\n"
+    "vpaddl.u8    q6, q6\n"
 
     // d3 = 60+70 61+71 62+72 63+73
-    "vpaddl.u8    d3, d3                      \n"
-    "vpaddl.u8    d7, d7                      \n"
-    "vpaddl.u8    d15, d15                    \n"
+    "vpaddl.u8    d3, d3\n"
+    "vpaddl.u8    d7, d7\n"
+    "vpaddl.u8    d15, d15\n"
 
     // combine source lines
-    "vadd.u16     q0, q2                      \n"
-    "vadd.u16     q0, q6                      \n"
-    "vadd.u16     d4, d3, d7                  \n"
-    "vadd.u16     d4, d15                     \n"
+    "vadd.u16     q0, q2\n"
+    "vadd.u16     q0, q6\n"
+    "vadd.u16     d4, d3, d7\n"
+    "vadd.u16     d4, d15\n"
 
     // dst_ptr[3] = (s[6 + st * 0] + s[7 + st * 0]
     //             + s[6 + st * 1] + s[7 + st * 1]
     //             + s[6 + st * 2] + s[7 + st * 2]) / 6
-    "vqrdmulh.s16 q2, q4                      \n"
-    "vmovn.u16    d4, q2                      \n"
+    "vqrdmulh.s16 q2, q4\n"
+    "vmovn.u16    d4, q2\n"
 
     // Shuffle 2,3 reg around so that 2 can be added to the
     //  0,1 reg and 3 can be added to the 4,5 reg.  This
@@ -383,41 +383,41 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     //  registers are already expanded.  Then do transposes
     //  to get aligned.
     // q2 = xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
-    "vmovl.u8     q1, d2                      \n"
-    "vmovl.u8     q3, d6                      \n"
-    "vmovl.u8     q7, d14                     \n"
+    "vmovl.u8     q1, d2\n"
+    "vmovl.u8     q3, d6\n"
+    "vmovl.u8     q7, d14\n"
 
     // combine source lines
-    "vadd.u16     q1, q3                      \n"
-    "vadd.u16     q1, q7                      \n"
+    "vadd.u16     q1, q3\n"
+    "vadd.u16     q1, q7\n"
 
     // d4 = xx 20 xx 30 xx 22 xx 32
     // d5 = xx 21 xx 31 xx 23 xx 33
-    "vtrn.u32     d2, d3                      \n"
+    "vtrn.u32     d2, d3\n"
 
     // d4 = xx 20 xx 21 xx 22 xx 23
     // d5 = xx 30 xx 31 xx 32 xx 33
-    "vtrn.u16     d2, d3                      \n"
+    "vtrn.u16     d2, d3\n"
 
     // 0+1+2, 3+4+5
-    "vadd.u16     q0, q1                      \n"
+    "vadd.u16     q0, q1\n"
 
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q8                      \n"
+    "vqrdmulh.s16 q0, q8\n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent
-    "vmov.u8      d2, d4                      \n"
+    "vmov.u8      d2, d4\n"
 
-    "vtbl.u8      d3, {d0, d1, d2}, d10       \n"
-    "vtbl.u8      d4, {d0, d1, d2}, d11       \n"
+    "vtbl.u8      d3, {d0, d1, d2}, d10\n"
+    "vtbl.u8      d4, {d0, d1, d2}, d11\n"
 
-    "vst1.u8      {d3}, [%1]!                 \n"
-    "vst1.u32     {d4[0]}, [%1]!              \n"
-    "subs         %2, #12                     \n"
-    "bhi          1b                          \n"
+    "vst1.u8      {d3}, [%1]!\n"
+    "vst1.u32     {d4[0]}, [%1]!\n"
+    "subs         %2, #12\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -435,45 +435,45 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vld1.u16     {q4}, [%4]              \n"
-    "vld1.u8      {q5}, [%5]              \n"
-    "add          %3, %0                  \n"
-    "1:                                   \n"
+    "vld1.u16     {q4}, [%4]\n"
+    "vld1.u8      {q5}, [%5]\n"
+    "add          %3, %0\n"
+    "1:\n"
 
     // d0 = 00 40 01 41 02 42 03 43
     // d1 = 10 50 11 51 12 52 13 53
     // d2 = 20 60 21 61 22 62 23 63
     // d3 = 30 70 31 71 32 72 33 73
-    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n"
-    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n"
+    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n"
+    "vld4.u8      {d4, d5, d6, d7}, [%3]!\n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added.  0,1 - 2,3 - 4,5 - 6,7
     // d0 = 00 10 01 11 02 12 03 13
     // d1 = 40 50 41 51 42 52 43 53
-    "vtrn.u8      d0, d1                  \n"
-    "vtrn.u8      d4, d5                  \n"
+    "vtrn.u8      d0, d1\n"
+    "vtrn.u8      d4, d5\n"
 
     // d2 = 20 30 21 31 22 32 23 33
     // d3 = 60 70 61 71 62 72 63 73
-    "vtrn.u8      d2, d3                  \n"
-    "vtrn.u8      d6, d7                  \n"
+    "vtrn.u8      d2, d3\n"
+    "vtrn.u8      d6, d7\n"
 
     // d0 = 00+10 01+11 02+12 03+13
     // d2 = 40+50 41+51 42+52 43+53
-    "vpaddl.u8    q0, q0                  \n"
-    "vpaddl.u8    q2, q2                  \n"
+    "vpaddl.u8    q0, q0\n"
+    "vpaddl.u8    q2, q2\n"
 
     // d3 = 60+70 61+71 62+72 63+73
-    "vpaddl.u8    d3, d3                  \n"
-    "vpaddl.u8    d7, d7                  \n"
+    "vpaddl.u8    d3, d3\n"
+    "vpaddl.u8    d7, d7\n"
 
     // combine source lines
-    "vadd.u16     q0, q2                  \n"
-    "vadd.u16     d4, d3, d7              \n"
+    "vadd.u16     q0, q2\n"
+    "vadd.u16     d4, d3, d7\n"
 
     // dst_ptr[3] = (s[6] + s[7] + s[6+st] + s[7+st]) / 4
-    "vqrshrn.u16  d4, q2, #2              \n"
+    "vqrshrn.u16  d4, q2, #2\n"
 
     // Shuffle 2,3 reg around so that 2 can be added to the
     //  0,1 reg and 3 can be added to the 4,5 reg.  This
@@ -481,39 +481,39 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     //  registers are already expanded.  Then do transposes
     //  to get aligned.
     // q2 = xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
-    "vmovl.u8     q1, d2                  \n"
-    "vmovl.u8     q3, d6                  \n"
+    "vmovl.u8     q1, d2\n"
+    "vmovl.u8     q3, d6\n"
 
     // combine source lines
-    "vadd.u16     q1, q3                  \n"
+    "vadd.u16     q1, q3\n"
 
     // d4 = xx 20 xx 30 xx 22 xx 32
     // d5 = xx 21 xx 31 xx 23 xx 33
-    "vtrn.u32     d2, d3                  \n"
+    "vtrn.u32     d2, d3\n"
 
     // d4 = xx 20 xx 21 xx 22 xx 23
     // d5 = xx 30 xx 31 xx 32 xx 33
-    "vtrn.u16     d2, d3                  \n"
+    "vtrn.u16     d2, d3\n"
 
     // 0+1+2, 3+4+5
-    "vadd.u16     q0, q1                  \n"
+    "vadd.u16     q0, q1\n"
 
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q4                  \n"
+    "vqrdmulh.s16 q0, q4\n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent
-    "vmov.u8      d2, d4                  \n"
+    "vmov.u8      d2, d4\n"
 
-    "vtbl.u8      d3, {d0, d1, d2}, d10   \n"
-    "vtbl.u8      d4, {d0, d1, d2}, d11   \n"
+    "vtbl.u8      d3, {d0, d1, d2}, d10\n"
+    "vtbl.u8      d4, {d0, d1, d2}, d11\n"
 
-    "vst1.u8      {d3}, [%1]!             \n"
-    "vst1.u32     {d4[0]}, [%1]!          \n"
-    "subs         %2, #12                 \n"
-    "bhi          1b                      \n"
+    "vst1.u8      {d3}, [%1]!\n"
+    "vst1.u32     {d4[0]}, [%1]!\n"
+    "subs         %2, #12\n"
+    "bhi          1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -630,15 +630,15 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm7
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
@@ -659,8 +659,8 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // dst_ptr
     mov        ecx, [esp + 4 + 16]   // dst_width
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
@@ -675,8 +675,8 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     psrlw      xmm0, 8
     movdqa     xmm3, xmm1
     psrlw      xmm1, 8
-    pand       xmm2, xmm7
-    pand       xmm3, xmm7
+    pand       xmm2, xmm5
+    pand       xmm3, xmm5
     pavgw      xmm0, xmm2
     pavgw      xmm1, xmm3
     packuswb   xmm0, xmm1
@@ -703,15 +703,15 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                      // src_stride ignored
     mov        edi, [esp + 32 + 12]  // dst_ptr
     mov        ecx, [esp + 32 + 16]  // dst_width
-    pcmpeqb    xmm7, xmm7            // generate mask 0x000000ff
-    psrld      xmm7, 24
+    pcmpeqb    xmm5, xmm5            // generate mask 0x000000ff
+    psrld      xmm5, 24
 
   wloop:
     movdqa     xmm0, [esi]
     movdqa     xmm1, [esi + 16]
     lea        esi,  [esi + 32]
-    pand       xmm0, xmm7
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     packuswb   xmm0, xmm0
     movq       qword ptr [edi], xmm0
@@ -794,15 +794,15 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                      // src_stride ignored
     mov        edi, [esp + 32 + 12]  // dst_ptr
     mov        ecx, [esp + 32 + 16]  // dst_width
-    pcmpeqb    xmm7, xmm7            // generate mask isolating 1 src 8 bytes
-    psrlq      xmm7, 56
+    pcmpeqb    xmm5, xmm5            // generate mask isolating 1 src 8 bytes
+    psrlq      xmm5, 56
 
   wloop:
     movdqa     xmm0, [esi]
     movdqa     xmm1, [esi + 16]
     lea        esi,  [esi + 32]
-    pand       xmm0, xmm7
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1  // 32->16
     packuswb   xmm0, xmm0  // 16->8
     packuswb   xmm0, xmm0  // 8->4
@@ -906,9 +906,9 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 
   wloop:
     movdqa     xmm0, [esi]
-    movdqa     xmm2, [esi + 16]
+    movdqa     xmm1, [esi + 16]
     lea        esi,  [esi + 32]
-    movdqa     xmm1, xmm2
+    movdqa     xmm2, xmm1
     palignr    xmm1, xmm0, 8
     pshufb     xmm0, xmm3
     pshufb     xmm1, xmm4
@@ -1069,16 +1069,15 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     mov        edx, [esp + 32 + 8]   // src_stride
     mov        edi, [esp + 32 + 12]  // dst_ptr
     mov        ecx, [esp + 32 + 16]  // dst_width
-    movdqa     xmm5, _shuf38a
-    movdqa     xmm6, _shuf38b
-    pxor       xmm7, xmm7
+    movdqa     xmm4, _shuf38a
+    movdqa     xmm5, _shuf38b
 
   xloop:
     movdqa     xmm0, [esi]           // 16 pixels -> 0,1,2,3,4,5
     movdqa     xmm1, [esi + 16]      // 16 pixels -> 6,7,8,9,10,11
     lea        esi, [esi + 32]
-    pshufb     xmm0, xmm5
-    pshufb     xmm1, xmm6
+    pshufb     xmm0, xmm4
+    pshufb     xmm1, xmm5
     paddusb    xmm0, xmm1
 
     movq       qword ptr [edi], xmm0 // write 12 pixels
@@ -1214,7 +1213,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     mov        edi, [esp + 32 + 12]  // dst_ptr
     mov        ecx, [esp + 32 + 16]  // dst_width
     mov        ebx, [esp + 32 + 20]  // height
-    pxor       xmm7, xmm7
+    pxor       xmm5, xmm5
     dec        ebx
 
   xloop:
@@ -1223,16 +1222,16 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     lea        eax, [esi + edx]
     movhlps    xmm3, xmm2
     mov        ebp, ebx
-    punpcklbw  xmm2, xmm7
-    punpcklbw  xmm3, xmm7
+    punpcklbw  xmm2, xmm5
+    punpcklbw  xmm3, xmm5
 
     // sum remaining rows
   yloop:
     movdqa     xmm0, [eax]       // read 16 pixels
     lea        eax, [eax + edx]  // advance to next row
     movhlps    xmm1, xmm0
-    punpcklbw  xmm0, xmm7
-    punpcklbw  xmm1, xmm7
+    punpcklbw  xmm0, xmm5
+    punpcklbw  xmm1, xmm5
     paddusw    xmm2, xmm0        // sum 16 words
     paddusw    xmm3, xmm1
     sub        ebp, 1
@@ -1365,9 +1364,9 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        ah,al
     neg        al
     add        al, 128
-    movd       xmm7, eax
-    punpcklwd  xmm7, xmm7
-    pshufd     xmm7, xmm7, 0
+    movd       xmm5, eax
+    punpcklwd  xmm5, xmm5
+    pshufd     xmm5, xmm5, 0
 
   xloop:
     movdqa     xmm0, [esi]
@@ -1376,8 +1375,8 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm2
     punpckhbw  xmm1, xmm2
-    pmaddubsw  xmm0, xmm7
-    pmaddubsw  xmm1, xmm7
+    pmaddubsw  xmm0, xmm5
+    pmaddubsw  xmm1, xmm5
     psrlw      xmm0, 7
     psrlw      xmm1, 7
     packuswb   xmm0, xmm1
@@ -1482,14 +1481,14 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,(%1)\n"
   "lea        0x10(%1),%1\n"
@@ -1499,15 +1498,15 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   :
-  : "memory"
+  : "memory", "cc"
 );
 }
 
 static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
@@ -1520,8 +1519,8 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   "psrlw      $0x8,%%xmm0\n"
   "movdqa     %%xmm1,%%xmm3\n"
   "psrlw      $0x8,%%xmm1\n"
-  "pand       %%xmm7,%%xmm2\n"
-  "pand       %%xmm7,%%xmm3\n"
+  "pand       %%xmm5,%%xmm2\n"
+  "pand       %%xmm5,%%xmm3\n"
   "pavgw      %%xmm2,%%xmm0\n"
   "pavgw      %%xmm3,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
@@ -1533,7 +1532,7 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
-  : "memory"
+  : "memory", "cc"
 );
 }
 
@@ -1541,14 +1540,14 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrld      $0x18,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrld      $0x18,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
   "movq       %%xmm0,(%1)\n"
@@ -1559,7 +1558,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   :
-  : "memory"
+  : "memory", "cc"
 );
 }
 
@@ -1609,7 +1608,10 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_width),   // %2
     "+r"(temp)         // %3
   : "r"(static_cast<intptr_t>(src_stride))    // %4
-  : "memory"
+  : "memory", "cc"
+#if defined(__x86_64__)
+    , "xmm6", "xmm7"
+#endif
 );
 }
 
@@ -1617,14 +1619,14 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlq      $0x38,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlq      $0x38,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
@@ -1636,7 +1638,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   :
-  : "memory"
+  : "memory", "cc"
 );
 }
 
@@ -1891,16 +1893,15 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "mov    0x28(%esp),%edx\n"
     "mov    0x2c(%esp),%edi\n"
     "mov    0x30(%esp),%ecx\n"
-    "movdqa _shuf38a ,%xmm5\n"
-    "movdqa _shuf38b ,%xmm6\n"
-    "pxor   %xmm7,%xmm7\n"
+    "movdqa _shuf38a ,%xmm4\n"
+    "movdqa _shuf38b ,%xmm5\n"
 
 "1:"
     "movdqa (%esi),%xmm0\n"
     "movdqa 0x10(%esi),%xmm1\n"
     "lea    0x20(%esi),%esi\n"
-    "pshufb %xmm5,%xmm0\n"
-    "pshufb %xmm6,%xmm1\n"
+    "pshufb %xmm4,%xmm0\n"
+    "pshufb %xmm5,%xmm1\n"
     "paddusb %xmm1,%xmm0\n"
     "movq   %xmm0,(%edi)\n"
     "movhlps %xmm0,%xmm1\n"
@@ -2040,22 +2041,22 @@ extern "C" void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "mov    0x2c(%esp),%edi\n"
     "mov    0x30(%esp),%ecx\n"
     "mov    0x34(%esp),%ebx\n"
-    "pxor   %xmm7,%xmm7\n"
+    "pxor   %xmm5,%xmm5\n"
 
 "1:"
     "movdqa (%esi),%xmm2\n"
     "lea    (%esi,%edx,1),%eax\n"
     "movhlps %xmm2,%xmm3\n"
     "lea    -0x1(%ebx),%ebp\n"
-    "punpcklbw %xmm7,%xmm2\n"
-    "punpcklbw %xmm7,%xmm3\n"
+    "punpcklbw %xmm5,%xmm2\n"
+    "punpcklbw %xmm5,%xmm3\n"
 
 "2:"
     "movdqa (%eax),%xmm0\n"
     "lea    (%eax,%edx,1),%eax\n"
     "movhlps %xmm0,%xmm1\n"
-    "punpcklbw %xmm7,%xmm0\n"
-    "punpcklbw %xmm7,%xmm1\n"
+    "punpcklbw %xmm5,%xmm0\n"
+    "punpcklbw %xmm5,%xmm1\n"
     "paddusw %xmm0,%xmm2\n"
     "paddusw %xmm1,%xmm3\n"
     "sub    $0x1,%ebp\n"
@@ -2195,9 +2196,9 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "mov    %al,%ah\n"
     "neg    %al\n"
     "add    $0x80,%al\n"
-    "movd   %eax,%xmm7\n"
-    "punpcklwd %xmm7,%xmm7\n"
-    "pshufd $0x0,%xmm7,%xmm7\n"
+    "movd   %eax,%xmm5\n"
+    "punpcklwd %xmm5,%xmm5\n"
+    "pshufd $0x0,%xmm5,%xmm5\n"
 
 "1:"
     "movdqa (%esi),%xmm0\n"
@@ -2206,8 +2207,8 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "movdqa %xmm0,%xmm1\n"
     "punpcklbw %xmm2,%xmm0\n"
     "punpckhbw %xmm2,%xmm1\n"
-    "pmaddubsw %xmm7,%xmm0\n"
-    "pmaddubsw %xmm7,%xmm1\n"
+    "pmaddubsw %xmm5,%xmm0\n"
+    "pmaddubsw %xmm5,%xmm1\n"
     "psrlw  $0x7,%xmm0\n"
     "psrlw  $0x7,%xmm1\n"
     "packuswb %xmm1,%xmm0\n"
@@ -2305,8 +2306,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
-  : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3",
-    "xmm4", "xmm5", "xmm6", "xmm7"
+  : "memory", "cc", "r10", "r11", "xmm6", "xmm7"
 );
 }
 
@@ -2338,7 +2338,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
   : "r"(_shuf0),   // %3
     "r"(_shuf1),   // %4
     "r"(_shuf2)    // %5
-  : "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  : "memory", "cc"
 );
 }
 
@@ -2395,8 +2395,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "r"(_madd11),   // %8
     "r"(_round34),  // %9
     "r"(_madd21)    // %10
-  : "memory", "xmm0", "xmm1", "xmm2", "xmm3",
-    "xmm4", "xmm5", "xmm6", "xmm7", "xmm8"
+  : "memory", "cc", "xmm6", "xmm7", "xmm8"
 );
 }
 
@@ -2456,8 +2455,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "r"(_madd11),   // %8
     "r"(_round34),  // %9
     "r"(_madd21)    // %10
-  : "memory", "xmm0", "xmm1", "xmm2", "xmm3",
-    "xmm4", "xmm5", "xmm6", "xmm7", "xmm8"
+  : "memory", "cc", "xmm6", "xmm7", "xmm8"
 );
 }
 
@@ -2465,15 +2463,14 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
   asm volatile(
-  "movdqa     (%3),%%xmm5\n"
-  "movdqa     (%4),%%xmm6\n"
-  "pxor       %%xmm7,%%xmm7\n"
+  "movdqa     (%3),%%xmm4\n"
+  "movdqa     (%4),%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
-  "pshufb     %%xmm5,%%xmm0\n"
-  "pshufb     %%xmm6,%%xmm1\n"
+  "pshufb     %%xmm4,%%xmm0\n"
+  "pshufb     %%xmm5,%%xmm1\n"
   "paddusb    %%xmm1,%%xmm0\n"
   "movq       %%xmm0,(%1)\n"
   "movhlps    %%xmm0,%%xmm1\n"
@@ -2486,7 +2483,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "+r"(dst_width)    // %2
   : "r"(_shuf38a),  // %3
     "r"(_shuf38b)   // %4
-  : "memory", "xmm0", "xmm1", "xmm5", "xmm6", "xmm7"
+  : "memory", "cc"
 );
 }
 
@@ -2543,8 +2540,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "r"(_shufac0),   // %4
     "r"(_shufac3),   // %5
     "r"(_scaleac3)   // %6
-  : "memory", "rax", "xmm0", "xmm1", "xmm2", "xmm3",
-    "xmm4", "xmm5", "xmm6", "xmm7"
+  : "memory", "cc", "rax", "xmm6", "xmm7"
 );
 }
 
@@ -2582,8 +2578,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "r"(_shufab1),   // %5
     "r"(_shufab2),   // %6
     "r"(_scaleab2)   // %7
-  : "memory", "rax", "xmm0", "xmm1", "xmm2",
-    "xmm4", "xmm5", "xmm6", "xmm7"
+  : "memory", "cc", "rax", "xmm6", "xmm7"
 );
 }
 
@@ -2592,21 +2587,21 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width,
                               int src_height) {
   asm volatile(
-  "pxor       %%xmm7,%%xmm7\n"
+  "pxor       %%xmm5,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm2\n"
   "lea        (%0,%4,1),%%r10\n"
   "movhlps    %%xmm2,%%xmm3\n"
   "lea        -0x1(%3),%%r11\n"
-  "punpcklbw  %%xmm7,%%xmm2\n"
-  "punpcklbw  %%xmm7,%%xmm3\n"
+  "punpcklbw  %%xmm5,%%xmm2\n"
+  "punpcklbw  %%xmm5,%%xmm3\n"
 
 "2:"
   "movdqa     (%%r10),%%xmm0\n"
   "lea        (%%r10,%4,1),%%r10\n"
   "movhlps    %%xmm0,%%xmm1\n"
-  "punpcklbw  %%xmm7,%%xmm0\n"
-  "punpcklbw  %%xmm7,%%xmm1\n"
+  "punpcklbw  %%xmm5,%%xmm0\n"
+  "punpcklbw  %%xmm5,%%xmm1\n"
   "paddusw    %%xmm0,%%xmm2\n"
   "paddusw    %%xmm1,%%xmm3\n"
   "sub        $0x1,%%r11\n"
@@ -2623,7 +2618,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(src_width),   // %2
     "+r"(src_height)   // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
-  : "memory", "r10", "r11", "xmm0", "xmm1", "xmm2", "xmm3", "xmm7"
+  : "memory", "cc", "r10", "r11"
 );
 }
 
@@ -2647,7 +2642,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
         "+r"(src_ptr),     // %1
         "+r"(dst_width)    // %2
       :
-      : "memory", "rax", "xmm0"
+      : "memory", "cc", "rax"
     );
     return;
   } else if (source_y_fraction == 128) {
@@ -2667,7 +2662,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
         "+r"(src_ptr),     // %1
         "+r"(dst_width)    // %2
       : "r"(static_cast<intptr_t>(src_stride))  // %3
-      : "memory", "rax", "xmm0", "xmm2"
+      : "memory", "cc", "rax"
     );
     return;
   } else {
@@ -2712,8 +2707,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
         "+r"(dst_width),   // %2
         "+r"(source_y_fraction)  // %3
       : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "rax", "xmm0", "xmm1", "xmm2", "xmm3",
-        "xmm5", "xmm6", "xmm7"
+      : "memory", "cc", "rax", "xmm6", "xmm7"
     );
   }
   return;
@@ -2739,7 +2733,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
         "+r"(src_ptr),     // %1
         "+r"(dst_width)    // %2
       :
-      : "memory", "rax", "xmm0"
+      : "memory", "cc", "rax"
     );
     return;
   } else if (source_y_fraction == 128) {
@@ -2759,7 +2753,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
         "+r"(src_ptr),     // %1
         "+r"(dst_width)    // %2
       : "r"(static_cast<intptr_t>(src_stride))  // %3
-     : "memory", "rax", "xmm0", "xmm2"
+     : "memory", "cc", "rax"
     );
     return;
   } else {
@@ -2769,9 +2763,9 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "mov        %%al,%%ah\n"
       "neg        %%al\n"
       "add        $0x80,%%al\n"
-      "movd       %%eax,%%xmm7\n"
-      "punpcklwd  %%xmm7,%%xmm7\n"
-      "pshufd     $0x0,%%xmm7,%%xmm7\n"
+      "movd       %%eax,%%xmm5\n"
+      "punpcklwd  %%xmm5,%%xmm5\n"
+      "pshufd     $0x0,%%xmm5,%%xmm5\n"
     "1:"
       "movdqa     (%1),%%xmm0\n"
       "movdqa     (%1,%4,1),%%xmm2\n"
@@ -2779,8 +2773,8 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "movdqa     %%xmm0,%%xmm1\n"
       "punpcklbw  %%xmm2,%%xmm0\n"
       "punpckhbw  %%xmm2,%%xmm1\n"
-      "pmaddubsw  %%xmm7,%%xmm0\n"
-      "pmaddubsw  %%xmm7,%%xmm1\n"
+      "pmaddubsw  %%xmm5,%%xmm0\n"
+      "pmaddubsw  %%xmm5,%%xmm1\n"
       "psrlw      $0x7,%%xmm0\n"
       "psrlw      $0x7,%%xmm1\n"
       "packuswb   %%xmm1,%%xmm0\n"
@@ -2795,7 +2789,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
         "+r"(dst_width),   // %2
         "+r"(source_y_fraction)  // %3
       : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "rax", "xmm0", "xmm1", "xmm2", "xmm7"
+      : "memory", "cc", "rax"
     );
   }
   return;
