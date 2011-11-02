@@ -287,9 +287,9 @@ __asm {
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
   asm volatile(
-"1:"
   // Read in the data from the source pointer.
   // First round of bit swap.
+"1:\n"
   "movq       (%0),%%xmm0\n"
   "movq       (%0,%3),%%xmm1\n"
   "lea        (%0,%3,2),%0\n"
@@ -363,7 +363,10 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
     "+r"(width)   // %2
   : "r"(static_cast<intptr_t>(src_stride)),  // %3
     "r"(static_cast<intptr_t>(dst_stride))   // %4
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
 );
 }
 
@@ -398,7 +401,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "mov    %ecx,0x10(%esp)\n"
     "mov    0x2c(%ecx),%ecx\n"
 
-"1:"
+"1:\n"
     "movdqa (%eax),%xmm0\n"
     "movdqa (%eax,%edi,1),%xmm1\n"
     "lea    (%eax,%edi,2),%eax\n"
@@ -502,9 +505,9 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
                                     uint8* dst, int dst_stride, int width) {
   asm volatile(
-"1:"
   // Read in the data from the source pointer.
   // First round of bit swap.
+"1:\n"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     (%0,%3),%%xmm1\n"
   "lea        (%0,%3,2),%0\n"
@@ -630,7 +633,9 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
     "+r"(width)   // %2
   : "r"(static_cast<intptr_t>(src_stride)),  // %3
     "r"(static_cast<intptr_t>(dst_stride))   // %4
-  : "memory"
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
+    "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",  "xmm14",  "xmm15"
 );
 }
 
@@ -640,9 +645,9 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                 uint8* dst_b, int dst_stride_b,
                                 int w) {
   asm volatile(
-"1:"
   // Read in the data from the source pointer.
   // First round of bit swap.
+"1:\n"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     (%0,%4),%%xmm1\n"
   "lea        (%0,%4,2),%0\n"
@@ -738,7 +743,9 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   : "r"(static_cast<intptr_t>(src_stride)),    // %4
     "r"(static_cast<intptr_t>(dst_stride_a)),  // %5
     "r"(static_cast<intptr_t>(dst_stride_b))   // %6
-  : "memory"
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
+    "xmm8", "xmm9"
 );
 }
 #endif
@@ -863,12 +870,12 @@ __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    movdqa    xmm7, _kShuffleReverse
+    movdqa    xmm5, _kShuffleReverse
     lea       eax, [eax + ecx - 16]
  convertloop :
     movdqa    xmm0, [eax]
     lea       eax, [eax - 16]
-    pshufb    xmm0, xmm7
+    pshufb    xmm0, xmm5
     movdqa    [edx], xmm0
     lea       edx, [edx + 16]
     sub       ecx, 16
@@ -883,21 +890,24 @@ __asm {
 static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile(
-  "movdqa     (%3),%%xmm7\n"
+  "movdqa     (%3),%%xmm5\n"
   "lea        -0x10(%0,%2,1),%0\n"
-"1:"
+"1:\n"
   "movdqa     (%0),%%xmm0\n"
   "lea        -0x10(%0),%0\n"
-  "pshufb     %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm5,%%xmm0\n"
   "movdqa     %%xmm0,(%1)\n"
   "lea        0x10(%1),%1\n"
   "sub        $0x10,%2\n"
   "ja         1b\n"
-  : "+r"(src),    // %0
-    "+r"(dst),    // %1
-    "+r"(temp_width)   // %2
-  : "r"(kShuffleReverse)   // %3
-  : "memory"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(temp_width)  // %2
+  : "r"(kShuffleReverse)  // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
 );
 }
 #endif
@@ -1073,13 +1083,13 @@ __asm {
     mov       edx, [esp + 4 + 8]   // dst_a
     mov       edi, [esp + 4 + 12]  // dst_b
     mov       ecx, [esp + 4 + 16]  // width
-    movdqa    xmm7, _kShuffleReverseUV
+    movdqa    xmm5, _kShuffleReverseUV
     lea       eax, [eax + ecx * 2 - 16]
 
  convertloop :
     movdqa    xmm0, [eax]
     lea       eax, [eax - 16]
-    pshufb    xmm0, xmm7
+    pshufb    xmm0, xmm5
     movlpd    qword ptr [edx], xmm0
     lea       edx, [edx + 8]
     movhpd    qword ptr [edi], xmm0
@@ -1099,12 +1109,12 @@ void ReverseLineUV_SSSE3(const uint8* src,
                          int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile(
-  "movdqa     (%4),%%xmm7\n"
+  "movdqa     (%4),%%xmm5\n"
   "lea        -0x10(%0,%3,2),%0\n"
-"1:"
+"1:\n"
   "movdqa     (%0),%%xmm0\n"
   "lea        -0x10(%0),%0\n"
-  "pshufb     %%xmm7,%%xmm0\n"
+  "pshufb     %%xmm5,%%xmm0\n"
   "movlpd     %%xmm0,(%1)\n"
   "lea        0x8(%1),%1\n"
   "movhpd     %%xmm0,(%2)\n"
@@ -1114,9 +1124,12 @@ void ReverseLineUV_SSSE3(const uint8* src,
   : "+r"(src),      // %0
     "+r"(dst_a),    // %1
     "+r"(dst_b),    // %2
-    "+r"(temp_width)     // %3
+    "+r"(temp_width)  // %3
   : "r"(kShuffleReverseUV)  // %4
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
 );
 }
 #endif
