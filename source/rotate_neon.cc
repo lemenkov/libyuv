@@ -159,7 +159,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
       "vst1.8      {d6}, [r9]\n"
 
       "add         %0, #8\n"              // src += 8
-      "add         %2, %3, lsl #3\n"      // dst += 8 * dst_stride
+      "add         %2, %2, %3, lsl #3\n"  // dst += 8 * dst_stride
       "subs        %4,  #8\n"             // w   -= 8
       "bge         1b\n"
 
@@ -209,7 +209,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "vst1.32     {d1[1]}, [r9]\n"
 
     "add         %0, #4\n"              // src += 4
-    "add         %2, %3, lsl #2\n"      // dst += 4 * dst_stride
+    "add         %2, %2, %3, lsl #2\n"  // dst += 4 * dst_stride
     "subs        %4,  #4\n"             // w   -= 4
     "beq         4f\n"
 
@@ -238,7 +238,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "vst1.64     {d1}, [r9]\n"
 
     "add         %0, #2\n"              // src += 2
-    "add         %2, %3, lsl #1\n"      // dst += 2 * dst_stride
+    "add         %2, %2, %3, lsl #1\n"  // dst += 2 * dst_stride
     "subs        %4,  #2\n"             // w   -= 2
     "beq         4f\n"
 
@@ -414,8 +414,8 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
       "vst1.8      {d21}, [r9]\n"
 
       "add         %0, #8*2\n"            // src   += 8*2
-      "add         %2, %3, lsl #3\n"      // dst_a += 8 * dst_stride_a
-      "add         %4, %5, lsl #3\n"      // dst_b += 8 * dst_stride_b
+      "add         %2, %2, %3, lsl #3\n"  // dst_a += 8 * dst_stride_a
+      "add         %4, %4, %5, lsl #3\n"  // dst_b += 8 * dst_stride_b
       "subs        %6,  #8\n"             // w     -= 8
       "bge         1b\n"
 
@@ -484,8 +484,8 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "vst1.32     {d23[1]},  [r9]\n"
 
     "add         %0, #4*2\n"            // src   += 4 * 2
-    "add         %2, %3, lsl #2\n"      // dst_a += 4 * dst_stride_a
-    "add         %4, %5, lsl #2\n"      // dst_b += 4 * dst_stride_b
+    "add         %2, %2, %3, lsl #2\n"  // dst_a += 4 * dst_stride_a
+    "add         %4, %4, %5, lsl #2\n"  // dst_b += 4 * dst_stride_b
     "subs        %6,  #4\n"             // w     -= 4
     "beq         4f\n"
 
@@ -520,8 +520,8 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "vst1.64     {d3}, [r9]\n"
 
     "add         %0, #2*2\n"            // src   += 2 * 2
-    "add         %2, %3, lsl #1\n"      // dst_a += 2 * dst_stride_a
-    "add         %4, %5, lsl #1\n"      // dst_b += 2 * dst_stride_b
+    "add         %2, %2, %3, lsl #1\n"  // dst_a += 2 * dst_stride_a
+    "add         %4, %4, %5, lsl #1\n"  // dst_b += 2 * dst_stride_b
     "subs        %6,  #2\n"             // w     -= 2
     "beq         4f\n"
 
