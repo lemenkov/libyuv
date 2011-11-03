@@ -105,7 +105,7 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_16(dst_u_opt, dst_uv_plane_size)
   align_buffer_16(dst_v_opt, dst_uv_plane_size)
 
-  libyuv::MaskCpuFlags(0);
+  libyuv::MaskCpuFlags(kCpuInitialized);
   double c_time = get_time();
 
   for (i = 0; i < runs; ++i)
@@ -137,8 +137,6 @@ static int TestFilter(int src_width, int src_height,
 
   printf ("filter %d - %8d us c - %8d us opt\n",
           f, (int)(c_time*1e6), (int)(opt_time*1e6));
-  ::testing::Test::RecordProperty("C", (int)c_time);
-  ::testing::Test::RecordProperty("Opt", (int)opt_time);
 
   // C version may be a little off from the optimized.  Order of
   //  operations may introduce rounding somewhere.  So do a difference

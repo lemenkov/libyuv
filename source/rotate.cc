@@ -44,8 +44,6 @@ typedef void (*rotate_wxh_func)(const uint8*, int, uint8*, int, int, int);
 
 #ifdef __ARM_NEON__
 extern "C" {
-void RestoreRegisters_NEON(unsigned long long *restore);
-void SaveRegisters_NEON(unsigned long long *store);
 #define HAS_REVERSE_LINE_NEON
 void ReverseLine_NEON(const uint8* src, uint8* dst, int width);
 #define HAS_REVERSE_LINE_UV_NEON
@@ -996,9 +994,7 @@ void TransposeUV(const uint8* src, int src_stride,
   rotate_uv_wxh_func TransposeWxH;
 
 #if defined(HAS_TRANSPOSE_UVWX8_NEON)
-  unsigned long long store_reg[8];
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
-    SaveRegisters_NEON(store_reg);
     TransposeWx8 = TransposeUVWx8_NEON;
     TransposeWxH = TransposeUVWxH_C;
   } else
@@ -1036,11 +1032,6 @@ void TransposeUV(const uint8* src, int src_stride,
                dst_b, dst_stride_b,
                width, i);
 
-#if defined(HAS_TRANSPOSE_UVWX8_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
-    RestoreRegisters_NEON(store_reg);
-  }
-#endif
 }
 
 void RotateUV90(const uint8* src, int src_stride,

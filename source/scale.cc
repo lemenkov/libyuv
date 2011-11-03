@@ -70,9 +70,7 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
   __asm__ volatile
   (
-    "mov        r4, #2\n"  // rounding constant
     "add        %1, %0\n"  // change the stride to row 2 pointer
-    "vdup.16    q4, r4\n"
     "1:\n"
     "vld1.u8    {q0,q1}, [%0]!\n"  // load row 1 and post increment
     "vld1.u8    {q2,q3}, [%1]!\n"  // load row 2 and post increment
@@ -80,10 +78,8 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
     "vpaddl.u8  q1, q1\n"
     "vpadal.u8  q0, q2\n"  // row 2 add adjacent, add row 1 to row 2
     "vpadal.u8  q1, q3\n"
-    "vadd.u16   q0, q4\n"  // rounding
-    "vadd.u16   q1, q4\n"
-    "vshrn.u16  d0, q0, #2\n"  // downshift and pack
-    "vshrn.u16  d1, q1, #2\n"
+    "vrshrn.u16 d0, q0, #2\n"  // downshift, round and pack
+    "vrshrn.u16 d1, q1, #2\n"
     "vst1.u8    {q0}, [%2]!\n"
     "subs       %3, %3, #16\n"  // 16 processed per loop
     "bhi        1b\n"
@@ -92,32 +88,28 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(dst),              // %2
       "+r"(dst_width)         // %3
     :
-    : "r4", "q0", "q1", "q2", "q3", "q4"              // Clobber List
+    : "q0", "q1", "q2", "q3"     // Clobber List
    );
 }
 
 #define HAS_SCALEROWDOWN4_NEON
-// Expecting widths on arm devices to be smaller.  Went with 8x4 blocks
-//  to get most coverage.  Look to back and evaluate 16x4 blocks with
-//  handling of leftovers.
 static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
                                uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "mov        r4, #4\n"
     "1:\n"
-    "vld1.u8    {d0[0]}, [%0],r4\n"   // load up only 2 pixels of data to
-    "vld1.u8    {d0[1]}, [%0],r4\n"   //  represent the entire 8x4 block
+    "vld2.u8    {d0, d1}, [%0]!\n"
+    "vtrn.u8    d1, d0\n"
+    "vshrn.u16  d0, q0, #8\n"
+    "vst1.u32   {d0[1]}, [%1]!\n"
 
-    "vst1.u16   {d0[0]}, [%1]!\n"
-
-    "subs       %2, #2\n"   // dst_width -= 2
+    "subs       %2, #4\n"
     "bhi        1b\n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
     :
-    : "r4", "q0", "q1", "memory", "cc"
+    : "q0", "q1", "memory", "cc"
   );
 }
 
@@ -125,46 +117,35 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
+    "add        r4, %0, %3\n"
+    "add        r5, r4, %3\n"
+    "add        %3, r5, %3\n"
     "1:\n"
-    "mov        r4, %0\n"
-    "vld1.u8    {d0}, [r4],%3\n"   // load up 8x4 block of input data
-    "vld1.u8    {d1}, [r4],%3\n"
-    "vld1.u8    {d2}, [r4],%3\n"
-    "vld1.u8    {d3}, [r4]\n"
+    "vld1.u8    {q0}, [%0]!\n"   // load up 16x4 block of input data
+    "vld1.u8    {q1}, [r4]!\n"
+    "vld1.u8    {q2}, [r5]!\n"
+    "vld1.u8    {q3}, [%3]!\n"
 
-    // data is loaded up int q0 and q1
-    // q0 = a00 a01 a02 a03 b00 b01 b02 b03 a10 a11 a12 a13 b10 b11 b12 b13
-    // q1 = a20 a21 a22 a23 b20 b21 b22 b23 a20 a21 a22 a23 b20 b21 b22 b23
-    // q0 = a00+a01 a02+a03 b00+b01 b02+b03 a10+a11 a12+a13 b10+b11 b12+b13
     "vpaddl.u8  q0, q0\n"
-
-    // d0 = a00+a01+a20+a21 a02+a03+a22+a23 b00+b01+b20+b21 b02+b03+b22+b23
-    // d1 = a10+a11+a20+a21 a12+a13+a22+a23 b10+b11+b20+b21 b12+b13+b22+b23
     "vpadal.u8  q0, q1\n"
+    "vpadal.u8  q0, q2\n"
+    "vpadal.u8  q0, q3\n"
 
-    // d0 = a00+a01+a20+a21+a02+a03+a22+a23 b00+b01+b20+b21+b02+b03+b22+b23
-    // d1 = a10+a11+a20+a21+a12+a13+a22+a23 b10+b11+b20+b21+b12+b13+b22+b23
     "vpaddl.u16 q0, q0\n"
 
+    "vrshrn.u32 d0, q0, #4\n"   // divide by 16 w/rounding
 
-    // d0 = a00+a01+a20+a21+a02+a03+a22+a23+a10+a11+a20+a21+a12+a13+a22+a23
-    //      b00+b01+b20+b21+b02+b03+b22+b23+b10+b11+b20+b21+b12+b13+b22+b23
-    "vadd.u32   d0, d1\n"
+    "vmovn.u16  d0, q0\n"
+    "vst1.u32   {d0[0]}, [%1]!\n"
 
-    "vrshr.u32  d0, d0, #4\n"   // divide by 16 w/rounding
-
-    "vst1.u8    {d0[0]}, [%1]!\n"
-    "vst1.u8    {d0[4]}, [%1]!\n"
-
-    "add        %0, #8\n"   // move src pointer to next 8 pixels
-    "subs       %2, #2\n"   // dst_width -= 2
+    "subs       %2, #4\n"
     "bhi        1b\n"
 
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
     : "r"(src_stride)         // %3
-    : "r4", "q0", "q1", "memory", "cc"
+    : "r4", "r5", "q0", "q1", "q2", "q3", "memory", "cc"
   );
 }
 
@@ -194,7 +175,7 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vmov.u8      d16, #3\n"
+    "vmov.u8      d24, #3\n"
     "add          %3, %0\n"
     "1:\n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!\n" // src line 0
@@ -203,35 +184,35 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
     // filter src line 0 with src line 1
     // expand chars to shorts to allow for room
     // when adding lines together
-    "vmovl.u8     q4, d4\n"
-    "vmovl.u8     q5, d5\n"
-    "vmovl.u8     q6, d6\n"
-    "vmovl.u8     q7, d7\n"
+    "vmovl.u8     q8, d4\n"
+    "vmovl.u8     q9, d5\n"
+    "vmovl.u8     q10, d6\n"
+    "vmovl.u8     q11, d7\n"
 
     // 3 * line_0 + line_1
-    "vmlal.u8     q4, d0, d16\n"
-    "vmlal.u8     q5, d1, d16\n"
-    "vmlal.u8     q6, d2, d16\n"
-    "vmlal.u8     q7, d3, d16\n"
+    "vmlal.u8     q8, d0, d24\n"
+    "vmlal.u8     q9, d1, d24\n"
+    "vmlal.u8     q10, d2, d24\n"
+    "vmlal.u8     q11, d3, d24\n"
 
     // (3 * line_0 + line_1) >> 2
-    "vqrshrn.u16  d0, q4, #2\n"
-    "vqrshrn.u16  d1, q5, #2\n"
-    "vqrshrn.u16  d2, q6, #2\n"
-    "vqrshrn.u16  d3, q7, #2\n"
+    "vqrshrn.u16  d0, q8, #2\n"
+    "vqrshrn.u16  d1, q9, #2\n"
+    "vqrshrn.u16  d2, q10, #2\n"
+    "vqrshrn.u16  d3, q11, #2\n"
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
-    "vmovl.u8     q4, d1\n"
-    "vmlal.u8     q4, d0, d16\n"
-    "vqrshrn.u16  d0, q4, #2\n"
+    "vmovl.u8     q8, d1\n"
+    "vmlal.u8     q8, d0, d24\n"
+    "vqrshrn.u16  d0, q8, #2\n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
     "vrhadd.u8    d1, d1, d2\n"
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
-    "vmovl.u8     q4, d2\n"
-    "vmlal.u8     q4, d3, d16\n"
-    "vqrshrn.u16  d2, q4, #2\n"
+    "vmovl.u8     q8, d2\n"
+    "vmlal.u8     q8, d3, d24\n"
+    "vqrshrn.u16  d2, q8, #2\n"
 
     "vst3.u8      {d0, d1, d2}, [%1]!\n"
 
@@ -242,7 +223,7 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(dst_width),        // %2
       "+r"(src_stride)        // %3
     :
-    : "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "d17", "memory", "cc"
+    : "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "d24", "memory", "cc"
   );
 }
 
@@ -250,11 +231,11 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vmov.u8      d10, #3\n"
+    "vmov.u8      d24, #3\n"
     "add          %3, %0\n"
     "1:\n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!\n" // src line 0
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!\n" // src line 1
+    "vld4.u8      {d0, d1, d2, d3}, [%0]! \n" // src line 0
+    "vld4.u8      {d4, d5, d6, d7}, [%3]! \n" // src line 1
 
     // average src line 0 with src line 1
     "vrhadd.u8    q0, q0, q2\n"
@@ -262,7 +243,7 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
     "vmovl.u8     q3, d1\n"
-    "vmlal.u8     q3, d0, d10\n"
+    "vmlal.u8     q3, d0, d24\n"
     "vqrshrn.u16  d0, q3, #2\n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
@@ -270,7 +251,7 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
     "vmovl.u8     q3, d2\n"
-    "vmlal.u8     q3, d3, d10\n"
+    "vmlal.u8     q3, d3, d24\n"
     "vqrshrn.u16  d2, q3, #2\n"
 
     "vst3.u8      {d0, d1, d2}, [%1]!\n"
@@ -282,7 +263,7 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(dst_width),        // %2
       "+r"(src_stride)        // %3
     :
-    : "r4", "q0", "q1", "q2", "q3", "d10", "memory", "cc"
+    : "r4", "q0", "q1", "q2", "q3", "d24", "memory", "cc"
   );
 }
 
@@ -325,9 +306,9 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vld1.u16     {q4}, [%4]\n"
-    "vld1.u8      {q5}, [%5]\n"
-    "vld1.u8      {q8}, [%6]\n"
+    "vld1.u16     {q13}, [%4]\n"
+    "vld1.u8      {q14}, [%5]\n"
+    "vld1.u8      {q15}, [%6]\n"
     "add          r4, %0, %3, lsl #1\n"
     "add          %3, %0\n"
     "1:\n"
@@ -338,7 +319,7 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     // d3 = 30 70 31 71 32 72 33 73
     "vld4.u8      {d0, d1, d2, d3}, [%0]!\n"
     "vld4.u8      {d4, d5, d6, d7}, [%3]!\n"
-    "vld4.u8      {d12, d13, d14, d15}, [r4]!\n"
+    "vld4.u8      {d16, d17, d18, d19}, [r4]!\n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added.  0,1 - 2,3 - 4,5 - 6,7
@@ -346,35 +327,35 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     // d1 = 40 50 41 51 42 52 43 53
     "vtrn.u8      d0, d1\n"
     "vtrn.u8      d4, d5\n"
-    "vtrn.u8      d12, d13\n"
+    "vtrn.u8      d16, d17\n"
 
     // d2 = 20 30 21 31 22 32 23 33
     // d3 = 60 70 61 71 62 72 63 73
     "vtrn.u8      d2, d3\n"
     "vtrn.u8      d6, d7\n"
-    "vtrn.u8      d14, d15\n"
+    "vtrn.u8      d18, d19\n"
 
     // d0 = 00+10 01+11 02+12 03+13
     // d2 = 40+50 41+51 42+52 43+53
     "vpaddl.u8    q0, q0\n"
     "vpaddl.u8    q2, q2\n"
-    "vpaddl.u8    q6, q6\n"
+    "vpaddl.u8    q8, q8\n"
 
     // d3 = 60+70 61+71 62+72 63+73
     "vpaddl.u8    d3, d3\n"
     "vpaddl.u8    d7, d7\n"
-    "vpaddl.u8    d15, d15\n"
+    "vpaddl.u8    d19, d19\n"
 
     // combine source lines
     "vadd.u16     q0, q2\n"
-    "vadd.u16     q0, q6\n"
+    "vadd.u16     q0, q8\n"
     "vadd.u16     d4, d3, d7\n"
-    "vadd.u16     d4, d15\n"
+    "vadd.u16     d4, d19\n"
 
     // dst_ptr[3] = (s[6 + st * 0] + s[7 + st * 0]
     //             + s[6 + st * 1] + s[7 + st * 1]
     //             + s[6 + st * 2] + s[7 + st * 2]) / 6
-    "vqrdmulh.s16 q2, q4\n"
+    "vqrdmulh.s16 q2, q13\n"
     "vmovn.u16    d4, q2\n"
 
     // Shuffle 2,3 reg around so that 2 can be added to the
@@ -385,11 +366,11 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     // q2 = xx 20 xx 30 xx 21 xx 31 xx 22 xx 32 xx 23 xx 33
     "vmovl.u8     q1, d2\n"
     "vmovl.u8     q3, d6\n"
-    "vmovl.u8     q7, d14\n"
+    "vmovl.u8     q9, d18\n"
 
     // combine source lines
     "vadd.u16     q1, q3\n"
-    "vadd.u16     q1, q7\n"
+    "vadd.u16     q1, q9\n"
 
     // d4 = xx 20 xx 30 xx 22 xx 32
     // d5 = xx 21 xx 31 xx 23 xx 33
@@ -405,14 +386,14 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q8\n"
+    "vqrdmulh.s16 q0, q15\n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent
     "vmov.u8      d2, d4\n"
 
-    "vtbl.u8      d3, {d0, d1, d2}, d10\n"
-    "vtbl.u8      d4, {d0, d1, d2}, d11\n"
+    "vtbl.u8      d3, {d0, d1, d2}, d28\n"
+    "vtbl.u8      d4, {d0, d1, d2}, d29\n"
 
     "vst1.u8      {d3}, [%1]!\n"
     "vst1.u32     {d4[0]}, [%1]!\n"
@@ -425,8 +406,8 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     : "r"(mult38_div6),       // %4
       "r"(shuf38_2),          // %5
       "r"(mult38_div9)        // %6
-    : "r4", "q0", "q1", "q2", "q3", "q4",
-      "q5", "q6", "q7", "q8", "memory", "cc"
+    : "r4", "q0", "q1", "q2", "q3", "q8", "q9",
+      "q13", "q14", "q15", "memory", "cc"
   );
 }
 
@@ -435,8 +416,8 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm__ volatile
   (
-    "vld1.u16     {q4}, [%4]\n"
-    "vld1.u8      {q5}, [%5]\n"
+    "vld1.u16     {q13}, [%4]\n"
+    "vld1.u8      {q14}, [%5]\n"
     "add          %3, %0\n"
     "1:\n"
 
@@ -501,14 +482,14 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q4\n"
+    "vqrdmulh.s16 q0, q13\n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent
     "vmov.u8      d2, d4\n"
 
-    "vtbl.u8      d3, {d0, d1, d2}, d10\n"
-    "vtbl.u8      d4, {d0, d1, d2}, d11\n"
+    "vtbl.u8      d3, {d0, d1, d2}, d28\n"
+    "vtbl.u8      d4, {d0, d1, d2}, d29\n"
 
     "vst1.u8      {d3}, [%1]!\n"
     "vst1.u32     {d4[0]}, [%1]!\n"
@@ -520,7 +501,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(src_stride)        // %3
     : "r"(mult38_div6),       // %4
       "r"(shuf38_2)           // %5
-    : "q0", "q1", "q2", "q3", "q4", "q5", "memory", "cc"
+    : "q0", "q1", "q2", "q3", "q13", "q14", "memory", "cc"
   );
 }
 
@@ -3090,9 +3071,7 @@ static void ScalePlaneDown2(int src_width, int src_height,
 
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (dst_width % 16 == 0) && (src_stride % 16 == 0) &&
-      (dst_stride % 16 == 0) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(dst_ptr, 16)) {
+      (dst_width % 16 == 0)) {
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   } else
 #endif
@@ -3132,8 +3111,7 @@ static void ScalePlaneDown4(int src_width, int src_height,
 
 #if defined(HAS_SCALEROWDOWN4_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (dst_width % 2 == 0) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(src_ptr, 8)) {
+      (dst_width % 4 == 0)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Int_NEON : ScaleRowDown4_NEON;
   } else
 #endif
@@ -3209,7 +3187,7 @@ static void ScalePlaneDown34(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
 #if defined(HAS_SCALEROWDOWN34_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (dst_width % 24 == 0) && (dst_stride % 8 == 0)) {
+      (dst_width % 24 == 0)) {
     if (!filtering) {
       ScaleRowDown34_0 = ScaleRowDown34_NEON;
       ScaleRowDown34_1 = ScaleRowDown34_NEON;
@@ -3298,7 +3276,7 @@ static void ScalePlaneDown38(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
 #if defined(HAS_SCALEROWDOWN38_NEON)
   if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (dst_width % 24 == 0)) {
+      (dst_width % 12 == 0)) {
     if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_NEON;
       ScaleRowDown38_2 = ScaleRowDown38_NEON;

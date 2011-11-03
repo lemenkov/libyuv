@@ -1,13 +1,9 @@
-  .global RestoreRegisters_NEON
   .global ReverseLine_NEON
   .global ReverseLineUV_NEON
-  .global SaveRegisters_NEON
   .global TransposeWx8_NEON
   .global TransposeUVWx8_NEON
-  .type RestoreRegisters_NEON, function
   .type ReverseLine_NEON, function
   .type ReverseLineUV_NEON, function
-  .type SaveRegisters_NEON, function
   .type TransposeWx8_NEON, function
   .type TransposeUVWx8_NEON, function
 
@@ -261,20 +257,6 @@ Ldone:
 vtbl_4x4_transpose:
   .byte  0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15
 
-@ void SaveRegisters_NEON (unsigned long long store)
-@ r0 unsigned long long store
-SaveRegisters_NEON:
-  vst1.i64    {d8, d9, d10, d11}, [r0]!
-  vst1.i64    {d12, d13, d14, d15}, [r0]!
-  bx          lr
-
-@ void RestoreRegisters_NEON (unsigned long long store)
-@ r0 unsigned long long store
-RestoreRegisters_NEON:
-  vld1.i64    {d8, d9, d10, d11}, [r0]!
-  vld1.i64    {d12, d13, d14, d15}, [r0]!
-  bx          lr
-
 @ void ReverseLineUV_NEON (const uint8* src,
 @                          uint8* dst_a,
 @                          uint8* dst_b,
@@ -380,34 +362,34 @@ Lloop_8x8_di:
     vld2.8      {d2,  d3},  [r9], r1
     vld2.8      {d4,  d5},  [r9], r1
     vld2.8      {d6,  d7},  [r9], r1
-    vld2.8      {d8,  d9},  [r9], r1
-    vld2.8      {d10, d11}, [r9], r1
-    vld2.8      {d12, d13}, [r9], r1
-    vld2.8      {d14, d15}, [r9]
+    vld2.8      {d16, d17}, [r9], r1
+    vld2.8      {d18, d19}, [r9], r1
+    vld2.8      {d20, d21}, [r9], r1
+    vld2.8      {d22, d23}, [r9]
 
     vtrn.8      q1, q0
     vtrn.8      q3, q2
-    vtrn.8      q5, q4
-    vtrn.8      q7, q6
+    vtrn.8      q9, q8
+    vtrn.8      q11, q10
 
     vtrn.16     q1, q3
     vtrn.16     q0, q2
-    vtrn.16     q5, q7
-    vtrn.16     q4, q6
+    vtrn.16     q9, q11
+    vtrn.16     q8, q10
 
-    vtrn.32     q1, q5
-    vtrn.32     q0, q4
-    vtrn.32     q3, q7
-    vtrn.32     q2, q6
+    vtrn.32     q1, q9
+    vtrn.32     q0, q8
+    vtrn.32     q3, q11
+    vtrn.32     q2, q10
 
     vrev16.8    q0, q0
     vrev16.8    q1, q1
     vrev16.8    q2, q2
     vrev16.8    q3, q3
-    vrev16.8    q4, q4
-    vrev16.8    q5, q5
-    vrev16.8    q6, q6
-    vrev16.8    q7, q7
+    vrev16.8    q8, q8
+    vrev16.8    q9, q9
+    vrev16.8    q10, q10
+    vrev16.8    q11, q11
 
     mov         r9, r2
 
@@ -415,10 +397,10 @@ Lloop_8x8_di:
     vst1.8      {d0},  [r9], r3
     vst1.8      {d6},  [r9], r3
     vst1.8      {d4},  [r9], r3
-    vst1.8      {d10}, [r9], r3
-    vst1.8      {d8},  [r9], r3
-    vst1.8      {d14}, [r9], r3
-    vst1.8      {d12}, [r9]
+    vst1.8      {d18}, [r9], r3
+    vst1.8      {d16}, [r9], r3
+    vst1.8      {d22}, [r9], r3
+    vst1.8      {d20}, [r9]
 
     mov         r9, r4
 
@@ -426,10 +408,10 @@ Lloop_8x8_di:
     vst1.8      {d1},  [r9], r5
     vst1.8      {d7},  [r9], r5
     vst1.8      {d5},  [r9], r5
-    vst1.8      {d11}, [r9], r5
-    vst1.8      {d9},  [r9], r5
-    vst1.8      {d15}, [r9], r5
-    vst1.8      {d13}, [r9]
+    vst1.8      {d19}, [r9], r5
+    vst1.8      {d17}, [r9], r5
+    vst1.8      {d23}, [r9], r5
+    vst1.8      {d21}, [r9]
 
     add         r0, #8*2          @ src   += 8*2
     add         r2, r3, lsl #3    @ dst_a += 8 * dst_stride_a
@@ -462,45 +444,45 @@ Lblock_4x8_di:
   vld1.64     {d7}, [r9]
 
   adr         r12, vtbl_4x4_transpose_di
-  vld1.8      {q7}, [r12]
+  vld1.8      {q15}, [r12]
 
   vtrn.8      q0, q1
   vtrn.8      q2, q3
 
-  vtbl.8      d8,  {d0, d1}, d14
-  vtbl.8      d9,  {d0, d1}, d15
-  vtbl.8      d10, {d2, d3}, d14
-  vtbl.8      d11, {d2, d3}, d15
-  vtbl.8      d12, {d4, d5}, d14
-  vtbl.8      d13, {d4, d5}, d15
-  vtbl.8      d0,  {d6, d7}, d14
-  vtbl.8      d1,  {d6, d7}, d15
+  vtbl.8      d16, {d0, d1}, d30
+  vtbl.8      d17, {d0, d1}, d31
+  vtbl.8      d18, {d2, d3}, d30
+  vtbl.8      d19, {d2, d3}, d31
+  vtbl.8      d20, {d4, d5}, d30
+  vtbl.8      d21, {d4, d5}, d31
+  vtbl.8      d22, {d6, d7}, d30
+  vtbl.8      d23, {d6, d7}, d31
 
   mov         r9, r2
 
-  vst1.32     {d8[0]},  [r9], r3
-  vst1.32     {d8[1]},  [r9], r3
-  vst1.32     {d9[0]},  [r9], r3
-  vst1.32     {d9[1]},  [r9], r3
+  vst1.32     {d16[0]},  [r9], r3
+  vst1.32     {d16[1]},  [r9], r3
+  vst1.32     {d17[0]},  [r9], r3
+  vst1.32     {d17[1]},  [r9], r3
 
   add         r9, r2, #4
-  vst1.32     {d12[0]}, [r9], r3
-  vst1.32     {d12[1]}, [r9], r3
-  vst1.32     {d13[0]}, [r9], r3
-  vst1.32     {d13[1]}, [r9]
+  vst1.32     {d20[0]}, [r9], r3
+  vst1.32     {d20[1]}, [r9], r3
+  vst1.32     {d21[0]}, [r9], r3
+  vst1.32     {d21[1]}, [r9]
 
   mov         r9, r4
 
-  vst1.32     {d10[0]}, [r9], r5
-  vst1.32     {d10[1]}, [r9], r5
-  vst1.32     {d11[0]}, [r9], r5
-  vst1.32     {d11[1]}, [r9], r5
+  vst1.32     {d18[0]}, [r9], r5
+  vst1.32     {d18[1]}, [r9], r5
+  vst1.32     {d19[0]}, [r9], r5
+  vst1.32     {d19[1]}, [r9], r5
 
   add         r9, r4, #4
-  vst1.32     {d0[0]},  [r9], r5
-  vst1.32     {d0[1]},  [r9], r5
-  vst1.32     {d1[0]},  [r9], r5
-  vst1.32     {d1[1]},  [r9]
+  vst1.32     {d22[0]},  [r9], r5
+  vst1.32     {d22[1]},  [r9], r5
+  vst1.32     {d23[0]},  [r9], r5
+  vst1.32     {d23[1]},  [r9]
 
   add         r0, #4*2          @ src   += 4 * 2
   add         r2, r3, lsl #2    @ dst_a += 4 * dst_stride_a
