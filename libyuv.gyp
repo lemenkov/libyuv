@@ -28,7 +28,6 @@
         'include/libyuv/general.h',
         'include/libyuv/scale.h',
         'include/libyuv/planar_functions.h',
-        
 
         # headers
          'source/conversion_tables.h',
@@ -57,6 +56,15 @@
         },{ # else
          'sources': [
             'source/row_posix.cc',
+          ],
+        }],
+        ['target_arch=="arm"',{
+          'conditions': [
+            ['arm_neon==1', {
+              'sources' : [
+                'source/rotate_neon.cc',
+              ],
+            }],
           ],
         }],
       ]

@@ -34,16 +34,12 @@ TEST_F(libyuvTest, Transpose) {
   for (iw = 8; iw < _rotate_max_w && !err; ++iw)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_1;
-      uint8 *output_2;
-
       ow = ih;
       oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_1 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_2 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_1, ow * oh)
+      align_buffer_16(output_2, iw * ih)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -67,9 +63,9 @@ TEST_F(libyuvTest, Transpose) {
         print_array(output_2, iw, ih);
       }
 
-      free(input);
-      free(output_1);
-      free(output_2);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_1)
+      free_aligned_buffer_16(output_2)
     }
 
   EXPECT_EQ(0, err);
@@ -82,18 +78,15 @@ TEST_F(libyuvTest, TransposeUV) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_a1, *output_b1;
-      uint8 *output_a2, *output_b2;
 
       ow = ih;
       oh = iw >> 1;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_a1 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_b1 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_a2 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_b2 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_a1, ow * oh)
+      align_buffer_16(output_b1, ow * oh)
+      align_buffer_16(output_a2, iw * ih)
+      align_buffer_16(output_b2, iw * ih)
 
       for (i = 0; i < (iw * ih); i += 2) {
         input[i] = i >> 1;
@@ -125,11 +118,11 @@ TEST_F(libyuvTest, TransposeUV) {
         print_array(output_b2, oh, ow);
       }
 
-      free(input);
-      free(output_a1);
-      free(output_b1);
-      free(output_a2);
-      free(output_b2);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_a1)
+      free_aligned_buffer_16(output_b1)
+      free_aligned_buffer_16(output_a2)
+      free_aligned_buffer_16(output_b2)
     }
 
   EXPECT_EQ(0, err);
@@ -142,20 +135,15 @@ TEST_F(libyuvTest, RotatePlane90) {
   for (iw = 8; iw < _rotate_max_w && !err; ++iw)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_90;
-      uint8 *output_180;
-      uint8 *output_270;
 
       ow = ih;
       oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_90 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_270 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_90, ow * oh)
+      align_buffer_16(output_180, iw * ih)
+      align_buffer_16(output_270, ow * oh)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -187,11 +175,11 @@ TEST_F(libyuvTest, RotatePlane90) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_90);
-      free(output_180);
-      free(output_270);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_90)
+      free_aligned_buffer_16(output_180)
+      free_aligned_buffer_16(output_270)
     }
 
   EXPECT_EQ(0, err);
@@ -204,24 +192,17 @@ TEST_F(libyuvTest, RotateUV90) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0_u;
-      uint8 *output_0_v;
-      uint8 *output_90_u;
-      uint8 *output_90_v;
-      uint8 *output_180_u;
-      uint8 *output_180_v;
 
       ow = ih;
       oh = iw >> 1;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_0_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_90_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_90_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0_u, ow * oh)
+      align_buffer_16(output_0_v, ow * oh)
+      align_buffer_16(output_90_u, ow * oh)
+      align_buffer_16(output_90_v, ow * oh)
+      align_buffer_16(output_180_u, ow * oh)
+      align_buffer_16(output_180_v, ow * oh)
 
       for (i = 0; i < (iw * ih); i += 2) {
         input[i] = i >> 1;
@@ -266,13 +247,13 @@ TEST_F(libyuvTest, RotateUV90) {
         print_array(output_0_v, oh, ow);
       }
 
-      free(input);
-      free(output_0_u);
-      free(output_0_v);
-      free(output_90_u);
-      free(output_90_v);
-      free(output_180_u);
-      free(output_180_v);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0_u)
+      free_aligned_buffer_16(output_0_v)
+      free_aligned_buffer_16(output_90_u)
+      free_aligned_buffer_16(output_90_v)
+      free_aligned_buffer_16(output_180_u)
+      free_aligned_buffer_16(output_180_v)
     }
 
   EXPECT_EQ(0, err);
@@ -285,24 +266,17 @@ TEST_F(libyuvTest, RotateUV180) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0_u;
-      uint8 *output_0_v;
-      uint8 *output_90_u;
-      uint8 *output_90_v;
-      uint8 *output_180_u;
-      uint8 *output_180_v;
 
       ow = iw >> 1;
       oh = ih;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_0_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_90_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_90_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0_u, ow * oh)
+      align_buffer_16(output_0_v, ow * oh)
+      align_buffer_16(output_90_u, ow * oh)
+      align_buffer_16(output_90_v, ow * oh)
+      align_buffer_16(output_180_u, ow * oh)
+      align_buffer_16(output_180_v, ow * oh)
 
       for (i = 0; i < (iw * ih); i += 2) {
         input[i] = i >> 1;
@@ -347,13 +321,13 @@ TEST_F(libyuvTest, RotateUV180) {
         print_array(output_0_v, ow, oh);
       }
 
-      free(input);
-      free(output_0_u);
-      free(output_0_v);
-      free(output_90_u);
-      free(output_90_v);
-      free(output_180_u);
-      free(output_180_v);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0_u)
+      free_aligned_buffer_16(output_0_v)
+      free_aligned_buffer_16(output_90_u)
+      free_aligned_buffer_16(output_90_v)
+      free_aligned_buffer_16(output_180_u)
+      free_aligned_buffer_16(output_180_v)
     }
 
   EXPECT_EQ(0, err);
@@ -366,24 +340,17 @@ TEST_F(libyuvTest, RotateUV270) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0_u;
-      uint8 *output_0_v;
-      uint8 *output_270_u;
-      uint8 *output_270_v;
-      uint8 *output_180_u;
-      uint8 *output_180_v;
 
       ow = ih;
       oh = iw >> 1;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_0_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_270_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_270_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_u = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180_v = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0_u, ow * oh)
+      align_buffer_16(output_0_v, ow * oh)
+      align_buffer_16(output_270_u, ow * oh)
+      align_buffer_16(output_270_v, ow * oh)
+      align_buffer_16(output_180_u, ow * oh)
+      align_buffer_16(output_180_v, ow * oh)
 
       for (i = 0; i < (iw * ih); i += 2) {
         input[i] = i >> 1;
@@ -429,13 +396,13 @@ TEST_F(libyuvTest, RotateUV270) {
         print_array(output_0_v, oh, ow);
       }
 
-      free(input);
-      free(output_0_u);
-      free(output_0_v);
-      free(output_270_u);
-      free(output_270_v);
-      free(output_180_u);
-      free(output_180_v);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0_u)
+      free_aligned_buffer_16(output_0_v)
+      free_aligned_buffer_16(output_270_u)
+      free_aligned_buffer_16(output_270_v)
+      free_aligned_buffer_16(output_180_u)
+      free_aligned_buffer_16(output_180_v)
     }
 
   EXPECT_EQ(0, err);
@@ -448,16 +415,13 @@ TEST_F(libyuvTest, RotatePlane180) {
   for (iw = 8; iw < _rotate_max_w && !err; ++iw)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_180;
 
       ow = iw;
       oh = ih;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_180 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_180, iw * ih)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -481,9 +445,9 @@ TEST_F(libyuvTest, RotatePlane180) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_180);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_180)
     }
 
   EXPECT_EQ(0, err);
@@ -496,20 +460,15 @@ TEST_F(libyuvTest, RotatePlane270) {
   for (iw = 8; iw < _rotate_max_w && !err; ++iw)
     for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_90;
-      uint8 *output_180;
-      uint8 *output_270;
 
       ow = ih;
       oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_90 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
-      output_180 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_270 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_90, ow * oh)
+      align_buffer_16(output_180, iw * ih)
+      align_buffer_16(output_270, ow * oh)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -541,11 +500,11 @@ TEST_F(libyuvTest, RotatePlane270) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_90);
-      free(output_180);
-      free(output_270);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_90)
+      free_aligned_buffer_16(output_180)
+      free_aligned_buffer_16(output_270)
     }
 
   EXPECT_EQ(0, err);
@@ -558,15 +517,13 @@ TEST_F(libyuvTest, RotatePlane90and270) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
     for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_90;
+
       ow = ih;
       oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_90 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_90, ow * oh)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -590,9 +547,9 @@ TEST_F(libyuvTest, RotatePlane90and270) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_90);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_90)
     }
 
   EXPECT_EQ(0, err);
@@ -605,15 +562,13 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
     for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_90;
+
       int ow = ih;
       int oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_90 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_90, ow * oh)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -649,9 +604,9 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_90);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_90)
     }
 
   EXPECT_EQ(0, err);
@@ -664,16 +619,13 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
   for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
     for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
       int i;
-      uint8 *input;
-      uint8 *output_0;
-      uint8 *output_270;
 
       ow = ih;
       oh = iw;
 
-      input = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_0 = static_cast<uint8*>(calloc(iw * ih, sizeof(uint8)));
-      output_270 = static_cast<uint8*>(calloc(ow * oh, sizeof(uint8)));
+      align_buffer_16(input, iw * ih)
+      align_buffer_16(output_0, iw * ih)
+      align_buffer_16(output_270, ow * oh)
 
       for (i = 0; i < (iw * ih); ++i)
         input[i] = i;
@@ -709,9 +661,9 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
         print_array(output_0, iw, ih);
       }
 
-      free(input);
-      free(output_0);
-      free(output_270);
+      free_aligned_buffer_16(input)
+      free_aligned_buffer_16(output_0)
+      free_aligned_buffer_16(output_270)
     }
 
   EXPECT_EQ(0, err);
@@ -719,10 +671,6 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
 
 TEST_F(libyuvTest, I420Rotate90) {
   int err = 0;
-  uint8 *orig_y, *orig_u, *orig_v;
-  uint8 *ro0_y, *ro0_u, *ro0_v;
-  uint8 *ro90_y, *ro90_u, *ro90_v;
-  uint8 *ro270_y, *ro270_u, *ro270_v;
 
   int yw = 1024;
   int yh = 768;
@@ -737,21 +685,21 @@ TEST_F(libyuvTest, I420Rotate90) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  orig_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_u, uv_plane_size)
+  align_buffer_16(orig_v, uv_plane_size)
 
-  ro0_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro0_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro0_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro0_y, y_plane_size)
+  align_buffer_16(ro0_u, uv_plane_size)
+  align_buffer_16(ro0_v, uv_plane_size)
 
-  ro90_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro90_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro90_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro90_y, y_plane_size)
+  align_buffer_16(ro90_u, uv_plane_size)
+  align_buffer_16(ro90_v, uv_plane_size)
 
-  ro270_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro270_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro270_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro270_y, y_plane_size)
+  align_buffer_16(ro270_u, uv_plane_size)
+  align_buffer_16(ro270_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -816,28 +764,24 @@ TEST_F(libyuvTest, I420Rotate90) {
       ++err;
   }
 
-  free(orig_y);
-  free(orig_u);
-  free(orig_v);
-  free(ro0_y);
-  free(ro0_u);
-  free(ro0_v);
-  free(ro90_y);
-  free(ro90_u);
-  free(ro90_v);
-  free(ro270_y);
-  free(ro270_u);
-  free(ro270_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_u)
+  free_aligned_buffer_16(orig_v)
+  free_aligned_buffer_16(ro0_y)
+  free_aligned_buffer_16(ro0_u)
+  free_aligned_buffer_16(ro0_v)
+  free_aligned_buffer_16(ro90_y)
+  free_aligned_buffer_16(ro90_u)
+  free_aligned_buffer_16(ro90_v)
+  free_aligned_buffer_16(ro270_y)
+  free_aligned_buffer_16(ro270_u)
+  free_aligned_buffer_16(ro270_v)
 
   EXPECT_EQ(0, err);
 }
 
 TEST_F(libyuvTest, I420Rotate270) {
   int err = 0;
-  uint8 *orig_y, *orig_u, *orig_v;
-  uint8 *ro0_y, *ro0_u, *ro0_v;
-  uint8 *ro90_y, *ro90_u, *ro90_v;
-  uint8 *ro270_y, *ro270_u, *ro270_v;
 
   int yw = 1024;
   int yh = 768;
@@ -852,21 +796,21 @@ TEST_F(libyuvTest, I420Rotate270) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  orig_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_u, uv_plane_size)
+  align_buffer_16(orig_v, uv_plane_size)
 
-  ro0_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro0_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro0_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro0_y, y_plane_size)
+  align_buffer_16(ro0_u, uv_plane_size)
+  align_buffer_16(ro0_v, uv_plane_size)
 
-  ro90_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro90_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro90_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro90_y, y_plane_size)
+  align_buffer_16(ro90_u, uv_plane_size)
+  align_buffer_16(ro90_v, uv_plane_size)
 
-  ro270_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro270_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro270_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro270_y, y_plane_size)
+  align_buffer_16(ro270_u, uv_plane_size)
+  align_buffer_16(ro270_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -931,27 +875,24 @@ TEST_F(libyuvTest, I420Rotate270) {
       ++err;
   }
 
-  free(orig_y);
-  free(orig_u);
-  free(orig_v);
-  free(ro0_y);
-  free(ro0_u);
-  free(ro0_v);
-  free(ro90_y);
-  free(ro90_u);
-  free(ro90_v);
-  free(ro270_y);
-  free(ro270_u);
-  free(ro270_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_u)
+  free_aligned_buffer_16(orig_v)
+  free_aligned_buffer_16(ro0_y)
+  free_aligned_buffer_16(ro0_u)
+  free_aligned_buffer_16(ro0_v)
+  free_aligned_buffer_16(ro90_y)
+  free_aligned_buffer_16(ro90_u)
+  free_aligned_buffer_16(ro90_v)
+  free_aligned_buffer_16(ro270_y)
+  free_aligned_buffer_16(ro270_u)
+  free_aligned_buffer_16(ro270_v)
 
   EXPECT_EQ(0, err);
 }
 
 TEST_F(libyuvTest, NV12ToI420Rotate90) {
   int err = 0;
-  uint8 *orig_y, *orig_uv;
-  uint8 *ro0_y, *ro0_u, *ro0_v;
-  uint8 *ro90_y, *ro90_u, *ro90_v;
 
   int yw = 1024;
   int yh = 768;
@@ -966,16 +907,16 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_uv = static_cast<uint8*>(calloc(o_uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_uv, o_uv_plane_size)
 
-  ro0_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro0_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro0_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro0_y, y_plane_size)
+  align_buffer_16(ro0_u, uv_plane_size)
+  align_buffer_16(ro0_v, uv_plane_size)
 
-  ro90_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro90_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro90_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro90_y, y_plane_size)
+  align_buffer_16(ro90_u, uv_plane_size)
+  align_buffer_16(ro90_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -1036,23 +977,20 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
   if (!zero_cnt)
     ++err;
 
-  free(orig_y);
-  free(orig_uv);
-  free(ro0_y);
-  free(ro0_u);
-  free(ro0_v);
-  free(ro90_y);
-  free(ro90_u);
-  free(ro90_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_uv)
+  free_aligned_buffer_16(ro0_y)
+  free_aligned_buffer_16(ro0_u)
+  free_aligned_buffer_16(ro0_v)
+  free_aligned_buffer_16(ro90_y)
+  free_aligned_buffer_16(ro90_u)
+  free_aligned_buffer_16(ro90_v)
 
   EXPECT_EQ(0, err);
 }
 
 TEST_F(libyuvTest, NV12ToI420Rotate270) {
   int err = 0;
-  uint8 *orig_y, *orig_uv;
-  uint8 *ro0_y, *ro0_u, *ro0_v;
-  uint8 *ro270_y, *ro270_u, *ro270_v;
 
   int yw = 1024;
   int yh = 768;
@@ -1068,16 +1006,16 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_uv = static_cast<uint8*>(calloc(o_uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_uv, o_uv_plane_size)
 
-  ro0_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro0_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro0_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro0_y, y_plane_size)
+  align_buffer_16(ro0_u, uv_plane_size)
+  align_buffer_16(ro0_v, uv_plane_size)
 
-  ro270_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro270_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro270_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro270_y, y_plane_size)
+  align_buffer_16(ro270_u, uv_plane_size)
+  align_buffer_16(ro270_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -1138,23 +1076,20 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
   if (!zero_cnt)
     ++err;
 
-  free(orig_y);
-  free(orig_uv);
-  free(ro0_y);
-  free(ro0_u);
-  free(ro0_v);
-  free(ro270_y);
-  free(ro270_u);
-  free(ro270_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_uv)
+  free_aligned_buffer_16(ro0_y)
+  free_aligned_buffer_16(ro0_u)
+  free_aligned_buffer_16(ro0_v)
+  free_aligned_buffer_16(ro270_y)
+  free_aligned_buffer_16(ro270_u)
+  free_aligned_buffer_16(ro270_v)
 
   EXPECT_EQ(0, err);
 }
 
 TEST_F(libyuvTest, NV12ToI420Rotate180) {
   int err = 0;
-  uint8 *orig_y, *orig_uv;
-  uint8 *ro0_y, *ro0_u, *ro0_v;
-  uint8 *ro180_y, *ro180_u, *ro180_v;
 
   int yw = 1024;
   int yh = 768;
@@ -1170,16 +1105,16 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_uv = static_cast<uint8*>(calloc(o_uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_uv, o_uv_plane_size)
 
-  ro0_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro0_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro0_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro0_y, y_plane_size)
+  align_buffer_16(ro0_u, uv_plane_size)
+  align_buffer_16(ro0_v, uv_plane_size)
 
-  ro180_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  ro180_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  ro180_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(ro180_y, y_plane_size)
+  align_buffer_16(ro180_u, uv_plane_size)
+  align_buffer_16(ro180_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -1236,24 +1171,20 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
   if (!zero_cnt)
     ++err;
 
-  free(orig_y);
-  free(orig_uv);
-  free(ro0_y);
-  free(ro0_u);
-  free(ro0_v);
-  free(ro180_y);
-  free(ro180_u);
-  free(ro180_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_uv)
+  free_aligned_buffer_16(ro0_y)
+  free_aligned_buffer_16(ro0_u)
+  free_aligned_buffer_16(ro0_v)
+  free_aligned_buffer_16(ro180_y)
+  free_aligned_buffer_16(ro180_u)
+  free_aligned_buffer_16(ro180_v)
 
   EXPECT_EQ(0, err);
 }
 
 TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
   int y_err = 0, uv_err = 0;
-  uint8 *orig_y, *orig_uv;
-  uint8 *roa_y, *roa_u, *roa_v;
-  uint8 *rob_y, *rob_u, *rob_v;
-  uint8 *roc_y, *roc_u, *roc_v;
 
   int yw = 1024;
   int yh = 768;
@@ -1268,20 +1199,20 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_uv = static_cast<uint8*>(calloc(o_uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_uv, o_uv_plane_size)
 
-  roa_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  roa_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  roa_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(roa_y, y_plane_size)
+  align_buffer_16(roa_u, uv_plane_size)
+  align_buffer_16(roa_v, uv_plane_size)
 
-  rob_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  rob_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  rob_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(rob_y, y_plane_size)
+  align_buffer_16(rob_u, uv_plane_size)
+  align_buffer_16(rob_v, uv_plane_size)
 
-  roc_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  roc_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  roc_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(roc_y, y_plane_size)
+  align_buffer_16(roc_u, uv_plane_size)
+  align_buffer_16(roc_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -1382,26 +1313,23 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
     print_array(roc_v, uv_st_0, uv_st_90);
   }
 
-  free(orig_y);
-  free(orig_uv);
-  free(roa_y);
-  free(roa_u);
-  free(roa_v);
-  free(rob_y);
-  free(rob_u);
-  free(rob_v);
-  free(roc_y);
-  free(roc_u);
-  free(roc_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_uv)
+  free_aligned_buffer_16(roa_y)
+  free_aligned_buffer_16(roa_u)
+  free_aligned_buffer_16(roa_v)
+  free_aligned_buffer_16(rob_y)
+  free_aligned_buffer_16(rob_u)
+  free_aligned_buffer_16(rob_v)
+  free_aligned_buffer_16(roc_y)
+  free_aligned_buffer_16(roc_u)
+  free_aligned_buffer_16(roc_v)
 
   EXPECT_EQ(0, y_err + uv_err);
 }
 
 TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   int y_err = 0, uv_err = 0;
-  uint8 *orig_y, *orig_uv;
-  uint8 *roa_y, *roa_u, *roa_v;
-  uint8 *rob_y, *rob_u, *rob_v;
 
   int yw = 1024;
   int yh = 768;
@@ -1416,16 +1344,16 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
 
   srandom(time(NULL));
 
-  orig_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  orig_uv = static_cast<uint8*>(calloc(o_uv_plane_size, sizeof(uint8)));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(orig_uv, o_uv_plane_size)
 
-  roa_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  roa_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  roa_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(roa_y, y_plane_size)
+  align_buffer_16(roa_u, uv_plane_size)
+  align_buffer_16(roa_v, uv_plane_size)
 
-  rob_y = static_cast<uint8*>(calloc(y_plane_size, sizeof(uint8)));
-  rob_u = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
-  rob_v = static_cast<uint8*>(calloc(uv_plane_size, sizeof(uint8)));
+  align_buffer_16(rob_y, y_plane_size)
+  align_buffer_16(rob_u, uv_plane_size)
+  align_buffer_16(rob_v, uv_plane_size)
 
   // fill image buffers with random data
   for (i = b; i < (yh + b); ++i) {
@@ -1506,14 +1434,14 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
     print_array(rob_v, uv_st, uvh + (2 * b));
   }
 
-  free(orig_y);
-  free(orig_uv);
-  free(roa_y);
-  free(roa_u);
-  free(roa_v);
-  free(rob_y);
-  free(rob_u);
-  free(rob_v);
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(orig_uv)
+  free_aligned_buffer_16(roa_y)
+  free_aligned_buffer_16(roa_u)
+  free_aligned_buffer_16(roa_v)
+  free_aligned_buffer_16(rob_y)
+  free_aligned_buffer_16(rob_u)
+  free_aligned_buffer_16(rob_v)
 
   EXPECT_EQ(0, y_err + uv_err);
 }

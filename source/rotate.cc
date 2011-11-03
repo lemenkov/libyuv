@@ -43,7 +43,6 @@ typedef void (*rotate_wx8_func)(const uint8*, int, uint8*, int, int);
 typedef void (*rotate_wxh_func)(const uint8*, int, uint8*, int, int, int);
 
 #ifdef __ARM_NEON__
-extern "C" {
 #define HAS_REVERSE_LINE_NEON
 void ReverseLine_NEON(const uint8* src, uint8* dst, int width);
 #define HAS_REVERSE_LINE_UV_NEON
@@ -58,7 +57,6 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width);
-}  // extern "C"
 #endif
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
@@ -784,10 +782,7 @@ void TransposePlane(const uint8* src, int src_stride,
   rotate_wxh_func TransposeWxH;
 
 #if defined(HAS_TRANSPOSE_WX8_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (width % 8 == 0) &&
-      IS_ALIGNED(src, 8) && (src_stride % 8 == 0) &&
-      IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
     TransposeWx8 = TransposeWx8_NEON;
     TransposeWxH = TransposeWxH_C;
   } else
@@ -917,10 +912,7 @@ void RotatePlane180(const uint8* src, int src_stride,
   reverse_func ReverseLine;
 
 #if defined(HAS_REVERSE_LINE_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
-      IS_ALIGNED(dst, 16) && (dst_stride % 16 == 0)) {
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
     ReverseLine = ReverseLine_NEON;
   } else
 #endif
@@ -1145,11 +1137,7 @@ void RotateUV180(const uint8* src, int src_stride,
   reverse_uv_func ReverseLine;
 
 #if defined(HAS_REVERSE_LINE_UV_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
-      IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
-      IS_ALIGNED(dst_b, 8) && (dst_stride_b % 8 == 0) ) {
+  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
     ReverseLine = ReverseLineUV_NEON;
   } else
 #endif
