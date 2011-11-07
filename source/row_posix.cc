@@ -793,6 +793,7 @@ void FastConvertYToARGBRow_MMX(const uint8* y_buf,
 
 #endif
 
+#ifdef HAS_ARGBTOYROW_SSSE3
 void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   ABGRToARGBRow_SSSE3(src_argb, row, pix);
@@ -804,6 +805,7 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   BGRAToARGBRow_SSSE3(src_argb, row, pix);
   ARGBToYRow_SSSE3(row, dst_y, pix);
 }
+#endif
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 void ABGRToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
