@@ -14,11 +14,14 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
+#ifdef __ANDROID__
+#include <cpu-features.h>
+#endif
 
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
-  __asm__ volatile (
+  asm volatile (
     "mov %%ebx, %%edi\n"
     "cpuid\n"
     "xchg %%edi, %%ebx\n"
@@ -28,7 +31,7 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 }
 #elif defined(__i386__) || defined(__x86_64__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
-  __asm__ volatile (
+  asm volatile (
     "cpuid\n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type)
@@ -49,6 +52,10 @@ static void InitCpuFlags() {
   cpu_info_ = (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0) |
               (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
               kCpuInitialized;
+#elif defined(__ANDROID__) && defined(__ARM_NEON__)
+  features = android_getCpuFeatures();
+  cpu_info_ = (features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
+              kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
@@ -61,14 +68,14 @@ static void InitCpuFlags() {
 
 void MaskCpuFlags(int enable_flags) {
   InitCpuFlags();
-  cpu_info_ &= enable_flags;
+  cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
 }
 
 bool TestCpuFlag(int flag) {
   if (0 == cpu_info_) {
     InitCpuFlags();
   }
-  return cpu_info_ & flag ? true : false;
+  return (cpu_info_ & flag) ? true : false;
 }
 
 }  // namespace libyuv

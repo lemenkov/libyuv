@@ -13,7 +13,11 @@
 #include "conversion_tables.h"
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
+#include "libyuv/format_conversion.h"
+#include "libyuv/planar_functions.h"
+#include "libyuv/rotate.h"
 #include "row.h"
+#include "video_common.h"
 
 //#define SCALEOPT //Currently for windows only. June 2010
 
@@ -650,7 +654,7 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_ARGBTOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -661,7 +665,7 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
     ARGBToYRow = ARGBToYRow_C;
   }
 #if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
@@ -703,7 +707,7 @@ int BGRAToI420(const uint8* src_frame, int src_stride_frame,
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_BGRATOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -714,7 +718,7 @@ int BGRAToI420(const uint8* src_frame, int src_stride_frame,
     ARGBToYRow = BGRAToYRow_C;
   }
 #if defined(HAS_BGRATOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
@@ -756,7 +760,7 @@ int ABGRToI420(const uint8* src_frame, int src_stride_frame,
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_ABGRTOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -767,7 +771,7 @@ int ABGRToI420(const uint8* src_frame, int src_stride_frame,
     ARGBToYRow = ABGRToYRow_C;
   }
 #if defined(HAS_ABGRTOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
@@ -809,7 +813,7 @@ int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_RGB24TOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -820,7 +824,7 @@ int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
     ARGBToYRow = RGB24ToYRow_C;
   }
 #if defined(HAS_RGB24TOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
@@ -862,7 +866,7 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #if defined(HAS_RAWTOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -873,7 +877,7 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
     ARGBToYRow = RAWToYRow_C;
   }
 #if defined(HAS_RAWTOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_frame, 16) && (src_stride_frame % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
@@ -897,6 +901,165 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
   if (height & 1) {
     ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
     ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+// Convert camera sample to I420 with cropping, rotation and vertical flip.
+int ConvertToI420(const uint8* sample, size_t sample_size,
+                  uint8* y, int y_stride,
+                  uint8* u, int u_stride,
+                  uint8* v, int v_stride,
+                  int horiz_crop, int vert_crop,
+                  int w, int h,
+                  int dw, int idh,
+                  RotationMode rotation,
+                  uint32 format) {
+  int aw = (w + 1) & ~1;
+  const uint8* src;
+  const uint8* src_uv;
+  int abs_h = (h < 0) ? -h : h;
+  switch (format) {
+    // Single plane formats
+    case FOURCC_YUY2:
+      src = sample + (aw * vert_crop + horiz_crop) * 2 ;
+      YUY2ToI420(src, aw * 2,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_UYVY:
+      src = sample + (aw * vert_crop + horiz_crop) * 2;
+      UYVYToI420(src, aw * 2,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_24BG:
+      src = sample + (w * vert_crop + horiz_crop) * 3;
+      RGB24ToI420(src, w * 3,
+                  y, y_stride,
+                  u, u_stride,
+                  v, v_stride,
+                  dw, idh);
+      break;
+    case FOURCC_RAW:
+      src = sample + (w * vert_crop + horiz_crop) * 3;
+      RAWToI420(src, w * 3,
+                y, y_stride,
+                u, u_stride,
+                v, v_stride,
+                dw, idh);
+      break;
+    case FOURCC_ARGB:
+      src = sample + (w * vert_crop + horiz_crop) * 4;
+      ARGBToI420(src, w * 4,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_BGRA:
+      src = sample + (w * vert_crop + horiz_crop) * 4;
+      BGRAToI420(src, w * 4,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_ABGR:
+      src = sample + (w * vert_crop + horiz_crop) * 4;
+      ABGRToI420(src, w * 4,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_BGGR:
+    case FOURCC_RGGB:
+    case FOURCC_GRBG:
+    case FOURCC_GBRG:
+      // TODO(fbarchard): We could support cropping by odd numbers by
+      // adjusting fourcc.
+      src = sample + (w * vert_crop + horiz_crop);
+      BayerRGBToI420(src, w, format,
+                     y, y_stride, u, u_stride, v, v_stride,
+                     dw, idh);
+      break;
+    // Biplanar formats
+    case FOURCC_M420:
+      src = sample + (w * vert_crop) * 12 / 8 + horiz_crop;
+      M420ToI420(src, w,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    case FOURCC_NV12:
+      src = sample + (w * vert_crop + horiz_crop);
+      src_uv = sample + aw * (h + vert_crop / 2) + horiz_crop;
+      NV12ToI420Rotate(src, w,
+                       src_uv, aw,
+                       y, y_stride,
+                       u, u_stride,
+                       v, v_stride,
+                       dw, idh, rotation);
+      break;
+    case FOURCC_NV21:
+      src = sample + (w * vert_crop + horiz_crop);
+      src_uv = sample + aw * (h + vert_crop / 2) + horiz_crop;
+      // Call NV12 but with u and v parameters swapped.
+      NV12ToI420Rotate(src, w,
+                       src_uv, aw,
+                       y, y_stride,
+                       u, u_stride,
+                       v, v_stride,
+                       dw, idh, rotation);
+      break;
+    case FOURCC_Q420:
+      src = sample + (w + aw * 2) * vert_crop + horiz_crop;
+      src_uv = sample + (w + aw * 2) * vert_crop + w + horiz_crop * 2;
+      Q420ToI420(src, w * 3,
+                 src_uv, w * 3,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh);
+      break;
+    // Triplanar formats
+    case FOURCC_I420:
+    case FOURCC_YV12: {
+      const uint8* src_y = sample + (w * vert_crop + horiz_crop);
+      const uint8* src_u;
+      const uint8* src_v;
+      int halfwidth = (w + 1) / 2;
+      int halfheight = (abs_h + 1) / 2;
+      if (format == FOURCC_I420) {
+        src_u = sample + w * abs_h +
+            (halfwidth * vert_crop + horiz_crop) / 2;
+        src_v = sample + w * abs_h +
+            halfwidth * (halfheight + vert_crop / 2) + horiz_crop / 2;
+      } else {
+        src_v = sample + w * abs_h +
+            (halfwidth * vert_crop + horiz_crop) / 2;
+        src_u = sample + w * abs_h +
+            halfwidth * (halfheight + vert_crop / 2) + horiz_crop / 2;
+      }
+      I420Rotate(src_y, w,
+                 src_u, halfwidth,
+                 src_v, halfwidth,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dw, idh, rotation);
+      break;
+    }
+    // Formats not supported
+    case FOURCC_MJPG:
+    default:
+      return -1;  // unknown fourcc - return failure code.
   }
   return 0;
 }

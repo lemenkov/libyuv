@@ -27,7 +27,9 @@ static const int kCpuInitialized = 8;
 bool TestCpuFlag(int flag);
 
 // For testing, allow CPU flags to be disabled.
-// ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.  -1 to enable all.
+// ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.
+// -1 to enable all cpu specific optimizations.
+// 0 to disable all cpu specific optimizations.
 void MaskCpuFlags(int enable_flags);
 
 }  // namespace libyuv

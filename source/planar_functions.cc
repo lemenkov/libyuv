@@ -26,11 +26,11 @@ static void SplitUV_NEON(const uint8* src_uv,
   __asm__ volatile
   (
     "1:\n"
-    "vld2.u8    {q0,q1}, [%0]!    \n"  // load 16 pairs of UV
-    "vst1.u8    {q0}, [%1]!       \n"  // store U
-    "vst1.u8    {q1}, [%2]!       \n"  // Store V
-    "subs       %3, %3, #16       \n"  // 16 processed per loop
-    "bhi        1b                \n"
+    "vld2.u8    {q0,q1}, [%0]!\n"  // load 16 pairs of UV
+    "vst1.u8    {q0}, [%1]!\n"  // store U
+    "vst1.u8    {q1}, [%2]!\n"  // Store V
+    "subs       %3, %3, #16\n"  // 16 processed per loop
+    "bhi        1b\n"
     : "+r"(src_uv),
       "+r"(dst_u),
       "+r"(dst_v),
@@ -48,16 +48,6 @@ static void SplitUV_NEON(const uint8* src_uv,
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #endif
 
-// Shuffle table for converting ABGR to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskABGRToARGB[16]) = {
-  2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
-};
-
-// Shuffle table for converting BGRA to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) = {
-  3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
-};
-
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
@@ -69,8 +59,8 @@ static void SplitUV_SSE2(const uint8* src_uv,
     mov        edx, [esp + 4 + 8]    // dst_u
     mov        edi, [esp + 4 + 12]   // dst_v
     mov        ecx, [esp + 4 + 16]   // pix
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
@@ -78,8 +68,8 @@ static void SplitUV_SSE2(const uint8* src_uv,
     lea        eax,  [eax + 32]
     movdqa     xmm2, xmm0
     movdqa     xmm3, xmm1
-    pand       xmm0, xmm7   // even bytes
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5   // even bytes
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
@@ -101,16 +91,16 @@ static void SplitUV_SSE2(const uint8* src_uv,
 static void SplitUV_SSE2(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
  asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
   "movdqa     %%xmm0,%%xmm2\n"
   "movdqa     %%xmm1,%%xmm3\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,(%1)\n"
   "lea        0x10(%1),%1\n"
@@ -126,7 +116,10 @@ static void SplitUV_SSE2(const uint8* src_uv,
     "+r"(dst_v),      // %2
     "+r"(pix)         // %3
   :
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
 );
 }
 #endif
@@ -196,15 +189,15 @@ int I420Copy(const uint8* src_y, int src_stride_y,
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   __asm__ volatile
   (
-    "vdup.u32   q0, %2            \n"  // duplicate 4 ints
+    "vdup.u32   q0, %2\n"  // duplicate 4 ints
     "1:\n"
-    "vst1.u32   {q0}, [%0]!       \n"  // store
-    "subs       %1, %1, #16       \n"  // 16 processed per loop
-    "bhi        1b                \n"
+    "vst1.u32   {q0}, [%0]!\n"  // store
+    "subs       %1, %1, #16\n"  // 16 processed per loop
+    "bhi        1b\n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
   : "r"(v32)    // %2
-  : "q0", "memory"
+  : "q0", "memory", "cc"
   );
 }
 
@@ -214,12 +207,12 @@ __declspec(naked)
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
   __asm {
     mov        eax, [esp + 4]    // dst
-    movd       xmm7, [esp + 8]   // v32
+    movd       xmm5, [esp + 8]   // v32
     mov        ecx, [esp + 12]   // count
-    pshufd     xmm7, xmm7, 0
+    pshufd     xmm5, xmm5, 0
 
   wloop:
-    movdqa     [eax], xmm7
+    movdqa     [eax], xmm5
     lea        eax, [eax + 16]
     sub        ecx, 16
     ja         wloop
@@ -233,17 +226,20 @@ static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
 #define HAS_SETROW_SSE2
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
   asm volatile(
-  "movd       %2, %%xmm7\n"
-  "pshufd     $0x0,%%xmm7,%%xmm7\n"
+  "movd       %2, %%xmm5\n"
+  "pshufd     $0x0,%%xmm5,%%xmm5\n"
 "1:"
-  "movdqa     %%xmm7,(%0)\n"
+  "movdqa     %%xmm5,(%0)\n"
   "lea        0x10(%0),%0\n"
   "sub        $0x10,%1\n"
   "ja         1b\n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
   : "r"(v32)    // %2
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm5"
+#endif
 );
 }
 #endif
@@ -257,13 +253,13 @@ static void I420SetPlane(uint8* dst_y, int dst_stride_y,
                          int value) {
   void (*SetRow)(uint8* dst, uint32 value, int pix);
 #if defined(HAS_SETROW_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+  if (TestCpuFlag(kCpuHasNEON) &&
       (width % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
     SetRow = SetRow32_NEON;
   } else
 #elif defined(HAS_SETROW_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
     SetRow = SetRow32_SSE2;
@@ -418,7 +414,7 @@ static int X420ToI420(const uint8* src_y,
   int halfwidth = (width + 1) >> 1;
   void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITUV_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON) &&
+  if (TestCpuFlag(kCpuHasNEON) &&
       (halfwidth % 16 == 0) &&
       IS_ALIGNED(src_uv, 16) && (src_stride_uv % 16 == 0) &&
       IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
@@ -426,7 +422,7 @@ static int X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_NEON;
   } else
 #elif defined(HAS_SPLITUV_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (halfwidth % 16 == 0) &&
       IS_ALIGNED(src_uv, 16) && (src_stride_uv % 16 == 0) &&
       IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
@@ -510,8 +506,8 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     mov        esi, [esp + 8 + 12]   // dst_u
     mov        edi, [esp + 8 + 16]   // dst_v
     mov        ecx, [esp + 8 + 20]   // pix
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
@@ -519,8 +515,8 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     lea        eax,  [eax + 32]
     movdqa     xmm2, xmm0
     movdqa     xmm3, xmm1
-    pand       xmm2, xmm7   // even bytes are Y
-    pand       xmm3, xmm7
+    pand       xmm2, xmm5   // even bytes are Y
+    pand       xmm3, xmm5
     packuswb   xmm2, xmm3
     movdqa     [edx], xmm2
     lea        edx, [edx + 16]
@@ -528,7 +524,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
-    pand       xmm0, xmm7  // U
+    pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
     movq       qword ptr [esi], xmm0
     lea        esi, [esi + 8]
@@ -551,16 +547,16 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
   "movdqa     %%xmm0,%%xmm2\n"
   "movdqa     %%xmm1,%%xmm3\n"
-  "pand       %%xmm7,%%xmm2\n"
-  "pand       %%xmm7,%%xmm3\n"
+  "pand       %%xmm5,%%xmm2\n"
+  "pand       %%xmm5,%%xmm3\n"
   "packuswb   %%xmm3,%%xmm2\n"
   "movdqa     %%xmm2,(%1)\n"
   "lea        0x10(%1),%1\n"
@@ -568,7 +564,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
   "psrlw      $0x8,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm5,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
   "movq       %%xmm0,(%2)\n"
   "lea        0x8(%2),%2\n"
@@ -584,7 +580,10 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
     "+r"(dst_v),       // %3
     "+r"(pix)          // %4
   :
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
 );
 }
 #endif
@@ -626,7 +625,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_yuy2, 16) && (src_stride_yuy2 % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
@@ -662,15 +661,15 @@ void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
     mov        eax, [esp + 4]    // src_yuy2
     mov        edx, [esp + 8]    // dst_y
     mov        ecx, [esp + 12]   // pix
-    pcmpeqb    xmm7, xmm7        // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5        // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm7   // even bytes are Y
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5   // even bytes are Y
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
@@ -691,8 +690,8 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     mov        edx, [esp + 8 + 12]   // dst_u
     mov        edi, [esp + 8 + 16]   // dst_v
     mov        ecx, [esp + 8 + 20]   // pix
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
@@ -706,7 +705,7 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
-    pand       xmm0, xmm7  // U
+    pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
@@ -758,8 +757,8 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     mov        edx, [esp + 8 + 12]   // dst_u
     mov        edi, [esp + 8 + 16]   // dst_v
     mov        ecx, [esp + 8 + 20]   // pix
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
 
   wloop:
     movdqa     xmm0, [eax]
@@ -769,11 +768,11 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     lea        eax,  [eax + 32]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
-    pand       xmm0, xmm7   // UYVY -> UVUV
-    pand       xmm1, xmm7
+    pand       xmm0, xmm5   // UYVY -> UVUV
+    pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     movdqa     xmm1, xmm0
-    pand       xmm0, xmm7  // U
+    pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
@@ -797,14 +796,14 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
 static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
                                 uint8* dst_y, int pix) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "lea        0x20(%0),%0\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,(%1)\n"
   "lea        0x10(%1),%1\n"
@@ -814,15 +813,18 @@ static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
 );
 }
 
 static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
                                  uint8* dst_u, uint8* dst_y, int pix) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
@@ -835,7 +837,7 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
   "psrlw      $0x8,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm5,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
   "movq       %%xmm0,(%1)\n"
   "lea        0x8(%1),%1\n"
@@ -850,7 +852,10 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_y),       // %2
     "+r"(pix)          // %3
   : "r"(static_cast<intptr_t>(stride_yuy2))  // %4
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
 );
 }
 #define HAS_UYVYTOI420ROW_SSE2
@@ -872,15 +877,18 @@ static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
 );
 }
 
 static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
                                  uint8* dst_u, uint8* dst_y, int pix) {
   asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "psrlw      $0x8,%%xmm7\n"
+  "pcmpeqb    %%xmm5,%%xmm5\n"
+  "psrlw      $0x8,%%xmm5\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
@@ -889,11 +897,11 @@ static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
   "lea        0x20(%0),%0\n"
   "pavgb      %%xmm2,%%xmm0\n"
   "pavgb      %%xmm3,%%xmm1\n"
-  "pand       %%xmm7,%%xmm0\n"
-  "pand       %%xmm7,%%xmm1\n"
+  "pand       %%xmm5,%%xmm0\n"
+  "pand       %%xmm5,%%xmm1\n"
   "packuswb   %%xmm1,%%xmm0\n"
   "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm7,%%xmm0\n"
+  "pand       %%xmm5,%%xmm0\n"
   "packuswb   %%xmm0,%%xmm0\n"
   "movq       %%xmm0,(%1)\n"
   "lea        0x8(%1),%1\n"
@@ -908,7 +916,10 @@ static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_y),       // %2
     "+r"(pix)          // %3
   : "r"(static_cast<intptr_t>(stride_uyvy))  // %4
-  : "memory"
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
 );
 }
 #endif
@@ -975,7 +986,7 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
                          uint8* dst_y, int pix);
 #if defined(HAS_YUY2TOI420ROW_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_yuy2, 16) && (src_stride_yuy2 % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
@@ -1022,7 +1033,7 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   void (*UYVYToI420RowY)(const uint8* src_uyvy,
                          uint8* dst_y, int pix);
 #if defined(HAS_UYVYTOI420ROW_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_uyvy, 16) && (src_stride_uyvy % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
@@ -1053,7 +1064,6 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
 }
 
 // Convert I420 to ARGB.
-// TODO(fbarchard): Add SSE2 version and supply C version for fallback.
 int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -1065,8 +1075,34 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 4 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow4_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 2 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
+  if (width % 2 == 0) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_MMX;
+  } else
+#endif
+  {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
+  }
   for (int y = 0; y < height; ++y) {
-    FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
+    FastConvertYUVToARGBRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
@@ -1074,7 +1110,7 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
       src_v += src_stride_v;
     }
   }
-  // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
+  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
   EMMS();
   return 0;
 }
@@ -1091,6 +1127,25 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  void (*FastConvertYUVToBGRARow)(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+#if defined(HAS_FASTCONVERTYUVTOBGRAROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 2 == 0)) {
+    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOBGRAROW_MMX)
+  if (width % 2 == 0) {
+    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_MMX;
+  } else
+#endif
+  {
+    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_C;
+  }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToBGRARow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -1104,7 +1159,7 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Convert I420 to BGRA.
+// Convert I420 to ABGR.
 int I420ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -1115,6 +1170,25 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
     height = -height;
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToABGRRow)(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+#if defined(HAS_FASTCONVERTYUVTOABGRROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 2 == 0)) {
+    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOABGRROW_MMX)
+  if (width % 2 == 0) {
+    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_MMX;
+  } else
+#endif
+  {
+    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_C;
   }
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToABGRRow(src_y, src_u, src_v, dst_argb, width);
@@ -1141,14 +1215,33 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 2 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
+  if (width % 2 == 0) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_MMX;
+  } else
+#endif
+  {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
+  }
   for (int y = 0; y < height; ++y) {
-    FastConvertYUVToRGB32Row(src_y, src_u, src_v, dst_argb, width);
+    FastConvertYUVToARGBRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     src_u += src_stride_u;
     src_v += src_stride_v;
   }
-  // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
+  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
   EMMS();
   return 0;
 }
@@ -1165,14 +1258,31 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  void (*FastConvertYUV444ToARGBRow)(const uint8* y_buf,
+                                      const uint8* u_buf,
+                                      const uint8* v_buf,
+                                      uint8* rgb_buf,
+                                      int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
+    FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_MMX;
+#else
+  {
+    FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_C;
+  }
+#endif
   for (int y = 0; y < height; ++y) {
-    FastConvertYUV444ToRGB32Row(src_y, src_u, src_v, dst_argb, width);
+    FastConvertYUV444ToARGBRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     src_u += src_stride_u;
     src_v += src_stride_v;
   }
-  // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
+  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
   EMMS();
   return 0;
 }
@@ -1187,176 +1297,32 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  void (*FastConvertYToARGBRow)(const uint8* y_buf,
+                                 uint8* rgb_buf,
+                                 int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 2 == 0) &&
+      IS_ALIGNED(dst_argb, 8) && (dst_stride_argb % 8 == 0)) {
+    FastConvertYToARGBRow = FastConvertYToARGBRow_SSE2;
+  } else
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
+  if (width % 2 == 0) {
+    FastConvertYToARGBRow = FastConvertYToARGBRow_MMX;
+  } else
+#endif
+  {
+    FastConvertYToARGBRow = FastConvertYToARGBRow_C;
+  }
   for (int y = 0; y < height; ++y) {
-    FastConvertYToRGB32Row(src_y, dst_argb, width);
+    FastConvertYToARGBRow(src_y, dst_argb, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
   }
-  // MMX used for FastConvertYUVToRGB32Row requires an emms instruction.
+  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
   EMMS();
   return 0;
-}
-
-// TODO(fbarchard): 64 bit version
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
-
-#define HAS_I400TOARGBROW_SSE2
-__declspec(naked)
-static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
-  __asm {
-    mov        eax, [esp + 4]        // src_y
-    mov        edx, [esp + 8]        // dst_argb
-    mov        ecx, [esp + 12]       // pix
-    pcmpeqb    xmm7, xmm7            // generate mask 0xff000000
-    pslld      xmm7, 24
-
-  wloop:
-    movq       xmm0, qword ptr [eax]
-    lea        eax,  [eax + 8]
-    punpcklbw  xmm0, xmm0
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm0
-    punpckhwd  xmm1, xmm1
-    por        xmm0, xmm7
-    por        xmm1, xmm7
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
-    lea        edx, [edx + 32]
-    sub        ecx, 8
-    ja         wloop
-    ret
-  }
-}
-
-#define HAS_ABGRTOARGBROW_SSSE3
-__declspec(naked)
-static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
-                                int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_abgr
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm7, _kShuffleMaskABGRToARGB
-
- convertloop :
-    movdqa    xmm0, [eax]
-    lea       eax, [eax + 16]
-    pshufb    xmm0, xmm7
-    movdqa    [edx], xmm0
-    lea       edx, [edx + 16]
-    sub       ecx, 4
-    ja        convertloop
-    ret
-  }
-}
-
-#define HAS_BGRATOARGBROW_SSSE3
-__declspec(naked)
-static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
-                                int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_bgra
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm7, _kShuffleMaskBGRAToARGB
-
- convertloop :
-    movdqa    xmm0, [eax]
-    lea       eax, [eax + 16]
-    pshufb    xmm0, xmm7
-    movdqa    [edx], xmm0
-    lea       edx, [edx + 16]
-    sub       ecx, 4
-    ja        convertloop
-    ret
-  }
-}
-
-
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-
-// TODO(yuche): consider moving ARGB related codes to a separate file.
-#define HAS_I400TOARGBROW_SSE2
-static void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm7,%%xmm7\n"
-  "pslld      $0x18,%%xmm7\n"
-"1:"
-  "movq       (%0),%%xmm0\n"
-  "lea        0x8(%0),%0\n"
-  "punpcklbw  %%xmm0,%%xmm0\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "punpcklwd  %%xmm0,%%xmm0\n"
-  "punpckhwd  %%xmm1,%%xmm1\n"
-  "por        %%xmm7,%%xmm0\n"
-  "por        %%xmm7,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "lea        0x20(%1),%1\n"
-  "sub        $0x8,%2\n"
-  "ja         1b\n"
-  : "+r"(src_y),     // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  :
-  : "memory"
-);
-}
-
-#define HAS_ABGRTOARGBROW_SSSE3
-static void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb,
-                                int pix) {
-  asm volatile(
-  "movdqa     (%3),%%xmm7\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "lea        0x10(%0),%0\n"
-  "pshufb     %%xmm7,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x4,%2\n"
-  "ja         1b\n"
-  : "+r"(src_abgr),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "r"(kShuffleMaskABGRToARGB)  // %3
-  : "memory"
-);
-}
-
-#define HAS_BGRATOARGBROW_SSSE3
-static void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb,
-                                int pix) {
-  asm volatile(
-  "movdqa     (%3),%%xmm7\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "lea        0x10(%0),%0\n"
-  "pshufb     %%xmm7,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x4,%2\n"
-  "ja         1b\n"
-  : "+r"(src_bgra),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "r"(kShuffleMaskBGRAToARGB)  // %3
-  : "memory"
-);
-}
-
-#endif
-
-static void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
-  // Copy a Y to RGB.
-  for (int x = 0; x < pix; ++x) {
-    uint8 y = src_y[0];
-    dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
-    dst_argb[3] = 255u;
-    dst_argb += 4;
-    ++src_y;
-  }
 }
 
 // Convert I400 to ARGB.
@@ -1370,7 +1336,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   }
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix);
 #if defined(HAS_I400TOARGBROW_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 8 == 0) &&
       IS_ALIGNED(src_y, 8) && (src_stride_y % 8 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1389,22 +1355,6 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-static void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    // To support in-place conversion.
-    uint8 r = src_abgr[0];
-    uint8 g = src_abgr[1];
-    uint8 b = src_abgr[2];
-    uint8 a = src_abgr[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_abgr += 4;
-  }
-}
-
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -1415,7 +1365,7 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
   }
 void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix);
 #if defined(HAS_ABGRTOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_abgr, 16) && (src_stride_abgr % 16 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1434,22 +1384,6 @@ void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix);
   return 0;
 }
 
-static void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    // To support in-place conversion.
-    uint8 a = src_bgra[0];
-    uint8 r = src_bgra[1];
-    uint8 g = src_bgra[2];
-    uint8 b = src_bgra[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_bgra += 4;
-  }
-}
-
 // Convert BGRA to ARGB.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
@@ -1461,7 +1395,7 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   }
   void (*BGRAToARGBRow)(const uint8* src_bgra, uint8* dst_argb, int pix);
 #if defined(HAS_BGRATOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_bgra, 16) && (src_stride_bgra % 16 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1491,7 +1425,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
   }
 void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
 #if defined(HAS_ARGBTOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_argb, 16) && (src_stride_argb % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -1522,7 +1456,7 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
   }
   void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix);
 #if defined(HAS_RAWTOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_raw, 16) && (src_stride_raw % 16 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1552,7 +1486,7 @@ int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
   }
   void (*BG24ToARGBRow)(const uint8* src_bg24, uint8* dst_argb, int pix);
 #if defined(HAS_BG24TOARGBROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src_bg24, 16) && (src_stride_bg24 % 16 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {

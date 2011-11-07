@@ -14,8 +14,6 @@
 #include "video_common.h"
 #include "row.h"
 
-#define kMaxStride (2048 * 4)
-
 namespace libyuv {
 
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
@@ -168,7 +166,7 @@ static void BayerRowBG(const uint8* src_bayer0, int src_stride_bayer,
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 g = src_bayer0[1];
   uint8 r = src_bayer1[1];
-  for (int x = 0; x < (pix - 2); x += 2) {
+  for (int x = 0; x < pix - 3; x += 2) {
     dst_rgb[0] = src_bayer0[0];
     dst_rgb[1] = AVG(g, src_bayer0[1]);
     dst_rgb[2] = AVG(r, src_bayer1[1]);
@@ -187,10 +185,12 @@ static void BayerRowBG(const uint8* src_bayer0, int src_stride_bayer,
   dst_rgb[1] = AVG(g, src_bayer0[1]);
   dst_rgb[2] = AVG(r, src_bayer1[1]);
   dst_rgb[3] = 255U;
-  dst_rgb[4] = src_bayer0[0];
-  dst_rgb[5] = src_bayer0[1];
-  dst_rgb[6] = src_bayer1[1];
-  dst_rgb[7] = 255U;
+  if (pix & 1) {
+    dst_rgb[4] = src_bayer0[0];
+    dst_rgb[5] = src_bayer0[1];
+    dst_rgb[6] = src_bayer1[1];
+    dst_rgb[7] = 255U;
+  }
 }
 
 static void BayerRowRG(const uint8* src_bayer0, int src_stride_bayer,
@@ -198,7 +198,7 @@ static void BayerRowRG(const uint8* src_bayer0, int src_stride_bayer,
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 g = src_bayer0[1];
   uint8 b = src_bayer1[1];
-  for (int x = 0; x < (pix - 2); x += 2) {
+  for (int x = 0; x < pix - 3; x += 2) {
     dst_rgb[0] = AVG(b, src_bayer1[1]);
     dst_rgb[1] = AVG(g, src_bayer0[1]);
     dst_rgb[2] = src_bayer0[0];
@@ -217,17 +217,19 @@ static void BayerRowRG(const uint8* src_bayer0, int src_stride_bayer,
   dst_rgb[1] = AVG(g, src_bayer0[1]);
   dst_rgb[2] = src_bayer0[0];
   dst_rgb[3] = 255U;
-  dst_rgb[4] = src_bayer1[1];
-  dst_rgb[5] = src_bayer0[1];
-  dst_rgb[6] = src_bayer0[0];
-  dst_rgb[7] = 255U;
+  if (pix & 1) {
+    dst_rgb[4] = src_bayer1[1];
+    dst_rgb[5] = src_bayer0[1];
+    dst_rgb[6] = src_bayer0[0];
+    dst_rgb[7] = 255U;
+  }
 }
 
 static void BayerRowGB(const uint8* src_bayer0, int src_stride_bayer,
                        uint8* dst_rgb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 b = src_bayer0[1];
-  for (int x = 0; x < (pix - 2); x += 2) {
+  for (int x = 0; x < pix - 3; x += 2) {
     dst_rgb[0] = AVG(b, src_bayer0[1]);
     dst_rgb[1] = src_bayer0[0];
     dst_rgb[2] = src_bayer1[0];
@@ -245,17 +247,19 @@ static void BayerRowGB(const uint8* src_bayer0, int src_stride_bayer,
   dst_rgb[1] = src_bayer0[0];
   dst_rgb[2] = src_bayer1[0];
   dst_rgb[3] = 255U;
-  dst_rgb[4] = src_bayer0[1];
-  dst_rgb[5] = src_bayer0[0];
-  dst_rgb[6] = src_bayer1[0];
-  dst_rgb[7] = 255U;
+  if (pix & 1) {
+    dst_rgb[4] = src_bayer0[1];
+    dst_rgb[5] = src_bayer0[0];
+    dst_rgb[6] = src_bayer1[0];
+    dst_rgb[7] = 255U;
+  }
 }
 
 static void BayerRowGR(const uint8* src_bayer0, int src_stride_bayer,
                        uint8* dst_rgb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 r = src_bayer0[1];
-  for (int x = 0; x < (pix - 2); x += 2) {
+  for (int x = 0; x < pix - 3; x += 2) {
     dst_rgb[0] = src_bayer1[0];
     dst_rgb[1] = src_bayer0[0];
     dst_rgb[2] = AVG(r, src_bayer0[1]);
@@ -273,10 +277,12 @@ static void BayerRowGR(const uint8* src_bayer0, int src_stride_bayer,
   dst_rgb[1] = src_bayer0[0];
   dst_rgb[2] = AVG(r, src_bayer0[1]);
   dst_rgb[3] = 255U;
-  dst_rgb[4] = src_bayer1[0];
-  dst_rgb[5] = src_bayer0[0];
-  dst_rgb[6] = src_bayer0[1];
-  dst_rgb[7] = 255U;
+  if (pix & 1) {
+    dst_rgb[4] = src_bayer1[0];
+    dst_rgb[5] = src_bayer0[0];
+    dst_rgb[6] = src_bayer0[1];
+    dst_rgb[7] = 255U;
+  }
 }
 
 // Converts any Bayer RGB format to ARGB.
@@ -315,7 +321,7 @@ int BayerRGBToARGB(const uint8* src_bayer, int src_stride_bayer,
       break;
   }
 
-  for (int y = 0; y < (height - 1); y += 2) {
+  for (int y = 0; y < height - 1; y += 2) {
     BayerRow0(src_bayer, src_stride_bayer, dst_rgb, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
         dst_rgb + dst_stride_rgb, width);
@@ -403,7 +409,7 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
       break;
   }
 
-  for (int y = 0; y < (height - 1); y += 2) {
+  for (int y = 0; y < height - 1; y += 2) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
               row + kMaxStride, width);

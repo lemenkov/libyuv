@@ -13,6 +13,7 @@
 #define INCLUDE_LIBYUV_CONVERT_H_
 
 #include "libyuv/basic_types.h"
+#include "libyuv/rotate.h"
 
 namespace libyuv {
 
@@ -92,6 +93,17 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  uint8* dst_frame, int dst_stride_frame,
                  int width, int height);
 
-} //  namespace libyuv
+// Convert camera sample to I420 with cropping, rotation and vertical flip.
+int ConvertToI420(const uint8* src_frame, size_t src_size,
+                  uint8* dst_y, int dst_stride_y,
+                  uint8* dst_u, int dst_stride_u,
+                  uint8* dst_v, int dst_stride_v,
+                  int horiz_crop, int vert_crop,
+                  int w, int h,
+                  int dw, int idh,
+                  RotationMode rotation,
+                  uint32 format);
+
+}  // namespace libyuv
 
 #endif // INCLUDE_LIBYUV_CONVERT_H_
