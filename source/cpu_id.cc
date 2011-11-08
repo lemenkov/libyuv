@@ -53,8 +53,8 @@ static void InitCpuFlags() {
               (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
               kCpuInitialized;
 #elif defined(__ANDROID__) && defined(__ARM_NEON__)
-  features = android_getCpuFeatures();
-  cpu_info_ = (features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
+  uint64_t features = android_getCpuFeatures();
+  cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
               kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
