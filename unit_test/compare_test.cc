@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-using namespace libyuv;
+namespace libyuv {
 
 TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   const int max_width = 4096*3;
@@ -327,4 +327,6 @@ TEST_F(libyuvTest, Ssim) {
 
   free_aligned_buffer_16(src_a)
   free_aligned_buffer_16(src_b)
+}
+
 }

@@ -111,7 +111,7 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 4 == 0) &&
       IS_ALIGNED(src_rgb, 16) && (src_stride_rgb % 16 == 0) &&
       IS_ALIGNED(dst_bayer, 4) && (dst_stride_bayer % 4 == 0)) {
@@ -365,7 +365,7 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
 
 #if defined(HAS_ARGBTOYROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
       IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
@@ -376,7 +376,7 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
     ARGBToYRow = ARGBToYRow_C;
   }
 #if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
       IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&

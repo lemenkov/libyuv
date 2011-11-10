@@ -40,12 +40,11 @@ static double get_time()
 #include <sys/time.h>
 #include <sys/resource.h>
 
-static double get_time()
-{
-    struct timeval t;
-    struct timezone tzp;
-    gettimeofday(&t, &tzp);
-    return t.tv_sec + t.tv_usec*1e-6;
+static double get_time() {
+  struct timeval t;
+  struct timezone tzp;
+  gettimeofday(&t, &tzp);
+  return t.tv_sec + t.tv_usec*1e-6;
 }
 
 #endif
@@ -53,8 +52,6 @@ static double get_time()
 class libyuvTest : public ::testing::Test {
  protected:
   libyuvTest();
-  virtual void SetUp();
-  virtual void TearDown();
 
   const int _rotate_max_w;
   const int _rotate_max_h;

@@ -782,13 +782,13 @@ void TransposePlane(const uint8* src, int src_stride,
   rotate_wxh_func TransposeWxH;
 
 #if defined(HAS_TRANSPOSE_WX8_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     TransposeWx8 = TransposeWx8_NEON;
     TransposeWxH = TransposeWxH_C;
   } else
 #endif
 #if defined(HAS_TRANSPOSE_WX8_FAST_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
@@ -797,7 +797,7 @@ void TransposePlane(const uint8* src, int src_stride,
   } else
 #endif
 #if defined(HAS_TRANSPOSE_WX8_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 8 == 0) &&
       IS_ALIGNED(src, 8) && (src_stride % 8 == 0) &&
       IS_ALIGNED(dst, 8) && (dst_stride % 8 == 0)) {
@@ -912,12 +912,12 @@ void RotatePlane180(const uint8* src, int src_stride,
   reverse_func ReverseLine;
 
 #if defined(HAS_REVERSE_LINE_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ReverseLine = ReverseLine_NEON;
   } else
 #endif
 #if defined(HAS_REVERSE_LINE_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst, 16) && (dst_stride % 16 == 0)) {
@@ -986,13 +986,13 @@ void TransposeUV(const uint8* src, int src_stride,
   rotate_uv_wxh_func TransposeWxH;
 
 #if defined(HAS_TRANSPOSE_UVWX8_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     TransposeWx8 = TransposeUVWx8_NEON;
     TransposeWxH = TransposeUVWxH_C;
   } else
 #endif
 #if defined(HAS_TRANSPOSE_UVWX8_SSE2)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 8 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
@@ -1137,12 +1137,12 @@ void RotateUV180(const uint8* src, int src_stride,
   reverse_uv_func ReverseLine;
 
 #if defined(HAS_REVERSE_LINE_UV_NEON)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ReverseLine = ReverseLineUV_NEON;
   } else
 #endif
 #if defined(HAS_REVERSE_LINE_UV_SSSE3)
-  if (libyuv::TestCpuFlag(libyuv::kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&

@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-using namespace libyuv;
+namespace libyuv {
 
 void print_array(uint8 *array, int w, int h) {
   int i, j;
@@ -1445,3 +1445,5 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
 
   EXPECT_EQ(0, y_err + uv_err);
 }
+
+}  // namespace

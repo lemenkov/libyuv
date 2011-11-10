@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-using namespace libyuv;
+namespace libyuv {
 
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
@@ -68,7 +68,7 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_16(dst_u_opt, dst_uv_plane_size)
   align_buffer_16(dst_v_opt, dst_uv_plane_size)
 
-  libyuv::MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(kCpuInitialized);
   double c_time = get_time();
 
   for (i = 0; i < runs; ++i)
@@ -83,7 +83,7 @@ static int TestFilter(int src_width, int src_height,
 
   c_time = (get_time() - c_time) / runs;
 
-  libyuv::MaskCpuFlags(-1);
+  MaskCpuFlags(-1);
   double opt_time = get_time();
 
   for (i = 0; i < runs; ++i)
@@ -210,3 +210,5 @@ TEST_F(libyuvTest, ScaleDownBy38) {
 
   EXPECT_EQ(0, err);
 }
+
+}  // namespace
