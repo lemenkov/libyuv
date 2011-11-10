@@ -16,8 +16,39 @@
 
 namespace libyuv {
 
-uint64 SumSquareError(const uint8* src_a, const uint8* src_b, uint64 count);
+static const int kMaxPsnr = 128;
+
+uint64 ComputeSumSquareError(const uint8 *src_a,
+                             const uint8 *src_b, int count);
+
+uint64 ComputeSumSquareErrorPlane(const uint8 *src_a, int stride_a,
+                                  const uint8 *src_b, int stride_b,
+                                  int width, int height);
+
+double CalcFramePsnr(const uint8 *src_a, int stride_a,
+                     const uint8 *src_b, int stride_b,
+                     int width, int height);
+
+double CalcFrameSsim(const uint8 *src_a, int stride_a,
+                     const uint8 *src_b, int stride_b,
+                     int width, int height);
+
+double I420Psnr(const uint8 *src_y_a, int stride_y_a,
+                const uint8 *src_u_a, int stride_u_a,
+                const uint8 *src_v_a, int stride_v_a,
+                const uint8 *src_y_b, int stride_y_b,
+                const uint8 *src_u_b, int stride_u_b,
+                const uint8 *src_v_b, int stride_v_b,
+                int width, int height);
+
+double I420Ssim(const uint8 *src_y_a, int stride_y_a,
+                const uint8 *src_u_a, int stride_u_a,
+                const uint8 *src_v_a, int stride_v_a,
+                const uint8 *src_y_b, int stride_y_b,
+                const uint8 *src_u_b, int stride_u_b,
+                const uint8 *src_v_b, int stride_v_b,
+                int width, int height);
 
 }  // namespace libyuv
 
-#endif  // INCLUDE_LIBYUV_COMPARE_H_
+#endif // INCLUDE_LIBYUV_COMPARE_H_

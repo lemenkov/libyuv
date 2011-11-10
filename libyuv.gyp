@@ -29,7 +29,7 @@
         'include/libyuv/planar_functions.h',
 
         # headers
-         'source/conversion_tables.h',
+        'source/conversion_tables.h',
         'source/cpu_id.h',
         'source/rotate.h',
         'source/rotate_priv.h',
@@ -37,6 +37,7 @@
         'source/video_common.h',
 
         # sources
+        'source/compare.cc',
         'source/convert.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',

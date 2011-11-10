@@ -1,5 +1,5 @@
 /*
- *  SumSquareErrorright (c) 2011 The LibYuv project authors. All Rights Reserved.
+ *  Copyright (c) 2011 The LibYuv project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,39 +8,59 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/planar_functions.h"
-
-#include <string.h>
-
+#include "libyuv/basic_types.h"
+#include "libyuv/compare.h"
 #include "libyuv/cpu_id.h"
-#include "row.h"
+
+#include <math.h>
+#include <float.h>
 
 namespace libyuv {
 
-uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count);
-uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count);
-uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count);
-
 #if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
 #define HAS_SUMSQUAREERROR_NEON
-  return 0;
-}
 
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
-  asm volatile (
+  volatile uint32 sse;
+  asm volatile
+  (
+    "vmov.u8    q7, #0\n"
+    "vmov.u8    q9, #0\n"
+    "vmov.u8    q8, #0\n"
+    "vmov.u8    q10, #0\n"
+
     "1:\n"
-    "vld1.u8    {q0}, [%0]!\n"  // load 16 bytes
-    "vld1.u8    {q1}, [%1]!\n"  // load 16 bytes
-// do stuff
-    "subs       %3, %3, #16\n"  // 16 processed per loop
+    "vld1.u8    {q0}, [%0]!\n"
+    "vld1.u8    {q1}, [%1]!\n"
+
+    "vsubl.u8   q2, d0, d2\n"
+    "vsubl.u8   q3, d1, d3\n"
+
+    "vmlal.s16  q7, d4, d4\n"
+    "vmlal.s16  q8, d6, d6\n"
+    "vmlal.s16  q8, d5, d5\n"
+    "vmlal.s16  q10, d7, d7\n"
+
+    "subs       %2, %2, #16\n"
     "bhi        1b\n"
+
+    "vadd.u32   q7, q7, q8\n"
+    "vadd.u32   q9, q9, q10\n"
+    "vadd.u32   q10, q7, q9\n"
+    "vpaddl.u32 q1, q10\n"
+    "vadd.u64   d0, d2, d3\n"
+    "vmov.32    %3, d0[0]\n"
+
     : "+r"(src_a),
-      "+r"(src_b)
-      "+r"(count)           // Output registers
-    :                       // Input registers
-    : "memory", "cc", "q0", "q1" // Clobber List
+      "+r"(src_b),
+      "+r"(count),
+      "=r"(sse)
+    :
+    : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10"
   );
+
+  return sse;
 }
 
 #elif (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
@@ -89,40 +109,25 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 
 #elif (defined(__x86_64__) || defined(__i386__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-#define HAS_SUMSQUAREERROR_SSE2
+// DISABLE
+//#define HAS_SUMSQUAREERROR_SSE2
+// DISABLE
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {
- asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "movdqa     %%xmm0,%%xmm2\n"
-  "movdqa     %%xmm1,%%xmm3\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "pand       %%xmm5,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "psrlw      $0x8,%%xmm2\n"
-  "psrlw      $0x8,%%xmm3\n"
-  "packuswb   %%xmm3,%%xmm2\n"
-  "movdqa     %%xmm2,(%2)\n"
-  "lea        0x10(%2),%2\n"
-  "sub        $0x10,%3\n"
-  "ja         1b\n"
-  : "+r"(src_uv),     // %0
-    "+r"(dst_u),      // %1
-    "+r"(dst_v),      // %2
-    "+r"(pix)         // %3
+  volatile uint32 sse;
+  asm volatile(
+  "\n"
+  : "+r"(src_a),      // %0
+    "+r"(src_b),      // %1
+    "+r"(count),      // %2
+    "=r"(sse)         // %3
   :
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
 );
+  return sse;
 }
 #endif
 #endif
@@ -139,9 +144,11 @@ static uint32 SumSquareError_C(const uint8* src_a,
   return udiff;
 }
 
-uint64 SumSquareError(const uint8* src_a, const uint8* src_b, uint64 count) {
+uint64 ComputeSumSquareError(const uint8* src_a,
+                             const uint8* src_b, int count) {
   uint32 (*SumSquareError)(const uint8* src_a,
                            const uint8* src_b, int count);
+
 #if defined(HAS_SUMSQUAREERROR_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SumSquareError = SumSquareError_NEON;
@@ -157,7 +164,8 @@ uint64 SumSquareError(const uint8* src_a, const uint8* src_b, uint64 count) {
   }
 
   const int kBlockSize = 4096;
-  uint64 diff = 0u;
+  uint64 diff = 0;
+
   while (count >= kBlockSize) {
     diff += SumSquareError(src_a, src_b, kBlockSize);
     src_a += kBlockSize;
@@ -165,16 +173,193 @@ uint64 SumSquareError(const uint8* src_a, const uint8* src_b, uint64 count) {
     count -= kBlockSize;
   }
   if (count > 0) {
-    int short_count = static_cast<int>(count);
-    if (short_count % 16 == 0) {
-      diff += static_cast<uint64>(SumSquareError(src_a, src_b, short_count));
+    if (count % 16 == 0) {
+      diff += static_cast<uint64>(SumSquareError(src_a, src_b, count));
     } else {
-      diff += static_cast<uint64>(SumSquareError_C(src_a, src_b, short_count));
+      diff += static_cast<uint64>(SumSquareError_C(src_a, src_b, count));
     }
   }
 
   return diff;
 }
 
-}  // namespace libyuv
+uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
+                                  const uint8* src_b, int stride_b,
+                                  int width, int height) {
+  uint32 (*SumSquareError)(const uint8* src_a,
+                           const uint8* src_b, int count);
 
+#if defined(HAS_SUMSQUAREERROR_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      (width % 16 == 0)) {
+    SumSquareError = SumSquareError_NEON;
+  } else
+#endif
+  {
+    SumSquareError = SumSquareError_C;
+  }
+
+  uint64 sse = 0;
+
+  for (int h = 0; h < height; ++h) {
+    sse += static_cast<uint64>(SumSquareError(src_a, src_b, width));
+    src_a += stride_a;
+    src_b += stride_b;
+  }
+
+  return sse;
+}
+
+double Sse2Psnr(double Samples, double Sse) {
+  double psnr;
+
+  if (Sse > 0.0)
+    psnr = 10.0 * log10(255.0 * 255.0 * Samples / Sse);
+  else
+    psnr = kMaxPsnr;      // Limit to prevent divide by 0
+
+  if (psnr > kMaxPsnr)
+    psnr = kMaxPsnr;
+
+  return psnr;
+}
+
+double CalcFramePsnr(const uint8* src_a, int stride_a,
+                     const uint8* src_b, int stride_b,
+                     int width, int height) {
+  const uint64 samples = width * height;
+
+  const uint64 sse = ComputeSumSquareErrorPlane(src_a, stride_a,
+                                                src_b, stride_b,
+                                                width, height);
+
+  return Sse2Psnr (samples, sse);
+}
+
+double I420Psnr(const uint8* src_y_a, int stride_y_a,
+                const uint8* src_u_a, int stride_u_a,
+                const uint8* src_v_a, int stride_v_a,
+                const uint8* src_y_b, int stride_y_b,
+                const uint8* src_u_b, int stride_u_b,
+                const uint8* src_v_b, int stride_v_b,
+                int width, int height) {
+  const uint64 sse_y = ComputeSumSquareErrorPlane(src_y_a, stride_y_a,
+                                                  src_y_b, stride_y_b,
+                                                  width, height);
+
+  const int width_uv = (width + 1) >> 1;
+  const int height_uv = (height + 1) >> 1;
+
+  const uint64 sse_u = ComputeSumSquareErrorPlane(src_u_a, stride_u_a,
+                                                  src_u_b, stride_u_b,
+                                                  width_uv, height_uv);
+  const uint64 sse_v = ComputeSumSquareErrorPlane(src_v_a, stride_v_a,
+                                                  src_v_b, stride_v_b,
+                                                  width_uv, height_uv);
+
+  const uint64 samples = width * height + 2 * (width_uv * height_uv);
+
+  const uint64 sse = sse_y + sse_u + sse_v;
+
+  return Sse2Psnr(samples, sse);
+}
+
+static const int64 cc1 =  26634;  // (64^2*(.01*255)^2
+static const int64 cc2 = 239708;  // (64^2*(.03*255)^2
+
+static double Ssim8x8_C(const uint8* src_a, int stride_a,
+                        const uint8* src_b, int stride_b) {
+  int64 sum_a = 0;
+  int64 sum_b = 0;
+  int64 sum_sq_a = 0;
+  int64 sum_sq_b = 0;
+  int64 sum_axb = 0;
+
+  for (int i = 0; i < 8; ++i) {
+    for (int j = 0; j < 8; ++j) {
+      sum_a += src_a[j];
+      sum_b += src_b[j];
+      sum_sq_a += src_a[j] * src_a[j];
+      sum_sq_b += src_b[j] * src_b[j];
+      sum_axb += src_a[j] * src_b[j];
+    }
+
+    src_a += stride_a;
+    src_b += stride_b;
+  }
+
+  const int64 count = 64;
+  // scale the constants by number of pixels
+  const int64 c1 = (cc1 * count * count) >> 12;
+  const int64 c2 = (cc2 * count * count) >> 12;
+
+  const int64 sum_a_x_sum_b = sum_a * sum_b;
+
+  const int64 ssim_n = (2 * sum_a_x_sum_b + c1) *
+                       (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
+
+  const int64 sum_a_sq = sum_a*sum_a;
+  const int64 sum_b_sq = sum_b*sum_b;
+
+  const int64 ssim_d = (sum_a_sq + sum_b_sq + c1) *
+                       (count * sum_sq_a - sum_a_sq +
+                        count * sum_sq_b - sum_b_sq + c2);
+
+  if (ssim_d == 0.0)
+    return DBL_MAX;
+  return ssim_n * 1.0 / ssim_d;
+}
+
+// We are using a 8x8 moving window with starting location of each 8x8 window
+// on the 4x4 pixel grid. Such arrangement allows the windows to overlap
+// block boundaries to penalize blocking artifacts.
+double CalcFrameSsim(const uint8* src_a, int stride_a,
+                     const uint8* src_b, int stride_b,
+                     int width, int height) {
+  int samples = 0;
+  double ssim_total = 0;
+
+  double (*Ssim8x8)(const uint8* src_a, int stride_a,
+                    const uint8* src_b, int stride_b);
+
+  Ssim8x8 = Ssim8x8_C;
+
+  // sample point start with each 4x4 location
+  for (int i = 0; i < height - 8; i += 4) {
+    for (int j = 0; j < width - 8; j += 4) {
+      ssim_total += Ssim8x8(src_a + j, stride_a, src_b + j, stride_b);
+      samples++;
+    }
+
+    src_a += stride_a * 4;
+    src_b += stride_b * 4;
+  }
+
+  ssim_total /= samples;
+  return ssim_total;
+}
+
+double I420Ssim(const uint8* src_y_a, int stride_y_a,
+                const uint8* src_u_a, int stride_u_a,
+                const uint8* src_v_a, int stride_v_a,
+                const uint8* src_y_b, int stride_y_b,
+                const uint8* src_u_b, int stride_u_b,
+                const uint8* src_v_b, int stride_v_b,
+                int width, int height) {
+  const double ssim_y = CalcFrameSsim(src_y_a, stride_y_a,
+                                      src_y_b, stride_y_b, width, height);
+
+  const int width_uv = (width + 1) >> 1;
+  const int height_uv = (height + 1) >> 1;
+
+  const double ssim_u = CalcFrameSsim(src_u_a, stride_u_a,
+                                      src_u_b, stride_u_b,
+                                      width_uv, height_uv);
+  const double ssim_v = CalcFrameSsim(src_v_a, stride_v_a,
+                                      src_v_b, stride_v_b,
+                                      width_uv, height_uv);
+
+  return ssim_y * 0.8 + 0.1 * (ssim_u + ssim_v);
+}
+
+}  // namespace libyuv
