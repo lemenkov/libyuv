@@ -22,9 +22,9 @@
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
   asm volatile (
-    "mov %%ebx, %%edi\n"
-    "cpuid\n"
-    "xchg %%edi, %%ebx\n"
+    "mov %%ebx, %%edi                          \n"
+    "cpuid                                     \n"
+    "xchg %%edi, %%ebx                         \n"
     : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type)
   );
@@ -32,7 +32,7 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 #elif defined(__i386__) || defined(__x86_64__)
 static inline void __cpuid(int cpu_info[4], int info_type) {
   asm volatile (
-    "cpuid\n"
+    "cpuid                                     \n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type)
   );

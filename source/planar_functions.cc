@@ -23,14 +23,13 @@ namespace libyuv {
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
 static void SplitUV_NEON(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
-  __asm__ volatile
-  (
-    "1:\n"
-    "vld2.u8    {q0,q1}, [%0]!\n"  // load 16 pairs of UV
-    "vst1.u8    {q0}, [%1]!\n"  // store U
-    "vst1.u8    {q1}, [%2]!\n"  // Store V
-    "subs       %3, %3, #16\n"  // 16 processed per loop
-    "bhi        1b\n"
+  asm volatile (
+    "1:                                        \n"
+    "vld2.u8    {q0,q1}, [%0]!                 \n"  // load 16 pairs of UV
+    "vst1.u8    {q0}, [%1]!                    \n"  // store U
+    "vst1.u8    {q1}, [%2]!                    \n"  // Store V
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "bhi        1b                             \n"
     : "+r"(src_uv),
       "+r"(dst_u),
       "+r"(dst_v),
@@ -57,7 +56,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
@@ -74,7 +73,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
     movdqa     [edi], xmm2
     lea        edi, [edi + 16]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
     pop        edi
     ret
   }
@@ -85,27 +84,27 @@ static void SplitUV_SSE2(const uint8* src_uv,
 #define HAS_SPLITUV_SSE2
 static void SplitUV_SSE2(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
- asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "movdqa     %%xmm0,%%xmm2\n"
-  "movdqa     %%xmm1,%%xmm3\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "pand       %%xmm5,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "psrlw      $0x8,%%xmm2\n"
-  "psrlw      $0x8,%%xmm3\n"
-  "packuswb   %%xmm3,%%xmm2\n"
-  "movdqa     %%xmm2,(%2)\n"
-  "lea        0x10(%2),%2\n"
-  "sub        $0x10,%3\n"
-  "ja         1b\n"
+ asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "movdqa     %%xmm0,%%xmm2                    \n"
+  "movdqa     %%xmm1,%%xmm3                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "pand       %%xmm5,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "psrlw      $0x8,%%xmm2                      \n"
+  "psrlw      $0x8,%%xmm3                      \n"
+  "packuswb   %%xmm3,%%xmm2                    \n"
+  "movdqa     %%xmm2,(%2)                      \n"
+  "lea        0x10(%2),%2                      \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
   : "+r"(src_uv),     // %0
     "+r"(dst_u),      // %1
     "+r"(dst_v),      // %2
@@ -239,13 +238,12 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
 #if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
 #define HAS_SETROW_NEON
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
-  __asm__ volatile
-  (
-    "vdup.u32   q0, %2\n"  // duplicate 4 ints
-    "1:\n"
-    "vst1.u32   {q0}, [%0]!\n"  // store
-    "subs       %1, %1, #16\n"  // 16 processed per loop
-    "bhi        1b\n"
+  asm volatile (
+    "vdup.u32   q0, %2                         \n"  // duplicate 4 ints
+    "1:                                        \n"
+    "vst1.u32   {q0}, [%0]!                    \n"  // store
+    "subs       %1, %1, #16                    \n"  // 16 processed per loop
+    "bhi        1b                             \n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
   : "r"(v32)    // %2
@@ -263,11 +261,11 @@ static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
     mov        ecx, [esp + 12]   // count
     pshufd     xmm5, xmm5, 0
 
-  wloop:
+  convertloop:
     movdqa     [eax], xmm5
     lea        eax, [eax + 16]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
     ret
   }
 }
@@ -277,14 +275,14 @@ static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
 
 #define HAS_SETROW_SSE2
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
-  asm volatile(
-  "movd       %2, %%xmm5\n"
-  "pshufd     $0x0,%%xmm5,%%xmm5\n"
-"1:"
-  "movdqa     %%xmm5,(%0)\n"
-  "lea        0x10(%0),%0\n"
-  "sub        $0x10,%1\n"
-  "ja         1b\n"
+  asm volatile (
+  "movd       %2, %%xmm5                       \n"
+  "pshufd     $0x0,%%xmm5,%%xmm5               \n"
+"1:                                            \n"
+  "movdqa     %%xmm5,(%0)                      \n"
+  "lea        0x10(%0),%0                      \n"
+  "sub        $0x10,%1                         \n"
+  "ja         1b                               \n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
   : "r"(v32)    // %2
@@ -561,7 +559,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
@@ -585,7 +583,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     movq       qword ptr [edi], xmm1
     lea        edi, [edi + 8]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
 
     pop        edi
     pop        esi
@@ -598,34 +596,34 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "movdqa     %%xmm0,%%xmm2\n"
-  "movdqa     %%xmm1,%%xmm3\n"
-  "pand       %%xmm5,%%xmm2\n"
-  "pand       %%xmm5,%%xmm3\n"
-  "packuswb   %%xmm3,%%xmm2\n"
-  "movdqa     %%xmm2,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "psrlw      $0x8,%%xmm0\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "packuswb   %%xmm0,%%xmm0\n"
-  "movq       %%xmm0,(%2)\n"
-  "lea        0x8(%2),%2\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm1\n"
-  "movq       %%xmm1,(%3)\n"
-  "lea        0x8(%3),%3\n"
-  "sub        $0x10,%4\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "movdqa     %%xmm0,%%xmm2                    \n"
+  "movdqa     %%xmm1,%%xmm3                    \n"
+  "pand       %%xmm5,%%xmm2                    \n"
+  "pand       %%xmm5,%%xmm3                    \n"
+  "packuswb   %%xmm3,%%xmm2                    \n"
+  "movdqa     %%xmm2,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "psrlw      $0x8,%%xmm0                      \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "packuswb   %%xmm0,%%xmm0                    \n"
+  "movq       %%xmm0,(%2)                      \n"
+  "lea        0x8(%2),%2                       \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm1                    \n"
+  "movq       %%xmm1,(%3)                      \n"
+  "lea        0x8(%3),%3                       \n"
+  "sub        $0x10,%4                         \n"
+  "ja         1b                               \n"
   : "+r"(src_yuy2),    // %0
     "+r"(dst_y),       // %1
     "+r"(dst_u),       // %2
@@ -716,7 +714,7 @@ void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
     pcmpeqb    xmm5, xmm5        // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
@@ -726,7 +724,7 @@ void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
     ret
   }
 }
@@ -745,7 +743,7 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     movdqa     xmm2, [eax + esi]
@@ -766,7 +764,7 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     movq       qword ptr [edi], xmm1
     lea        edi, [edi + 8]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
 
     pop        edi
     pop        esi
@@ -783,7 +781,7 @@ void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
     mov        edx, [esp + 8]    // dst_y
     mov        ecx, [esp + 12]   // pix
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
@@ -793,7 +791,7 @@ void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
     ret
   }
 }
@@ -812,7 +810,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
-  wloop:
+  convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     movdqa     xmm2, [eax + esi]
@@ -833,7 +831,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     movq       qword ptr [edi], xmm1
     lea        edi, [edi + 8]
     sub        ecx, 16
-    ja         wloop
+    ja         convertloop
 
     pop        edi
     pop        esi
@@ -847,20 +845,20 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #define HAS_YUY2TOI420ROW_SSE2
 static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
                                 uint8* dst_y, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "pand       %%xmm5,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "pand       %%xmm5,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -874,31 +872,31 @@ static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
 
 static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
                                  uint8* dst_u, uint8* dst_y, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     (%0,%4,1),%%xmm2\n"
-  "movdqa     0x10(%0,%4,1),%%xmm3\n"
-  "lea        0x20(%0),%0\n"
-  "pavgb      %%xmm2,%%xmm0\n"
-  "pavgb      %%xmm3,%%xmm1\n"
-  "psrlw      $0x8,%%xmm0\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "packuswb   %%xmm0,%%xmm0\n"
-  "movq       %%xmm0,(%1)\n"
-  "lea        0x8(%1),%1\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm1\n"
-  "movq       %%xmm1,(%2)\n"
-  "lea        0x8(%2),%2\n"
-  "sub        $0x10,%3\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     (%0,%4,1),%%xmm2                 \n"
+  "movdqa     0x10(%0,%4,1),%%xmm3             \n"
+  "lea        0x20(%0),%0                      \n"
+  "pavgb      %%xmm2,%%xmm0                    \n"
+  "pavgb      %%xmm3,%%xmm1                    \n"
+  "psrlw      $0x8,%%xmm0                      \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "packuswb   %%xmm0,%%xmm0                    \n"
+  "movq       %%xmm0,(%1)                      \n"
+  "lea        0x8(%1),%1                       \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm1                    \n"
+  "movq       %%xmm1,(%2)                      \n"
+  "lea        0x8(%2),%2                       \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
   : "+r"(src_yuy2),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2
@@ -913,18 +911,18 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
 #define HAS_UYVYTOI420ROW_SSE2
 static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
                                 uint8* dst_y, int pix) {
-  asm volatile(
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "lea        0x20(%0),%0\n"
-  "psrlw      $0x8,%%xmm0\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
+  asm volatile (
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "psrlw      $0x8,%%xmm0                      \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -938,31 +936,31 @@ static void UYVYToI420RowY_SSE2(const uint8* src_uyvy,
 
 static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
                                  uint8* dst_u, uint8* dst_y, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "psrlw      $0x8,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     (%0,%4,1),%%xmm2\n"
-  "movdqa     0x10(%0,%4,1),%%xmm3\n"
-  "lea        0x20(%0),%0\n"
-  "pavgb      %%xmm2,%%xmm0\n"
-  "pavgb      %%xmm3,%%xmm1\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "pand       %%xmm5,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm0\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "pand       %%xmm5,%%xmm0\n"
-  "packuswb   %%xmm0,%%xmm0\n"
-  "movq       %%xmm0,(%1)\n"
-  "lea        0x8(%1),%1\n"
-  "psrlw      $0x8,%%xmm1\n"
-  "packuswb   %%xmm1,%%xmm1\n"
-  "movq       %%xmm1,(%2)\n"
-  "lea        0x8(%2),%2\n"
-  "sub        $0x10,%3\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     (%0,%4,1),%%xmm2                 \n"
+  "movdqa     0x10(%0,%4,1),%%xmm3             \n"
+  "lea        0x20(%0),%0                      \n"
+  "pavgb      %%xmm2,%%xmm0                    \n"
+  "pavgb      %%xmm3,%%xmm1                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "pand       %%xmm5,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "packuswb   %%xmm0,%%xmm0                    \n"
+  "movq       %%xmm0,(%1)                      \n"
+  "lea        0x8(%1),%1                       \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm1                    \n"
+  "movq       %%xmm1,(%2)                      \n"
+  "lea        0x8(%2),%2                       \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
   : "+r"(src_uyvy),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2

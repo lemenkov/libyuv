@@ -59,23 +59,23 @@ static const uvec8 kShuffleMaskBGRAToARGB = {
 };
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"
-  "pslld      $0x18,%%xmm5\n"
-"1:"
-  "movq       (%0),%%xmm0\n"
-  "lea        0x8(%0),%0\n"
-  "punpcklbw  %%xmm0,%%xmm0\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "punpcklwd  %%xmm0,%%xmm0\n"
-  "punpckhwd  %%xmm1,%%xmm1\n"
-  "por        %%xmm5,%%xmm0\n"
-  "por        %%xmm5,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "lea        0x20(%1),%1\n"
-  "sub        $0x8,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "pslld      $0x18,%%xmm5                     \n"
+"1:                                            \n"
+  "movq       (%0),%%xmm0                      \n"
+  "lea        0x8(%0),%0                       \n"
+  "punpcklbw  %%xmm0,%%xmm0                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "punpcklwd  %%xmm0,%%xmm0                    \n"
+  "punpckhwd  %%xmm1,%%xmm1                    \n"
+  "por        %%xmm5,%%xmm0                    \n"
+  "por        %%xmm5,%%xmm1                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "movdqa     %%xmm1,0x10(%1)                  \n"
+  "lea        0x20(%1),%1                      \n"
+  "sub        $0x8,%2                          \n"
+  "ja         1b                               \n"
   : "+r"(src_y),     // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -88,16 +88,16 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
 }
 
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  asm volatile(
-  "movdqa     %3,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "lea        0x10(%0),%0\n"
-  "pshufb     %%xmm5,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x4,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "movdqa     %3,%%xmm5                        \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "lea        0x10(%0),%0                      \n"
+  "pshufb     %%xmm5,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x4,%2                          \n"
+  "ja         1b                               \n"
   : "+r"(src_abgr),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -111,16 +111,16 @@ void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
 }
 
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  asm volatile(
-  "movdqa     %3,%%xmm5\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "lea        0x10(%0),%0\n"
-  "pshufb     %%xmm5,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x4,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "movdqa     %3,%%xmm5                        \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "lea        0x10(%0),%0                      \n"
+  "pshufb     %%xmm5,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x4,%2                          \n"
+  "ja         1b                               \n"
   : "+r"(src_bgra),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -133,34 +133,34 @@ void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
 }
 
 void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"  // generate mask 0xff000000
-  "pslld      $0x18,%%xmm5\n"
-  "movdqa     %3,%%xmm4\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm3\n"
-  "lea        0x30(%0),%0\n"
-  "movdqa     %%xmm3,%%xmm2\n"
-  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
-  "pshufb     %%xmm4,%%xmm2\n"
-  "por        %%xmm5,%%xmm2\n"
-  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
-  "pshufb     %%xmm4,%%xmm0\n"
-  "movdqa     %%xmm2,0x20(%1)\n"
-  "por        %%xmm5,%%xmm0\n"
-  "pshufb     %%xmm4,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "por        %%xmm5,%%xmm1\n"
-  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
-  "pshufb     %%xmm4,%%xmm3\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "por        %%xmm5,%%xmm3\n"
-  "movdqa     %%xmm3,0x30(%1)\n"
-  "lea        0x40(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm5                     \n"
+  "movdqa     %3,%%xmm4                        \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     0x20(%0),%%xmm3                  \n"
+  "lea        0x30(%0),%0                      \n"
+  "movdqa     %%xmm3,%%xmm2                    \n"
+  "palignr    $0x8,%%xmm1,%%xmm2               \n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm4,%%xmm2                    \n"
+  "por        %%xmm5,%%xmm2                    \n"
+  "palignr    $0xc,%%xmm0,%%xmm1               \n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm4,%%xmm0                    \n"
+  "movdqa     %%xmm2,0x20(%1)                  \n"
+  "por        %%xmm5,%%xmm0                    \n"
+  "pshufb     %%xmm4,%%xmm1                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "por        %%xmm5,%%xmm1                    \n"
+  "palignr    $0x4,%%xmm3,%%xmm3               \n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm4,%%xmm3                    \n"
+  "movdqa     %%xmm1,0x10(%1)                  \n"
+  "por        %%xmm5,%%xmm3                    \n"
+  "movdqa     %%xmm3,0x30(%1)                  \n"
+  "lea        0x40(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
   : "+r"(src_bg24),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -173,34 +173,34 @@ void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
 }
 
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
-  asm volatile(
-  "pcmpeqb    %%xmm5,%%xmm5\n"  // generate mask 0xff000000
-  "pslld      $0x18,%%xmm5\n"
-  "movdqa     %3,%%xmm4\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm3\n"
-  "lea        0x30(%0),%0\n"
-  "movdqa     %%xmm3,%%xmm2\n"
-  "palignr    $0x8,%%xmm1,%%xmm2\n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
-  "pshufb     %%xmm4,%%xmm2\n"
-  "por        %%xmm5,%%xmm2\n"
-  "palignr    $0xc,%%xmm0,%%xmm1\n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
-  "pshufb     %%xmm4,%%xmm0\n"
-  "movdqa     %%xmm2,0x20(%1)\n"
-  "por        %%xmm5,%%xmm0\n"
-  "pshufb     %%xmm4,%%xmm1\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "por        %%xmm5,%%xmm1\n"
-  "palignr    $0x4,%%xmm3,%%xmm3\n"  // xmm3 = { xmm3[4:15] }
-  "pshufb     %%xmm4,%%xmm3\n"
-  "movdqa     %%xmm1,0x10(%1)\n"
-  "por        %%xmm5,%%xmm3\n"
-  "movdqa     %%xmm3,0x30(%1)\n"
-  "lea        0x40(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"  // generate mask 0xff000000
+  "pslld      $0x18,%%xmm5                     \n"
+  "movdqa     %3,%%xmm4                        \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     0x20(%0),%%xmm3                  \n"
+  "lea        0x30(%0),%0                      \n"
+  "movdqa     %%xmm3,%%xmm2                    \n"
+  "palignr    $0x8,%%xmm1,%%xmm2               \n"  // xmm2 = { xmm3[0:3] xmm1[8:15] }
+  "pshufb     %%xmm4,%%xmm2                    \n"
+  "por        %%xmm5,%%xmm2                    \n"
+  "palignr    $0xc,%%xmm0,%%xmm1               \n"  // xmm1 = { xmm3[0:7] xmm0[12:15] }
+  "pshufb     %%xmm4,%%xmm0                    \n"
+  "movdqa     %%xmm2,0x20(%1)                  \n"
+  "por        %%xmm5,%%xmm0                    \n"
+  "pshufb     %%xmm4,%%xmm1                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "por        %%xmm5,%%xmm1                    \n"
+  "palignr    $0x4,%%xmm3,%%xmm3               \n"  // xmm3 = { xmm3[4:15] }
+  "pshufb     %%xmm4,%%xmm3                    \n"
+  "movdqa     %%xmm1,0x10(%1)                  \n"
+  "por        %%xmm5,%%xmm3                    \n"
+  "movdqa     %%xmm3,0x30(%1)                  \n"
+  "lea        0x40(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
   : "+r"(src_raw),   // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -213,29 +213,29 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
 }
 
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  asm volatile(
-  "movdqa     %4,%%xmm5\n"
-  "movdqa     %3,%%xmm4\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm2\n"
-  "movdqa     0x30(%0),%%xmm3\n"
-  "pmaddubsw  %%xmm4,%%xmm0\n"
-  "pmaddubsw  %%xmm4,%%xmm1\n"
-  "pmaddubsw  %%xmm4,%%xmm2\n"
-  "pmaddubsw  %%xmm4,%%xmm3\n"
-  "lea        0x40(%0),%0\n"
-  "phaddw     %%xmm1,%%xmm0\n"
-  "phaddw     %%xmm3,%%xmm2\n"
-  "psrlw      $0x7,%%xmm0\n"
-  "psrlw      $0x7,%%xmm2\n"
-  "packuswb   %%xmm2,%%xmm0\n"
-  "paddb      %%xmm5,%%xmm0\n"
-  "movdqa     %%xmm0,(%1)\n"
-  "lea        0x10(%1),%1\n"
-  "sub        $0x10,%2\n"
-  "ja         1b\n"
+  asm volatile (
+  "movdqa     %4,%%xmm5                        \n"
+  "movdqa     %3,%%xmm4                        \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     0x20(%0),%%xmm2                  \n"
+  "movdqa     0x30(%0),%%xmm3                  \n"
+  "pmaddubsw  %%xmm4,%%xmm0                    \n"
+  "pmaddubsw  %%xmm4,%%xmm1                    \n"
+  "pmaddubsw  %%xmm4,%%xmm2                    \n"
+  "pmaddubsw  %%xmm4,%%xmm3                    \n"
+  "lea        0x40(%0),%0                      \n"
+  "phaddw     %%xmm1,%%xmm0                    \n"
+  "phaddw     %%xmm3,%%xmm2                    \n"
+  "psrlw      $0x7,%%xmm0                      \n"
+  "psrlw      $0x7,%%xmm2                      \n"
+  "packuswb   %%xmm2,%%xmm0                    \n"
+  "paddb      %%xmm5,%%xmm0                    \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -253,10 +253,10 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 #ifdef HAS_ARGBTOUVROW_SSSE3
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
- asm volatile(
-  "movdqa     %0,%%xmm4\n"
-  "movdqa     %1,%%xmm3\n"
-  "movdqa     %2,%%xmm5\n"
+ asm volatile (
+  "movdqa     %0,%%xmm4                        \n"
+  "movdqa     %1,%%xmm3                        \n"
+  "movdqa     %2,%%xmm5                        \n"
   :
   : "m"(kARGBToU),         // %0
     "m"(kARGBToV),         // %1
@@ -266,43 +266,43 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "xmm3", "xmm4", "xmm5"
 #endif
  );
- asm volatile(
-  "sub        %1,%2\n"
-"1:"
-  "movdqa     (%0),%%xmm0\n"
-  "movdqa     0x10(%0),%%xmm1\n"
-  "movdqa     0x20(%0),%%xmm2\n"
-  "movdqa     0x30(%0),%%xmm6\n"
-  "pavgb      (%0,%4,1),%%xmm0\n"
-  "pavgb      0x10(%0,%4,1),%%xmm1\n"
-  "pavgb      0x20(%0,%4,1),%%xmm2\n"
-  "pavgb      0x30(%0,%4,1),%%xmm6\n"
-  "lea        0x40(%0),%0\n"
-  "movdqa     %%xmm0,%%xmm7\n"
-  "shufps     $0x88,%%xmm1,%%xmm0\n"
-  "shufps     $0xdd,%%xmm1,%%xmm7\n"
-  "pavgb      %%xmm7,%%xmm0\n"
-  "movdqa     %%xmm2,%%xmm7\n"
-  "shufps     $0x88,%%xmm6,%%xmm2\n"
-  "shufps     $0xdd,%%xmm6,%%xmm7\n"
-  "pavgb      %%xmm7,%%xmm2\n"
-  "movdqa     %%xmm0,%%xmm1\n"
-  "movdqa     %%xmm2,%%xmm6\n"
-  "pmaddubsw  %%xmm4,%%xmm0\n"
-  "pmaddubsw  %%xmm4,%%xmm2\n"
-  "pmaddubsw  %%xmm3,%%xmm1\n"
-  "pmaddubsw  %%xmm3,%%xmm6\n"
-  "phaddw     %%xmm2,%%xmm0\n"
-  "phaddw     %%xmm6,%%xmm1\n"
-  "psraw      $0x8,%%xmm0\n"
-  "psraw      $0x8,%%xmm1\n"
-  "packsswb   %%xmm1,%%xmm0\n"
-  "paddb      %%xmm5,%%xmm0\n"
-  "movlps     %%xmm0,(%1)\n"
-  "movhps     %%xmm0,(%1,%2,1)\n"
-  "lea        0x8(%1),%1\n"
-  "sub        $0x10,%3\n"
-  "ja         1b\n"
+ asm volatile (
+  "sub        %1,%2                            \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "movdqa     0x10(%0),%%xmm1                  \n"
+  "movdqa     0x20(%0),%%xmm2                  \n"
+  "movdqa     0x30(%0),%%xmm6                  \n"
+  "pavgb      (%0,%4,1),%%xmm0                 \n"
+  "pavgb      0x10(%0,%4,1),%%xmm1             \n"
+  "pavgb      0x20(%0,%4,1),%%xmm2             \n"
+  "pavgb      0x30(%0,%4,1),%%xmm6             \n"
+  "lea        0x40(%0),%0                      \n"
+  "movdqa     %%xmm0,%%xmm7                    \n"
+  "shufps     $0x88,%%xmm1,%%xmm0              \n"
+  "shufps     $0xdd,%%xmm1,%%xmm7              \n"
+  "pavgb      %%xmm7,%%xmm0                    \n"
+  "movdqa     %%xmm2,%%xmm7                    \n"
+  "shufps     $0x88,%%xmm6,%%xmm2              \n"
+  "shufps     $0xdd,%%xmm6,%%xmm7              \n"
+  "pavgb      %%xmm7,%%xmm2                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "movdqa     %%xmm2,%%xmm6                    \n"
+  "pmaddubsw  %%xmm4,%%xmm0                    \n"
+  "pmaddubsw  %%xmm4,%%xmm2                    \n"
+  "pmaddubsw  %%xmm3,%%xmm1                    \n"
+  "pmaddubsw  %%xmm3,%%xmm6                    \n"
+  "phaddw     %%xmm2,%%xmm0                    \n"
+  "phaddw     %%xmm6,%%xmm1                    \n"
+  "psraw      $0x8,%%xmm0                      \n"
+  "psraw      $0x8,%%xmm1                      \n"
+  "packsswb   %%xmm1,%%xmm0                    \n"
+  "paddb      %%xmm5,%%xmm0                    \n"
+  "movlps     %%xmm0,(%1)                      \n"
+  "movhps     %%xmm0,(%1,%2,1)                 \n"
+  "lea        0x8(%1),%1                       \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
   : "+r"(src_argb0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -332,98 +332,65 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #define OMITFP __attribute__((optimize("omit-frame-pointer")))
 #endif
 
-#if defined(__APPLE__)
-// REG6 version uses 1 less register but is slower
-#define REG6
-#endif
-
-#ifdef REG6
-// 6 register version only has REG_a for temporary
-#define CLOBBER "%"REG_a
-#define YUVTORGB                                                               \
- "1:"                                                                          \
-  "movzb  (%1),%%"REG_a"\n"                                                    \
-  "lea    1(%1),%1\n"                                                          \
-  "movq   2048(%5,%%"REG_a",8),%%xmm0\n"                                       \
-  "movzb  (%2),%%"REG_a"\n"                                                    \
-  "lea    1(%2),%2\n"                                                          \
-  "movq   4096(%5,%%"REG_a",8),%%xmm1\n"                                       \
-  "paddsw %%xmm1,%%xmm0\n"                                                     \
-  "movzb  (%0),%%"REG_a"\n"                                                    \
-  "movq   0(%5,%%"REG_a",8),%%xmm2\n"                                          \
-  "movzb  0x1(%0),%%"REG_a"\n"                                                 \
-  "movq   0(%5,%%"REG_a",8),%%xmm3\n"                                          \
-  "lea    2(%0),%0\n"                                                          \
-  "paddsw %%xmm0,%%xmm2\n"                                                     \
-  "paddsw %%xmm0,%%xmm3\n"                                                     \
-  "shufps $0x44,%%xmm3,%%xmm2\n"                                               \
-  "psraw  $0x6,%%xmm2\n"                                                       \
-  "packuswb %%xmm2,%%xmm2\n"                                                   \
-  "movq   %%xmm2,0x0(%3)\n"                                                    \
-  "lea    8(%3),%3\n"                                                          \
-  "sub    $0x2,%4\n"                                                           \
-  "ja     1b\n"
-#else
 #define CLOBBER "%"REG_a, "%"REG_d
 // This version produces 2 pixels
 #define YUVTORGB                                                               \
-"1:"                                                                           \
-  "movzb      (%1),%%"REG_a"\n"                                                \
-  "lea        1(%1),%1\n"                                                      \
-  "movzb      (%2),%%"REG_d"\n"                                                \
-  "lea        1(%2),%2\n"                                                      \
-  "movq       2048(%5,%%"REG_a",8),%%xmm0\n"                                   \
-  "movzb      0(%0),%%"REG_a"\n"                                               \
-  "movq       4096(%5,%%"REG_d",8),%%xmm1\n"                                   \
-  "paddsw     %%xmm1,%%xmm0\n"                                                 \
-  "movzb      1(%0),%%"REG_d"\n"                                               \
-  "punpcklqdq %%xmm0,%%xmm0\n"                                                 \
-  "lea        2(%0),%0\n"                                                      \
-  "movq       0(%5,%%"REG_a",8),%%xmm1\n"                                      \
-  "movhps     0(%5,%%"REG_d",8),%%xmm1\n"                                      \
-  "paddsw     %%xmm0,%%xmm1\n"                                                 \
-  "psraw      $6,%%xmm1\n"                                                     \
-  "packuswb   %%xmm1,%%xmm1\n"                                                 \
-  "movq       %%xmm1,0(%3)\n"                                                  \
-  "lea        8(%3),%3\n"                                                      \
-  "sub        $0x2,%4\n"                                                       \
-  "ja         1b\n"
+"1:                                            \n"                             \
+  "movzb      (%1),%%"REG_a"                   \n"                             \
+  "lea        1(%1),%1                         \n"                             \
+  "movzb      (%2),%%"REG_d"                   \n"                             \
+  "lea        1(%2),%2                         \n"                             \
+  "movq       2048(%5,%%"REG_a",8),%%xmm0      \n"                             \
+  "movzb      0(%0),%%"REG_a"                  \n"                             \
+  "movq       4096(%5,%%"REG_d",8),%%xmm1      \n"                             \
+  "paddsw     %%xmm1,%%xmm0                    \n"                             \
+  "movzb      1(%0),%%"REG_d"                  \n"                             \
+  "punpcklqdq %%xmm0,%%xmm0                    \n"                             \
+  "lea        2(%0),%0                         \n"                             \
+  "movq       0(%5,%%"REG_a",8),%%xmm1         \n"                             \
+  "movhps     0(%5,%%"REG_d",8),%%xmm1         \n"                             \
+  "paddsw     %%xmm0,%%xmm1                    \n"                             \
+  "psraw      $6,%%xmm1                        \n"                             \
+  "packuswb   %%xmm1,%%xmm1                    \n"                             \
+  "movq       %%xmm1,0(%3)                     \n"                             \
+  "lea        8(%3),%3                         \n"                             \
+  "sub        $0x2,%4                          \n"                             \
+  "ja         1b                               \n"
 // This version produces 4 pixels
 #define YUVTORGB4                                                              \
-"1:"                                                                           \
-  "movzb      0(%1),%%"REG_a"\n"                                               \
-  "movzb      0(%2),%%"REG_d"\n"                                               \
-  "movq       2048(%5,%%"REG_a",8),%%xmm0\n"                                   \
-  "movzb      0(%0),%%"REG_a"\n"                                               \
-  "movq       4096(%5,%%"REG_d",8),%%xmm1\n"                                   \
-  "paddsw     %%xmm1,%%xmm0\n"                                                 \
-  "movzb      1(%0),%%"REG_d"\n"                                               \
-  "punpcklqdq %%xmm0,%%xmm0\n"                                                 \
-  "movq       0(%5,%%"REG_a",8),%%xmm2\n"                                      \
-  "movhps     0(%5,%%"REG_d",8),%%xmm2\n"                                      \
-  "paddsw     %%xmm0,%%xmm2\n"                                                 \
-  "psraw      $6,%%xmm2\n"                                                     \
-  "movzb      1(%1),%%"REG_a"\n"                                               \
-  "movzb      1(%2),%%"REG_d"\n"                                               \
-  "movq       2048(%5,%%"REG_a",8),%%xmm0\n"                                   \
-  "movzb      2(%0),%%"REG_a"\n"                                               \
-  "movq       4096(%5,%%"REG_d",8),%%xmm1\n"                                   \
-  "paddsw     %%xmm1,%%xmm0\n"                                                 \
-  "movzb      3(%0),%%"REG_d"\n"                                               \
-  "punpcklqdq %%xmm0,%%xmm0\n"                                                 \
-  "movq       0(%5,%%"REG_a",8),%%xmm3\n"                                      \
-  "movhps     0(%5,%%"REG_d",8),%%xmm3\n"                                      \
-  "paddsw     %%xmm0,%%xmm3\n"                                                 \
-  "psraw      $6,%%xmm3\n"                                                     \
-  "lea        2(%1),%1\n"                                                      \
-  "lea        2(%2),%2\n"                                                      \
-  "lea        4(%0),%0\n"                                                      \
-  "packuswb   %%xmm3,%%xmm2\n"                                                 \
-  "movdqa     %%xmm2,0(%3)\n"                                                  \
-  "lea        16(%3),%3\n"                                                     \
-  "sub        $0x4,%4\n"                                                       \
-  "ja         1b\n"
-#endif
+"1:                                            \n"                             \
+  "movzb      0(%1),%%"REG_a"                  \n"                             \
+  "movzb      0(%2),%%"REG_d"                  \n"                             \
+  "movq       2048(%5,%%"REG_a",8),%%xmm0      \n"                             \
+  "movzb      0(%0),%%"REG_a"                  \n"                             \
+  "movq       4096(%5,%%"REG_d",8),%%xmm1      \n"                             \
+  "paddsw     %%xmm1,%%xmm0                    \n"                             \
+  "movzb      1(%0),%%"REG_d"                  \n"                             \
+  "punpcklqdq %%xmm0,%%xmm0                    \n"                             \
+  "movq       0(%5,%%"REG_a",8),%%xmm2         \n"                             \
+  "movhps     0(%5,%%"REG_d",8),%%xmm2         \n"                             \
+  "paddsw     %%xmm0,%%xmm2                    \n"                             \
+  "psraw      $6,%%xmm2                        \n"                             \
+  "movzb      1(%1),%%"REG_a"                  \n"                             \
+  "movzb      1(%2),%%"REG_d"                  \n"                             \
+  "movq       2048(%5,%%"REG_a",8),%%xmm0      \n"                             \
+  "movzb      2(%0),%%"REG_a"                  \n"                             \
+  "movq       4096(%5,%%"REG_d",8),%%xmm1      \n"                             \
+  "paddsw     %%xmm1,%%xmm0                    \n"                             \
+  "movzb      3(%0),%%"REG_d"                  \n"                             \
+  "punpcklqdq %%xmm0,%%xmm0                    \n"                             \
+  "movq       0(%5,%%"REG_a",8),%%xmm3         \n"                             \
+  "movhps     0(%5,%%"REG_d",8),%%xmm3         \n"                             \
+  "paddsw     %%xmm0,%%xmm3                    \n"                             \
+  "psraw      $6,%%xmm3                        \n"                             \
+  "lea        2(%1),%1                         \n"                             \
+  "lea        2(%2),%2                         \n"                             \
+  "lea        4(%0),%0                         \n"                             \
+  "packuswb   %%xmm3,%%xmm2                    \n"                             \
+  "movdqa     %%xmm2,0(%3)                     \n"                             \
+  "lea        16(%3),%3                        \n"                             \
+  "sub        $0x4,%4                          \n"                             \
+  "ja         1b                               \n"                             \
 
 // 6 or 7 registers
 void OMITFP FastConvertYUVToARGBRow_SSE2(const uint8* y_buf,  // rdi
@@ -431,7 +398,7 @@ void OMITFP FastConvertYUVToARGBRow_SSE2(const uint8* y_buf,  // rdi
                                          const uint8* v_buf,  // rdx
                                          uint8* rgb_buf,      // rcx
                                          int width) {         // r8
-  asm volatile(
+  asm volatile (
     YUVTORGB
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
@@ -452,7 +419,7 @@ void OMITFP FastConvertYUVToARGBRow4_SSE2(const uint8* y_buf,  // rdi
                                           const uint8* v_buf,  // rdx
                                           uint8* rgb_buf,      // rcx
                                           int width) {         // r8
-  asm volatile(
+  asm volatile (
     YUVTORGB4
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
@@ -472,7 +439,7 @@ void OMITFP FastConvertYUVToBGRARow_SSE2(const uint8* y_buf,  // rdi
                                          const uint8* v_buf,  // rdx
                                          uint8* rgb_buf,      // rcx
                                          int width) {         // r8
-  asm volatile(
+  asm volatile (
     YUVTORGB
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
@@ -492,7 +459,7 @@ void OMITFP FastConvertYUVToABGRRow_SSE2(const uint8* y_buf,  // rdi
                                          const uint8* v_buf,  // rdx
                                          uint8* rgb_buf,      // rcx
                                          int width) {         // r8
-  asm volatile(
+  asm volatile (
     YUVTORGB
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
@@ -513,26 +480,26 @@ void OMITFP FastConvertYUV444ToARGBRow_SSE2(const uint8* y_buf,  // rdi
                                             const uint8* v_buf,  // rdx
                                             uint8* rgb_buf,      // rcx
                                             int width) {         // r8
-  asm volatile(
-"1:"
-  "movzb  (%1),%%"REG_a"\n"
-  "lea    1(%1),%1\n"
-  "movq   2048(%5,%%"REG_a",8),%%xmm0\n"
-  "movzb  (%2),%%"REG_a"\n"
-  "lea    1(%2),%2\n"
-  "movq   4096(%5,%%"REG_a",8),%%xmm1\n"
-  "paddsw %%xmm1,%%xmm0\n"
-  "movzb  (%0),%%"REG_a"\n"
-  "lea    1(%0),%0\n"
-  "movq   0(%5,%%"REG_a",8),%%xmm2\n"
-  "paddsw %%xmm0,%%xmm2\n"
-  "shufps $0x44,%%xmm2,%%xmm2\n"
-  "psraw  $0x6,%%xmm2\n"
-  "packuswb %%xmm2,%%xmm2\n"
-  "movd   %%xmm2,0x0(%3)\n"
-  "lea    4(%3),%3\n"
-  "sub    $0x1,%4\n"
-  "ja     1b\n"
+  asm volatile (
+"1:                                            \n"
+  "movzb  (%1),%%"REG_a"                       \n"
+  "lea    1(%1),%1                             \n"
+  "movq   2048(%5,%%"REG_a",8),%%xmm0          \n"
+  "movzb  (%2),%%"REG_a"                       \n"
+  "lea    1(%2),%2                             \n"
+  "movq   4096(%5,%%"REG_a",8),%%xmm1          \n"
+  "paddsw %%xmm1,%%xmm0                        \n"
+  "movzb  (%0),%%"REG_a"                       \n"
+  "lea    1(%0),%0                             \n"
+  "movq   0(%5,%%"REG_a",8),%%xmm2             \n"
+  "paddsw %%xmm0,%%xmm2                        \n"
+  "shufps $0x44,%%xmm2,%%xmm2                  \n"
+  "psraw  $0x6,%%xmm2                          \n"
+  "packuswb %%xmm2,%%xmm2                      \n"
+  "movd   %%xmm2,0x0(%3)                       \n"
+  "lea    4(%3),%3                             \n"
+  "sub    $0x1,%4                              \n"
+  "ja     1b                                   \n"
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
     "+r"(v_buf),    // %2
@@ -550,19 +517,19 @@ void OMITFP FastConvertYUV444ToARGBRow_SSE2(const uint8* y_buf,  // rdi
 void FastConvertYToARGBRow_SSE2(const uint8* y_buf,  // rdi
                                 uint8* rgb_buf,      // rcx
                                 int width) {         // r8
-  asm volatile(
-"1:"
-  "movzb  (%0),%%"REG_a"\n"
-  "movzb  0x1(%0),%%"REG_d"\n"
-  "movq   (%3,%%"REG_a",8),%%xmm2\n"
-  "lea    2(%0),%0\n"
-  "movhps (%3,%%"REG_d",8),%%xmm2\n"
-  "psraw  $0x6,%%xmm2\n"
-  "packuswb %%xmm2,%%xmm2\n"
-  "movq   %%xmm2,0x0(%1)\n"
-  "lea    8(%1),%1\n"
-  "sub    $0x2,%2\n"
-  "ja     1b\n"
+  asm volatile (
+"1:                                            \n"
+  "movzb  (%0),%%"REG_a"                       \n"
+  "movzb  0x1(%0),%%"REG_d"                    \n"
+  "movq   (%3,%%"REG_a",8),%%xmm2              \n"
+  "lea    2(%0),%0                             \n"
+  "movhps (%3,%%"REG_d",8),%%xmm2              \n"
+  "psraw  $0x6,%%xmm2                          \n"
+  "packuswb %%xmm2,%%xmm2                      \n"
+  "movq   %%xmm2,0x0(%1)                       \n"
+  "lea    8(%1),%1                             \n"
+  "sub    $0x2,%2                              \n"
+  "ja     1b                                   \n"
   : "+r"(y_buf),    // %0
     "+r"(rgb_buf),  // %1
     "+rm"(width)    // %2
@@ -591,44 +558,44 @@ void FastConvertYUVToARGBRow_MMX(const uint8* y_buf,
                                  uint8* rgb_buf,
                                  int width);
   asm(
-  ".text\n"
+  ".text                                       \n"
 #if defined(OSX) || defined(IOS)
-  ".globl _FastConvertYUVToARGBRow_MMX\n"
-"_FastConvertYUVToARGBRow_MMX:\n"
+  ".globl _FastConvertYUVToARGBRow_MMX         \n"
+"_FastConvertYUVToARGBRow_MMX:                 \n"
 #else
-  ".global FastConvertYUVToARGBRow_MMX\n"
-"FastConvertYUVToARGBRow_MMX:\n"
+  ".global FastConvertYUVToARGBRow_MMX         \n"
+"FastConvertYUVToARGBRow_MMX:                  \n"
 #endif
-  "pusha\n"
-  "mov    0x24(%esp),%edx\n"
-  "mov    0x28(%esp),%edi\n"
-  "mov    0x2c(%esp),%esi\n"
-  "mov    0x30(%esp),%ebp\n"
-  "mov    0x34(%esp),%ecx\n"
+  "pusha                                       \n"
+  "mov    0x24(%esp),%edx                      \n"
+  "mov    0x28(%esp),%edi                      \n"
+  "mov    0x2c(%esp),%esi                      \n"
+  "mov    0x30(%esp),%ebp                      \n"
+  "mov    0x34(%esp),%ecx                      \n"
 
-"1:"
-  "movzbl (%edi),%eax\n"
-  "lea    1(%edi),%edi\n"
-  "movzbl (%esi),%ebx\n"
-  "lea    1(%esi),%esi\n"
+"1:                                            \n"
+  "movzbl (%edi),%eax                          \n"
+  "lea    1(%edi),%edi                         \n"
+  "movzbl (%esi),%ebx                          \n"
+  "lea    1(%esi),%esi                         \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY+2048(,%eax,8),%mm0\n"
-  "movzbl (%edx),%eax\n"
+  "movzbl (%edx),%eax                          \n"
   "paddsw " UNDERSCORE "kCoefficientsRgbY+4096(,%ebx,8),%mm0\n"
-  "movzbl 0x1(%edx),%ebx\n"
+  "movzbl 0x1(%edx),%ebx                       \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY(,%eax,8),%mm1\n"
-  "lea    2(%edx),%edx\n"
+  "lea    2(%edx),%edx                         \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY(,%ebx,8),%mm2\n"
-  "paddsw %mm0,%mm1\n"
-  "paddsw %mm0,%mm2\n"
-  "psraw  $0x6,%mm1\n"
-  "psraw  $0x6,%mm2\n"
-  "packuswb %mm2,%mm1\n"
-  "movq   %mm1,0x0(%ebp)\n"
-  "lea    8(%ebp),%ebp\n"
-  "sub    $0x2,%ecx\n"
-  "ja     1b\n"
-  "popa\n"
-  "ret\n"
+  "paddsw %mm0,%mm1                            \n"
+  "paddsw %mm0,%mm2                            \n"
+  "psraw  $0x6,%mm1                            \n"
+  "psraw  $0x6,%mm2                            \n"
+  "packuswb %mm2,%mm1                          \n"
+  "movq   %mm1,0x0(%ebp)                       \n"
+  "lea    8(%ebp),%ebp                         \n"
+  "sub    $0x2,%ecx                            \n"
+  "ja     1b                                   \n"
+  "popa                                        \n"
+  "ret                                         \n"
 );
 
 void FastConvertYUVToBGRARow_MMX(const uint8* y_buf,
@@ -637,44 +604,44 @@ void FastConvertYUVToBGRARow_MMX(const uint8* y_buf,
                                  uint8* rgb_buf,
                                  int width);
   asm(
-  ".text\n"
+  ".text                                       \n"
 #if defined(OSX) || defined(IOS)
-  ".globl _FastConvertYUVToBGRARow_MMX\n"
-"_FastConvertYUVToBGRARow_MMX:\n"
+  ".globl _FastConvertYUVToBGRARow_MMX         \n"
+"_FastConvertYUVToBGRARow_MMX:                 \n"
 #else
-  ".global FastConvertYUVToBGRARow_MMX\n"
-"FastConvertYUVToBGRARow_MMX:\n"
+  ".global FastConvertYUVToBGRARow_MMX         \n"
+"FastConvertYUVToBGRARow_MMX:                  \n"
 #endif
-  "pusha\n"
-  "mov    0x24(%esp),%edx\n"
-  "mov    0x28(%esp),%edi\n"
-  "mov    0x2c(%esp),%esi\n"
-  "mov    0x30(%esp),%ebp\n"
-  "mov    0x34(%esp),%ecx\n"
+  "pusha                                       \n"
+  "mov    0x24(%esp),%edx                      \n"
+  "mov    0x28(%esp),%edi                      \n"
+  "mov    0x2c(%esp),%esi                      \n"
+  "mov    0x30(%esp),%ebp                      \n"
+  "mov    0x34(%esp),%ecx                      \n"
 
-"1:"
-  "movzbl (%edi),%eax\n"
-  "lea    1(%edi),%edi\n"
-  "movzbl (%esi),%ebx\n"
-  "lea    1(%esi),%esi\n"
+"1:                                            \n"
+  "movzbl (%edi),%eax                          \n"
+  "lea    1(%edi),%edi                         \n"
+  "movzbl (%esi),%ebx                          \n"
+  "lea    1(%esi),%esi                         \n"
   "movq   " UNDERSCORE "kCoefficientsBgraY+2048(,%eax,8),%mm0\n"
-  "movzbl (%edx),%eax\n"
+  "movzbl (%edx),%eax                          \n"
   "paddsw " UNDERSCORE "kCoefficientsBgraY+4096(,%ebx,8),%mm0\n"
-  "movzbl 0x1(%edx),%ebx\n"
+  "movzbl 0x1(%edx),%ebx                       \n"
   "movq   " UNDERSCORE "kCoefficientsBgraY(,%eax,8),%mm1\n"
-  "lea    2(%edx),%edx\n"
+  "lea    2(%edx),%edx                         \n"
   "movq   " UNDERSCORE "kCoefficientsBgraY(,%ebx,8),%mm2\n"
-  "paddsw %mm0,%mm1\n"
-  "paddsw %mm0,%mm2\n"
-  "psraw  $0x6,%mm1\n"
-  "psraw  $0x6,%mm2\n"
-  "packuswb %mm2,%mm1\n"
-  "movq   %mm1,0x0(%ebp)\n"
-  "lea    8(%ebp),%ebp\n"
-  "sub    $0x2,%ecx\n"
-  "ja     1b\n"
-  "popa\n"
-  "ret\n"
+  "paddsw %mm0,%mm1                            \n"
+  "paddsw %mm0,%mm2                            \n"
+  "psraw  $0x6,%mm1                            \n"
+  "psraw  $0x6,%mm2                            \n"
+  "packuswb %mm2,%mm1                          \n"
+  "movq   %mm1,0x0(%ebp)                       \n"
+  "lea    8(%ebp),%ebp                         \n"
+  "sub    $0x2,%ecx                            \n"
+  "ja     1b                                   \n"
+  "popa                                        \n"
+  "ret                                         \n"
 );
 
 void FastConvertYUVToABGRRow_MMX(const uint8* y_buf,
@@ -683,44 +650,44 @@ void FastConvertYUVToABGRRow_MMX(const uint8* y_buf,
                                  uint8* rgb_buf,
                                  int width);
   asm(
-  ".text\n"
+  ".text                                       \n"
 #if defined(OSX) || defined(IOS)
-  ".globl _FastConvertYUVToABGRRow_MMX\n"
-"_FastConvertYUVToABGRRow_MMX:\n"
+  ".globl _FastConvertYUVToABGRRow_MMX         \n"
+"_FastConvertYUVToABGRRow_MMX:                 \n"
 #else
-  ".global FastConvertYUVToABGRRow_MMX\n"
-"FastConvertYUVToABGRRow_MMX:\n"
+  ".global FastConvertYUVToABGRRow_MMX         \n"
+"FastConvertYUVToABGRRow_MMX:                  \n"
 #endif
-  "pusha\n"
-  "mov    0x24(%esp),%edx\n"
-  "mov    0x28(%esp),%edi\n"
-  "mov    0x2c(%esp),%esi\n"
-  "mov    0x30(%esp),%ebp\n"
-  "mov    0x34(%esp),%ecx\n"
+  "pusha                                       \n"
+  "mov    0x24(%esp),%edx                      \n"
+  "mov    0x28(%esp),%edi                      \n"
+  "mov    0x2c(%esp),%esi                      \n"
+  "mov    0x30(%esp),%ebp                      \n"
+  "mov    0x34(%esp),%ecx                      \n"
 
-"1:"
-  "movzbl (%edi),%eax\n"
-  "lea    1(%edi),%edi\n"
-  "movzbl (%esi),%ebx\n"
-  "lea    1(%esi),%esi\n"
+"1:                                            \n"
+  "movzbl (%edi),%eax                          \n"
+  "lea    1(%edi),%edi                         \n"
+  "movzbl (%esi),%ebx                          \n"
+  "lea    1(%esi),%esi                         \n"
   "movq   " UNDERSCORE "kCoefficientsAbgrY+2048(,%eax,8),%mm0\n"
-  "movzbl (%edx),%eax\n"
+  "movzbl (%edx),%eax                          \n"
   "paddsw " UNDERSCORE "kCoefficientsAbgrY+4096(,%ebx,8),%mm0\n"
-  "movzbl 0x1(%edx),%ebx\n"
+  "movzbl 0x1(%edx),%ebx                       \n"
   "movq   " UNDERSCORE "kCoefficientsAbgrY(,%eax,8),%mm1\n"
-  "lea    2(%edx),%edx\n"
+  "lea    2(%edx),%edx                         \n"
   "movq   " UNDERSCORE "kCoefficientsAbgrY(,%ebx,8),%mm2\n"
-  "paddsw %mm0,%mm1\n"
-  "paddsw %mm0,%mm2\n"
-  "psraw  $0x6,%mm1\n"
-  "psraw  $0x6,%mm2\n"
-  "packuswb %mm2,%mm1\n"
-  "movq   %mm1,0x0(%ebp)\n"
-  "lea    8(%ebp),%ebp\n"
-  "sub    $0x2,%ecx\n"
-  "ja     1b\n"
-  "popa\n"
-  "ret\n"
+  "paddsw %mm0,%mm1                            \n"
+  "paddsw %mm0,%mm2                            \n"
+  "psraw  $0x6,%mm1                            \n"
+  "psraw  $0x6,%mm2                            \n"
+  "packuswb %mm2,%mm1                          \n"
+  "movq   %mm1,0x0(%ebp)                       \n"
+  "lea    8(%ebp),%ebp                         \n"
+  "sub    $0x2,%ecx                            \n"
+  "ja     1b                                   \n"
+  "popa                                        \n"
+  "ret                                         \n"
 );
 
 void FastConvertYUV444ToARGBRow_MMX(const uint8* y_buf,
@@ -729,73 +696,73 @@ void FastConvertYUV444ToARGBRow_MMX(const uint8* y_buf,
                                     uint8* rgb_buf,
                                     int width);
   asm(
-  ".text\n"
+  ".text                                       \n"
 #if defined(OSX) || defined(IOS)
-  ".globl _FastConvertYUV444ToARGBRow_MMX\n"
-"_FastConvertYUV444ToARGBRow_MMX:\n"
+  ".globl _FastConvertYUV444ToARGBRow_MMX      \n"
+"_FastConvertYUV444ToARGBRow_MMX:              \n"
 #else
-  ".global FastConvertYUV444ToARGBRow_MMX\n"
-"FastConvertYUV444ToARGBRow_MMX:\n"
+  ".global FastConvertYUV444ToARGBRow_MMX      \n"
+"FastConvertYUV444ToARGBRow_MMX:               \n"
 #endif
-  "pusha\n"
-  "mov    0x24(%esp),%edx\n"
-  "mov    0x28(%esp),%edi\n"
-  "mov    0x2c(%esp),%esi\n"
-  "mov    0x30(%esp),%ebp\n"
-  "mov    0x34(%esp),%ecx\n"
+  "pusha                                       \n"
+  "mov    0x24(%esp),%edx                      \n"
+  "mov    0x28(%esp),%edi                      \n"
+  "mov    0x2c(%esp),%esi                      \n"
+  "mov    0x30(%esp),%ebp                      \n"
+  "mov    0x34(%esp),%ecx                      \n"
 
-"1:"
-  "movzbl (%edi),%eax\n"
-  "lea    1(%edi),%edi\n"
-  "movzbl (%esi),%ebx\n"
-  "lea    1(%esi),%esi\n"
+"1:                                            \n"
+  "movzbl (%edi),%eax                          \n"
+  "lea    1(%edi),%edi                         \n"
+  "movzbl (%esi),%ebx                          \n"
+  "lea    1(%esi),%esi                         \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY+2048(,%eax,8),%mm0\n"
-  "movzbl (%edx),%eax\n"
+  "movzbl (%edx),%eax                          \n"
   "paddsw " UNDERSCORE "kCoefficientsRgbY+4096(,%ebx,8),%mm0\n"
-  "lea    1(%edx),%edx\n"
+  "lea    1(%edx),%edx                         \n"
   "paddsw " UNDERSCORE "kCoefficientsRgbY(,%eax,8),%mm0\n"
-  "psraw  $0x6,%mm0\n"
-  "packuswb %mm0,%mm0\n"
-  "movd   %mm0,0x0(%ebp)\n"
-  "lea    4(%ebp),%ebp\n"
-  "sub    $0x1,%ecx\n"
-  "ja     1b\n"
-  "popa\n"
-  "ret\n"
+  "psraw  $0x6,%mm0                            \n"
+  "packuswb %mm0,%mm0                          \n"
+  "movd   %mm0,0x0(%ebp)                       \n"
+  "lea    4(%ebp),%ebp                         \n"
+  "sub    $0x1,%ecx                            \n"
+  "ja     1b                                   \n"
+  "popa                                        \n"
+  "ret                                         \n"
 );
 
 void FastConvertYToARGBRow_MMX(const uint8* y_buf,
                                uint8* rgb_buf,
                                int width);
   asm(
-  ".text\n"
+  ".text                                       \n"
 #if defined(OSX) || defined(IOS)
-  ".globl _FastConvertYToARGBRow_MMX\n"
-"_FastConvertYToARGBRow_MMX:\n"
+  ".globl _FastConvertYToARGBRow_MMX           \n"
+"_FastConvertYToARGBRow_MMX:                   \n"
 #else
-  ".global FastConvertYToARGBRow_MMX\n"
-"FastConvertYToARGBRow_MMX:\n"
+  ".global FastConvertYToARGBRow_MMX           \n"
+"FastConvertYToARGBRow_MMX:                    \n"
 #endif
-  "push   %ebx\n"
-  "mov    0x8(%esp),%eax\n"
-  "mov    0xc(%esp),%edx\n"
-  "mov    0x10(%esp),%ecx\n"
+  "push   %ebx                                 \n"
+  "mov    0x8(%esp),%eax                       \n"
+  "mov    0xc(%esp),%edx                       \n"
+  "mov    0x10(%esp),%ecx                      \n"
 
-"1:"
-  "movzbl (%eax),%ebx\n"
+"1:                                            \n"
+  "movzbl (%eax),%ebx                          \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY(,%ebx,8),%mm0\n"
-  "psraw  $0x6,%mm0\n"
-  "movzbl 0x1(%eax),%ebx\n"
+  "psraw  $0x6,%mm0                            \n"
+  "movzbl 0x1(%eax),%ebx                       \n"
   "movq   " UNDERSCORE "kCoefficientsRgbY(,%ebx,8),%mm1\n"
-  "psraw  $0x6,%mm1\n"
-  "packuswb %mm1,%mm0\n"
-  "lea    0x2(%eax),%eax\n"
-  "movq   %mm0,(%edx)\n"
-  "lea    0x8(%edx),%edx\n"
-  "sub    $0x2,%ecx\n"
-  "ja     1b\n"
-  "pop    %ebx\n"
-  "ret\n"
+  "psraw  $0x6,%mm1                            \n"
+  "packuswb %mm1,%mm0                          \n"
+  "lea    0x2(%eax),%eax                       \n"
+  "movq   %mm0,(%edx)                          \n"
+  "lea    0x8(%edx),%edx                       \n"
+  "sub    $0x2,%ecx                            \n"
+  "ja     1b                                   \n"
+  "pop    %ebx                                 \n"
+  "ret                                         \n"
 );
 
 #endif

@@ -92,7 +92,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     pcmpeqb    xmm5, xmm5            // generate mask 0xff000000
     pslld      xmm5, 24
 
-  wloop:
+  convertloop:
     movq       xmm0, qword ptr [eax]
     lea        eax,  [eax + 8]
     punpcklbw  xmm0, xmm0
@@ -105,7 +105,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     movdqa     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 8
-    ja         wloop
+    ja         convertloop
     ret
   }
 }
@@ -753,18 +753,18 @@ SIMD_ALIGNED(const int16 kUVBiasR[8]) = {
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
-    __asm pmaddubsw  xmm0, kUVToB        /* scale B UV */                     \
-    __asm pmaddubsw  xmm1, kUVToG        /* scale G UV */                     \
-    __asm pmaddubsw  xmm2, kUVToR        /* scale R UV */                     \
-    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */          \
-    __asm psubw      xmm1, kUVBiasG                                           \
-    __asm psubw      xmm2, kUVBiasR                                           \
+    __asm pmaddubsw  xmm0, kUVToB        /* scale B UV */                      \
+    __asm pmaddubsw  xmm1, kUVToG        /* scale G UV */                      \
+    __asm pmaddubsw  xmm2, kUVToR        /* scale R UV */                      \
+    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */           \
+    __asm psubw      xmm1, kUVBiasG                                            \
+    __asm psubw      xmm2, kUVBiasR                                            \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                                     \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm4                                                \
-    __asm psubsw     xmm3, kYSub16                                            \
-    __asm pmullw     xmm3, kYToRgb                                            \
+    __asm psubsw     xmm3, kYSub16                                             \
+    __asm pmullw     xmm3, kYToRgb                                             \
     __asm paddw      xmm0, xmm3           /* B += Y */                         \
     __asm paddw      xmm1, xmm3           /* G += Y */                         \
     __asm paddw      xmm2, xmm3           /* R += Y */                         \

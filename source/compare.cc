@@ -23,35 +23,30 @@ namespace libyuv {
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
   volatile uint32 sse;
-  asm volatile
-  (
-    "vmov.u8    q7, #0\n"
-    "vmov.u8    q9, #0\n"
-    "vmov.u8    q8, #0\n"
-    "vmov.u8    q10, #0\n"
+  asm volatile (
+    "vmov.u8    q7, #0                         \n"
+    "vmov.u8    q9, #0                         \n"
+    "vmov.u8    q8, #0                         \n"
+    "vmov.u8    q10, #0                        \n"
 
-    "1:\n"
-    "vld1.u8    {q0}, [%0]!\n"
-    "vld1.u8    {q1}, [%1]!\n"
+    "1:                                        \n"
+    "vld1.u8    {q0}, [%0]!                    \n"
+    "vld1.u8    {q1}, [%1]!                    \n"
+    "vsubl.u8   q2, d0, d2                     \n"
+    "vsubl.u8   q3, d1, d3                     \n"
+    "vmlal.s16  q7, d4, d4                     \n"
+    "vmlal.s16  q8, d6, d6                     \n"
+    "vmlal.s16  q8, d5, d5                     \n"
+    "vmlal.s16  q10, d7, d7                    \n"
+    "subs       %2, %2, #16                    \n"
+    "bhi        1b                             \n"
 
-    "vsubl.u8   q2, d0, d2\n"
-    "vsubl.u8   q3, d1, d3\n"
-
-    "vmlal.s16  q7, d4, d4\n"
-    "vmlal.s16  q8, d6, d6\n"
-    "vmlal.s16  q8, d5, d5\n"
-    "vmlal.s16  q10, d7, d7\n"
-
-    "subs       %2, %2, #16\n"
-    "bhi        1b\n"
-
-    "vadd.u32   q7, q7, q8\n"
-    "vadd.u32   q9, q9, q10\n"
-    "vadd.u32   q10, q7, q9\n"
-    "vpaddl.u32 q1, q10\n"
-    "vadd.u64   d0, d2, d3\n"
-    "vmov.32    %3, d0[0]\n"
-
+    "vadd.u32   q7, q7, q8                     \n"
+    "vadd.u32   q9, q9, q10                    \n"
+    "vadd.u32   q10, q7, q9                    \n"
+    "vpaddl.u32 q1, q10                        \n"
+    "vadd.u64   d0, d2, d3                     \n"
+    "vmov.32    %3, d0[0]                      \n"
     : "+r"(src_a),
       "+r"(src_b),
       "+r"(count),
@@ -59,7 +54,6 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
     :
     : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10"
   );
-
   return sse;
 }
 
@@ -102,7 +96,6 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     pshufd     xmm1, xmm0, 01h
     paddd      xmm0, xmm1
     movd       eax, xmm0
-
     ret
   }
 }
@@ -112,11 +105,12 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 // DISABLE
 //#define HAS_SUMSQUAREERROR_SSE2
 // DISABLE
+#if HAS_SUMSQUAREERROR_SSE2
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {
   volatile uint32 sse;
-  asm volatile(
-  "\n"
+  asm volatile (
+  "                                            \n"
   : "+r"(src_a),      // %0
     "+r"(src_b),      // %1
     "+r"(count),      // %2
@@ -129,6 +123,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 );
   return sse;
 }
+#endif
 #endif
 #endif
 
@@ -148,7 +143,6 @@ uint64 ComputeSumSquareError(const uint8* src_a,
                              const uint8* src_b, int count) {
   uint32 (*SumSquareError)(const uint8* src_a,
                            const uint8* src_b, int count);
-
 #if defined(HAS_SUMSQUAREERROR_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SumSquareError = SumSquareError_NEON;
@@ -162,10 +156,8 @@ uint64 ComputeSumSquareError(const uint8* src_a,
   {
     SumSquareError = SumSquareError_C;
   }
-
   const int kBlockSize = 4096;
   uint64 diff = 0;
-
   while (count >= kBlockSize) {
     diff += SumSquareError(src_a, src_b, kBlockSize);
     src_a += kBlockSize;
@@ -179,7 +171,6 @@ uint64 ComputeSumSquareError(const uint8* src_a,
       diff += static_cast<uint64>(SumSquareError_C(src_a, src_b, count));
     }
   }
-
   return diff;
 }
 
@@ -188,7 +179,6 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
                                   int width, int height) {
   uint32 (*SumSquareError)(const uint8* src_a,
                            const uint8* src_b, int count);
-
 #if defined(HAS_SUMSQUAREERROR_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       (width % 16 == 0)) {
@@ -200,7 +190,6 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
   }
 
   uint64 sse = 0;
-
   for (int h = 0; h < height; ++h) {
     sse += static_cast<uint64>(SumSquareError(src_a, src_b, width));
     src_a += stride_a;
@@ -210,13 +199,27 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
   return sse;
 }
 
-double Sse2Psnr(double Samples, double Sse) {
+double Sse2Psnr(double samples, double sse) {
   double psnr;
-
-  if (Sse > 0.0)
-    psnr = 10.0 * log10(255.0 * 255.0 * Samples / Sse);
+  if (sse > 0.0)
+    psnr = 10.0 * log10(255.0 * 255.0 * samples / sse);
   else
     psnr = kMaxPsnr;      // Limit to prevent divide by 0
+
+  if (psnr > kMaxPsnr)
+    psnr = kMaxPsnr;
+
+  return psnr;
+}
+
+double Sse2Psnr(uint64 samples, uint64 sse) {
+  double psnr;
+  if (sse > 0) {
+    double mse = static_cast<double>(samples) / static_cast<double>(sse);
+    psnr = 10.0 * log10(255.0 * 255.0 * mse);
+  } else {
+    psnr = kMaxPsnr;      // Limit to prevent divide by 0
+  }
 
   if (psnr > kMaxPsnr)
     psnr = kMaxPsnr;
@@ -233,7 +236,7 @@ double CalcFramePsnr(const uint8* src_a, int stride_a,
                                                 src_b, stride_b,
                                                 width, height);
 
-  return Sse2Psnr (samples, sse);
+  return Sse2Psnr(samples, sse);
 }
 
 double I420Psnr(const uint8* src_y_a, int stride_y_a,
