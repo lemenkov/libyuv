@@ -42,11 +42,6 @@ static void SplitUV_NEON(const uint8* src_uv,
 
 #elif (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
     && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-#if defined(_MSC_VER)
-#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
-#else
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
-#endif
 
 #if defined(WIN32) && !defined(COVERAGE_ENABLED)
 #define HAS_SPLITUV_SSE2
