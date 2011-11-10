@@ -16,7 +16,6 @@
 #include "libyuv/convert.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
-#include "libyuv/general.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/scale.h"

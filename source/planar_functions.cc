@@ -182,6 +182,63 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+int I420Mirror(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (src_y == NULL || src_u == NULL || src_v == NULL ||
+      dst_y == NULL || dst_u == NULL || dst_v == NULL)
+    return -1;
+
+  // Only accepts positive dimensions
+  if (height < 0 || width < 0 ||  src_stride_y < 0 || src_stride_u < 0 ||
+      src_stride_v < 0 || dst_stride_y < 0 || dst_stride_u < 0 ||
+      dst_stride_v < 0)
+    return -1;
+
+  int indO = 0;
+  int indS  = 0;
+  int wind, hind;
+  uint8 tmp_val;
+  // Will swap two values per iteration
+  const int half_width = (width + 1) >> 1;
+
+  // Y
+  for (wind = 0; wind < half_width; ++wind) {
+   for (hind = 0; hind < height; ++hind) {
+     indO = hind * src_stride_y + wind;
+     indS = hind * dst_stride_y + (width - wind - 1);
+     tmp_val = src_y[indO];
+     dst_y[indO] = src_y[indS];
+     dst_y[indS] = tmp_val;
+    }
+  }
+
+  const int half_height = (height + 1) >> 1;
+  const int half_uv_width = (width + 1) >> 1;
+
+  for (wind = 0; wind < half_uv_width; ++wind) {
+   for (hind = 0; hind < half_height; ++hind) {
+     // U
+     indO = hind * dst_stride_u + wind;
+     indS = hind * dst_stride_u + (half_uv_width - wind - 1);
+     tmp_val = src_u[indO];
+     dst_u[indO] = src_u[indS];
+     dst_u[indS] = tmp_val;
+     // V
+     indO = hind * dst_stride_v + wind;
+     indS = hind * dst_stride_v + (half_uv_width - wind - 1);
+     tmp_val = src_v[indO];
+     dst_v[indO] = src_v[indS];
+     dst_v[indS] = tmp_val;
+   }
+  }
+  return 0;
+}
+
 // SetRows32 writes 'count' bytes using a 32 bit value repeated
 
 #if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
