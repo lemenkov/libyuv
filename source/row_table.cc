@@ -208,25 +208,27 @@ SIMD_ALIGNED(const int16 NAME[256 * 3][4]) = {\
   RGBV(0xFC), RGBV(0xFD), RGBV(0xFE), RGBV(0xFF), \
 };
 
+#define CS(v) static_cast<int16>(v)
+
 // ARGB table
 #define RGBY(i) { \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(256 * 64 - 1) \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(256 * 64 - 1) \
 }
 
 #define RGBU(i) { \
-  static_cast<int16>(2.018 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(-0.391 * 64 * (i - 128) + 0.5), \
+  CS(2.018 * 64 * (i - 128) + 0.5), \
+  CS(-0.391 * 64 * (i - 128) - 0.5), \
   0, \
   0 \
 }
 
 #define RGBV(i) { \
   0, \
-  static_cast<int16>(-0.813 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(1.596 * 64 * (i - 128) + 0.5), \
+  CS(-0.813 * 64 * (i - 128) - 0.5), \
+  CS(1.596 * 64 * (i - 128) + 0.5), \
   0 \
 }
 
@@ -238,23 +240,23 @@ MAKETABLE(kCoefficientsRgbY)
 
 // BGRA table
 #define RGBY(i) { \
-  static_cast<int16>(256 * 64 - 1), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5) \
+  CS(256 * 64 - 1), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5) \
 }
 
 #define RGBU(i) { \
   0, \
   0, \
-  static_cast<int16>(-0.391 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(2.018 * 64 * (i - 128) + 0.5) \
+  CS(-0.391 * 64 * (i - 128) - 0.5), \
+  CS(2.018 * 64 * (i - 128) + 0.5) \
 }
 
 #define RGBV(i) { \
   0, \
-  static_cast<int16>(1.596 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(-0.813 * 64 * (i - 128) + 0.5), \
+  CS(1.596 * 64 * (i - 128) + 0.5), \
+  CS(-0.813 * 64 * (i - 128) - 0.5), \
   0 \
 }
 
@@ -266,22 +268,22 @@ MAKETABLE(kCoefficientsBgraY)
 
 // ABGR table
 #define RGBY(i) { \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(1.164 * 64 * (i - 16) + 0.5), \
-  static_cast<int16>(256 * 64 - 1) \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(1.164 * 64 * (i - 16) + 0.5), \
+  CS(256 * 64 - 1) \
 }
 
 #define RGBU(i) { \
   0, \
-  static_cast<int16>(-0.391 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(2.018 * 64 * (i - 128) + 0.5), \
+  CS(-0.391 * 64 * (i - 128) - 0.5), \
+  CS(2.018 * 64 * (i - 128) + 0.5), \
   0 \
 }
 
 #define RGBV(i) { \
-  static_cast<int16>(1.596 * 64 * (i - 128) + 0.5), \
-  static_cast<int16>(-0.813 * 64 * (i - 128) + 0.5), \
+  CS(1.596 * 64 * (i - 128) + 0.5), \
+  CS(-0.813 * 64 * (i - 128) - 0.5), \
   0, \
   0 \
 }

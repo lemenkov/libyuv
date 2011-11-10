@@ -36,7 +36,7 @@ static void SplitUV_NEON(const uint8* src_uv,
       "+r"(dst_v),
       "+r"(pix)             // Output registers
     :                       // Input registers
-    : "q0", "q1"            // Clobber List
+    : "memory", "cc", "q0", "q1" // Clobber List
   );
 }
 
@@ -1080,6 +1080,13 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
                                   const uint8* v_buf,
                                   uint8* rgb_buf,
                                   int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+  } else
+#endif
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 4 == 0) &&
@@ -1132,6 +1139,13 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
                                    const uint8* v_buf,
                                    uint8* rgb_buf,
                                    int width);
+#if defined(HAS_FASTCONVERTYUVTOBGRAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_SSSE3;
+  } else
+#endif
 #if defined(HAS_FASTCONVERTYUVTOBGRAROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 2 == 0)) {
@@ -1176,6 +1190,13 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
                                    const uint8* v_buf,
                                    uint8* rgb_buf,
                                    int width);
+#if defined(HAS_FASTCONVERTYUVTOABGRROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_SSSE3;
+  } else
+#endif
 #if defined(HAS_FASTCONVERTYUVTOABGRROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 2 == 0)) {
@@ -1220,6 +1241,13 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
                                    const uint8* v_buf,
                                    uint8* rgb_buf,
                                    int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+  } else
+#endif
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       (width % 2 == 0)) {
@@ -1263,6 +1291,13 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
                                       const uint8* v_buf,
                                       uint8* rgb_buf,
                                       int width);
+#if defined(HAS_FASTCONVERTYUV444TOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
+    FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_SSSE3;
+  } else
+#endif
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_SSE2;
@@ -1300,10 +1335,10 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
   void (*FastConvertYToARGBRow)(const uint8* y_buf,
                                  uint8* rgb_buf,
                                  int width);
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      (width % 2 == 0) &&
-      IS_ALIGNED(dst_argb, 8) && (dst_stride_argb % 8 == 0)) {
+#if defined(HAS_FASTCONVERTYTOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 8 == 0) &&
+      IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
     FastConvertYToARGBRow = FastConvertYToARGBRow_SSE2;
   } else
 #endif

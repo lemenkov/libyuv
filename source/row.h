@@ -15,49 +15,59 @@
 
 #define kMaxStride (2048 * 4)
 
+#if defined(COVERAGE_ENABLED) || defined(TARGET_IPHONE_SIMULATOR)
+#define YUV_DISABLE_ASM
+#endif
+
 // The following are available on all x86 platforms
 #if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(LIBYUV_DISABLE_ASM)
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_BGRATOARGBROW_SSSE3
-#define HAS_ARGBTOYROW_SSSE3
 #define HAS_BG24TOARGBROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RGB24TOYROW_SSSE3
 #define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOUVROW_SSSE3
 #define HAS_RAWTOUVROW_SSSE3
+#define HAS_ARGBTOYROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
-#define HAS_I400TOARGBROW_SSE2
-#endif
-
-// The following are available on Windows and Linux
-#if (defined(WIN32) || defined(__x86_64__) || \
-    (defined(__i386__) && !defined(__pic__))) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
+#define HAS_I400TOARGBROW_SSE2
 #endif
 
 // The following are available on Linux (32/64 bit)
 // TODO(fbarchard): enable for fpic on linux
 #if (defined(__x86_64__) || \
     (defined(__i386__) && !defined(__pic__))) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(LIBYUV_DISABLE_ASM)
 #define HAS_FASTCONVERTYUVTOARGBROW_SSE2
 #define HAS_FASTCONVERTYUVTOBGRAROW_SSE2
 #define HAS_FASTCONVERTYUVTOABGRROW_SSE2
+#define HAS_FASTCONVERTYUV444TOARGBROW_SSE2
+#define HAS_FASTCONVERTYTOARGBROW_SSE2
 #endif
 
 // The following are available on Windows and GCC 32 bit
 #if (defined(WIN32) || \
     defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(LIBYUV_DISABLE_ASM)
 #define HAS_FASTCONVERTYUVTOARGBROW_MMX
 #define HAS_FASTCONVERTYUVTOBGRAROW_MMX
 #define HAS_FASTCONVERTYUVTOABGRROW_MMX
+#endif
+
+// The following are available on Windows
+#if defined(WIN32) && \
+    !defined(LIBYUV_DISABLE_ASM)
+#define HAS_FASTCONVERTYUVTOARGBROW_SSSE3
+#define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
+#define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
+#define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
+#define HAS_FASTCONVERTYTOARGBROW_SSE2
 #endif
 
 extern "C" {
@@ -222,6 +232,40 @@ void FastConvertYUV444ToARGBRow_MMX(const uint8* y_buf,
 void FastConvertYToARGBRow_MMX(const uint8* y_buf,
                                uint8* rgb_buf,
                                int width);
+#endif
+
+#ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
+void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+
+void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+
+void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+
+void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
+                                      const uint8* u_buf,
+                                      const uint8* v_buf,
+                                      uint8* rgb_buf,
+                                      int width);
+
+#endif
+
+#ifdef HAS_FASTCONVERTYTOARGBROW_SSE2
+void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
+                                uint8* rgb_buf,
+                                int width);
+
 #endif
 
 // Method to force C version.

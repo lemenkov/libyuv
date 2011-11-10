@@ -253,37 +253,47 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 #ifdef HAS_ARGBTOUVROW_SSSE3
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
-  "movdqa     %5,%%xmm7\n"
-  "movdqa     %6,%%xmm6\n"
-  "movdqa     %7,%%xmm5\n"
+ asm volatile(
+  "movdqa     %0,%%xmm4\n"
+  "movdqa     %1,%%xmm3\n"
+  "movdqa     %2,%%xmm5\n"
+  :
+  : "m"(kARGBToU),         // %0
+    "m"(kARGBToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+ );
+ asm volatile(
   "sub        %1,%2\n"
 "1:"
   "movdqa     (%0),%%xmm0\n"
   "movdqa     0x10(%0),%%xmm1\n"
   "movdqa     0x20(%0),%%xmm2\n"
-  "movdqa     0x30(%0),%%xmm3\n"
+  "movdqa     0x30(%0),%%xmm6\n"
   "pavgb      (%0,%4,1),%%xmm0\n"
   "pavgb      0x10(%0,%4,1),%%xmm1\n"
   "pavgb      0x20(%0,%4,1),%%xmm2\n"
-  "pavgb      0x30(%0,%4,1),%%xmm3\n"
+  "pavgb      0x30(%0,%4,1),%%xmm6\n"
   "lea        0x40(%0),%0\n"
-  "movdqa     %%xmm0,%%xmm4\n"
+  "movdqa     %%xmm0,%%xmm7\n"
   "shufps     $0x88,%%xmm1,%%xmm0\n"
-  "shufps     $0xdd,%%xmm1,%%xmm4\n"
-  "pavgb      %%xmm4,%%xmm0\n"
-  "movdqa     %%xmm2,%%xmm4\n"
-  "shufps     $0x88,%%xmm3,%%xmm2\n"
-  "shufps     $0xdd,%%xmm3,%%xmm4\n"
-  "pavgb      %%xmm4,%%xmm2\n"
+  "shufps     $0xdd,%%xmm1,%%xmm7\n"
+  "pavgb      %%xmm7,%%xmm0\n"
+  "movdqa     %%xmm2,%%xmm7\n"
+  "shufps     $0x88,%%xmm6,%%xmm2\n"
+  "shufps     $0xdd,%%xmm6,%%xmm7\n"
+  "pavgb      %%xmm7,%%xmm2\n"
   "movdqa     %%xmm0,%%xmm1\n"
-  "movdqa     %%xmm2,%%xmm3\n"
-  "pmaddubsw  %%xmm7,%%xmm0\n"
-  "pmaddubsw  %%xmm7,%%xmm2\n"
-  "pmaddubsw  %%xmm6,%%xmm1\n"
-  "pmaddubsw  %%xmm6,%%xmm3\n"
+  "movdqa     %%xmm2,%%xmm6\n"
+  "pmaddubsw  %%xmm4,%%xmm0\n"
+  "pmaddubsw  %%xmm4,%%xmm2\n"
+  "pmaddubsw  %%xmm3,%%xmm1\n"
+  "pmaddubsw  %%xmm3,%%xmm6\n"
   "phaddw     %%xmm2,%%xmm0\n"
-  "phaddw     %%xmm3,%%xmm1\n"
+  "phaddw     %%xmm6,%%xmm1\n"
   "psraw      $0x8,%%xmm0\n"
   "psraw      $0x8,%%xmm1\n"
   "packsswb   %%xmm1,%%xmm0\n"
@@ -297,13 +307,10 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_argb)), // %4
-    "m"(kARGBToU),         // %5
-    "m"(kARGBToV),         // %6
-    "m"(kAddUV128)         // %7
+  : "r"(static_cast<intptr_t>(src_stride_argb))
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
 #endif
 );
 }
