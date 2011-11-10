@@ -13,74 +13,73 @@
 extern "C" {
 
 #ifdef HAS_ARGBTOYROW_SSSE3
-#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
 
 // Constant multiplication table for converting ARGB to I400.
-extern "C" TALIGN16(const int8, kARGBToY[16]) = {
+SIMD_ALIGNED(const int8 kARGBToY[16]) = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
-extern "C" TALIGN16(const int8, kARGBToU[16]) = {
+SIMD_ALIGNED(const int8 kARGBToU[16]) = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
-extern "C" TALIGN16(const int8, kARGBToV[16]) = {
+SIMD_ALIGNED(const int8 kARGBToV[16]) = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
 };
 
 // Constants for BGRA
-extern "C" TALIGN16(const int8, kBGRAToY[16]) = {
+SIMD_ALIGNED(const int8 kBGRAToY[16]) = {
   0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
 };
 
-extern "C" TALIGN16(const int8, kBGRAToU[16]) = {
+SIMD_ALIGNED(const int8 kBGRAToU[16]) = {
   0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112
 };
 
-extern "C" TALIGN16(const int8, kBGRAToV[16]) = {
+SIMD_ALIGNED(const int8 kBGRAToV[16]) = {
   0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
 };
 
 // Constants for ABGR
-extern "C" TALIGN16(const int8, kABGRToY[16]) = {
+SIMD_ALIGNED(const int8 kABGRToY[16]) = {
   33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
 };
 
-extern "C" TALIGN16(const int8, kABGRToU[16]) = {
+SIMD_ALIGNED(const int8 kABGRToU[16]) = {
   -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0
 };
 
-extern "C" TALIGN16(const int8, kABGRToV[16]) = {
+SIMD_ALIGNED(const int8 kABGRToV[16]) = {
   112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
 };
 
-extern "C" TALIGN16(const uint8, kAddY16[16]) = {
+SIMD_ALIGNED(const uint8 kAddY16[16]) = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
 };
 
-extern "C" TALIGN16(const uint8, kAddUV128[16]) = {
+SIMD_ALIGNED(const uint8 kAddUV128[16]) = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
 
 // Shuffle table for converting BG24 to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBG24ToARGB[16]) = {
+SIMD_ALIGNED(const uint8 kShuffleMaskBG24ToARGB[16]) = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
 // Shuffle table for converting RAW to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskRAWToARGB[16]) = {
+SIMD_ALIGNED(const uint8 kShuffleMaskRAWToARGB[16]) = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
 // Shuffle table for converting ABGR to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskABGRToARGB[16]) = {
+SIMD_ALIGNED(const uint8 kShuffleMaskABGRToARGB[16]) = {
   2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
 };
 
 // Shuffle table for converting BGRA to ARGB.
-extern "C" TALIGN16(const uint8, kShuffleMaskBGRAToARGB[16]) = {
+SIMD_ALIGNED(const uint8 kShuffleMaskBGRAToARGB[16]) = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
@@ -117,7 +116,7 @@ __asm {
     mov       eax, [esp + 4]   // src_abgr
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, _kShuffleMaskABGRToARGB
+    movdqa    xmm5, kShuffleMaskABGRToARGB
 
  convertloop :
     movdqa    xmm0, [eax]
@@ -137,7 +136,7 @@ __asm {
     mov       eax, [esp + 4]   // src_bgra
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, _kShuffleMaskBGRAToARGB
+    movdqa    xmm5, kShuffleMaskBGRAToARGB
 
  convertloop :
     movdqa    xmm0, [eax]
@@ -159,7 +158,7 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
     pslld     xmm5, 24
-    movdqa    xmm4, _kShuffleMaskBG24ToARGB
+    movdqa    xmm4, kShuffleMaskBG24ToARGB
 
  convertloop :
     movdqa    xmm0, [eax]
@@ -198,7 +197,7 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
     pslld     xmm5, 24
-    movdqa    xmm4, _kShuffleMaskRAWToARGB
+    movdqa    xmm4, kShuffleMaskRAWToARGB
 
  convertloop :
     movdqa    xmm0, [eax]
@@ -235,8 +234,8 @@ __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, _kAddY16
-    movdqa     xmm4, _kARGBToY
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kARGBToY
 
  convertloop :
     movdqa     xmm0, [eax]
@@ -268,8 +267,8 @@ __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, _kAddY16
-    movdqa     xmm4, _kBGRAToY
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kBGRAToY
 
  convertloop :
     movdqa     xmm0, [eax]
@@ -301,8 +300,8 @@ __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, _kAddY16
-    movdqa     xmm4, _kABGRToY
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kABGRToY
 
  convertloop :
     movdqa     xmm0, [eax]
@@ -339,9 +338,9 @@ __asm {
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, _kARGBToU
-    movdqa     xmm6, _kARGBToV
-    movdqa     xmm5, _kAddUV128
+    movdqa     xmm7, kARGBToU
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
  convertloop :
@@ -403,9 +402,9 @@ __asm {
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, _kBGRAToU
-    movdqa     xmm6, _kBGRAToV
-    movdqa     xmm5, _kAddUV128
+    movdqa     xmm7, kBGRAToU
+    movdqa     xmm6, kBGRAToV
+    movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
  convertloop :
@@ -467,9 +466,9 @@ __asm {
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, _kABGRToU
-    movdqa     xmm6, _kABGRToV
-    movdqa     xmm5, _kAddUV128
+    movdqa     xmm7, kABGRToU
+    movdqa     xmm6, kABGRToV
+    movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
  convertloop :
@@ -713,35 +712,35 @@ void FastConvertYToARGBRow_MMX(const uint8* y_buf,
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-extern "C" TALIGN16(const int8, kUVToB[16]) = {
+SIMD_ALIGNED(const int8 kUVToB[16]) = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
 };
 
-extern "C" TALIGN16(const int8, kUVToR[16]) = {
+SIMD_ALIGNED(const int8 kUVToR[16]) = {
   UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR
 };
 
-extern "C" TALIGN16(const int8, kUVToG[16]) = {
+SIMD_ALIGNED(const int8 kUVToG[16]) = {
   UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
 };
 
-extern "C" TALIGN16(const int16, kYToRgb[8]) = {
+SIMD_ALIGNED(const int16 kYToRgb[8]) = {
   YG, YG, YG, YG, YG, YG, YG, YG
 };
 
-extern "C" TALIGN16(const int16, kYSub16[8]) = {
+SIMD_ALIGNED(const int16 kYSub16[8]) = {
   16, 16, 16, 16, 16, 16, 16, 16
 };
 
-extern "C" TALIGN16(const int16, kUVBiasB[8]) = {
+SIMD_ALIGNED(const int16 kUVBiasB[8]) = {
   BB, BB, BB, BB, BB, BB, BB, BB
 };
 
-extern "C" TALIGN16(const int16, kUVBiasG[8]) = {
+SIMD_ALIGNED(const int16 kUVBiasG[8]) = {
   BG, BG, BG, BG, BG, BG, BG, BG
 };
 
-extern "C" TALIGN16(const int16, kUVBiasR[8]) = {
+SIMD_ALIGNED(const int16 kUVBiasR[8]) = {
   BR, BR, BR, BR, BR, BR, BR, BR
 };
 
@@ -754,18 +753,18 @@ extern "C" TALIGN16(const int16, kUVBiasR[8]) = {
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
-    __asm pmaddubsw  xmm0, _kUVToB        /* scale B UV */                     \
-    __asm pmaddubsw  xmm1, _kUVToG        /* scale G UV */                     \
-    __asm pmaddubsw  xmm2, _kUVToR        /* scale R UV */                     \
-    __asm psubw      xmm0, _kUVBiasB      /* unbias back to signed */          \
-    __asm psubw      xmm1, _kUVBiasG                                           \
-    __asm psubw      xmm2, _kUVBiasR                                           \
+    __asm pmaddubsw  xmm0, kUVToB        /* scale B UV */                     \
+    __asm pmaddubsw  xmm1, kUVToG        /* scale G UV */                     \
+    __asm pmaddubsw  xmm2, kUVToR        /* scale R UV */                     \
+    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */          \
+    __asm psubw      xmm1, kUVBiasG                                           \
+    __asm psubw      xmm2, kUVBiasR                                           \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                                     \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm4                                                \
-    __asm psubsw     xmm3, _kYSub16                                            \
-    __asm pmullw     xmm3, _kYToRgb                                            \
+    __asm psubsw     xmm3, kYSub16                                            \
+    __asm pmullw     xmm3, kYToRgb                                            \
     __asm paddw      xmm0, xmm3           /* B += Y */                         \
     __asm paddw      xmm1, xmm3           /* G += Y */                         \
     __asm paddw      xmm2, xmm3           /* R += Y */                         \
@@ -923,19 +922,19 @@ void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
     punpcklbw  xmm0, xmm1           // UV
     movdqa     xmm1, xmm0
     movdqa     xmm2, xmm0
-    pmaddubsw  xmm0, _kUVToB        // scale B UV
-    pmaddubsw  xmm1, _kUVToG        // scale G UV
-    pmaddubsw  xmm2, _kUVToR        // scale R UV
-    psubw      xmm0, _kUVBiasB      // unbias back to signed
-    psubw      xmm1, _kUVBiasG
-    psubw      xmm2, _kUVBiasR
+    pmaddubsw  xmm0, kUVToB        // scale B UV
+    pmaddubsw  xmm1, kUVToG        // scale G UV
+    pmaddubsw  xmm2, kUVToR        // scale R UV
+    psubw      xmm0, kUVBiasB      // unbias back to signed
+    psubw      xmm1, kUVBiasG
+    psubw      xmm2, kUVBiasR
 
     // Step 2: Find Y contribution to 4 R,G,B values
     movd       xmm3, [eax]
     lea        eax, [eax + 4]
     punpcklbw  xmm3, xmm4
-    psubsw     xmm3, _kYSub16
-    pmullw     xmm3, _kYToRgb
+    psubsw     xmm3, kYSub16
+    pmullw     xmm3, kYToRgb
     paddw      xmm0, xmm3           // B += Y
     paddw      xmm1, xmm3           // G += Y
     paddw      xmm2, xmm3           // R += Y
@@ -976,8 +975,8 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
     pcmpeqb    xmm5, xmm5           // generate mask 0xff000000
     pslld      xmm5, 24
     pxor       xmm4, xmm4
-    movdqa     xmm3, _kYSub16
-    movdqa     xmm2, _kYToRgb
+    movdqa     xmm3, kYSub16
+    movdqa     xmm2, kYToRgb
 
  convertloop :
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
