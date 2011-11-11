@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/rotate.h"
-#include "../source/rotate_priv.h"
 #include "unit_test.h"
+
 #include <stdlib.h>
 #include <time.h>
+
+#include "libyuv/rotate.h"
+#include "../source/rotate_priv.h"
 
 namespace libyuv {
 
@@ -1446,4 +1448,4 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   EXPECT_EQ(0, y_err + uv_err);
 }
 
-}  // namespace
+}  // namespace libyuv

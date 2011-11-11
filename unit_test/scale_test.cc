@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/cpu_id.h"
-#include "libyuv/scale.h"
 #include "unit_test.h"
+
 #include <stdlib.h>
 #include <time.h>
+
+#include "libyuv/cpu_id.h"
+#include "libyuv/scale.h"
 
 namespace libyuv {
 
@@ -211,4 +213,4 @@ TEST_F(libyuvTest, ScaleDownBy38) {
   EXPECT_EQ(0, err);
 }
 
-}  // namespace
+}  // namespace libyuv

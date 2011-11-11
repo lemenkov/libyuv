@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #ifndef INCLUDE_LIBYUV_FORMATCONVERSION_H_
 #define INCLUDE_LIBYUV_FORMATCONVERSION_H_
 

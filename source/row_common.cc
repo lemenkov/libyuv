@@ -10,6 +10,8 @@
 
 #include "row.h"
 
+#include "libyuv/basic_types.h"
+
 extern "C" {
 
 void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {

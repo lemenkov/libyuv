@@ -10,6 +10,8 @@
 
 #include "row.h"
 
+#include "libyuv/basic_types.h"
+
 extern "C" {
 
 #ifdef HAS_ARGBTOYROW_SSSE3

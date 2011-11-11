@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
-#include "libyuv/cpu_id.h"
 
-#include <math.h>
 #include <float.h>
+#include <math.h>
+
+#include "libyuv/basic_types.h"
+#include "libyuv/cpu_id.h"
 
 namespace libyuv {
 

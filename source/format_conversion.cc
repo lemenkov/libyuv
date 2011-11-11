@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "row.h"
+
 #include <assert.h>
 
+#include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "video_common.h"
-#include "row.h"
 
 namespace libyuv {
 

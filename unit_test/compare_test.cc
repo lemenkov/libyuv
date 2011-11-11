@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/basic_types.h"
-#include "libyuv/compare.h"
-#include "libyuv/cpu_id.h"
 #include "unit_test.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "libyuv/basic_types.h"
+#include "libyuv/compare.h"
+#include "libyuv/cpu_id.h"
 
 namespace libyuv {
 
@@ -329,4 +331,4 @@ TEST_F(libyuvTest, Ssim) {
   free_aligned_buffer_16(src_b)
 }
 
-}
+}  // namespace libyuv

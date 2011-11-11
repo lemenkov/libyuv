@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
-#include "rotate_priv.h"
 
 #include "libyuv/cpu_id.h"
+#include "libyuv/planar_functions.h"
+#include "rotate_priv.h"
 
 namespace libyuv {
 

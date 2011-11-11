@@ -10,6 +10,12 @@
 
 #include "libyuv/convert.h"
 
+//#define SCALEOPT //Currently for windows only. June 2010
+
+#ifdef SCALEOPT
+#include <emmintrin.h>
+#endif
+
 #include "conversion_tables.h"
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
@@ -18,12 +24,6 @@
 #include "libyuv/rotate.h"
 #include "row.h"
 #include "video_common.h"
-
-//#define SCALEOPT //Currently for windows only. June 2010
-
-#ifdef SCALEOPT
-#include <emmintrin.h>
-#endif
 
 namespace libyuv {
 
