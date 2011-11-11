@@ -94,13 +94,34 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  int width, int height);
 
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
+// "src_size" is needed to parse MJPG.
+// "dst_stride_y" number of bytes in a row of the dst_y plane.
+//   Normally this would be the same as dst_width, with recommended alignment
+//   to 16 bytes for better efficiency.
+//   If rotation of 90 or 270 is used, stride is affected. The caller should
+//   allocate the I420 buffer according to rotation.
+// "dst_stride_u" number of bytes in a row of the dst_u plane.
+//   Normally this would be the same as (dst_width + 1) / 2, with
+//   recommended alignment to 16 bytes for better efficiency.
+//   If rotation of 90 or 270 is used, stride is affected.
+// "crop_x" and "crop_y" are starting position for cropping.
+//   To center, crop_x = (src_width - dst_width) / 2
+//              crop_y = (src_height - dst_height) / 2
+// "src_width" / "src_height" is size of src_frame in pixels.
+//   "src_height" can be negative indicating a vertically flipped image source.
+// "dst_width" / "dst_height" is size of destination to crop to.
+//    Must be less than or equal to src_width/src_height
+//    Cropping parameters are pre-rotation.
+// "rotation" can be 0, 90, 180 or 270.
+// "format" is a fourcc.  ie 'I420', 'YUY2'
+// Returns 0 for successful; -1 for invalid parameter. Non-zero for failure.
 int ConvertToI420(const uint8* src_frame, size_t src_size,
                   uint8* dst_y, int dst_stride_y,
                   uint8* dst_u, int dst_stride_u,
                   uint8* dst_v, int dst_stride_v,
-                  int horiz_crop, int vert_crop,
-                  int w, int h,
-                  int dw, int idh,
+                  int crop_x, int crop_y,
+                  int src_width, int src_height,
+                  int dst_width, int dst_height,
                   RotationMode rotation,
                   uint32 format);
 
