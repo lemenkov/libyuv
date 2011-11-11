@@ -1150,11 +1150,6 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
-  if (width % 2 == 0) {
-    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_MMX;
-  } else
-#endif
   {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
   }
@@ -1167,8 +1162,6 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
       src_v += src_stride_v;
     }
   }
-  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
-  EMMS();
   return 0;
 }
 
@@ -1202,11 +1195,6 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
     FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOBGRAROW_MMX)
-  if (width % 2 == 0) {
-    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_MMX;
-  } else
-#endif
   {
     FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_C;
   }
@@ -1219,7 +1207,6 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
       src_v += src_stride_v;
     }
   }
-  EMMS();
   return 0;
 }
 
@@ -1253,11 +1240,6 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
     FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOABGRROW_MMX)
-  if (width % 2 == 0) {
-    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_MMX;
-  } else
-#endif
   {
     FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_C;
   }
@@ -1270,7 +1252,6 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
       src_v += src_stride_v;
     }
   }
-  EMMS();
   return 0;
 }
 
@@ -1304,11 +1285,6 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
-  if (width % 2 == 0) {
-    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_MMX;
-  } else
-#endif
   {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
   }
@@ -1319,8 +1295,6 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
     src_u += src_stride_u;
     src_v += src_stride_v;
   }
-  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
-  EMMS();
   return 0;
 }
 
@@ -1353,13 +1327,9 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
     FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
-    FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_MMX;
-#else
   {
     FastConvertYUV444ToARGBRow = FastConvertYUV444ToARGBRow_C;
   }
-#endif
   for (int y = 0; y < height; ++y) {
     FastConvertYUV444ToARGBRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -1367,8 +1337,6 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
     src_u += src_stride_u;
     src_v += src_stride_v;
   }
-  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
-  EMMS();
   return 0;
 }
 
@@ -1392,11 +1360,6 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
     FastConvertYToARGBRow = FastConvertYToARGBRow_SSE2;
   } else
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_MMX)
-  if (width % 2 == 0) {
-    FastConvertYToARGBRow = FastConvertYToARGBRow_MMX;
-  } else
-#endif
   {
     FastConvertYToARGBRow = FastConvertYToARGBRow_C;
   }
@@ -1405,8 +1368,6 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
   }
-  // MMX used for FastConvertYUVToARGBRow requires an emms instruction.
-  EMMS();
   return 0;
 }
 

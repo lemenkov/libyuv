@@ -13,21 +13,19 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "rotate_priv.h"
+#include "row.h"
 
 namespace libyuv {
 
-#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
-    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-#if defined(_MSC_VER)
-#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
-#else
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
-#endif
+#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) && \
+    !defined(__APPLE__) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+
 // Shuffle table for reversing the bytes.
-extern "C" TALIGN16(const uint8, kShuffleReverse[16]) =
+static const uvec8 kShuffleReverse =
   { 15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u };
 // Shuffle table for reversing the bytes of UV channels.
-extern "C" TALIGN16(const uint8, kShuffleReverseUV[16]) =
+static const uvec8 kShuffleReverseUV =
   { 14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u };
 #endif
 
@@ -73,7 +71,7 @@ __asm {
     mov       edx, [esp + 12 + 12]  // dst
     mov       esi, [esp + 12 + 16]  // dst_stride
     mov       ecx, [esp + 12 + 20]  // width
- convertloop :
+ convertloop:
     // Read in the data from the source pointer.
     // First round of bit swap.
     movq      xmm0, qword ptr [eax]
@@ -172,7 +170,7 @@ __asm {
     and       esp, ~15
     mov       [esp + 16], ecx
     mov       ecx, [ecx + 16 + 28]  // w
- convertloop :
+ convertloop:
     // Read in the data from the source pointer.
     // First round of bit swap.
     movdqa    xmm0, [eax]
@@ -863,9 +861,9 @@ __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    movdqa    xmm5, _kShuffleReverse
+    movdqa    xmm5, kShuffleReverse
     lea       eax, [eax + ecx - 16]
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
@@ -878,12 +876,16 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
+    !defined(__APPLE__) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_REVERSE_LINE_SSSE3
 static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "movdqa     (%3),%%xmm5                      \n"
+  "movdqa     %0,%%xmm5                        \n"
+  :: "m"(kShuffleReverse)
+  );
+  asm volatile (
   "lea        -0x10(%0,%2,1),%0                \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
@@ -896,12 +898,12 @@ static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
-  : "r"(kShuffleReverse)  // %3
+  :
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
 #endif
-);
+  );
 }
 #endif
 
@@ -1066,10 +1068,10 @@ __asm {
     mov       edx, [esp + 4 + 8]   // dst_a
     mov       edi, [esp + 4 + 12]  // dst_b
     mov       ecx, [esp + 4 + 16]  // width
-    movdqa    xmm5, _kShuffleReverseUV
+    movdqa    xmm5, kShuffleReverseUV
     lea       eax, [eax + ecx * 2 - 16]
 
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
@@ -1085,6 +1087,7 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
+    !defined(__APPLE__) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_REVERSE_LINE_UV_SSSE3
 void ReverseLineUV_SSSE3(const uint8* src,
@@ -1092,28 +1095,31 @@ void ReverseLineUV_SSSE3(const uint8* src,
                          int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "movdqa     (%4),%%xmm5                      \n"
-  "lea        -0x10(%0,%3,2),%0                \n"
+  "movdqa     %0,%%xmm5                        \n"
+  :: "m"(kShuffleReverseUV)
+  );
+  asm volatile (
+  "lea        -16(%0,%3,2),%0                  \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
-  "lea        -0x10(%0),%0                     \n"
+  "lea        -16(%0),%0                       \n"
   "pshufb     %%xmm5,%%xmm0                    \n"
   "movlpd     %%xmm0,(%1)                      \n"
-  "lea        0x8(%1),%1                       \n"
+  "lea        8(%1),%1                         \n"
   "movhpd     %%xmm0,(%2)                      \n"
-  "lea        0x8(%2),%2                       \n"
-  "sub        $0x8,%3                          \n"
+  "lea        8(%2),%2                         \n"
+  "sub        $8,%3                            \n"
   "ja         1b                               \n"
   : "+r"(src),      // %0
     "+r"(dst_a),    // %1
     "+r"(dst_b),    // %2
     "+r"(temp_width)  // %3
-  : "r"(kShuffleReverseUV)  // %4
+  :
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
 #endif
-);
+  );
 }
 #endif
 

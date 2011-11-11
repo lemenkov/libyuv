@@ -51,15 +51,6 @@
 #define HAS_FASTCONVERTYTOARGBROW_SSE2
 #endif
 
-// The following are available on Windows and GCC 32 bit
-#if (defined(WIN32) || \
-    defined(__i386__)) && \
-    !defined(LIBYUV_DISABLE_ASM)
-#define HAS_FASTCONVERTYUVTOARGBROW_MMX
-#define HAS_FASTCONVERTYUVTOBGRAROW_MMX
-#define HAS_FASTCONVERTYUVTOABGRROW_MMX
-#endif
-
 // The following are available on Windows
 #if defined(WIN32) && \
     !defined(LIBYUV_DISABLE_ASM)
@@ -128,12 +119,14 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);
 
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
-#define TALIGN16(t, var) static __declspec(align(16)) t _ ## var
+typedef __declspec(align(16)) signed char vec8[16];
+typedef __declspec(align(16)) unsigned char uvec8[16];
+typedef __declspec(align(16)) signed short vec16[8];
 #else // __GNUC__
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
 typedef signed char __attribute__((vector_size(16))) vec8;
 typedef unsigned char __attribute__((vector_size(16))) uvec8;
+typedef signed short __attribute__((vector_size(16))) vec16;
 #endif
 
 extern "C" SIMD_ALIGNED(const int16 kCoefficientsRgbY[768][4]);
@@ -204,36 +197,6 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
                                 int width);
 #endif
 
-#ifdef HAS_FASTCONVERTYUVTOARGBROW_MMX
-void FastConvertYUVToARGBRow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width);
-
-void FastConvertYUVToBGRARow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width);
-
-void FastConvertYUVToABGRRow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width);
-
-void FastConvertYUV444ToARGBRow_MMX(const uint8* y_buf,
-                                    const uint8* u_buf,
-                                    const uint8* v_buf,
-                                    uint8* rgb_buf,
-                                    int width);
-
-void FastConvertYToARGBRow_MMX(const uint8* y_buf,
-                               uint8* rgb_buf,
-                               int width);
-#endif
-
 #ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
@@ -267,42 +230,6 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
                                 int width);
 
 #endif
-
-// Method to force C version.
-//#define USE_MMX 0
-//#define USE_SSE2 0
-
-#if !defined(USE_MMX)
-// Windows, Mac and Linux use MMX
-#if defined(__i386__) || defined(_MSC_VER)
-#define USE_MMX 1
-#else
-#define USE_MMX 0
-#endif
-#endif
-
-#if !defined(USE_SSE2)
-#if defined(__SSE2__) || defined(ARCH_CPU_X86_64) || _M_IX86_FP==2
-#define USE_SSE2 1
-#else
-#define USE_SSE2 0
-#endif
-#endif
-
-// x64 uses MMX2 (SSE) so emms is not required.
-// Warning C4799: function has no EMMS instruction.
-// EMMS() is slow and should be called by the calling function once per image.
-#if USE_MMX && !defined(ARCH_CPU_X86_64)
-#if defined(_MSC_VER)
-#define EMMS() __asm emms
-#pragma warning(disable: 4799)
-#else
-#define EMMS() asm("emms")
-#endif
-#else
-#define EMMS()
-#endif
-
 
 }  // extern "C"
 

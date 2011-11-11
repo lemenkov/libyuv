@@ -14,12 +14,14 @@
 #include <string.h>
 
 #include "libyuv/cpu_id.h"
+#include "row.h"
 
 #if defined(_MSC_VER)
 #define ALIGN16(var) __declspec(align(16)) var
 #else
 #define ALIGN16(var) var __attribute__((aligned(16)))
 #endif
+
 
 // Note: A Neon reference manual
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0204j/CJAJIIGG.html

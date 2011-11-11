@@ -15,71 +15,71 @@ extern "C" {
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constant multiplication table for converting ARGB to I400.
-SIMD_ALIGNED(const int8 kARGBToY[16]) = {
+static const vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
-SIMD_ALIGNED(const int8 kARGBToU[16]) = {
+static const vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
-SIMD_ALIGNED(const int8 kARGBToV[16]) = {
+static const vec8 kARGBToV = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
 };
 
 // Constants for BGRA
-SIMD_ALIGNED(const int8 kBGRAToY[16]) = {
+static const vec8 kBGRAToY = {
   0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
 };
 
-SIMD_ALIGNED(const int8 kBGRAToU[16]) = {
+static const vec8 kBGRAToU = {
   0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112
 };
 
-SIMD_ALIGNED(const int8 kBGRAToV[16]) = {
+static const vec8 kBGRAToV = {
   0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
 };
 
 // Constants for ABGR
-SIMD_ALIGNED(const int8 kABGRToY[16]) = {
+static const vec8 kABGRToY = {
   33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
 };
 
-SIMD_ALIGNED(const int8 kABGRToU[16]) = {
+static const vec8 kABGRToU = {
   -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0
 };
 
-SIMD_ALIGNED(const int8 kABGRToV[16]) = {
+static const vec8 kABGRToV = {
   112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
 };
 
-SIMD_ALIGNED(const uint8 kAddY16[16]) = {
+static const uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
 };
 
-SIMD_ALIGNED(const uint8 kAddUV128[16]) = {
+static const uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
 
 // Shuffle table for converting BG24 to ARGB.
-SIMD_ALIGNED(const uint8 kShuffleMaskBG24ToARGB[16]) = {
+static const uvec8 kShuffleMaskBG24ToARGB = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
 // Shuffle table for converting RAW to ARGB.
-SIMD_ALIGNED(const uint8 kShuffleMaskRAWToARGB[16]) = {
+static const uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
 // Shuffle table for converting ABGR to ARGB.
-SIMD_ALIGNED(const uint8 kShuffleMaskABGRToARGB[16]) = {
+static const uvec8 kShuffleMaskABGRToARGB = {
   2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
 };
 
 // Shuffle table for converting BGRA to ARGB.
-SIMD_ALIGNED(const uint8 kShuffleMaskBGRAToARGB[16]) = {
+static const uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
@@ -118,7 +118,7 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     movdqa    xmm5, kShuffleMaskABGRToARGB
 
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     lea       eax, [eax + 16]
     pshufb    xmm0, xmm5
@@ -138,7 +138,7 @@ __asm {
     mov       ecx, [esp + 12]  // pix
     movdqa    xmm5, kShuffleMaskBGRAToARGB
 
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     lea       eax, [eax + 16]
     pshufb    xmm0, xmm5
@@ -160,7 +160,7 @@ __asm {
     pslld     xmm5, 24
     movdqa    xmm4, kShuffleMaskBG24ToARGB
 
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     movdqa    xmm1, [eax + 16]
     movdqa    xmm3, [eax + 32]
@@ -199,7 +199,7 @@ __asm {
     pslld     xmm5, 24
     movdqa    xmm4, kShuffleMaskRAWToARGB
 
- convertloop :
+ convertloop:
     movdqa    xmm0, [eax]
     movdqa    xmm1, [eax + 16]
     movdqa    xmm3, [eax + 32]
@@ -237,7 +237,7 @@ __asm {
     movdqa     xmm5, kAddY16
     movdqa     xmm4, kARGBToY
 
- convertloop :
+ convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     movdqa     xmm2, [eax + 32]
@@ -270,7 +270,7 @@ __asm {
     movdqa     xmm5, kAddY16
     movdqa     xmm4, kBGRAToY
 
- convertloop :
+ convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     movdqa     xmm2, [eax + 32]
@@ -303,7 +303,7 @@ __asm {
     movdqa     xmm5, kAddY16
     movdqa     xmm4, kABGRToY
 
- convertloop :
+ convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     movdqa     xmm2, [eax + 32]
@@ -343,7 +343,7 @@ __asm {
     movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
- convertloop :
+ convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -407,7 +407,7 @@ __asm {
     movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
- convertloop :
+ convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -471,7 +471,7 @@ __asm {
     movdqa     xmm5, kAddUV128
     sub        edi, edx             // stride from u to v
 
- convertloop :
+ convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -519,182 +519,6 @@ __asm {
   }
 }
 
-#define YUVTORGB_MMX(TABLE) __asm {                                            \
-    __asm convertloop :                                                        \
-    __asm movzx     eax, byte ptr [edi]                                        \
-    __asm lea       edi, [edi + 1]                                             \
-    __asm movzx     ebx, byte ptr [esi]                                        \
-    __asm lea       esi, [esi + 1]                                             \
-    __asm movq      mm0, [TABLE + 2048 + 8 * eax]                              \
-    __asm movzx     eax, byte ptr [edx]                                        \
-    __asm paddsw    mm0, [TABLE + 4096 + 8 * ebx]                              \
-    __asm movzx     ebx, byte ptr [edx + 1]                                    \
-    __asm movq      mm1, [TABLE + 8 * eax]                                     \
-    __asm lea       edx, [edx + 2]                                             \
-    __asm movq      mm2, [TABLE + 8 * ebx]                                     \
-    __asm paddsw    mm1, mm0                                                   \
-    __asm paddsw    mm2, mm0                                                   \
-    __asm psraw     mm1, 6                                                     \
-    __asm psraw     mm2, 6                                                     \
-    __asm packuswb  mm1, mm2                                                   \
-    __asm movq      [ebp], mm1                                                 \
-    __asm lea       ebp, [ebp + 8]                                             \
-    __asm sub       ecx, 2                                                     \
-    __asm ja        convertloop                                                \
-  }
-
-__declspec(naked)
-void FastConvertYUVToARGBRow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width) {
-  __asm {
-    push      ebx
-    push      esi
-    push      edi
-    push      ebp
-    mov       edx, [esp + 16 + 4]
-    mov       edi, [esp + 16 + 8]
-    mov       esi, [esp + 16 + 12]
-    mov       ebp, [esp + 16 + 16]
-    mov       ecx, [esp + 16 + 20]
-
-    YUVTORGB_MMX(kCoefficientsRgbY)
-
-    pop       ebp
-    pop       edi
-    pop       esi
-    pop       ebx
-    ret
-  }
-}
-
-__declspec(naked)
-void FastConvertYUVToBGRARow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width) {
-  __asm {
-    push      ebx
-    push      esi
-    push      edi
-    push      ebp
-    mov       edx, [esp + 16 + 4]
-    mov       edi, [esp + 16 + 8]
-    mov       esi, [esp + 16 + 12]
-    mov       ebp, [esp + 16 + 16]
-    mov       ecx, [esp + 16 + 20]
-
-    YUVTORGB_MMX(kCoefficientsBgraY)
-
-    pop       ebp
-    pop       edi
-    pop       esi
-    pop       ebx
-    ret
-  }
-}
-
-__declspec(naked)
-void FastConvertYUVToABGRRow_MMX(const uint8* y_buf,
-                                 const uint8* u_buf,
-                                 const uint8* v_buf,
-                                 uint8* rgb_buf,
-                                 int width) {
-  __asm {
-    push      ebx
-    push      esi
-    push      edi
-    push      ebp
-    mov       edx, [esp + 16 + 4]
-    mov       edi, [esp + 16 + 8]
-    mov       esi, [esp + 16 + 12]
-    mov       ebp, [esp + 16 + 16]
-    mov       ecx, [esp + 16 + 20]
-
-    YUVTORGB_MMX(kCoefficientsAbgrY)
-
-    pop       ebp
-    pop       edi
-    pop       esi
-    pop       ebx
-    ret
-  }
-}
-
-__declspec(naked)
-void FastConvertYUV444ToARGBRow_MMX(const uint8* y_buf,
-                                    const uint8* u_buf,
-                                    const uint8* v_buf,
-                                    uint8* rgb_buf,
-                                    int width) {
-  __asm {
-    push      ebx
-    push      esi
-    push      edi
-    push      ebp
-    mov       edx, [esp + 16 + 4]
-    mov       edi, [esp + 16 + 8]
-    mov       esi, [esp + 16 + 12]
-    mov       ebp, [esp + 16 + 16]
-    mov       ecx, [esp + 16 + 20]
-
- convertloop :
-    movzx     eax, byte ptr [edi]
-    lea       edi, [edi + 1]
-    movzx     ebx, byte ptr [esi]
-    lea       esi, [esi + 1]
-    movq      mm0, [kCoefficientsRgbY + 2048 + 8 * eax]
-    movzx     eax, byte ptr [edx]
-    paddsw    mm0, [kCoefficientsRgbY + 4096 + 8 * ebx]
-    lea       edx, [edx + 1]
-    paddsw    mm0, [kCoefficientsRgbY + 8 * eax]
-    psraw     mm0, 6
-    packuswb  mm0, mm0
-    movd      [ebp], mm0
-    lea       ebp, [ebp + 4]
-    sub       ecx, 1
-    ja        convertloop
-
-    pop       ebp
-    pop       edi
-    pop       esi
-    pop       ebx
-    ret
-  }
-}
-
-__declspec(naked)
-void FastConvertYToARGBRow_MMX(const uint8* y_buf,
-                               uint8* rgb_buf,
-                               int width) {
-  __asm {
-    push      ebx
-    mov       eax, [esp + 4 + 4]   // Y
-    mov       edx, [esp + 4 + 8]   // rgb
-    mov       ecx, [esp + 4 + 12]  // width
-
- convertloop :
-    movzx     ebx, byte ptr [eax]
-    movq      mm0, [kCoefficientsRgbY + 8 * ebx]
-    psraw     mm0, 6
-    movzx     ebx, byte ptr [eax + 1]
-    movq      mm1, [kCoefficientsRgbY + 8 * ebx]
-    psraw     mm1, 6
-    packuswb  mm0, mm1
-    lea       eax, [eax + 2]
-    movq      [edx], mm0
-    lea       edx, [edx + 8]
-    sub       ecx, 2
-    ja        convertloop
-
-    pop       ebx
-    ret
-  }
-}
-
 #ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 
 #define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
@@ -712,35 +536,35 @@ void FastConvertYToARGBRow_MMX(const uint8* y_buf,
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-SIMD_ALIGNED(const int8 kUVToB[16]) = {
+static const vec8 kUVToB = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
 };
 
-SIMD_ALIGNED(const int8 kUVToR[16]) = {
+static const vec8 kUVToR = {
   UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR
 };
 
-SIMD_ALIGNED(const int8 kUVToG[16]) = {
+static const vec8 kUVToG = {
   UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
 };
 
-SIMD_ALIGNED(const int16 kYToRgb[8]) = {
+static const vec16 kYToRgb = {
   YG, YG, YG, YG, YG, YG, YG, YG
 };
 
-SIMD_ALIGNED(const int16 kYSub16[8]) = {
+static const vec16 kYSub16 = {
   16, 16, 16, 16, 16, 16, 16, 16
 };
 
-SIMD_ALIGNED(const int16 kUVBiasB[8]) = {
+static const vec16 kUVBiasB = {
   BB, BB, BB, BB, BB, BB, BB, BB
 };
 
-SIMD_ALIGNED(const int16 kUVBiasG[8]) = {
+static const vec16 kUVBiasG = {
   BG, BG, BG, BG, BG, BG, BG, BG
 };
 
-SIMD_ALIGNED(const int16 kUVBiasR[8]) = {
+static const vec16 kUVBiasR = {
   BR, BR, BR, BR, BR, BR, BR, BR
 };
 
@@ -794,7 +618,7 @@ void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
     pxor       xmm4, xmm4
 
- convertloop :
+ convertloop:
     YUVTORGB_SSSE3
 
     // Step 3: Weave into ARGB
@@ -833,7 +657,7 @@ void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
     sub        edi, esi
     pxor       xmm4, xmm4
 
- convertloop :
+ convertloop:
     YUVTORGB_SSSE3
 
     // Step 3: Weave into BGRA
@@ -874,7 +698,7 @@ void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
     pxor       xmm4, xmm4
 
- convertloop :
+ convertloop:
     YUVTORGB_SSSE3
 
     // Step 3: Weave into ARGB
@@ -914,7 +738,7 @@ void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
     pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
     pxor       xmm4, xmm4
 
- convertloop :
+ convertloop:
     // Step 1: Find 4 UV contributions to 4 R,G,B values
     movd       xmm0, [esi]          // U
     movd       xmm1, [esi + edi]    // V
@@ -978,7 +802,7 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
     movdqa     xmm3, kYSub16
     movdqa     xmm2, kYToRgb
 
- convertloop :
+ convertloop:
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
     movq       xmm0, qword ptr [eax]
     lea        eax, [eax + 8]
