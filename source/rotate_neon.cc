@@ -12,9 +12,10 @@
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#if defined(__ARM_NEON__) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 
-void ReverseLine_NEON(const uint8* src, uint8* dst, int width) {
+void ReverseRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // compute where to start writing destination
     "add         %1, %2                        \n"
@@ -267,9 +268,9 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
   );
 }
 
-void ReverseLineUV_NEON(const uint8* src,
-                        uint8* dst_a, uint8* dst_b,
-                        int width) {
+void ReverseRowUV_NEON(const uint8* src,
+                       uint8* dst_a, uint8* dst_b,
+                       int width) {
   asm volatile (
     // compute where to start writing destination
     "add         %1, %3                        \n"  // dst_a + width

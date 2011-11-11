@@ -22,8 +22,7 @@ static const vec8 kARGBToY = {
 };
 
 static const uvec8 kAddY16 = {
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
@@ -32,8 +31,9 @@ static const vec8 kARGBToU = {
 };
 
 static const uvec8 kARGBToV = {
-  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
+  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0
 };
+
 static const uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u

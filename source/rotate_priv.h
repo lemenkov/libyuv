@@ -16,56 +16,48 @@
 namespace libyuv {
 
 // Rotate planes by 90, 180, 270
-void
-RotatePlane90(const uint8* src, int src_stride,
-              uint8* dst, int dst_stride,
-              int width, int height);
+void RotatePlane90(const uint8* src, int src_stride,
+                   uint8* dst, int dst_stride,
+                   int width, int height);
 
-void
-RotatePlane180(const uint8* src, int src_stride,
-               uint8* dst, int dst_stride,
-               int width, int height);
+void RotatePlane180(const uint8* src, int src_stride,
+                    uint8* dst, int dst_stride,
+                    int width, int height);
 
-void
-RotatePlane270(const uint8* src, int src_stride,
-               uint8* dst, int dst_stride,
-               int width, int height);
+void RotatePlane270(const uint8* src, int src_stride,
+                    uint8* dst, int dst_stride,
+                    int width, int height);
 
-void
-RotateUV90(const uint8* src, int src_stride,
-           uint8* dst_a, int dst_stride_a,
-           uint8* dst_b, int dst_stride_b,
-           int width, int height);
+void RotateUV90(const uint8* src, int src_stride,
+                uint8* dst_a, int dst_stride_a,
+                uint8* dst_b, int dst_stride_b,
+                int width, int height);
 
 // Rotations for when U and V are interleaved.
 // These functions take one input pointer and
 // split the data into two buffers while
 // rotating them.
-void
-RotateUV180(const uint8* src, int src_stride,
-            uint8* dst_a, int dst_stride_a,
-            uint8* dst_b, int dst_stride_b,
-            int width, int height);
+void RotateUV180(const uint8* src, int src_stride,
+                 uint8* dst_a, int dst_stride_a,
+                 uint8* dst_b, int dst_stride_b,
+                 int width, int height);
 
-void
-RotateUV270(const uint8* src, int src_stride,
-            uint8* dst_a, int dst_stride_a,
-            uint8* dst_b, int dst_stride_b,
-            int width, int height);
+void RotateUV270(const uint8* src, int src_stride,
+                 uint8* dst_a, int dst_stride_a,
+                 uint8* dst_b, int dst_stride_b,
+                 int width, int height);
 
 // The 90 and 270 functions are based on transposes.
 // Doing a transpose with reversing the read/write
 // order will result in a rotation by +- 90 degrees.
-void
-TransposePlane(const uint8* src, int src_stride,
-               uint8* dst, int dst_stride,
-               int width, int height);
+void TransposePlane(const uint8* src, int src_stride,
+                    uint8* dst, int dst_stride,
+                    int width, int height);
 
-void
-TransposeUV(const uint8* src, int src_stride,
-            uint8* dst_a, int dst_stride_a,
-            uint8* dst_b, int dst_stride_b,
-            int width, int height);
+void TransposeUV(const uint8* src, int src_stride,
+                 uint8* dst_a, int dst_stride_a,
+                 uint8* dst_b, int dst_stride_b,
+                 int width, int height);
 
 }  // namespace libyuv
 

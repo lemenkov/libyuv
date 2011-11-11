@@ -18,15 +18,16 @@
 namespace libyuv {
 
 #if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(__APPLE__) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-
+    !defined(LIBYUV_DISABLE_ASM)
+// Note static const preferred, but gives internal compiler error on gcc 4.2
 // Shuffle table for reversing the bytes.
-static const uvec8 kShuffleReverse =
-  { 15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u };
+uvec8 kShuffleReverse = {
+  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
+};
 // Shuffle table for reversing the bytes of UV channels.
-static const uvec8 kShuffleReverseUV =
-  { 14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u };
+uvec8 kShuffleReverseUV = {
+  14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
+};
 #endif
 
 typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
@@ -41,10 +42,10 @@ typedef void (*rotate_wx8_func)(const uint8*, int, uint8*, int, int);
 typedef void (*rotate_wxh_func)(const uint8*, int, uint8*, int, int, int);
 
 #ifdef __ARM_NEON__
-#define HAS_REVERSE_LINE_NEON
-void ReverseLine_NEON(const uint8* src, uint8* dst, int width);
-#define HAS_REVERSE_LINE_UV_NEON
-void ReverseLineUV_NEON(const uint8* src,
+#define HAS_REVERSE_ROW_NEON
+void ReverseRow_NEON(const uint8* src, uint8* dst, int width);
+#define HAS_REVERSE_ROW_UV_NEON
+void ReverseRowUV_NEON(const uint8* src,
                         uint8* dst_a, uint8* dst_b,
                         int width);
 #define HAS_TRANSPOSE_WX8_NEON
@@ -57,7 +58,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          int width);
 #endif
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
 #define HAS_TRANSPOSE_WX8_SSSE3
 __declspec(naked)
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
@@ -276,7 +277,7 @@ __asm {
   }
 }
 #elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_TRANSPOSE_WX8_SSSE3
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
@@ -844,7 +845,7 @@ void RotatePlane270(const uint8* src, int src_stride,
   TransposePlane(src, src_stride, dst, dst_stride, width, height);
 }
 
-static void ReverseLine_C(const uint8* src, uint8* dst, int width) {
+static void ReverseRow_C(const uint8* src, uint8* dst, int width) {
   int i;
   src += width - 1;
   for (i = 0; i < width; ++i) {
@@ -853,10 +854,10 @@ static void ReverseLine_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
-#define HAS_REVERSE_LINE_SSSE3
+#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
+#define HAS_REVERSE_ROW_SSSE3
 __declspec(naked)
-static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
+static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
 __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
@@ -876,16 +877,12 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(__APPLE__) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-#define HAS_REVERSE_LINE_SSSE3
-static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
+    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_REVERSE_ROW_SSSE3
+static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "movdqa     %0,%%xmm5                        \n"
-  :: "m"(kShuffleReverse)
-  );
-  asm volatile (
+  "movdqa     %3,%%xmm5                        \n"
   "lea        -0x10(%0,%2,1),%0                \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
@@ -898,7 +895,7 @@ static void ReverseLine_SSSE3(const uint8* src, uint8* dst, int width) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
-  :
+  : "m"(kShuffleReverse) // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
@@ -911,29 +908,29 @@ void RotatePlane180(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
   int i;
-  reverse_func ReverseLine;
+  reverse_func ReverseRow;
 
-#if defined(HAS_REVERSE_LINE_NEON)
+#if defined(HAS_REVERSE_ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ReverseLine = ReverseLine_NEON;
+    ReverseRow = ReverseRow_NEON;
   } else
 #endif
-#if defined(HAS_REVERSE_LINE_SSSE3)
+#if defined(HAS_REVERSE_ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst, 16) && (dst_stride % 16 == 0)) {
-    ReverseLine = ReverseLine_SSSE3;
+    ReverseRow = ReverseRow_SSSE3;
   } else
 #endif
   {
-    ReverseLine = ReverseLine_C;
+    ReverseRow = ReverseRow_C;
   }
   // Rotate by 180 is a mirror and vertical flip
   src += src_stride * (height - 1);
 
   for (i = 0; i < height; ++i) {
-    ReverseLine(src, dst, width);
+    ReverseRow(src, dst, width);
     src -= src_stride;
     dst += dst_stride;
   }
@@ -1056,10 +1053,10 @@ void RotateUV270(const uint8* src, int src_stride,
               width, height);
 }
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
-#define HAS_REVERSE_LINE_UV_SSSE3
+#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
+#define HAS_REVERSE_ROW_UV_SSSE3
 __declspec(naked)
-void ReverseLineUV_SSSE3(const uint8* src,
+void ReverseRowUV_SSSE3(const uint8* src,
                          uint8* dst_a, uint8* dst_b,
                          int width) {
 __asm {
@@ -1087,18 +1084,14 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(__APPLE__) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-#define HAS_REVERSE_LINE_UV_SSSE3
-void ReverseLineUV_SSSE3(const uint8* src,
-                         uint8* dst_a, uint8* dst_b,
-                         int width) {
+    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
+#define HAS_REVERSE_ROW_UV_SSSE3
+void ReverseRowUV_SSSE3(const uint8* src,
+                        uint8* dst_a, uint8* dst_b,
+                        int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "movdqa     %0,%%xmm5                        \n"
-  :: "m"(kShuffleReverseUV)
-  );
-  asm volatile (
+  "movdqa     %4,%%xmm5                        \n"
   "lea        -16(%0,%3,2),%0                  \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
@@ -1114,7 +1107,7 @@ void ReverseLineUV_SSSE3(const uint8* src,
     "+r"(dst_a),    // %1
     "+r"(dst_b),    // %2
     "+r"(temp_width)  // %3
-  :
+  : "m"(kShuffleReverseUV) // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
@@ -1123,7 +1116,7 @@ void ReverseLineUV_SSSE3(const uint8* src,
 }
 #endif
 
-static void ReverseLineUV_C(const uint8* src,
+static void ReverseRowUV_C(const uint8* src,
                             uint8* dst_a, uint8* dst_b,
                             int width) {
   int i;
@@ -1140,31 +1133,31 @@ void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height) {
   int i;
-  reverse_uv_func ReverseLine;
+  reverse_uv_func ReverseRow;
 
-#if defined(HAS_REVERSE_LINE_UV_NEON)
+#if defined(HAS_REVERSE_ROW_UV_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ReverseLine = ReverseLineUV_NEON;
+    ReverseRow = ReverseRowUV_NEON;
   } else
 #endif
-#if defined(HAS_REVERSE_LINE_UV_SSSE3)
+#if defined(HAS_REVERSE_ROW_UV_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 16 == 0) &&
       IS_ALIGNED(src, 16) && (src_stride % 16 == 0) &&
       IS_ALIGNED(dst_a, 8) && (dst_stride_a % 8 == 0) &&
       IS_ALIGNED(dst_b, 8) && (dst_stride_b % 8 == 0) ) {
-    ReverseLine = ReverseLineUV_SSSE3;
+    ReverseRow = ReverseRowUV_SSSE3;
   } else
 #endif
   {
-    ReverseLine = ReverseLineUV_C;
+    ReverseRow = ReverseRowUV_C;
   }
 
   dst_a += dst_stride_a * (height - 1);
   dst_b += dst_stride_b * (height - 1);
 
   for (i = 0; i < height; ++i) {
-    ReverseLine(src, dst_a, dst_b, width);
+    ReverseRow(src, dst_a, dst_b, width);
 
     src   += src_stride;      // down one line at a time
     dst_a -= dst_stride_a;    // nominally up one line at a time
