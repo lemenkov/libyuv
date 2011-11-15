@@ -18,7 +18,8 @@
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#if defined(__ARM_NEON__) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_SUMSQUAREERROR_NEON
 
 static uint32 SumSquareError_NEON(const uint8* src_a,
@@ -58,10 +59,8 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
   return sse;
 }
 
-#elif (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
-    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#elif defined(WIN32) && \
+    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
 #define HAS_SUMSQUAREERROR_SSE2
 __declspec(naked)
 static uint32 SumSquareError_SSE2(const uint8* src_a,
@@ -103,41 +102,63 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 
 #elif (defined(__x86_64__) || defined(__i386__)) && \
     !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-// DISABLE
-//#define HAS_SUMSQUAREERROR_SSE2
-// DISABLE
-#if HAS_SUMSQUAREERROR_SSE2
+#define HAS_SUMSQUAREERROR_SSE2
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {
-  volatile uint32 sse;
+  uint32 sse;
   asm volatile (
-  "                                            \n"
+    "pxor      %%xmm0,%%xmm0                   \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
+    "sub       %0,%1                           \n"
+
+    "1:                                        \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "movdqa    (%0,%1,1),%%xmm2                \n"
+    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm1,%%xmm3                   \n"
+    "psubusb   %%xmm2,%%xmm1                   \n"
+    "psubusb   %%xmm3,%%xmm2                   \n"
+    "por       %%xmm2,%%xmm1                   \n"
+    "movdqa    %%xmm1,%%xmm2                   \n"
+    "punpcklbw %%xmm5,%%xmm1                   \n"
+    "punpckhbw %%xmm5,%%xmm2                   \n"
+    "pmaddwd   %%xmm1,%%xmm1                   \n"
+    "pmaddwd   %%xmm2,%%xmm2                   \n"
+    "paddd     %%xmm1,%%xmm0                   \n"
+    "paddd     %%xmm2,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+
+    "pshufd    $0xee,%%xmm0,%%xmm1             \n"
+    "paddd     %%xmm1,%%xmm0                   \n"
+    "pshufd    $0x1,%%xmm0,%%xmm1              \n"
+    "paddd     %%xmm1,%%xmm0                   \n"
+    "movd      %%xmm0,%3                       \n"
+
   : "+r"(src_a),      // %0
     "+r"(src_b),      // %1
     "+r"(count),      // %2
-    "=r"(sse)         // %3
+    "=g"(sse)         // %3
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm5"
 #endif
-);
+  );
   return sse;
 }
-#endif
-#endif
 #endif
 
 static uint32 SumSquareError_C(const uint8* src_a,
                                const uint8* src_b, int count) {
-  uint32 udiff = 0u;
+  uint32 sse = 0u;
   for (int x = 0; x < count; ++x) {
     int diff = src_a[0] - src_b[0];
-    udiff += static_cast<uint32>(diff * diff);
+    sse += static_cast<uint32>(diff * diff);
     src_a += 1;
     src_b += 1;
   }
-  return udiff;
+  return sse;
 }
 
 uint64 ComputeSumSquareError(const uint8* src_a,
@@ -157,22 +178,25 @@ uint64 ComputeSumSquareError(const uint8* src_a,
   {
     SumSquareError = SumSquareError_C;
   }
-  const int kBlockSize = 4096;
-  uint64 diff = 0;
+  const int kBlockSize = 32768;
+  uint64 sse = 0;
   while (count >= kBlockSize) {
-    diff += SumSquareError(src_a, src_b, kBlockSize);
+    sse += SumSquareError(src_a, src_b, kBlockSize);
     src_a += kBlockSize;
     src_b += kBlockSize;
     count -= kBlockSize;
   }
-  if (count > 0) {
-    if (count % 16 == 0) {
-      diff += static_cast<uint64>(SumSquareError(src_a, src_b, count));
-    } else {
-      diff += static_cast<uint64>(SumSquareError_C(src_a, src_b, count));
-    }
+  int remainder = count & ~15;
+  if (remainder) {
+    sse += SumSquareError(src_a, src_b, remainder);
+    src_a += remainder;
+    src_b += remainder;
+    count -= remainder;
   }
-  return diff;
+  if (count) {
+    sse += SumSquareError_C(src_a, src_b, count);
+  }
+  return sse;
 }
 
 uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
@@ -192,7 +216,7 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
 
   uint64 sse = 0;
   for (int h = 0; h < height; ++h) {
-    sse += static_cast<uint64>(SumSquareError(src_a, src_b, width));
+    sse += SumSquareError(src_a, src_b, width);
     src_a += stride_a;
     src_b += stride_b;
   }
