@@ -509,7 +509,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     !defined(COVERAGE_ENABLED) && !TARGET_IPHONE_SIMULATOR
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif defined(OSX)
+#elif defined(OSX) && defined(__i386__)
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
