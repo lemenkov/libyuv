@@ -37,28 +37,17 @@
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
-#endif
-
-// The following are available on Linux (32/64 bit)
-// TODO(fbarchard): enable for fpic on linux
-#if (defined(__x86_64__) || \
-    (defined(__i386__) && !defined(__pic__))) && \
-    !defined(LIBYUV_DISABLE_ASM)
-#define HAS_FASTCONVERTYUVTOARGBROW_SSE2
-#define HAS_FASTCONVERTYUVTOBGRAROW_SSE2
-#define HAS_FASTCONVERTYUVTOABGRROW_SSE2
-#define HAS_FASTCONVERTYUV444TOARGBROW_SSE2
 #define HAS_FASTCONVERTYTOARGBROW_SSE2
 #endif
 
-// The following are available on Windows
-#if defined(WIN32) && \
+// The following are available on all x86 platforms except 32 bit OSX
+#if (defined(WIN32) || defined(__x86_64__) || \
+    (defined(__i386__) && !defined(__APPLE__))) && \
     !defined(LIBYUV_DISABLE_ASM)
 #define HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 #define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
 #define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
 #define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
-#define HAS_FASTCONVERTYTOARGBROW_SSE2
 #endif
 
 extern "C" {

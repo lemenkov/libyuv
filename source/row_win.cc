@@ -54,8 +54,7 @@ static const vec8 kABGRToV = {
 };
 
 static const uvec8 kAddY16 = {
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
 static const uvec8 kAddUV128 = {
@@ -548,27 +547,13 @@ static const vec8 kUVToG = {
   UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
 };
 
-static const vec16 kYToRgb = {
-  YG, YG, YG, YG, YG, YG, YG, YG
-};
+static const vec16 kYToRgb = { YG, YG, YG, YG, YG, YG, YG, YG };
+static const vec16 kYSub16 = { 16, 16, 16, 16, 16, 16, 16, 16 };
+static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
+static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
+static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
-static const vec16 kYSub16 = {
-  16, 16, 16, 16, 16, 16, 16, 16
-};
-
-static const vec16 kUVBiasB = {
-  BB, BB, BB, BB, BB, BB, BB, BB
-};
-
-static const vec16 kUVBiasG = {
-  BG, BG, BG, BG, BG, BG, BG, BG
-};
-
-static const vec16 kUVBiasR = {
-  BR, BR, BR, BR, BR, BR, BR, BR
-};
-
-#define YUVTORGB_SSSE3 __asm {                                                 \
+#define YUVTORGB __asm {                                                 \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
@@ -619,7 +604,7 @@ void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
     pxor       xmm4, xmm4
 
  convertloop:
-    YUVTORGB_SSSE3
+    YUVTORGB
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -658,7 +643,7 @@ void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
     pxor       xmm4, xmm4
 
  convertloop:
-    YUVTORGB_SSSE3
+    YUVTORGB
 
     // Step 3: Weave into BGRA
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
@@ -699,7 +684,7 @@ void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
     pxor       xmm4, xmm4
 
  convertloop:
-    YUVTORGB_SSSE3
+    YUVTORGB
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm2, xmm1           // RG
@@ -787,7 +772,6 @@ void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
 #endif
 
 #ifdef HAS_FASTCONVERTYTOARGBROW_SSE2
-
 __declspec(naked)
 void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
                                 uint8* rgb_buf,
@@ -829,8 +813,8 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
     ret
   }
 }
-
 #endif
+
 #endif
 
 }  // extern "C"
