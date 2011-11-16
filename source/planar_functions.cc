@@ -17,7 +17,7 @@
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#if defined(__ARM_NEON__) && !defined(DISABLE_ASM)
 #define HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
@@ -39,10 +39,7 @@ static void SplitUV_NEON(const uint8* src_uv,
   );
 }
 
-#elif (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) \
-    && !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
-
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#elif defined(WIN32) && !defined(DISABLE_ASM)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
 static void SplitUV_SSE2(const uint8* src_uv,
@@ -79,8 +76,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
 #define HAS_SPLITUV_SSE2
 static void SplitUV_SSE2(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
@@ -116,7 +112,6 @@ static void SplitUV_SSE2(const uint8* src_uv,
 #endif
 );
 }
-#endif
 #endif
 
 static void SplitUV_C(const uint8* src_uv,
@@ -235,7 +230,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
 
 // SetRows32 writes 'count' bytes using a 32 bit value repeated
 
-#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#if defined(__ARM_NEON__) && !defined(DISABLE_ASM)
 #define HAS_SETROW_NEON
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
@@ -251,7 +246,7 @@ static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   );
 }
 
-#elif defined(WIN32) && !defined(COVERAGE_ENABLED)
+#elif defined(WIN32) && !defined(DISABLE_ASM)
 #define HAS_SETROW_SSE2
 __declspec(naked)
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
@@ -270,8 +265,7 @@ static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
 
 #define HAS_SETROW_SSE2
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
@@ -366,6 +360,63 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
   return 0;
 }
 
+#if defined(WIN32) && !defined(DISABLE_ASM)
+#define HAS_HALFROW_SSE2
+__declspec(naked)
+static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                         uint8* dst_uv, int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // src_uv_stride
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    sub        edi, eax
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    pavgb      xmm0, [eax + edx]
+    movdqa     [eax + edi], xmm0
+    lea        eax,  [eax + 16]
+    sub        ecx, 16
+    ja         convertloop
+    pop        edi
+    ret
+  }
+}
+
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
+#define HAS_HALFROW_SSE2
+static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                         uint8* dst_uv, int pix) {
+ asm volatile (
+  "sub        %0,%1                            \n"
+"1:                                            \n"
+  "movdqa     (%0),%%xmm0                      \n"
+  "pavgb      (%0,%3),%%xmm0                   \n"
+  "movdqa     %%xmm0,(%0,%1)                   \n"
+  "lea        0x10(%0),%0                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
+  : "+r"(src_uv),  // %0
+    "+r"(dst_uv),  // %1
+    "+r"(pix)      // %2
+  : "r"(static_cast<intptr_t>(src_uv_stride))  // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0"
+#endif
+);
+}
+#endif
+
+void HalfRow_C(const uint8* src_uv, int src_uv_stride,
+               uint8* dst_uv, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+  }
+}
+
 // Helper function to copy yuv data without scaling.  Used
 // by our jpeg conversion callbacks to incrementally fill a yuv image.
 int I422ToI420(const uint8* src_y, int src_stride_y,
@@ -385,36 +436,45 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
+  int halfwidth = (width + 1) >> 1;
+  void (*HalfRow)(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix);
+#if defined(HAS_HALFROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (halfwidth % 16 == 0) &&
+      IS_ALIGNED(src_u, 16) && (src_stride_u % 16 == 0) &&
+      IS_ALIGNED(src_v, 16) && (src_stride_v % 16 == 0) &&
+      IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
+      IS_ALIGNED(dst_v, 16) && (dst_stride_v % 16 == 0)) {
+    HalfRow = HalfRow_SSE2;
+  } else
+#endif
+  {
+    HalfRow = HalfRow_C;
+  }
 
   // Copy Y plane
   I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
 
-  // SubSample UV planes.
-  int x, y;
-  int halfwidth = (width + 1) >> 1;
-  for (y = 0; y < height; y += 2) {
-    const uint8* u0 = src_u;
-    const uint8* u1 = src_u + src_stride_u;
-    if ((y + 1) >= height) {
-      u1 = u0;
-    }
-    for (x = 0; x < halfwidth; ++x) {
-      dst_u[x] = (u0[x] + u1[x] + 1) >> 1;
-    }
+  // SubSample U plane.
+  int y;
+  for (y = 0; y < height - 1; y += 2) {
+    HalfRow(src_u, src_stride_u, dst_u, halfwidth);
     src_u += src_stride_u * 2;
     dst_u += dst_stride_u;
   }
-  for (y = 0; y < height; y += 2) {
-    const uint8* v0 = src_v;
-    const uint8* v1 = src_v + src_stride_v;
-    if ((y + 1) >= height) {
-      v1 = v0;
-    }
-    for (x = 0; x < halfwidth; ++x) {
-      dst_v[x] = (v0[x] + v1[x] + 1) >> 1;
-    }
+  if (height & 1) {
+    HalfRow(src_u, 0, dst_u, halfwidth);
+  }
+
+  // SubSample V plane.
+  for (y = 0; y < height - 1; y += 2) {
+    HalfRow(src_v, src_stride_v, dst_v, halfwidth);
     src_v += src_stride_v * 2;
     dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    HalfRow(src_v, 0, dst_v, halfwidth);
   }
   return 0;
 }
@@ -543,7 +603,7 @@ int NV12ToI420(const uint8* src_y,
                     width, height);
 }
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#if defined(WIN32) && !defined(DISABLE_ASM)
 #define HAS_SPLITYUY2_SSE2
 __declspec(naked)
 static void SplitYUY2_SSE2(const uint8* src_yuy2,
@@ -592,7 +652,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
 }
 
 #elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(DISABLE_ASM)
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
@@ -702,7 +762,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#if defined(WIN32) && !defined(DISABLE_ASM)
 #define HAS_YUY2TOI420ROW_SSE2
 __declspec(naked)
 void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
@@ -840,7 +900,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
 }
 
 #elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(DISABLE_ASM)
 
 #define HAS_YUY2TOI420ROW_SSE2
 static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
