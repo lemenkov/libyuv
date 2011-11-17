@@ -20,8 +20,8 @@
 #endif
 
 // The following are available on all x86 platforms
-#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(LIBYUV_DISABLE_ASM)
+#if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
+    !defined(YUV_DISABLE_ASM)
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_BGRATOARGBROW_SSSE3
 #define HAS_BG24TOARGBROW_SSSE3
@@ -38,12 +38,6 @@
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_FASTCONVERTYTOARGBROW_SSE2
-#endif
-
-// The following are available on all x86 platforms except 32 bit OSX
-#if (defined(WIN32) || defined(__x86_64__) || \
-    (defined(__i386__) && !defined(__APPLE__))) && \
-    !defined(LIBYUV_DISABLE_ASM)
 #define HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 #define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
 #define HAS_FASTCONVERTYUVTOABGRROW_SSSE3

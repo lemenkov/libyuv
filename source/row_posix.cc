@@ -319,13 +319,6 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif
 
 
-#ifdef HAS_FASTCONVERTYTOARGBROW_SSE2
-#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
-
-vec16 kYToRgb = { YG, YG, YG, YG, YG, YG, YG, YG };
-vec16 kYSub16 = { 16, 16, 16, 16, 16, 16, 16, 16 };
-#endif
-
 #ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 #define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
 #define UG -25 /* static_cast<int8>(-0.391 * 64 - 0.5) */
@@ -340,22 +333,7 @@ vec16 kYSub16 = { 16, 16, 16, 16, 16, 16, 16, 16 };
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-vec8 kUVToB = {
-  UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
-};
-
-vec8 kUVToR = {
-  UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR
-};
-
-vec8 kUVToG = {
-  UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
-};
-
-
-vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
-vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
-vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
+#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
 
 #if defined(__APPLE__) || defined(__x86_64__)
 #define OMITFP
@@ -363,7 +341,27 @@ vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 #define OMITFP __attribute__((optimize("omit-frame-pointer")))
 #endif
 
-// This version produces 8 pixels
+struct {
+  vec8 kUVToB;
+  vec8 kUVToG;
+  vec8 kUVToR;
+  vec16 kUVBiasB;
+  vec16 kUVBiasG;
+  vec16 kUVBiasR;
+  vec16 kYSub16;
+  vec16 kYToRgb;
+} SIMD_ALIGNED(kYuvConstants) = {
+  { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR },
+  { 16, 16, 16, 16, 16, 16, 16, 16 },
+  { YG, YG, YG, YG, YG, YG, YG, YG }
+};
+
+// Convert 8 pixels
 #define YUVTORGB                                                               \
   "movd        (%1),%%xmm0                     \n"                             \
   "movd        (%1,%2,1),%%xmm1                \n"                             \
@@ -372,17 +370,17 @@ vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   "punpcklwd   %%xmm0,%%xmm0                   \n"                             \
   "movdqa      %%xmm0,%%xmm1                   \n"                             \
   "movdqa      %%xmm0,%%xmm2                   \n"                             \
-  "pmaddubsw   %5,%%xmm0                       \n"                             \
-  "pmaddubsw   %6,%%xmm1                       \n"                             \
-  "pmaddubsw   %7,%%xmm2                       \n"                             \
-  "psubw       %8,%%xmm0                       \n"                             \
-  "psubw       %9,%%xmm1                       \n"                             \
-  "psubw       %10,%%xmm2                      \n"                             \
+  "pmaddubsw   (%5),%%xmm0                     \n"                             \
+  "pmaddubsw   16(%5),%%xmm1                   \n"                             \
+  "pmaddubsw   32(%5),%%xmm2                   \n"                             \
+  "psubw       48(%5),%%xmm0                   \n"                             \
+  "psubw       64(%5),%%xmm1                   \n"                             \
+  "psubw       80(%5),%%xmm2                   \n"                             \
   "movq        (%0),%%xmm3                     \n"                             \
   "lea         0x8(%0),%0                      \n"                             \
   "punpcklbw   %%xmm4,%%xmm3                   \n"                             \
-  "psubsw      %11,%%xmm3                      \n"                             \
-  "pmullw      %12,%%xmm3                      \n"                             \
+  "psubsw      96(%5),%%xmm3                   \n"                             \
+  "pmullw      112(%5),%%xmm3                  \n"                             \
   "paddw       %%xmm3,%%xmm0                   \n"                             \
   "paddw       %%xmm3,%%xmm1                   \n"                             \
   "paddw       %%xmm3,%%xmm2                   \n"                             \
@@ -420,14 +418,7 @@ void OMITFP FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,  // rdi
     "+r"(v_buf),    // %2
     "+r"(rgb_buf),  // %3
     "+rm"(width)    // %4
-  : "m" (kUVToB),   // %5
-    "m" (kUVToG),   // %6
-    "m" (kUVToR),   // %7
-    "m" (kUVBiasB), // %8
-    "m" (kUVBiasG), // %9
-    "m" (kUVBiasR), // %10
-    "m" (kYSub16),  // %11
-    "m" (kYToRgb)   // %12
+  : "r"(&kYuvConstants.kUVToB) // %5
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -463,14 +454,7 @@ void OMITFP FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,  // rdi
     "+r"(v_buf),    // %2
     "+r"(rgb_buf),  // %3
     "+rm"(width)    // %4
-  : "m" (kUVToB),   // %5
-    "m" (kUVToG),   // %6
-    "m" (kUVToR),   // %7
-    "m" (kUVBiasB), // %8
-    "m" (kUVBiasG), // %9
-    "m" (kUVBiasR), // %10
-    "m" (kYSub16),  // %11
-    "m" (kYToRgb)   // %12
+  : "r"(&kYuvConstants.kUVToB) // %5
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -508,14 +492,7 @@ void OMITFP FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,  // rdi
     "+r"(v_buf),    // %2
     "+r"(rgb_buf),  // %3
     "+rm"(width)    // %4
-  : "m" (kUVToB),   // %5
-    "m" (kUVToG),   // %6
-    "m" (kUVToR),   // %7
-    "m" (kUVBiasB), // %8
-    "m" (kUVBiasG), // %9
-    "m" (kUVBiasR), // %10
-    "m" (kYSub16),  // %11
-    "m" (kYToRgb)   // %12
+  : "r"(&kYuvConstants.kUVToB) // %5
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -540,17 +517,17 @@ void OMITFP FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,  // rdi
     "punpcklbw   %%xmm1,%%xmm0                 \n"
     "movdqa      %%xmm0,%%xmm1                 \n"
     "movdqa      %%xmm0,%%xmm2                 \n"
-    "pmaddubsw   %5,%%xmm0                     \n"
-    "pmaddubsw   %6,%%xmm1                     \n"
-    "pmaddubsw   %7,%%xmm2                     \n"
-    "psubw       %8,%%xmm0                     \n"
-    "psubw       %9,%%xmm1                     \n"
-    "psubw       %10,%%xmm2                    \n"
+    "pmaddubsw   (%5),%%xmm0                   \n"
+    "pmaddubsw   16(%5),%%xmm1                 \n"
+    "pmaddubsw   32(%5),%%xmm2                 \n"
+    "psubw       48(%5),%%xmm0                 \n"
+    "psubw       64(%5),%%xmm1                 \n"
+    "psubw       80(%5),%%xmm2                 \n"
     "movd        (%0),%%xmm3                   \n"
     "lea         0x4(%0),%0                    \n"
     "punpcklbw   %%xmm4,%%xmm3                 \n"
-    "psubsw      %11,%%xmm3                    \n"
-    "pmullw      %12,%%xmm3                    \n"
+    "psubsw      96(%5),%%xmm3                 \n"
+    "pmullw      112(%5),%%xmm3                \n"
     "paddw       %%xmm3,%%xmm0                 \n"
     "paddw       %%xmm3,%%xmm1                 \n"
     "paddw       %%xmm3,%%xmm2                 \n"
@@ -572,14 +549,7 @@ void OMITFP FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,  // rdi
     "+r"(v_buf),    // %2
     "+r"(rgb_buf),  // %3
     "+rm"(width)    // %4
-  : "m" (kUVToB),   // %5
-    "m" (kUVToG),   // %6
-    "m" (kUVToR),   // %7
-    "m" (kUVBiasB), // %8
-    "m" (kUVBiasG), // %9
-    "m" (kUVBiasR), // %10
-    "m" (kYSub16),  // %11
-    "m" (kYToRgb)   // %12
+  : "r"(&kYuvConstants.kUVToB) // %5
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -625,8 +595,8 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,  // rdi
   : "+r"(y_buf),    // %0
     "+r"(rgb_buf),  // %1
     "+rm"(width)    // %2
-  : "m" (kYSub16),  // %3
-    "m" (kYToRgb)   // %4
+  : "m"(kYuvConstants.kYSub16),  // %3
+    "m"(kYuvConstants.kYToRgb)   // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"

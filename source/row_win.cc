@@ -553,7 +553,7 @@ static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
 static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
 static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
-#define YUVTORGB __asm {                                                 \
+#define YUVTORGB __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
