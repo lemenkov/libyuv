@@ -17,7 +17,7 @@
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && !defined(DISABLE_ASM)
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
@@ -39,7 +39,7 @@ static void SplitUV_NEON(const uint8* src_uv,
   );
 }
 
-#elif defined(WIN32) && !defined(DISABLE_ASM)
+#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITUV_SSE2
 __declspec(naked)
 static void SplitUV_SSE2(const uint8* src_uv,
@@ -76,7 +76,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITUV_SSE2
 static void SplitUV_SSE2(const uint8* src_uv,
                          uint8* dst_u, uint8* dst_v, int pix) {
@@ -230,7 +230,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
 
 // SetRows32 writes 'count' bytes using a 32 bit value repeated
 
-#if defined(__ARM_NEON__) && !defined(DISABLE_ASM)
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SETROW_NEON
 static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
@@ -246,7 +246,7 @@ static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
   );
 }
 
-#elif defined(WIN32) && !defined(DISABLE_ASM)
+#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_SETROW_SSE2
 __declspec(naked)
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
@@ -265,7 +265,7 @@ static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 
 #define HAS_SETROW_SSE2
 static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
@@ -360,7 +360,7 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
   return 0;
 }
 
-#if defined(WIN32) && !defined(DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_HALFROW_SSE2
 __declspec(naked)
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
@@ -385,7 +385,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(DISABLE_ASM)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_HALFROW_SSE2
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
@@ -603,7 +603,7 @@ int NV12ToI420(const uint8* src_y,
                     width, height);
 }
 
-#if defined(WIN32) && !defined(DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITYUY2_SSE2
 __declspec(naked)
 static void SplitYUY2_SSE2(const uint8* src_yuy2,
@@ -651,8 +651,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(DISABLE_ASM)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
@@ -762,7 +761,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-#if defined(WIN32) && !defined(DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_YUY2TOI420ROW_SSE2
 __declspec(naked)
 void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,
@@ -899,8 +898,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(DISABLE_ASM)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 
 #define HAS_YUY2TOI420ROW_SSE2
 static void YUY2ToI420RowY_SSE2(const uint8* src_yuy2,

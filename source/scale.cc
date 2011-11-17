@@ -49,7 +49,7 @@ void SetUseReferenceImpl(bool use) {
  *
  */
 
-#if defined(__ARM_NEON__) && !defined(COVERAGE_ENABLED)
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
                         uint8* dst, int dst_width) {
@@ -505,8 +505,8 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
  */
 
 // Constants for SSE2 code
-#elif (defined(WIN32) || defined(__i386__) || defined(__x86_64__)) && \
-    !defined(COVERAGE_ENABLED) && !TARGET_IPHONE_SIMULATOR
+#elif (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__)) && \
+    !defined(YUV_DISABLE_ASM)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
 #elif defined(OSX) && defined(__i386__)
@@ -590,7 +590,7 @@ extern "C" TALIGN16(const uint16, scaleab2[8]) =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 #endif
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 
 #define HAS_SCALEROWDOWN2_SSE2
 // Reads 32 pixels, throws half away and writes 16 pixels.
@@ -1444,8 +1444,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:

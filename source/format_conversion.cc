@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "row.h"
-
 #include <assert.h>
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
+#include "row.h"
 #include "video_common.h"
 
 namespace libyuv {
@@ -22,7 +21,7 @@ namespace libyuv {
 // and vst would select which 2 components to write.  The low level would need
 // to be ARGBToBG, ARGBToGB, ARGBToRG, ARGBToGR
 
-#if defined(WIN32) && !defined(COVERAGE_ENABLED)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_ARGBTOBAYERROW_SSSE3
 __declspec(naked)
 static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
@@ -46,8 +45,7 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 
 #define HAS_ARGBTOBAYERROW_SSSE3
 static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,

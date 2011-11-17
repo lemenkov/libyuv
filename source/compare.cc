@@ -15,11 +15,11 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
+#include "row.h"
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_NEON
 
 static uint32 SumSquareError_NEON(const uint8* src_a,
@@ -59,8 +59,7 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
   return sse;
 }
 
-#elif defined(WIN32) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_SSE2
 __declspec(naked)
 static uint32 SumSquareError_SSE2(const uint8* src_a,
@@ -100,8 +99,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_SSE2
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {

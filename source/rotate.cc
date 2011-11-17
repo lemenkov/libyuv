@@ -17,8 +17,8 @@
 
 namespace libyuv {
 
-#if (defined(WIN32) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(LIBYUV_DISABLE_ASM)
+#if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
+    !defined(YUV_DISABLE_ASM)
 // Note static const preferred, but gives internal compiler error on gcc 4.2
 // Shuffle table for reversing the bytes.
 uvec8 kShuffleReverse = {
@@ -58,7 +58,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          int width);
 #endif
 
-#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_TRANSPOSE_WX8_SSSE3
 __declspec(naked)
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
@@ -276,8 +276,7 @@ __asm {
     ret
   }
 }
-#elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
+#elif (defined(__i386__) || defined(__x86_64__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_TRANSPOSE_WX8_SSSE3
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
@@ -854,7 +853,7 @@ static void ReverseRow_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
-#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_REVERSE_ROW_SSSE3
 __declspec(naked)
 static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
@@ -877,7 +876,7 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(YUV_DISABLE_ASM)
 #define HAS_REVERSE_ROW_SSSE3
 static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
@@ -1053,7 +1052,7 @@ void RotateUV270(const uint8* src, int src_stride,
               width, height);
 }
 
-#if defined(WIN32) && !defined(LIBYUV_DISABLE_ASM)
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_REVERSE_ROW_UV_SSSE3
 __declspec(naked)
 void ReverseRowUV_SSSE3(const uint8* src,
@@ -1084,7 +1083,7 @@ __asm {
 }
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(LIBYUV_DISABLE_ASM) && !defined(TARGET_IPHONE_SIMULATOR)
+    !defined(YUV_DISABLE_ASM)
 #define HAS_REVERSE_ROW_UV_SSSE3
 void ReverseRowUV_SSSE3(const uint8* src,
                         uint8* dst_a, uint8* dst_b,

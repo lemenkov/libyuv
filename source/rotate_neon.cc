@@ -9,11 +9,11 @@
  */
 
 #include "libyuv/basic_types.h"
+#include "row.h"
 
 namespace libyuv {
 
-#if defined(__ARM_NEON__) && \
-    !defined(COVERAGE_ENABLED) && !defined(TARGET_IPHONE_SIMULATOR)
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 
 void ReverseRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
