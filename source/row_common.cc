@@ -220,43 +220,41 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
 }
 
 // C reference code that mimic the YUV assembly.
-#define packuswb(x) ((x) < 0 ? 0 : ((x) > 255 ? 255 : (x)))
-#define paddsw(x, y) (((x) + (y)) < -32768 ? -32768 : \
-    (((x) + (y)) > 32767 ? 32767 : ((x) + (y))))
 
-static inline void YuvPixel(uint8 y,
-                            uint8 u,
-                            uint8 v,
-                            uint8* rgb_buf,
-                            int ashift,
-                            int rshift,
-                            int gshift,
-                            int bshift) {
+#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
 
-  int b = kCoefficientsRgbY[256+u][0];
-  int g = kCoefficientsRgbY[256+u][1];
-  int r = kCoefficientsRgbY[256+u][2];
-  int a = kCoefficientsRgbY[256+u][3];
+#define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
+#define UG -25 /* static_cast<int8>(-0.391 * 64 - 0.5) */
+#define UR 0
 
-  b = paddsw(b, kCoefficientsRgbY[512+v][0]);
-  g = paddsw(g, kCoefficientsRgbY[512+v][1]);
-  r = paddsw(r, kCoefficientsRgbY[512+v][2]);
-  a = paddsw(a, kCoefficientsRgbY[512+v][3]);
+#define VB 0
+#define VG -52 /* static_cast<int8>(-0.813 * 64 - 0.5) */
+#define VR 102 /* static_cast<int8>(1.596 * 64 + 0.5) */
 
-  b = paddsw(b, kCoefficientsRgbY[y][0]);
-  g = paddsw(g, kCoefficientsRgbY[y][1]);
-  r = paddsw(r, kCoefficientsRgbY[y][2]);
-  a = paddsw(a, kCoefficientsRgbY[y][3]);
+// Bias
+#define BB UB * 128 + VB * 128
+#define BG UG * 128 + VG * 128
+#define BR UR * 128 + VR * 128
 
-  b >>= 6;
-  g >>= 6;
-  r >>= 6;
-  a >>= 6;
+static inline uint32 Clip(int32 val) {
+  if (val < 0) {
+    return (uint32) 0;
+  } else if (val > 255){
+    return (uint32) 255;
+  }
+  return (uint32) val;
+}
 
-  *reinterpret_cast<uint32*>(rgb_buf) = (packuswb(b) << bshift) |
-                                        (packuswb(g) << gshift) |
-                                        (packuswb(r) << rshift) |
-                                        (packuswb(a) << ashift);
+static inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
+                            int ashift, int rshift, int gshift, int bshift) {
+  int32 y1 = (static_cast<int32>(y) - 16) * YG;
+  uint32 b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
+  uint32 g = Clip(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
+  uint32 r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
+  *reinterpret_cast<uint32*>(rgb_buf) = (b << bshift) |
+                                        (g << gshift) |
+                                        (r << rshift) |
+                                        (255u << ashift);
 }
 
 void FastConvertYUVToARGBRow_C(const uint8* y_buf,

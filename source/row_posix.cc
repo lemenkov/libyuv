@@ -381,9 +381,9 @@ struct {
   "punpcklbw   %%xmm4,%%xmm3                   \n"                             \
   "psubsw      96(%5),%%xmm3                   \n"                             \
   "pmullw      112(%5),%%xmm3                  \n"                             \
-  "paddw       %%xmm3,%%xmm0                   \n"                             \
-  "paddw       %%xmm3,%%xmm1                   \n"                             \
-  "paddw       %%xmm3,%%xmm2                   \n"                             \
+  "paddsw      %%xmm3,%%xmm0                   \n"                             \
+  "paddsw      %%xmm3,%%xmm1                   \n"                             \
+  "paddsw      %%xmm3,%%xmm2                   \n"                             \
   "psraw       $0x6,%%xmm0                     \n"                             \
   "psraw       $0x6,%%xmm1                     \n"                             \
   "psraw       $0x6,%%xmm2                     \n"                             \
@@ -528,9 +528,9 @@ void OMITFP FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,  // rdi
     "punpcklbw   %%xmm4,%%xmm3                 \n"
     "psubsw      96(%5),%%xmm3                 \n"
     "pmullw      112(%5),%%xmm3                \n"
-    "paddw       %%xmm3,%%xmm0                 \n"
-    "paddw       %%xmm3,%%xmm1                 \n"
-    "paddw       %%xmm3,%%xmm2                 \n"
+    "paddsw      %%xmm3,%%xmm0                 \n"
+    "paddsw      %%xmm3,%%xmm1                 \n"
+    "paddsw      %%xmm3,%%xmm2                 \n"
     "psraw       $0x6,%%xmm0                   \n"
     "psraw       $0x6,%%xmm1                   \n"
     "psraw       $0x6,%%xmm2                   \n"

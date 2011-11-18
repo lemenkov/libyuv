@@ -574,9 +574,9 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm punpcklbw  xmm3, xmm4                                                \
     __asm psubsw     xmm3, kYSub16                                             \
     __asm pmullw     xmm3, kYToRgb                                             \
-    __asm paddw      xmm0, xmm3           /* B += Y */                         \
-    __asm paddw      xmm1, xmm3           /* G += Y */                         \
-    __asm paddw      xmm2, xmm3           /* R += Y */                         \
+    __asm paddsw     xmm0, xmm3           /* B += Y */                         \
+    __asm paddsw     xmm1, xmm3           /* G += Y */                         \
+    __asm paddsw     xmm2, xmm3           /* R += Y */                         \
     __asm psraw      xmm0, 6                                                   \
     __asm psraw      xmm1, 6                                                   \
     __asm psraw      xmm2, 6                                                   \
@@ -744,9 +744,9 @@ void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
     punpcklbw  xmm3, xmm4
     psubsw     xmm3, kYSub16
     pmullw     xmm3, kYToRgb
-    paddw      xmm0, xmm3           // B += Y
-    paddw      xmm1, xmm3           // G += Y
-    paddw      xmm2, xmm3           // R += Y
+    paddsw     xmm0, xmm3           // B += Y
+    paddsw     xmm1, xmm3           // G += Y
+    paddsw     xmm2, xmm3           // R += Y
     psraw      xmm0, 6
     psraw      xmm1, 6
     psraw      xmm2, 6

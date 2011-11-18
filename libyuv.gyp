@@ -44,7 +44,6 @@
         'source/planar_functions.cc',
         'source/rotate.cc',
         'source/row_common.cc',
-        'source/row_table.cc',
         'source/scale.cc',
         'source/video_common.cc',
       ],
