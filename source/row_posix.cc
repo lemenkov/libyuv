@@ -474,9 +474,6 @@ void OMITFP FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,  // rdi
 
   "1:                                          \n"
     YUVTORGB
-    "packuswb    %%xmm0,%%xmm0                 \n"
-    "packuswb    %%xmm1,%%xmm1                 \n"
-    "packuswb    %%xmm2,%%xmm2                 \n"
     "punpcklbw   %%xmm1,%%xmm2                 \n"
     "punpcklbw   %%xmm5,%%xmm0                 \n"
     "movdqa      %%xmm2,%%xmm1                 \n"
