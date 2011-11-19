@@ -19,6 +19,27 @@
 #define YUV_DISABLE_ASM
 #endif
 
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#define HAS_FASTCONVERTYUVTOARGBROW_NEON
+void FastConvertYUVToARGBRow_NEON(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#define HAS_FASTCONVERTYUVTOBGRAROW_NEON
+void FastConvertYUVToBGRARow_NEON(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#define HAS_FASTCONVERTYUVTOABGRROW_NEON
+void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#endif
+
 // The following are available on all x86 platforms
 #if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(YUV_DISABLE_ASM)

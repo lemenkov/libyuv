@@ -16,7 +16,7 @@
 #define align_buffer_16(var, size) \
   uint8 *var; \
   uint8 *var##_mem; \
-  var##_mem = reinterpret_cast<uint8*>(calloc(size+15, sizeof(uint8))); \
+  var##_mem = reinterpret_cast<uint8*>(calloc((size)+15, sizeof(uint8))); \
   var = reinterpret_cast<uint8*> \
         ((reinterpret_cast<intptr_t>(var##_mem) + 15) & (~0x0f));
 

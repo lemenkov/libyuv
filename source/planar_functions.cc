@@ -1188,7 +1188,11 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
                                   const uint8* v_buf,
                                   uint8* rgb_buf,
                                   int width);
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && (width % 16 == 0)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 8 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1227,7 +1231,11 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
                                    const uint8* v_buf,
                                    uint8* rgb_buf,
                                    int width);
-#if defined(HAS_FASTCONVERTYUVTOBGRAROW_SSSE3)
+#if defined(HAS_FASTCONVERTYUVTOBGRAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && (width % 16 == 0)) {
+    FastConvertYUVToBGRARow = FastConvertYUVToBGRARow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOBGRAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 8 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {
@@ -1266,7 +1274,11 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
                                    const uint8* v_buf,
                                    uint8* rgb_buf,
                                    int width);
-#if defined(HAS_FASTCONVERTYUVTOABGRROW_SSSE3)
+#if defined(HAS_FASTCONVERTYUVTOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && (width % 16 == 0)) {
+    FastConvertYUVToABGRRow = FastConvertYUVToABGRRow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOABGRROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       (width % 8 == 0) &&
       IS_ALIGNED(dst_argb, 16) && (dst_stride_argb % 16 == 0)) {

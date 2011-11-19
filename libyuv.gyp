@@ -62,6 +62,7 @@
             ['arm_neon==1', {
               'sources' : [
                 'source/rotate_neon.cc',
+                'source/row_neon.cc',
               ],
             }],
           ],
