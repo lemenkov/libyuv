@@ -319,6 +319,140 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// YUY2 - Macro-pixel = 2 image pixels
+// Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
+
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#define HAS_I42XTOYUY2ROW_SSE2
+__declspec(naked)
+static void I42xToYUY2Row_SSE2(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_frame, int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_y
+    mov        esi, [esp + 8 + 8]    // src_u
+    mov        edx, [esp + 8 + 12]   // src_v
+    mov        edi, [esp + 8 + 16]   // dst_frame
+    mov        ecx, [esp + 8 + 20]   // width
+    sub        edx, esi
+
+  convertloop:
+    movdqa     xmm0, [eax] // Y
+    lea        eax, [eax + 16]
+    movq       xmm2, qword ptr [esi] // U
+    movq       xmm3, qword ptr [esi + edx] // V
+    lea        esi, [esi + 8]
+    punpcklbw  xmm2, xmm3 // UV
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm2 // YUYV
+    punpckhbw  xmm1, xmm2
+    movdqa     [edi], xmm0
+    movdqa     [edi + 16], xmm1
+    lea        edi, [edi + 32]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#define HAS_I42XTOYUY2ROW_SSE2
+static void I42xToYUY2Row_SSE2(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_frame, int width) {
+ asm volatile (
+  "sub        %1,%2                            \n"
+"1:                                            \n"
+  "movdqa    (%0),%%xmm0                       \n"
+  "lea       0x10(%0),%0                       \n"
+  "movq      (%1),%%xmm2                       \n"
+  "movq      (%1,%2,1),%%xmm3                  \n"
+  "lea       0x8(%1),%1                        \n"
+  "punpcklbw %%xmm3,%%xmm2                     \n"
+  "movdqa    %%xmm0,%%xmm1                     \n"
+  "punpcklbw %%xmm2,%%xmm0                     \n"
+  "punpckhbw %%xmm2,%%xmm1                     \n"
+  "movdqa    %%xmm0,(%3)                       \n"
+  "movdqa    %%xmm1,0x10(%3)                   \n"
+  "lea       0x20(%3),%3                       \n"
+  "sub       $0x10,%4                          \n"
+  "ja         1b                               \n"
+  : "+r"(src_y),  // %0
+    "+r"(src_u),  // %1
+    "+r"(src_v),  // %2
+    "+r"(dst_frame),  // %3
+    "+rm"(width)  // %4
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+);
+}
+#endif
+
+void I42xToYUY2Row_C(const uint8* src_y, const uint8* src_u, const uint8* src_v,
+                     uint8* dst_frame, int width) {
+    for (int x = 0; x < width - 1; x += 2) {
+      dst_frame[0] = src_y[0];
+      dst_frame[1] = src_u[0];
+      dst_frame[2] = src_y[1];
+      dst_frame[3] = src_v[0];
+      dst_frame += 4;
+      src_y += 2;
+      src_u += 1;
+      src_v += 1;
+    }
+    if (width & 1) {
+      dst_frame[0] = src_y[0];
+      dst_frame[1] = src_u[0];
+      dst_frame[2] = src_y[0];  // duplicate last y
+      dst_frame[3] = src_v[0];
+    }
+}
+
+int I422ToYUY2(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height) {
+  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_frame = dst_frame + (height - 1) * dst_stride_frame;
+    dst_stride_frame = -dst_stride_frame;
+  }
+  void (*I42xToYUY2Row)(const uint8* src_y, const uint8* src_u,
+                        const uint8* src_v, uint8* dst_frame, int width);
+#if defined(HAS_I42XTOYUY2ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_y, 16) && (src_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_frame, 16) && (dst_stride_frame % 16 == 0)) {
+    I42xToYUY2Row = I42xToYUY2Row_SSE2;
+  } else
+#endif
+  {
+    I42xToYUY2Row = I42xToYUY2Row_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    I42xToYUY2Row(src_y, src_u, src_y, dst_frame, width);
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_frame += dst_stride_frame;
+  }
+  return 0;
+}
 
 int I420ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -328,105 +462,37 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
   if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
     return -1;
   }
-
-  const uint8* in1 = src_y;
-  const uint8* in2 = src_y + src_stride_y;
-
-  uint8* out1 = dst_frame;
-  uint8* out2 = dst_frame + dst_stride_frame;
-
-  // YUY2 - Macro-pixel = 2 image pixels
-  // Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
-#ifndef SCALEOPT
-  for (int i = 0; i < ((height + 1) >> 1); i++){
-    for (int j = 0; j < ((width + 1) >> 1); j++){
-      out1[0] = in1[0];
-      out1[1] = *src_u;
-      out1[2] = in1[1];
-      out1[3] = *src_v;
-
-      out2[0] = in2[0];
-      out2[1] = *src_u;
-      out2[2] = in2[1];
-      out2[3] = *src_v;
-      out1 += 4;
-      out2 += 4;
-      src_u++;
-      src_v++;
-      in1 += 2;
-      in2 += 2;
-    }
-    in1 += 2 * src_stride_y - width;
-    in2 += 2 * src_stride_y - width;
-    src_u += src_stride_u - ((width + 1) >> 1);
-    src_v += src_stride_v - ((width + 1) >> 1);
-    out1 += dst_stride_frame + dst_stride_frame - 2 * width;
-    out2 += dst_stride_frame + dst_stride_frame - 2 * width;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_frame = dst_frame + (height - 1) * dst_stride_frame;
+    dst_stride_frame = -dst_stride_frame;
   }
-#else
-  for (WebRtc_UWord32 i = 0; i < ((height + 1) >> 1);i++) {
-    int32 width__ = (width >> 4);
-    _asm
-    {
-      ;pusha
-      mov       eax, DWORD PTR [in1]                       ;1939.33
-      mov       ecx, DWORD PTR [in2]                       ;1939.33
-      mov       ebx, DWORD PTR [src_u]                       ;1939.33
-      mov       edx, DWORD PTR [src_v]                       ;1939.33
-      loop0:
-      movq      xmm6, QWORD PTR [ebx]          ;src_u
-      movq      xmm0, QWORD PTR [edx]          ;src_v
-      punpcklbw xmm6, xmm0                     ;src_u, src_v mix
-      ;movdqa    xmm1, xmm6
-      ;movdqa    xmm2, xmm6
-      ;movdqa    xmm4, xmm6
-
-      movdqu    xmm3, XMMWORD PTR [eax]        ;in1
-      movdqa    xmm1, xmm3
-      punpcklbw xmm1, xmm6                     ;in1, src_u, in1, src_v
-      mov       esi, DWORD PTR [out1]
-      movdqu    XMMWORD PTR [esi], xmm1        ;write to out1
-
-      movdqu    xmm5, XMMWORD PTR [ecx]        ;in2
-      movdqa    xmm2, xmm5
-      punpcklbw xmm2, xmm6                     ;in2, src_u, in2, src_v
-      mov       edi, DWORD PTR [out2]
-      movdqu    XMMWORD PTR [edi], xmm2        ;write to out2
-
-      punpckhbw xmm3, xmm6                     ;in1, src_u, in1, src_v again
-      movdqu    XMMWORD PTR [esi+16], xmm3     ;write to out1 again
-      add       esi, 32
-      mov       DWORD PTR [out1], esi
-
-      punpckhbw xmm5, xmm6                     ;src_u, in2, src_v again
-      movdqu    XMMWORD PTR [edi+16], xmm5     ;write to out2 again
-      add       edi, 32
-      mov       DWORD PTR [out2], edi
-
-      add       ebx, 8
-      add       edx, 8
-      add       eax, 16
-      add       ecx, 16
-
-      mov       esi, DWORD PTR [width__]
-      sub       esi, 1
-      mov       DWORD PTR [width__], esi
-      jg        loop0
-
-      mov       DWORD PTR [in1], eax                       ;1939.33
-      mov       DWORD PTR [in2], ecx                       ;1939.33
-      mov       DWORD PTR [src_u], ebx                       ;1939.33
-      mov       DWORD PTR [src_v], edx                       ;1939.33
-
-      ;popa
-      emms
-    }
-    in1 += 2 * src_stride_y - width;
-    in2 += 2 * src_stride_y - width;
-    out1 += dst_stride_frame + dst_stride_frame - 2 * width;
-    out2 += dst_stride_frame + dst_stride_frame - 2 * width;
-  }
+  void (*I42xToYUY2Row)(const uint8* src_y, const uint8* src_u,
+                        const uint8* src_v, uint8* dst_frame, int width);
+#if defined(HAS_I42XTOYUY2ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 16 == 0) &&
+      IS_ALIGNED(src_y, 16) && (src_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_frame, 16) && (dst_stride_frame % 16 == 0)) {
+    I42xToYUY2Row = I42xToYUY2Row_SSE2;
+  } else
 #endif
+  {
+    I42xToYUY2Row = I42xToYUY2Row_C;
+  }
+  for (int y = 0; y < height - 1; y += 2) {
+    I42xToYUY2Row(src_y, src_u, src_v, dst_frame, width);
+    I42xToYUY2Row(src_y + src_stride_y, src_u, src_v,
+                  dst_frame + dst_stride_frame, width);
+    src_y += src_stride_y * 2;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_frame += dst_stride_frame * 2;
+  }
+  if (height & 1) {
+    I42xToYUY2Row(src_y, src_u, src_v, dst_frame, width);
+  }
   return 0;
 }
 
