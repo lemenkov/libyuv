@@ -46,6 +46,12 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
+int I422ToYUY2(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height);
+
 int I420ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,

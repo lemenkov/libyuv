@@ -1057,22 +1057,13 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
     case FOURCC_RGGB:
     case FOURCC_GRBG:
     case FOURCC_GBRG:
-      // TODO(fbarchard): We could support cropping by odd numbers by
-      // adjusting fourcc.
+      // TODO(fbarchard): Support cropping by odd numbers by adjusting fourcc.
       src = sample + (src_width * crop_y + crop_x);
       BayerRGBToI420(src, src_width, format,
                      y, y_stride, u, u_stride, v, v_stride,
                      dst_width, inv_dst_height);
       break;
     // Biplanar formats
-    case FOURCC_M420:
-      src = sample + (src_width * crop_y) * 12 / 8 + crop_x;
-      M420ToI420(src, src_width,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
-      break;
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
       src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
@@ -1093,6 +1084,14 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                        u, u_stride,
                        v, v_stride,
                        dst_width, inv_dst_height, rotation);
+      break;
+    case FOURCC_M420:
+      src = sample + (src_width * crop_y) * 12 / 8 + crop_x;
+      M420ToI420(src, src_width,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_width, inv_dst_height);
       break;
     case FOURCC_Q420:
       src = sample + (src_width + aligned_src_width * 2) * crop_y + crop_x;
@@ -1131,6 +1130,33 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                  u, u_stride,
                  v, v_stride,
                  dst_width, inv_dst_height, rotation);
+      break;
+    }
+    // Triplanar formats
+    case FOURCC_I422:
+    case FOURCC_YV16: {
+      const uint8* src_y = sample + (src_width * crop_y + crop_x);
+      const uint8* src_u;
+      const uint8* src_v;
+      int halfwidth = (src_width + 1) / 2;
+      if (format == FOURCC_I422) {
+        src_u = sample + src_width * abs_src_height +
+            halfwidth * crop_y + crop_x / 2;
+        src_v = sample + src_width * abs_src_height +
+            halfwidth * (abs_src_height + crop_y) + crop_x / 2;
+      } else {
+        src_v = sample + src_width * abs_src_height +
+            halfwidth * crop_y + crop_x / 2;
+        src_u = sample + src_width * abs_src_height +
+            halfwidth * (abs_src_height + crop_y) + crop_x / 2;
+      }
+      I422ToI420(src_y, src_width,
+                 src_u, halfwidth,
+                 src_v, halfwidth,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_width, inv_dst_height);
       break;
     }
     // Formats not supported

@@ -814,7 +814,34 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
   }
 }
 #endif
+#endif
 
+#ifdef HAS_REVERSE_ROW_SSSE3
+
+// Shuffle table for reversing the bytes.
+static const uvec8 kShuffleReverse = {
+  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
+};
+
+__declspec(naked)
+void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
+__asm {
+    mov       eax, [esp + 4]   // src
+    mov       edx, [esp + 8]   // dst
+    mov       ecx, [esp + 12]  // width
+    movdqa    xmm5, kShuffleReverse
+    lea       eax, [eax + ecx - 16]
+ convertloop:
+    movdqa    xmm0, [eax]
+    lea       eax, [eax - 16]
+    pshufb    xmm0, xmm5
+    movdqa    [edx], xmm0
+    lea       edx, [edx + 16]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
 #endif
 
 }  // extern "C"

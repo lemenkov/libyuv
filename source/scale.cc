@@ -42,6 +42,8 @@ void SetUseReferenceImpl(bool use) {
   use_reference_impl_ = use;
 }
 
+// ScaleRowDown2Int also used by planar functions
+
 /**
  * NEON downscalers with interpolation.
  *
@@ -624,8 +626,8 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked)
-static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
-                                  uint8* dst_ptr, int dst_width) {
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+                           uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]    // src_ptr
@@ -2778,8 +2780,8 @@ static void ScaleRowDown2_C(const uint8* src_ptr, int,
   }
 }
 
-static void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
-                               uint8* dst, int dst_width) {
+void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
+                        uint8* dst, int dst_width) {
   for (int x = 0; x < dst_width; ++x) {
     *dst++ = (src_ptr[0] + src_ptr[1] +
               src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
@@ -3068,8 +3070,9 @@ static void ScalePlaneDown2(int src_width, int src_height,
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
-      (dst_width % 16 == 0) && IS_ALIGNED(src_ptr, 16) &&
-      IS_ALIGNED(dst_ptr, 16)) {
+      (dst_width % 16 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && (src_stride % 16 == 0) &&
+      IS_ALIGNED(dst_ptr, 16) && (dst_stride % 16 == 0)) {
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
   } else
 #endif

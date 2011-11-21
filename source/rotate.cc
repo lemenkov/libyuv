@@ -20,10 +20,6 @@ namespace libyuv {
 #if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(YUV_DISABLE_ASM)
 // Note static const preferred, but gives internal compiler error on gcc 4.2
-// Shuffle table for reversing the bytes.
-uvec8 kShuffleReverse = {
-  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
-};
 // Shuffle table for reversing the bytes of UV channels.
 uvec8 kShuffleReverseUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
@@ -31,7 +27,6 @@ uvec8 kShuffleReverseUV = {
 #endif
 
 typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
-typedef void (*reverse_func)(const uint8*, uint8*, int);
 typedef void (*rotate_uv_wx8_func)(const uint8*, int,
                                    uint8*, int,
                                    uint8*, int, int);
@@ -844,71 +839,10 @@ void RotatePlane270(const uint8* src, int src_stride,
   TransposePlane(src, src_stride, dst, dst_stride, width, height);
 }
 
-static void ReverseRow_C(const uint8* src, uint8* dst, int width) {
-  int i;
-  src += width - 1;
-  for (i = 0; i < width; ++i) {
-    dst[i] = src[0];
-    --src;
-  }
-}
-
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_REVERSE_ROW_SSSE3
-__declspec(naked)
-static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
-__asm {
-    mov       eax, [esp + 4]   // src
-    mov       edx, [esp + 8]   // dst
-    mov       ecx, [esp + 12]  // width
-    movdqa    xmm5, kShuffleReverse
-    lea       eax, [eax + ecx - 16]
- convertloop:
-    movdqa    xmm0, [eax]
-    lea       eax, [eax - 16]
-    pshufb    xmm0, xmm5
-    movdqa    [edx], xmm0
-    lea       edx, [edx + 16]
-    sub       ecx, 16
-    ja        convertloop
-    ret
-  }
-}
-
-#elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(YUV_DISABLE_ASM)
-#define HAS_REVERSE_ROW_SSSE3
-static void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
-  asm volatile (
-  "movdqa     %3,%%xmm5                        \n"
-  "lea        -0x10(%0,%2,1),%0                \n"
-"1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "lea        -0x10(%0),%0                     \n"
-  "pshufb     %%xmm5,%%xmm0                    \n"
-  "movdqa     %%xmm0,(%1)                      \n"
-  "lea        0x10(%1),%1                      \n"
-  "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
-  : "+r"(src),  // %0
-    "+r"(dst),  // %1
-    "+r"(temp_width)  // %2
-  : "m"(kShuffleReverse) // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
-  );
-}
-#endif
-
 void RotatePlane180(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
-  int i;
-  reverse_func ReverseRow;
-
+  void (*ReverseRow)(const uint8* src, uint8* dst, int width);
 #if defined(HAS_REVERSE_ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ReverseRow = ReverseRow_NEON;
@@ -925,10 +859,11 @@ void RotatePlane180(const uint8* src, int src_stride,
   {
     ReverseRow = ReverseRow_C;
   }
+
   // Rotate by 180 is a mirror and vertical flip
   src += src_stride * (height - 1);
 
-  for (i = 0; i < height; ++i) {
+  for (int y = 0; y < height; ++y) {
     ReverseRow(src, dst, width);
     src -= src_stride;
     dst += dst_stride;

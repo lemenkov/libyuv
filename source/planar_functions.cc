@@ -126,12 +126,75 @@ static void SplitUV_C(const uint8* src_uv,
   }
 }
 
-static void I420CopyPlane(const uint8* src_y, int src_stride_y,
-                          uint8* dst_y, int dst_stride_y,
-                          int width, int height) {
+// CopyRows copys 'count' bytes using a 16 byte load/store, 64 bytes at time
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#define HAS_COPYROW_SSE2
+__declspec(naked)
+void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
+  __asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    ja         convertloop
+    ret
+  }
+}
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#define HAS_COPYROW_SSE2
+void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
+  asm volatile (
+"1:                                            \n"
+  "movdqa      (%0),%%xmm0                     \n"
+  "movdqa      0x10(%0),%%xmm1                 \n"
+  "lea         0x20(%0),%0                     \n"
+  "movdqa      %%xmm0,(%1)                     \n"
+  "movdqa      %%xmm1,0x10(%1)                 \n"
+  "lea         0x20(%1),%1                     \n"
+  "sub         $0x20,%2                        \n"
+  "ja          1b                              \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(count)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+);
+}
+#endif
+
+void CopyRow_C(const uint8* src, uint8* dst, int count) {
+  memcpy(dst, src, count);
+}
+
+static void CopyPlane(const uint8* src_y, int src_stride_y,
+                      uint8* dst_y, int dst_stride_y,
+                      int width, int height) {
+  void (*CopyRow)(const uint8* src, uint8* dst, int width);
+#if defined(HAS_COPYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (width % 32 == 0) &&
+      IS_ALIGNED(src_y, 16) && (src_stride_y % 16 == 0)) {
+    CopyRow = CopyRow_SSE2;
+  } else
+#endif
+  {
+    CopyRow = CopyRow_C;
+  }
+
   // Copy plane
   for (int y = 0; y < height; ++y) {
-    memcpy(dst_y, src_y, width);
+    CopyRow(src_y, dst_y, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }
@@ -150,7 +213,6 @@ int I420Copy(const uint8* src_y, int src_stride_y,
       width <= 0 || height == 0) {
     return -1;
   }
-
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -165,9 +227,9 @@ int I420Copy(const uint8* src_y, int src_stride_y,
 
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  I420CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
-  I420CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
+  CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
   return 0;
 }
 
@@ -178,52 +240,66 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL ||
-      dst_y == NULL || dst_u == NULL || dst_v == NULL)
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
     return -1;
+  }
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
 
-  // Only accepts positive dimensions
-  if (height < 0 || width < 0 ||  src_stride_y < 0 || src_stride_u < 0 ||
-      src_stride_v < 0 || dst_stride_y < 0 || dst_stride_u < 0 ||
-      dst_stride_v < 0)
-    return -1;
-
-  int indO = 0;
-  int indS  = 0;
-  int wind, hind;
-  uint8 tmp_val;
-  // Will swap two values per iteration
-  const int half_width = (width + 1) >> 1;
-
-  // Y
-  for (wind = 0; wind < half_width; ++wind) {
-   for (hind = 0; hind < height; ++hind) {
-     indO = hind * src_stride_y + wind;
-     indS = hind * dst_stride_y + (width - wind - 1);
-     tmp_val = src_y[indO];
-     dst_y[indO] = src_y[indS];
-     dst_y[indS] = tmp_val;
-    }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+  void (*ReverseRow)(const uint8* src, uint8* dst, int width);
+#if defined(HAS_REVERSE_ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      (width % 32 == 0)) {
+    ReverseRow = ReverseRow_NEON;
+  } else
+#endif
+#if defined(HAS_REVERSE_ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      (width % 32 == 0) &&
+      IS_ALIGNED(src_y, 16) && (src_stride_y % 16 == 0) &&
+      IS_ALIGNED(src_u, 16) && (src_stride_u % 16 == 0) &&
+      IS_ALIGNED(src_v, 16) && (src_stride_v % 16 == 0) &&
+      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0) &&
+      IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
+      IS_ALIGNED(dst_v, 16) && (dst_stride_v % 16 == 0)) {
+    ReverseRow = ReverseRow_SSSE3;
+  } else
+#endif
+  {
+    ReverseRow = ReverseRow_C;
   }
 
-  const int half_height = (height + 1) >> 1;
-  const int half_uv_width = (width + 1) >> 1;
-
-  for (wind = 0; wind < half_uv_width; ++wind) {
-   for (hind = 0; hind < half_height; ++hind) {
-     // U
-     indO = hind * dst_stride_u + wind;
-     indS = hind * dst_stride_u + (half_uv_width - wind - 1);
-     tmp_val = src_u[indO];
-     dst_u[indO] = src_u[indS];
-     dst_u[indS] = tmp_val;
-     // V
-     indO = hind * dst_stride_v + wind;
-     indS = hind * dst_stride_v + (half_uv_width - wind - 1);
-     tmp_val = src_v[indO];
-     dst_v[indO] = src_v[indS];
-     dst_v[indS] = tmp_val;
-   }
+  // Y Plane
+  int y;
+  for (y = 0; y < height; ++y) {
+    ReverseRow(src_y, dst_y, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+  // U Plane
+  for (y = 0; y < halfheight; ++y) {
+    ReverseRow(src_u, dst_u, halfwidth);
+    src_u += src_stride_u;
+    dst_u += dst_stride_u;
+  }
+  // V Plane
+  for (y = 0; y < halfheight; ++y) {
+    ReverseRow(src_v, dst_v, halfwidth);
+    src_v += src_stride_v;
+    dst_v += dst_stride_v;
   }
   return 0;
 }
@@ -417,8 +493,6 @@ void HalfRow_C(const uint8* src_uv, int src_uv_stride,
   }
 }
 
-// Helper function to copy yuv data without scaling.  Used
-// by our jpeg conversion callbacks to incrementally fill a yuv image.
 int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -454,7 +528,7 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   }
 
   // Copy Y plane
-  I420CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
 
   // SubSample U plane.
   int y;
@@ -479,7 +553,133 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-static void I420CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
+int I420ToI422(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+  // Copy Y plane
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+
+  int halfwidth = (width + 1) >> 1;
+  // UpSample U plane.
+  int y;
+  for (y = 0; y < height - 1; y += 2) {
+    memcpy(dst_u, src_u, halfwidth);
+    memcpy(dst_u + dst_stride_u, src_u, halfwidth);
+    src_u += src_stride_u;
+    dst_u += dst_stride_u * 2;
+  }
+  if (height & 1) {
+    memcpy(dst_u, src_u, halfwidth);
+  }
+
+  // UpSample V plane.
+  for (y = 0; y < height - 1; y += 2) {
+    memcpy(dst_v, src_v, halfwidth);
+    memcpy(dst_v + dst_stride_v, src_v, halfwidth);
+    src_v += src_stride_v;
+    dst_v += dst_stride_v * 2;
+  }
+  if (height & 1) {
+    memcpy(dst_v, src_v, halfwidth);
+  }
+  return 0;
+}
+
+// Blends 32x2 pixels to 16x1
+// source in scale.cc
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#define HAS_SCALEROWDOWN2_NEON
+void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
+                           uint8* dst, int dst_width);
+#elif (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
+    !defined(YUV_DISABLE_ASM)
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+                           uint8* dst_ptr, int dst_width);
+#endif
+void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
+                        uint8* dst_ptr, int dst_width);
+
+// Half Width and Height
+int I444ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+  int halfwidth = (width + 1) >> 1;
+  void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
+                        uint8* dst_ptr, int dst_width);
+#if defined(HAS_SCALEROWDOWN2_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      (halfwidth % 16 == 0)) {
+    ScaleRowDown2 = ScaleRowDown2Int_NEON;
+  } else
+#endif
+#if defined(HAS_SCALEROWDOWN2_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      (halfwidth % 16 == 0) &&
+      IS_ALIGNED(src_u, 16) && (src_stride_u % 16 == 0) &&
+      IS_ALIGNED(src_v, 16) && (src_stride_v % 16 == 0) &&
+      IS_ALIGNED(dst_u, 16) && (dst_stride_u % 16 == 0) &&
+      IS_ALIGNED(dst_v, 16) && (dst_stride_v % 16 == 0)) {
+    ScaleRowDown2 = ScaleRowDown2Int_SSE2;
+#endif
+  {
+    ScaleRowDown2 = ScaleRowDown2Int_C;
+  }
+
+  // Copy Y plane
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+
+  // SubSample U plane.
+  int y;
+  for (y = 0; y < height - 1; y += 2) {
+    ScaleRowDown2(src_u, src_stride_u, dst_u, halfwidth);
+    src_u += src_stride_u * 2;
+    dst_u += dst_stride_u;
+  }
+  if (height & 1) {
+    ScaleRowDown2(src_u, 0, dst_u, halfwidth);
+  }
+
+  // SubSample V plane.
+  for (y = 0; y < height - 1; y += 2) {
+    ScaleRowDown2(src_v, src_stride_v, dst_v, halfwidth);
+    src_v += src_stride_v * 2;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ScaleRowDown2(src_v, 0, dst_v, halfwidth);
+  }
+  return 0;
+}
+
+static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
                            uint8* dst, int dst_stride_frame,
                            int width, int height) {
   // Copy plane
@@ -544,7 +744,7 @@ static int X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_C;
   }
 
-  I420CopyPlane2(src_y, src_stride_y0, src_stride_y1, dst_y, dst_stride_y,
+  CopyPlane2(src_y, src_stride_y0, src_stride_y1, dst_y, dst_stride_y,
                  width, height);
 
   int halfheight = (height + 1) >> 1;
@@ -1108,18 +1308,18 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
     YUY2ToI420RowY = YUY2ToI420RowY_C;
     YUY2ToI420RowUV = YUY2ToI420RowUV_C;
   }
-  for (int y = 0; y < height; ++y) {
-    if ((y & 1) == 0) {
-      if (y >= (height - 1) ) {  // last chroma on odd height clamp height
-        src_stride_yuy2 = 0;
-      }
-      YUY2ToI420RowUV(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
-      dst_u += dst_stride_u;
-      dst_v += dst_stride_v;
-    }
+  for (int y = 0; y < height - 1; y += 2) {
+    YUY2ToI420RowUV(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
     YUY2ToI420RowY(src_yuy2, dst_y, width);
-    dst_y += dst_stride_y;
-    src_yuy2 += src_stride_yuy2;
+    YUY2ToI420RowY(src_yuy2 + src_stride_yuy2, dst_y + dst_stride_y, width);
+    dst_y += dst_stride_y * 2;
+    src_yuy2 += src_stride_yuy2 * 2;
+  }
+  if (height & 1) {
+    YUY2ToI420RowUV(src_yuy2, 0, dst_u, dst_v, width);
+    YUY2ToI420RowY(src_yuy2, dst_y, width);
   }
   return 0;
 }
@@ -1155,18 +1355,18 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
     UYVYToI420RowY = UYVYToI420RowY_C;
     UYVYToI420RowUV = UYVYToI420RowUV_C;
   }
-  for (int y = 0; y < height; ++y) {
-    if ((y & 1) == 0) {
-      if (y >= (height - 1) ) {  // last chroma on odd height clamp height
-        src_stride_uyvy = 0;
-      }
-      UYVYToI420RowUV(src_uyvy, src_stride_uyvy, dst_u, dst_v, width);
-      dst_u += dst_stride_u;
-      dst_v += dst_stride_v;
-    }
+  for (int y = 0; y < height - 1; y += 2) {
+    UYVYToI420RowUV(src_uyvy, src_stride_uyvy, dst_u, dst_v, width);
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
     UYVYToI420RowY(src_uyvy, dst_y, width);
-    dst_y += dst_stride_y;
-    src_uyvy += src_stride_uyvy;
+    UYVYToI420RowY(src_uyvy + src_stride_uyvy, dst_y + dst_stride_y, width);
+    dst_y += dst_stride_y * 2;
+    src_uyvy += src_stride_uyvy * 2;
+  }
+  if (height & 1) {
+    UYVYToI420RowUV(src_uyvy, 0, dst_u, dst_v, width);
+    UYVYToI420RowY(src_uyvy, dst_y, width);
   }
   return 0;
 }

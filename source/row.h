@@ -63,6 +63,12 @@ void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
 #define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
 #define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
 #define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
+#define HAS_REVERSE_ROW_SSSE3
+#endif
+
+// The following are available on Neon platforms
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#define HAS_REVERSE_ROW_NEON
 #endif
 
 extern "C" {
@@ -89,6 +95,14 @@ void RGB24ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 void RAWToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 #endif
+#ifdef HAS_REVERSE_ROW_SSSE3
+void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width);
+#endif
+#ifdef HAS_REVERSE_ROW_NEON
+void ReverseRow_NEON(const uint8* src, uint8* dst, int width);
+#endif
+void ReverseRow_C(const uint8* src, uint8* dst, int width);
+
 void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
