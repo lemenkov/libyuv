@@ -43,10 +43,9 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 namespace libyuv {
 
 // CPU detect function for SIMD instruction sets.
-static int cpu_info_ = 0;
+int cpu_info_ = 0;
 
-// TODO(fbarchard): (cpu_info[2] & 0x10000000 ? kCpuHasAVX : 0)
-static void InitCpuFlags() {
+int InitCpuFlags() {
 #ifdef CPU_X86
   int cpu_info[4];
   __cpuid(cpu_info, 1);
@@ -65,18 +64,12 @@ static void InitCpuFlags() {
 #else
   cpu_info_ = kCpuInitialized;
 #endif
+  return cpu_info_;
 }
 
 void MaskCpuFlags(int enable_flags) {
   InitCpuFlags();
   cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
-}
-
-bool TestCpuFlag(int flag) {
-  if (0 == cpu_info_) {
-    InitCpuFlags();
-  }
-  return (cpu_info_ & flag) ? true : false;
 }
 
 }  // namespace libyuv
