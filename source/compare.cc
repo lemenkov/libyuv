@@ -204,7 +204,7 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
                            const uint8* src_b, int count);
 #if defined(HAS_SUMSQUAREERROR_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
-      (width % 16 == 0)) {
+      IS_ALIGNED(width, 16)) {
     SumSquareError = SumSquareError_NEON;
   } else
 #endif

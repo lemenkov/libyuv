@@ -14,6 +14,7 @@
 #include "libyuv/basic_types.h"
 
 #define kMaxStride (2048 * 4)
+#define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(COVERAGE_ENABLED) || defined(TARGET_IPHONE_SIMULATOR)
 #define YUV_DISABLE_ASM

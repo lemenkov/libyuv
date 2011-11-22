@@ -112,9 +112,9 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
-      (width % 4 == 0) &&
-      IS_ALIGNED(src_rgb, 16) && (src_stride_rgb % 16 == 0) &&
-      IS_ALIGNED(dst_bayer, 4) && (dst_stride_bayer % 4 == 0)) {
+      IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_rgb, 16) && IS_ALIGNED(src_stride_rgb, 16) &&
+      IS_ALIGNED(dst_bayer, 4) && IS_ALIGNED(dst_stride_bayer, 4)) {
     ARGBToBayerRow = ARGBToBayerRow_SSSE3;
   } else
 #endif
@@ -366,9 +366,9 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
 
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
-      IS_ALIGNED(dst_y, 16) && (dst_stride_y % 16 == 0)) {
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(row, 16) && IS_ALIGNED(kMaxStride, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     ARGBToYRow = ARGBToYRow_SSSE3;
   } else
 #endif
@@ -377,10 +377,10 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   }
 #if defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
-      (width % 16 == 0) &&
-      IS_ALIGNED(row, 16) && (kMaxStride % 16 == 0) &&
-      IS_ALIGNED(dst_u, 8) && (dst_stride_u % 8 == 0) &&
-      IS_ALIGNED(dst_v, 8) && (dst_stride_v % 8 == 0)) {
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(row, 16) && IS_ALIGNED(kMaxStride, 16) &&
+      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
+      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
     ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
