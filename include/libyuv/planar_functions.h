@@ -33,15 +33,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Draw a rectangle into I420
-int I420Rect(uint8* dst_y, int dst_stride_y,
-             uint8* dst_u, int dst_stride_u,
-             uint8* dst_v, int dst_stride_v,
-             int x, int y,
-             int width, int height,
-             int value_y, int value_u, int value_v);
-
-// Convert I422 to I420.  Used by MJPG.
+// Convert I422 to I420.
 int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -182,6 +174,20 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
+
+// Draw a rectangle into I420
+int I420Rect(uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int x, int y,
+             int width, int height,
+             int value_y, int value_u, int value_v);
+
+// Draw a rectangle into ARGB
+int ARGBRect(uint8* dst_argb, int dst_stride_argb,
+             int x, int y,
+             int width, int height,
+             uint32 value);
 
 }  // namespace libyuv
 

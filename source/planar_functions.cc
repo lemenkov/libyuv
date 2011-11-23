@@ -304,138 +304,6 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// SetRows32 writes 'count' bytes using a 32 bit value repeated
-
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
-#define HAS_SETROW_NEON
-static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
-  asm volatile (
-    "vdup.u32   q0, %2                         \n"  // duplicate 4 ints
-    "1:                                        \n"
-    "vst1.u32   {q0}, [%0]!                    \n"  // store
-    "subs       %1, %1, #16                    \n"  // 16 processed per loop
-    "bhi        1b                             \n"
-  : "+r"(dst),  // %0
-    "+r"(count) // %1
-  : "r"(v32)    // %2
-  : "q0", "memory", "cc"
-  );
-}
-
-#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_SETROW_SSE2
-__declspec(naked)
-static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
-  __asm {
-    mov        eax, [esp + 4]    // dst
-    movd       xmm5, [esp + 8]   // v32
-    mov        ecx, [esp + 12]   // count
-    pshufd     xmm5, xmm5, 0
-
-  convertloop:
-    movdqa     [eax], xmm5
-    lea        eax, [eax + 16]
-    sub        ecx, 16
-    ja         convertloop
-    ret
-  }
-}
-
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
-
-#define HAS_SETROW_SSE2
-static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
-  asm volatile (
-  "movd       %2, %%xmm5                       \n"
-  "pshufd     $0x0,%%xmm5,%%xmm5               \n"
-"1:                                            \n"
-  "movdqa     %%xmm5,(%0)                      \n"
-  "lea        0x10(%0),%0                      \n"
-  "sub        $0x10,%1                         \n"
-  "ja         1b                               \n"
-  : "+r"(dst),  // %0
-    "+r"(count) // %1
-  : "r"(v32)    // %2
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm5"
-#endif
-);
-}
-#endif
-
-static void SetRow8_C(uint8* dst, uint32 v8, int count) {
-  memset(dst, v8, count);
-}
-
-static void I420SetPlane(uint8* dst_y, int dst_stride_y,
-                         int width, int height,
-                         int value) {
-  void (*SetRow)(uint8* dst, uint32 value, int pix);
-#if defined(HAS_SETROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    SetRow = SetRow32_NEON;
-  } else
-#elif defined(HAS_SETROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    SetRow = SetRow32_SSE2;
-  } else
-#endif
-  {
-    SetRow = SetRow8_C;
-  }
-
-  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
-  // Set plane
-  for (int y = 0; y < height; ++y) {
-    SetRow(dst_y, v32, width);
-    dst_y += dst_stride_y;
-  }
-}
-
-// Draw a rectangle into I420
-int I420Rect(uint8* dst_y, int dst_stride_y,
-             uint8* dst_u, int dst_stride_u,
-             uint8* dst_v, int dst_stride_v,
-             int x, int y,
-             int width, int height,
-             int value_y, int value_u, int value_v) {
-  if (!dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0 ||
-      x < 0 || y < 0 ||
-      value_y < 0 || value_y > 255 ||
-      value_u < 0 || value_u > 255 ||
-      value_v < 0 || value_v > 255) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    int halfheight = (height + 1) >> 1;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (halfheight - 1) * dst_stride_u;
-    dst_v = dst_v + (halfheight - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  uint8* start_y = dst_y + y * dst_stride_y + x;
-  uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
-  uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
-
-  I420SetPlane(start_y, dst_stride_y, width, height, value_y);
-  I420SetPlane(start_u, dst_stride_u, halfwidth, halfheight, value_u);
-  I420SetPlane(start_v, dst_stride_v, halfwidth, halfheight, value_v);
-  return 0;
-}
-
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_HALFROW_SSE2
 __declspec(naked)
@@ -1780,6 +1648,170 @@ int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
   for (int y = 0; y < height; ++y) {
     BG24ToARGBRow(src_bg24, dst_argb, width);
     src_bg24 += src_stride_bg24;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+
+// SetRows32 writes 'count' bytes using a 32 bit value repeated
+
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#define HAS_SETROW_NEON
+static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
+  asm volatile (
+    "vdup.u32   q0, %2                         \n"  // duplicate 4 ints
+    "1:                                        \n"
+    "vst1.u32   {q0}, [%0]!                    \n"  // store
+    "subs       %1, %1, #16                    \n"  // 16 processed per loop
+    "bhi        1b                             \n"
+  : "+r"(dst),  // %0
+    "+r"(count) // %1
+  : "r"(v32)    // %2
+  : "q0", "memory", "cc"
+  );
+}
+
+#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#define HAS_SETROW_SSE2
+__declspec(naked)
+static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
+  __asm {
+    mov        eax, [esp + 4]    // dst
+    movd       xmm5, [esp + 8]   // v32
+    mov        ecx, [esp + 12]   // count
+    pshufd     xmm5, xmm5, 0
+
+  convertloop:
+    movdqa     [eax], xmm5
+    lea        eax, [eax + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+
+#define HAS_SETROW_SSE2
+static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
+  asm volatile (
+  "movd       %2, %%xmm5                       \n"
+  "pshufd     $0x0,%%xmm5,%%xmm5               \n"
+"1:                                            \n"
+  "movdqa     %%xmm5,(%0)                      \n"
+  "lea        0x10(%0),%0                      \n"
+  "sub        $0x10,%1                         \n"
+  "ja         1b                               \n"
+  : "+r"(dst),  // %0
+    "+r"(count) // %1
+  : "r"(v32)    // %2
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm5"
+#endif
+);
+}
+#endif
+
+static void SetRow8_C(uint8* dst, uint32 v8, int count) {
+  memset(dst, v8, count);
+}
+
+static void SetPlane(uint8* dst_y, int dst_stride_y,
+                     int width, int height,
+                     uint32 value) {
+  void (*SetRow)(uint8* dst, uint32 value, int pix);
+#if defined(HAS_SETROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    SetRow = SetRow32_NEON;
+  } else
+#elif defined(HAS_SETROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    SetRow = SetRow32_SSE2;
+  } else
+#endif
+  {
+    SetRow = SetRow8_C;
+  }
+
+  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
+  // Set plane
+  for (int y = 0; y < height; ++y) {
+    SetRow(dst_y, v32, width);
+    dst_y += dst_stride_y;
+  }
+}
+
+// Draw a rectangle into I420
+int I420Rect(uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int x, int y,
+             int width, int height,
+             int value_y, int value_u, int value_v) {
+  if (!dst_y || !dst_u || !dst_v ||
+      width <= 0 || height <= 0 ||
+      x < 0 || y < 0 ||
+      value_y < 0 || value_y > 255 ||
+      value_u < 0 || value_u > 255 ||
+      value_v < 0 || value_v > 255) {
+    return -1;
+  }
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  uint8* start_y = dst_y + y * dst_stride_y + x;
+  uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
+  uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
+
+  SetPlane(start_y, dst_stride_y, width, height, value_y);
+  SetPlane(start_u, dst_stride_u, halfwidth, halfheight, value_u);
+  SetPlane(start_v, dst_stride_v, halfwidth, halfheight, value_v);
+  return 0;
+}
+
+// count measured in bytes
+static void SetRow32_C(uint8* dst, uint32 v8, int count) {
+  uint32* d = reinterpret_cast<uint32*>(dst);
+  for (int x = 0; x < count; x += 4) {
+    *d++ = v8;
+  }
+}
+
+// Draw a rectangle into ARGB
+int ARGBRect(uint8* dst_argb, int dst_stride_argb,
+             int x, int y,
+             int width, int height,
+             uint32 value) {
+  if (!dst_argb ||
+      width <= 0 || height <= 0 ||
+      x < 0 || y < 0) {
+    return -1;
+  }
+  void (*SetRow)(uint8* dst, uint32 value, int count);
+#if defined(HAS_SETROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    SetRow = SetRow32_NEON;
+  } else
+#elif defined(HAS_SETROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    SetRow = SetRow32_SSE2;
+  } else
+#endif
+  {
+    SetRow = SetRow32_C;
+  }
+  int w32 = width << 2;
+  for (int y = 0; y < height; ++y) {
+    SetRow(dst_argb, value, w32);
     dst_argb += dst_stride_argb;
   }
   return 0;

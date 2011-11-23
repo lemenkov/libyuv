@@ -1171,8 +1171,8 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
         src_u = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
       }
       I444ToI420(src_y, src_width,
-                 src_u, halfwidth,
-                 src_v, halfwidth,
+                 src_u, src_width,
+                 src_v, src_width,
                  y, y_stride,
                  u, u_stride,
                  v, v_stride,

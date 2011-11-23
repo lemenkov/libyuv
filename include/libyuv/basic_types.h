@@ -66,7 +66,6 @@ typedef char int8;
 #define CPU_X86 1
 #endif
 
-#define IS_ALIGNED(p, a) (0==(reinterpret_cast<uintptr_t>(p) & ((a)-1)))
 #define ALIGNP(p, t) \
   (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
   ((t)-1)) & ~((t)-1))))
