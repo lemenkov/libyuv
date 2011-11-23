@@ -1132,10 +1132,9 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                  dst_width, inv_dst_height, rotation);
       break;
     }
-    // Triplanar formats
     case FOURCC_I422:
     case FOURCC_YV16: {
-      const uint8* src_y = sample + (src_width * crop_y + crop_x);
+      const uint8* src_y = sample + src_width * crop_y + crop_x;
       const uint8* src_u;
       const uint8* src_v;
       int halfwidth = (src_width + 1) / 2;
@@ -1151,6 +1150,27 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
             halfwidth * (abs_src_height + crop_y) + crop_x / 2;
       }
       I422ToI420(src_y, src_width,
+                 src_u, halfwidth,
+                 src_v, halfwidth,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_width, inv_dst_height);
+      break;
+    }
+    case FOURCC_I444:
+    case FOURCC_YV24: {
+      const uint8* src_y = sample + src_width * crop_y + crop_x;
+      const uint8* src_u;
+      const uint8* src_v;
+      if (format == FOURCC_I444) {
+        src_u = sample + src_width * (abs_src_height + crop_y) + crop_x;
+        src_v = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
+      } else {
+        src_v = sample + src_width * (abs_src_height + crop_y) + crop_x;
+        src_u = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
+      }
+      I444ToI420(src_y, src_width,
                  src_u, halfwidth,
                  src_v, halfwidth,
                  y, y_stride,
