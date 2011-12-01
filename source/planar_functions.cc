@@ -129,6 +129,7 @@ static void SplitUV_C(const uint8* src_uv,
 // CopyRows copys 'count' bytes using a 16 byte load/store, 64 bytes at time
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_COPYROW_SSE2
+#define HAS_COPYROW_X86
 __declspec(naked)
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
@@ -145,6 +146,21 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     lea        edx, [edx + 32]
     sub        ecx, 32
     ja         convertloop
+    ret
+  }
+}
+
+void CopyRow_X86(const uint8* src, uint8* dst, int count) {
+  __asm {
+    push       esi
+    push       edi
+    mov        esi, [esp + 4 + 4]   // src
+    mov        edi, [esp + 4 + 8]   // dst
+    mov        ecx, [esp + 4 + 12]  // count
+    shr        ecx, 2
+    rep movsd
+    pop        edi
+    pop        esi
     ret
   }
 }
@@ -184,8 +200,16 @@ static void CopyPlane(const uint8* src_y, int src_stride_y,
 #if defined(HAS_COPYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 32) &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16)) {
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     CopyRow = CopyRow_SSE2;
+  } else
+#endif
+#if defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(dst_y, 4) && IS_ALIGNED(dst_stride_y, 4)) {
+    CopyRow = CopyRow_X86;
   } else
 #endif
   {
@@ -230,6 +254,28 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+  return 0;
+}
+
+
+// Copy ARGB with optional flipping
+int ARGBCopy(const uint8* src_argb, int src_stride_argb,
+             uint8* dst_argb, int dst_stride_argb,
+             int width, int height) {
+  if (!src_argb ||
+      !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  CopyPlane(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+            width * 4, height);
   return 0;
 }
 
@@ -1673,109 +1719,111 @@ static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
   );
 }
 
-static void SetRow32_NEON(uint8* dst, uint32 v32, int count) {
-  asm volatile (
-    "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
-    "1:                                        \n"
-    "vst1.u32  {q0}, [%0]!                     \n"  // store
-    "subs      %1, %1, #4                      \n"  // 4 pixels per loop
-    "bhi       1b                              \n"
-  : "+r"(dst),  // %0
-    "+r"(count) // %1
-  : "r"(v32)    // %2
-  : "q0", "memory", "cc"
-  );
+// TODO(fbarchard): Make fully assembler
+static void SetRows32_NEON(uint8* dst, uint32 v32, int width,
+                           int dst_stride, int height) {
+  for (int y = 0; y < height; ++y) {
+    SetRow8_NEON(dst, v32, width << 2);
+    dst += dst_stride;
+  }
 }
 
 #elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_SETROW_SSE2
+#define HAS_SETROW_X86
 __declspec(naked)
-static void SetRow8_SSE2(uint8* dst, uint32 v32, int count) {
+static void SetRow8_X86(uint8* dst, uint32 v32, int count) {
   __asm {
-    mov        eax, [esp + 4]    // dst
-    movd       xmm5, [esp + 8]   // v32
-    mov        ecx, [esp + 12]   // count
-    pshufd     xmm5, xmm5, 0
-
-  convertloop:
-    movdqa     [eax], xmm5
-    lea        eax, [eax + 16]
-    sub        ecx, 16
-    ja         convertloop
+    push       edi
+    mov        edi, [esp + 4 + 4]   // dst
+    mov        eax, [esp + 4 + 8]   // v32
+    mov        ecx, [esp + 4 + 12]  // count
+    shr        ecx, 2
+    rep stosd
+    pop        edi
     ret
   }
 }
 
 __declspec(naked)
-static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
+static void SetRows32_X86(uint8* dst, uint32 v32, int width,
+                         int dst_stride, int height) {
   __asm {
-    mov        eax, [esp + 4]    // dst
-    movd       xmm5, [esp + 8]   // v32
-    mov        ecx, [esp + 12]   // count
-    pshufd     xmm5, xmm5, 0
+    push       edi
+    push       ebp
+    mov        edi, [esp + 8 + 4]   // dst
+    mov        eax, [esp + 8 + 8]   // v32
+    mov        ebp, [esp + 8 + 12]  // width
+    mov        edx, [esp + 8 + 16]  // dst_stride
+    mov        ebx, [esp + 8 + 20]  // height
+    lea        ecx, [ebp * 4]
+    sub        edx, ecx             // stride - width * 4
 
   convertloop:
-    movdqa     [eax], xmm5
-    lea        eax, [eax + 16]
-    sub        ecx, 4
+    mov        ecx, ebp
+    rep stosd
+    add        edi, edx
+    sub        ebx, 1
     ja         convertloop
+
+    pop        ebp
+    pop        edi
     ret
   }
 }
 
 #elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
-
-#define HAS_SETROW_SSE2
-static void SetRow8_SSE2(uint8* dst, uint32 v32, int count) {
+#define HAS_SETROW_X86
+static void SetRow8_X86(uint8* dst, uint32 v32, int width) {
+  size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
-    "movd      %2, %%xmm5                      \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-  "1:                                          \n"
-    "movdqa    %%xmm5,(%0)                     \n"
-    "lea       0x10(%0),%0                     \n"
-    "sub       $0x10,%1                        \n"
-    "ja        1b                              \n"
-  : "+r"(dst),  // %0
-    "+r"(count) // %1
-  : "r"(v32)    // %2
+    "shr       $0x2,%1                         \n"
+    "rep stos  %2,(%0)                         \n"
+  : "+D"(dst),  // %0
+    "+c"(width_tmp) // %1
+  : "a"(v32)    // %2
   : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm5"
-#endif
   );
 }
 
-static void SetRow32_SSE2(uint8* dst, uint32 v32, int count) {
-  asm volatile (
-    "movd      %2, %%xmm5                      \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-  "1:                                          \n"
-    "movdqa    %%xmm5,(%0)                     \n"
-    "lea       0x10(%0),%0                     \n"
-    "sub       $0x4,%1                         \n"
-    "ja        1b                              \n"
-  : "+r"(dst),  // %0
-    "+r"(count) // %1
-  : "r"(v32)    // %2
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm5"
-#endif
-  );
-}
-#endif
-
-static void SetRow8_C(uint8* dst, uint32 v8, int count) {
-  memset(dst, v8, count);
-}
-
-// count measured in bytes
-static void SetRow32_C(uint8* dst, uint32 v32, int count) {
-  uint32* d = reinterpret_cast<uint32*>(dst);
-  for (int x = 0; x < count; ++x) {
-    d[x] = v32;
+static void SetRows32_X86(uint8* dst, uint32 v32, int width,
+                         int dst_stride, int height) {
+  for (int y = 0; y < height; ++y) {
+    size_t width_tmp = static_cast<size_t>(width);
+    uint32* d = reinterpret_cast<uint32*>(dst);
+    asm volatile (
+      "rep stos  %2,(%0)                       \n"
+    : "+D"(d),  // %0
+      "+c"(width_tmp) // %1
+    : "a"(v32)    // %2
+    : "memory", "cc"
+    );
+    dst += dst_stride;
   }
 }
+#endif
+
+#if !defined(HAS_SETROW_X86)
+static void SetRow8_C(uint8* dst, uint32 v8, int count) {
+#ifdef _MSC_VER
+  for (int x = 0; x < count; ++x) {
+    dst[x] = v8;
+  }
+#else
+  memset(dst, v8, count);
+#endif
+}
+
+static void SetRows32_C(uint8* dst, uint32 v32, int width,
+                        int dst_stride, int height) {
+  for (int y = 0; y < height; ++y) {
+    uint32* d = reinterpret_cast<uint32*>(dst);
+    for (int x = 0; x < width; ++x) {
+      d[x] = v32;
+    }
+    dst += dst_stride;
+  }
+}
+#endif
 
 static void SetPlane(uint8* dst_y, int dst_stride_y,
                      int width, int height,
@@ -1795,7 +1843,11 @@ static void SetPlane(uint8* dst_y, int dst_stride_y,
   } else
 #endif
   {
+#if defined(HAS_SETROW_X86)
+    SetRow = SetRow8_X86;
+#else
     SetRow = SetRow8_C;
+#endif
   }
 
   uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
@@ -1844,27 +1896,23 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     return -1;
   }
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  void (*SetRow)(uint8* dst, uint32 value, int count);
+  void (*SetRows)(uint8* dst, uint32 value, int width,
+                  int dst_stride, int height);
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    SetRow = SetRow32_NEON;
-  } else
-#elif defined(HAS_SETROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    SetRow = SetRow32_SSE2;
+    SetRows = SetRows32_NEON;
   } else
 #endif
   {
-    SetRow = SetRow32_C;
+#if defined(HAS_SETROW_X86)
+    SetRows = SetRows32_X86;
+#else
+    SetRows = SetRows32_C;
+#endif
   }
-  for (int y = 0; y < height; ++y) {
-    SetRow(dst, value, width);
-    dst += dst_stride_argb;
-  }
+  SetRows(dst, value, width, dst_stride_argb, height);
   return 0;
 }
 

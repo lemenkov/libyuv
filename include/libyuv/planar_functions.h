@@ -189,6 +189,11 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int width, int height,
              uint32 value);
 
+// Copy ARGB to ARGB.
+int ARGBCopy(const uint8* src_argb, int src_stride_argb,
+             uint8* dst_argb, int dst_stride_argb,
+             int width, int height);
+
 }  // namespace libyuv
 
 #endif  // INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
