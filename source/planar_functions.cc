@@ -150,13 +150,14 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   }
 }
 
+__declspec(naked)
 void CopyRow_X86(const uint8* src, uint8* dst, int count) {
   __asm {
     push       esi
     push       edi
-    mov        esi, [esp + 4 + 4]   // src
-    mov        edi, [esp + 4 + 8]   // dst
-    mov        ecx, [esp + 4 + 12]  // count
+    mov        esi, [esp + 8 + 4]   // src
+    mov        edi, [esp + 8 + 8]   // dst
+    mov        ecx, [esp + 8 + 12]  // count
     shr        ecx, 2
     rep movsd
     pop        edi
@@ -256,7 +257,6 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
   return 0;
 }
-
 
 // Copy ARGB with optional flipping
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
