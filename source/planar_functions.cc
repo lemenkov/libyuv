@@ -129,7 +129,6 @@ static void SplitUV_C(const uint8* src_uv,
 // CopyRows copys 'count' bytes using a 16 byte load/store, 64 bytes at time
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_COPYROW_SSE2
-#define HAS_COPYROW_X86
 __declspec(naked)
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
@@ -150,6 +149,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   }
 }
 
+#define HAS_COPYROW_X86
 __declspec(naked)
 void CopyRow_X86(const uint8* src, uint8* dst, int count) {
   __asm {
@@ -169,15 +169,15 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 #define HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
-"1:                                            \n"
-  "movdqa      (%0),%%xmm0                     \n"
-  "movdqa      0x10(%0),%%xmm1                 \n"
-  "lea         0x20(%0),%0                     \n"
-  "movdqa      %%xmm0,(%1)                     \n"
-  "movdqa      %%xmm1,0x10(%1)                 \n"
-  "lea         0x20(%1),%1                     \n"
-  "sub         $0x20,%2                        \n"
-  "ja          1b                              \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "movdqa    %%xmm1,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "sub       $0x20,%2                        \n"
+    "ja        1b                              \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(count)  // %2
@@ -186,7 +186,21 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 #if defined(__SSE2__)
     , "xmm0", "xmm1"
 #endif
-);
+  );
+}
+
+#define HAS_COPYROW_X86
+void CopyRow_X86(const uint8* src, uint8* dst, int width) {
+  size_t width_tmp = static_cast<size_t>(width);
+  asm volatile (
+    "shr       $0x2,%2                         \n"
+    "rep movsl (%0),(%1)                       \n"
+  : "+S"(src),  // %0
+    "+D"(dst),  // %1
+    "+c"(width_tmp) // %2
+  :
+  : "memory", "cc"
+  );
 }
 #endif
 
