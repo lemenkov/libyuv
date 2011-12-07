@@ -365,9 +365,9 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                     uint8* dst_a, int dst_stride_a,
                                     uint8* dst_b, int dst_stride_b,
                                     int w);
-  asm volatile (
+  asm (
     ".text                                     \n"
-#if defined(OSX)
+#if defined(__APPLE__)
     ".globl _TransposeUVWx8_SSE2               \n"
 "_TransposeUVWx8_SSE2:                         \n"
 #else
