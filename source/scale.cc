@@ -511,10 +511,22 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     !defined(YUV_DISABLE_ASM)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif defined(__APPLE__) && defined(__i386__)
+#elif (defined(__APPLE__) || defined(__MINGW32__)) && defined(__i386__)
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
+#endif
+#if (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
+    defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".globl _" name "                          \n"                             \
+"_" name ":                                    \n"
+#else
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".global _" name "                         \n"                             \
+name ":                                        \n"
 #endif
 
 // Offsets for source bytes 0 to 9
@@ -1620,14 +1632,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown8Int_SSE2             \n"
-"_ScaleRowDown8Int_SSE2:                       \n"
-#else
-    ".global ScaleRowDown8Int_SSE2             \n"
-"ScaleRowDown8Int_SSE2:                        \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown8Int_SSE2)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%ebx                    \n"
@@ -1691,14 +1696,7 @@ extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown34_SSSE3              \n"
-"_ScaleRowDown34_SSSE3:                        \n"
-#else
-    ".global ScaleRowDown34_SSSE3              \n"
-"ScaleRowDown34_SSSE3:                         \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown34_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x2c(%esp),%edi                    \n"
@@ -1729,14 +1727,7 @@ extern "C" void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown34_1_Int_SSSE3        \n"
-"_ScaleRowDown34_1_Int_SSSE3:                  \n"
-#else
-    ".global ScaleRowDown34_1_Int_SSSE3        \n"
-"ScaleRowDown34_1_Int_SSSE3:                   \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown34_1_Int_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%ebp                    \n"
@@ -1790,14 +1781,7 @@ extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown34_0_Int_SSSE3        \n"
-"_ScaleRowDown34_0_Int_SSSE3:                  \n"
-#else
-    ".global ScaleRowDown34_0_Int_SSSE3        \n"
-"ScaleRowDown34_0_Int_SSSE3:                   \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown34_0_Int_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%ebp                    \n"
@@ -1854,14 +1838,7 @@ extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                      uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown38_SSSE3              \n"
-"_ScaleRowDown38_SSSE3:                        \n"
-#else
-    ".global ScaleRowDown38_SSSE3              \n"
-"ScaleRowDown38_SSSE3:                         \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown38_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%edx                    \n"
@@ -1890,14 +1867,7 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown38_3_Int_SSSE3        \n"
-"_ScaleRowDown38_3_Int_SSSE3:                  \n"
-#else
-    ".global ScaleRowDown38_3_Int_SSSE3        \n"
-"ScaleRowDown38_3_Int_SSSE3:                   \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown38_3_Int_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%edx                    \n"
@@ -1954,14 +1924,7 @@ extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                            uint8* dst_ptr, int dst_width);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleRowDown38_2_Int_SSSE3        \n"
-"_ScaleRowDown38_2_Int_SSSE3:                  \n"
-#else
-    ".global ScaleRowDown38_2_Int_SSSE3        \n"
-"ScaleRowDown38_2_Int_SSSE3:                   \n"
-#endif
+    DECLARE_FUNCTION(ScaleRowDown38_2_Int_SSSE3)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%edx                    \n"
@@ -2001,14 +1964,7 @@ extern "C" void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                                   uint16* dst_ptr, int src_width,
                                   int src_height);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleAddRows_SSE2                 \n"
-"_ScaleAddRows_SSE2:                           \n"
-#else
-    ".global ScaleAddRows_SSE2                 \n"
-"ScaleAddRows_SSE2:                            \n"
-#endif
+    DECLARE_FUNCTION(ScaleAddRows_SSE2)
     "pusha                                     \n"
     "mov    0x24(%esp),%esi                    \n"
     "mov    0x28(%esp),%edx                    \n"
@@ -2052,14 +2008,7 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                      const uint8* src_ptr, int src_stride,
                                      int dst_width, int source_y_fraction);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleFilterRows_SSE2              \n"
-"_ScaleFilterRows_SSE2:                        \n"
-#else
-    ".global ScaleFilterRows_SSE2              \n"
-"ScaleFilterRows_SSE2:                         \n"
-#endif
+    DECLARE_FUNCTION(ScaleFilterRows_SSE2)
     "push   %esi                               \n"
     "push   %edi                               \n"
     "mov    0xc(%esp),%edi                     \n"
@@ -2147,14 +2096,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                       const uint8* src_ptr, int src_stride,
                                       int dst_width, int source_y_fraction);
   asm(
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _ScaleFilterRows_SSSE3             \n"
-"_ScaleFilterRows_SSSE3:                       \n"
-#else
-    ".global ScaleFilterRows_SSSE3             \n"
-"ScaleFilterRows_SSSE3:                        \n"
-#endif
+    DECLARE_FUNCTION(ScaleFilterRows_SSSE3)
     "push   %esi                               \n"
     "push   %edi                               \n"
     "mov    0xc(%esp),%edi                     \n"

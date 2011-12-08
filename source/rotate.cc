@@ -24,7 +24,23 @@ namespace libyuv {
 uvec8 kShuffleReverseUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
 };
+
+#if (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
+    defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".globl _" name "                          \n"                             \
+"_" name ":                                    \n"
+#else
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".global _" name "                         \n"                             \
+name ":                                        \n"
 #endif
+
+#endif
+
+
 
 typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
 typedef void (*rotate_uv_wx8_func)(const uint8*, int,
@@ -366,14 +382,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                     uint8* dst_b, int dst_stride_b,
                                     int w);
   asm (
-    ".text                                     \n"
-#if defined(__APPLE__)
-    ".globl _TransposeUVWx8_SSE2               \n"
-"_TransposeUVWx8_SSE2:                         \n"
-#else
-    ".global TransposeUVWx8_SSE2               \n"
-"TransposeUVWx8_SSE2:                          \n"
-#endif
+    DECLARE_FUNCTION(TransposeUVWx8_SSE2)
     "push   %ebx                               \n"
     "push   %esi                               \n"
     "push   %edi                               \n"
