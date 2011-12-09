@@ -30,8 +30,6 @@
 
         # headers
         'source/conversion_tables.h',
-        'source/cpu_id.h',
-        'source/rotate.h',
         'source/rotate_priv.h',
         'source/row.h',
         'source/video_common.h',
