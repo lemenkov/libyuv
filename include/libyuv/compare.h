@@ -13,9 +13,14 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 static const int kMaxPsnr = 128;
+
+double SumSquareErrorToPsnr(uint64 sse, uint64 count);
 
 uint64 ComputeSumSquareError(const uint8 *src_a,
                              const uint8 *src_b, int count);
@@ -48,6 +53,9 @@ double I420Ssim(const uint8 *src_y_a, int stride_y_a,
                 const uint8 *src_v_b, int stride_v_b,
                 int width, int height);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif // INCLUDE_LIBYUV_COMPARE_H_

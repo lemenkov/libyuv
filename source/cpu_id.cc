@@ -40,7 +40,10 @@ static inline void __cpuid(int cpu_info[4], int info_type) {
 }
 #endif
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // CPU detect function for SIMD instruction sets.
 int cpu_info_ = 0;
@@ -72,4 +75,7 @@ void MaskCpuFlags(int enable_flags) {
   cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif

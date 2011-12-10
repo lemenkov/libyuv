@@ -15,7 +15,10 @@
 #include "row.h"
 #include "video_common.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
 // and vst would select which 2 components to write.  The low level would need
@@ -430,4 +433,7 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   return 0;
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif

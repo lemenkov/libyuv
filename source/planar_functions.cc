@@ -15,7 +15,10 @@
 #include "libyuv/cpu_id.h"
 #include "row.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITUV_NEON
@@ -194,7 +197,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
     "shr       $0x2,%2                         \n"
-    "rep movsl (%0),(%1)                       \n"
+    "rep movsl                                 \n"
   : "+S"(src),  // %0
     "+D"(dst),  // %1
     "+c"(width_tmp) // %2
@@ -709,22 +712,6 @@ int NV12ToI420(const uint8* src_y, int src_stride_y,
                int width, int height) {
   return X420ToI420(src_y, src_stride_y, src_stride_y,
                     src_uv, src_stride_uv,
-                    dst_y, dst_stride_y,
-                    dst_u, dst_stride_u,
-                    dst_v, dst_stride_v,
-                    width, height);
-}
-
-// Convert NV12 to I420.  Deprecated.
-int NV12ToI420(const uint8* src_y,
-               const uint8* src_uv,
-               int src_stride_frame,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  return X420ToI420(src_y, src_stride_frame, src_stride_frame,
-                    src_uv, src_stride_frame,
                     dst_y, dst_stride_y,
                     dst_u, dst_stride_u,
                     dst_v, dst_stride_v,
@@ -1791,7 +1778,7 @@ static void SetRow8_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
     "shr       $0x2,%1                         \n"
-    "rep stos  %2,(%0)                         \n"
+    "rep stosl                                 \n"
   : "+D"(dst),  // %0
     "+c"(width_tmp) // %1
   : "a"(v32)    // %2
@@ -1805,7 +1792,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
     size_t width_tmp = static_cast<size_t>(width);
     uint32* d = reinterpret_cast<uint32*>(dst);
     asm volatile (
-      "rep stos  %2,(%0)                       \n"
+      "rep stosl                               \n"
     : "+D"(d),  // %0
       "+c"(width_tmp) // %1
     : "a"(v32)    // %2
@@ -1930,5 +1917,7 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
-
+#endif

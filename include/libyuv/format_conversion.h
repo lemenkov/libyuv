@@ -13,7 +13,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // Converts any Bayer RGB format to I420.
 int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
@@ -35,6 +38,9 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
                    uint32 dst_fourcc_bayer,
                    int width, int height);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif  // INCLUDE_LIBYUV_FORMATCONVERSION_H_

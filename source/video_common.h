@@ -20,7 +20,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 //////////////////////////////////////////////////////////////////////////////
 // Definition of fourcc.
@@ -84,6 +87,9 @@ enum FourCC {
 // Converts fourcc aliases into canonical ones.
 uint32 CanonicalFourCC(uint32 fourcc);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif  // LIBYUV_SOURCE_VIDEO_COMMON_H_

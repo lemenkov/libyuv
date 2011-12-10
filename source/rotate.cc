@@ -15,7 +15,10 @@
 #include "rotate_priv.h"
 #include "row.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 #if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(YUV_DISABLE_ASM)
@@ -29,13 +32,13 @@ uvec8 kShuffleReverseUV = {
     defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".globl _" name "                          \n"                             \
-"_" name ":                                    \n"
+    ".globl _" #name "                         \n"                             \
+"_" #name ":                                   \n"
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global _" name "                         \n"                             \
-name ":                                        \n"
+    ".global _" #name "                        \n"                             \
+#name ":                                       \n"
 #endif
 
 #endif
@@ -1203,7 +1206,8 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
   switch (mode) {
     case kRotate0:
       // copy frame
-      return NV12ToI420(src_y, src_uv, src_stride_y,
+      return NV12ToI420(src_y, src_stride_y,
+                        src_uv, src_stride_uv,
                         dst_y, dst_stride_y,
                         dst_u, dst_stride_u,
                         dst_v, dst_stride_v,
@@ -1241,4 +1245,7 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
   return -1;
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif

@@ -14,7 +14,10 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/rotate.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
@@ -130,6 +133,9 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   RotationMode rotation,
                   uint32 format);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif // INCLUDE_LIBYUV_CONVERT_H_

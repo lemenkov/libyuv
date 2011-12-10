@@ -10,6 +10,11 @@
 
 #include "row.h"
 
+#ifdef __cplusplus
+namespace libyuv {
+extern "C" {
+#endif
+
 #define YUVTORGB                                                               \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
@@ -153,4 +158,9 @@ YUVTORGB
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
+#endif
+
+#ifdef __cplusplus
+}  // extern "C"
+}  // namespace libyuv
 #endif

@@ -25,7 +25,10 @@
 #include "row.h"
 #include "video_common.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 static inline uint8 Clip(int32 val) {
   if (val < 0) {
@@ -1187,4 +1190,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   return 0;
 }
 
-} // namespace libyuv
+#ifdef __cplusplus
+}  // extern "C"
+}  // namespace libyuv
+#endif

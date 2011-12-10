@@ -18,7 +18,10 @@
 #ifndef LIBYUV_SOURCE_CONVERSION_TABLES_H_
 #define LIBYUV_SOURCE_CONVERSION_TABLES_H_
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 /******************************************************************************
 * YUV TO RGB approximation
@@ -197,7 +200,10 @@ namespace libyuv {
         Vcg(244),Vcg(245),Vcg(246),Vcg(247),Vcg(248),Vcg(249),Vcg(250),Vcg(251),
         Vcg(252),Vcg(253),Vcg(254),Vcg(255)};
 
-} // namespace libyuv
+#ifdef __cplusplus
+}  // extern "C"
+}  // namespace libyuv
+#endif
 
 #endif
 

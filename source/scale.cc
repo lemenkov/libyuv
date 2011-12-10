@@ -16,19 +16,21 @@
 #include "libyuv/cpu_id.h"
 #include "row.h"
 
+#ifdef __cplusplus
+namespace libyuv {
+extern "C" {
+#endif
+
 #if defined(_MSC_VER)
 #define ALIGN16(var) __declspec(align(16)) var
 #else
 #define ALIGN16(var) var __attribute__((aligned(16)))
 #endif
 
-
 // Note: A Neon reference manual
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0204j/CJAJIIGG.html
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
-
-namespace libyuv {
 
 // Set the following flag to true to revert to only
 // using the reference implementation ScalePlaneBox(), and
@@ -516,18 +518,20 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
 #endif
+
 #if (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
     defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".globl _" name "                          \n"                             \
-"_" name ":                                    \n"
+    ".globl _" #name "                         \n"                             \
+"_" #name ":                                   \n"
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global _" name "                         \n"                             \
-name ":                                        \n"
+    ".global _" #name "                        \n"                             \
+#name ":                                       \n"
 #endif
+
 
 // Offsets for source bytes 0 to 9
 extern "C" TALIGN16(const uint8, shuf0[16]) =
@@ -3677,23 +3681,24 @@ int I420Scale(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int halfsrc_width = (src_width + 1) >> 1;
-  int halfsrc_height = (src_height + 1) >> 1;
-  int halfdst_width = (dst_width + 1) >> 1;
-  int halfoheight = (dst_height + 1) >> 1;
+  int src_halfwidth = (src_width + 1) >> 1;
+  int src_halfheight = (src_height + 1) >> 1;
+  int dst_halfwidth = (dst_width + 1) >> 1;
+  int dst_halfheight = (dst_height + 1) >> 1;
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,
              filtering, use_reference_impl_);
-  ScalePlane(src_u, src_stride_u, halfsrc_width, halfsrc_height,
-             dst_u, dst_stride_u, halfdst_width, halfoheight,
+  ScalePlane(src_u, src_stride_u, src_halfwidth, src_halfheight,
+             dst_u, dst_stride_u, dst_halfwidth, dst_halfheight,
              filtering, use_reference_impl_);
-  ScalePlane(src_v, src_stride_v, halfsrc_width, halfsrc_height,
-             dst_v, dst_stride_v, halfdst_width, halfoheight,
+  ScalePlane(src_v, src_stride_v, src_halfwidth, src_halfheight,
+             dst_v, dst_stride_v, dst_halfwidth, dst_halfheight,
              filtering, use_reference_impl_);
   return 0;
 }
 
+// Deprecated api
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int src_stride_y, int src_stride_u, int src_stride_v,
           int src_width, int src_height,
@@ -3716,49 +3721,54 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int halfsrc_width = (src_width + 1) >> 1;
-  int halfsrc_height = (src_height + 1) >> 1;
-  int halfdst_width = (dst_width + 1) >> 1;
-  int halfoheight = (dst_height + 1) >> 1;
+  int src_halfwidth = (src_width + 1) >> 1;
+  int src_halfheight = (src_height + 1) >> 1;
+  int dst_halfwidth = (dst_width + 1) >> 1;
+  int dst_halfheight = (dst_height + 1) >> 1;
   FilterMode filtering = interpolate ? kFilterBox : kFilterNone;
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,
              filtering, use_reference_impl_);
-  ScalePlane(src_u, src_stride_u, halfsrc_width, halfsrc_height,
-             dst_u, dst_stride_u, halfdst_width, halfoheight,
+  ScalePlane(src_u, src_stride_u, src_halfwidth, src_halfheight,
+             dst_u, dst_stride_u, dst_halfwidth, dst_halfheight,
              filtering, use_reference_impl_);
-  ScalePlane(src_v, src_stride_v, halfsrc_width, halfsrc_height,
-             dst_v, dst_stride_v, halfdst_width, halfoheight,
+  ScalePlane(src_v, src_stride_v, src_halfwidth, src_halfheight,
+             dst_v, dst_stride_v, dst_halfwidth, dst_halfheight,
              filtering, use_reference_impl_);
   return 0;
 }
 
-int Scale(const uint8* src, int src_width, int src_height,
-          uint8* dst, int dst_width, int dst_height, int ooffset,
-          bool interpolate) {
+// Deprecated api
+int ScaleOffset(const uint8* src, int src_width, int src_height,
+                uint8* dst, int dst_width, int dst_height, int dst_yoffset,
+                bool interpolate) {
   if (!src || src_width <= 0 || src_height <= 0 ||
-      !dst || dst_width <= 0 || dst_height <= 0 || ooffset < 0 ||
-      ooffset >= dst_height) {
+      !dst || dst_width <= 0 || dst_height <= 0 || dst_yoffset < 0 ||
+      dst_yoffset >= dst_height) {
     return -1;
   }
-  ooffset = ooffset & ~1;  // chroma requires offset to multiple of 2.
-  int halfsrc_width = (src_width + 1) >> 1;
-  int halfsrc_height = (src_height + 1) >> 1;
-  int halfdst_width = (dst_width + 1) >> 1;
-  int halfoheight = (dst_height + 1) >> 1;
-  int aheight = dst_height - ooffset * 2;  // actual output height
-  const uint8* const iyptr = src;
-  uint8* oyptr = dst + ooffset * dst_width;
-  const uint8* const iuptr = src + src_width * src_height;
-  uint8* ouptr = dst + dst_width * dst_height + (ooffset >> 1) * halfdst_width;
-  const uint8* const ivptr = src + src_width * src_height +
-                             halfsrc_width * halfsrc_height;
-  uint8* ovptr = dst + dst_width * dst_height + halfdst_width * halfoheight +
-                 (ooffset >> 1) * halfdst_width;
-  return Scale(iyptr, iuptr, ivptr, src_width, halfsrc_width, halfsrc_width,
-               src_width, src_height, oyptr, ouptr, ovptr, dst_width,
-               halfdst_width, halfdst_width, dst_width, aheight, interpolate);
+  dst_yoffset = dst_yoffset & ~1;  // chroma requires offset to multiple of 2.
+  int src_halfwidth = (src_width + 1) >> 1;
+  int src_halfheight = (src_height + 1) >> 1;
+  int dst_halfwidth = (dst_width + 1) >> 1;
+  int dst_halfheight = (dst_height + 1) >> 1;
+  int aheight = dst_height - dst_yoffset * 2;  // actual output height
+  const uint8* const src_y = src;
+  const uint8* const src_u = src + src_width * src_height;
+  const uint8* const src_v = src + src_width * src_height +
+                             src_halfwidth * src_halfheight;
+  uint8* dst_y = dst + dst_yoffset * dst_width;
+  uint8* dst_u = dst + dst_width * dst_height +
+                 (dst_yoffset >> 1) * dst_halfwidth;
+  uint8* dst_v = dst + dst_width * dst_height + dst_halfwidth * dst_halfheight +
+                 (dst_yoffset >> 1) * dst_halfwidth;
+  return Scale(src_y, src_u, src_v, src_width, src_halfwidth, src_halfwidth,
+               src_width, src_height, dst_y, dst_u, dst_v, dst_width,
+               dst_halfwidth, dst_halfwidth, dst_width, aheight, interpolate);
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif

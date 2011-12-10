@@ -13,7 +13,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // Rotate planes by 90, 180, 270
 void RotatePlane90(const uint8* src, int src_stride,
@@ -59,6 +62,9 @@ void TransposeUV(const uint8* src, int src_stride,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif  // SOURCE_ROTATE_PRIV_H_

@@ -12,7 +12,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
+namespace libyuv {
 extern "C" {
+#endif
 
 void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
@@ -343,4 +346,7 @@ void ReverseRow_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
+#ifdef __cplusplus
 }  // extern "C"
+}  // namespace libyuv
+#endif

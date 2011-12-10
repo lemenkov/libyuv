@@ -13,7 +13,7 @@
 
 #include <stddef.h>  // for NULL, size_t
 
-#ifndef WIN32
+#if !(defined(_MSC_VER) && (_MSC_VER < 1600))
 #include <stdint.h>  // for uintptr_t
 #endif
 

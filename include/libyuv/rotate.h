@@ -13,7 +13,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // Supported rotation
 enum RotationMode {
@@ -47,6 +50,9 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      int width, int height,
                      RotationMode mode);
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif
 
 #endif  // INCLUDE_LIBYUV_ROTATE_H_

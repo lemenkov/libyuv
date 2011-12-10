@@ -10,7 +10,10 @@
 
 #include "row.h"
 
+#ifdef __cplusplus
+namespace libyuv {
 extern "C" {
+#endif
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
@@ -844,7 +847,7 @@ __asm {
 }
 #endif
 
+#ifdef __cplusplus
 }  // extern "C"
-
-
-
+}  // namespace libyuv
+#endif

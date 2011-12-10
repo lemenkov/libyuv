@@ -72,7 +72,10 @@ void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
 #define HAS_REVERSE_ROW_NEON
 #endif
 
+#ifdef __cplusplus
+namespace libyuv {
 extern "C" {
+#endif
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
@@ -250,6 +253,9 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
 
 #endif
 
+#ifdef __cplusplus
 }  // extern "C"
+}  // namespace libyuv
+#endif
 
 #endif  // LIBYUV_SOURCE_ROW_H_

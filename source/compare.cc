@@ -17,7 +17,10 @@
 #include "libyuv/cpu_id.h"
 #include "row.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_NEON
@@ -222,23 +225,10 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
   return sse;
 }
 
-double Sse2Psnr(double samples, double sse) {
-  double psnr;
-  if (sse > 0.0)
-    psnr = 10.0 * log10(255.0 * 255.0 * samples / sse);
-  else
-    psnr = kMaxPsnr;      // Limit to prevent divide by 0
-
-  if (psnr > kMaxPsnr)
-    psnr = kMaxPsnr;
-
-  return psnr;
-}
-
-double Sse2Psnr(uint64 samples, uint64 sse) {
+double SumSquareErrorToPsnr(uint64 sse, uint64 count) {
   double psnr;
   if (sse > 0) {
-    double mse = static_cast<double>(samples) / static_cast<double>(sse);
+    double mse = static_cast<double>(count) / static_cast<double>(sse);
     psnr = 10.0 * log10(255.0 * 255.0 * mse);
   } else {
     psnr = kMaxPsnr;      // Limit to prevent divide by 0
@@ -254,12 +244,10 @@ double CalcFramePsnr(const uint8* src_a, int stride_a,
                      const uint8* src_b, int stride_b,
                      int width, int height) {
   const uint64 samples = width * height;
-
   const uint64 sse = ComputeSumSquareErrorPlane(src_a, stride_a,
                                                 src_b, stride_b,
                                                 width, height);
-
-  return Sse2Psnr(samples, sse);
+  return SumSquareErrorToPsnr(sse, samples);
 }
 
 double I420Psnr(const uint8* src_y_a, int stride_y_a,
@@ -272,22 +260,17 @@ double I420Psnr(const uint8* src_y_a, int stride_y_a,
   const uint64 sse_y = ComputeSumSquareErrorPlane(src_y_a, stride_y_a,
                                                   src_y_b, stride_y_b,
                                                   width, height);
-
   const int width_uv = (width + 1) >> 1;
   const int height_uv = (height + 1) >> 1;
-
   const uint64 sse_u = ComputeSumSquareErrorPlane(src_u_a, stride_u_a,
                                                   src_u_b, stride_u_b,
                                                   width_uv, height_uv);
   const uint64 sse_v = ComputeSumSquareErrorPlane(src_v_a, stride_v_a,
                                                   src_v_b, stride_v_b,
                                                   width_uv, height_uv);
-
   const uint64 samples = width * height + 2 * (width_uv * height_uv);
-
   const uint64 sse = sse_y + sse_u + sse_v;
-
-  return Sse2Psnr(samples, sse);
+  return SumSquareErrorToPsnr(sse, samples);
 }
 
 static const int64 cc1 =  26634;  // (64^2*(.01*255)^2
@@ -374,18 +357,18 @@ double I420Ssim(const uint8* src_y_a, int stride_y_a,
                 int width, int height) {
   const double ssim_y = CalcFrameSsim(src_y_a, stride_y_a,
                                       src_y_b, stride_y_b, width, height);
-
   const int width_uv = (width + 1) >> 1;
   const int height_uv = (height + 1) >> 1;
-
   const double ssim_u = CalcFrameSsim(src_u_a, stride_u_a,
                                       src_u_b, stride_u_b,
                                       width_uv, height_uv);
   const double ssim_v = CalcFrameSsim(src_v_a, stride_v_a,
                                       src_v_b, stride_v_b,
                                       width_uv, height_uv);
-
   return ssim_y * 0.8 + 0.1 * (ssim_u + ssim_v);
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
+#endif

@@ -12,7 +12,10 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
+namespace libyuv {
 extern "C" {
+#endif
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 vec8 kARGBToU = {
@@ -317,7 +320,6 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 );
 }
 #endif
-
 
 #ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
 #define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
@@ -637,7 +639,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
 #ifdef HAS_REVERSE_ROW_SSSE3
 
 // Shuffle table for reversing the bytes.
-static const uvec8 kShuffleReverse = {
+uvec8 kShuffleReverse = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
@@ -666,4 +668,7 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif
 
+#ifdef __cplusplus
 }  // extern "C"
+}  // namespace libyuv
+#endif

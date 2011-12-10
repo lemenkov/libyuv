@@ -11,7 +11,10 @@
 #include "libyuv/basic_types.h"
 #include "row.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 
@@ -555,4 +558,8 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
   );
 }
 #endif
-}
+
+#ifdef __cplusplus
+}  // extern "C"
+}  // namespace libyuv
+#endif
