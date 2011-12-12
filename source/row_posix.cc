@@ -638,6 +638,9 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
 
 #ifdef HAS_REVERSE_ROW_SSSE3
 
+// TODO(fbarchard): define CONST macro that is static const for linux, but
+// does nothing for gcc on OSX (which has an internal compiler fault)
+
 // Shuffle table for reversing the bytes.
 uvec8 kShuffleReverse = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u

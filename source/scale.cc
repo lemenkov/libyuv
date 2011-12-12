@@ -528,7 +528,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global _" #name "                        \n"                             \
+    ".global " #name "                         \n"                             \
 #name ":                                       \n"
 #endif
 

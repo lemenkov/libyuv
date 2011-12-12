@@ -37,7 +37,7 @@ uvec8 kShuffleReverseUV = {
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global _" #name "                        \n"                             \
+    ".global " #name "                         \n"                             \
 #name ":                                       \n"
 #endif
 
