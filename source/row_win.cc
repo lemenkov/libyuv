@@ -614,8 +614,8 @@ void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
     punpcklbw  xmm2, xmm5           // RA
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    movdqa     [edx], xmm0
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
 
@@ -803,10 +803,10 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
     punpcklbw  xmm0, xmm0           // GG
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm0           // BGRA first 4 pixels
-    por        xmm0, xmm5
-    movdqa     [edx], xmm0
     punpckhwd  xmm1, xmm1           // BGRA next 4 pixels
+    por        xmm0, xmm5
     por        xmm1, xmm5
+    movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
 
