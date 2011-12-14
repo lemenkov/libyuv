@@ -868,6 +868,14 @@ void RotatePlane180(const uint8* src, int src_stride,
     ReverseRow = ReverseRow_SSSE3;
   } else
 #endif
+#if defined(HAS_REVERSE_ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
+      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+    ReverseRow = ReverseRow_SSE2;
+  } else
+#endif
   {
     ReverseRow = ReverseRow_C;
   }
@@ -1019,8 +1027,8 @@ __asm {
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
     movlpd    qword ptr [edx], xmm0
-    lea       edx, [edx + 8]
     movhpd    qword ptr [edi], xmm0
+    lea       edx, [edx + 8]
     lea       edi, [edi + 8]
     sub       ecx, 8
     ja        convertloop
@@ -1044,8 +1052,8 @@ void ReverseRowUV_SSSE3(const uint8* src,
   "lea        -16(%0),%0                       \n"
   "pshufb     %%xmm5,%%xmm0                    \n"
   "movlpd     %%xmm0,(%1)                      \n"
-  "lea        8(%1),%1                         \n"
   "movhpd     %%xmm0,(%2)                      \n"
+  "lea        8(%1),%1                         \n"
   "lea        8(%2),%2                         \n"
   "sub        $8,%3                            \n"
   "ja         1b                               \n"

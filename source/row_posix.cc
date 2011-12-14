@@ -17,16 +17,22 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#ifdef __APPLE__
+#define CONST
+#else
+#define CONST static const
+#endif
+
 #ifdef HAS_ARGBTOUVROW_SSSE3
-vec8 kARGBToU = {
+CONST vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
-uvec8 kARGBToV = {
+CONST uvec8 kARGBToV = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0
 };
 
-uvec8 kAddUV128 = {
+CONST uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
@@ -35,31 +41,31 @@ uvec8 kAddUV128 = {
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constant multiplication table for converting ARGB to I400.
-vec8 kARGBToY = {
+CONST vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
-uvec8 kAddY16 = {
+CONST uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
 // Shuffle table for converting BG24 to ARGB.
-uvec8 kShuffleMaskBG24ToARGB = {
+CONST uvec8 kShuffleMaskBG24ToARGB = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
 // Shuffle table for converting RAW to ARGB.
-uvec8 kShuffleMaskRAWToARGB = {
+CONST uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
 // Shuffle table for converting ABGR to ARGB.
-uvec8 kShuffleMaskABGRToARGB = {
+CONST uvec8 kShuffleMaskABGRToARGB = {
   2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
 };
 
 // Shuffle table for converting BGRA to ARGB.
-uvec8 kShuffleMaskBGRAToARGB = {
+CONST uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
@@ -352,7 +358,7 @@ struct {
   vec16 kUVBiasR;
   vec16 kYSub16;
   vec16 kYToRgb;
-} SIMD_ALIGNED(kYuvConstants) = {
+} CONST SIMD_ALIGNED(kYuvConstants) = {
   { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
   { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
@@ -445,8 +451,8 @@ void OMITFP FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,  // rdi
     "punpcklbw   %%xmm2,%%xmm5                 \n"
     "movdqa      %%xmm5,%%xmm0                 \n"
     "punpcklwd   %%xmm1,%%xmm5                 \n"
-    "movdqa      %%xmm5,(%3)                   \n"
     "punpckhwd   %%xmm1,%%xmm0                 \n"
+    "movdqa      %%xmm5,(%3)                   \n"
     "movdqa      %%xmm0,0x10(%3)               \n"
     "lea         0x20(%3),%3                   \n"
     "sub         $0x8,%4                       \n"
@@ -480,8 +486,8 @@ void OMITFP FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,  // rdi
     "punpcklbw   %%xmm5,%%xmm0                 \n"
     "movdqa      %%xmm2,%%xmm1                 \n"
     "punpcklwd   %%xmm0,%%xmm2                 \n"
-    "movdqa      %%xmm2,(%3)                   \n"
     "punpckhwd   %%xmm0,%%xmm1                 \n"
+    "movdqa      %%xmm2,(%3)                   \n"
     "movdqa      %%xmm1,0x10(%3)               \n"
     "lea         0x20(%3),%3                   \n"
     "sub         $0x8,%4                       \n"
@@ -640,11 +646,8 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
 
 #ifdef HAS_REVERSE_ROW_SSSE3
 
-// TODO(fbarchard): define CONST macro that is static const for linux, but
-// does nothing for gcc on OSX (which has an internal compiler fault)
-
 // Shuffle table for reversing the bytes.
-uvec8 kShuffleReverse = {
+CONST uvec8 kShuffleReverse = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
@@ -653,14 +656,14 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   asm volatile (
   "movdqa     %3,%%xmm5                        \n"
   "lea        -0x10(%0,%2,1),%0                \n"
-"1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "lea        -0x10(%0),%0                     \n"
-  "pshufb     %%xmm5,%%xmm0                    \n"
-  "movdqa     %%xmm0,(%1)                      \n"
-  "lea        0x10(%1),%1                      \n"
-  "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
+  "1:                                          \n"
+    "movdqa     (%0),%%xmm0                    \n"
+    "lea        -0x10(%0),%0                   \n"
+    "pshufb     %%xmm5,%%xmm0                  \n"
+    "movdqa     %%xmm0,(%1)                    \n"
+    "lea        0x10(%1),%1                    \n"
+    "sub        $0x10,%2                       \n"
+    "ja         1b                             \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
@@ -668,6 +671,38 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
+#endif
+  );
+}
+#endif
+
+#ifdef HAS_REVERSE_ROW_SSE2
+
+void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
+  intptr_t temp_width = static_cast<intptr_t>(width);
+  asm volatile (
+  "lea        -0x10(%0,%2,1),%0                \n"
+  "1:                                          \n"
+    "movdqa     (%0),%%xmm0                    \n"
+    "lea        -0x10(%0),%0                   \n"
+    "movdqa     %%xmm0,%%xmm1                  \n"
+    "psllw      $0x8,%%xmm0                    \n"
+    "psrlw      $0x8,%%xmm1                    \n"
+    "por        %%xmm1,%%xmm0                  \n"
+    "pshuflw    $0x1b,%%xmm0,%%xmm0            \n"
+    "pshufhw    $0x1b,%%xmm0,%%xmm0            \n"
+    "pshufd     $0x4e,%%xmm0,%%xmm0            \n"
+    "movdqa     %%xmm0,(%1)                    \n"
+    "lea        0x10(%1),%1                    \n"
+    "sub        $0x10,%2                       \n"
+    "ja         1b                             \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(temp_width)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
 #endif
   );
 }

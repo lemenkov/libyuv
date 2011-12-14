@@ -65,6 +65,7 @@ void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
 #define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
 #define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
 #define HAS_REVERSE_ROW_SSSE3
+#define HAS_REVERSE_ROW_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -101,6 +102,9 @@ void RAWToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif
 #ifdef HAS_REVERSE_ROW_SSSE3
 void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width);
+#endif
+#ifdef HAS_REVERSE_ROW_SSE2
+void ReverseRow_SSE2(const uint8* src, uint8* dst, int width);
 #endif
 #ifdef HAS_REVERSE_ROW_NEON
 void ReverseRow_NEON(const uint8* src, uint8* dst, int width);

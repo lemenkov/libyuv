@@ -341,6 +341,18 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
     ReverseRow = ReverseRow_SSSE3;
   } else
 #endif
+#if defined(HAS_REVERSE_ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 32) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
+      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16) &&
+      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
+      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+    ReverseRow = ReverseRow_SSE2;
+  } else
+#endif
   {
     ReverseRow = ReverseRow_C;
   }

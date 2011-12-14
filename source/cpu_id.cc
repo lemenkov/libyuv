@@ -10,6 +10,7 @@
 
 #include "libyuv/cpu_id.h"
 
+#include <stdlib.h>  // for getenv
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
@@ -55,6 +56,15 @@ int InitCpuFlags() {
   cpu_info_ = (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0) |
               (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
               kCpuInitialized;
+
+  // environment variable overrides for testing.
+  if (getenv("LIBYUV_DISABLE_SSE2")) {
+    cpu_info_ &= ~kCpuHasSSE2;
+  }
+  // environment variable overrides for testing.
+  if (getenv("LIBYUV_DISABLE_SSSE3")) {
+    cpu_info_ &= ~kCpuHasSSSE3;
+  }
 #elif defined(__ANDROID__) && defined(__ARM_NEON__)
   uint64_t features = android_getCpuFeatures();
   cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
