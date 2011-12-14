@@ -558,47 +558,49 @@ void OMITFP FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,  // rdi
 #endif
 
 #ifdef HAS_FASTCONVERTYTOARGBROW_SSE2
+
 void FastConvertYToARGBRow_SSE2(const uint8* y_buf,  // rdi
                                 uint8* rgb_buf,      // rcx
                                 int width) {         // r8
   asm volatile (
-  "pcmpeqb     %%xmm5,%%xmm5                   \n"
-  "pslld       $0x18,%%xmm5                    \n"
-  "pxor        %%xmm4,%%xmm4                   \n"
-  "movdqa      %3,%%xmm3                       \n"
-  "movdqa      %4,%%xmm2                       \n"
+  "pcmpeqb     %%xmm4,%%xmm4                   \n"
+  "pslld       $0x18,%%xmm4                    \n"
+  "mov         $0x10001000,%%eax               \n"
+  "movd        %%eax,%%xmm3                    \n"
+  "pshufd      $0x0,%%xmm3,%%xmm3              \n"
+  "mov         $0x012a012a,%%eax               \n"
+  "movd        %%eax,%%xmm2                    \n"
+  "pshufd      $0x0,%%xmm2,%%xmm2              \n"
 
   "1:                                          \n"
-  // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
-  "movq        (%0),%%xmm0                     \n"
-  "lea         0x8(%0),%0                      \n"
-  "punpcklbw   %%xmm4,%%xmm0                   \n"
-  "psubsw      %%xmm3,%%xmm0                   \n"
-  "pmullw      %%xmm2,%%xmm0                   \n"
-  "psraw       $0x6,%%xmm0                     \n"
-  "packuswb    %%xmm0,%%xmm0                   \n"
+    // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
+    "movq        (%0),%%xmm0                   \n"
+    "lea         0x8(%0),%0                    \n"
+    "punpcklbw   %%xmm0,%%xmm0                 \n"
+    "psubusw     %%xmm3,%%xmm0                 \n"
+    "pmulhuw     %%xmm2,%%xmm0                 \n"
+    "packuswb    %%xmm0,%%xmm0                 \n"
 
-  // Step 2: Weave into ARGB
-  "punpcklbw   %%xmm0,%%xmm0                   \n"
-  "movdqa      %%xmm0,%%xmm1                   \n"
-  "punpcklwd   %%xmm0,%%xmm0                   \n"
-  "por         %%xmm5,%%xmm0                   \n"
-  "movdqa      %%xmm0,(%1)                     \n"
-  "punpckhwd   %%xmm1,%%xmm1                   \n"
-  "por         %%xmm5,%%xmm1                   \n"
-  "movdqa      %%xmm1,16(%1)                   \n"
-  "lea         32(%1),%1                       \n"
+    // Step 2: Weave into ARGB
+    "punpcklbw   %%xmm0,%%xmm0                 \n"
+    "movdqa      %%xmm0,%%xmm1                 \n"
+    "punpcklwd   %%xmm0,%%xmm0                 \n"
+    "punpckhwd   %%xmm1,%%xmm1                 \n"
+    "por         %%xmm4,%%xmm0                 \n"
+    "por         %%xmm4,%%xmm1                 \n"
+    "movdqa      %%xmm0,(%1)                   \n"
+    "movdqa      %%xmm1,16(%1)                 \n"
+    "lea         32(%1),%1                     \n"
 
-  "sub         $0x8,%2                         \n"
-  "ja          1b                              \n"
+    "sub         $0x8,%2                       \n"
+    "ja          1b                            \n"
   : "+r"(y_buf),    // %0
     "+r"(rgb_buf),  // %1
     "+rm"(width)    // %2
-  : "m"(kYuvConstants.kYSub16),  // %3
-    "m"(kYuvConstants.kYToRgb)   // %4
-  : "memory", "cc"
+  :
+  : "memory", "cc", "eax"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
