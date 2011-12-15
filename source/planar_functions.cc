@@ -55,6 +55,7 @@ static void SplitUV_SSE2(const uint8* src_uv,
     mov        ecx, [esp + 4 + 16]   // pix
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
+    sub        edi, edx
 
   convertloop:
     movdqa     xmm0, [eax]
@@ -65,13 +66,12 @@ static void SplitUV_SSE2(const uint8* src_uv,
     pand       xmm0, xmm5   // even bytes
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
-    movdqa     [edx], xmm0
-    lea        edx, [edx + 16]
     psrlw      xmm2, 8      // odd bytes
     psrlw      xmm3, 8
     packuswb   xmm2, xmm3
-    movdqa     [edi], xmm2
-    lea        edi, [edi + 16]
+    movdqa     [edx], xmm0
+    movdqa     [edx + edi], xmm2
+    lea        edx, [edx + 16]
     sub        ecx, 16
     ja         convertloop
     pop        edi
@@ -86,6 +86,8 @@ static void SplitUV_SSE2(const uint8* src_uv,
  asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  "sub        %1,%2                            \n"
+
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -95,13 +97,12 @@ static void SplitUV_SSE2(const uint8* src_uv,
   "pand       %%xmm5,%%xmm0                    \n"
   "pand       %%xmm5,%%xmm1                    \n"
   "packuswb   %%xmm1,%%xmm0                    \n"
-  "movdqa     %%xmm0,(%1)                      \n"
-  "lea        0x10(%1),%1                      \n"
   "psrlw      $0x8,%%xmm2                      \n"
   "psrlw      $0x8,%%xmm3                      \n"
   "packuswb   %%xmm3,%%xmm2                    \n"
-  "movdqa     %%xmm2,(%2)                      \n"
-  "lea        0x10(%2),%2                      \n"
+  "movdqa     %%xmm0,(%1)                      \n"
+  "movdqa     %%xmm2,(%1,%2)                   \n"
+  "lea        0x10(%1),%1                      \n"
   "sub        $0x10,%3                         \n"
   "ja         1b                               \n"
   : "+r"(src_uv),     // %0
