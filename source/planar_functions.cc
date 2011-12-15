@@ -134,7 +134,6 @@ static void SplitUV_C(const uint8* src_uv,
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_COPYROW_SSE2
 __declspec(naked)
-
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
     mov        eax, [esp + 4]   // src
@@ -157,15 +156,15 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 __declspec(naked)
 void CopyRow_X86(const uint8* src, uint8* dst, int count) {
   __asm {
-    push       esi
-    push       edi
-    mov        esi, [esp + 8 + 4]   // src
-    mov        edi, [esp + 8 + 8]   // dst
-    mov        ecx, [esp + 8 + 12]  // count
+    mov        eax, esi
+    mov        edx, edi
+    mov        esi, [esp + 4]   // src
+    mov        edi, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
     shr        ecx, 2
     rep movsd
-    pop        edi
-    pop        esi
+    mov        edi, edx
+    mov        esi, eax
     ret
   }
 }
@@ -1747,13 +1746,13 @@ static void SetRows32_NEON(uint8* dst, uint32 v32, int width,
 __declspec(naked)
 static void SetRow8_X86(uint8* dst, uint32 v32, int count) {
   __asm {
-    push       edi
-    mov        edi, [esp + 4 + 4]   // dst
-    mov        eax, [esp + 4 + 8]   // v32
-    mov        ecx, [esp + 4 + 12]  // count
+    mov        edx, edi
+    mov        edi, [esp + 4]   // dst
+    mov        eax, [esp + 8]   // v32
+    mov        ecx, [esp + 12]  // count
     shr        ecx, 2
     rep stosd
-    pop        edi
+    mov        edi, edx
     ret
   }
 }
