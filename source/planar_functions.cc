@@ -928,6 +928,7 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     mov        ecx, [esp + 8 + 20]   // pix
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
+    sub        edi, edx
 
   convertloop:
     movdqa     xmm0, [eax]
@@ -943,12 +944,79 @@ void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
-    movq       qword ptr [edx], xmm0
-    lea        edx, [edx + 8]
     psrlw      xmm1, 8     // V
     packuswb   xmm1, xmm1
-    movq       qword ptr [edi], xmm1
-    lea        edi, [edi + 8]
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void YUY2ToI420RowY_Unaligned_SSE2(const uint8* src_yuy2,
+                                   uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_yuy2
+    mov        edx, [esp + 8]    // dst_y
+    mov        ecx, [esp + 12]   // pix
+    pcmpeqb    xmm5, xmm5        // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    pand       xmm0, xmm5   // even bytes are Y
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void YUY2ToI420RowUV_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                                    uint8* dst_u, uint8* dst_y, int pix) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
+    mov        edx, [esp + 8 + 12]   // dst_u
+    mov        edi, [esp + 8 + 16]   // dst_v
+    mov        ecx, [esp + 8 + 20]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2
+    pavgb      xmm1, xmm3
+    psrlw      xmm0, 8      // YUYV -> UVUV
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    movdqa     xmm1, xmm0
+    pand       xmm0, xmm5  // U
+    packuswb   xmm0, xmm0
+    psrlw      xmm1, 8     // V
+    packuswb   xmm1, xmm1
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
     sub        ecx, 16
     ja         convertloop
 
@@ -995,6 +1063,7 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     mov        ecx, [esp + 8 + 20]   // pix
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
+    sub        edi, edx
 
   convertloop:
     movdqa     xmm0, [eax]
@@ -1010,12 +1079,11 @@ void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
-    movq       qword ptr [edx], xmm0
-    lea        edx, [edx + 8]
     psrlw      xmm1, 8     // V
     packuswb   xmm1, xmm1
-    movq       qword ptr [edi], xmm1
-    lea        edi, [edi + 8]
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
     sub        ecx, 16
     ja         convertloop
 
@@ -1060,6 +1128,7 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  "sub        %1,%2                            \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1074,12 +1143,78 @@ static void YUY2ToI420RowUV_SSE2(const uint8* src_yuy2, int stride_yuy2,
   "movdqa     %%xmm0,%%xmm1                    \n"
   "pand       %%xmm5,%%xmm0                    \n"
   "packuswb   %%xmm0,%%xmm0                    \n"
-  "movq       %%xmm0,(%1)                      \n"
-  "lea        0x8(%1),%1                       \n"
   "psrlw      $0x8,%%xmm1                      \n"
   "packuswb   %%xmm1,%%xmm1                    \n"
-  "movq       %%xmm1,(%2)                      \n"
-  "lea        0x8(%2),%2                       \n"
+  "movq       %%xmm0,(%1)                      \n"
+  "movq       %%xmm1,(%1,%2)                   \n"
+  "lea        0x8(%1),%1                       \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
+  : "+r"(src_yuy2),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_y),       // %2
+    "+r"(pix)          // %3
+  : "r"(static_cast<intptr_t>(stride_yuy2))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+);
+}
+static void YUY2ToI420RowY_Unaligned_SSE2(const uint8* src_yuy2,
+                                          uint8* dst_y, int pix) {
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "pand       %%xmm5,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqu     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
+  : "+r"(src_yuy2),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+);
+}
+
+static void YUY2ToI420RowUV_Unaligned_SSE2(const uint8* src_yuy2,
+                                           int stride_yuy2,
+                                           uint8* dst_u, uint8* dst_y,
+                                           int pix) {
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+  "sub        %1,%2                            \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "movdqu     (%0,%4,1),%%xmm2                 \n"
+  "movdqu     0x10(%0,%4,1),%%xmm3             \n"
+  "lea        0x20(%0),%0                      \n"
+  "pavgb      %%xmm2,%%xmm0                    \n"
+  "pavgb      %%xmm3,%%xmm1                    \n"
+  "psrlw      $0x8,%%xmm0                      \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "packuswb   %%xmm0,%%xmm0                    \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "packuswb   %%xmm1,%%xmm1                    \n"
+  "movq       %%xmm0,(%1)                      \n"
+  "movq       %%xmm1,(%1,%2)                   \n"
+  "lea        0x8(%1),%1                       \n"
   "sub        $0x10,%3                         \n"
   "ja         1b                               \n"
   : "+r"(src_yuy2),    // %0
@@ -1124,6 +1259,7 @@ static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  "sub        %1,%2                            \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1138,12 +1274,11 @@ static void UYVYToI420RowUV_SSE2(const uint8* src_uyvy, int stride_uyvy,
   "movdqa     %%xmm0,%%xmm1                    \n"
   "pand       %%xmm5,%%xmm0                    \n"
   "packuswb   %%xmm0,%%xmm0                    \n"
-  "movq       %%xmm0,(%1)                      \n"
-  "lea        0x8(%1),%1                       \n"
   "psrlw      $0x8,%%xmm1                      \n"
   "packuswb   %%xmm1,%%xmm1                    \n"
-  "movq       %%xmm1,(%2)                      \n"
-  "lea        0x8(%2),%2                       \n"
+  "movq       %%xmm0,(%1)                      \n"
+  "movq       %%xmm1,(%1,%2)                   \n"
+  "lea        0x8(%1),%1                       \n"
   "sub        $0x10,%3                         \n"
   "ja         1b                               \n"
   : "+r"(src_uyvy),    // %0
@@ -1221,14 +1356,18 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
   void (*YUY2ToI420RowY)(const uint8* src_yuy2,
                          uint8* dst_y, int pix);
 #if defined(HAS_YUY2TOI420ROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16) &&
-      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
-      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    YUY2ToI420RowY = YUY2ToI420RowY_SSE2;
-    YUY2ToI420RowUV = YUY2ToI420RowUV_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
+      YUY2ToI420RowUV = YUY2ToI420RowUV_SSE2;
+    } else {
+      YUY2ToI420RowUV = YUY2ToI420RowUV_Unaligned_SSE2;
+    }
+    if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16) &&
+        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+      YUY2ToI420RowY = YUY2ToI420RowY_SSE2;
+    } else {
+      YUY2ToI420RowY = YUY2ToI420RowY_Unaligned_SSE2;
+    }
   } else
 #endif
   {
