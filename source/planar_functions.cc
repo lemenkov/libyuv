@@ -134,19 +134,19 @@ static void SplitUV_C(const uint8* src_uv,
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_COPYROW_SSE2
 __declspec(naked)
+
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
     mov        eax, [esp + 4]   // src
     mov        edx, [esp + 8]   // dst
     mov        ecx, [esp + 12]  // count
-
+    sub        edx, eax
   convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
+    movdqa     [eax + edx], xmm0
+    movdqa     [eax + edx + 16], xmm1
     lea        eax, [eax + 32]
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
-    lea        edx, [edx + 32]
     sub        ecx, 32
     ja         convertloop
     ret
@@ -173,13 +173,13 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 #define HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
+  "sub        %0,%1                            \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    %%xmm0,(%0,%1)                  \n"
+    "movdqa    %%xmm1,0x10(%0,%1)              \n"
     "lea       0x20(%0),%0                     \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "movdqa    %%xmm1,0x10(%1)                 \n"
-    "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "ja        1b                              \n"
   : "+r"(src),   // %0
