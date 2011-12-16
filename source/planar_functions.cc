@@ -2069,6 +2069,26 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+// I400 is greyscale typically used in MJPG
+int I400ToI420(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  SetPlane(dst_u, dst_stride_u, halfwidth, halfheight, 128);
+  SetPlane(dst_v, dst_stride_v, halfwidth, halfheight, 128);
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
