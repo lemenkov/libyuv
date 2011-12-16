@@ -1066,6 +1066,15 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                      y, y_stride, u, u_stride, v, v_stride,
                      dst_width, inv_dst_height);
       break;
+    case FOURCC_I400:
+      src = sample + src_width * crop_y + crop_x;
+      I400ToI420(src, src_width,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_width, inv_dst_height);
+      break;
+
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
