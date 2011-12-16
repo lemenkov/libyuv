@@ -189,6 +189,11 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
+// Copy a plane of data
+void CopyPlane(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

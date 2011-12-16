@@ -867,7 +867,7 @@ __asm {
     por       xmm0, xmm1
     pshuflw   xmm0, xmm0, 0x1b  // swap words
     pshufhw   xmm0, xmm0, 0x1b
-    pshufd    xmm0, xmm0, 0x4e
+    pshufd    xmm0, xmm0, 0x4e  // swap qwords
     movdqa    [edx], xmm0
     lea       edx, [edx + 16]
     sub       ecx, 16

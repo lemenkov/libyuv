@@ -211,9 +211,10 @@ void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }
 
-static void CopyPlane(const uint8* src_y, int src_stride_y,
-                      uint8* dst_y, int dst_stride_y,
-                      int width, int height) {
+// Copy a plane of data
+void CopyPlane(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height) {
   void (*CopyRow)(const uint8* src, uint8* dst, int width);
 #if defined(HAS_COPYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&

@@ -14,6 +14,7 @@
 #include <string.h>
 
 #include "libyuv/cpu_id.h"
+#include "libyuv/planar_functions.h"  // For CopyPlane
 #include "row.h"
 
 #ifdef __cplusplus
@@ -3570,33 +3571,6 @@ static void ScalePlaneDown(int src_width, int src_height,
   }
 }
 
-/**
- * Copy plane, no scaling
- *
- * This simply copies the given plane without scaling.
- * The current implementation is ~115 times faster
- * compared to the reference implementation.
- *
- */
-static void CopyPlane(int src_width, int src_height,
-                      int dst_width, int dst_height,
-                      int src_stride, int dst_stride,
-                      const uint8* src_ptr, uint8* dst_ptr) {
-  if (src_stride == src_width && dst_stride == dst_width) {
-    // All contiguous, so can use REALLY fast path.
-    memcpy(dst_ptr, src_ptr, src_width * src_height);
-  } else {
-    // Not all contiguous; must copy scanlines individually
-    const uint8* src = src_ptr;
-    uint8* dst = dst_ptr;
-    for (int i = 0; i < src_height; ++i) {
-      memcpy(dst, src, src_width);
-      dst += dst_stride;
-      src += src_stride;
-    }
-  }
-}
-
 static void ScalePlane(const uint8* src, int src_stride,
                        int src_width, int src_height,
                        uint8* dst, int dst_stride,
@@ -3606,8 +3580,7 @@ static void ScalePlane(const uint8* src, int src_stride,
   // For example, all the 1/2 scalings will use ScalePlaneDown2()
   if (dst_width == src_width && dst_height == src_height) {
     // Straight copy.
-    CopyPlane(src_width, src_height, dst_width, dst_height, src_stride,
-              dst_stride, src, dst);
+    CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
   } else if (dst_width <= src_width && dst_height <= src_height) {
     // Scale down.
     if (use_ref) {
