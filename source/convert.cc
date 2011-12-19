@@ -30,7 +30,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-static inline uint8 Clip(int32 val) {
+static __inline uint8 Clip(int32 val) {
   if (val < 0) {
     return (uint8) 0;
   } else if (val > 255){

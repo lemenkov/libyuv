@@ -514,7 +514,8 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     !defined(YUV_DISABLE_ASM)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif (defined(__APPLE__) || defined(__MINGW32__)) && defined(__i386__)
+#elif (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
+    defined(__i386__)
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
@@ -3265,8 +3266,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
   }
 }
 
-inline static uint32 SumBox(int iboxwidth, int iboxheight,
-                            int src_stride, const uint8* src_ptr) {
+static __inline uint32 SumBox(int iboxwidth, int iboxheight,
+                              int src_stride, const uint8* src_ptr) {
   assert(iboxwidth > 0);
   assert(iboxheight > 0);
   uint32 sum = 0u;
@@ -3292,7 +3293,7 @@ static void ScalePlaneBoxRow(int dst_width, int boxheight,
   }
 }
 
-inline static uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
+static __inline uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   assert(iboxwidth > 0);
   uint32 sum = 0u;
   for (int x = 0; x < iboxwidth; ++x) {

@@ -107,14 +107,14 @@ void RAWToUVRow_C(const uint8* src_argb, int src_stride_argb,
   ARGBToUVRow_C(row, kMaxStride, dst_u, dst_v, pix);
 }
 
-static inline int RGBToY(uint8 r, uint8 g, uint8 b) {
+static __inline int RGBToY(uint8 r, uint8 g, uint8 b) {
   return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
 }
 
-static inline int RGBToU(uint8 r, uint8 g, uint8 b) {
+static __inline int RGBToU(uint8 r, uint8 g, uint8 b) {
   return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
 }
-static inline int RGBToV(uint8 r, uint8 g, uint8 b) {
+static __inline int RGBToV(uint8 r, uint8 g, uint8 b) {
   return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
 }
 
@@ -239,7 +239,7 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-static inline uint32 Clip(int32 val) {
+static __inline uint32 Clip(int32 val) {
   if (val < 0) {
     return (uint32) 0;
   } else if (val > 255){
@@ -248,7 +248,7 @@ static inline uint32 Clip(int32 val) {
   return (uint32) val;
 }
 
-static inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
+static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
                             int ashift, int rshift, int gshift, int bshift) {
   int32 y1 = (static_cast<int32>(y) - 16) * YG;
   uint32 b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
