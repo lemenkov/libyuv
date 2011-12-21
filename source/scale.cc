@@ -521,12 +521,15 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
 #endif
 
-#if (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
-    defined(__i386__)
+#if defined(__APPLE__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".globl _" #name "                         \n"                             \
     ".private_extern _" #name "                \n"                             \
+    ".align 4,0x90                             \n"                             \
+"_" #name ":                                   \n"
+#elif (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
     ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
 #else

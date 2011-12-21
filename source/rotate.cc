@@ -28,12 +28,15 @@ uvec8 kShuffleReverseUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
 };
 
-#if (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
-    defined(__i386__)
+#if defined(__APPLE__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".globl _" #name "                         \n"                             \
     ".private_extern _" #name "                \n"                             \
+    ".align 4,0x90                             \n"                             \
+"_" #name ":                                   \n"
+#elif (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
     ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
 #else
