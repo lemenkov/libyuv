@@ -37,6 +37,7 @@
         # sources
         'source/compare.cc',
         'source/convert.cc',
+        'source/convertfrom.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
         'source/planar_functions.cc',

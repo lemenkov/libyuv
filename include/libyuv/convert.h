@@ -133,6 +133,14 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   RotationMode rotation,
                   uint32 format);
 
+// Convert I420 to specified format.
+int ConvertFromI420(const uint8* y, int y_stride,
+                    const uint8* u, int u_stride,
+                    const uint8* v, int v_stride,
+                    uint8* dst_sample, size_t dst_sample_size,
+                    int width, int height,
+                    uint32 format);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
