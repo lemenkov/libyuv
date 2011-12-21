@@ -63,12 +63,26 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert I420 to I444.
+int I420ToI444(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // Convert I400 (grey) to I420.
 int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
+
+// Copy to I400.  Source can be I420,422,444,400,NV12,NV21
+int I400Copy(const uint8* src_y, int src_stride_y,
+             uint8* dst_y, int dst_stride_y,
+             int width, int height);
 
 // Convert NV12 to I420.  Also used for NV21.
 int NV12ToI420(const uint8* src_y, int src_stride_y,

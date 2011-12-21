@@ -19,11 +19,19 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// RGB24 is also known as 24BG and BGR3
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
                 const uint8* src_v, int src_stride_v,
                 uint8* dst_frame, int dst_stride_frame,
                 int width, int height);
+
+// RAW is also known as RGB3
+int I420ToRAW(const uint8* src_y, int src_stride_y,
+              const uint8* src_u, int src_stride_u,
+              const uint8* src_v, int src_stride_v,
+              uint8* dst_frame, int dst_stride_frame,
+              int width, int height);
 
 int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,

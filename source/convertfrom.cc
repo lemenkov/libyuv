@@ -57,7 +57,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                   dst_sample, width * 3,
                   width, height);
       break;
-#ifdef HAVEI420TOBAYER
     case FOURCC_RAW:
       I420ToRAW(y, y_stride,
                 u, u_stride,
@@ -65,7 +64,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                 dst_sample, width * 3,
                 width, height);
       break;
-#endif
     case FOURCC_ARGB:
       I420ToARGB(y, y_stride,
                  u, u_stride,
@@ -99,15 +97,11 @@ int ConvertFromI420(const uint8* y, int y_stride,
                      width, height);
       break;
 #endif
-#ifdef HAVEI420TOI400
     case FOURCC_I400:
-      I420ToI400(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample, width,
-                 width, height);
+      I400Copy(y, y_stride,
+               dst_sample, width,
+               width, height);
       break;
-#endif
     // Triplanar formats
     case FOURCC_I420:
     case FOURCC_YV12: {
@@ -152,7 +146,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  width, height);
       break;
     }
-#ifdef HAVEI420TOI444
     case FOURCC_I444:
     case FOURCC_YV24: {
       uint8* dst_u;
@@ -173,7 +166,7 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  width, height);
       break;
     }
-#endif
+
     // Formats not supported - MJPG, biplanar, some rgb formats.
     default:
       return -1;  // unknown fourcc - return failure code.

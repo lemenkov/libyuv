@@ -3449,10 +3449,10 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
  * Scale plane to/from any dimensions, with bilinear
  * interpolation.
  */
-static void ScalePlaneBilinear(int src_width, int src_height,
-                               int dst_width, int dst_height,
-                               int src_stride, int dst_stride,
-                               const uint8* src_ptr, uint8* dst_ptr) {
+void ScalePlaneBilinear(int src_width, int src_height,
+                        int dst_width, int dst_height,
+                        int src_stride, int dst_stride,
+                        const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
   int dy = (src_height << 16) / dst_height;

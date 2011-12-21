@@ -557,7 +557,6 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
                         uint8* dst_ptr, int dst_width);
 
-// Half Width and Height
 int I444ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -622,6 +621,53 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
+
+// use Bilinear for upsampling chroma
+void ScalePlaneBilinear(int src_width, int src_height,
+                        int dst_width, int dst_height,
+                        int src_stride, int dst_stride,
+                        const uint8* src_ptr, uint8* dst_ptr);
+
+int I420ToI444(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+
+  // Copy Y plane
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+
+  // Upsample U plane.
+  ScalePlaneBilinear(halfwidth, halfheight,
+                     width, height,
+                     src_stride_u,
+                     dst_stride_u,
+                     src_u, dst_u);
+
+  // Upsample V plane.
+  ScalePlaneBilinear(halfwidth, halfheight,
+                     width, height,
+                     src_stride_v,
+                     dst_stride_v,
+                     src_v, dst_v);
+  return 0;
+}
+
 
 static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
                            uint8* dst, int dst_stride_frame,
@@ -2086,6 +2132,20 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   SetPlane(dst_u, dst_stride_u, halfwidth, halfheight, 128);
   SetPlane(dst_v, dst_stride_v, halfwidth, halfheight, 128);
+  return 0;
+}
+
+// Copy to I400.  Source can be I420,422,444,400,NV12,NV21
+int I400Copy(const uint8* src_y, int src_stride_y,
+             uint8* dst_y, int dst_stride_y,
+             int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   return 0;
 }
 

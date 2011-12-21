@@ -39,6 +39,7 @@ static __inline uint8 Clip(int32 val) {
   return (uint8) val;
 }
 
+// TODO(fbarchard): rewrite with row functions
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
                 const uint8* src_v, int src_stride_v,
@@ -108,7 +109,79 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// same as RGB24 but r,g,b instead of b,g,r
+// TODO(fbarchard): rewrite with row functions
+int I420ToRAW(const uint8* src_y, int src_stride_y,
+              const uint8* src_u, int src_stride_u,
+              const uint8* src_v, int src_stride_v,
+              uint8* dst_frame, int dst_stride_frame,
+              int width, int height) {
+  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+    return -1;
+  }
+
+  // RGB orientation - bottom up
+  // TODO(fbarchard): support inversion
+  uint8* out = dst_frame + dst_stride_frame * height - dst_stride_frame;
+  uint8* out2 = out - dst_stride_frame;
+  int h, w;
+  int tmp_r, tmp_g, tmp_b;
+  const uint8 *y1, *y2 ,*u, *v;
+  y1 = src_y;
+  y2 = y1 + src_stride_y;
+  u = src_u;
+  v = src_v;
+  for (h = ((height + 1) >> 1); h > 0; h--){
+    // 2 rows at a time, 2 y's at a time
+    for (w = 0; w < ((width + 1) >> 1); w++){
+      // Vertical and horizontal sub-sampling
+      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
+      out[0] = Clip(tmp_r);
+      out[1] = Clip(tmp_g);
+      out[2] = Clip(tmp_b);
+
+      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
+      out[3] = Clip(tmp_r);
+      out[4] = Clip(tmp_g);
+      out[5] = Clip(tmp_b);
+
+      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
+      out2[0] = Clip(tmp_r);
+      out2[1] = Clip(tmp_g);
+      out2[2] = Clip(tmp_b);
+
+      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
+      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
+      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
+      out2[3] = Clip(tmp_r);
+      out2[4] = Clip(tmp_g);
+      out2[5] = Clip(tmp_b);
+
+      out += 6;
+      out2 += 6;
+      y1 += 2;
+      y2 += 2;
+      u++;
+      v++;
+    }
+    y1 += src_stride_y + src_stride_y - width;
+    y2 += src_stride_y + src_stride_y - width;
+    u += src_stride_u - ((width + 1) >> 1);
+    v += src_stride_v - ((width + 1) >> 1);
+    out -= dst_stride_frame * 3;
+    out2 -= dst_stride_frame * 3;
+  } // end height for
+  return 0;
+}
+
 // Little Endian...
+// TODO(fbarchard): rewrite with row functions
 int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
                    const uint8* src_v, int src_stride_v,
@@ -175,7 +248,7 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-
+// TODO(fbarchard): rewrite with row functions
 int I420ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_u, int src_stride_u,
                  const uint8* src_v, int src_stride_v,
@@ -254,7 +327,7 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-
+// TODO(fbarchard): rewrite with row functions
 int I420ToARGB1555(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
                    const uint8* src_v, int src_stride_v,
