@@ -526,14 +526,15 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
     ".globl _" #name "                         \n"                             \
+    ".private_extern _" #name "                \n"                             \
+    ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global " #name "                         \n"                             \
+    ".align 4,0x90                             \n"                             \
 #name ":                                       \n"
 #endif
-
 
 // Offsets for source bytes 0 to 9
 extern "C" TALIGN16(const uint8, shuf0[16]) =

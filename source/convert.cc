@@ -977,6 +977,9 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // src_width is used for source stride computation
 // src_height is used to compute location of planes, and indicate inversion
+// TODO(fbarchard): sample_size should be used to ensure the low levels do
+// not read outside the buffer provided.  It is measured in bytes and is the
+// size of the frame.  With MJPEG it is the compressed size of the frame.
 int ConvertToI420(const uint8* sample, size_t sample_size,
                   uint8* y, int y_stride,
                   uint8* u, int u_stride,

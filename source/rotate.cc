@@ -33,17 +33,16 @@ uvec8 kShuffleReverseUV = {
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
     ".globl _" #name "                         \n"                             \
+    ".private_extern _" #name "                \n"                             \
+    ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
 #else
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
-    ".global " #name "                         \n"                             \
+    ".align 4,0x90                             \n"                             \
 #name ":                                       \n"
 #endif
-
 #endif
-
-
 
 typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
 typedef void (*rotate_uv_wx8_func)(const uint8*, int,
