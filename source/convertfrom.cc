@@ -13,7 +13,7 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
-#include "video_common.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {

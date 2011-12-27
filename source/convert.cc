@@ -23,7 +23,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "row.h"
-#include "video_common.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -48,11 +48,9 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
   if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
     return -1;
   }
-
-  // RGB orientation - bottom up
   // TODO(fbarchard): support inversion
-  uint8* out = dst_frame + dst_stride_frame * height - dst_stride_frame;
-  uint8* out2 = out - dst_stride_frame;
+  uint8* out = dst_frame;
+  uint8* out2 = out + dst_stride_frame;
   int h, w;
   int tmp_r, tmp_g, tmp_b;
   const uint8 *y1, *y2 ,*u, *v;
@@ -99,13 +97,13 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
       u++;
       v++;
     }
-    y1 += src_stride_y + src_stride_y - width;
-    y2 += src_stride_y + src_stride_y - width;
+    y1 += 2 * src_stride_y - width;
+    y2 += 2 * src_stride_y - width;
     u += src_stride_u - ((width + 1) >> 1);
     v += src_stride_v - ((width + 1) >> 1);
-    out -= dst_stride_frame * 3;
-    out2 -= dst_stride_frame * 3;
-  } // end height for
+    out += dst_stride_frame;
+    out2 += dst_stride_frame;
+  }
   return 0;
 }
 
