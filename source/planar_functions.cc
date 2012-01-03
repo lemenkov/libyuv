@@ -29,9 +29,9 @@ static void SplitUV_NEON(const uint8* src_uv,
   asm volatile (
     "1:                                        \n"
     "vld2.u8    {q0,q1}, [%0]!                 \n"  // load 16 pairs of UV
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vst1.u8    {q0}, [%1]!                    \n"  // store U
     "vst1.u8    {q1}, [%2]!                    \n"  // Store V
-    "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "bhi        1b                             \n"
     : "+r"(src_uv),
       "+r"(dst_u),
@@ -714,11 +714,7 @@ static int X420ToI420(const uint8* src_y,
   int halfwidth = (width + 1) >> 1;
   void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITUV_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(halfwidth, 16) &&
-      IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
     SplitUV = SplitUV_NEON;
   } else
 #elif defined(HAS_SPLITUV_SSE2)
@@ -1908,8 +1904,8 @@ static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
     "1:                                        \n"
-    "vst1.u32  {q0}, [%0]!                     \n"  // store
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
+    "vst1.u32  {q0}, [%0]!                     \n"  // store
     "bhi       1b                              \n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
