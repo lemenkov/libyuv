@@ -10,7 +10,7 @@
 
 #include "libyuv/planar_functions.h"
 
-#include <string.h>
+#include <string.h>  // For memcpy()
 
 #include "libyuv/cpu_id.h"
 #include "row.h"

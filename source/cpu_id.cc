@@ -10,15 +10,15 @@
 
 #include "libyuv/cpu_id.h"
 
-#include <stdlib.h>  // for getenv
+#include <stdlib.h>  // For getenv()
 #ifdef _MSC_VER
-#include <intrin.h>
+#include <intrin.h>  // For __cpuid()
 #endif
 #ifdef __ANDROID__
-#include <cpu-features.h>
+#include <cpu-features.h>  // For android_getCpuFeatures()
 #endif
 
-#include "libyuv/basic_types.h"  // for CPU_X86
+#include "libyuv/basic_types.h"  // For CPU_X86
 
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)

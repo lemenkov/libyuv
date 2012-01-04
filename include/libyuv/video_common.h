@@ -12,11 +12,8 @@
 * Common definitions for video, including fourcc and VideoFormat
 */
 
-
-#ifndef LIBYUV_SOURCE_VIDEO_COMMON_H_
-#define LIBYUV_SOURCE_VIDEO_COMMON_H_
-
-#include <string>
+#ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_
+#define INCLUDE_LIBYUV_VIDEO_COMMON_H_
 
 #include "libyuv/basic_types.h"
 
@@ -38,6 +35,7 @@ extern "C" {
 // Some good pages discussing FourCC codes:
 //   http://developer.apple.com/quicktime/icefloe/dispatch020.html
 //   http://www.fourcc.org/yuv.php
+//   http://linuxtv.org/downloads/v4l-dvb-apis/pixfmt.html
 enum FourCC {
   // Canonical fourcc codes used in our code.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
@@ -93,4 +91,4 @@ uint32 CanonicalFourCC(uint32 fourcc);
 }  // namespace libyuv
 #endif
 
-#endif  // LIBYUV_SOURCE_VIDEO_COMMON_H_
+#endif  // INCLUDE_LIBYUV_VIDEO_COMMON_H_

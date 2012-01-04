@@ -13,7 +13,7 @@
 //#define SCALEOPT //Currently for windows only. June 2010
 
 #ifdef SCALEOPT
-#include <emmintrin.h>
+#include <emmintrin.h>  // Not currently used
 #endif
 
 #include "conversion_tables.h"
@@ -22,8 +22,8 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
-#include "row.h"
 #include "libyuv/video_common.h"
+#include "row.h"
 
 #ifdef __cplusplus
 namespace libyuv {

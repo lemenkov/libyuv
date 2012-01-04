@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
+#include "libyuv/format_conversion.h"
+
+#include <assert.h>  // For assert()
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
-#include "row.h"
 #include "libyuv/video_common.h"
+#include "row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
