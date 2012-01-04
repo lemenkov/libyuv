@@ -153,8 +153,8 @@ TEST_F(libyuvTest, ScaleDownBy2) {
 
   const int src_width = 1280;
   const int src_height = 720;
-  const int dst_width = src_width >> 1;
-  const int dst_height = src_height >> 1;
+  const int dst_width = src_width / 2;
+  const int dst_height = src_height / 2;
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
@@ -169,8 +169,8 @@ TEST_F(libyuvTest, ScaleDownBy4) {
 
   const int src_width = 1280;
   const int src_height = 720;
-  const int dst_width = src_width >> 2;
-  const int dst_height = src_height >> 2;
+  const int dst_width = src_width / 4;
+  const int dst_height = src_height / 4;
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
@@ -185,8 +185,8 @@ TEST_F(libyuvTest, ScaleDownBy34) {
 
   const int src_width = 1280;
   const int src_height = 720;
-  const int dst_width = (src_width*3) >> 2;
-  const int dst_height = (src_height*3) >> 2;
+  const int dst_width = src_width * 3 / 4;
+  const int dst_height = src_height * 3 / 4;
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
@@ -200,8 +200,24 @@ TEST_F(libyuvTest, ScaleDownBy34) {
 TEST_F(libyuvTest, ScaleDownBy38) {
   int src_width = 1280;
   int src_height = 720;
-  int dst_width = (src_width*3) >> 3;
-  int dst_height = (src_height*3) >> 3;
+  int dst_width = src_width * 3 / 8;
+  int dst_height = src_height * 3 / 8;
+
+  int err = 0;
+
+  for (int f = 0; f < 3; ++f)
+    err += TestFilter (src_width, src_height,
+                       dst_width, dst_height,
+                       static_cast<FilterMode>(f));
+
+  EXPECT_EQ(0, err);
+}
+
+TEST_F(libyuvTest, ScalePlaneBilinear) {
+  int src_width = 1280;
+  int src_height = 720;
+  int dst_width = 1366;
+  int dst_height = 768;
 
   int err = 0;
 

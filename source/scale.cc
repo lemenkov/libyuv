@@ -502,6 +502,61 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
+// 16x2 -> 16x1
+#define HAS_SCALEFILTERROWS_NEON
+static void ScaleFilterRows_NEON(uint8* dst_ptr,
+                              const uint8* src_ptr, int src_stride,
+                              int dst_width, int source_y_fraction) {
+  asm volatile (
+    "cmp          %4, #0                       \n"
+    "beq          2f                           \n"
+    "add          %2, %1                       \n"
+    "cmp          %4, #128                     \n"
+    "beq          3f                           \n"
+
+    "vdup.8       d5, %4                       \n"
+    "rsb          %4, #256                     \n"
+    "vdup.8       d4, %4                       \n"
+    "1:                                        \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.u8      {q1}, [%2]!                  \n"
+    "subs         %3, #16                      \n"
+    "vmull.u8     q13, d0, d4                  \n"
+    "vmull.u8     q14, d1, d4                  \n"
+    "vmlal.u8     q13, d2, d5                  \n"
+    "vmlal.u8     q14, d3, d5                  \n"
+    "vrshrn.u16   d0, q13, #8                  \n"
+    "vrshrn.u16   d1, q14, #8                  \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bhi          1b                           \n"
+    "b            4f                           \n"
+
+    "2:                                        \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "subs         %3, #16                      \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bhi          2b                           \n"
+    "b            4f                           \n"
+
+    "3:                                        \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.u8      {q1}, [%2]!                  \n"
+    "subs         %3, #16                      \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bhi          3b                           \n"
+    "4:                                        \n"
+    "vst1.u8      {d1[7]}, [%0]                \n"
+    : "+r"(dst_ptr),          // %0
+      "+r"(src_ptr),          // %1
+      "+r"(src_stride),       // %2
+      "+r"(dst_width),        // %3
+      "+r"(source_y_fraction) // %4
+    :
+    : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
+  );
+}
+
 /**
  * SSE2 downscalers with interpolation.
  *
@@ -3471,6 +3526,12 @@ void ScalePlaneBilinear(int src_width, int src_height,
                             int dst_width, int source_y_fraction);
     void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
                             int dst_width, int dx);
+#if defined(HAS_SCALEFILTERROWS_NEON)
+    if (TestCpuFlag(kCpuHasNEON) &&
+        IS_ALIGNED(src_width, 16)) {
+      ScaleFilterRows = ScaleFilterRows_NEON;
+    } else
+#endif
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
     if (TestCpuFlag(kCpuHasSSSE3) &&
         IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16) &&
