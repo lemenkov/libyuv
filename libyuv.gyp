@@ -27,7 +27,7 @@
         'include/libyuv/convert.h',
         'include/libyuv/scale.h',
         'include/libyuv/planar_functions.h',
-        'include/video_common.h',
+        'include/libyuv/video_common.h',
 
         # headers
         'source/conversion_tables.h',
