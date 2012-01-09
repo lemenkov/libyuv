@@ -86,6 +86,24 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
               uint8* dst_v, int dst_stride_v,
               int width, int height);
 
+int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
+                 uint8* dst_y, int dst_stride_y,
+                 uint8* dst_u, int dst_stride_u,
+                 uint8* dst_v, int dst_stride_v,
+                 int width, int height);
+
+int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height);
+
+int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height);
+
 int ABGRToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,

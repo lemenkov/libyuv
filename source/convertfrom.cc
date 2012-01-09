@@ -50,6 +50,27 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  dst_sample, width * 2,
                  width, height);
       break;
+    case FOURCC_RGBP:
+      I420ToRGB565(y, y_stride,
+                   u, u_stride,
+                   v, v_stride,
+                   dst_sample, width * 2,
+                   width, height);
+      break;
+    case FOURCC_RGBO:
+      I420ToARGB1555(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample, width * 2,
+                     width, height);
+      break;
+    case FOURCC_R444:
+      I420ToARGB4444(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample, width * 2,
+                     width, height);
+      break;
     case FOURCC_24BG:
       I420ToRGB24(y, y_stride,
                   u, u_stride,

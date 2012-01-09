@@ -37,6 +37,12 @@
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
+#define HAS_RGB565TOYROW_SSSE3
+#define HAS_ARGB1555TOYROW_SSSE3
+#define HAS_ARGB4444TOYROW_SSSE3
+#define HAS_RGB565TOUVROW_SSSE3
+#define HAS_ARGB1555TOUVROW_SSSE3
+#define HAS_ARGB4444TOUVROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_FASTCONVERTYTOARGBROW_SSE2
 #define HAS_FASTCONVERTYUVTOARGBROW_SSSE3
@@ -99,10 +105,21 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #ifdef HASRGB24TOYROW_SSSE3
 void RGB24ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void RAWToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RGB565ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGB1555ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGB4444ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+
 void RGB24ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                         uint8* dst_u, uint8* dst_v, int width);
 void RAWToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
+void RGB565ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                         uint8* dst_u, uint8* dst_v, int width);
+void ARGB1555ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                           uint8* dst_u, uint8* dst_v, int width);
+void ARGB4444ToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                           uint8* dst_u, uint8* dst_v, int width);
+
 #endif
 #ifdef HAS_REVERSE_ROW_SSSE3
 void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width);
@@ -120,6 +137,10 @@ void BGRAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void RGB24ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void RAWToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void RGB565ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGB1555ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGB4444ToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+
 void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                    uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_C(const uint8* src_argb0, int src_stride_argb,
@@ -130,17 +151,30 @@ void RGB24ToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                     uint8* dst_u, uint8* dst_v, int width);
 void RAWToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                   uint8* dst_u, uint8* dst_v, int width);
+void RGB565ToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                     uint8* dst_u, uint8* dst_v, int width);
+void ARGB1555ToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
+void ARGB4444ToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
 
 #ifdef HAS_BG24TOARGBROW_SSSE3
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix);
 void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix);
 void RAWToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix);
+// TODO(fbarchard): SSE2 565 etc
+//void RGB565ToARGBRow_SSE2(const uint8* src_rgb, uint8* dst_argb, int pix);
+//void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
+//void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 #endif
 void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix);
 void BG24ToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix);
 void RAWToARGBRow_C(const uint8* src_bg24, uint8* dst_argb, int pix);
+void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix);
+void ARGB1555ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
+void ARGB4444ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
 
 #ifdef HAS_I400TOARGBROW_SSE2
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);

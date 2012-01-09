@@ -1845,7 +1845,6 @@ void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   return 0;
 }
 
-
 // Convert RAW to ARGB.
 int RAWToARGB(const uint8* src_raw, int src_stride_raw,
               uint8* dst_argb, int dst_stride_argb,

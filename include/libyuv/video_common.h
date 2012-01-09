@@ -23,19 +23,20 @@ extern "C" {
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-// Definition of fourcc.
+// Definition of FourCC codes
 //////////////////////////////////////////////////////////////////////////////
-// Convert four characters to a fourcc code.
+// Convert four characters to a FourCC code.
 // Needs to be a macro otherwise the OS X compiler complains when the kFormat*
 // constants are used in a switch.
-#define FOURCC(a, b, c, d) (\
+#define FOURCC(a, b, c, d) ( \
     (static_cast<uint32>(a)) | (static_cast<uint32>(b) << 8) | \
     (static_cast<uint32>(c) << 16) | (static_cast<uint32>(d) << 24))
 
-// Some good pages discussing FourCC codes:
-//   http://developer.apple.com/quicktime/icefloe/dispatch020.html
+// Some pages discussing FourCC codes:
 //   http://www.fourcc.org/yuv.php
-//   http://linuxtv.org/downloads/v4l-dvb-apis/pixfmt.html
+//   http://v4l2spec.bytesex.org/spec/book1.htm
+//   http://developer.apple.com/quicktime/icefloe/dispatch020.html
+
 enum FourCC {
   // Canonical fourcc codes used in our code.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
@@ -53,6 +54,9 @@ enum FourCC {
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'), // bgr565
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'), // abgr1555
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'), // argb4444
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
   FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
@@ -75,6 +79,7 @@ enum FourCC {
   FOURCC_HDYC = FOURCC('H', 'D', 'Y', 'C'),  // Alias for UYVY
   FOURCC_2VUY = FOURCC('2', 'v', 'u', 'y'),  // Alias for UYVY
   FOURCC_JPEG = FOURCC('J', 'P', 'E', 'G'),  // Alias for MJPG
+  FOURCC_DMB1 = FOURCC('d', 'm', 'b', '1'),  // Alias for MJPG on Mac
   FOURCC_BA81 = FOURCC('B', 'A', '8', '1'),  // Alias for BGGR
   FOURCC_RGB3 = FOURCC('R', 'G', 'B', '3'),  // Alias for RAW
   FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG

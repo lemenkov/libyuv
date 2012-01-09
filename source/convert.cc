@@ -39,6 +39,7 @@ static __inline uint8 Clip(int32 val) {
   return (uint8) val;
 }
 
+// FourCC is 24BG.  bgr in memory
 // TODO(fbarchard): rewrite with row functions
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
@@ -107,7 +108,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// same as RGB24 but r,g,b instead of b,g,r
+// FourCC is RAW.  Same as RGB24 but r,g,b instead of b,g,r
 // TODO(fbarchard): rewrite with row functions
 int I420ToRAW(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
@@ -178,7 +179,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Little Endian...
+// FourCC is R444. Little Endian...
 // TODO(fbarchard): rewrite with row functions
 int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
@@ -246,6 +247,7 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// FourCC RGBP little endian rgb565
 // TODO(fbarchard): rewrite with row functions
 int I420ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_u, int src_stride_u,
@@ -325,6 +327,7 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// FourCC RGBO little endian rgb565
 // TODO(fbarchard): rewrite with row functions
 int I420ToARGB1555(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
@@ -1045,6 +1048,165 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
   return 0;
 }
 
+int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
+                 uint8* dst_y, int dst_stride_y,
+                 uint8* dst_u, int dst_stride_u,
+                 uint8* dst_v, int dst_stride_v,
+                 int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_RGB565TOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = RGB565ToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = RGB565ToYRow_C;
+  }
+#if defined(HAS_RGB565TOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
+      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
+    ARGBToUVRow = RGB565ToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = RGB565ToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
+                 uint8* dst_y, int dst_stride_y,
+                 uint8* dst_u, int dst_stride_u,
+                 uint8* dst_v, int dst_stride_v,
+                 int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_ARGB1555TOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGB1555ToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGB1555ToYRow_C;
+  }
+#if defined(HAS_ARGB1555TOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
+      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
+    ARGBToUVRow = ARGB1555ToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = ARGB1555ToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
+int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
+                 uint8* dst_y, int dst_stride_y,
+                 uint8* dst_u, int dst_stride_u,
+                 uint8* dst_v, int dst_stride_v,
+                 int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_frame = src_frame + (height - 1) * src_stride_frame;
+    src_stride_frame = -src_stride_frame;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+#if defined(HAS_ARGB4444TOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGB4444ToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGB4444ToYRow_C;
+  }
+#if defined(HAS_ARGB4444TOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
+      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
+    ARGBToUVRow = ARGB4444ToUVRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToUVRow = ARGB4444ToUVRow_C;
+  }
+
+  for (int y = 0; y < (height - 1); y += 2) {
+    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    src_frame += src_stride_frame * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
+    ARGBToYRow(src_frame, dst_y, width);
+  }
+  return 0;
+}
+
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // src_width is used for source stride computation
 // src_height is used to compute location of planes, and indicate inversion
@@ -1129,6 +1291,30 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                  u, u_stride,
                  v, v_stride,
                  dst_width, inv_dst_height);
+      break;
+    case FOURCC_RGBP:
+      src = sample + (src_width * crop_y + crop_x) * 4;
+      RGB565ToI420(src, src_width * 4,
+                   y, y_stride,
+                   u, u_stride,
+                   v, v_stride,
+                   dst_width, inv_dst_height);
+      break;
+    case FOURCC_RGBO:
+      src = sample + (src_width * crop_y + crop_x) * 4;
+      ARGB1555ToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
+      break;
+    case FOURCC_R444:
+      src = sample + (src_width * crop_y + crop_x) * 4;
+      ARGB4444ToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_BGGR:
     case FOURCC_RGGB:
