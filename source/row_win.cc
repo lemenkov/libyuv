@@ -229,6 +229,40 @@ __asm {
   }
 }
 
+__declspec(naked)
+void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
+                            int pix) {
+__asm {
+    mov       eax, 0x0f0f0f0f  // generate mask 0x0f0f0f0f
+    movd      xmm4, eax
+    pshufd    xmm4, xmm4, 0
+    movdqa    xmm5, xmm4       // 0xf0f0f0f0 for high nibbles
+    pslld     xmm5, 4
+    mov       eax, [esp + 4]   // src_argb4444
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+
+ convertloop:
+    movq      xmm0, qword ptr [eax] // fetch 4 pixels of bgra4444
+    lea       eax, [eax + 8]
+    movdqa    xmm2, xmm0
+    pand      xmm0, xmm4    // mask low nibbles
+    pand      xmm2, xmm5    // mask high nibbles
+    movdqa    xmm1, xmm0
+    movdqa    xmm3, xmm2
+    psllw     xmm1, 4
+    psrlw     xmm3, 4
+    por       xmm0, xmm1
+    por       xmm2, xmm3
+    punpcklbw xmm0, xmm2
+    movdqa    [edx], xmm0  // store 4 pixels of ARGB
+    lea       edx, [edx + 16]
+    sub       ecx, 4
+    ja        convertloop
+    ret
+  }
+}
+
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values
 __declspec(naked)
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
