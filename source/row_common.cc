@@ -108,10 +108,10 @@ void ARGB1555ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
 
 void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
   for (int x = 0; x < pix; ++x) {
-    uint8 b = src_rgb[0] & 0x1f;
-    uint8 g = src_rgb[0] >> 4;
-    uint8 r = src_rgb[1] & 0x1f;
     uint8 a = src_rgb[1] >> 4;
+    uint8 r = src_rgb[1] & 0x0f;
+    uint8 g = src_rgb[0] >> 4;
+    uint8 b = src_rgb[0] & 0x0f;
     dst_argb[0] = (b << 4) | b;
     dst_argb[1] = (g << 4) | g;
     dst_argb[2] = (r << 4) | r;
@@ -270,7 +270,11 @@ void ARGB1555ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
 void ARGB4444ToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   SIMD_ALIGNED(uint8 row[kMaxStride]);
+#ifdef HAS_ARGB4444TOARGBROW_SSE2
+  ARGB4444ToARGBRow_SSE2(src_argb, row, pix);
+#else
   ARGB4444ToARGBRow_C(src_argb, row, pix);
+#endif
   ARGBToYRow_SSSE3(row, dst_y, pix);
 }
 #endif
@@ -313,8 +317,13 @@ void ARGB1555ToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
 void ARGB4444ToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int pix) {
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+#ifdef HAS_ARGB4444TOARGBROW_SSE2
+  ARGB4444ToARGBRow_SSE2(src_argb, row, pix);
+  ARGB4444ToARGBRow_SSE2(src_argb + src_stride_argb, row + kMaxStride, pix);
+#else
   ARGB4444ToARGBRow_C(src_argb, row, pix);
   ARGB4444ToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
+#endif
   ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
 }
 

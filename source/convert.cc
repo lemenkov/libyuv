@@ -1293,24 +1293,36 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                  dst_width, inv_dst_height);
       break;
     case FOURCC_RGBP:
-      src = sample + (src_width * crop_y + crop_x) * 4;
-      RGB565ToI420(src, src_width * 4,
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      RGB565ToI420(src, src_width * 2,
                    y, y_stride,
                    u, u_stride,
                    v, v_stride,
                    dst_width, inv_dst_height);
       break;
+//  V4L2_PIX_FMT_RGB555 'RGBO'
+//               Byte 0                    Byte 1
+//  Bit   7  6  5  4  3  2  1  0    7  6  5  4  3  2  1  0
+//       g2 g1 g0 b4 b3 b2 b1 b0    a r4 r3 r2 r1 r0 g4 g3
+//  Bit 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//       a r4 r3 r2 r1 r0 g4 g3 g2 g1 g0 b4 b3 b2 b1 b0
     case FOURCC_RGBO:
-      src = sample + (src_width * crop_y + crop_x) * 4;
-      ARGB1555ToI420(src, src_width * 4,
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      ARGB1555ToI420(src, src_width * 2,
                      y, y_stride,
                      u, u_stride,
                      v, v_stride,
                      dst_width, inv_dst_height);
       break;
+//  V4L2_PIX_FMT_RGB444 'R444'
+//               Byte 0                    Byte 1
+//  Bit   7  6  5  4  3  2  1  0    7  6  5  4  3  2  1  0
+//       g3 g2 g1 g0 b3 b2 b1 b0   a3 a2 a1 a0 r3 r2 r1 r0
+//  Bit 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
+//      a3 a2 a1 a0 r3 r2 r1 r0 g3 g2 g1 g0 b3 b2 b1 b0
     case FOURCC_R444:
-      src = sample + (src_width * crop_y + crop_x) * 4;
-      ARGB4444ToI420(src, src_width * 4,
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      ARGB4444ToI420(src, src_width * 2,
                      y, y_stride,
                      u, u_stride,
                      v, v_stride,

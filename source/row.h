@@ -53,6 +53,11 @@
 #define HAS_REVERSE_ROW_SSE2
 #endif
 
+// The following are available on Windows platforms
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#define HAS_ARGB4444TOARGBROW_SSE2
+#endif
+
 // The following are available on Neon platforms
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_REVERSE_ROW_NEON
@@ -166,7 +171,9 @@ void RAWToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix);
 // TODO(fbarchard): SSE2 565 etc
 //void RGB565ToARGBRow_SSE2(const uint8* src_rgb, uint8* dst_argb, int pix);
 //void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
-//void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
+#endif
+#ifdef HAS_ARGB4444TOARGBROW_SSE2
+void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 #endif
 void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix);
