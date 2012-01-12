@@ -65,8 +65,8 @@ static const uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
 
-// Shuffle table for converting BG24 to ARGB.
-static const uvec8 kShuffleMaskBG24ToARGB = {
+// Shuffle table for converting RGB24 to ARGB.
+static const uvec8 kShuffleMaskRGB24ToARGB = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
@@ -153,14 +153,14 @@ __asm {
 }
 
 __declspec(naked)
-void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
+void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
 __asm {
-    mov       eax, [esp + 4]   // src_bg24
+    mov       eax, [esp + 4]   // src_rgb24
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
     pslld     xmm5, 24
-    movdqa    xmm4, kShuffleMaskBG24ToARGB
+    movdqa    xmm4, kShuffleMaskRGB24ToARGB
 
  convertloop:
     movdqa    xmm0, [eax]
@@ -229,6 +229,7 @@ __asm {
   }
 }
 
+// TODO(fbarchard): Port ARGB4444ToARGBRow_SSE2 to gcc
 __declspec(naked)
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
@@ -243,8 +244,8 @@ __asm {
     mov       ecx, [esp + 12]  // pix
 
  convertloop:
-    movq      xmm0, qword ptr [eax] // fetch 4 pixels of bgra4444
-    lea       eax, [eax + 8]
+    movdqa    xmm0, qword ptr [eax] // fetch 8 pixels of bgra4444
+    lea       eax, [eax + 16]
     movdqa    xmm2, xmm0
     pand      xmm0, xmm4    // mask low nibbles
     pand      xmm2, xmm5    // mask high nibbles
@@ -254,10 +255,13 @@ __asm {
     psrlw     xmm3, 4
     por       xmm0, xmm1
     por       xmm2, xmm3
+    movdqa    xmm1, xmm0
     punpcklbw xmm0, xmm2
+    punpckhbw xmm1, xmm2
     movdqa    [edx], xmm0  // store 4 pixels of ARGB
-    lea       edx, [edx + 16]
-    sub       ecx, 4
+    movdqa    [edx + 16], xmm1  // store next 4 pixels of ARGB
+    lea       edx, [edx + 32]
+    sub       ecx, 8
     ja        convertloop
     ret
   }

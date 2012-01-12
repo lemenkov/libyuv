@@ -1621,6 +1621,217 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Convert I420 to RGB565.
+int I420ToRGB565(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToRGB565Row)(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
+                                    int width);
+#if defined(HAS_FASTCONVERTYUVTORGB565ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToRGB565Row = FastConvertYUVToRGB565Row_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTORGB565ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    FastConvertYUVToRGB565Row = FastConvertYUVToRGB565Row_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToRGB565Row = FastConvertYUVToRGB565Row_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToRGB565Row(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+// Convert I420 to ARGB1555.
+int I420ToARGB1555(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToARGB1555Row)(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
+                                    int width);
+#if defined(HAS_FASTCONVERTYUVTOARGB1555ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToARGB1555Row = FastConvertYUVToARGB1555Row_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOARGB1555ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    FastConvertYUVToARGB1555Row = FastConvertYUVToARGB1555Row_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToARGB1555Row = FastConvertYUVToARGB1555Row_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToARGB1555Row(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+// Convert I420 to ARGB4444.
+int I420ToARGB4444(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToARGB4444Row)(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
+                                    int width);
+#if defined(HAS_FASTCONVERTYUVTOARGB4444ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToARGB4444Row = FastConvertYUVToARGB4444Row_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOARGB4444ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    FastConvertYUVToARGB4444Row = FastConvertYUVToARGB4444Row_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToARGB4444Row = FastConvertYUVToARGB4444Row_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToARGB4444Row(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+// Convert I420 to RGB24.
+int I420ToRGB24(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToRGB24Row)(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
+                                    int width);
+#if defined(HAS_FASTCONVERTYUVTORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToRGB24Row = FastConvertYUVToRGB24Row_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTORGB24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    FastConvertYUVToRGB24Row = FastConvertYUVToRGB24Row_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToRGB24Row = FastConvertYUVToRGB24Row_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToRGB24Row(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+// Convert I420 to RAW.
+int I420ToRAW(const uint8* src_y, int src_stride_y,
+                 const uint8* src_u, int src_stride_u,
+                 const uint8* src_v, int src_stride_v,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*FastConvertYUVToRAWRow)(const uint8* y_buf,
+                                    const uint8* u_buf,
+                                    const uint8* v_buf,
+                                    uint8* rgb_buf,
+                                    int width);
+#if defined(HAS_FASTCONVERTYUVTORAWROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToRAWRow = FastConvertYUVToRAWRow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTORAWROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    FastConvertYUVToRAWRow = FastConvertYUVToRAWRow_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToRAWRow = FastConvertYUVToRAWRow_C;
+  }
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToRAWRow(src_y, src_u, src_v, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -1875,31 +2086,31 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
   return 0;
 }
 
-// Convert BG24 to ARGB.
-int BG24ToARGB(const uint8* src_bg24, int src_stride_bg24,
+// Convert RGB24 to ARGB.
+int BG24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
   if (height < 0) {
     height = -height;
-    src_bg24 = src_bg24 + (height - 1) * src_stride_bg24;
-    src_stride_bg24 = -src_stride_bg24;
+    src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;
+    src_stride_rgb24 = -src_stride_rgb24;
   }
-  void (*BG24ToARGBRow)(const uint8* src_bg24, uint8* dst_argb, int pix);
-#if defined(HAS_BG24TOARGBROW_SSSE3)
+  void (*RGB24ToARGBRow)(const uint8* src_rgb24, uint8* dst_argb, int pix);
+#if defined(HAS_RGB24TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_bg24, 16) && IS_ALIGNED(src_stride_bg24, 16) &&
+      IS_ALIGNED(src_rgb24, 16) && IS_ALIGNED(src_stride_rgb24, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    BG24ToARGBRow = BG24ToARGBRow_SSSE3;
+    RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
   } else
 #endif
   {
-    BG24ToARGBRow = BG24ToARGBRow_C;
+    RGB24ToARGBRow = RGB24ToARGBRow_C;
   }
 
   for (int y = 0; y < height; ++y) {
-    BG24ToARGBRow(src_bg24, dst_argb, width);
-    src_bg24 += src_stride_bg24;
+    RGB24ToARGBRow(src_rgb24, dst_argb, width);
+    src_rgb24 += src_stride_rgb24;
     dst_argb += dst_stride_argb;
   }
   return 0;

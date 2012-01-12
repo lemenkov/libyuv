@@ -49,8 +49,8 @@ CONST uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
-// Shuffle table for converting BG24 to ARGB.
-CONST uvec8 kShuffleMaskBG24ToARGB = {
+// Shuffle table for converting RGB24 to ARGB.
+CONST uvec8 kShuffleMaskRGB24ToARGB = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
@@ -143,7 +143,7 @@ void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
 );
 }
 
-void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
+void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"  // generate mask 0xff000000
   "pslld      $0x18,%%xmm5                     \n"
@@ -172,10 +172,10 @@ void BG24ToARGBRow_SSSE3(const uint8* src_bg24, uint8* dst_argb, int pix) {
   "lea        0x40(%1),%1                      \n"
   "sub        $0x10,%2                         \n"
   "ja         1b                               \n"
-  : "+r"(src_bg24),  // %0
+  : "+r"(src_rgb24),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
-  : "m"(kShuffleMaskBG24ToARGB)  // %3
+  : "m"(kShuffleMaskRGB24ToARGB)  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"

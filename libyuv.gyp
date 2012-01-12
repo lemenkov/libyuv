@@ -30,7 +30,6 @@
         'include/libyuv/video_common.h',
 
         # headers
-        'source/conversion_tables.h',
         'source/rotate_priv.h',
         'source/row.h',
 

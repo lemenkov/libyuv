@@ -16,7 +16,6 @@
 #include <emmintrin.h>  // Not currently used
 #endif
 
-#include "conversion_tables.h"
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
@@ -29,372 +28,6 @@
 namespace libyuv {
 extern "C" {
 #endif
-
-static __inline uint8 Clip(int32 val) {
-  if (val < 0) {
-    return (uint8) 0;
-  } else if (val > 255){
-    return (uint8) 255;
-  }
-  return (uint8) val;
-}
-
-// FourCC is 24BG.  bgr in memory
-// TODO(fbarchard): rewrite with row functions
-int I420ToRGB24(const uint8* src_y, int src_stride_y,
-                const uint8* src_u, int src_stride_u,
-                const uint8* src_v, int src_stride_v,
-                uint8* dst_frame, int dst_stride_frame,
-                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
-    return -1;
-  }
-  // TODO(fbarchard): support inversion
-  uint8* out = dst_frame;
-  uint8* out2 = out + dst_stride_frame;
-  int h, w;
-  int tmp_r, tmp_g, tmp_b;
-  const uint8 *y1, *y2 ,*u, *v;
-  y1 = src_y;
-  y2 = y1 + src_stride_y;
-  u = src_u;
-  v = src_v;
-  for (h = ((height + 1) >> 1); h > 0; h--){
-    // 2 rows at a time, 2 y's at a time
-    for (w = 0; w < ((width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0] = Clip(tmp_b);
-      out[1] = Clip(tmp_g);
-      out[2] = Clip(tmp_r);
-
-      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[3] = Clip(tmp_b);
-      out[4] = Clip(tmp_g);
-      out[5] = Clip(tmp_r);
-
-      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = Clip(tmp_b);
-      out2[1] = Clip(tmp_g);
-      out2[2] = Clip(tmp_r);
-
-      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[3] = Clip(tmp_b);
-      out2[4] = Clip(tmp_g);
-      out2[5] = Clip(tmp_r);
-
-      out += 6;
-      out2 += 6;
-      y1 += 2;
-      y2 += 2;
-      u++;
-      v++;
-    }
-    y1 += 2 * src_stride_y - width;
-    y2 += 2 * src_stride_y - width;
-    u += src_stride_u - ((width + 1) >> 1);
-    v += src_stride_v - ((width + 1) >> 1);
-    out += dst_stride_frame;
-    out2 += dst_stride_frame;
-  }
-  return 0;
-}
-
-// FourCC is RAW.  Same as RGB24 but r,g,b instead of b,g,r
-// TODO(fbarchard): rewrite with row functions
-int I420ToRAW(const uint8* src_y, int src_stride_y,
-              const uint8* src_u, int src_stride_u,
-              const uint8* src_v, int src_stride_v,
-              uint8* dst_frame, int dst_stride_frame,
-              int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
-    return -1;
-  }
-
-  // RGB orientation - bottom up
-  // TODO(fbarchard): support inversion
-  uint8* out = dst_frame + dst_stride_frame * height - dst_stride_frame;
-  uint8* out2 = out - dst_stride_frame;
-  int h, w;
-  int tmp_r, tmp_g, tmp_b;
-  const uint8 *y1, *y2 ,*u, *v;
-  y1 = src_y;
-  y2 = y1 + src_stride_y;
-  u = src_u;
-  v = src_v;
-  for (h = ((height + 1) >> 1); h > 0; h--){
-    // 2 rows at a time, 2 y's at a time
-    for (w = 0; w < ((width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0] = Clip(tmp_r);
-      out[1] = Clip(tmp_g);
-      out[2] = Clip(tmp_b);
-
-      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[3] = Clip(tmp_r);
-      out[4] = Clip(tmp_g);
-      out[5] = Clip(tmp_b);
-
-      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = Clip(tmp_r);
-      out2[1] = Clip(tmp_g);
-      out2[2] = Clip(tmp_b);
-
-      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[3] = Clip(tmp_r);
-      out2[4] = Clip(tmp_g);
-      out2[5] = Clip(tmp_b);
-
-      out += 6;
-      out2 += 6;
-      y1 += 2;
-      y2 += 2;
-      u++;
-      v++;
-    }
-    y1 += src_stride_y + src_stride_y - width;
-    y2 += src_stride_y + src_stride_y - width;
-    u += src_stride_u - ((width + 1) >> 1);
-    v += src_stride_v - ((width + 1) >> 1);
-    out -= dst_stride_frame * 3;
-    out2 -= dst_stride_frame * 3;
-  } // end height for
-  return 0;
-}
-
-// FourCC is R444. Little Endian...
-// TODO(fbarchard): rewrite with row functions
-int I420ToARGB4444(const uint8* src_y, int src_stride_y,
-                   const uint8* src_u, int src_stride_u,
-                   const uint8* src_v, int src_stride_v,
-                   uint8* dst_frame, int dst_stride_frame,
-                   int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
-    return -1;
-  }
-
-  // RGB orientation - bottom up
-  uint8* out = dst_frame + dst_stride_frame * (height - 1);
-  uint8* out2 = out - dst_stride_frame;
-  int tmp_r, tmp_g, tmp_b;
-  const uint8 *y1,*y2, *u, *v;
-  y1 = src_y;
-  y2 = y1 + src_stride_y;
-  u = src_u;
-  v = src_v;
-  int h, w;
-
-  for (h = ((height + 1) >> 1); h > 0; h--) {
-    // 2 rows at a time, 2 y's at a time
-    for (w = 0; w < ((width + 1) >> 1); w++) {
-        // Vertical and horizontal sub-sampling
-        // Convert to RGB888 and re-scale to 4 bits
-        tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-        tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-        out[0] =(uint8)((Clip(tmp_g) & 0xf0) + (Clip(tmp_b) >> 4));
-        out[1] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
-
-        tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-        tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-        out[2] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
-        out[3] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
-
-        tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-        tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-        out2[0] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
-        out2[1] = (uint8) (0xf0 + (Clip(tmp_r) >> 4));
-
-        tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-        tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-        tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-        out2[2] = (uint8)((Clip(tmp_g) & 0xf0 ) + (Clip(tmp_b) >> 4));
-        out2[3] = (uint8)(0xf0 + (Clip(tmp_r) >> 4));
-
-        out += 4;
-        out2 += 4;
-        y1 += 2;
-        y2 += 2;
-        u++;
-        v++;
-    }
-    y1 += 2 * src_stride_y - width;
-    y2 += 2 * src_stride_y - width;
-    u += src_stride_u - ((width + 1) >> 1);
-    v += src_stride_v - ((width + 1) >> 1);
-    out -= (dst_stride_frame + width) * 2;
-    out2 -= (dst_stride_frame + width) * 2;
-  } // end height for
-  return 0;
-}
-
-// FourCC RGBP little endian rgb565
-// TODO(fbarchard): rewrite with row functions
-int I420ToRGB565(const uint8* src_y, int src_stride_y,
-                 const uint8* src_u, int src_stride_u,
-                 const uint8* src_v, int src_stride_v,
-                 uint8* dst_frame, int dst_stride_frame,
-                 int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
-    return -1;
-  }
-
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-  uint16* out = (uint16*)(dst_frame) + dst_stride_frame * (height - 1);
-  uint16* out2 = out - dst_stride_frame;
-
-  int tmp_r, tmp_g, tmp_b;
-  const uint8* y1,* y2, * u, * v;
-  y1 = src_y;
-  y2 = y1 + src_stride_y;
-  u = src_u;
-  v = src_v;
-  int h, w;
-
-  for (h = ((height + 1) >> 1); h > 0; h--){
-    // 2 rows at a time, 2 y's at a time
-    for (w = 0; w < ((width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-      // 1. Convert to RGB888
-      // 2. Shift to adequate location (in the 16 bit word) - RGB 565
-
-      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0]  = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
-                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
-
-      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
-                         & 0xfc) << 3) + (Clip(tmp_b ) >> 3);
-
-      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
-                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
-
-      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[1] = (uint16)((Clip(tmp_r) & 0xf8) << 8) + ((Clip(tmp_g)
-                          & 0xfc) << 3) + (Clip(tmp_b) >> 3);
-
-      y1 += 2;
-      y2 += 2;
-      out += 2;
-      out2 += 2;
-      u++;
-      v++;
-    }
-    y1 += 2 * src_stride_y - width;
-    y2 += 2 * src_stride_y - width;
-    u += src_stride_u - ((width + 1) >> 1);
-    v += src_stride_v - ((width + 1) >> 1);
-    out -= 2 * dst_stride_frame + width;
-    out2 -=  2 * dst_stride_frame + width;
-  }
-  return 0;
-}
-
-// FourCC RGBO little endian rgb565
-// TODO(fbarchard): rewrite with row functions
-int I420ToARGB1555(const uint8* src_y, int src_stride_y,
-                   const uint8* src_u, int src_stride_u,
-                   const uint8* src_v, int src_stride_v,
-                   uint8* dst_frame, int dst_stride_frame,
-                   int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
-    return -1;
-  }
-  uint16* out = (uint16*)(dst_frame) + dst_stride_frame * (height - 1);
-  uint16* out2 = out - dst_stride_frame ;
-  int32 tmp_r, tmp_g, tmp_b;
-  const uint8 *y1,*y2, *u, *v;
-  int h, w;
-
-  y1 = src_y;
-  y2 = y1 + src_stride_y;
-  u = src_u;
-  v = src_v;
-
-  for (h = ((height + 1) >> 1); h > 0; h--){
-    // 2 rows at a time, 2 y's at a time
-    for (w = 0; w < ((width + 1) >> 1); w++){
-      // Vertical and horizontal sub-sampling
-      // 1. Convert to RGB888
-      // 2. Shift to adequate location (in the 16 bit word) - RGB 555
-      // 3. Add 1 for alpha value
-      tmp_r = (int32)((mapYc[y1[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[0]] + mapUcb[u[0]] + 128) >> 8);
-      out[0]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
-                ((Clip(tmp_g) & 0xf8) << 3) + (Clip(tmp_b) >> 3));
-
-      tmp_r = (int32)((mapYc[y1[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y1[1]] + mapUcg[u[0]] + mapVcg[v[0]]  + 128) >> 8);
-      tmp_b = (int32)((mapYc[y1[1]] + mapUcb[u[0]] + 128) >> 8);
-      out[1]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
-                ((Clip(tmp_g) & 0xf8) << 3)  + (Clip(tmp_b) >> 3));
-
-      tmp_r = (int32)((mapYc[y2[0]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[0]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[0]] + mapUcb[u[0]] + 128) >> 8);
-      out2[0]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
-                 ((Clip(tmp_g) & 0xf8) << 3) + (Clip(tmp_b) >> 3));
-
-      tmp_r = (int32)((mapYc[y2[1]] + mapVcr[v[0]] + 128) >> 8);
-      tmp_g = (int32)((mapYc[y2[1]] + mapUcg[u[0]] + mapVcg[v[0]] + 128) >> 8);
-      tmp_b = (int32)((mapYc[y2[1]] + mapUcb[u[0]] + 128) >> 8);
-      out2[1]  = (uint16)(0x8000 + ((Clip(tmp_r) & 0xf8) << 10) +
-                 ((Clip(tmp_g) & 0xf8) << 3)  + (Clip(tmp_b) >> 3));
-
-      y1 += 2;
-      y2 += 2;
-      out += 2;
-      out2 += 2;
-      u++;
-      v++;
-    }
-    y1 += 2 * src_stride_y - width;
-    y2 += 2 * src_stride_y - width;
-    u += src_stride_u - ((width + 1) >> 1);
-    v += src_stride_v - ((width + 1) >> 1);
-    out -= 2 * dst_stride_frame + width;
-    out2 -=  2 * dst_stride_frame + width;
-  }
-  return 0;
-}
 
 // YUY2 - Macro-pixel = 2 image pixels
 // Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
@@ -685,7 +318,7 @@ loop0:
   return 0;
 }
 
-
+#if HAVE_NV12TORGB565
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
                  uint8* dst_frame, int dst_stride_frame,
@@ -754,6 +387,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
+#endif
 
 // TODO(fbarchard): Deprecated - this is same as BG24ToARGB with -height
 int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
@@ -952,27 +586,37 @@ int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
     src_frame = src_frame + (height - 1) * src_stride_frame;
     src_stride_frame = -src_stride_frame;
   }
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  void (*RGB24ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#if defined(HAS_RGB24TOYROW_SSSE3)
+#if defined(HAS_RGB24TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = RGB24ToYRow_SSSE3;
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
+    RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
   } else
 #endif
   {
-    ARGBToYRow = RGB24ToYRow_C;
+    RGB24ToARGBRow = RGB24ToARGBRow_C;
   }
-#if defined(HAS_RGB24TOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
       IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    ARGBToUVRow = RGB24ToUVRow_SSSE3;
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
   {
@@ -980,17 +624,20 @@ int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
-    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    RGB24ToARGBRow(src_frame, row, width);
+    RGB24ToARGBRow(src_frame + src_stride_frame, row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
+    RGB24ToARGBRow(src_frame, row, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
@@ -1005,27 +652,37 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
     src_frame = src_frame + (height - 1) * src_stride_frame;
     src_stride_frame = -src_stride_frame;
   }
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  void (*RAWToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#if defined(HAS_RAWTOYROW_SSSE3)
+#if defined(HAS_RAWTOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = RAWToYRow_SSSE3;
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
+    RAWToARGBRow = RAWToARGBRow_SSSE3;
   } else
 #endif
   {
-    ARGBToYRow = RAWToYRow_C;
+    RAWToARGBRow = RAWToARGBRow_C;
   }
-#if defined(HAS_RAWTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
       IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    ARGBToUVRow = RAWToUVRow_SSSE3;
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
   {
@@ -1033,17 +690,20 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
-    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    RAWToARGBRow(src_frame, row, width);
+    RAWToARGBRow(src_frame + src_stride_frame, row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
+    RAWToARGBRow(src_frame, row, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
@@ -1058,27 +718,37 @@ int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
     src_frame = src_frame + (height - 1) * src_stride_frame;
     src_stride_frame = -src_stride_frame;
   }
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  void (*RGB565ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#if defined(HAS_RGB565TOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
+#if defined(HAS_RGB565TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = RGB565ToYRow_SSSE3;
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
+    RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
   } else
 #endif
   {
-    ARGBToYRow = RGB565ToYRow_C;
+    RGB565ToARGBRow = RGB565ToARGBRow_C;
   }
-#if defined(HAS_RGB565TOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
       IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    ARGBToUVRow = RGB565ToUVRow_SSSE3;
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
   {
@@ -1086,52 +756,65 @@ int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
-    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    RGB565ToARGBRow(src_frame, row, width);
+    RGB565ToARGBRow(src_frame + src_stride_frame, row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
+    RGB565ToARGBRow(src_frame, row, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
 
 int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
-                 uint8* dst_y, int dst_stride_y,
-                 uint8* dst_u, int dst_stride_u,
-                 uint8* dst_v, int dst_stride_v,
-                 int width, int height) {
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
   if (height < 0) {
     height = -height;
     src_frame = src_frame + (height - 1) * src_stride_frame;
     src_stride_frame = -src_stride_frame;
   }
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  void (*ARGB1555ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#if defined(HAS_ARGB1555TOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
+#if defined(HAS_ARGB1555TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = ARGB1555ToYRow_SSSE3;
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
   } else
 #endif
   {
-    ARGBToYRow = ARGB1555ToYRow_C;
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_C;
   }
-#if defined(HAS_ARGB1555TOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
       IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    ARGBToUVRow = ARGB1555ToUVRow_SSSE3;
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
   {
@@ -1139,52 +822,65 @@ int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
-    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    ARGB1555ToARGBRow(src_frame, row, width);
+    ARGB1555ToARGBRow(src_frame + src_stride_frame, row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
+    ARGB1555ToARGBRow(src_frame, row, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
 
 int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
-                 uint8* dst_y, int dst_stride_y,
-                 uint8* dst_u, int dst_stride_u,
-                 uint8* dst_v, int dst_stride_v,
-                 int width, int height) {
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
   if (height < 0) {
     height = -height;
     src_frame = src_frame + (height - 1) * src_stride_frame;
     src_stride_frame = -src_stride_frame;
   }
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  void (*ARGB4444ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-#if defined(HAS_ARGB4444TOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
+#if defined(HAS_ARGB4444TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = ARGB4444ToYRow_SSSE3;
+      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
   } else
 #endif
   {
-    ARGBToYRow = ARGB4444ToYRow_C;
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_C;
   }
-#if defined(HAS_ARGB4444TOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToYRow = ARGBToYRow_C;
+  }
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
       IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
-    ARGBToUVRow = ARGB4444ToUVRow_SSSE3;
+    ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
   {
@@ -1192,17 +888,20 @@ int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
-    ARGBToUVRow(src_frame, src_stride_frame, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
-    ARGBToYRow(src_frame + src_stride_frame, dst_y + dst_stride_y, width);
+    ARGB4444ToARGBRow(src_frame, row, width);
+    ARGB4444ToARGBRow(src_frame + src_stride_frame, row + kMaxStride, width);
+    ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
+    ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
     src_frame += src_stride_frame * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_frame, 0, dst_u, dst_v, width);
-    ARGBToYRow(src_frame, dst_y, width);
+    ARGB4444ToARGBRow(src_frame, row, width);
+    ARGBToUVRow(row, 0, dst_u, dst_v, width);
+    ARGBToYRow(row, dst_y, width);
   }
   return 0;
 }
