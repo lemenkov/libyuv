@@ -79,6 +79,12 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert NV12 to RGB565.  Also used for NV21.
+int NV12ToRGB565(const uint8* src_y, int src_stride_y,
+                 const uint8* src_uv, int src_stride_uv,
+                 uint8* dst_frame, int dst_stride_frame,
+                 int width, int height);
+
 // Copy to I400.  Source can be I420,422,444,400,NV12,NV21
 int I400Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_y, int dst_stride_y,

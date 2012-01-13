@@ -122,11 +122,6 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-int NV12ToRGB565(const uint8* src_y, int src_stride_y,
-                 const uint8* src_uv, int src_stride_uv,
-                 uint8* dst_frame, int dst_stride_frame,
-                 int width, int height);
-
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
 // "dst_stride_y" number of bytes in a row of the dst_y plane.
