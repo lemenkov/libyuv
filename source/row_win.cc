@@ -229,53 +229,50 @@ __asm {
   }
 }
 
+#ifdef SHIFT565
+// Below shift/mask code is efficient and works, but more instructions than
+// pmul method
 // TODO(fbarchard): Port RGB565ToARGBRow_SSE2 to gcc
+// 29 instructions
 __declspec(naked)
-void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
-                          int pix) {
+void OldRGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
+                             int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_rgb565
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
-    pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
+    pcmpeqb   xmm5, xmm5       // generate mask 0xff000000 for Alpha
     pslld     xmm5, 24
-    pcmpeqb   xmm4, xmm4       // generate mask 0xf800f800
+    pcmpeqb   xmm4, xmm4       // generate mask 0xf800f800 for Red
     psllw     xmm4, 11
-    pcmpeqb   xmm6, xmm6       // generate mask 0x001f001f
+    pcmpeqb   xmm6, xmm6       // generate mask 0x001f001f for Blue
     psrlw     xmm6, 11
-    pcmpeqb   xmm7, xmm7       // generate mask 0x00fc00fc
+    pcmpeqb   xmm7, xmm7       // generate mask 0x00fc00fc for Green
     psrlw     xmm7, 10
     psllw     xmm7, 2
-
 
  convertloop:
     movdqa    xmm0, [eax] // fetch 8 pixels of bgr565
     lea       eax, [eax + 16]
-
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
     pand      xmm1, xmm4    // R in upper 5 bits
     psrlw     xmm2, 13      // R 3 bits
     psllw     xmm2, 8
     por       xmm1, xmm2
-
     movdqa    xmm2, xmm0
     pand      xmm2, xmm6    // mask B 5 bits
     movdqa    xmm3, xmm2
     psllw     xmm2, 3
     psrlw     xmm3, 2
     por       xmm2, xmm3
-
     por       xmm1, xmm2    // RB
-
     psrlw     xmm0, 3       // G in top 6 bits of lower byte
     pand      xmm0, xmm7    // mask G 6 bits
     movdqa    xmm2, xmm0
     psrlw     xmm2, 6
     por       xmm0, xmm2
-
     por       xmm0, xmm5   // AG
-
     movdqa    xmm2, xmm1
     punpcklbw xmm1, xmm0
     punpckhbw xmm2, xmm0
@@ -288,7 +285,177 @@ __asm {
   }
 }
 
+// TODO(fbarchard): Port ARGB1555ToARGBRow_SSE2 to gcc
+// 33 instructions
+__declspec(naked)
+void OldARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
+                               int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_argb1555
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    pcmpeqb   xmm5, xmm5       // generate mask 0xff00ff00 for Alpha
+    psllw     xmm5, 8
+    pcmpeqb   xmm4, xmm4       // generate mask 0xf800f800 for Red
+    psllw     xmm4, 11
+    pcmpeqb   xmm6, xmm6       // generate mask 0x001f001f for Blue
+    psrlw     xmm6, 11
+    pcmpeqb   xmm7, xmm7       // generate mask 0x00f800f8 for Green
+    psrlw     xmm7, 11
+    psllw     xmm7, 3
+
+ convertloop:
+    movdqa    xmm0, [eax] // fetch 8 pixels of bgr565
+    lea       eax, [eax + 16]
+    movdqa    xmm1, xmm0
+    psllw     xmm1, 1
+    movdqa    xmm2, xmm0
+    pand      xmm1, xmm4    // R in upper 5 bits
+    psrlw     xmm2, 13      // R 3 bits
+    psllw     xmm2, 8
+    por       xmm1, xmm2
+    movdqa    xmm2, xmm0
+    pand      xmm2, xmm6    // mask B 5 bits
+    movdqa    xmm3, xmm2
+    psllw     xmm2, 3
+    psrlw     xmm3, 2
+    por       xmm2, xmm3
+    por       xmm1, xmm2    // RB
+    movdqa    xmm2, xmm0
+    psrlw     xmm2, 2       // G in top 5 bits of lower byte
+    pand      xmm2, xmm7    // mask G 5 bits
+    movdqa    xmm3, xmm2
+    psrlw     xmm3, 5
+    por       xmm2, xmm3
+    psraw     xmm0, 8       // A
+    pand      xmm0, xmm5
+    por       xmm0, xmm2    // AG
+    movdqa    xmm2, xmm1
+    punpcklbw xmm1, xmm0
+    punpckhbw xmm2, xmm0
+    movdqa    [edx], xmm1  // store 4 pixels of ARGB
+    movdqa    [edx + 16], xmm2  // store next 4 pixels of ARGB
+    lea       edx, [edx + 32]
+    sub       ecx, 8
+    ja        convertloop
+    ret
+  }
+}
+#endif
+
+// pmul method to replicate bits
+// Math to replicate bits
+// (v << 8) | (v << 3)
+// v * 256 + v * 8
+// v * (256 + 8)
+// G shift of 5 is incorporated, so shift is 5 + 8 and 5 + 3
+// 20 instructions
+__declspec(naked)
+void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
+                          int pix) {
+__asm {
+    mov       eax, 0x01080108  // generate multiplier to repeat 5 bits
+    movd      xmm5, eax
+    pshufd    xmm5, xmm5, 0
+    mov       eax, 0x20082008  // multiplier shift by 5 and then repeat 6 bits
+    movd      xmm6, eax
+    pshufd    xmm6, xmm6, 0
+    pcmpeqb   xmm3, xmm3       // generate mask 0xf800f800 for Red
+    psllw     xmm3, 11
+    pcmpeqb   xmm4, xmm4       // generate mask 0x07e007e0 for Green
+    psllw     xmm4, 10
+    psrlw     xmm4, 5
+    pcmpeqb   xmm7, xmm7       // generate mask 0xff00ff00 for Alpha
+    psllw     xmm7, 8
+
+    mov       eax, [esp + 4]   // src_rgb565
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    sub       edx, eax
+    sub       edx, eax
+
+ convertloop:
+    movdqa    xmm0, [eax] // fetch 8 pixels of bgr565
+    movdqa    xmm1, xmm0
+    movdqa    xmm2, xmm0
+    pand      xmm1, xmm3    // R in upper 5 bits
+    psllw     xmm2, 11      // B in upper 5 bits
+    pmulhuw   xmm1, xmm5    // * (256 + 8)
+    pmulhuw   xmm2, xmm5    // * (256 + 8)
+    psllw     xmm1, 8
+    por       xmm1, xmm2    // RB
+    pand      xmm0, xmm4    // G in middle 6 bits
+    pmulhuw   xmm0, xmm6    // << 5 * (256 + 4)
+    por       xmm0, xmm7    // AG
+    movdqa    xmm2, xmm1
+    punpcklbw xmm1, xmm0
+    punpckhbw xmm2, xmm0
+    movdqa    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
+    movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
+    lea       eax, [eax + 16]
+    sub       ecx, 8
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port ARGB1555ToARGBRow_SSE2 to gcc
+// 24 instructions
+__declspec(naked)
+void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
+                            int pix) {
+__asm {
+    mov       eax, 0x01080108  // generate multiplier to repeat 5 bits
+    movd      xmm5, eax
+    pshufd    xmm5, xmm5, 0
+    mov       eax, 0x42004200  // multiplier shift by 6 and then repeat 5 bits
+    movd      xmm6, eax
+    pshufd    xmm6, xmm6, 0
+    pcmpeqb   xmm3, xmm3       // generate mask 0xf800f800 for Red
+    psllw     xmm3, 11
+    pcmpeqb   xmm4, xmm4       // generate mask 0x03e003e0 for Green
+    psllw     xmm4, 11
+    psrlw     xmm4, 6
+    pcmpeqb   xmm7, xmm7       // generate mask 0xff00ff00 for Alpha
+    psllw     xmm7, 8
+
+    mov       eax, [esp + 4]   // src_argb1555
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    sub       edx, eax
+    sub       edx, eax
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 8 pixels of 1555
+    movdqa    xmm1, xmm0
+    movdqa    xmm2, xmm0
+    psllw     xmm1, 1       // R in upper 5 bits
+    psllw     xmm2, 11      // B in upper 5 bits
+    pand      xmm1, xmm3
+    pmulhuw   xmm2, xmm5    // * (256 + 8)
+    pmulhuw   xmm1, xmm5    // * (256 + 8)
+    psllw     xmm1, 8
+    por       xmm1, xmm2    // RB
+    movdqa    xmm2, xmm0
+    pand      xmm0, xmm4    // G in middle 5 bits
+    psraw     xmm2, 8       // A
+    pmulhuw   xmm0, xmm6    // << 6 * (256 + 8)
+    pand      xmm2, xmm7
+    por       xmm0, xmm2    // AG
+    movdqa    xmm2, xmm1
+    punpcklbw xmm1, xmm0
+    punpckhbw xmm2, xmm0
+    movdqa    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
+    movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
+    lea       eax, [eax + 16]
+    sub       ecx, 8
+    ja        convertloop
+    ret
+  }
+}
+
 // TODO(fbarchard): Port ARGB4444ToARGBRow_SSE2 to gcc
+// 18 instructions
 __declspec(naked)
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
@@ -301,10 +468,11 @@ __asm {
     mov       eax, [esp + 4]   // src_argb4444
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
+    sub       edx, eax
+    sub       edx, eax
 
  convertloop:
-    movdqa    xmm0, qword ptr [eax] // fetch 8 pixels of bgra4444
-    lea       eax, [eax + 16]
+    movdqa    xmm0, [eax]   // fetch 8 pixels of bgra4444
     movdqa    xmm2, xmm0
     pand      xmm0, xmm4    // mask low nibbles
     pand      xmm2, xmm5    // mask high nibbles
@@ -317,9 +485,9 @@ __asm {
     movdqa    xmm1, xmm0
     punpcklbw xmm0, xmm2
     punpckhbw xmm1, xmm2
-    movdqa    [edx], xmm0  // store 4 pixels of ARGB
-    movdqa    [edx + 16], xmm1  // store next 4 pixels of ARGB
-    lea       edx, [edx + 32]
+    movdqa    [eax * 2 + edx], xmm0  // store 4 pixels of ARGB
+    movdqa    [eax * 2 + edx + 16], xmm1  // store next 4 pixels of ARGB
+    lea       eax, [eax + 16]
     sub       ecx, 8
     ja        convertloop
     ret
