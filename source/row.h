@@ -61,6 +61,7 @@
 // The following are available on Windows platforms
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_ARGB4444TOARGBROW_SSE2
+#define HAS_RGB565TOARGBROW_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -213,9 +214,11 @@ void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix);
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
-// TODO(fbarchard): SSE2 565 etc
-//void RGB565ToARGBRow_SSE2(const uint8* src_rgb, uint8* dst_argb, int pix);
+// TODO(fbarchard): SSE2 555
 //void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
+#endif
+#ifdef HAS_RGB565TOARGBROW_SSE2
+void RGB565ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 #endif
 #ifdef HAS_ARGB4444TOARGBROW_SSE2
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);

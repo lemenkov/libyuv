@@ -229,6 +229,65 @@ __asm {
   }
 }
 
+// TODO(fbarchard): Port RGB565ToARGBRow_SSE2 to gcc
+__declspec(naked)
+void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
+                          int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_rgb565
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
+    pslld     xmm5, 24
+    pcmpeqb   xmm4, xmm4       // generate mask 0xf800f800
+    psllw     xmm4, 11
+    pcmpeqb   xmm6, xmm6       // generate mask 0x001f001f
+    psrlw     xmm6, 11
+    pcmpeqb   xmm7, xmm7       // generate mask 0x00fc00fc
+    psrlw     xmm7, 10
+    psllw     xmm7, 2
+
+
+ convertloop:
+    movdqa    xmm0, [eax] // fetch 8 pixels of bgr565
+    lea       eax, [eax + 16]
+
+    movdqa    xmm1, xmm0
+    movdqa    xmm2, xmm0
+    pand      xmm1, xmm4    // R in upper 5 bits
+    psrlw     xmm2, 13      // R 3 bits
+    psllw     xmm2, 8
+    por       xmm1, xmm2
+
+    movdqa    xmm2, xmm0
+    pand      xmm2, xmm6    // mask B 5 bits
+    movdqa    xmm3, xmm2
+    psllw     xmm2, 3
+    psrlw     xmm3, 2
+    por       xmm2, xmm3
+
+    por       xmm1, xmm2    // RB
+
+    psrlw     xmm0, 3       // G in top 6 bits of lower byte
+    pand      xmm0, xmm7    // mask G 6 bits
+    movdqa    xmm2, xmm0
+    psrlw     xmm2, 6
+    por       xmm0, xmm2
+
+    por       xmm0, xmm5   // AG
+
+    movdqa    xmm2, xmm1
+    punpcklbw xmm1, xmm0
+    punpckhbw xmm2, xmm0
+    movdqa    [edx], xmm1  // store 4 pixels of ARGB
+    movdqa    [edx + 16], xmm2  // store next 4 pixels of ARGB
+    lea       edx, [edx + 32]
+    sub       ecx, 8
+    ja        convertloop
+    ret
+  }
+}
+
 // TODO(fbarchard): Port ARGB4444ToARGBRow_SSE2 to gcc
 __declspec(naked)
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
