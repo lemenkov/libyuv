@@ -549,7 +549,7 @@ int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
   } else
 #endif
   {
-    ARGBToUVRow = RGB24ToUVRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
@@ -615,7 +615,7 @@ int RAWToI420(const uint8* src_frame, int src_stride_frame,
   } else
 #endif
   {
-    ARGBToUVRow = RAWToUVRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
@@ -681,7 +681,7 @@ int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
   } else
 #endif
   {
-    ARGBToUVRow = RGB565ToUVRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
@@ -747,7 +747,7 @@ int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
   } else
 #endif
   {
-    ARGBToUVRow = ARGB1555ToUVRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
   }
 
   for (int y = 0; y < (height - 1); y += 2) {
@@ -813,7 +813,7 @@ int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
   } else
 #endif
   {
-    ARGBToUVRow = ARGB4444ToUVRow_C;
+    ARGBToUVRow = ARGBToUVRow_C;
   }
 
   for (int y = 0; y < (height - 1); y += 2) {

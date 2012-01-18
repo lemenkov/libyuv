@@ -1624,13 +1624,13 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
 // Convert NV12 to RGB565.
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
-                 uint8* dst_argb, int dst_stride_argb,
+                 uint8* dst_rgb, int dst_stride_rgb,
                  int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
-    dst_stride_argb = -dst_stride_argb;
+    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
+    dst_stride_rgb = -dst_stride_rgb;
   }
   void (*FastConvertYUVToRGB565Row)(const uint8* y_buf,
                                     const uint8* u_buf,
@@ -1644,7 +1644,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
 #elif defined(HAS_FASTCONVERTYUVTORGB565ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 8) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      IS_ALIGNED(dst_rgb, 16) && IS_ALIGNED(dst_stride_rgb, 16)) {
     FastConvertYUVToRGB565Row = FastConvertYUVToRGB565Row_SSSE3;
   } else
 #endif
@@ -1675,8 +1675,8 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
       SplitUV(src_uv, row, row + kMaxStride, halfwidth);
       src_uv += src_stride_uv;
     }
-    FastConvertYUVToRGB565Row(src_y, row, row + kMaxStride, dst_argb, width);
-    dst_argb += dst_stride_argb;
+    FastConvertYUVToRGB565Row(src_y, row, row + kMaxStride, dst_rgb, width);
+    dst_rgb += dst_stride_rgb;
     src_y += src_stride_y;
   }
   return 0;

@@ -375,7 +375,7 @@ __asm {
     sub       edx, eax
 
  convertloop:
-    movdqa    xmm0, [eax] // fetch 8 pixels of bgr565
+    movdqa    xmm0, [eax]   // fetch 8 pixels of bgr565
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
     pand      xmm1, xmm3    // R in upper 5 bits
