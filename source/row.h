@@ -63,6 +63,12 @@
 #define HAS_RGB565TOARGBROW_SSE2
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
+
+#define HAS_ARGBTORGB24ROW_SSSE3
+#define HAS_ARGBTORAWROW_SSSE3
+#define HAS_ARGBTORGB565ROW_SSE2
+#define HAS_ARGBTOARGB1555ROW_SSE2
+#define HAS_ARGBTOARGB4444ROW_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -209,6 +215,20 @@ void RAWToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix);
 void ARGB1555ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
 void ARGB4444ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
+
+void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
+// ARGBToABGRRow_C is same as ABGRToARGB
+// ARGBToBGRARow_C is same as BGRAToARGB
+void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);

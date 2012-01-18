@@ -85,6 +85,15 @@ static const uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
+// Shuffle table for converting ARGB to RGB24.
+static const uvec8 kShuffleMaskARGBToRGB24 = {
+  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u };
+
+
+// Shuffle table for converting ARGB to RAW.
+static const uvec8 kShuffleMaskARGBToRAW = {
+  2u, 1u,0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u };
+
 __declspec(naked)
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
@@ -489,6 +498,201 @@ __asm {
     movdqa    [eax * 2 + edx + 16], xmm1  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port to gcc
+__declspec(naked)
+void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm5, kShuffleMaskARGBToRGB24
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 16 pixels of argb
+    movdqa    xmm1, [eax + 16]
+    movdqa    xmm2, [eax + 32]
+    movdqa    xmm3, [eax + 48]
+    lea       eax, [eax + 64]
+    pshufb    xmm0, xmm5    // pack 16 bytes of ARGB to 12 bytes of RGB
+    pshufb    xmm1, xmm5
+    pshufb    xmm2, xmm5
+    pshufb    xmm3, xmm5
+    movdqa    xmm4, xmm1
+    psllq     xmm4, 12
+    por       xmm4, xmm0
+    movdqa    [edx], xmm4   // first 16 bytes
+    movdqa    xmm4, xmm2
+    psrlq     xmm1, 4
+    psllq     xmm4, 8
+    por       xmm1, xmm4
+    movdqa    [edx + 16], xmm1   // middle 16 bytes
+    psrlq     xmm2, 8
+    psllq     xmm3, 4
+    por       xmm2, xmm3
+    movdqa    [edx + 32], xmm2   // last 16 bytes
+    lea       edx, [edx + 48]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port to gcc
+__declspec(naked)
+void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm5, kShuffleMaskARGBToRAW
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 16 pixels of argb
+    movdqa    xmm1, [eax + 16]
+    movdqa    xmm2, [eax + 32]
+    movdqa    xmm3, [eax + 48]
+    lea       eax, [eax + 64]
+    pshufb    xmm0, xmm5    // pack 16 bytes of ARGB to 12 bytes of RGB
+    pshufb    xmm1, xmm5
+    pshufb    xmm2, xmm5
+    pshufb    xmm3, xmm5
+    movdqa    xmm4, xmm1
+    psllq     xmm4, 12
+    por       xmm4, xmm0
+    movdqa    [edx], xmm4   // first 16 bytes
+    movdqa    xmm4, xmm2
+    psrlq     xmm1, 4
+    psllq     xmm4, 8
+    por       xmm1, xmm4
+    movdqa    [edx + 16], xmm1   // middle 16 bytes
+    psrlq     xmm2, 8
+    psllq     xmm3, 4
+    por       xmm2, xmm3
+    movdqa    [edx + 32], xmm2   // last 16 bytes
+    lea       edx, [edx + 48]
+    sub       ecx, 16
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port to gcc
+__declspec(naked)
+void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+__asm {
+    pcmpeqb   xmm3, xmm3       // generate mask 0x001f001f
+    psrlw     xmm3, 11
+    pcmpeqb   xmm4, xmm4       // generate mask 0x07e007e0
+    psrlw     xmm4, 10
+    psllw     xmm4, 5
+    pcmpeqb   xmm5, xmm5       // generate mask 0xf800f800
+    psrlw     xmm5, 11
+
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 12]  // pix
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    lea       eax, [eax + 16]
+    movdqa    xmm1, xmm0    // B
+    psrlw     xmm1, 3
+    pand      xmm1, xmm3
+    movdqa    xmm2, xmm0    // G
+    psrlw     xmm2, 5
+    pand      xmm2, xmm4
+    por       xmm1, xmm2
+    psrlw     xmm0, 8       // R
+    pand      xmm0, xmm5
+    por       xmm0, xmm1
+    pslld     xmm0, 16
+    psrad     xmm0, 16
+    packssdw  xmm0, xmm0
+    movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
+    lea       edx, [edx + 8]
+    sub       ecx, 4
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port to gcc
+__declspec(naked)
+void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+__asm {
+    pcmpeqb   xmm3, xmm3       // generate mask 0x001f001f
+    psrlw     xmm3, 11
+    movdqa    xmm4, xmm3       // generate mask 0x03e003e0
+    psllw     xmm4, 5
+    movdqa    xmm5, xmm3       // generate mask 0x7c007c00
+    psllw     xmm5, 10
+    pcmpeqb   xmm6, xmm6       // generate mask 0x80008000
+    psrlw     xmm6, 15
+
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 12]  // pix
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    lea       eax, [eax + 16]
+    movdqa    xmm1, xmm0    // B
+    psrlw     xmm1, 3
+    pand      xmm1, xmm3
+    movdqa    xmm2, xmm0    // G
+    psrlw     xmm2, 6
+    pand      xmm2, xmm4
+    por       xmm1, xmm2
+    movdqa    xmm2, xmm0    // R
+    psrlw     xmm2, 9
+    pand      xmm2, xmm5
+    por       xmm1, xmm2
+    movdqa    xmm2, xmm0    // A
+    psrlw     xmm2, 16
+    pand      xmm2, xmm6
+    por       xmm1, xmm2
+    pslld     xmm0, 16
+    psrad     xmm0, 16
+    packssdw  xmm1, xmm1
+    movq      qword ptr [edx], xmm1  // store 4 pixels of ARGB1555
+    lea       edx, [edx + 8]
+    sub       ecx, 4
+    ja        convertloop
+    ret
+  }
+}
+
+// TODO(fbarchard): Port to gcc
+__declspec(naked)
+void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+__asm {
+    pcmpeqb   xmm4, xmm4       // generate mask 0xf000f000
+    psllw     xmm4, 12
+    movdqa    xmm3, xmm4       // generate mask 0x00f000f0
+    psrlw     xmm3, 8
+
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 12]  // pix
+
+ convertloop:
+    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    lea       eax, [eax + 16]
+    movdqa    xmm1, xmm0
+    pand      xmm0, xmm3    // low nibble
+    pand      xmm1, xmm4    // high nibble
+    psrl      xmm0, 4
+    psrl      xmm1, 8
+    por       xmm0, xmm1
+    packuswb  xmm0, xmm0
+    movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB4444
+    lea       edx, [edx + 8]
+    sub       ecx, 4
     ja        convertloop
     ret
   }

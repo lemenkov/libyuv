@@ -192,6 +192,16 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// Convert ARGB To RGB24.
+int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
+                uint8* dst_rgb24, int dst_stride_rgb24,
+                int width, int height);
+
+// Convert ARGB To RAW.
+int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_rgb, int dst_stride_rgb,
+              int width, int height);
+
 // Convert ARGB to I400.
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
