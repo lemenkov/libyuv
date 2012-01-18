@@ -20,17 +20,15 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Convert I420 to specified format.
-// TODO(fbarchard): sample_size should be used to ensure the low levels do
-// not read outside the buffer provided.  It is measured in bytes and is the
-// size of the frame.  With MJPEG it is the compressed size of the frame.
-// TODO(fbarchard): add I400, I444 and RAW support.
-int ConvertFromI420(const uint8* y, int y_stride,
-                    const uint8* u, int u_stride,
-                    const uint8* v, int v_stride,
-                    uint8* dst_sample, size_t dst_sample_size,
-                    int width, int height,
-                    uint32 format) {
+// Convert I420 to specified format
+int ConvertFromI420Stride(const uint8* y, int y_stride,
+                          const uint8* u, int u_stride,
+                          const uint8* v, int v_stride,
+                          uint8* dst_sample, size_t dst_sample_stride,
+                          size_t dst_sample_size,
+                          int width, int height,
+                          uint32 format) {
+
   if (y == NULL || u == NULL || v == NULL || dst_sample == NULL) {
     return -1;
   }
@@ -40,70 +38,80 @@ int ConvertFromI420(const uint8* y, int y_stride,
       I420ToYUY2(y, y_stride,
                  u, u_stride,
                  v, v_stride,
-                 dst_sample, width * 2,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride : width * 2,
                  width, height);
       break;
     case FOURCC_UYVY:
       I420ToUYVY(y, y_stride,
                  u, u_stride,
                  v, v_stride,
-                 dst_sample, width * 2,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride : width * 2,
                  width, height);
       break;
     case FOURCC_RGBP:
       I420ToRGB565(y, y_stride,
                    u, u_stride,
                    v, v_stride,
-                   dst_sample, width * 2,
+                   dst_sample,
+                   dst_sample_stride ? dst_sample_stride : width * 2,
                    width, height);
       break;
     case FOURCC_RGBO:
       I420ToARGB1555(y, y_stride,
                      u, u_stride,
                      v, v_stride,
-                     dst_sample, width * 2,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 2,
                      width, height);
       break;
     case FOURCC_R444:
       I420ToARGB4444(y, y_stride,
                      u, u_stride,
                      v, v_stride,
-                     dst_sample, width * 2,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 2,
                      width, height);
       break;
     case FOURCC_24BG:
       I420ToRGB24(y, y_stride,
                   u, u_stride,
                   v, v_stride,
-                  dst_sample, width * 3,
+                  dst_sample,
+                  dst_sample_stride ? dst_sample_stride : width * 3,
                   width, height);
       break;
     case FOURCC_RAW:
       I420ToRAW(y, y_stride,
                 u, u_stride,
                 v, v_stride,
-                dst_sample, width * 3,
+                dst_sample,
+                dst_sample_stride ? dst_sample_stride : width * 3,
                 width, height);
       break;
     case FOURCC_ARGB:
       I420ToARGB(y, y_stride,
                  u, u_stride,
                  v, v_stride,
-                 dst_sample, width * 4,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride : width * 4,
                  width, height);
       break;
     case FOURCC_BGRA:
       I420ToBGRA(y, y_stride,
                  u, u_stride,
                  v, v_stride,
-                 dst_sample, width * 4,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride : width * 4,
                  width, height);
       break;
     case FOURCC_ABGR:
       I420ToABGR(y, y_stride,
                  u, u_stride,
                  v, v_stride,
-                 dst_sample, width * 4,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride : width * 4,
                  width, height);
       break;
 #ifdef HAVEI420TOBAYER
@@ -114,16 +122,20 @@ int ConvertFromI420(const uint8* y, int y_stride,
       I420ToBayerRGB(y, y_stride,
                      u, u_stride,
                      v, v_stride,
-                     dst_sample, width, format,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width,
+                     format,
                      width, height);
       break;
 #endif
     case FOURCC_I400:
       I400Copy(y, y_stride,
-               dst_sample, width,
+               dst_sample,
+               dst_sample_stride ? dst_sample_stride : width,
                width, height);
       break;
     // Triplanar formats
+    // TODO(fbarchard): halfstride instead of halfwidth
     case FOURCC_I420:
     case FOURCC_YV12: {
       int halfwidth = (width + 1) / 2;
@@ -193,6 +205,24 @@ int ConvertFromI420(const uint8* y, int y_stride,
       return -1;  // unknown fourcc - return failure code.
   }
   return 0;
+}
+
+// Convert I420 to specified format.
+// TODO(fbarchard): sample_size should be used to ensure the low levels do
+// not read outside the buffer provided.  It is measured in bytes and is the
+// size of the frame.  With MJPEG it is the compressed size of the frame.
+// TODO(fbarchard): add I400, I444 and RAW support.
+int ConvertFromI420(const uint8* y, int y_stride,
+                    const uint8* u, int u_stride,
+                    const uint8* v, int v_stride,
+                    uint8* dst_sample, size_t dst_sample_size,
+                    int width, int height,
+                    uint32 format) {
+  return ConvertFromI420Stride(y, y_stride,
+                               u, u_stride,
+                               v, v_stride,
+                               dst_sample, 0, dst_sample_size,
+                               width, height, format);
 }
 
 #ifdef __cplusplus

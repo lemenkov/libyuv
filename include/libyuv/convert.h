@@ -162,6 +162,16 @@ int ConvertFromI420(const uint8* y, int y_stride,
                     int width, int height,
                     uint32 format);
 
+// Convert I420 to specified format with stride.
+// stride applies to first plane.  If zero, width is used to compute stride.
+int ConvertFromI420Stride(const uint8* y, int y_stride,
+                          const uint8* u, int u_stride,
+                          const uint8* v, int v_stride,
+                          uint8* dst_sample, size_t dst_sample_stride,
+                          size_t dst_sample_size,
+                          int width, int height,
+                          uint32 format);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
