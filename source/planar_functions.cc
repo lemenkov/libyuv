@@ -2245,6 +2245,66 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Convert NV12 to ARGB.
+int NV12ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_uv, int src_stride_uv,
+               uint8* dst_rgb, int dst_stride_rgb,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
+    dst_stride_rgb = -dst_stride_rgb;
+  }
+  void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+#if defined(HAS_SPLITUV_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
+    SplitUV = SplitUV_NEON;
+  } else
+#elif defined(HAS_SPLITUV_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(halfwidth, 16) &&
+      IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16)) {
+    SplitUV = SplitUV_SSE2;
+  } else
+#endif
+  {
+    SplitUV = SplitUV_C;
+  }
+  SIMD_ALIGNED(uint8 rowuv[kMaxStride * 2]);
+
+  for (int y = 0; y < height; ++y) {
+    if ((y & 1) == 0) {
+      // Copy a row of UV.
+      SplitUV(src_uv, rowuv, rowuv + kMaxStride, halfwidth);
+      src_uv += src_stride_uv;
+    }
+    FastConvertYUVToARGBRow(src_y, rowuv, rowuv + kMaxStride, dst_rgb, width);
+    dst_rgb += dst_stride_rgb;
+    src_y += src_stride_y;
+  }
+  return 0;
+}
+
 // Convert NV12 to RGB565.
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,

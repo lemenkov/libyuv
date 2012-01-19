@@ -79,6 +79,12 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert NV12 to ARGB.
+int NV12ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_uv, int src_stride_uv,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height);
+
 // Convert NV12 to RGB565.  Also used for NV21.
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
