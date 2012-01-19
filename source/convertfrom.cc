@@ -21,11 +21,16 @@ extern "C" {
 #endif
 
 // Convert I420 to specified format
+// TODO(fbarchard): sample_size should be used to ensure the low levels do
+// not read outside the buffer provided.  It is measured in bytes and is the
+// size of the frame.  With MJPEG it is the compressed size of the frame.
+// dst_sample_stride is bytes in a row for the destination.  Pass 0 if the
+// buffer has contiguous rows.  Can be negative.  A multiple of 16 is optimal.
 int ConvertFromI420Stride(const uint8* y, int y_stride,
                           const uint8* u, int u_stride,
                           const uint8* v, int v_stride,
                           uint8* dst_sample, size_t dst_sample_stride,
-                          size_t dst_sample_size,
+                          size_t /*dst_sample_size*/,
                           int width, int height,
                           uint32 format) {
 
@@ -208,10 +213,6 @@ int ConvertFromI420Stride(const uint8* y, int y_stride,
 }
 
 // Convert I420 to specified format.
-// TODO(fbarchard): sample_size should be used to ensure the low levels do
-// not read outside the buffer provided.  It is measured in bytes and is the
-// size of the frame.  With MJPEG it is the compressed size of the frame.
-// TODO(fbarchard): add I400, I444 and RAW support.
 int ConvertFromI420(const uint8* y, int y_stride,
                     const uint8* u, int u_stride,
                     const uint8* v, int v_stride,
