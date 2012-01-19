@@ -523,16 +523,16 @@ __asm {
     pshufb    xmm2, xmm5
     pshufb    xmm3, xmm5
     movdqa    xmm4, xmm1
-    psllq     xmm4, 12
+    pslldq    xmm4, 12
     por       xmm4, xmm0
     movdqa    [edx], xmm4   // first 16 bytes
     movdqa    xmm4, xmm2
-    psrlq     xmm1, 4
-    psllq     xmm4, 8
+    psrldq    xmm1, 4
+    pslldq    xmm4, 8
     por       xmm1, xmm4
     movdqa    [edx + 16], xmm1   // middle 16 bytes
-    psrlq     xmm2, 8
-    psllq     xmm3, 4
+    psrldq    xmm2, 8
+    pslldq    xmm3, 4
     por       xmm2, xmm3
     movdqa    [edx + 32], xmm2   // last 16 bytes
     lea       edx, [edx + 48]
@@ -562,16 +562,16 @@ __asm {
     pshufb    xmm2, xmm5
     pshufb    xmm3, xmm5
     movdqa    xmm4, xmm1
-    psllq     xmm4, 12
+    pslldq    xmm4, 12
     por       xmm4, xmm0
     movdqa    [edx], xmm4   // first 16 bytes
     movdqa    xmm4, xmm2
-    psrlq     xmm1, 4
-    psllq     xmm4, 8
+    psrldq    xmm1, 4
+    pslldq    xmm4, 8
     por       xmm1, xmm4
     movdqa    [edx + 16], xmm1   // middle 16 bytes
-    psrlq     xmm2, 8
-    psllq     xmm3, 4
+    psrldq    xmm2, 8
+    pslldq    xmm3, 4
     por       xmm2, xmm3
     movdqa    [edx + 32], xmm2   // last 16 bytes
     lea       edx, [edx + 48]
@@ -582,6 +582,7 @@ __asm {
 }
 
 // TODO(fbarchard): Port to gcc
+// TODO(fbarchard): Improve sign extension/packing
 __declspec(naked)
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -591,7 +592,7 @@ __asm {
     psrlw     xmm4, 10
     psllw     xmm4, 5
     pcmpeqb   xmm5, xmm5       // generate mask 0xf800f800
-    psrlw     xmm5, 11
+    psllw     xmm5, 11
 
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
@@ -599,20 +600,20 @@ __asm {
 
  convertloop:
     movdqa    xmm0, [eax]   // fetch 4 pixels of argb
-    lea       eax, [eax + 16]
     movdqa    xmm1, xmm0    // B
-    psrlw     xmm1, 3
+    psrld     xmm1, 3
     pand      xmm1, xmm3
     movdqa    xmm2, xmm0    // G
-    psrlw     xmm2, 5
+    psrld     xmm2, 5
     pand      xmm2, xmm4
     por       xmm1, xmm2
-    psrlw     xmm0, 8       // R
+    psrld     xmm0, 8       // R
     pand      xmm0, xmm5
     por       xmm0, xmm1
     pslld     xmm0, 16
     psrad     xmm0, 16
     packssdw  xmm0, xmm0
+    lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
     lea       edx, [edx + 8]
     sub       ecx, 4
@@ -622,6 +623,7 @@ __asm {
 }
 
 // TODO(fbarchard): Port to gcc
+// TODO(fbarchard): Improve sign extension/packing
 __declspec(naked)
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -629,10 +631,10 @@ __asm {
     psrlw     xmm3, 11
     movdqa    xmm4, xmm3       // generate mask 0x03e003e0
     psllw     xmm4, 5
-    movdqa    xmm5, xmm3       // generate mask 0x7c007c00
-    psllw     xmm5, 10
+    movdqa    xmm5, xmm4       // generate mask 0x7c007c00
+    psllw     xmm5, 5
     pcmpeqb   xmm6, xmm6       // generate mask 0x80008000
-    psrlw     xmm6, 15
+    psllw     xmm6, 15
 
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
@@ -640,26 +642,25 @@ __asm {
 
  convertloop:
     movdqa    xmm0, [eax]   // fetch 4 pixels of argb
-    lea       eax, [eax + 16]
     movdqa    xmm1, xmm0    // B
-    psrlw     xmm1, 3
+    psrld     xmm1, 3
     pand      xmm1, xmm3
     movdqa    xmm2, xmm0    // G
-    psrlw     xmm2, 6
+    psrld     xmm2, 6
     pand      xmm2, xmm4
     por       xmm1, xmm2
     movdqa    xmm2, xmm0    // R
-    psrlw     xmm2, 9
+    psrld     xmm2, 9
     pand      xmm2, xmm5
     por       xmm1, xmm2
-    movdqa    xmm2, xmm0    // A
-    psrlw     xmm2, 16
-    pand      xmm2, xmm6
-    por       xmm1, xmm2
+    psrld     xmm0, 16      // A
+    pand      xmm0, xmm6
+    por       xmm0, xmm1
     pslld     xmm0, 16
     psrad     xmm0, 16
-    packssdw  xmm1, xmm1
-    movq      qword ptr [edx], xmm1  // store 4 pixels of ARGB1555
+    packssdw  xmm0, xmm0
+    lea       eax, [eax + 16]
+    movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
     lea       edx, [edx + 8]
     sub       ecx, 4
     ja        convertloop
@@ -682,7 +683,6 @@ __asm {
 
  convertloop:
     movdqa    xmm0, [eax]   // fetch 4 pixels of argb
-    lea       eax, [eax + 16]
     movdqa    xmm1, xmm0
     pand      xmm0, xmm3    // low nibble
     pand      xmm1, xmm4    // high nibble
@@ -690,6 +690,7 @@ __asm {
     psrl      xmm1, 8
     por       xmm0, xmm1
     packuswb  xmm0, xmm0
+    lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB4444
     lea       edx, [edx + 8]
     sub       ecx, 4
