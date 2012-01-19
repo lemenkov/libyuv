@@ -155,22 +155,14 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   uint32 format);
 
 // Convert I420 to specified format.
+// "dst_sample_stride" is bytes in a row for the destination. Pass 0 if the
+//    buffer has contiguous rows. Can be negative. A multiple of 16 is optimal.
 int ConvertFromI420(const uint8* y, int y_stride,
                     const uint8* u, int u_stride,
                     const uint8* v, int v_stride,
-                    uint8* dst_sample, size_t dst_sample_size,
+                    uint8* dst_sample, int dst_sample_stride,
                     int width, int height,
                     uint32 format);
-
-// Convert I420 to specified format with stride.
-// stride applies to first plane.  If zero, width is used to compute stride.
-int ConvertFromI420Stride(const uint8* y, int y_stride,
-                          const uint8* u, int u_stride,
-                          const uint8* v, int v_stride,
-                          uint8* dst_sample, size_t dst_sample_stride,
-                          size_t dst_sample_size,
-                          int width, int height,
-                          uint32 format);
 
 #ifdef __cplusplus
 }  // extern "C"
