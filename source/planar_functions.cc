@@ -2248,25 +2248,27 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
 // Convert NV12 to ARGB.
 int NV12ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
-               uint8* dst_rgb, int dst_stride_rgb,
+               uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
-    dst_stride_rgb = -dst_stride_rgb;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
   }
   void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
                                   const uint8* u_buf,
                                   const uint8* v_buf,
-                                  uint8* rgb_buf,
+                                  uint8* argb_buf,
                                   int width);
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
   } else
 #elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
   } else
 #endif
@@ -2298,8 +2300,8 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
       SplitUV(src_uv, rowuv, rowuv + kMaxStride, halfwidth);
       src_uv += src_stride_uv;
     }
-    FastConvertYUVToARGBRow(src_y, rowuv, rowuv + kMaxStride, dst_rgb, width);
-    dst_rgb += dst_stride_rgb;
+    FastConvertYUVToARGBRow(src_y, rowuv, rowuv + kMaxStride, dst_argb, width);
+    dst_argb += dst_stride_argb;
     src_y += src_stride_y;
   }
   return 0;
