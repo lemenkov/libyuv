@@ -655,14 +655,13 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
   "movdqa     %3,%%xmm5                        \n"
-  "lea        -0x10(%0,%2,1),%0                \n"
+  "lea        -0x10(%0),%0                     \n"
   "1:                                          \n"
-    "movdqa     (%0),%%xmm0                    \n"
-    "lea        -0x10(%0),%0                   \n"
+    "movdqa     (%0,%2),%%xmm0                 \n"
     "pshufb     %%xmm5,%%xmm0                  \n"
+    "sub        $0x10,%2                       \n"
     "movdqa     %%xmm0,(%1)                    \n"
     "lea        0x10(%1),%1                    \n"
-    "sub        $0x10,%2                       \n"
     "ja         1b                             \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
@@ -681,10 +680,9 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
 void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "lea        -0x10(%0,%2,1),%0                \n"
+  "lea        -0x10(%0),%0                     \n"
   "1:                                          \n"
-    "movdqa     (%0),%%xmm0                    \n"
-    "lea        -0x10(%0),%0                   \n"
+    "movdqa     (%0,%2),%%xmm0                 \n"
     "movdqa     %%xmm0,%%xmm1                  \n"
     "psllw      $0x8,%%xmm0                    \n"
     "psrlw      $0x8,%%xmm1                    \n"
@@ -692,9 +690,9 @@ void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
     "pshuflw    $0x1b,%%xmm0,%%xmm0            \n"
     "pshufhw    $0x1b,%%xmm0,%%xmm0            \n"
     "pshufd     $0x4e,%%xmm0,%%xmm0            \n"
+    "sub        $0x10,%2                       \n"
     "movdqa     %%xmm0,(%1)                    \n"
     "lea        0x10(%1),%1                    \n"
-    "sub        $0x10,%2                       \n"
     "ja         1b                             \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
