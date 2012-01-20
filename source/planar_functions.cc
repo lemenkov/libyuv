@@ -1512,12 +1512,16 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
+  } else if (TestCpuFlag(kCpuHasNEON)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBAnyRow_NEON;
   } else
 #elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBAnyRow_SSSE3;
   } else
 #endif
   {

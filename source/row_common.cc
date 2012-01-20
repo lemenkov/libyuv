@@ -11,6 +11,7 @@
 #include "row.h"
 
 #include "libyuv/basic_types.h"
+#include <string.h>  // For memcpy
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -366,6 +367,39 @@ void ReverseRow_C(const uint8* src, uint8* dst, int width) {
     --src;
   }
 }
+
+// Wrappers to handle odd sizes/alignments
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+void FastConvertYUVToARGBAnyRow_SSSE3(const uint8* y_buf,
+                                      const uint8* u_buf,
+                                      const uint8* v_buf,
+                                      uint8* rgb_buf,
+                                      int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  FastConvertYUVToARGBRow_SSSE3(y_buf,
+                                u_buf,
+                                v_buf,
+                                row,
+                                width);
+  memcpy(rgb_buf, row, width << 2);
+}
+#endif
+
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+void FastConvertYUVToARGBAnyRow_NEON(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     uint8* rgb_buf,
+                                     int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  FastConvertYUVToARGBRow_NEON(y_buf,
+                                u_buf,
+                                v_buf,
+                                row,
+                                width);
+  memcpy(rgb_buf, row, width << 2);
+}
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
