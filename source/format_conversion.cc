@@ -118,8 +118,7 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_rgb, 16) && IS_ALIGNED(src_stride_rgb, 16) &&
-      IS_ALIGNED(dst_bayer, 4) && IS_ALIGNED(dst_stride_bayer, 4)) {
+      IS_ALIGNED(src_rgb, 16) && IS_ALIGNED(src_stride_rgb, 16)) {
     ARGBToBayerRow = ARGBToBayerRow_SSSE3;
   } else
 #endif
@@ -372,7 +371,6 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(row, 16) && IS_ALIGNED(kMaxStride, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     ARGBToYRow = ARGBToYRow_SSSE3;
   } else
@@ -381,11 +379,7 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
     ARGBToYRow = ARGBToYRow_C;
   }
 #if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(row, 16) && IS_ALIGNED(kMaxStride, 16) &&
-      IS_ALIGNED(dst_u, 8) && IS_ALIGNED(dst_stride_u, 8) &&
-      IS_ALIGNED(dst_v, 8) && IS_ALIGNED(dst_stride_v, 8)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
     ARGBToUVRow = ARGBToUVRow_SSSE3;
   } else
 #endif
@@ -426,7 +420,6 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
-  // TODO(fbarchard): Make sure this filters properly
   if (height & 1) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
     ARGBToUVRow(row, 0, dst_u, dst_v, width);

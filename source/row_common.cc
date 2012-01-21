@@ -369,36 +369,26 @@ void ReverseRow_C(const uint8* src, uint8* dst, int width) {
 }
 
 // Wrappers to handle odd sizes/alignments
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
-void FastConvertYUVToARGBAnyRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  FastConvertYUVToARGBRow_SSSE3(y_buf,
-                                u_buf,
-                                v_buf,
-                                row,
-                                width);
-  memcpy(rgb_buf, row, width << 2);
+#define MAKEYUVANY(NAMEANY, NAME)                                              \
+void NAMEANY(const uint8* y_buf,                                               \
+             const uint8* u_buf,                                               \
+             const uint8* v_buf,                                               \
+             uint8* rgb_buf,                                                   \
+             int width) {                                                      \
+  SIMD_ALIGNED(uint8 row[kMaxStride]);                                         \
+  NAME(y_buf, u_buf, v_buf, row, width);                                       \
+  memcpy(rgb_buf, row, width << 2);                                            \
 }
-#endif
 
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+MAKEYUVANY(FastConvertYUVToARGBAnyRow_SSSE3, FastConvertYUVToARGBRow_SSSE3)
+MAKEYUVANY(FastConvertYUVToBGRAAnyRow_SSSE3, FastConvertYUVToBGRARow_SSSE3)
+MAKEYUVANY(FastConvertYUVToABGRAnyRow_SSSE3, FastConvertYUVToABGRRow_SSSE3)
+#endif
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
-void FastConvertYUVToARGBAnyRow_NEON(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  FastConvertYUVToARGBRow_NEON(y_buf,
-                                u_buf,
-                                v_buf,
-                                row,
-                                width);
-  memcpy(rgb_buf, row, width << 2);
-}
+MAKEYUVANY(FastConvertYUVToARGBAnyRow_NEON, FastConvertYUVToARGBRow_NEON)
+MAKEYUVANY(FastConvertYUVToBGRAAnyRow_NEON, FastConvertYUVToBGRARow_NEON)
+MAKEYUVANY(FastConvertYUVToABGRAnyRow_NEON, FastConvertYUVToABGRRow_NEON)
 #endif
 
 #ifdef __cplusplus

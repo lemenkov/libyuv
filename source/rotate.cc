@@ -797,17 +797,13 @@ void TransposePlane(const uint8* src, int src_stride,
 #if defined(HAS_TRANSPOSE_WX8_FAST_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst, 8) && IS_ALIGNED(dst_stride, 8)) {
+      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     TransposeWx8 = TransposeWx8_FAST_SSSE3;
     TransposeWxH = TransposeWxH_C;
   } else
 #endif
 #if defined(HAS_TRANSPOSE_WX8_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 8) &&
-      IS_ALIGNED(src, 8) && IS_ALIGNED(src_stride, 8) &&
-      IS_ALIGNED(dst, 8) && IS_ALIGNED(dst_stride, 8)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     TransposeWx8 = TransposeWx8_SSSE3;
     TransposeWxH = TransposeWxH_C;
   } else
@@ -949,9 +945,7 @@ void TransposeUV(const uint8* src, int src_stride,
 #if defined(HAS_TRANSPOSE_UVWX8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 8) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_a, 8) && IS_ALIGNED(dst_stride_a, 8) &&
-      IS_ALIGNED(dst_b, 8) && IS_ALIGNED(dst_stride_b, 8)) {
+      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     TransposeWx8 = TransposeUVWx8_SSE2;
     TransposeWxH = TransposeUVWxH_C;
   } else
@@ -1099,9 +1093,7 @@ void RotateUV180(const uint8* src, int src_stride,
 #if defined(HAS_REVERSE_ROW_UV_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_a, 8) && IS_ALIGNED(dst_stride_a, 8) &&
-      IS_ALIGNED(dst_b, 8) && IS_ALIGNED(dst_stride_b, 8) ) {
+      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     ReverseRow = ReverseRowUV_SSSE3;
   } else
 #endif
