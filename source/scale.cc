@@ -3115,8 +3115,7 @@ static void ScalePlaneDown4(int src_width, int src_height,
 #if defined(HAS_SCALEROWDOWN4_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 8) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_ptr, 8) && IS_ALIGNED(dst_stride, 8)) {
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
   } else
 #endif
@@ -3149,8 +3148,7 @@ static void ScalePlaneDown8(int src_width, int src_height,
 #if defined(HAS_SCALEROWDOWN8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 4) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleRowDown8 = filtering ? ScaleRowDown8Int_SSE2 : ScaleRowDown8_SSE2;
   } else
 #endif
@@ -3182,8 +3180,7 @@ static void ScalePlaneDown34(int src_width, int src_height,
   void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
 #if defined(HAS_SCALEROWDOWN34_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      (dst_width % 24 == 0)) {
+  if (TestCpuFlag(kCpuHasNEON) && (dst_width % 24 == 0)) {
     if (!filtering) {
       ScaleRowDown34_0 = ScaleRowDown34_NEON;
       ScaleRowDown34_1 = ScaleRowDown34_NEON;
@@ -3194,10 +3191,8 @@ static void ScalePlaneDown34(int src_width, int src_height,
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      (dst_width % 24 == 0) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_ptr, 8) && IS_ALIGNED(dst_stride, 8)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     if (!filtering) {
       ScaleRowDown34_0 = ScaleRowDown34_SSSE3;
       ScaleRowDown34_1 = ScaleRowDown34_SSSE3;
@@ -3208,11 +3203,8 @@ static void ScalePlaneDown34(int src_width, int src_height,
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      (dst_width % 24 == 0) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_stride, 8) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(dst_ptr, 8) &&
-      filtering) {
+  if (TestCpuFlag(kCpuHasSSE2) && (dst_width % 24 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) && filtering) {
     ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSE2;
     ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSE2;
   } else
@@ -3226,29 +3218,27 @@ static void ScalePlaneDown34(int src_width, int src_height,
       ScaleRowDown34_1 = ScaleRowDown34_1_Int_C;
     }
   }
-  int src_row = 0;
-  for (int y = 0; y < dst_height; ++y) {
-    switch (src_row) {
-      case 0:
-        ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
-        break;
 
-      case 1:
-        ScaleRowDown34_1(src_ptr, src_stride, dst_ptr, dst_width);
-        break;
-
-      case 2:
-        ScaleRowDown34_0(src_ptr + src_stride, -src_stride,
-                         dst_ptr, dst_width);
-        break;
-    }
-    ++src_row;
+  for (int y = 0; y < dst_height - 2; y += 3) {
+    ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
-    if (src_row >= 3) {
-      src_ptr += src_stride;
-      src_row = 0;
-    }
+    ScaleRowDown34_1(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride;
+    dst_ptr += dst_stride;
+    ScaleRowDown34_0(src_ptr + src_stride, -src_stride,
+                     dst_ptr, dst_width);
+    src_ptr += src_stride * 2;
+    dst_ptr += dst_stride;
+  }
+
+  if ((dst_height % 3) >= 1) {
+    ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride;
+    dst_ptr += dst_stride;
+  }
+  if ((dst_height % 3) >= 2) {
+    ScaleRowDown34_1(src_ptr, src_stride, dst_ptr, dst_width);
   }
 }
 
@@ -3271,8 +3261,7 @@ static void ScalePlaneDown38(int src_width, int src_height,
   void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
 #if defined(HAS_SCALEROWDOWN38_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      (dst_width % 12 == 0)) {
+  if (TestCpuFlag(kCpuHasNEON) && (dst_width % 12 == 0)) {
     if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_NEON;
       ScaleRowDown38_2 = ScaleRowDown38_NEON;
@@ -3283,10 +3272,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
   } else
 #endif
 #if defined(HAS_SCALEROWDOWN38_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      (dst_width % 24 == 0) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_stride, 8) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(dst_ptr, 8)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_SSSE3;
@@ -3305,23 +3292,24 @@ static void ScalePlaneDown38(int src_width, int src_height,
       ScaleRowDown38_2 = ScaleRowDown38_2_Int_C;
     }
   }
-  int src_row = 0;
-  for (int y = 0; y < dst_height; ++y) {
-    switch (src_row) {
-      case 0:
-      case 1:
-        ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
-        src_ptr += src_stride * 3;
-        ++src_row;
-        break;
-
-      case 2:
-        ScaleRowDown38_2(src_ptr, src_stride, dst_ptr, dst_width);
-        src_ptr += src_stride * 2;
-        src_row = 0;
-        break;
-    }
+  for (int y = 0; y < dst_height - 2; y += 3) {
+    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
+    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride * 3;
+    dst_ptr += dst_stride;
+    ScaleRowDown38_2(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride * 2;
+    dst_ptr += dst_stride;
+  }
+  if ((dst_height % 3) >= 1) {
+    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    src_ptr += src_stride * 3;
+    dst_ptr += dst_stride;
+  }
+  if ((dst_height % 3) >= 2) {
+    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
   }
 }
 
@@ -3433,8 +3421,7 @@ static void ScalePlaneBox(int src_width, int src_height,
                          const uint16* src_ptr, uint8* dst_ptr);
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16) &&
-        IS_ALIGNED(src_width, 16)) {
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
       ScaleAddRows = ScaleAddRows_SSE2;
     } else
 #endif
@@ -3527,22 +3514,19 @@ void ScalePlaneBilinear(int src_width, int src_height,
     void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
                             int dst_width, int dx);
 #if defined(HAS_SCALEFILTERROWS_NEON)
-    if (TestCpuFlag(kCpuHasNEON) &&
-        IS_ALIGNED(src_width, 16)) {
+    if (TestCpuFlag(kCpuHasNEON)) {
       ScaleFilterRows = ScaleFilterRows_NEON;
     } else
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
     if (TestCpuFlag(kCpuHasSSSE3) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16) &&
-        IS_ALIGNED(src_width, 16)) {
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
       ScaleFilterRows = ScaleFilterRows_SSSE3;
     } else
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16) &&
-        IS_ALIGNED(src_width, 16)) {
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
     } else
 #endif
