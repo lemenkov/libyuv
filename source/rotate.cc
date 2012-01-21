@@ -24,7 +24,7 @@ extern "C" {
     !defined(YUV_DISABLE_ASM)
 // Note static const preferred, but gives internal compiler error on gcc 4.2
 // Shuffle table for reversing the bytes of UV channels.
-uvec8 kShuffleReverseUV = {
+uvec8 kShuffleMirrorUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
 };
 
@@ -47,7 +47,7 @@ uvec8 kShuffleReverseUV = {
 #endif
 #endif
 
-typedef void (*reverse_uv_func)(const uint8*, uint8*, uint8*, int);
+typedef void (*mirror_uv_func)(const uint8*, uint8*, uint8*, int);
 typedef void (*rotate_uv_wx8_func)(const uint8*, int,
                                    uint8*, int,
                                    uint8*, int, int);
@@ -58,10 +58,10 @@ typedef void (*rotate_wx8_func)(const uint8*, int, uint8*, int, int);
 typedef void (*rotate_wxh_func)(const uint8*, int, uint8*, int, int, int);
 
 #ifdef __ARM_NEON__
-#define HAS_REVERSE_ROW_NEON
-void ReverseRow_NEON(const uint8* src, uint8* dst, int width);
-#define HAS_REVERSE_ROW_UV_NEON
-void ReverseRowUV_NEON(const uint8* src,
+#define HAS_MIRRORROW_NEON
+void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
+#define HAS_MIRRORROW_UV_NEON
+void MirrorRowUV_NEON(const uint8* src,
                         uint8* dst_a, uint8* dst_b,
                         int width);
 #define HAS_TRANSPOSE_WX8_NEON
@@ -852,37 +852,37 @@ void RotatePlane270(const uint8* src, int src_stride,
 void RotatePlane180(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
-  void (*ReverseRow)(const uint8* src, uint8* dst, int width);
-#if defined(HAS_REVERSE_ROW_NEON)
+  void (*MirrorRow)(const uint8* src, uint8* dst, int width);
+#if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ReverseRow = ReverseRow_NEON;
+    MirrorRow = MirrorRow_NEON;
   } else
 #endif
-#if defined(HAS_REVERSE_ROW_SSSE3)
+#if defined(HAS_MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ReverseRow = ReverseRow_SSSE3;
+    MirrorRow = MirrorRow_SSSE3;
   } else
 #endif
-#if defined(HAS_REVERSE_ROW_SSE2)
+#if defined(HAS_MIRRORROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ReverseRow = ReverseRow_SSE2;
+    MirrorRow = MirrorRow_SSE2;
   } else
 #endif
   {
-    ReverseRow = ReverseRow_C;
+    MirrorRow = MirrorRow_C;
   }
 
   // Rotate by 180 is a mirror and vertical flip
   src += src_stride * (height - 1);
 
   for (int y = 0; y < height; ++y) {
-    ReverseRow(src, dst, width);
+    MirrorRow(src, dst, width);
     src -= src_stride;
     dst += dst_stride;
   }
@@ -1004,9 +1004,9 @@ void RotateUV270(const uint8* src, int src_stride,
 }
 
 #if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_REVERSE_ROW_UV_SSSE3
+#define HAS_MIRRORROW_UV_SSSE3
 __declspec(naked)
-void ReverseRowUV_SSSE3(const uint8* src,
+void MirrorRowUV_SSSE3(const uint8* src,
                          uint8* dst_a, uint8* dst_b,
                          int width) {
 __asm {
@@ -1015,7 +1015,7 @@ __asm {
     mov       edx, [esp + 4 + 8]   // dst_a
     mov       edi, [esp + 4 + 12]  // dst_b
     mov       ecx, [esp + 4 + 16]  // width
-    movdqa    xmm5, kShuffleReverseUV
+    movdqa    xmm5, kShuffleMirrorUV
     lea       eax, [eax + ecx * 2 - 16]
 
  convertloop:
@@ -1035,8 +1035,8 @@ __asm {
 
 #elif (defined(__i386__) || defined(__x86_64__)) && \
     !defined(YUV_DISABLE_ASM)
-#define HAS_REVERSE_ROW_UV_SSSE3
-void ReverseRowUV_SSSE3(const uint8* src,
+#define HAS_MIRRORROW_UV_SSSE3
+void MirrorRowUV_SSSE3(const uint8* src,
                         uint8* dst_a, uint8* dst_b,
                         int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
@@ -1057,7 +1057,7 @@ void ReverseRowUV_SSSE3(const uint8* src,
     "+r"(dst_a),    // %1
     "+r"(dst_b),    // %2
     "+r"(temp_width)  // %3
-  : "m"(kShuffleReverseUV) // %4
+  : "m"(kShuffleMirrorUV) // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
@@ -1066,7 +1066,7 @@ void ReverseRowUV_SSSE3(const uint8* src,
 }
 #endif
 
-static void ReverseRowUV_C(const uint8* src,
+static void MirrorRowUV_C(const uint8* src,
                             uint8* dst_a, uint8* dst_b,
                             int width) {
   int i;
@@ -1083,29 +1083,29 @@ void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height) {
   int i;
-  reverse_uv_func ReverseRow;
+  mirror_uv_func MirrorRow;
 
-#if defined(HAS_REVERSE_ROW_UV_NEON)
+#if defined(HAS_MIRRORROW_UV_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ReverseRow = ReverseRowUV_NEON;
+    MirrorRow = MirrorRowUV_NEON;
   } else
 #endif
-#if defined(HAS_REVERSE_ROW_UV_SSSE3)
+#if defined(HAS_MIRRORROW_UV_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
-    ReverseRow = ReverseRowUV_SSSE3;
+    MirrorRow = MirrorRowUV_SSSE3;
   } else
 #endif
   {
-    ReverseRow = ReverseRowUV_C;
+    MirrorRow = MirrorRowUV_C;
   }
 
   dst_a += dst_stride_a * (height - 1);
   dst_b += dst_stride_b * (height - 1);
 
   for (i = 0; i < height; ++i) {
-    ReverseRow(src, dst_a, dst_b, width);
+    MirrorRow(src, dst_a, dst_b, width);
 
     src   += src_stride;      // down one line at a time
     dst_a -= dst_stride_a;    // nominally up one line at a time

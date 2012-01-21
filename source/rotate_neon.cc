@@ -19,7 +19,7 @@ extern "C" {
 
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 
-void ReverseRow_NEON(const uint8* src, uint8* dst, int width) {
+void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // compute where to start writing destination
     "add         %1, %2                        \n"
@@ -38,7 +38,7 @@ void ReverseRow_NEON(const uint8* src, uint8* dst, int width) {
     "beq         2f                            \n"
 
     // back of destination by the size of the register that is
-    // going to be reversed
+    // going to be mirrord
     "sub         %1, #16                       \n"
 
     // the loop needs to run on blocks of 16.  what will be left
@@ -50,12 +50,12 @@ void ReverseRow_NEON(const uint8* src, uint8* dst, int width) {
     "1:                                        \n"
       "vld1.8      {q0}, [%0]!                 \n"  // src += 16
 
-        // reverse the bytes in the 64 bit segments.  unable to reverse
+        // mirror the bytes in the 64 bit segments.  unable to mirror
         // the bytes in the entire 128 bits in one go.
       "vrev64.8    q0, q0                      \n"
 
-        // because of the inability to reverse the entire 128 bits
-        // reverse the writing out of the two 64 bit segments.
+        // because of the inability to mirror the entire 128 bits
+        // mirror the writing out of the two 64 bit segments.
       "vst1.8      {d1}, [%1]!                 \n"
       "vst1.8      {d0}, [%1], r3              \n"  // dst -= 16
 
@@ -272,7 +272,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
   );
 }
 
-void ReverseRowUV_NEON(const uint8* src,
+void MirrorRowUV_NEON(const uint8* src,
                        uint8* dst_a, uint8* dst_b,
                        int width) {
   asm volatile (
@@ -291,7 +291,7 @@ void ReverseRowUV_NEON(const uint8* src,
     "mov         r12, #-8                      \n"
 
     // back of destination by the size of the register that is
-    // going to be reversed
+    // going to be mirrord
     "sub         %1, #8                        \n"
     "sub         %2, #8                        \n"
 
@@ -304,7 +304,7 @@ void ReverseRowUV_NEON(const uint8* src,
     "1:                                        \n"
       "vld2.8      {d0, d1}, [%0]!             \n"  // src += 16
 
-      // reverse the bytes in the 64 bit segments
+      // mirror the bytes in the 64 bit segments
       "vrev64.8    q0, q0                      \n"
 
       "vst1.8      {d0}, [%1], r12             \n"  // dst_a -= 8

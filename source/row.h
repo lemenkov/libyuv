@@ -39,8 +39,8 @@
 #define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
 #define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
 #define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
-#define HAS_REVERSE_ROW_SSSE3
-#define HAS_REVERSE_ROW_SSE2
+#define HAS_MIRRORROW_SSSE3
+#define HAS_MIRRORROW_SSE2
 #endif
 
 // The following are available on Windows platforms
@@ -58,7 +58,7 @@
 
 // The following are available on Neon platforms
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
-#define HAS_REVERSE_ROW_NEON
+#define HAS_MIRRORROW_NEON
 #define HAS_FASTCONVERTYUVTOARGBROW_NEON
 #define HAS_FASTCONVERTYUVTOBGRAROW_NEON
 #define HAS_FASTCONVERTYUVTOABGRROW_NEON
@@ -107,10 +107,10 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 
-void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width);
-void ReverseRow_SSE2(const uint8* src, uint8* dst, int width);
-void ReverseRow_NEON(const uint8* src, uint8* dst, int width);
-void ReverseRow_C(const uint8* src, uint8* dst, int width);
+void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
+void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
+void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
+void MirrorRow_C(const uint8* src, uint8* dst, int width);
 
 void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);

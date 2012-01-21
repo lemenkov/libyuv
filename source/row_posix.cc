@@ -644,14 +644,14 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
 }
 #endif
 
-#ifdef HAS_REVERSE_ROW_SSSE3
+#ifdef HAS_MIRRORROW_SSSE3
 
 // Shuffle table for reversing the bytes.
-CONST uvec8 kShuffleReverse = {
+CONST uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
-void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
+void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
   "movdqa     %3,%%xmm5                        \n"
@@ -666,7 +666,7 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
-  : "m"(kShuffleReverse) // %3
+  : "m"(kShuffleMirror) // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
@@ -675,15 +675,15 @@ void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif
 
-#ifdef HAS_REVERSE_ROW_SSE2
+#ifdef HAS_MIRRORROW_SSE2
 
-void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
+void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
   "lea        -0x10(%0),%0                     \n"
   "1:                                          \n"
-    "movdqa     (%0,%2),%%xmm0                 \n"
-    "movdqa     %%xmm0,%%xmm1                  \n"
+    "movdqu     (%0,%2),%%xmm0                 \n"
+    "movdqu     %%xmm0,%%xmm1                  \n"
     "psllw      $0x8,%%xmm0                    \n"
     "psrlw      $0x8,%%xmm1                    \n"
     "por        %%xmm1,%%xmm0                  \n"
@@ -691,7 +691,7 @@ void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
     "pshufhw    $0x1b,%%xmm0,%%xmm0            \n"
     "pshufd     $0x4e,%%xmm0,%%xmm0            \n"
     "sub        $0x10,%2                       \n"
-    "movdqa     %%xmm0,(%1)                    \n"
+    "movdqu     %%xmm0,(%1)                    \n"
     "lea        0x10(%1),%1                    \n"
     "ja         1b                             \n"
   : "+r"(src),  // %0

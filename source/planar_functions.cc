@@ -278,6 +278,74 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Mirror a plane of data
+void MirrorPlane(const uint8* src_y, int src_stride_y,
+                 uint8* dst_y, int dst_stride_y,
+                 int width, int height) {
+  void (*MirrorRow)(const uint8* src, uint8* dst, int width);
+#if defined(HAS_MIRRORROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    MirrorRow = MirrorRow_NEON;
+  } else
+#endif
+#if defined(HAS_MIRRORROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16)) {
+    MirrorRow = MirrorRow_SSSE3;
+  } else
+#endif
+#if defined(HAS_MIRRORROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
+    MirrorRow = MirrorRow_SSE2;
+  } else
+#endif
+  {
+    MirrorRow = MirrorRow_C;
+  }
+
+  // Mirror plane
+  for (int y = 0; y < height; ++y) {
+    MirrorRow(src_y, dst_y, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+}
+
+// Mirror I420 with optional flipping
+int I420Mirror(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (dst_y) {
+    MirrorPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+  MirrorPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
+  MirrorPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+  return 0;
+}
+
 // Copy ARGB with optional flipping
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
@@ -296,89 +364,6 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 
   CopyPlane(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
             width * 4, height);
-  return 0;
-}
-
-int I420Mirror(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (halfheight - 1) * src_stride_u;
-    src_v = src_v + (halfheight - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-  void (*ReverseRow)(const uint8* src, uint8* dst, int width);
-#if defined(HAS_REVERSE_ROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(width, 32)) {
-    ReverseRow = ReverseRow_NEON;
-  } else
-#endif
-#if defined(HAS_REVERSE_ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 32) &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    ReverseRow = ReverseRow_SSSE3;
-  } else
-#endif
-#if defined(HAS_REVERSE_ROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 32) &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    ReverseRow = ReverseRow_SSE2;
-  } else
-#endif
-  {
-    ReverseRow = ReverseRow_C;
-  }
-
-  // Y Plane
-  int y;
-  for (y = 0; y < height; ++y) {
-    ReverseRow(src_y, dst_y, width);
-    src_y += src_stride_y;
-    dst_y += dst_stride_y;
-  }
-  // U Plane
-  for (y = 0; y < halfheight; ++y) {
-    ReverseRow(src_u, dst_u, halfwidth);
-    src_u += src_stride_u;
-    dst_u += dst_stride_u;
-  }
-  // V Plane
-  for (y = 0; y < halfheight; ++y) {
-    ReverseRow(src_v, dst_v, halfwidth);
-    src_v += src_stride_v;
-    dst_v += dst_stride_v;
-  }
   return 0;
 }
 

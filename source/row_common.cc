@@ -360,7 +360,7 @@ void FastConvertYToARGBRow_C(const uint8* y_buf,
   }
 }
 
-void ReverseRow_C(const uint8* src, uint8* dst, int width) {
+void MirrorRow_C(const uint8* src, uint8* dst, int width) {
   src += width - 1;
   for (int i = 0; i < width; ++i) {
     dst[i] = src[0];

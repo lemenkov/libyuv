@@ -1169,20 +1169,20 @@ void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
 #endif
 #endif
 
-#ifdef HAS_REVERSE_ROW_SSSE3
+#ifdef HAS_MIRRORROW_SSSE3
 
 // Shuffle table for reversing the bytes.
-static const uvec8 kShuffleReverse = {
+static const uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
 __declspec(naked)
-void ReverseRow_SSSE3(const uint8* src, uint8* dst, int width) {
+void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    movdqa    xmm5, kShuffleReverse
+    movdqa    xmm5, kShuffleMirror
     lea       eax, [eax - 16]
  convertloop:
     movdqa    xmm0, [eax + ecx]
@@ -1196,18 +1196,20 @@ __asm {
 }
 #endif
 
-#ifdef HAS_REVERSE_ROW_SSE2
+#ifdef HAS_MIRRORROW_SSE2
 
+// SSE2 version has movdqu so it can be used on misaligned buffers when SSSE3
+// version can not.
 __declspec(naked)
-void ReverseRow_SSE2(const uint8* src, uint8* dst, int width) {
+void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
     lea       eax, [eax - 16]
  convertloop:
-    movdqa    xmm0, [eax + ecx]
-    movdqa    xmm1, xmm0        // swap bytes
+    movdqu    xmm0, [eax + ecx]
+    movdqu    xmm1, xmm0        // swap bytes
     psllw     xmm0, 8
     psrlw     xmm1, 8
     por       xmm0, xmm1
@@ -1215,7 +1217,7 @@ __asm {
     pshufhw   xmm0, xmm0, 0x1b
     pshufd    xmm0, xmm0, 0x4e  // swap qwords
     sub       ecx, 16
-    movdqa    [edx], xmm0
+    movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     ja        convertloop
     ret
