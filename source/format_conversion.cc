@@ -103,61 +103,67 @@ static uint32 GenerateSelector(int select0, int select1) {
          static_cast<uint32>((select1 + 12) << 24);
 }
 
-// Converts 32 bit ARGB to any Bayer RGB format.
-int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
-                   uint8* dst_bayer, int dst_stride_bayer,
-                   uint32 dst_fourcc_bayer,
-                   int width, int height) {
+static void MakeSelectors(const int blue_index,
+                          const int green_index,
+                          const int red_index,
+                          uint32 dst_fourcc_bayer,
+                          uint32 *index_map) {
+  // Now build a lookup table containing the indices for the four pixels in each
+  // 2x2 Bayer grid.
+  switch (dst_fourcc_bayer) {
+    default:
+      assert(false);
+    case FOURCC_BGGR:
+      index_map[0] = GenerateSelector(blue_index, green_index);
+      index_map[1] = GenerateSelector(green_index, red_index);
+      break;
+    case FOURCC_GBRG:
+      index_map[0] = GenerateSelector(green_index, blue_index);
+      index_map[1] = GenerateSelector(red_index, green_index);
+      break;
+    case FOURCC_RGGB:
+      index_map[0] = GenerateSelector(red_index, green_index);
+      index_map[1] = GenerateSelector(green_index, blue_index);
+      break;
+    case FOURCC_GRBG:
+      index_map[0] = GenerateSelector(green_index, red_index);
+      index_map[1] = GenerateSelector(blue_index, green_index);
+      break;
+  }
+}
+
+// Converts 32 bit ARGB to Bayer RGB formats.
+int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
+                uint8* dst_bayer, int dst_stride_bayer,
+                int width, int height,
+                uint32 dst_fourcc_bayer) {
   if (height < 0) {
     height = -height;
-    src_rgb = src_rgb + (height - 1) * src_stride_rgb;
-    src_stride_rgb = -src_stride_rgb;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
   }
   void (*ARGBToBayerRow)(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_rgb, 16) && IS_ALIGNED(src_stride_rgb, 16)) {
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
     ARGBToBayerRow = ARGBToBayerRow_SSSE3;
   } else
 #endif
   {
     ARGBToBayerRow = ARGBToBayerRow_C;
   }
-
-  int blue_index = 0;
-  int green_index = 1;
-  int red_index = 2;
-
-  // Now build a lookup table containing the indices for the four pixels in each
-  // 2x2 Bayer grid.
+  const int blue_index = 0;  // Offsets for ARGB format
+  const int green_index = 1;
+  const int red_index = 2;
   uint32 index_map[2];
-  switch (dst_fourcc_bayer) {
-    default:
-      assert(false);
-    case FOURCC_RGGB:
-      index_map[0] = GenerateSelector(red_index, green_index);
-      index_map[1] = GenerateSelector(green_index, blue_index);
-      break;
-    case FOURCC_BGGR:
-      index_map[0] = GenerateSelector(blue_index, green_index);
-      index_map[1] = GenerateSelector(green_index, red_index);
-      break;
-    case FOURCC_GRBG:
-      index_map[0] = GenerateSelector(green_index, red_index);
-      index_map[1] = GenerateSelector(blue_index, green_index);
-      break;
-    case FOURCC_GBRG:
-      index_map[0] = GenerateSelector(green_index, blue_index);
-      index_map[1] = GenerateSelector(red_index, green_index);
-      break;
-  }
+  MakeSelectors(blue_index, green_index, red_index,
+                dst_fourcc_bayer, index_map);
 
-  // Now convert.
   for (int y = 0; y < height; ++y) {
-    ARGBToBayerRow(src_rgb, dst_bayer, index_map[y & 1], width);
-    src_rgb += src_stride_rgb;
+    ARGBToBayerRow(src_argb, dst_bayer, index_map[y & 1], width);
+    src_argb += src_stride_argb;
     dst_bayer += dst_stride_bayer;
   }
   return 0;
@@ -166,185 +172,184 @@ int ARGBToBayerRGB(const uint8* src_rgb, int src_stride_rgb,
 #define AVG(a,b) (((a) + (b)) >> 1)
 
 static void BayerRowBG(const uint8* src_bayer0, int src_stride_bayer,
-                       uint8* dst_rgb, int pix) {
+                       uint8* dst_argb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 g = src_bayer0[1];
   uint8 r = src_bayer1[1];
   for (int x = 0; x < pix - 2; x += 2) {
-    dst_rgb[0] = src_bayer0[0];
-    dst_rgb[1] = AVG(g, src_bayer0[1]);
-    dst_rgb[2] = AVG(r, src_bayer1[1]);
-    dst_rgb[3] = 255U;
-    dst_rgb[4] = AVG(src_bayer0[0], src_bayer0[2]);
-    dst_rgb[5] = src_bayer0[1];
-    dst_rgb[6] = src_bayer1[1];
-    dst_rgb[7] = 255U;
+    dst_argb[0] = src_bayer0[0];
+    dst_argb[1] = AVG(g, src_bayer0[1]);
+    dst_argb[2] = AVG(r, src_bayer1[1]);
+    dst_argb[3] = 255U;
+    dst_argb[4] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_argb[5] = src_bayer0[1];
+    dst_argb[6] = src_bayer1[1];
+    dst_argb[7] = 255U;
     g = src_bayer0[1];
     r = src_bayer1[1];
     src_bayer0 += 2;
     src_bayer1 += 2;
-    dst_rgb += 8;
+    dst_argb += 8;
   }
-  dst_rgb[0] = src_bayer0[0];
-  dst_rgb[1] = AVG(g, src_bayer0[1]);
-  dst_rgb[2] = AVG(r, src_bayer1[1]);
-  dst_rgb[3] = 255U;
+  dst_argb[0] = src_bayer0[0];
+  dst_argb[1] = AVG(g, src_bayer0[1]);
+  dst_argb[2] = AVG(r, src_bayer1[1]);
+  dst_argb[3] = 255U;
   if (!(pix & 1)) {
-    dst_rgb[4] = src_bayer0[0];
-    dst_rgb[5] = src_bayer0[1];
-    dst_rgb[6] = src_bayer1[1];
-    dst_rgb[7] = 255U;
+    dst_argb[4] = src_bayer0[0];
+    dst_argb[5] = src_bayer0[1];
+    dst_argb[6] = src_bayer1[1];
+    dst_argb[7] = 255U;
   }
 }
 
 static void BayerRowRG(const uint8* src_bayer0, int src_stride_bayer,
-                       uint8* dst_rgb, int pix) {
+                       uint8* dst_argb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 g = src_bayer0[1];
   uint8 b = src_bayer1[1];
   for (int x = 0; x < pix - 2; x += 2) {
-    dst_rgb[0] = AVG(b, src_bayer1[1]);
-    dst_rgb[1] = AVG(g, src_bayer0[1]);
-    dst_rgb[2] = src_bayer0[0];
-    dst_rgb[3] = 255U;
-    dst_rgb[4] = src_bayer1[1];
-    dst_rgb[5] = src_bayer0[1];
-    dst_rgb[6] = AVG(src_bayer0[0], src_bayer0[2]);
-    dst_rgb[7] = 255U;
+    dst_argb[0] = AVG(b, src_bayer1[1]);
+    dst_argb[1] = AVG(g, src_bayer0[1]);
+    dst_argb[2] = src_bayer0[0];
+    dst_argb[3] = 255U;
+    dst_argb[4] = src_bayer1[1];
+    dst_argb[5] = src_bayer0[1];
+    dst_argb[6] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_argb[7] = 255U;
     g = src_bayer0[1];
     b = src_bayer1[1];
     src_bayer0 += 2;
     src_bayer1 += 2;
-    dst_rgb += 8;
+    dst_argb += 8;
   }
-  dst_rgb[0] = AVG(b, src_bayer1[1]);
-  dst_rgb[1] = AVG(g, src_bayer0[1]);
-  dst_rgb[2] = src_bayer0[0];
-  dst_rgb[3] = 255U;
+  dst_argb[0] = AVG(b, src_bayer1[1]);
+  dst_argb[1] = AVG(g, src_bayer0[1]);
+  dst_argb[2] = src_bayer0[0];
+  dst_argb[3] = 255U;
   if (!(pix & 1)) {
-    dst_rgb[4] = src_bayer1[1];
-    dst_rgb[5] = src_bayer0[1];
-    dst_rgb[6] = src_bayer0[0];
-    dst_rgb[7] = 255U;
+    dst_argb[4] = src_bayer1[1];
+    dst_argb[5] = src_bayer0[1];
+    dst_argb[6] = src_bayer0[0];
+    dst_argb[7] = 255U;
   }
 }
 
 static void BayerRowGB(const uint8* src_bayer0, int src_stride_bayer,
-                       uint8* dst_rgb, int pix) {
+                       uint8* dst_argb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 b = src_bayer0[1];
   for (int x = 0; x < pix - 2; x += 2) {
-    dst_rgb[0] = AVG(b, src_bayer0[1]);
-    dst_rgb[1] = src_bayer0[0];
-    dst_rgb[2] = src_bayer1[0];
-    dst_rgb[3] = 255U;
-    dst_rgb[4] = src_bayer0[1];
-    dst_rgb[5] = AVG(src_bayer0[0], src_bayer0[2]);
-    dst_rgb[6] = AVG(src_bayer1[0], src_bayer1[2]);
-    dst_rgb[7] = 255U;
+    dst_argb[0] = AVG(b, src_bayer0[1]);
+    dst_argb[1] = src_bayer0[0];
+    dst_argb[2] = src_bayer1[0];
+    dst_argb[3] = 255U;
+    dst_argb[4] = src_bayer0[1];
+    dst_argb[5] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_argb[6] = AVG(src_bayer1[0], src_bayer1[2]);
+    dst_argb[7] = 255U;
     b = src_bayer0[1];
     src_bayer0 += 2;
     src_bayer1 += 2;
-    dst_rgb += 8;
+    dst_argb += 8;
   }
-  dst_rgb[0] = AVG(b, src_bayer0[1]);
-  dst_rgb[1] = src_bayer0[0];
-  dst_rgb[2] = src_bayer1[0];
-  dst_rgb[3] = 255U;
+  dst_argb[0] = AVG(b, src_bayer0[1]);
+  dst_argb[1] = src_bayer0[0];
+  dst_argb[2] = src_bayer1[0];
+  dst_argb[3] = 255U;
   if (!(pix & 1)) {
-    dst_rgb[4] = src_bayer0[1];
-    dst_rgb[5] = src_bayer0[0];
-    dst_rgb[6] = src_bayer1[0];
-    dst_rgb[7] = 255U;
+    dst_argb[4] = src_bayer0[1];
+    dst_argb[5] = src_bayer0[0];
+    dst_argb[6] = src_bayer1[0];
+    dst_argb[7] = 255U;
   }
 }
 
 static void BayerRowGR(const uint8* src_bayer0, int src_stride_bayer,
-                       uint8* dst_rgb, int pix) {
+                       uint8* dst_argb, int pix) {
   const uint8* src_bayer1 = src_bayer0 + src_stride_bayer;
   uint8 r = src_bayer0[1];
   for (int x = 0; x < pix - 2; x += 2) {
-    dst_rgb[0] = src_bayer1[0];
-    dst_rgb[1] = src_bayer0[0];
-    dst_rgb[2] = AVG(r, src_bayer0[1]);
-    dst_rgb[3] = 255U;
-    dst_rgb[4] = AVG(src_bayer1[0], src_bayer1[2]);
-    dst_rgb[5] = AVG(src_bayer0[0], src_bayer0[2]);
-    dst_rgb[6] = src_bayer0[1];
-    dst_rgb[7] = 255U;
+    dst_argb[0] = src_bayer1[0];
+    dst_argb[1] = src_bayer0[0];
+    dst_argb[2] = AVG(r, src_bayer0[1]);
+    dst_argb[3] = 255U;
+    dst_argb[4] = AVG(src_bayer1[0], src_bayer1[2]);
+    dst_argb[5] = AVG(src_bayer0[0], src_bayer0[2]);
+    dst_argb[6] = src_bayer0[1];
+    dst_argb[7] = 255U;
     r = src_bayer0[1];
     src_bayer0 += 2;
     src_bayer1 += 2;
-    dst_rgb += 8;
+    dst_argb += 8;
   }
-  dst_rgb[0] = src_bayer1[0];
-  dst_rgb[1] = src_bayer0[0];
-  dst_rgb[2] = AVG(r, src_bayer0[1]);
-  dst_rgb[3] = 255U;
+  dst_argb[0] = src_bayer1[0];
+  dst_argb[1] = src_bayer0[0];
+  dst_argb[2] = AVG(r, src_bayer0[1]);
+  dst_argb[3] = 255U;
   if (!(pix & 1)) {
-    dst_rgb[4] = src_bayer1[0];
-    dst_rgb[5] = src_bayer0[0];
-    dst_rgb[6] = src_bayer0[1];
-    dst_rgb[7] = 255U;
+    dst_argb[4] = src_bayer1[0];
+    dst_argb[5] = src_bayer0[0];
+    dst_argb[6] = src_bayer0[1];
+    dst_argb[7] = 255U;
   }
 }
 
 // Converts any Bayer RGB format to ARGB.
-int BayerRGBToARGB(const uint8* src_bayer, int src_stride_bayer,
-                   uint32 src_fourcc_bayer,
-                   uint8* dst_rgb, int dst_stride_rgb,
-                   int width, int height) {
+int BayerToARGB(const uint8* src_bayer, int src_stride_bayer,
+                uint8* dst_argb, int dst_stride_argb,
+                int width, int height,
+                uint32 src_fourcc_bayer) {
   if (height < 0) {
     height = -height;
-    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
-    dst_stride_rgb = -dst_stride_rgb;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
   }
   void (*BayerRow0)(const uint8* src_bayer, int src_stride_bayer,
-                    uint8* dst_rgb, int pix);
+                    uint8* dst_argb, int pix);
   void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
-                    uint8* dst_rgb, int pix);
-
+                    uint8* dst_argb, int pix);
   switch (src_fourcc_bayer) {
     default:
       assert(false);
-    case FOURCC_RGGB:
-      BayerRow0 = BayerRowRG;
-      BayerRow1 = BayerRowGB;
-      break;
     case FOURCC_BGGR:
       BayerRow0 = BayerRowBG;
       BayerRow1 = BayerRowGR;
-      break;
-    case FOURCC_GRBG:
-      BayerRow0 = BayerRowGR;
-      BayerRow1 = BayerRowBG;
       break;
     case FOURCC_GBRG:
       BayerRow0 = BayerRowGB;
       BayerRow1 = BayerRowRG;
       break;
+    case FOURCC_GRBG:
+      BayerRow0 = BayerRowGR;
+      BayerRow1 = BayerRowBG;
+      break;
+    case FOURCC_RGGB:
+      BayerRow0 = BayerRowRG;
+      BayerRow1 = BayerRowGB;
+      break;
   }
 
   for (int y = 0; y < height - 1; y += 2) {
-    BayerRow0(src_bayer, src_stride_bayer, dst_rgb, width);
+    BayerRow0(src_bayer, src_stride_bayer, dst_argb, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,
-        dst_rgb + dst_stride_rgb, width);
+              dst_argb + dst_stride_argb, width);
     src_bayer += src_stride_bayer * 2;
-    dst_rgb += dst_stride_rgb * 2;
+    dst_argb += dst_stride_argb * 2;
   }
   if (height & 1) {
-    BayerRow0(src_bayer, -src_stride_bayer, dst_rgb, width);
+    BayerRow0(src_bayer, -src_stride_bayer, dst_argb, width);
   }
   return 0;
 }
 
 // Converts any Bayer RGB format to ARGB.
-int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
-                   uint32 src_fourcc_bayer,
-                   uint8* dst_y, int dst_stride_y,
-                   uint8* dst_u, int dst_stride_u,
-                   uint8* dst_v, int dst_stride_v,
-                   int width, int height) {
+int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
+                uint8* dst_y, int dst_stride_y,
+                uint8* dst_u, int dst_stride_u,
+                uint8* dst_v, int dst_stride_v,
+                int width, int height,
+                uint32 src_fourcc_bayer) {
   if (width * 4 > kMaxStride) {
     return -1;
   }
@@ -360,9 +365,9 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
     dst_stride_v = -dst_stride_v;
   }
   void (*BayerRow0)(const uint8* src_bayer, int src_stride_bayer,
-                    uint8* dst_rgb, int pix);
+                    uint8* dst_argb, int pix);
   void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
-                    uint8* dst_rgb, int pix);
+                    uint8* dst_argb, int pix);
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
@@ -390,21 +395,21 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   switch (src_fourcc_bayer) {
     default:
       assert(false);
-    case FOURCC_RGGB:
-      BayerRow0 = BayerRowRG;
-      BayerRow1 = BayerRowGB;
-      break;
     case FOURCC_BGGR:
       BayerRow0 = BayerRowBG;
       BayerRow1 = BayerRowGR;
+      break;
+    case FOURCC_GBRG:
+      BayerRow0 = BayerRowGB;
+      BayerRow1 = BayerRowRG;
       break;
     case FOURCC_GRBG:
       BayerRow0 = BayerRowGR;
       BayerRow1 = BayerRowBG;
       break;
-    case FOURCC_GBRG:
-      BayerRow0 = BayerRowGB;
-      BayerRow1 = BayerRowRG;
+    case FOURCC_RGGB:
+      BayerRow0 = BayerRowRG;
+      BayerRow1 = BayerRowGB;
       break;
   }
 
@@ -427,6 +432,122 @@ int BayerRGBToI420(const uint8* src_bayer, int src_stride_bayer,
   }
   return 0;
 }
+
+// Convert I420 to Bayer.
+int I420ToBayer(const uint8* src_y, int src_stride_y,
+                const uint8* src_u, int src_stride_u,
+                const uint8* src_v, int src_stride_v,
+                uint8* dst_bayer, int dst_stride_bayer,
+                int width, int height,
+                uint32 dst_fourcc_bayer) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+  void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
+                                  const uint8* u_buf,
+                                  const uint8* v_buf,
+                                  uint8* rgb_buf,
+                                  int width);
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
+  } else
+#elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+  } else
+#endif
+  {
+    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
+  }
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  void (*ARGBToBayerRow)(const uint8* src_argb,
+                         uint8* dst_bayer, uint32 selector, int pix);
+#if defined(HAS_ARGBTOBAYERROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
+    ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+  } else
+#endif
+  {
+    ARGBToBayerRow = ARGBToBayerRow_C;
+  }
+  const int blue_index = 0;  // Offsets for ARGB format
+  const int green_index = 1;
+  const int red_index = 2;
+  uint32 index_map[2];
+  MakeSelectors(blue_index, green_index, red_index,
+                dst_fourcc_bayer, index_map);
+
+  for (int y = 0; y < height; ++y) {
+    FastConvertYUVToARGBRow(src_y, src_u, src_v, row, width);
+    ARGBToBayerRow(row, dst_bayer, index_map[y & 1], width);
+    dst_bayer += dst_stride_bayer;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
+#define MAKEBAYERFOURCC(BAYER)                                                 \
+int Bayer##BAYER##ToI420(const uint8* src_bayer, int src_stride_bayer,         \
+                         uint8* dst_y, int dst_stride_y,                       \
+                         uint8* dst_u, int dst_stride_u,                       \
+                         uint8* dst_v, int dst_stride_v,                       \
+                         int width, int height) {                              \
+  return BayerToI420(src_bayer, src_stride_bayer,                              \
+                     dst_y, dst_stride_y,                                      \
+                     dst_u, dst_stride_u,                                      \
+                     dst_v, dst_stride_v,                                      \
+                     width, height,                                            \
+                     FOURCC_##BAYER);                                          \
+}                                                                              \
+                                                                               \
+int I420ToBayer##BAYER(const uint8* src_y, int src_stride_y,                   \
+                       const uint8* src_u, int src_stride_u,                   \
+                       const uint8* src_v, int src_stride_v,                   \
+                       uint8* dst_bayer, int dst_stride_bayer,                 \
+                       int width, int height) {                                \
+  return I420ToBayer(src_y, src_stride_y,                                      \
+                     src_u, src_stride_u,                                      \
+                     src_v, src_stride_v,                                      \
+                     dst_bayer, dst_stride_bayer,                              \
+                     width, height,                                            \
+                     FOURCC_##BAYER);                                          \
+}                                                                              \
+                                                                               \
+int ARGBToBayer##BAYER(const uint8* src_argb, int src_stride_argb,             \
+                       uint8* dst_bayer, int dst_stride_bayer,                 \
+                       int width, int height) {                                \
+  return ARGBToBayer(src_argb, src_stride_argb,                                \
+                     dst_bayer, dst_stride_bayer,                              \
+                     width, height,                                            \
+                     FOURCC_##BAYER);                                          \
+}                                                                              \
+                                                                               \
+int Bayer##BAYER##ToARGB(const uint8* src_bayer, int src_stride_bayer,         \
+                         uint8* dst_argb, int dst_stride_argb,                 \
+                         int width, int height) {                              \
+  return BayerToARGB(src_bayer, src_stride_bayer,                              \
+                     dst_argb, dst_stride_argb,                                \
+                     width, height,                                            \
+                     FOURCC_##BAYER);                                          \
+}
+
+MAKEBAYERFOURCC(BGGR)
+MAKEBAYERFOURCC(GBRG)
+MAKEBAYERFOURCC(GRBG)
+MAKEBAYERFOURCC(RGGB)
 
 #ifdef __cplusplus
 }  // extern "C"

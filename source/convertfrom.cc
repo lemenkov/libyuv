@@ -113,20 +113,38 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  dst_sample_stride ? dst_sample_stride : width * 4,
                  width, height);
       break;
-#ifdef HAVEI420TOBAYER
     case FOURCC_BGGR:
-    case FOURCC_RGGB:
-    case FOURCC_GRBG:
-    case FOURCC_GBRG:
-      I420ToBayerRGB(y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_sample,
-                     dst_sample_stride ? dst_sample_stride : width,
-                     format,
-                     width, height);
+      I420ToBayerBGGR(y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_sample,
+                      dst_sample_stride ? dst_sample_stride : width,
+                      width, height);
       break;
-#endif
+    case FOURCC_GBRG:
+      I420ToBayerGBRG(y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_sample,
+                      dst_sample_stride ? dst_sample_stride : width,
+                      width, height);
+      break;
+    case FOURCC_GRBG:
+      I420ToBayerGRBG(y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_sample,
+                      dst_sample_stride ? dst_sample_stride : width,
+                      width, height);
+      break;
+    case FOURCC_RGGB:
+      I420ToBayerRGGB(y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_sample,
+                      dst_sample_stride ? dst_sample_stride : width,
+                      width, height);
+      break;
     case FOURCC_I400:
       I400Copy(y, y_stride,
                dst_sample,

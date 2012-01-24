@@ -1615,10 +1615,10 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
 
 // Convert I420 to RGB24.
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
-                 const uint8* src_u, int src_stride_u,
-                 const uint8* src_v, int src_stride_v,
-                 uint8* dst_argb, int dst_stride_argb,
-                 int width, int height) {
+                const uint8* src_u, int src_stride_u,
+                const uint8* src_v, int src_stride_v,
+                uint8* dst_argb, int dst_stride_argb,
+                int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -1781,10 +1781,10 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
 
 // Convert I420 to ARGB1555.
 int I420ToARGB1555(const uint8* src_y, int src_stride_y,
-                 const uint8* src_u, int src_stride_u,
-                 const uint8* src_v, int src_stride_v,
-                 uint8* dst_argb, int dst_stride_argb,
-                 int width, int height) {
+                   const uint8* src_u, int src_stride_u,
+                   const uint8* src_v, int src_stride_v,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -1835,10 +1835,10 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
 
 // Convert I420 to ARGB4444.
 int I420ToARGB4444(const uint8* src_y, int src_stride_y,
-                 const uint8* src_u, int src_stride_u,
-                 const uint8* src_v, int src_stride_v,
-                 uint8* dst_argb, int dst_stride_argb,
-                 int width, int height) {
+                   const uint8* src_u, int src_stride_u,
+                   const uint8* src_v, int src_stride_v,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height) {
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
