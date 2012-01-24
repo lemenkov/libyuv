@@ -28,6 +28,7 @@
         'include/libyuv/scale.h',
         'include/libyuv/planar_functions.h',
         'include/libyuv/video_common.h',
+        'include/libyuv/version.h',
 
         # headers
         'source/rotate_priv.h',
