@@ -14,7 +14,7 @@
 #ifdef _MSC_VER
 #include <intrin.h>  // For __cpuid()
 #endif
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && defined(NDK_ROOT)
 #include <cpu-features.h>  // For android_getCpuFeatures()
 #endif
 
@@ -65,7 +65,7 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_SSSE3")) {
     cpu_info_ &= ~kCpuHasSSSE3;
   }
-#elif defined(__ANDROID__) && defined(__ARM_NEON__)
+#elif defined(__ANDROID__) && defined(__ARM_NEON__) && defined(NDK_ROOT)
   uint64_t features = android_getCpuFeatures();
   cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
               kCpuInitialized;
