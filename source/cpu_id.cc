@@ -14,9 +14,10 @@
 #ifdef _MSC_VER
 #include <intrin.h>  // For __cpuid()
 #endif
-#if defined(__ANDROID__) && defined(NDK_ROOT)
-#include <cpu-features.h>  // For android_getCpuFeatures()
-#endif
+
+// For ArmCpuCaps() but unittested on all platforms
+#include <stdio.h>
+#include <string.h>
 
 #include "libyuv/basic_types.h"  // For CPU_X86
 
@@ -46,6 +47,26 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// based on libvpx arm_cpudetect.c
+int ArmCpuCaps(const char* cpuinfoname) {
+  int flags = 0;
+  FILE* fin = fopen(cpuinfoname, "r");
+  if (fin) {
+    char buf[512];
+    while (fgets(buf, 511, fin)) {
+      if (memcmp(buf, "Features", 8) == 0) {
+        char* p = strstr(buf, " neon");
+        if (p && (p[5] == ' ' || p[5] == '\n')) {
+          flags |= kCpuHasNEON;
+          break;
+        }
+      }
+    }
+    fclose(fin);
+  }
+  return flags;
+}
+
 // CPU detect function for SIMD instruction sets.
 int cpu_info_ = 0;
 
@@ -65,10 +86,8 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_SSSE3")) {
     cpu_info_ &= ~kCpuHasSSSE3;
   }
-#elif defined(__ANDROID__) && defined(__ARM_NEON__) && defined(NDK_ROOT)
-  uint64_t features = android_getCpuFeatures();
-  cpu_info_ = ((features & ANDROID_CPU_ARM_FEATURE_NEON) ? kCpuHasNEON : 0) |
-              kCpuInitialized;
+#elif if defined(__linux__) && defined(__ARM_NEON__)
+  cpu_info_ = ArmCpuCaps("/proc/cpuinfo") | kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags

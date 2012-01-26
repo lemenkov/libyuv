@@ -35,6 +35,8 @@ static double get_time()
     return double(t.QuadPart)/double(f.QuadPart);
 }
 
+#define random rand
+#define srandom srand
 #else
 
 #include <sys/time.h>

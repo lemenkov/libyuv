@@ -8,19 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_VERSION_H_
-#define INCLUDE_LIBYUV_VERSION_H_
+#include "unit_test.h"
 
-#ifdef __cplusplus
+#include <stdlib.h>
+#include <string.h>
+
+#include "libyuv/basic_types.h"
+#include "libyuv/cpu_id.h"
+
 namespace libyuv {
-extern "C" {
-#endif
 
-#define LIBYUV_VERSION 153
+extern "C" int ArmCpuCaps(const char* cpuinfoname);
 
-#ifdef __cplusplus
-}  // extern "C"
+TEST_F(libyuvTest, TestLinuxNeon) {
+  EXPECT_EQ(0,ArmCpuCaps("testdata/arm_v7.txt"));
+  EXPECT_NE(kCpuHasNEON,ArmCpuCaps("testdata/tegra3.txt"));
+}
+
 }  // namespace libyuv
-#endif
-
-#endif  // INCLUDE_LIBYUV_VERSION_H_
