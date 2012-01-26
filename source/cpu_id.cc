@@ -48,6 +48,7 @@ extern "C" {
 #endif
 
 // based on libvpx arm_cpudetect.c
+// For Arm, but testable on any CPU
 int ArmCpuCaps(const char* cpuinfoname) {
   int flags = 0;
   FILE* fin = fopen(cpuinfoname, "r");
@@ -86,7 +87,7 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_SSSE3")) {
     cpu_info_ &= ~kCpuHasSSSE3;
   }
-#elif if defined(__linux__) && defined(__ARM_NEON__)
+#elif defined(__linux__) && defined(__ARM_NEON__)
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo") | kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
