@@ -15,6 +15,7 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
+#include "libyuv/version.h"
 
 namespace libyuv {
 
@@ -23,6 +24,10 @@ extern "C" int ArmCpuCaps(const char* cpuinfoname);
 TEST_F(libyuvTest, TestLinuxNeon) {
   EXPECT_EQ(0,ArmCpuCaps("testdata/arm_v7.txt"));
   EXPECT_NE(kCpuHasNEON,ArmCpuCaps("testdata/tegra3.txt"));
+}
+
+TEST_F(libyuvTest, TestVersion) {
+  EXPECT_GE(159,LIBYUV_VERSION);
 }
 
 }  // namespace libyuv
