@@ -380,10 +380,26 @@ void NAMEANY(const uint8* y_buf,                                               \
   memcpy(rgb_buf, row, width << 2);                                            \
 }
 
+
+// Wrappers to handle odd sizes/alignments
+#define MAKEYUVANYRGB(NAMEANY, ARGBTORGB, BPP)                                 \
+void NAMEANY(const uint8* argb_buf,                                            \
+             uint8* rgb_buf,                                                   \
+             int width) {                                                      \
+  SIMD_ALIGNED(uint8 row[kMaxStride]);                                         \
+  ARGBTORGB(argb_buf, row, width);                                             \
+  memcpy(rgb_buf, row, width * BPP);                                           \
+}
+
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
 MAKEYUVANY(FastConvertYUVToARGBAnyRow_SSSE3, FastConvertYUVToARGBRow_SSSE3)
 MAKEYUVANY(FastConvertYUVToBGRAAnyRow_SSSE3, FastConvertYUVToBGRARow_SSSE3)
 MAKEYUVANY(FastConvertYUVToABGRAnyRow_SSSE3, FastConvertYUVToABGRRow_SSSE3)
+MAKEYUVANYRGB(ARGBToRGB24AnyRow_SSSE3, ARGBToRGB24Row_SSSE3, 3)
+MAKEYUVANYRGB(ARGBToRAWAnyRow_SSSE3, ARGBToRAWRow_SSSE3, 3)
+MAKEYUVANYRGB(ARGBToRGB565AnyRow_SSE2, ARGBToRGB565Row_SSE2, 2)
+MAKEYUVANYRGB(ARGBToARGB1555AnyRow_SSE2, ARGBToARGB1555Row_SSE2, 2)
+MAKEYUVANYRGB(ARGBToARGB4444AnyRow_SSE2, ARGBToARGB4444Row_SSE2, 2)
 #endif
 #if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
 MAKEYUVANY(FastConvertYUVToARGBAnyRow_NEON, FastConvertYUVToARGBRow_NEON)

@@ -229,6 +229,12 @@ void FastConvertYUVToABGRAnyRow_SSSE3(const uint8* y_buf,
                                       uint8* rgb_buf,
                                       int width);
 
+void ARGBToRGB24AnyRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRAWAnyRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
 void FastConvertYUVToARGBAnyRow_NEON(const uint8* y_buf,
                                      const uint8* u_buf,
                                      const uint8* v_buf,
