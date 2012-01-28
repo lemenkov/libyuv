@@ -16,7 +16,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#define LIBYUV_VERSION 160
+#define LIBYUV_VERSION 161
 
 #ifdef __cplusplus
 }  // extern "C"

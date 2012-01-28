@@ -612,6 +612,39 @@ __asm {
 }
 
 __declspec(naked)
+void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+__asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kARGBToY
+
+ convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    lea        eax, [eax + 64]
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 7
+    psrlw      xmm2, 7
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -637,6 +670,39 @@ __asm {
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
     movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+__asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kBGRAToY
+
+ convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    lea        eax, [eax + 64]
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 7
+    psrlw      xmm2, 7
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
     ja         convertloop
@@ -678,6 +744,39 @@ __asm {
 }
 
 __declspec(naked)
+void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+__asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    movdqa     xmm5, kAddY16
+    movdqa     xmm4, kABGRToY
+
+ convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    lea        eax, [eax + 64]
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 7
+    psrlw      xmm2, 7
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -703,6 +802,75 @@ __asm {
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
     pavgb      xmm3, [eax + esi + 48]
+    lea        eax,  [eax + 64]
+    movdqa     xmm4, xmm0
+    shufps     xmm0, xmm1, 0x88
+    shufps     xmm4, xmm1, 0xdd
+    pavgb      xmm0, xmm4
+    movdqa     xmm4, xmm2
+    shufps     xmm2, xmm3, 0x88
+    shufps     xmm4, xmm3, 0xdd
+    pavgb      xmm2, xmm4
+
+    // step 2 - convert to U and V
+    // from here down is very similar to Y code except
+    // instead of 16 different pixels, its 8 pixels of U and 8 of V
+    movdqa     xmm1, xmm0
+    movdqa     xmm3, xmm2
+    pmaddubsw  xmm0, xmm7  // U
+    pmaddubsw  xmm2, xmm7
+    pmaddubsw  xmm1, xmm6  // V
+    pmaddubsw  xmm3, xmm6
+    phaddw     xmm0, xmm2
+    phaddw     xmm1, xmm3
+    psraw      xmm0, 8
+    psraw      xmm1, 8
+    packsswb   xmm0, xmm1
+    paddb      xmm0, xmm5            // -> unsigned
+
+    // step 3 - store 8 U and 8 V values
+    movlps     qword ptr [edx], xmm0 // U
+    movhps     qword ptr [edx + edi], xmm0 // V
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+
+__declspec(naked)
+void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+__asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // src_argb
+    mov        esi, [esp + 8 + 8]   // src_stride_argb
+    mov        edx, [esp + 8 + 12]  // dst_u
+    mov        edi, [esp + 8 + 16]  // dst_v
+    mov        ecx, [esp + 8 + 20]  // pix
+    movdqa     xmm7, kARGBToU
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm5, kAddUV128
+    sub        edi, edx             // stride from u to v
+
+ convertloop:
+    /* step 1 - subsample 16x2 argb pixels to 8x1 */
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    movdqu     xmm4, [eax + esi]
+    pavgb      xmm0, xmm4
+    movdqu     xmm4, [eax + esi + 16]
+    pavgb      xmm1, xmm4
+    movdqu     xmm4, [eax + esi + 32]
+    pavgb      xmm2, xmm4
+    movdqu     xmm4, [eax + esi + 48]
+    pavgb      xmm3, xmm4
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -806,6 +974,74 @@ __asm {
 }
 
 __declspec(naked)
+void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+__asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // src_argb
+    mov        esi, [esp + 8 + 8]   // src_stride_argb
+    mov        edx, [esp + 8 + 12]  // dst_u
+    mov        edi, [esp + 8 + 16]  // dst_v
+    mov        ecx, [esp + 8 + 20]  // pix
+    movdqa     xmm7, kBGRAToU
+    movdqa     xmm6, kBGRAToV
+    movdqa     xmm5, kAddUV128
+    sub        edi, edx             // stride from u to v
+
+ convertloop:
+    /* step 1 - subsample 16x2 argb pixels to 8x1 */
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    movdqu     xmm4, [eax + esi]
+    pavgb      xmm0, xmm4
+    movdqu     xmm4, [eax + esi + 16]
+    pavgb      xmm1, xmm4
+    movdqu     xmm4, [eax + esi + 32]
+    pavgb      xmm2, xmm4
+    movdqu     xmm4, [eax + esi + 48]
+    pavgb      xmm3, xmm4
+    lea        eax,  [eax + 64]
+    movdqa     xmm4, xmm0
+    shufps     xmm0, xmm1, 0x88
+    shufps     xmm4, xmm1, 0xdd
+    pavgb      xmm0, xmm4
+    movdqa     xmm4, xmm2
+    shufps     xmm2, xmm3, 0x88
+    shufps     xmm4, xmm3, 0xdd
+    pavgb      xmm2, xmm4
+
+    // step 2 - convert to U and V
+    // from here down is very similar to Y code except
+    // instead of 16 different pixels, its 8 pixels of U and 8 of V
+    movdqa     xmm1, xmm0
+    movdqa     xmm3, xmm2
+    pmaddubsw  xmm0, xmm7  // U
+    pmaddubsw  xmm2, xmm7
+    pmaddubsw  xmm1, xmm6  // V
+    pmaddubsw  xmm3, xmm6
+    phaddw     xmm0, xmm2
+    phaddw     xmm1, xmm3
+    psraw      xmm0, 8
+    psraw      xmm1, 8
+    packsswb   xmm0, xmm1
+    paddb      xmm0, xmm5            // -> unsigned
+
+    // step 3 - store 8 U and 8 V values
+    movlps     qword ptr [edx], xmm0 // U
+    movhps     qword ptr [edx + edi], xmm0 // V
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -831,6 +1067,75 @@ __asm {
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
     pavgb      xmm3, [eax + esi + 48]
+    lea        eax,  [eax + 64]
+    movdqa     xmm4, xmm0
+    shufps     xmm0, xmm1, 0x88
+    shufps     xmm4, xmm1, 0xdd
+    pavgb      xmm0, xmm4
+    movdqa     xmm4, xmm2
+    shufps     xmm2, xmm3, 0x88
+    shufps     xmm4, xmm3, 0xdd
+    pavgb      xmm2, xmm4
+
+    // step 2 - convert to U and V
+    // from here down is very similar to Y code except
+    // instead of 16 different pixels, its 8 pixels of U and 8 of V
+    movdqa     xmm1, xmm0
+    movdqa     xmm3, xmm2
+    pmaddubsw  xmm0, xmm7  // U
+    pmaddubsw  xmm2, xmm7
+    pmaddubsw  xmm1, xmm6  // V
+    pmaddubsw  xmm3, xmm6
+    phaddw     xmm0, xmm2
+    phaddw     xmm1, xmm3
+    psraw      xmm0, 8
+    psraw      xmm1, 8
+    packsswb   xmm0, xmm1
+    paddb      xmm0, xmm5            // -> unsigned
+
+    // step 3 - store 8 U and 8 V values
+    movlps     qword ptr [edx], xmm0 // U
+    movhps     qword ptr [edx + edi], xmm0 // V
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+
+__declspec(naked)
+void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+__asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // src_argb
+    mov        esi, [esp + 8 + 8]   // src_stride_argb
+    mov        edx, [esp + 8 + 12]  // dst_u
+    mov        edi, [esp + 8 + 16]  // dst_v
+    mov        ecx, [esp + 8 + 20]  // pix
+    movdqa     xmm7, kABGRToU
+    movdqa     xmm6, kABGRToV
+    movdqa     xmm5, kAddUV128
+    sub        edi, edx             // stride from u to v
+
+ convertloop:
+    /* step 1 - subsample 16x2 argb pixels to 8x1 */
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    movdqu     xmm4, [eax + esi]
+    pavgb      xmm0, xmm4
+    movdqu     xmm4, [eax + esi + 16]
+    pavgb      xmm1, xmm4
+    movdqu     xmm4, [eax + esi + 32]
+    pavgb      xmm2, xmm4
+    movdqu     xmm4, [eax + esi + 48]
+    pavgb      xmm3, xmm4
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88

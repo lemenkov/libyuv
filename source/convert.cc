@@ -365,6 +365,11 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     ARGBToYRow = ARGBToYRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) && width <= kMaxStride) {
+    ARGBToYRow = ARGBToYAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {
@@ -375,6 +380,12 @@ int ARGBToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
     ARGBToUVRow = ARGBToUVRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 2) && width <= kMaxStride) {
+    ARGBToUVRow = ARGBToUVAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {
@@ -416,6 +427,11 @@ int BGRAToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     ARGBToYRow = BGRAToYRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) && width <= kMaxStride) {
+    ARGBToYRow = BGRAToYAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = BGRAToYRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {
@@ -426,6 +442,12 @@ int BGRAToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
     ARGBToUVRow = BGRAToUVRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 2) && width <= kMaxStride) {
+    ARGBToUVRow = BGRAToUVAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = BGRAToUVRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {
@@ -467,6 +489,11 @@ int ABGRToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     ARGBToYRow = ABGRToYRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) && width <= kMaxStride) {
+    ARGBToYRow = ABGRToYAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ABGRToYRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {
@@ -477,6 +504,12 @@ int ABGRToI420(const uint8* src_frame, int src_stride_frame,
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src_frame, 16) && IS_ALIGNED(src_stride_frame, 16)) {
     ARGBToUVRow = ABGRToUVRow_SSSE3;
+  } else if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 2) && width <= kMaxStride) {
+    ARGBToUVRow = ABGRToUVAnyRow_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ABGRToUVRow_Unaligned_SSSE3;
+    }
   } else
 #endif
   {

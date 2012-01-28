@@ -380,8 +380,17 @@ void NAMEANY(const uint8* y_buf,                                               \
   memcpy(rgb_buf, row, width << 2);                                            \
 }
 
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+MAKEYUVANY(FastConvertYUVToARGBAnyRow_SSSE3, FastConvertYUVToARGBRow_SSSE3)
+MAKEYUVANY(FastConvertYUVToBGRAAnyRow_SSSE3, FastConvertYUVToBGRARow_SSSE3)
+MAKEYUVANY(FastConvertYUVToABGRAnyRow_SSSE3, FastConvertYUVToABGRRow_SSSE3)
+#endif
+#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+MAKEYUVANY(FastConvertYUVToARGBAnyRow_NEON, FastConvertYUVToARGBRow_NEON)
+MAKEYUVANY(FastConvertYUVToBGRAAnyRow_NEON, FastConvertYUVToBGRARow_NEON)
+MAKEYUVANY(FastConvertYUVToABGRAnyRow_NEON, FastConvertYUVToABGRRow_NEON)
+#endif
 
-// Wrappers to handle odd sizes/alignments
 #define MAKEYUVANYRGB(NAMEANY, ARGBTORGB, BPP)                                 \
 void NAMEANY(const uint8* argb_buf,                                            \
              uint8* rgb_buf,                                                   \
@@ -391,20 +400,40 @@ void NAMEANY(const uint8* argb_buf,                                            \
   memcpy(rgb_buf, row, width * BPP);                                           \
 }
 
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
-MAKEYUVANY(FastConvertYUVToARGBAnyRow_SSSE3, FastConvertYUVToARGBRow_SSSE3)
-MAKEYUVANY(FastConvertYUVToBGRAAnyRow_SSSE3, FastConvertYUVToBGRARow_SSSE3)
-MAKEYUVANY(FastConvertYUVToABGRAnyRow_SSSE3, FastConvertYUVToABGRRow_SSSE3)
+#if defined(HAS_ARGBTORGB24ROW_SSSE3)
 MAKEYUVANYRGB(ARGBToRGB24AnyRow_SSSE3, ARGBToRGB24Row_SSSE3, 3)
 MAKEYUVANYRGB(ARGBToRAWAnyRow_SSSE3, ARGBToRAWRow_SSSE3, 3)
 MAKEYUVANYRGB(ARGBToRGB565AnyRow_SSE2, ARGBToRGB565Row_SSE2, 2)
 MAKEYUVANYRGB(ARGBToARGB1555AnyRow_SSE2, ARGBToARGB1555Row_SSE2, 2)
 MAKEYUVANYRGB(ARGBToARGB4444AnyRow_SSE2, ARGBToARGB4444Row_SSE2, 2)
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
-MAKEYUVANY(FastConvertYUVToARGBAnyRow_NEON, FastConvertYUVToARGBRow_NEON)
-MAKEYUVANY(FastConvertYUVToBGRAAnyRow_NEON, FastConvertYUVToBGRARow_NEON)
-MAKEYUVANY(FastConvertYUVToABGRAnyRow_NEON, FastConvertYUVToABGRRow_NEON)
+
+#ifdef HAS_ARGBTOYROW_SSSE3
+
+#define MAKEARGBTOYANY(NAMEANY, ARGBTOY)                                       \
+    void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
+      SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
+      ARGBTOY(src_argb, row, width);                                           \
+      memcpy(dst_y, row, width);                                               \
+    }
+
+MAKEARGBTOYANY(ARGBToYAnyRow_SSSE3, ARGBToYRow_Unaligned_SSSE3)
+MAKEARGBTOYANY(BGRAToYAnyRow_SSSE3, BGRAToYRow_Unaligned_SSSE3)
+MAKEARGBTOYANY(ABGRToYAnyRow_SSSE3, ABGRToYRow_Unaligned_SSSE3)
+
+#define MAKEARGBTOUVANY(NAMEANY, ARGBTOUV)                                     \
+    void NAMEANY(const uint8* src_argb0, int src_stride_argb,                  \
+                 uint8* dst_u, uint8* dst_v, int width) {                      \
+      SIMD_ALIGNED(uint8 row[kMaxStride * 2]);                                 \
+      ARGBTOUV(src_argb0, src_stride_argb, row, row + kMaxStride, width);      \
+      int halfwidth = (width + 1) >> 1;                                        \
+      memcpy(dst_u, row, halfwidth);                                           \
+      memcpy(dst_v, row + kMaxStride, halfwidth);                              \
+    }
+
+MAKEARGBTOUVANY(ARGBToUVAnyRow_SSSE3, ARGBToUVRow_Unaligned_SSSE3)
+MAKEARGBTOUVANY(BGRAToUVAnyRow_SSSE3, BGRAToUVRow_Unaligned_SSSE3)
+MAKEARGBTOUVANY(ABGRToUVAnyRow_SSSE3, ABGRToUVRow_Unaligned_SSSE3)
 #endif
 
 #ifdef __cplusplus

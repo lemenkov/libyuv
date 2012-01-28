@@ -100,12 +100,22 @@ void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width);
+void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width);
+void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width);
 
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
@@ -234,6 +244,16 @@ void ARGBToRAWAnyRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
+void ARGBToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void BGRAToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ABGRToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
+void BGRAToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
+void ABGRToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
 
 void FastConvertYUVToARGBAnyRow_NEON(const uint8* y_buf,
                                      const uint8* u_buf,

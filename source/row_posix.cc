@@ -259,6 +259,43 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
 );
 }
+
+void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+  "movdqa     %4,%%xmm5                        \n"
+  "movdqa     %3,%%xmm4                        \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "movdqu     0x20(%0),%%xmm2                  \n"
+  "movdqu     0x30(%0),%%xmm3                  \n"
+  "pmaddubsw  %%xmm4,%%xmm0                    \n"
+  "pmaddubsw  %%xmm4,%%xmm1                    \n"
+  "pmaddubsw  %%xmm4,%%xmm2                    \n"
+  "pmaddubsw  %%xmm4,%%xmm3                    \n"
+  "lea        0x40(%0),%0                      \n"
+  "phaddw     %%xmm1,%%xmm0                    \n"
+  "phaddw     %%xmm3,%%xmm2                    \n"
+  "psrlw      $0x7,%%xmm0                      \n"
+  "psrlw      $0x7,%%xmm2                      \n"
+  "packuswb   %%xmm2,%%xmm0                    \n"
+  "paddb      %%xmm5,%%xmm0                    \n"
+  "movdqu     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "ja         1b                               \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kARGBToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+
+);
+}
 #endif
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
@@ -288,6 +325,74 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
   "pavgb      0x10(%0,%4,1),%%xmm1             \n"
   "pavgb      0x20(%0,%4,1),%%xmm2             \n"
   "pavgb      0x30(%0,%4,1),%%xmm6             \n"
+  "lea        0x40(%0),%0                      \n"
+  "movdqa     %%xmm0,%%xmm7                    \n"
+  "shufps     $0x88,%%xmm1,%%xmm0              \n"
+  "shufps     $0xdd,%%xmm1,%%xmm7              \n"
+  "pavgb      %%xmm7,%%xmm0                    \n"
+  "movdqa     %%xmm2,%%xmm7                    \n"
+  "shufps     $0x88,%%xmm6,%%xmm2              \n"
+  "shufps     $0xdd,%%xmm6,%%xmm7              \n"
+  "pavgb      %%xmm7,%%xmm2                    \n"
+  "movdqa     %%xmm0,%%xmm1                    \n"
+  "movdqa     %%xmm2,%%xmm6                    \n"
+  "pmaddubsw  %%xmm4,%%xmm0                    \n"
+  "pmaddubsw  %%xmm4,%%xmm2                    \n"
+  "pmaddubsw  %%xmm3,%%xmm1                    \n"
+  "pmaddubsw  %%xmm3,%%xmm6                    \n"
+  "phaddw     %%xmm2,%%xmm0                    \n"
+  "phaddw     %%xmm6,%%xmm1                    \n"
+  "psraw      $0x8,%%xmm0                      \n"
+  "psraw      $0x8,%%xmm1                      \n"
+  "packsswb   %%xmm1,%%xmm0                    \n"
+  "paddb      %%xmm5,%%xmm0                    \n"
+  "movlps     %%xmm0,(%1)                      \n"
+  "movhps     %%xmm0,(%1,%2,1)                 \n"
+  "lea        0x8(%1),%1                       \n"
+  "sub        $0x10,%3                         \n"
+  "ja         1b                               \n"
+  : "+r"(src_argb0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_argb))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+);
+}
+
+void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+ asm volatile (
+  "movdqa     %0,%%xmm4                        \n"
+  "movdqa     %1,%%xmm3                        \n"
+  "movdqa     %2,%%xmm5                        \n"
+  :
+  : "m"(kARGBToU),         // %0
+    "m"(kARGBToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+ );
+ asm volatile (
+  "sub        %1,%2                            \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "movdqu     0x20(%0),%%xmm2                  \n"
+  "movdqu     0x30(%0),%%xmm6                  \n"
+  "movdqu     (%0,%4,1),%%xmm7                 \n"
+  "pavgb      %%xmm7,%%xmm0                    \n"
+  "movdqu     0x10(%0,%4,1),%%xmm7             \n"
+  "pavgb      %%xmm7,%%xmm1                    \n"
+  "movdqu     0x20(%0,%4,1),%%xmm7             \n"
+  "pavgb      %%xmm7,%%xmm2                    \n"
+  "movdqu     0x30(%0,%4,1),%%xmm7             \n"
+  "pavgb      %%xmm7,%%xmm6                    \n"
   "lea        0x40(%0),%0                      \n"
   "movdqa     %%xmm0,%%xmm7                    \n"
   "shufps     $0x88,%%xmm1,%%xmm0              \n"
@@ -624,6 +729,18 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   BGRAToARGBRow_SSSE3(src_argb, row, pix);
   ARGBToYRow_SSSE3(row, dst_y, pix);
 }
+
+void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  ABGRToARGBRow_C(src_argb, row, pix);
+  ARGBToYRow_SSSE3(row, dst_y, pix);
+}
+
+void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  BGRAToARGBRow_C(src_argb, row, pix);
+  ARGBToYRow_SSSE3(row, dst_y, pix);
+}
 #endif
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
@@ -640,6 +757,22 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
   BGRAToARGBRow_SSSE3(src_argb, row, pix);
   BGRAToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  ABGRToARGBRow_C(src_argb, row, pix);
+  ABGRToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
+  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
+}
+
+void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int pix) {
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
+  BGRAToARGBRow_C(src_argb, row, pix);
+  BGRAToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
   ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
 }
 #endif
