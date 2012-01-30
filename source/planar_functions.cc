@@ -2147,7 +2147,6 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
 #if defined(HAS_RAWTOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_raw, 16) && IS_ALIGNED(src_stride_raw, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     RAWToARGBRow = RAWToARGBRow_SSSE3;
   } else
@@ -2177,7 +2176,6 @@ int BG24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
 #if defined(HAS_RGB24TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_rgb24, 16) && IS_ALIGNED(src_stride_rgb24, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
   } else

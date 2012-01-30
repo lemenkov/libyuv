@@ -172,9 +172,9 @@ __asm {
     movdqa    xmm4, kShuffleMaskRGB24ToARGB
 
  convertloop:
-    movdqa    xmm0, [eax]
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm3, [eax + 32]
+    movdqu    xmm0, [eax]
+    movdqu    xmm1, [eax + 16]
+    movdqu    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
     palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
@@ -211,9 +211,9 @@ __asm {
     movdqa    xmm4, kShuffleMaskRAWToARGB
 
  convertloop:
-    movdqa    xmm0, [eax]
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm3, [eax + 32]
+    movdqu    xmm0, [eax]
+    movdqu    xmm1, [eax + 16]
+    movdqu    xmm3, [eax + 32]
     lea       eax, [eax + 48]
     movdqa    xmm2, xmm3
     palignr   xmm2, xmm1, 8    // xmm2 = { xmm3[0:3] xmm1[8:15]}
@@ -270,7 +270,7 @@ __asm {
     sub       edx, eax
 
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 8 pixels of bgr565
+    movdqu    xmm0, [eax]   // fetch 8 pixels of bgr565
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
     pand      xmm1, xmm3    // R in upper 5 bits
@@ -320,7 +320,7 @@ __asm {
     sub       edx, eax
 
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 8 pixels of 1555
+    movdqu    xmm0, [eax]   // fetch 8 pixels of 1555
     movdqa    xmm1, xmm0
     movdqa    xmm2, xmm0
     psllw     xmm1, 1       // R in upper 5 bits
@@ -366,7 +366,7 @@ __asm {
     sub       edx, eax
 
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 8 pixels of bgra4444
+    movdqu    xmm0, [eax]   // fetch 8 pixels of bgra4444
     movdqa    xmm2, xmm0
     pand      xmm0, xmm4    // mask low nibbles
     pand      xmm2, xmm5    // mask high nibbles
