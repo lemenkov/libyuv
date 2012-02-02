@@ -10,8 +10,6 @@
 
 #include "libyuv/format_conversion.h"
 
-#include <assert.h>  // For assert()
-
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/video_common.h"
@@ -103,16 +101,14 @@ static uint32 GenerateSelector(int select0, int select1) {
          static_cast<uint32>((select1 + 12) << 24);
 }
 
-static void MakeSelectors(const int blue_index,
-                          const int green_index,
-                          const int red_index,
-                          uint32 dst_fourcc_bayer,
-                          uint32 *index_map) {
+static int MakeSelectors(const int blue_index,
+                         const int green_index,
+                         const int red_index,
+                         uint32 dst_fourcc_bayer,
+                         uint32 *index_map) {
   // Now build a lookup table containing the indices for the four pixels in each
   // 2x2 Bayer grid.
   switch (dst_fourcc_bayer) {
-    default:
-      assert(false);
     case FOURCC_BGGR:
       index_map[0] = GenerateSelector(blue_index, green_index);
       index_map[1] = GenerateSelector(green_index, red_index);
@@ -129,7 +125,10 @@ static void MakeSelectors(const int blue_index,
       index_map[0] = GenerateSelector(green_index, red_index);
       index_map[1] = GenerateSelector(blue_index, green_index);
       break;
+    default:
+      return -1; // Bad FourCC
   }
+  return 0;
 }
 
 // Converts 32 bit ARGB to Bayer RGB formats.
@@ -158,8 +157,10 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
   const int green_index = 1;
   const int red_index = 2;
   uint32 index_map[2];
-  MakeSelectors(blue_index, green_index, red_index,
-                dst_fourcc_bayer, index_map);
+  if (MakeSelectors(blue_index, green_index, red_index,
+                    dst_fourcc_bayer, index_map)) {
+    return -1; // Bad FourCC
+  }
 
   for (int y = 0; y < height; ++y) {
     ARGBToBayerRow(src_argb, dst_bayer, index_map[y & 1], width);
@@ -310,8 +311,6 @@ int BayerToARGB(const uint8* src_bayer, int src_stride_bayer,
   void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
                     uint8* dst_argb, int pix);
   switch (src_fourcc_bayer) {
-    default:
-      assert(false);
     case FOURCC_BGGR:
       BayerRow0 = BayerRowBG;
       BayerRow1 = BayerRowGR;
@@ -328,6 +327,8 @@ int BayerToARGB(const uint8* src_bayer, int src_stride_bayer,
       BayerRow0 = BayerRowRG;
       BayerRow1 = BayerRowGB;
       break;
+    default:
+      return -1;    // Bad FourCC
   }
 
   for (int y = 0; y < height - 1; y += 2) {
@@ -351,7 +352,7 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
                 int width, int height,
                 uint32 src_fourcc_bayer) {
   if (width * 4 > kMaxStride) {
-    return -1;
+    return -1;  // Size too large for row buffer
   }
   // Negative height means invert the image.
   if (height < 0) {
@@ -393,8 +394,6 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
   }
 
   switch (src_fourcc_bayer) {
-    default:
-      assert(false);
     case FOURCC_BGGR:
       BayerRow0 = BayerRowBG;
       BayerRow1 = BayerRowGR;
@@ -411,6 +410,8 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
       BayerRow0 = BayerRowRG;
       BayerRow1 = BayerRowGB;
       break;
+    default:
+      return -1;    // Bad FourCC
   }
 
   for (int y = 0; y < height - 1; y += 2) {
@@ -483,8 +484,10 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   const int green_index = 1;
   const int red_index = 2;
   uint32 index_map[2];
-  MakeSelectors(blue_index, green_index, red_index,
-                dst_fourcc_bayer, index_map);
+  if (MakeSelectors(blue_index, green_index, red_index,
+                    dst_fourcc_bayer, index_map)) {
+    return -1;  // Bad FourCC
+  }
 
   for (int y = 0; y < height; ++y) {
     FastConvertYUVToARGBRow(src_y, src_u, src_v, row, width);
