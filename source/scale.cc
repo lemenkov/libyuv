@@ -2972,7 +2972,7 @@ static void ScaleRowDown38_C(const uint8* src_ptr, int,
 static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  for (int i = 0; i < dst_width; i+=3) {
+  for (int i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
         src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
         src_ptr[src_stride + 2] + src_ptr[src_stride * 2 + 0] +
@@ -2996,7 +2996,7 @@ static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  for (int i = 0; i < dst_width; i+=3) {
+  for (int i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
         src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
         src_ptr[src_stride + 2]) * (65536 / 6) >> 16;
@@ -3084,6 +3084,7 @@ static void ScalePlaneDown2(int src_width, int src_height,
   {
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
   }
+  // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += (src_stride << 1);
@@ -3232,13 +3233,14 @@ static void ScalePlaneDown34(int src_width, int src_height,
     dst_ptr += dst_stride;
   }
 
-  if ((dst_height % 3) >= 1) {
+  // Remainder 1 or 2 rows with last row vertically unfiltered
+  if ((dst_height % 3) == 2) {
     ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
-  }
-  if ((dst_height % 3) >= 2) {
-    ScaleRowDown34_1(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown34_1(src_ptr, 0, dst_ptr, dst_width);
+  } else if ((dst_height % 3) == 1) {
+    ScaleRowDown34_0(src_ptr, 0, dst_ptr, dst_width);
   }
 }
 
@@ -3248,7 +3250,16 @@ static void ScalePlaneDown34(int src_width, int src_height,
  * This is an optimized version for scaling down a plane to 3/8
  * of its original size.
  *
- * Reduces 16x3 to 6x1
+ * Uses box filter arranges like this
+ * aaabbbcc -> abc
+ * aaabbbcc    def
+ * aaabbbcc    ghi
+ * dddeeeff
+ * dddeeeff
+ * dddeeeff
+ * ggghhhii
+ * ggghhhii
+ * Boxes are 3x3, 2x3, 3x2 and 2x2
  */
 static void ScalePlaneDown38(int src_width, int src_height,
                              int dst_width, int dst_height,
@@ -3303,13 +3314,15 @@ static void ScalePlaneDown38(int src_width, int src_height,
     src_ptr += src_stride * 2;
     dst_ptr += dst_stride;
   }
-  if ((dst_height % 3) >= 1) {
+
+  // Remainder 1 or 2 rows with last row vertically unfiltered
+  if ((dst_height % 3) == 2) {
     ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
-  }
-  if ((dst_height % 3) >= 2) {
-    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown38_3(src_ptr, 0, dst_ptr, dst_width);
+  } else if ((dst_height % 3) == 1) {
+    ScaleRowDown38_3(src_ptr, 0, dst_ptr, dst_width);
   }
 }
 
