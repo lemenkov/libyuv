@@ -271,7 +271,7 @@ static __inline uint32 Clip(int32 val) {
 }
 
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
-                            int ashift, int rshift, int gshift, int bshift) {
+                              int ashift, int rshift, int gshift, int bshift) {
   int32 y1 = (static_cast<int32>(y) - 16) * YG;
   uint32 b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
   uint32 g = Clip(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
@@ -282,11 +282,11 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
                                         (255u << ashift);
 }
 
-void FastConvertYUVToARGBRow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width) {
+void I420ToARGBRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
   for (int x = 0; x < width - 1; x += 2) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
     YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 16, 8, 0);
@@ -300,11 +300,11 @@ void FastConvertYUVToARGBRow_C(const uint8* y_buf,
   }
 }
 
-void FastConvertYUVToBGRARow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width) {
+void I420ToBGRARow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
   for (int x = 0; x < width - 1; x += 2) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 0, 8, 16, 24);
     YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 0, 8, 16, 24);
@@ -318,11 +318,11 @@ void FastConvertYUVToBGRARow_C(const uint8* y_buf,
   }
 }
 
-void FastConvertYUVToABGRRow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width) {
+void I420ToABGRRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
   for (int x = 0; x < width - 1; x += 2) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 0, 8, 16);
     YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 0, 8, 16);
@@ -336,11 +336,11 @@ void FastConvertYUVToABGRRow_C(const uint8* y_buf,
   }
 }
 
-void FastConvertYUV444ToARGBRow_C(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width) {
+void I444ToARGBRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
   for (int x = 0; x < width; ++x) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf, 24, 16, 8, 0);
     y_buf += 1;
@@ -350,9 +350,9 @@ void FastConvertYUV444ToARGBRow_C(const uint8* y_buf,
   }
 }
 
-void FastConvertYToARGBRow_C(const uint8* y_buf,
-                             uint8* rgb_buf,
-                             int width) {
+void YToARGBRow_C(const uint8* y_buf,
+                  uint8* rgb_buf,
+                  int width) {
   for (int x = 0; x < width; ++x) {
     YuvPixel(y_buf[0], 128, 128, rgb_buf, 24, 16, 8, 0);
     y_buf += 1;
@@ -368,6 +368,51 @@ void MirrorRow_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
+// Filter 2 rows of YUY2 UV's (422) into U and V (420)
+void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
+                   uint8* dst_u, uint8* dst_v, int pix) {
+  // Output a row of UV values, filtering 2 rows of YUY2
+  for (int x = 0; x < pix; x += 2) {
+    dst_u[0] = (src_yuy2[1] + src_yuy2[src_stride_yuy2 + 1] + 1) >> 1;
+    dst_v[0] = (src_yuy2[3] + src_yuy2[src_stride_yuy2 + 3] + 1) >> 1;
+    src_yuy2 += 4;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
+void YUY2ToYRow_C(const uint8* src_yuy2,
+                  uint8* dst_y, int pix) {
+  // Copy a row of yuy2 Y values
+  for (int x = 0; x < pix; ++x) {
+    dst_y[0] = src_yuy2[0];
+    src_yuy2 += 2;
+    dst_y += 1;
+  }
+}
+
+void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
+                   uint8* dst_u, uint8* dst_v, int pix) {
+  // Copy a row of uyvy UV values
+  for (int x = 0; x < pix; x += 2) {
+    dst_u[0] = (src_uyvy[0] + src_uyvy[src_stride_uyvy + 0] + 1) >> 1;
+    dst_v[0] = (src_uyvy[2] + src_uyvy[src_stride_uyvy + 2] + 1) >> 1;
+    src_uyvy += 4;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
+void UYVYToYRow_C(const uint8* src_uyvy,
+                  uint8* dst_y, int pix) {
+  // Copy a row of uyvy Y values
+  for (int x = 0; x < pix; ++x) {
+    dst_y[0] = src_uyvy[1];
+    src_uyvy += 2;
+    dst_y += 1;
+  }
+}
+
 // Wrappers to handle odd sizes/alignments
 #define MAKEYUVANY(NAMEANY, NAME)                                              \
 void NAMEANY(const uint8* y_buf,                                               \
@@ -380,15 +425,15 @@ void NAMEANY(const uint8* y_buf,                                               \
   memcpy(rgb_buf, row, width << 2);                                            \
 }
 
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
-MAKEYUVANY(FastConvertYUVToARGBAnyRow_SSSE3, FastConvertYUVToARGBRow_SSSE3)
-MAKEYUVANY(FastConvertYUVToBGRAAnyRow_SSSE3, FastConvertYUVToBGRARow_SSSE3)
-MAKEYUVANY(FastConvertYUVToABGRAnyRow_SSSE3, FastConvertYUVToABGRRow_SSSE3)
+#if defined(HAS_I420TOARGBROW_SSSE3)
+MAKEYUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_SSSE3)
+MAKEYUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_SSSE3)
+MAKEYUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_SSSE3)
 #endif
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
-MAKEYUVANY(FastConvertYUVToARGBAnyRow_NEON, FastConvertYUVToARGBRow_NEON)
-MAKEYUVANY(FastConvertYUVToBGRAAnyRow_NEON, FastConvertYUVToBGRARow_NEON)
-MAKEYUVANY(FastConvertYUVToABGRAnyRow_NEON, FastConvertYUVToABGRRow_NEON)
+#if defined(HAS_I420TOARGBROW_NEON)
+MAKEYUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON)
+MAKEYUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON)
+MAKEYUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON)
 #endif
 
 #define MAKEYUVANYRGB(NAMEANY, ARGBTORGB, BPP)                                 \
@@ -401,27 +446,29 @@ void NAMEANY(const uint8* argb_buf,                                            \
 }
 
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
-MAKEYUVANYRGB(ARGBToRGB24AnyRow_SSSE3, ARGBToRGB24Row_SSSE3, 3)
-MAKEYUVANYRGB(ARGBToRAWAnyRow_SSSE3, ARGBToRAWRow_SSSE3, 3)
-MAKEYUVANYRGB(ARGBToRGB565AnyRow_SSE2, ARGBToRGB565Row_SSE2, 2)
-MAKEYUVANYRGB(ARGBToARGB1555AnyRow_SSE2, ARGBToARGB1555Row_SSE2, 2)
-MAKEYUVANYRGB(ARGBToARGB4444AnyRow_SSE2, ARGBToARGB4444Row_SSE2, 2)
+MAKEYUVANYRGB(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, 3)
+MAKEYUVANYRGB(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, 3)
+MAKEYUVANYRGB(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, 2)
+MAKEYUVANYRGB(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, 2)
+MAKEYUVANYRGB(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 2)
 #endif
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
-#define MAKEARGBTOYANY(NAMEANY, ARGBTOY)                                       \
+#define MAKEANYTOYANY(NAMEANY, ARGBTOY)                                        \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
       ARGBTOY(src_argb, row, width);                                           \
       memcpy(dst_y, row, width);                                               \
     }
 
-MAKEARGBTOYANY(ARGBToYAnyRow_SSSE3, ARGBToYRow_Unaligned_SSSE3)
-MAKEARGBTOYANY(BGRAToYAnyRow_SSSE3, BGRAToYRow_Unaligned_SSSE3)
-MAKEARGBTOYANY(ABGRToYAnyRow_SSSE3, ABGRToYRow_Unaligned_SSSE3)
+MAKEANYTOYANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3)
+MAKEANYTOYANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3)
+MAKEANYTOYANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3)
+MAKEANYTOYANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2)
+MAKEANYTOYANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2)
 
-#define MAKEARGBTOUVANY(NAMEANY, ARGBTOUV)                                     \
+#define MAKEANYTOUVANY(NAMEANY, ARGBTOUV)                                      \
     void NAMEANY(const uint8* src_argb0, int src_stride_argb,                  \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       SIMD_ALIGNED(uint8 row[kMaxStride * 2]);                                 \
@@ -431,9 +478,11 @@ MAKEARGBTOYANY(ABGRToYAnyRow_SSSE3, ABGRToYRow_Unaligned_SSSE3)
       memcpy(dst_v, row + kMaxStride, halfwidth);                              \
     }
 
-MAKEARGBTOUVANY(ARGBToUVAnyRow_SSSE3, ARGBToUVRow_Unaligned_SSSE3)
-MAKEARGBTOUVANY(BGRAToUVAnyRow_SSSE3, BGRAToUVRow_Unaligned_SSSE3)
-MAKEARGBTOUVANY(ABGRToUVAnyRow_SSSE3, ABGRToUVRow_Unaligned_SSSE3)
+MAKEANYTOUVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3)
+MAKEANYTOUVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3)
+MAKEANYTOUVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3)
+MAKEANYTOUVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2)
+MAKEANYTOUVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2)
 #endif
 
 #ifdef __cplusplus

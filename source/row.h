@@ -13,6 +13,11 @@
 
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
+namespace libyuv {
+extern "C" {
+#endif
+
 #define kMaxStride (2048 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
@@ -34,13 +39,15 @@
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
-#define HAS_FASTCONVERTYTOARGBROW_SSE2
-#define HAS_FASTCONVERTYUVTOARGBROW_SSSE3
-#define HAS_FASTCONVERTYUVTOBGRAROW_SSSE3
-#define HAS_FASTCONVERTYUVTOABGRROW_SSSE3
-#define HAS_FASTCONVERTYUV444TOARGBROW_SSSE3
+#define HAS_YTOARGBROW_SSE2
+#define HAS_I420TOARGBROW_SSSE3
+#define HAS_I420TOBGRAROW_SSSE3
+#define HAS_I420TOABGRROW_SSSE3
+#define HAS_I444TOARGBROW_SSSE3
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROW_SSE2
+#define HAS_YUY2TOI420ROW_SSE2
+#define HAS_UYVYTOI420ROW_SSE2
 #endif
 
 // The following are available on Windows platforms
@@ -48,7 +55,6 @@
 #define HAS_RGB565TOARGBROW_SSE2
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
-
 #define HAS_ARGBTORGB24ROW_SSSE3
 #define HAS_ARGBTORAWROW_SSSE3
 #define HAS_ARGBTORGB565ROW_SSE2
@@ -59,14 +65,9 @@
 // The following are available on Neon platforms
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_MIRRORROW_NEON
-#define HAS_FASTCONVERTYUVTOARGBROW_NEON
-#define HAS_FASTCONVERTYUVTOBGRAROW_NEON
-#define HAS_FASTCONVERTYUVTOABGRROW_NEON
-#endif
-
-#ifdef __cplusplus
-namespace libyuv {
-extern "C" {
+#define HAS_I420TOARGBROW_NEON
+#define HAS_I420TOBGRAROW_NEON
+#define HAS_I420TOABGRROW_NEON
 #endif
 
 #if defined(_MSC_VER)
@@ -81,21 +82,21 @@ typedef unsigned char __attribute__((vector_size(16))) uvec8;
 typedef signed short __attribute__((vector_size(16))) vec16;
 #endif
 
-void FastConvertYUVToARGBRow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
-void FastConvertYUVToBGRARow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
-void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+void I420ToARGBRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
+void I420ToBGRARow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
+void I420ToABGRRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
 
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
@@ -164,114 +165,144 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);
 
-void FastConvertYUVToARGBRow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width);
+void I420ToARGBRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width);
 
-void FastConvertYUVToBGRARow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width);
+void I420ToBGRARow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width);
 
-void FastConvertYUVToABGRRow_C(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* rgb_buf,
-                               int width);
+void I420ToABGRRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width);
 
-void FastConvertYUV444ToARGBRow_C(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+void I444ToARGBRow_C(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
 
-void FastConvertYToARGBRow_C(const uint8* y_buf,
+void YToARGBRow_C(const uint8* y_buf,
                              uint8* rgb_buf,
                              int width);
 
-void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width);
+void I420ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width);
 
-void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width);
+void I420ToBGRARow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width);
 
-void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width);
+void I420ToABGRRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width);
 
-void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width);
+void I444ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width);
 
-void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
-                                uint8* rgb_buf,
-                                int width);
+void YToARGBRow_SSE2(const uint8* y_buf,
+                     uint8* rgb_buf,
+                     int width);
 
 // 'Any' wrappers use memcpy()
-void FastConvertYUVToARGBAnyRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width);
+void I420ToARGBRow_Any_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width);
 
-void FastConvertYUVToBGRAAnyRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width);
+void I420ToBGRARow_Any_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width);
 
-void FastConvertYUVToABGRAnyRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width);
+void I420ToABGRRow_Any_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width);
 
-void ARGBToRGB24AnyRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
-void ARGBToRAWAnyRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
-void ARGBToRGB565AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
-void ARGBToARGB1555AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
-void ARGBToARGB4444AnyRow_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
-void ARGBToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
-void BGRAToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
-void ABGRToYAnyRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
-void ARGBToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void BGRAToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ABGRToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                           uint8* dst_u, uint8* dst_v, int width);
-void BGRAToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+void BGRAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                           uint8* dst_u, uint8* dst_v, int width);
-void ABGRToUVAnyRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+void ABGRToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                           uint8* dst_u, uint8* dst_v, int width);
 
-void FastConvertYUVToARGBAnyRow_NEON(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width);
+void I420ToARGBRow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
 
-void FastConvertYUVToBGRAAnyRow_NEON(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width);
+void I420ToBGRARow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
 
-void FastConvertYUVToABGRAnyRow_NEON(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width);
+void I420ToABGRRow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
+
+void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
+void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                      uint8* dst_u, uint8* dst_y, int pix);
+void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
+                               uint8* dst_y, int pix);
+void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                                uint8* dst_u, uint8* dst_y, int pix);
+
+void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
+void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                      uint8* dst_u, uint8* dst_y, int pix);
+void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
+                               uint8* dst_y, int pix);
+void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                                uint8* dst_u, uint8* dst_y, int pix);
+
+void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
+                   uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int pix);
+void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
+                   uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToYRow_C(const uint8* src_uyvy, uint8* dst_y, int pix);
+
+void YUY2ToUVRow_Any_SSE2(const uint8* src_yuy2, int src_stride_yuy2,
+                          uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToYRow_Any_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
+void UYVYToUVRow_Any_SSE2(const uint8* src_uyvy, int src_stride_uyvy,
+                          uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
 
 #ifdef __cplusplus
 }  // extern "C"

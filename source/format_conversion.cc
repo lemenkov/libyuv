@@ -452,22 +452,22 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  void (*FastConvertYUVToARGBRow)(const uint8* y_buf,
+  void (*I420ToARGBRow)(const uint8* y_buf,
                                   const uint8* u_buf,
                                   const uint8* v_buf,
                                   uint8* rgb_buf,
                                   int width);
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
+#if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_NEON;
+    I420ToARGBRow = I420ToARGBRow_NEON;
   } else
-#elif defined(HAS_FASTCONVERTYUVTOARGBROW_SSSE3)
+#elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_SSSE3;
+    I420ToARGBRow = I420ToARGBRow_SSSE3;
   } else
 #endif
   {
-    FastConvertYUVToARGBRow = FastConvertYUVToARGBRow_C;
+    I420ToARGBRow = I420ToARGBRow_C;
   }
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   void (*ARGBToBayerRow)(const uint8* src_argb,
@@ -490,7 +490,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   }
 
   for (int y = 0; y < height; ++y) {
-    FastConvertYUVToARGBRow(src_y, src_u, src_v, row, width);
+    I420ToARGBRow(src_y, src_u, src_v, row, width);
     ARGBToBayerRow(row, dst_bayer, index_map[y & 1], width);
     dst_bayer += dst_stride_bayer;
     src_y += src_stride_y;

@@ -55,19 +55,19 @@ extern "C" {
     "vtrn.u8    d22, d23                       \n"                             \
     "vtrn.u8    d16, d17                       \n"                             \
 
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON) || \
-    defined(HAS_FASTCONVERTYUVTOBGRAROW_NEON) || \
-    defined(HAS_FASTCONVERTYUVTOABGRROW_NEON)
+#if defined(HAS_I420TOARGBROW_NEON) || \
+    defined(HAS_I420TOBGRAROW_NEON) || \
+    defined(HAS_I420TOABGRROW_NEON)
 static const vec8 kUVToRB[8]  = { 127, 127, 127, 127, 102, 102, 102, 102 };
 static const vec8 kUVToG[8]   = { -25, -25, -25, -25, -52, -52, -52, -52 };
 #endif
 
-#if defined(HAS_FASTCONVERTYUVTOARGBROW_NEON)
-void FastConvertYUVToARGBRow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width) {
+#if defined(HAS_I420TOARGBROW_NEON)
+void I420ToARGBRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) {
   asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"
@@ -94,12 +94,12 @@ YUVTORGB
 }
 #endif
 
-#if defined(HAS_FASTCONVERTYUVTOBGRAROW_NEON)
-void FastConvertYUVToBGRARow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width) {
+#if defined(HAS_I420TOBGRAROW_NEON)
+void I420ToBGRARow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) {
   asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"
@@ -127,12 +127,12 @@ YUVTORGB
 }
 #endif
 
-#if defined(HAS_FASTCONVERTYUVTOABGRROW_NEON)
-void FastConvertYUVToABGRRow_NEON(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width) {
+#if defined(HAS_I420TOABGRROW_NEON)
+void I420ToABGRRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) {
   asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"

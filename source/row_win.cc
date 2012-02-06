@@ -1174,7 +1174,7 @@ __asm {
   }
 }
 
-#ifdef HAS_FASTCONVERTYUVTOARGBROW_SSSE3
+#ifdef HAS_I420TOARGBROW_SSSE3
 
 #define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
 
@@ -1242,11 +1242,11 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 __declspec(naked)
-void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width) {
+void I420ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width) {
   __asm {
     push       esi
     push       edi
@@ -1282,11 +1282,11 @@ void FastConvertYUVToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 __declspec(naked)
-void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width) {
+void I420ToBGRARow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width) {
   __asm {
     push       esi
     push       edi
@@ -1322,11 +1322,11 @@ void FastConvertYUVToBGRARow_SSSE3(const uint8* y_buf,
 }
 
 __declspec(naked)
-void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
-                                   const uint8* u_buf,
-                                   const uint8* v_buf,
-                                   uint8* rgb_buf,
-                                   int width) {
+void I420ToABGRRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width) {
   __asm {
     push       esi
     push       edi
@@ -1362,11 +1362,11 @@ void FastConvertYUVToABGRRow_SSSE3(const uint8* y_buf,
 }
 
 __declspec(naked)
-void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width) {
+void I444ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         int width) {
   __asm {
     push       esi
     push       edi
@@ -1427,11 +1427,11 @@ void FastConvertYUV444ToARGBRow_SSSE3(const uint8* y_buf,
 }
 #endif
 
-#ifdef HAS_FASTCONVERTYTOARGBROW_SSE2
+#ifdef HAS_YTOARGBROW_SSE2
 __declspec(naked)
-void FastConvertYToARGBRow_SSE2(const uint8* y_buf,
-                                uint8* rgb_buf,
-                                int width) {
+void YToARGBRow_SSE2(const uint8* y_buf,
+                     uint8* rgb_buf,
+                     int width) {
   __asm {
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
@@ -1529,6 +1529,277 @@ __asm {
   }
 }
 #endif
+
+#ifdef HAS_YUY2TOI420ROW_SSE2
+__declspec(naked)
+void YUY2ToYRow_SSE2(const uint8* src_yuy2,
+                     uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_yuy2
+    mov        edx, [esp + 8]    // dst_y
+    mov        ecx, [esp + 12]   // pix
+    pcmpeqb    xmm5, xmm5        // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    pand       xmm0, xmm5   // even bytes are Y
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                      uint8* dst_u, uint8* dst_y, int pix) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
+    mov        edx, [esp + 8 + 12]   // dst_u
+    mov        edi, [esp + 8 + 16]   // dst_v
+    mov        ecx, [esp + 8 + 20]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + esi]
+    movdqa     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2
+    pavgb      xmm1, xmm3
+    psrlw      xmm0, 8      // YUYV -> UVUV
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    movdqa     xmm1, xmm0
+    pand       xmm0, xmm5  // U
+    packuswb   xmm0, xmm0
+    psrlw      xmm1, 8     // V
+    packuswb   xmm1, xmm1
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
+                               uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_yuy2
+    mov        edx, [esp + 8]    // dst_y
+    mov        ecx, [esp + 12]   // pix
+    pcmpeqb    xmm5, xmm5        // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    pand       xmm0, xmm5   // even bytes are Y
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                                uint8* dst_u, uint8* dst_y, int pix) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
+    mov        edx, [esp + 8 + 12]   // dst_u
+    mov        edi, [esp + 8 + 16]   // dst_v
+    mov        ecx, [esp + 8 + 20]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2
+    pavgb      xmm1, xmm3
+    psrlw      xmm0, 8      // YUYV -> UVUV
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    movdqa     xmm1, xmm0
+    pand       xmm0, xmm5  // U
+    packuswb   xmm0, xmm0
+    psrlw      xmm1, 8     // V
+    packuswb   xmm1, xmm1
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void UYVYToYRow_SSE2(const uint8* src_uyvy,
+                     uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_uyvy
+    mov        edx, [esp + 8]    // dst_y
+    mov        ecx, [esp + 12]   // pix
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    psrlw      xmm0, 8    // odd bytes are Y
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                      uint8* dst_u, uint8* dst_y, int pix) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
+    mov        edx, [esp + 8 + 12]   // dst_u
+    mov        edi, [esp + 8 + 16]   // dst_v
+    mov        ecx, [esp + 8 + 20]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + esi]
+    movdqa     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2
+    pavgb      xmm1, xmm3
+    pand       xmm0, xmm5   // UYVY -> UVUV
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    movdqa     xmm1, xmm0
+    pand       xmm0, xmm5  // U
+    packuswb   xmm0, xmm0
+    psrlw      xmm1, 8     // V
+    packuswb   xmm1, xmm1
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
+                               uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_uyvy
+    mov        edx, [esp + 8]    // dst_y
+    mov        ecx, [esp + 12]   // pix
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    psrlw      xmm0, 8    // odd bytes are Y
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                                uint8* dst_u, uint8* dst_y, int pix) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_yuy2
+    mov        esi, [esp + 8 + 8]    // stride_yuy2
+    mov        edx, [esp + 8 + 12]   // dst_u
+    mov        edi, [esp + 8 + 16]   // dst_v
+    mov        ecx, [esp + 8 + 20]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2
+    pavgb      xmm1, xmm3
+    pand       xmm0, xmm5   // UYVY -> UVUV
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    movdqa     xmm1, xmm0
+    pand       xmm0, xmm5  // U
+    packuswb   xmm0, xmm0
+    psrlw      xmm1, 8     // V
+    packuswb   xmm1, xmm1
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + edi], xmm1
+    lea        edx, [edx + 8]
+    sub        ecx, 16
+    ja         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_YUY2TOI420ROW_SSE2
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

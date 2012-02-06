@@ -11,16 +11,7 @@
 #ifndef INCLUDE_LIBYUV_VERSION_H_
 #define INCLUDE_LIBYUV_VERSION_H_
 
-#ifdef __cplusplus
-namespace libyuv {
-extern "C" {
-#endif
-
-#define LIBYUV_VERSION 167
-
-#ifdef __cplusplus
-}  // extern "C"
-}  // namespace libyuv
-#endif
+#define LIBYUV_VERSION 168
 
 #endif  // INCLUDE_LIBYUV_VERSION_H_
+
