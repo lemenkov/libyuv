@@ -12,6 +12,9 @@
 
 #include <float.h>
 #include <math.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
@@ -23,7 +26,7 @@ extern "C" {
 #endif
 
 // hash seed of 5381 recommended.
-uint32 HashDjb2(const uint8* src, size_t len, uint32 seed) {
+uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
   uint32 hash = seed;
   if (len > 0) {
     do {
@@ -190,7 +193,9 @@ uint64 ComputeSumSquareError(const uint8* src_a,
   {
     SumSquareError = SumSquareError_C;
   }
-  const int kBlockSize = 32768;
+  // 32K values will fit a 32bit int return value from SumSquareError.
+  // After each block of 32K, accumulate into 64 bit int.
+  const int kBlockSize = 1 << 15;  // 32768;
   uint64 sse = 0;
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+: sse)
