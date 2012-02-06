@@ -22,6 +22,17 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// hash seed of 5381 recommended.
+uint32 HashDjb2(const uint8* src, size_t len, uint32 seed) {
+  uint32 hash = seed;
+  if (len > 0) {
+    do {
+      hash = hash * 33 + *src++;
+    } while (--len);
+  }
+  return hash;
+}
+
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_NEON
 
@@ -181,21 +192,23 @@ uint64 ComputeSumSquareError(const uint8* src_a,
   }
   const int kBlockSize = 32768;
   uint64 sse = 0;
-  while (count >= kBlockSize) {
-    sse += SumSquareError(src_a, src_b, kBlockSize);
-    src_a += kBlockSize;
-    src_b += kBlockSize;
-    count -= kBlockSize;
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+: sse)
+#endif
+  for (int i = 0; i < (count - (kBlockSize - 1)); i += kBlockSize) {
+    sse += SumSquareError(src_a + i, src_b + i, kBlockSize);
   }
-  int remainder = count & ~15;
+  src_a += count & ~(kBlockSize - 1);
+  src_b += count & ~(kBlockSize - 1);
+  int remainder = count & (kBlockSize - 1) & ~15;
   if (remainder) {
     sse += SumSquareError(src_a, src_b, remainder);
     src_a += remainder;
     src_b += remainder;
-    count -= remainder;
   }
-  if (count) {
-    sse += SumSquareError_C(src_a, src_b, count);
+  remainder = count & 15;
+  if (remainder) {
+    sse += SumSquareError_C(src_a, src_b, remainder);
   }
   return sse;
 }
