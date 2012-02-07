@@ -966,12 +966,12 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
 #endif
   for (int y = 0; y < height - 1; y += 2) {
     YUY2ToUVRow(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
     YUY2ToYRow(src_yuy2, dst_y, width);
     YUY2ToYRow(src_yuy2 + src_stride_yuy2, dst_y + dst_stride_y, width);
-    dst_y += dst_stride_y * 2;
     src_yuy2 += src_stride_yuy2 * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
   }
   if (height & 1) {
     YUY2ToUVRow(src_yuy2, 0, dst_u, dst_v, width);
@@ -1018,12 +1018,12 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
 #endif
   for (int y = 0; y < height - 1; y += 2) {
     UYVYToUVRow(src_uyvy, src_stride_uyvy, dst_u, dst_v, width);
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
     UYVYToYRow(src_uyvy, dst_y, width);
     UYVYToYRow(src_uyvy + src_stride_uyvy, dst_y + dst_stride_y, width);
-    dst_y += dst_stride_y * 2;
     src_uyvy += src_stride_uyvy * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
   }
   if (height & 1) {
     UYVYToUVRow(src_uyvy, 0, dst_u, dst_v, width);

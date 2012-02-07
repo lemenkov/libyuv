@@ -20,6 +20,47 @@
 
 namespace libyuv {
 
+// hash seed of 5381 recommended.
+static uint32 ReferenceHashDjb2(const uint8* src, uint64 count, uint32 seed) {
+  uint32 hash = seed;
+  if (count > 0) {
+    do {
+      hash = hash * 33 + *src++;
+    } while (--count);
+  }
+  return hash;
+}
+
+TEST_F(libyuvTest, TestDjb2) {
+  const int kMaxTest = 2049;
+
+  align_buffer_16(src_a, kMaxTest)
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i] = i;
+  }
+  for (int i = 0; i < kMaxTest; ++i) {
+    uint32 h1 = HashDjb2(src_a, kMaxTest, 5381);
+    uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
+    EXPECT_EQ(h1, h2);
+  }
+  free_aligned_buffer_16(src_a)
+}
+
+TEST_F(libyuvTest, BenchmakDjb2) {
+  const int kMaxTest = 1280 * 720;
+
+  align_buffer_16(src_a, kMaxTest)
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i] = i;
+  }
+  uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
+  for (int i = 0; i < _benchmark_iterations; ++i) {
+    uint32 h1 = HashDjb2(src_a, kMaxTest, 5381);
+    EXPECT_EQ(h1, h2);
+  }
+  free_aligned_buffer_16(src_a)
+}
+
 TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   const int max_width = 4096*3;
 
@@ -27,8 +68,9 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   align_buffer_16(src_b, max_width)
 
   MaskCpuFlags(kCpuInitialized);
-  for (int i = 0; i < _benchmark_iterations; ++i)
+  for (int i = 0; i < _benchmark_iterations; ++i) {
     ComputeSumSquareError(src_a, src_b, max_width);
+  }
 
   MaskCpuFlags(-1);
 
@@ -44,8 +86,9 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
   align_buffer_16(src_a, max_width)
   align_buffer_16(src_b, max_width)
 
-  for (int i = 0; i < _benchmark_iterations; ++i)
+  for (int i = 0; i < _benchmark_iterations; ++i) {
     ComputeSumSquareError(src_a, src_b, max_width);
+  }
 
   EXPECT_EQ(0, 0);
 

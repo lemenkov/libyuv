@@ -27,7 +27,7 @@ TEST_F(libyuvTest, TestLinuxNeon) {
 }
 
 TEST_F(libyuvTest, TestVersion) {
-  EXPECT_GE(159,LIBYUV_VERSION);
+  EXPECT_GE(LIBYUV_VERSION, 169);
 }
 
 }  // namespace libyuv

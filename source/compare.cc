@@ -28,10 +28,10 @@ extern "C" {
 // hash seed of 5381 recommended.
 uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
   uint32 hash = seed;
-  if (len > 0) {
+  if (count > 0) {
     do {
       hash = hash * 33 + *src++;
-    } while (--len);
+    } while (--count);
   }
   return hash;
 }
