@@ -839,7 +839,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 }
 #endif
 
-#ifdef HAS_YUY2TOI420ROW_SSE2
+#ifdef HAS_YUY2TOYROW_SSE2
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1100,7 +1100,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
   );
 }
 
-#endif  // HAS_YUY2TOI420ROW_SSE2
+#endif  // HAS_YUY2TOYROW_SSE2
 
 #ifdef __cplusplus
 }  // extern "C"

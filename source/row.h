@@ -46,8 +46,10 @@ extern "C" {
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROW_SSE2
-#define HAS_YUY2TOI420ROW_SSE2
-#define HAS_UYVYTOI420ROW_SSE2
+#define HAS_YUY2TOYROW_SSE2
+#define HAS_UYVYTOYROW_SSE2
+#define HAS_YUY2TOUVROW_SSE2
+#define HAS_UYVYTOUVROW_SSE2
 #endif
 
 // The following are available on Windows platforms
