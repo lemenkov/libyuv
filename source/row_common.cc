@@ -455,34 +455,32 @@ MAKEYUVANYRGB(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 2)
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
-#define MAKEANYTOYANY(NAMEANY, ARGBTOY)                                        \
+#define MAKEYANY(NAMEANY, ARGBTOY_SSE, BPP)                                    \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
-      SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
-      ARGBTOY(src_argb, row, width);                                           \
-      memcpy(dst_y, row, width);                                               \
+      ARGBTOY_SSE(src_argb, dst_y, width - 16);                                \
+      ARGBTOY_SSE(src_argb + (width - 16) * BPP, dst_y + (width - 16), 16);    \
     }
 
-MAKEANYTOYANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3)
-MAKEANYTOYANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3)
-MAKEANYTOYANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3)
-MAKEANYTOYANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2)
-MAKEANYTOYANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2)
+MAKEYANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
+MAKEYANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
+MAKEYANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
+MAKEYANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
+MAKEYANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
 
-#define MAKEANYTOUVANY(NAMEANY, ARGBTOUV)                                      \
+#define MAKEUVANY(NAMEANY, ARGBTOUV_SSE, ARGBTOUV_C, BPP)                      \
     void NAMEANY(const uint8* src_argb0, int src_stride_argb,                  \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
-      SIMD_ALIGNED(uint8 row[kMaxStride * 2]);                                 \
-      ARGBTOUV(src_argb0, src_stride_argb, row, row + kMaxStride, width);      \
-      int halfwidth = (width + 1) >> 1;                                        \
-      memcpy(dst_u, row, halfwidth);                                           \
-      memcpy(dst_v, row + kMaxStride, halfwidth);                              \
+      ARGBTOUV_SSE(src_argb0, src_stride_argb, dst_u, dst_v, width & ~15);     \
+      ARGBTOUV_C(src_argb0 + (width & ~15) * BPP, src_stride_argb,             \
+                 dst_u + (width & ~15) / 2, dst_v + (width & ~15) / 2,         \
+                 width & 15);                                                  \
     }
 
-MAKEANYTOUVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3)
-MAKEANYTOUVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3)
-MAKEANYTOUVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3)
-MAKEANYTOUVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2)
-MAKEANYTOUVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2)
+MAKEUVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
+MAKEUVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
+MAKEUVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
+MAKEUVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
+MAKEUVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
 #endif
 
 #ifdef __cplusplus

@@ -133,6 +133,13 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert V210 to I420.
+int V210ToI420(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // Convert I420 to ARGB.
 int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
