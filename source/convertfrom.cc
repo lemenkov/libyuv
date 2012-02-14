@@ -49,6 +49,15 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  dst_sample_stride ? dst_sample_stride : width * 2,
                  width, height);
       break;
+    case FOURCC_V210:
+      I420ToV210(y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_sample,
+                 dst_sample_stride ? dst_sample_stride :
+                     (width + 47) / 48 * 128,
+                 width, height);
+      break;
     case FOURCC_RGBP:
       I420ToRGB565(y, y_stride,
                    u, u_stride,
