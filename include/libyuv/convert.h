@@ -69,11 +69,6 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
-// TODO(fbarchard): Deprecated - this is same as BG24ToARGB with -height
-int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
-                uint8* dst_frame, int dst_stride_frame,
-                int width, int height);
-
 int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,

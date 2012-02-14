@@ -1623,9 +1623,9 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
 }
 
 // Convert RGB24 to ARGB.
-int BG24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
+int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
+                uint8* dst_argb, int dst_stride_argb,
+                int width, int height) {
   if (height < 0) {
     height = -height;
     src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;

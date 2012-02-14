@@ -318,34 +318,6 @@ loop0:
   return 0;
 }
 
-// TODO(fbarchard): Deprecated - this is same as BG24ToARGB with -height
-int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
-                uint8* dst_frame, int dst_stride_frame,
-                int width, int height) {
-  if (src_frame == NULL || dst_frame == NULL) {
-    return -1;
-  }
-
-  int i, j, offset;
-  uint8* outFrame = dst_frame;
-  const uint8* inFrame = src_frame;
-
-  outFrame += dst_stride_frame * (height - 1) * 4;
-  for (i = 0; i < height; i++) {
-    for (j = 0; j < width; j++) {
-      offset = j * 4;
-      outFrame[0 + offset] = inFrame[0];
-      outFrame[1 + offset] = inFrame[1];
-      outFrame[2 + offset] = inFrame[2];
-      outFrame[3 + offset] = 0xff;
-      inFrame += 3;
-    }
-    outFrame -= 4 * (dst_stride_frame - width);
-    inFrame += src_stride_frame - width;
-  }
-  return 0;
-}
-
 // Test if over reading on source is safe.
 // TODO(fbarchard): Find more efficient solution to safely do odd sizes.
 // Macros to control read policy, from slowest to fastest:
