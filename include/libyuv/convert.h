@@ -12,6 +12,7 @@
 #define INCLUDE_LIBYUV_CONVERT_H_
 
 #include "libyuv/basic_types.h"
+#include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 
 #ifdef __cplusplus
@@ -19,116 +20,141 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// RGB24 is also known as 24BG and BGR3
-int I420ToRGB24(const uint8* src_y, int src_stride_y,
-                const uint8* src_u, int src_stride_u,
-                const uint8* src_v, int src_stride_v,
-                uint8* dst_frame, int dst_stride_frame,
-                int width, int height);
+// Copy I420 to I420.
+int I420Copy(const uint8* src_y, int src_stride_y,
+             const uint8* src_u, int src_stride_u,
+             const uint8* src_v, int src_stride_v,
+             uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int width, int height);
 
-// RAW is also known as RGB3
-int I420ToRAW(const uint8* src_y, int src_stride_y,
-              const uint8* src_u, int src_stride_u,
-              const uint8* src_v, int src_stride_v,
-              uint8* dst_frame, int dst_stride_frame,
-              int width, int height);
-
-int I420ToARGB4444(const uint8* src_y, int src_stride_y,
-                   const uint8* src_u, int src_stride_u,
-                   const uint8* src_v, int src_stride_v,
-                   uint8* dst_frame, int dst_stride_frame,
-                   int width, int height);
-
-int I420ToRGB565(const uint8* src_y, int src_stride_y,
-                 const uint8* src_u, int src_stride_u,
-                 const uint8* src_v, int src_stride_v,
-                 uint8* dst_frame, int dst_stride_frame,
-                 int width, int height);
-
-int I420ToARGB1555(const uint8* src_y, int src_stride_y,
-                   const uint8* src_u, int src_stride_u,
-                   const uint8* src_v, int src_stride_v,
-                   uint8* dst_frame, int dst_stride_frame,
-                   int width, int height);
-
-int I420ToYUY2(const uint8* src_y, int src_stride_y,
+// Convert I422 to I420.
+int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-int I422ToYUY2(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-int I420ToUYVY(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-int I422ToUYVY(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-int I420ToV210(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-
-int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
-                uint8* dst_y, int dst_stride_y,
-                uint8* dst_u, int dst_stride_u,
-                uint8* dst_v, int dst_stride_v,
-                int width, int height);
-
-int RAWToI420(const uint8* src_frame, int src_stride_frame,
-              uint8* dst_y, int dst_stride_y,
-              uint8* dst_u, int dst_stride_u,
-              uint8* dst_v, int dst_stride_v,
-              int width, int height);
-
-int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
-                 uint8* dst_y, int dst_stride_y,
-                 uint8* dst_u, int dst_stride_u,
-                 uint8* dst_v, int dst_stride_v,
-                 int width, int height);
-
-int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
-                   uint8* dst_y, int dst_stride_y,
-                   uint8* dst_u, int dst_stride_u,
-                   uint8* dst_v, int dst_stride_v,
-                   int width, int height);
-
-int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
-                   uint8* dst_y, int dst_stride_y,
-                   uint8* dst_u, int dst_stride_u,
-                   uint8* dst_v, int dst_stride_v,
-                   int width, int height);
-
-int ABGRToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert I444 to I420.
+int I444ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert I400 (grey) to I420.
+int I400ToI420(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert NV12 to I420.  Also used for NV21.
+int NV12ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_uv, int src_stride_uv,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert M420 to I420.
+int M420ToI420(const uint8* src_m420, int src_stride_m420,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert Q420 to I420.
+int Q420ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert YUY2 to I420.
+int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert UYVY to I420.
+int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert V210 to I420.
+int V210ToI420(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// ARGB little endian (bgra in memory) to I420
+int ARGBToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// BGRA little endian (argb in memory) to I420
 int BGRAToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-int ARGBToI420(const uint8* src_frame, int src_stride_frame,
+// ABGR little endian (rgba in memory) to I420
+int ABGRToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
+
+// RGB little endian (bgr in memory) to I420
+int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
+                uint8* dst_y, int dst_stride_y,
+                uint8* dst_u, int dst_stride_u,
+                uint8* dst_v, int dst_stride_v,
+                int width, int height);
+
+// RGB big endian (rgb in memory) to I420
+int RAWToI420(const uint8* src_frame, int src_stride_frame,
+              uint8* dst_y, int dst_stride_y,
+              uint8* dst_u, int dst_stride_u,
+              uint8* dst_v, int dst_stride_v,
+              int width, int height);
+
+// RGB16 (RGBP fourcc) little endian to I420
+int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
+                 uint8* dst_y, int dst_stride_y,
+                 uint8* dst_u, int dst_stride_u,
+                 uint8* dst_v, int dst_stride_v,
+                 int width, int height);
+
+// RGB15 (RGBO fourcc) little endian to I420
+int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height);
+
+// RGB12 (R444 fourcc) little endian to I420
+int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height);
+
+// Note Bayer formats (BGGR) To I420 are in format_conversion.h
 
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
@@ -161,16 +187,6 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   int dst_width, int dst_height,
                   RotationMode rotation,
                   uint32 format);
-
-// Convert I420 to specified format.
-// "dst_sample_stride" is bytes in a row for the destination. Pass 0 if the
-//    buffer has contiguous rows. Can be negative. A multiple of 16 is optimal.
-int ConvertFromI420(const uint8* y, int y_stride,
-                    const uint8* u, int u_stride,
-                    const uint8* v, int v_stride,
-                    uint8* dst_sample, int dst_sample_stride,
-                    int width, int height,
-                    uint32 format);
 
 #ifdef __cplusplus
 }  // extern "C"

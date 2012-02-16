@@ -15,6 +15,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// This module is for Visual C x86
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constant multiplication table for converting ARGB to I400.
@@ -1503,7 +1506,7 @@ __asm {
 
 #ifdef HAS_MIRRORROW_SSE2
 
-// SSE2 version has movdqu so it can be used on misaligned buffers when SSSE3
+// SSE2 version has movdqu so it can be used on unaligned buffers when SSSE3
 // version can not.
 __declspec(naked)
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
@@ -1514,7 +1517,7 @@ __asm {
     lea       eax, [eax - 16]
  convertloop:
     movdqu    xmm0, [eax + ecx]
-    movdqu    xmm1, xmm0        // swap bytes
+    movdqa    xmm1, xmm0        // swap bytes
     psllw     xmm0, 8
     psrlw     xmm1, 8
     por       xmm0, xmm1
@@ -1525,6 +1528,42 @@ __asm {
     movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     ja        convertloop
+    ret
+  }
+}
+#endif
+
+#ifdef HAS_SPLITUV_SSE2
+__declspec(naked)
+void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // dst_u
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    movdqa     xmm2, xmm0
+    movdqa     xmm3, xmm1
+    pand       xmm0, xmm5   // even bytes
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    psrlw      xmm2, 8      // odd bytes
+    psrlw      xmm3, 8
+    packuswb   xmm2, xmm3
+    movdqa     [edx], xmm0
+    movdqa     [edx + edi], xmm2
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    ja         convertloop
+    pop        edi
     ret
   }
 }
@@ -1799,6 +1838,8 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
   }
 }
 #endif  // HAS_YUY2TOYROW_SSE2
+
+#endif  // _M_IX86
 
 #ifdef __cplusplus
 }  // extern "C"

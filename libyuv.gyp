@@ -25,6 +25,7 @@
         # includes
         'include/libyuv/basic_types.h',
         'include/libyuv/convert.h',
+        'include/libyuv/convert_from.h',
         'include/libyuv/scale.h',
         'include/libyuv/planar_functions.h',
         'include/libyuv/video_common.h',
@@ -37,7 +38,7 @@
         # sources
         'source/compare.cc',
         'source/convert.cc',
-        'source/convertfrom.cc',
+        'source/convert_from.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
         'source/planar_functions.cc',

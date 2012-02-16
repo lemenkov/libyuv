@@ -18,62 +18,19 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Copy I420 to I420.
-int I420Copy(const uint8* src_y, int src_stride_y,
-             const uint8* src_u, int src_stride_u,
-             const uint8* src_v, int src_stride_v,
-             uint8* dst_y, int dst_stride_y,
-             uint8* dst_u, int dst_stride_u,
-             uint8* dst_v, int dst_stride_v,
-             int width, int height);
+void SetPlane(uint8* dst_y, int dst_stride_y,
+              int width, int height,
+              uint32 value);
+
+// Copy a plane of data (I420 to I400)
+void CopyPlane(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
 
 // I420 mirror
 int I420Mirror(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I422 to I420.
-int I422ToI420(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I422 to I420.
-int I420ToI422(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I444 to I420.
-int I444ToI420(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I420 to I444.
-int I420ToI444(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I400 (grey) to I420.
-int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
@@ -90,76 +47,6 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
                  uint8* dst_frame, int dst_stride_frame,
                  int width, int height);
-
-// Copy to I400.  Source can be I420,422,444,400,NV12,NV21
-int I400Copy(const uint8* src_y, int src_stride_y,
-             uint8* dst_y, int dst_stride_y,
-             int width, int height);
-
-// Convert NV12 to I420.  Also used for NV21.
-int NV12ToI420(const uint8* src_y, int src_stride_y,
-               const uint8* src_uv, int src_stride_uv,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert Q420 to I420.
-int Q420ToI420(const uint8* src_y, int src_stride_y,
-               const uint8* src_yuy2, int src_stride_yuy2,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert M420 to I420.
-int M420ToI420(const uint8* src_m420, int src_stride_m420,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert YUY2 to I420.
-int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert UYVY to I420.
-int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert V210 to I420.
-int V210ToI420(const uint8* src_uyvy, int src_stride_uyvy,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
-// Convert I420 to ARGB.
-int I420ToARGB(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height);
-
-// Convert I420 to BGRA.
-int I420ToBGRA(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height);
-
-// Convert I420 to ABGR.
-int I420ToABGR(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height);
 
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
@@ -242,9 +129,16 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-// Copy a plane of data
-void CopyPlane(const uint8* src_y, int src_stride_y,
-               uint8* dst_y, int dst_stride_y,
+int I422ToYUY2(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
+               int width, int height);
+
+int I422ToUYVY(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
 #ifdef __cplusplus

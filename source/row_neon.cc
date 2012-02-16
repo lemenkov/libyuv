@@ -15,6 +15,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// This module is for GCC Neon
+#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+
 #define YUVTORGB                                                               \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
@@ -159,6 +162,29 @@ YUVTORGB
   );
 }
 #endif
+
+#if defined(HAS_SPLITUV_NEON)
+// Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
+// Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
+void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld2.u8    {q0,q1}, [%0]!                 \n"  // load 16 pairs of UV
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "vst1.u8    {q0}, [%1]!                    \n"  // store U
+    "vst1.u8    {q1}, [%2]!                    \n"  // Store V
+    "bhi        1b                             \n"
+    : "+r"(src_uv),
+      "+r"(dst_u),
+      "+r"(dst_v),
+      "+r"(pix)             // Output registers
+    :                       // Input registers
+    : "memory", "cc", "q0", "q1" // Clobber List
+  );
+}
+#endif
+
+#endif // __ARM_NEON__
 
 #ifdef __cplusplus
 }  // extern "C"

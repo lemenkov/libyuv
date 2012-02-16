@@ -350,9 +350,7 @@ void I444ToARGBRow_C(const uint8* y_buf,
   }
 }
 
-void YToARGBRow_C(const uint8* y_buf,
-                  uint8* rgb_buf,
-                  int width) {
+void YToARGBRow_C(const uint8* y_buf, uint8* rgb_buf, int width) {
   for (int x = 0; x < width; ++x) {
     YuvPixel(y_buf[0], 128, 128, rgb_buf, 24, 16, 8, 0);
     y_buf += 1;
@@ -365,6 +363,17 @@ void MirrorRow_C(const uint8* src, uint8* dst, int width) {
   for (int i = 0; i < width; ++i) {
     dst[i] = src[0];
     --src;
+  }
+}
+
+void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+  // Copy a row of UV.
+  for (int x = 0; x < pix; ++x) {
+    dst_u[0] = src_uv[0];
+    dst_v[0] = src_uv[1];
+    src_uv += 2;
+    dst_u += 1;
+    dst_v += 1;
   }
 }
 
