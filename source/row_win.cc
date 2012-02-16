@@ -1569,6 +1569,46 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 }
 #endif
 
+#ifdef HAS_COPYROW_SSE2
+// CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time
+__declspec(naked)
+void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
+  __asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+    sub        edx, eax
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     [eax + edx], xmm0
+    movdqa     [eax + edx + 16], xmm1
+    lea        eax, [eax + 32]
+    sub        ecx, 32
+    ja         convertloop
+    ret
+  }
+}
+#endif  // HAS_COPYROW_SSE2
+
+#ifdef HAS_COPYROW_X86
+__declspec(naked)
+void CopyRow_X86(const uint8* src, uint8* dst, int count) {
+  __asm {
+    mov        eax, esi
+    mov        edx, edi
+    mov        esi, [esp + 4]   // src
+    mov        edi, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+    shr        ecx, 2
+    rep movsd
+    mov        edi, edx
+    mov        esi, eax
+    ret
+  }
+}
+#endif
+
 #ifdef HAS_YUY2TOYROW_SSE2
 __declspec(naked)
 void YUY2ToYRow_SSE2(const uint8* src_yuy2,

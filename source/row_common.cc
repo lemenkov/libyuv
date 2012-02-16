@@ -377,6 +377,10 @@ void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   }
 }
 
+void CopyRow_C(const uint8* src, uint8* dst, int count) {
+  memcpy(dst, src, count);
+}
+
 // Filter 2 rows of YUY2 UV's (422) into U and V (420)
 void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
                    uint8* dst_u, uint8* dst_v, int pix) {
@@ -423,36 +427,36 @@ void UYVYToYRow_C(const uint8* src_uyvy,
 }
 
 // Wrappers to handle odd sizes/alignments
-#define MAKEYUVANY(NAMEANY, NAME)                                              \
-void NAMEANY(const uint8* y_buf,                                               \
-             const uint8* u_buf,                                               \
-             const uint8* v_buf,                                               \
-             uint8* rgb_buf,                                                   \
-             int width) {                                                      \
-  SIMD_ALIGNED(uint8 row[kMaxStride]);                                         \
-  NAME(y_buf, u_buf, v_buf, row, width);                                       \
-  memcpy(rgb_buf, row, width << 2);                                            \
-}
+#define MAKEYUVANY(NAMEANY, NAME, COPYROW)                                     \
+    void NAMEANY(const uint8* y_buf,                                           \
+                 const uint8* u_buf,                                           \
+                 const uint8* v_buf,                                           \
+                 uint8* rgb_buf,                                               \
+                 int width) {                                                  \
+      SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
+      NAME(y_buf, u_buf, v_buf, row, width);                                   \
+      COPYROW(row, rgb_buf, width << 2);                                       \
+    }
 
 #if defined(HAS_I420TOARGBROW_SSSE3)
-MAKEYUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_SSSE3)
-MAKEYUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_SSSE3)
-MAKEYUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_SSSE3)
+MAKEYUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_SSSE3, CopyRow_X86)
+MAKEYUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_SSSE3, CopyRow_X86)
+MAKEYUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_SSSE3, CopyRow_X86)
 #endif
 #if defined(HAS_I420TOARGBROW_NEON)
-MAKEYUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON)
-MAKEYUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON)
-MAKEYUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON)
+MAKEYUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON, CopyRow_C)
+MAKEYUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON, CopyRow_C)
+MAKEYUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON, CopyRow_C)
 #endif
 
 #define MAKEYUVANYRGB(NAMEANY, ARGBTORGB, BPP)                                 \
-void NAMEANY(const uint8* argb_buf,                                            \
-             uint8* rgb_buf,                                                   \
-             int width) {                                                      \
-  SIMD_ALIGNED(uint8 row[kMaxStride]);                                         \
-  ARGBTORGB(argb_buf, row, width);                                             \
-  memcpy(rgb_buf, row, width * BPP);                                           \
-}
+    void NAMEANY(const uint8* argb_buf,                                        \
+                 uint8* rgb_buf,                                               \
+                 int width) {                                                  \
+      SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
+      ARGBTORGB(argb_buf, row, width);                                         \
+      memcpy(rgb_buf, row, width * BPP);                                       \
+    }
 
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
 MAKEYUVANYRGB(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, 3)

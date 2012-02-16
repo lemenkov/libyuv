@@ -13,6 +13,10 @@
 
 #include "libyuv/basic_types.h"
 
+// TODO(fbarchard): Remove the following headers includes
+#include "libyuv/convert.h"
+#include "libyuv/planar_functions.h"
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {

@@ -12,6 +12,8 @@
 #define INCLUDE_LIBYUV_CONVERT_H_
 
 #include "libyuv/basic_types.h"
+// TODO(fbarchard): Remove the following headers includes
+#include "libyuv/convert_from.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 

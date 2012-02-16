@@ -184,7 +184,27 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 }
 #endif
 
-#endif // __ARM_NEON__
+#if defined(HAS_COPYROW_NEON)
+// TODO(fbarchard): Test with and without pld
+//  "pld        [%0, #0xC0]                    \n"  // preload
+// Copy multiple of 64
+void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
+  asm volatile (
+  "1:                                          \n"
+    "vld1.u8    {q0,q1,q2,q3}, [%0]!           \n"  // load 64
+    "subs       %2, %2, #64                    \n"  // 64 processed per loop
+    "vst1.u8    {q0,q1,q2,q3}, [%1]!           \n"  // store 64
+    "bhi        1b                             \n"
+    : "+r"(src),
+      "+r"(dst),
+      "+r"(count)           // Output registers
+    :                       // Input registers
+    : "memory", "cc", "q0", "q1", "q2", "q3" // Clobber List
+  );
+}
+#endif  // HAS_COPYROW_NEON
+
+#endif  // __ARM_NEON__
 
 #ifdef __cplusplus
 }  // extern "C"

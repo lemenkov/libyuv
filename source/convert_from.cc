@@ -10,8 +10,6 @@
 
 #include "libyuv/convert_from.h"
 
-#include <string.h>  // For memcpy()
-
 #include "libyuv/basic_types.h"
 #include "libyuv/convert.h"  // For I420Copy
 #include "libyuv/cpu_id.h"
@@ -43,33 +41,53 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
+  int halfwidth = (width + 1) >> 1;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 64)) {
+    CopyRow = CopyRow_NEON;
+  }
+#elif defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(halfwidth, 4)) {
+    CopyRow = CopyRow_X86;
+#if defined(HAS_COPYROW_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 32) &&
+        IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
+        IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
+        IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
+        IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+      CopyRow = CopyRow_SSE2;
+    }
+#endif
+  }
+#endif
+
   // Copy Y plane
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
   // UpSample U plane.
   int y;
   for (y = 0; y < height - 1; y += 2) {
-    memcpy(dst_u, src_u, halfwidth);
-    memcpy(dst_u + dst_stride_u, src_u, halfwidth);
+    CopyRow(src_u, dst_u, halfwidth);
+    CopyRow(src_u, dst_u + dst_stride_u, halfwidth);
     src_u += src_stride_u;
     dst_u += dst_stride_u * 2;
   }
   if (height & 1) {
-    memcpy(dst_u, src_u, halfwidth);
+    CopyRow(src_u, dst_u, halfwidth);
   }
 
   // UpSample V plane.
   for (y = 0; y < height - 1; y += 2) {
-    memcpy(dst_v, src_v, halfwidth);
-    memcpy(dst_v + dst_stride_v, src_v, halfwidth);
+    CopyRow(src_v, dst_v, halfwidth);
+    CopyRow(src_v, dst_v + dst_stride_v, halfwidth);
     src_v += src_stride_v;
     dst_v += dst_stride_v * 2;
   }
   if (height & 1) {
-    memcpy(dst_v, src_v, halfwidth);
+    CopyRow(src_v, dst_v, halfwidth);
   }
   return 0;
 }

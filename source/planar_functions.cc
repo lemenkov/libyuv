@@ -10,8 +10,6 @@
 
 #include "libyuv/planar_functions.h"
 
-#include <string.h>  // For memcpy()
-
 #include "libyuv/cpu_id.h"
 #include "row.h"
 
@@ -20,110 +18,28 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// CopyRows copys 'count' bytes using a 16 byte load/store, 64 bytes at time
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_COPYROW_SSE2
-__declspec(naked)
-void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
-  __asm {
-    mov        eax, [esp + 4]   // src
-    mov        edx, [esp + 8]   // dst
-    mov        ecx, [esp + 12]  // count
-    sub        edx, eax
-  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     [eax + edx], xmm0
-    movdqa     [eax + edx + 16], xmm1
-    lea        eax, [eax + 32]
-    sub        ecx, 32
-    ja         convertloop
-    ret
-  }
-}
-
-#define HAS_COPYROW_X86
-__declspec(naked)
-void CopyRow_X86(const uint8* src, uint8* dst, int count) {
-  __asm {
-    mov        eax, esi
-    mov        edx, edi
-    mov        esi, [esp + 4]   // src
-    mov        edi, [esp + 8]   // dst
-    mov        ecx, [esp + 12]  // count
-    shr        ecx, 2
-    rep movsd
-    mov        edi, edx
-    mov        esi, eax
-    ret
-  }
-}
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
-#define HAS_COPYROW_SSE2
-void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
-  asm volatile (
-  "sub        %0,%1                            \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    %%xmm0,(%0,%1)                  \n"
-    "movdqa    %%xmm1,0x10(%0,%1)              \n"
-    "lea       0x20(%0),%0                     \n"
-    "sub       $0x20,%2                        \n"
-    "ja        1b                              \n"
-  : "+r"(src),   // %0
-    "+r"(dst),   // %1
-    "+r"(count)  // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1"
-#endif
-  );
-}
-
-#define HAS_COPYROW_X86
-void CopyRow_X86(const uint8* src, uint8* dst, int width) {
-  size_t width_tmp = static_cast<size_t>(width);
-  asm volatile (
-    "shr       $0x2,%2                         \n"
-    "rep movsl                                 \n"
-  : "+S"(src),  // %0
-    "+D"(dst),  // %1
-    "+c"(width_tmp) // %2
-  :
-  : "memory", "cc"
-  );
-}
-#endif
-
-void CopyRow_C(const uint8* src, uint8* dst, int count) {
-  memcpy(dst, src, count);
-}
-
 // Copy a plane of data
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
-  void (*CopyRow)(const uint8* src, uint8* dst, int width);
-#if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 32) &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    CopyRow = CopyRow_SSE2;
-  } else
-#endif
-#if defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
-      IS_ALIGNED(dst_y, 4) && IS_ALIGNED(dst_stride_y, 4)) {
-    CopyRow = CopyRow_X86;
-  } else
-#endif
-  {
-    CopyRow = CopyRow_C;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+    CopyRow = CopyRow_NEON;
   }
+#elif defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+#if defined(HAS_COPYROW_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) &&
+        IS_ALIGNED(width, 32) &&
+        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+      CopyRow = CopyRow_SSE2;
+    }
+#endif
+  }
+#endif
 
   // Copy plane
   for (int y = 0; y < height; ++y) {

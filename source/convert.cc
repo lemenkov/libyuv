@@ -10,8 +10,6 @@
 
 #include "libyuv/convert.h"
 
-#include <string.h>  // For memcpy()
-
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
@@ -283,14 +281,34 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
 static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
                        uint8* dst, int dst_stride_frame,
                        int width, int height) {
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+    CopyRow = CopyRow_NEON;
+  }
+#elif defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+#if defined(HAS_COPYROW_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) &&
+        IS_ALIGNED(width, 32) && IS_ALIGNED(src, 16) &&
+        IS_ALIGNED(src_stride_0, 16) && IS_ALIGNED(src_stride_1, 16) &&
+        IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_frame, 16)) {
+      CopyRow = CopyRow_SSE2;
+    }
+#endif
+  }
+#endif
+
   // Copy plane
-  for (int y = 0; y < height; y += 2) {
-    memcpy(dst, src, width);
-    src += src_stride_0;
-    dst += dst_stride_frame;
-    memcpy(dst, src, width);
-    src += src_stride_1;
-    dst += dst_stride_frame;
+  for (int y = 0; y < height - 1; y += 2) {
+    CopyRow(src, dst, width);
+    CopyRow(src + src_stride_0, dst + dst_stride_frame, width);
+    src += src_stride_0 + src_stride_1;
+    dst += dst_stride_frame * 2;
+  }
+  if (height & 1) {
+    CopyRow(src, dst, width);
   }
 }
 
@@ -514,6 +532,24 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+    CopyRow = CopyRow_NEON;
+  }
+#elif defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+#if defined(HAS_COPYROW_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
+        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+      CopyRow = CopyRow_SSE2;
+    }
+#endif
+  }
+#endif
+
   void (*SplitYUY2)(const uint8* src_yuy2,
                     uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
 #if defined(HAS_SPLITYUY2_SSE2)
@@ -528,7 +564,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     SplitYUY2 = SplitYUY2_C;
   }
   for (int y = 0; y < height; y += 2) {
-    memcpy(dst_y, src_y, width);
+    CopyRow(src_y, dst_y, width);
     dst_y += dst_stride_y;
     src_y += src_stride_y;
 

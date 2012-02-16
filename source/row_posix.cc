@@ -848,7 +848,6 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "pcmpeqb    %%xmm5,%%xmm5                    \n"
     "psrlw      $0x8,%%xmm5                      \n"
     "sub        %1,%2                            \n"
-
   "1:                                            \n"
     "movdqa     (%0),%%xmm0                      \n"
     "movdqa     0x10(%0),%%xmm1                  \n"
@@ -875,6 +874,45 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 #if defined(__SSE2__)
       , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
+  );
+}
+#endif
+
+#ifdef HAS_COPYROW_SSE2
+void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
+  asm volatile (
+  "sub        %0,%1                            \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    %%xmm0,(%0,%1)                  \n"
+    "movdqa    %%xmm1,0x10(%0,%1)              \n"
+    "lea       0x20(%0),%0                     \n"
+    "sub       $0x20,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(count)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+  );
+}
+#endif  // HAS_COPYROW_SSE2
+
+#ifdef HAS_COPYROW_X86
+void CopyRow_X86(const uint8* src, uint8* dst, int width) {
+  size_t width_tmp = static_cast<size_t>(width);
+  asm volatile (
+    "shr       $0x2,%2                         \n"
+    "rep movsl                                 \n"
+  : "+S"(src),  // %0
+    "+D"(dst),  // %1
+    "+c"(width_tmp) // %2
+  :
+  : "memory", "cc"
   );
 }
 #endif
