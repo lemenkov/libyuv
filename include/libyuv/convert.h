@@ -156,6 +156,17 @@ int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_v, int dst_stride_v,
                    int width, int height);
 
+#ifdef HAVE_JPEG
+// src_width/height provided by capture
+// dst_width/height for clipping determine final size.
+int MJPGToI420(const uint8* sample, size_t sample_size,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int src_width, int src_height,
+               int dst_width, int dst_height);
+#endif
+
 // Note Bayer formats (BGGR) To I420 are in format_conversion.h
 
 // Convert camera sample to I420 with cropping, rotation and vertical flip.

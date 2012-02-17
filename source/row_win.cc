@@ -20,7 +20,7 @@ extern "C" {
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
-// Constant multiplication table for converting ARGB to I400.
+// Constants for ARGB
 static const vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };

@@ -20,36 +20,62 @@ extern "C" {
 // This module is for GCC x86 and x64
 #if (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 
+// GCC 4.2 on OSX has link error when passing static or const to inline.
+// TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
 #ifdef __APPLE__
 #define CONST
 #else
 #define CONST static const
 #endif
 
-#ifdef HAS_ARGBTOUVROW_SSSE3
+#ifdef HAS_ARGBTOYROW_SSSE3
+
+// Constants for ARGB
+CONST vec8 kARGBToY = {
+  13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
+};
+
 CONST vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
-CONST uvec8 kARGBToV = {
-  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0
+CONST vec8 kARGBToV = {
+  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
+};
+
+// Constants for BGRA
+CONST vec8 kBGRAToY = {
+  0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
+};
+
+CONST vec8 kBGRAToU = {
+  0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112
+};
+
+CONST vec8 kBGRAToV = {
+  0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
+};
+
+// Constants for ABGR
+CONST vec8 kABGRToY = {
+  33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
+};
+
+CONST vec8 kABGRToU = {
+  -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0
+};
+
+CONST vec8 kABGRToV = {
+  112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
+};
+
+CONST uvec8 kAddY16 = {
+  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
 CONST uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
-};
-#endif
-
-#ifdef HAS_ARGBTOYROW_SSSE3
-
-// Constant multiplication table for converting ARGB to I400.
-CONST vec8 kARGBToY = {
-  13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
-};
-
-CONST uvec8 kAddY16 = {
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
 // Shuffle table for converting RGB24 to ARGB.
@@ -76,7 +102,6 @@ CONST uvec8 kShuffleMaskBGRAToARGB = {
 CONST uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
 };
-
 
 // Shuffle table for converting ARGB to RAW.
 CONST uvec8 kShuffleMaskARGBToRAW = {
@@ -569,7 +594,6 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
   );
 }
 
-
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %4,%%xmm5                       \n"
@@ -641,9 +665,12 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 #endif
   );
 }
-#endif
 
-#ifdef HAS_ARGBTOUVROW_SSSE3
+// TODO(fbarchard): pass xmm constants to single block of assembly.
+// fpic on GCC 4.2 for OSX runs out of GPR registers.  "m" effectively takes
+// 3 registers - ebx, ebp and eax.  "m" can be passed with 3 normal registers,
+// or 4 if stack frame is disabled.  Doing 2 assembly blocks is a work around
+// and considered unsafe.
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
@@ -775,7 +802,420 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif
   );
 }
+
+
+void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_bgra),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kBGRAToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
+  );
+}
+
+void BGRAToYRow_Unaligned_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_bgra),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kBGRAToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
+                       uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kBGRAToU),         // %0
+    "m"(kBGRAToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm6                 \n"
+    "pavgb     (%0,%4,1),%%xmm0                \n"
+    "pavgb     0x10(%0,%4,1),%%xmm1            \n"
+    "pavgb     0x20(%0,%4,1),%%xmm2            \n"
+    "pavgb     0x30(%0,%4,1),%%xmm6            \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "sub       $0x10,%3                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_bgra0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_bgra))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+
+void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kBGRAToU),         // %0
+    "m"(kBGRAToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
+    "movdqu    (%0,%4,1),%%xmm7                \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqu    0x10(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm1                   \n"
+    "movdqu    0x20(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqu    0x30(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm6                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "sub       $0x10,%3                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_bgra0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_bgra))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif
+
+
+void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_abgr),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kABGRToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void ABGRToYRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_abgr),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kABGRToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
+                       uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kABGRToU),         // %0
+    "m"(kABGRToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm6                 \n"
+    "pavgb     (%0,%4,1),%%xmm0                \n"
+    "pavgb     0x10(%0,%4,1),%%xmm1            \n"
+    "pavgb     0x20(%0,%4,1),%%xmm2            \n"
+    "pavgb     0x30(%0,%4,1),%%xmm6            \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "sub       $0x10,%3                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_abgr0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_abgr))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+
+void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kABGRToU),         // %0
+    "m"(kABGRToV),         // %1
+    "m"(kAddUV128)         // %2
+  :
+#if defined(__SSE2__)
+    "xmm3", "xmm4", "xmm5"
+#endif
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
+    "movdqu    (%0,%4,1),%%xmm7                \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqu    0x10(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm1                   \n"
+    "movdqu    0x20(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqu    0x30(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm6                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "sub       $0x10,%3                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_abgr0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_abgr))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif
+
+#endif  // HAS_ARGBTOYROW_SSSE3
 
 #ifdef HAS_I420TOARGBROW_SSSE3
 #define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
@@ -1053,66 +1493,6 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
-}
-#endif
-
-#ifdef HAS_ARGBTOYROW_SSSE3
-void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  ABGRToARGBRow_SSSE3(src_argb, row, pix);
-  ARGBToYRow_SSSE3(row, dst_y, pix);
-}
-
-void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  BGRAToARGBRow_SSSE3(src_argb, row, pix);
-  ARGBToYRow_SSSE3(row, dst_y, pix);
-}
-
-void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  ABGRToARGBRow_C(src_argb, row, pix);
-  ARGBToYRow_SSSE3(row, dst_y, pix);
-}
-
-void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  BGRAToARGBRow_C(src_argb, row, pix);
-  ARGBToYRow_SSSE3(row, dst_y, pix);
-}
-#endif
-
-#ifdef HAS_ARGBTOUVROW_SSSE3
-void ABGRToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  ABGRToARGBRow_SSSE3(src_argb, row, pix);
-  ABGRToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
-  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
-}
-
-void BGRAToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
-                       uint8* dst_u, uint8* dst_v, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  BGRAToARGBRow_SSSE3(src_argb, row, pix);
-  BGRAToARGBRow_SSSE3(src_argb + src_stride_argb, row + kMaxStride, pix);
-  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
-}
-
-void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
-                                 uint8* dst_u, uint8* dst_v, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  ABGRToARGBRow_C(src_argb, row, pix);
-  ABGRToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
-  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
-}
-
-void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
-                                 uint8* dst_u, uint8* dst_v, int pix) {
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  BGRAToARGBRow_C(src_argb, row, pix);
-  BGRAToARGBRow_C(src_argb + src_stride_argb, row + kMaxStride, pix);
-  ARGBToUVRow_SSSE3(row, kMaxStride, dst_u, dst_v, pix);
 }
 #endif
 
