@@ -1,7 +1,7 @@
 vars = {
   "libyuv_trunk" : "https://libyuv.googlecode.com/svn/trunk",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "95033",
+  "chromium_revision": "119959",
   # Use this googlecode_url variable only if there is an internal mirror for it.
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
@@ -17,8 +17,12 @@ deps = {
   "trunk/testing/gtest":
     (Var("googlecode_url") % "googletest") + "/trunk@573",
 
-   "trunk/tools/gyp":
+  "trunk/tools/gyp":
     (Var("googlecode_url") % "gyp") + "/trunk@985",
+
+  # Dependencies used by libjpeg-turbo
+  "trunk/third_party/libjpeg_turbo/":
+    Var("chromium_trunk") + "/src/third_party/libjpeg_turbo@" + Var("chromium_revision"),
 
   "trunk/third_party/yasm/":
     Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
