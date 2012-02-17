@@ -90,12 +90,14 @@ static const uvec8 kShuffleMaskBGRAToARGB = {
 
 // Shuffle table for converting ARGB to RGB24.
 static const uvec8 kShuffleMaskARGBToRGB24 = {
-  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u };
+  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
+};
 
 
 // Shuffle table for converting ARGB to RAW.
 static const uvec8 kShuffleMaskARGBToRAW = {
-  2u, 1u,0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u };
+  2u, 1u,0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
+};
 
 __declspec(naked)
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -297,7 +299,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port ARGB1555ToARGBRow_SSE2 to gcc
 // 24 instructions
 __declspec(naked)
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
@@ -351,7 +352,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port ARGB4444ToARGBRow_SSE2 to gcc
 // 18 instructions
 __declspec(naked)
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
@@ -391,7 +391,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port to gcc
 __declspec(naked)
 void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -430,7 +429,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port to gcc
 __declspec(naked)
 void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -507,7 +505,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port to gcc
 // TODO(fbarchard): Improve sign extension/packing
 __declspec(naked)
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
@@ -550,7 +547,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port to gcc
 __declspec(naked)
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
