@@ -803,7 +803,6 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
   );
 }
 
-
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %4,%%xmm5                       \n"
@@ -1007,8 +1006,6 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
 #endif
   );
 }
-#endif
-
 
 void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
   asm volatile (
@@ -1213,7 +1210,6 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
 #endif
   );
 }
-#endif
 
 #endif  // HAS_ARGBTOYROW_SSSE3
 
