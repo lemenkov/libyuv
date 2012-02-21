@@ -140,6 +140,51 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// 420 chroma is 1/2 width, 1/2 height
+// 411 chroma is 1/4 width, 1x height
+int I420ToI411(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+
+  // Copy Y plane
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  int quarterwidth = (width + 3) >> 2;
+
+  // Resample U plane.
+  ScalePlaneBilinear(halfwidth, halfheight,  // from 1/2 width, 1/2 height
+                     quarterwidth, height,  // to 1/4 width, 1x height
+                     src_stride_u,
+                     dst_stride_u,
+                     src_u, dst_u);
+
+  // Resample V plane.
+  ScalePlaneBilinear(halfwidth, halfheight,  // from 1/2 width, 1/2 height
+                     quarterwidth, height,  // to 1/4 width, 1x height
+                     src_stride_v,
+                     dst_stride_v,
+                     src_v, dst_v);
+  return 0;
+}
+
 // Copy to I400.  Source can be I420,422,444,400,NV12,NV21
 int I400Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_y, int dst_stride_y,
@@ -1228,6 +1273,19 @@ int ConvertFromI420(const uint8* y, int y_stride,
                  dst_sample, width,
                  dst_u, width,
                  dst_v, width,
+                 width, height);
+      break;
+    }
+    case FOURCC_I411: {
+      int quarterwidth = (width + 3) / 4;
+      uint8* dst_u = dst_sample + width * height;
+      uint8* dst_v = dst_u + quarterwidth * height;
+      I420ToI411(y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_sample, width,
+                 dst_u, quarterwidth,
+                 dst_v, quarterwidth,
                  width, height);
       break;
     }

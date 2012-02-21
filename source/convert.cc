@@ -258,6 +258,57 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// use Bilinear for upsampling chroma
+void ScalePlaneBilinear(int src_width, int src_height,
+                        int dst_width, int dst_height,
+                        int src_stride, int dst_stride,
+                        const uint8* src_ptr, uint8* dst_ptr);
+
+// 411 chroma is 1/4 width, 1x height
+// 420 chroma is 1/2 width, 1/2 height
+int I411ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+
+  // Copy Y plane
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  int quarterwidth = (width + 3) >> 2;
+
+  // Resample U plane.
+  ScalePlaneBilinear(quarterwidth, height,  // from 1/4 width, 1x height
+                     halfwidth, halfheight,  // to 1/2 width, 1/2 height
+                     src_stride_u,
+                     dst_stride_u,
+                     src_u, dst_u);
+
+  // Resample V plane.
+  ScalePlaneBilinear(quarterwidth, height,  // from 1/4 width, 1x height
+                     halfwidth, halfheight,  // to 1/2 width, 1/2 height
+                     src_stride_v,
+                     dst_stride_v,
+                     src_v, dst_v);
+  return 0;
+}
+
 // I400 is greyscale typically used in MJPG
 int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
@@ -1607,6 +1658,23 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                  dst_width, inv_dst_height);
       break;
     }
+    case FOURCC_I411: {
+      int quarterwidth = (src_width + 3) / 4;
+      const uint8* src_y = sample + src_width * crop_y + crop_x;
+      const uint8* src_u = sample + src_width * abs_src_height +
+          quarterwidth * crop_y + crop_x / 4;
+      const uint8* src_v = sample + src_width * abs_src_height +
+          quarterwidth * (abs_src_height + crop_y) + crop_x / 4;
+      I411ToI420(src_y, src_width,
+                 src_u, quarterwidth,
+                 src_v, quarterwidth,
+                 y, y_stride,
+                 u, u_stride,
+                 v, v_stride,
+                 dst_width, inv_dst_height);
+      break;
+    }
+
     // Formats not supported
     case FOURCC_MJPG:
     default:

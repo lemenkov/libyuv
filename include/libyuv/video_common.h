@@ -42,6 +42,7 @@ enum FourCC {
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
   FOURCC_I422 = FOURCC('I', '4', '2', '2'),
   FOURCC_I444 = FOURCC('I', '4', '4', '4'),
+  FOURCC_I411 = FOURCC('I', '4', '1', '1'),
   FOURCC_I400 = FOURCC('I', '4', '0', '0'),
   FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),

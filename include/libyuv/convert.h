@@ -49,6 +49,15 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Convert I411 to I420.
+int I411ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // Convert I400 (grey) to I420.
 int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,

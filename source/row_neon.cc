@@ -61,8 +61,10 @@ extern "C" {
 #if defined(HAS_I420TOARGBROW_NEON) || \
     defined(HAS_I420TOBGRAROW_NEON) || \
     defined(HAS_I420TOABGRROW_NEON)
-static const vec8 kUVToRB[8]  = { 127, 127, 127, 127, 102, 102, 102, 102 };
-static const vec8 kUVToG[8]   = { -25, -25, -25, -25, -52, -52, -52, -52 };
+static const vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
+                               0, 0, 0, 0, 0, 0, 0, 0 };
+static const vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
+                             0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 
 #if defined(HAS_I420TOARGBROW_NEON)
@@ -84,13 +86,13 @@ YUVTORGB
     "vst4.u8    {d20, d21, d22, d23}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
     "bhi        1b                             \n"
-    : "+r"(y_buf),          // %0
-      "+r"(u_buf),          // %1
-      "+r"(v_buf),          // %2
-      "+r"(rgb_buf),        // %3
-      "+r"(width)           // %4
-    : "r"(kUVToRB),
-      "r"(kUVToG)
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(kUVToRB),   // %5
+      "r"(kUVToG)     // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -117,13 +119,13 @@ YUVTORGB
     "vst4.u8    {d19, d20, d21, d22}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
     "bhi        1b                             \n"
-    : "+r"(y_buf),          // %0
-      "+r"(u_buf),          // %1
-      "+r"(v_buf),          // %2
-      "+r"(rgb_buf),        // %3
-      "+r"(width)           // %4
-    : "r"(kUVToRB),
-      "r"(kUVToG)
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(kUVToRB),   // %5
+      "r"(kUVToG)     // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -150,13 +152,13 @@ YUVTORGB
     "vst4.u8    {d20, d21, d22, d23}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
     "bhi        1b                             \n"
-    : "+r"(y_buf),          // %0
-      "+r"(u_buf),          // %1
-      "+r"(v_buf),          // %2
-      "+r"(rgb_buf),        // %3
-      "+r"(width)           // %4
-    : "r"(kUVToRB),
-      "r"(kUVToG)
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(kUVToRB),   // %5
+      "r"(kUVToG)     // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -174,10 +176,10 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "vst1.u8    {q0}, [%1]!                    \n"  // store U
     "vst1.u8    {q1}, [%2]!                    \n"  // Store V
     "bhi        1b                             \n"
-    : "+r"(src_uv),
-      "+r"(dst_u),
-      "+r"(dst_v),
-      "+r"(pix)             // Output registers
+    : "+r"(src_uv),  // %0
+      "+r"(dst_u),   // %1
+      "+r"(dst_v),   // %2
+      "+r"(pix)      // %3  // Output registers
     :                       // Input registers
     : "memory", "cc", "q0", "q1" // Clobber List
   );
@@ -195,10 +197,10 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
     "subs       %2, %2, #64                    \n"  // 64 processed per loop
     "vst1.u8    {q0,q1,q2,q3}, [%1]!           \n"  // store 64
     "bhi        1b                             \n"
-    : "+r"(src),
-      "+r"(dst),
-      "+r"(count)           // Output registers
-    :                       // Input registers
+    : "+r"(src),   // %0
+      "+r"(dst),   // %1
+      "+r"(count)  // %2  // Output registers
+    :                     // Input registers
     : "memory", "cc", "q0", "q1", "q2", "q3" // Clobber List
   );
 }
