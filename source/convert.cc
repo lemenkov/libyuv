@@ -1855,6 +1855,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                      dst_width, inv_dst_height);
       break;
     }
+#ifdef HAVE_JPEG
     case FOURCC_MJPG:
       r = MJPGToI420(sample, sample_size,
                      y, y_stride,
@@ -1862,6 +1863,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                      v, v_stride,
                      src_width, abs_src_height, dst_width, inv_dst_height);
       break;
+#endif
     default:
       return -1;  // unknown fourcc - return failure code.
   }
