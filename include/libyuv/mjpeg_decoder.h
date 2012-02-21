@@ -20,6 +20,8 @@ struct jpeg_source_mgr;
 
 namespace libyuv {
 
+static const uint32 kUnknownDataSize = 0xFFFFFFFF;
+
 enum JpegSubsamplingType {
   kJpegYuv420,
   kJpegYuv422,

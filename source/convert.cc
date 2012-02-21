@@ -13,6 +13,9 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
+#ifdef HAVE_JPEG
+#include "libyuv/mjpeg_decoder.h"
+#endif
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
@@ -1363,12 +1366,202 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
   return 0;
 }
 
+#ifdef HAVE_JPEG
+struct I420Buffers {
+  uint8* y;
+  int y_stride;
+  uint8* u;
+  int u_stride;
+  uint8* v;
+  int v_stride;
+  int w;
+  int h;
+};
+
+static void JpegCopyI420(void* opaque,
+                         const uint8* const* data,
+                         const int* strides,
+                         int rows) {
+  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Copy(data[0], strides[0],
+           data[1], strides[1],
+           data[2], strides[2],
+           dest->y, dest->y_stride,
+           dest->u, dest->u_stride,
+           dest->v, dest->v_stride,
+           dest->w, rows);
+  dest->y += rows * dest->y_stride;
+  dest->u += ((rows + 1) >> 1) * dest->u_stride;
+  dest->v += ((rows + 1) >> 1) * dest->v_stride;
+  dest->h -= rows;
+}
+
+static void JpegI422ToI420(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I422ToI420(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->y, dest->y_stride,
+             dest->u, dest->u_stride,
+             dest->v, dest->v_stride,
+             dest->w, rows);
+  dest->y += rows * dest->y_stride;
+  dest->u += ((rows + 1) >> 1) * dest->u_stride;
+  dest->v += ((rows + 1) >> 1) * dest->v_stride;
+  dest->h -= rows;
+}
+
+static void JpegI444ToI420(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I444ToI420(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->y, dest->y_stride,
+             dest->u, dest->u_stride,
+             dest->v, dest->v_stride,
+             dest->w, rows);
+  dest->y += rows * dest->y_stride;
+  dest->u += ((rows + 1) >> 1) * dest->u_stride;
+  dest->v += ((rows + 1) >> 1) * dest->v_stride;
+  dest->h -= rows;
+}
+
+static void JpegI411ToI420(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I411ToI420(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->y, dest->y_stride,
+             dest->u, dest->u_stride,
+             dest->v, dest->v_stride,
+             dest->w, rows);
+  dest->y += rows * dest->y_stride;
+  dest->u += ((rows + 1) >> 1) * dest->u_stride;
+  dest->v += ((rows + 1) >> 1) * dest->v_stride;
+  dest->h -= rows;
+}
+
+static void JpegI400ToI420(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I400ToI420(data[0], strides[0],
+             dest->y, dest->y_stride,
+             dest->u, dest->u_stride,
+             dest->v, dest->v_stride,
+             dest->w, rows);
+  dest->y += rows * dest->y_stride;
+  dest->u += ((rows + 1) >> 1) * dest->u_stride;
+  dest->v += ((rows + 1) >> 1) * dest->v_stride;
+  dest->h -= rows;
+}
+
+// MJPG (Motion JPeg) to I420
+// TODO(fbarchard): review w and h requirement.  dw and dh may be enough.
+int MJPGToI420(const uint8* sample,
+               size_t sample_size,
+               uint8* y, int y_stride,
+               uint8* u, int u_stride,
+               uint8* v, int v_stride,
+               int w, int h,
+               int dw, int dh) {
+  if (sample_size == kUnknownDataSize) {
+    // ERROR: MJPEG frame size unknown
+    return -1;
+  }
+
+  // TODO(fbarchard): Port to C
+  MJpegDecoder* mjpeg_decoder = new MJpegDecoder();
+  bool ret = mjpeg_decoder->LoadFrame(sample, sample_size);
+  if (ret && (mjpeg_decoder->GetWidth() != w ||
+              mjpeg_decoder->GetHeight() != h)) {
+    // ERROR: MJPEG frame has unexpected dimensions
+    mjpeg_decoder->UnloadFrame();
+    delete mjpeg_decoder;
+    return 1;  // runtime failure
+  }
+  if (ret) {
+    I420Buffers bufs = { y, y_stride, u, u_stride, v, v_stride, dw, dh };
+    // YUV420
+    if (mjpeg_decoder->GetColorSpace() ==
+            MJpegDecoder::kColorSpaceYCbCr &&
+        mjpeg_decoder->GetNumComponents() == 3 &&
+        mjpeg_decoder->GetVertSampFactor(0) == 2 &&
+        mjpeg_decoder->GetHorizSampFactor(0) == 2 &&
+        mjpeg_decoder->GetVertSampFactor(1) == 1 &&
+        mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
+        mjpeg_decoder->GetVertSampFactor(2) == 1 &&
+        mjpeg_decoder->GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder->DecodeToCallback(&JpegCopyI420, &bufs, dw, dh);
+    // YUV422
+    } else if (mjpeg_decoder->GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder->GetNumComponents() == 3 &&
+               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(0) == 2 &&
+               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder->DecodeToCallback(&JpegI422ToI420, &bufs, dw, dh);
+    // YUV444
+    } else if (mjpeg_decoder->GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder->GetNumComponents() == 3 &&
+               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(0) == 1 &&
+               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder->DecodeToCallback(&JpegI444ToI420, &bufs, dw, dh);
+    // YUV411
+    } else if (mjpeg_decoder->GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder->GetNumComponents() == 3 &&
+               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(0) == 4 &&
+               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder->DecodeToCallback(&JpegI411ToI420, &bufs, dw, dh);
+    // YUV400
+    } else if (mjpeg_decoder->GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceGrayscale &&
+               mjpeg_decoder->GetNumComponents() == 1 &&
+               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder->GetHorizSampFactor(0) == 1) {
+      ret = mjpeg_decoder->DecodeToCallback(&JpegI400ToI420, &bufs, dw, dh);
+    } else {
+      // TODO(fbarchard): Implement conversion for any other colorspace/sample
+      // factors that occur in practice.  411 is supported by libjpeg
+      // ERROR: Unable to convert MJPEG frame because format is not supported
+      mjpeg_decoder->UnloadFrame();
+      delete mjpeg_decoder;
+      return 1;
+    }
+  }
+  delete mjpeg_decoder;
+  return 0;
+}
+#endif
+
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // src_width is used for source stride computation
 // src_height is used to compute location of planes, and indicate inversion
-// TODO(fbarchard): sample_size should be used to ensure the low levels do
-// not read outside the buffer provided.  It is measured in bytes and is the
-// size of the frame.  With MJPEG it is the compressed size of the frame.
+// sample_size is measured in bytes and is the size of the frame.
+//   With MJPEG it is the compressed size of the frame.
 int ConvertToI420(const uint8* sample, size_t sample_size,
                   uint8* y, int y_stride,
                   uint8* u, int u_stride,
@@ -1389,199 +1582,187 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   if (src_height < 0) {
     inv_dst_height = -inv_dst_height;
   }
-
+  int r = 0;
   switch (format) {
     // Single plane formats
     case FOURCC_YUY2:
       src = sample + (aligned_src_width * crop_y + crop_x) * 2 ;
-      YUY2ToI420(src, aligned_src_width * 2,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = YUY2ToI420(src, aligned_src_width * 2,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_UYVY:
       src = sample + (aligned_src_width * crop_y + crop_x) * 2;
-      UYVYToI420(src, aligned_src_width * 2,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = UYVYToI420(src, aligned_src_width * 2,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_V210:
       // stride is multiple of 48 pixels (128 bytes).
       // pixels come in groups of 6 = 16 bytes
       src = sample + (aligned_src_width + 47) / 48 * 128 * crop_y +
             crop_x / 6 * 16;
-      V210ToI420(src, (aligned_src_width + 47) / 48 * 128,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = V210ToI420(src, (aligned_src_width + 47) / 48 * 128,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_24BG:
       src = sample + (src_width * crop_y + crop_x) * 3;
-      RGB24ToI420(src, src_width * 3,
-                  y, y_stride,
-                  u, u_stride,
-                  v, v_stride,
-                  dst_width, inv_dst_height);
+      r = RGB24ToI420(src, src_width * 3,
+                      y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_width, inv_dst_height);
       break;
     case FOURCC_RAW:
       src = sample + (src_width * crop_y + crop_x) * 3;
-      RAWToI420(src, src_width * 3,
-                y, y_stride,
-                u, u_stride,
-                v, v_stride,
-                dst_width, inv_dst_height);
+      r = RAWToI420(src, src_width * 3,
+                    y, y_stride,
+                    u, u_stride,
+                    v, v_stride,
+                    dst_width, inv_dst_height);
       break;
     case FOURCC_ARGB:
       src = sample + (src_width * crop_y + crop_x) * 4;
-      ARGBToI420(src, src_width * 4,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = ARGBToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_BGRA:
       src = sample + (src_width * crop_y + crop_x) * 4;
-      BGRAToI420(src, src_width * 4,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = BGRAToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_ABGR:
       src = sample + (src_width * crop_y + crop_x) * 4;
-      ABGRToI420(src, src_width * 4,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = ABGRToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_RGBP:
       src = sample + (src_width * crop_y + crop_x) * 2;
-      RGB565ToI420(src, src_width * 2,
-                   y, y_stride,
-                   u, u_stride,
-                   v, v_stride,
-                   dst_width, inv_dst_height);
+      r = RGB565ToI420(src, src_width * 2,
+                       y, y_stride,
+                       u, u_stride,
+                       v, v_stride,
+                       dst_width, inv_dst_height);
       break;
-//  V4L2_PIX_FMT_RGB555 'RGBO'
-//               Byte 0                    Byte 1
-//  Bit   7  6  5  4  3  2  1  0    7  6  5  4  3  2  1  0
-//       g2 g1 g0 b4 b3 b2 b1 b0    a r4 r3 r2 r1 r0 g4 g3
-//  Bit 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-//       a r4 r3 r2 r1 r0 g4 g3 g2 g1 g0 b4 b3 b2 b1 b0
     case FOURCC_RGBO:
       src = sample + (src_width * crop_y + crop_x) * 2;
-      ARGB1555ToI420(src, src_width * 2,
-                     y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_width, inv_dst_height);
+      r = ARGB1555ToI420(src, src_width * 2,
+                         y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_width, inv_dst_height);
       break;
-//  V4L2_PIX_FMT_RGB444 'R444'
-//               Byte 0                    Byte 1
-//  Bit   7  6  5  4  3  2  1  0    7  6  5  4  3  2  1  0
-//       g3 g2 g1 g0 b3 b2 b1 b0   a3 a2 a1 a0 r3 r2 r1 r0
-//  Bit 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-//      a3 a2 a1 a0 r3 r2 r1 r0 g3 g2 g1 g0 b3 b2 b1 b0
     case FOURCC_R444:
       src = sample + (src_width * crop_y + crop_x) * 2;
-      ARGB4444ToI420(src, src_width * 2,
-                     y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_width, inv_dst_height);
+      r = ARGB4444ToI420(src, src_width * 2,
+                         y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_width, inv_dst_height);
       break;
     // TODO(fbarchard): Support cropping Bayer by odd numbers
     // by adjusting fourcc.
     case FOURCC_BGGR:
       src = sample + (src_width * crop_y + crop_x);
-      BayerBGGRToI420(src, src_width,
-                      y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_width, inv_dst_height);
+      r = BayerBGGRToI420(src, src_width,
+                          y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_width, inv_dst_height);
       break;
 
     case FOURCC_GBRG:
       src = sample + (src_width * crop_y + crop_x);
-      BayerGBRGToI420(src, src_width,
-                      y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_width, inv_dst_height);
+      r = BayerGBRGToI420(src, src_width,
+                          y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_width, inv_dst_height);
       break;
 
     case FOURCC_GRBG:
       src = sample + (src_width * crop_y + crop_x);
-      BayerGRBGToI420(src, src_width,
-                      y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_width, inv_dst_height);
+      r = BayerGRBGToI420(src, src_width,
+                          y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_width, inv_dst_height);
       break;
 
     case FOURCC_RGGB:
       src = sample + (src_width * crop_y + crop_x);
-      BayerRGGBToI420(src, src_width,
-                      y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_width, inv_dst_height);
+      r = BayerRGGBToI420(src, src_width,
+                          y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_width, inv_dst_height);
       break;
 
     case FOURCC_I400:
       src = sample + src_width * crop_y + crop_x;
-      I400ToI420(src, src_width,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = I400ToI420(src, src_width,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
 
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
       src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
-      NV12ToI420Rotate(src, src_width,
-                       src_uv, aligned_src_width,
-                       y, y_stride,
-                       u, u_stride,
-                       v, v_stride,
-                       dst_width, inv_dst_height, rotation);
+      r = NV12ToI420Rotate(src, src_width,
+                           src_uv, aligned_src_width,
+                           y, y_stride,
+                           u, u_stride,
+                           v, v_stride,
+                           dst_width, inv_dst_height, rotation);
       break;
     case FOURCC_NV21:
       src = sample + (src_width * crop_y + crop_x);
       src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
       // Call NV12 but with u and v parameters swapped.
-      NV12ToI420Rotate(src, src_width,
-                       src_uv, aligned_src_width,
-                       y, y_stride,
-                       u, u_stride,
-                       v, v_stride,
-                       dst_width, inv_dst_height, rotation);
+      r = NV12ToI420Rotate(src, src_width,
+                           src_uv, aligned_src_width,
+                           y, y_stride,
+                           u, u_stride,
+                           v, v_stride,
+                           dst_width, inv_dst_height, rotation);
       break;
     case FOURCC_M420:
       src = sample + (src_width * crop_y) * 12 / 8 + crop_x;
-      M420ToI420(src, src_width,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = M420ToI420(src, src_width,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     case FOURCC_Q420:
       src = sample + (src_width + aligned_src_width * 2) * crop_y + crop_x;
       src_uv = sample + (src_width + aligned_src_width * 2) * crop_y +
                src_width + crop_x * 2;
-      Q420ToI420(src, src_width * 3,
-                 src_uv, src_width * 3,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = Q420ToI420(src, src_width * 3,
+                    src_uv, src_width * 3,
+                    y, y_stride,
+                    u, u_stride,
+                    v, v_stride,
+                    dst_width, inv_dst_height);
       break;
     // Triplanar formats
     case FOURCC_I420:
@@ -1602,13 +1783,13 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
         src_u = sample + src_width * abs_src_height +
             halfwidth * (halfheight + crop_y / 2) + crop_x / 2;
       }
-      I420Rotate(src_y, src_width,
-                 src_u, halfwidth,
-                 src_v, halfwidth,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height, rotation);
+      r = I420Rotate(src_y, src_width,
+                     src_u, halfwidth,
+                     src_v, halfwidth,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height, rotation);
       break;
     }
     case FOURCC_I422:
@@ -1628,13 +1809,13 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
         src_u = sample + src_width * abs_src_height +
             halfwidth * (abs_src_height + crop_y) + crop_x / 2;
       }
-      I422ToI420(src_y, src_width,
-                 src_u, halfwidth,
-                 src_v, halfwidth,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = I422ToI420(src_y, src_width,
+                     src_u, halfwidth,
+                     src_v, halfwidth,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     }
     case FOURCC_I444:
@@ -1649,13 +1830,13 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
         src_v = sample + src_width * (abs_src_height + crop_y) + crop_x;
         src_u = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
       }
-      I444ToI420(src_y, src_width,
-                 src_u, src_width,
-                 src_v, src_width,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = I444ToI420(src_y, src_width,
+                     src_u, src_width,
+                     src_v, src_width,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     }
     case FOURCC_I411: {
@@ -1665,22 +1846,26 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
           quarterwidth * crop_y + crop_x / 4;
       const uint8* src_v = sample + src_width * abs_src_height +
           quarterwidth * (abs_src_height + crop_y) + crop_x / 4;
-      I411ToI420(src_y, src_width,
-                 src_u, quarterwidth,
-                 src_v, quarterwidth,
-                 y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_width, inv_dst_height);
+      r = I411ToI420(src_y, src_width,
+                     src_u, quarterwidth,
+                     src_v, quarterwidth,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
       break;
     }
-
-    // Formats not supported
     case FOURCC_MJPG:
+      r = MJPGToI420(sample, sample_size,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     src_width, abs_src_height, dst_width, inv_dst_height);
+      break;
     default:
       return -1;  // unknown fourcc - return failure code.
   }
-  return 0;
+  return r;
 }
 
 #ifdef __cplusplus
