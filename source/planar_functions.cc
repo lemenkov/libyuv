@@ -10,6 +10,8 @@
 
 #include "libyuv/planar_functions.h"
 
+#include <string.h> // for memset()
+
 #include "libyuv/cpu_id.h"
 #include "row.h"
 

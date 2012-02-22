@@ -647,6 +647,13 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
 // READSAFE_ALWAYS - enables read ahead on systems without memory exceptions
 //   or where buffers are padded by 64 bytes.
 
+#if defined(HAS_RGB24TOARGBROW_SSSE3) || \
+    defined(HAS_RGB24TOARGBROW_SSSE3) || \
+    defined(HAS_RAWTOARGBROW_SSSE3) || \
+    defined(HAS_RGB565TOARGBROW_SSE2) || \
+    defined(HAS_ARGB1555TOARGBROW_SSE2) || \
+    defined(HAS_ARGB4444TOARGBROW_SSE2)
+
 #define READSAFE_ODDHEIGHT
 
 static bool TestReadSafe(const uint8* src_yuy2, int src_stride_yuy2,
@@ -676,6 +683,7 @@ static bool TestReadSafe(const uint8* src_yuy2, int src_stride_yuy2,
   return false;
 #endif
 }
+#endif
 
 // Convert YUY2 to I420.
 int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,

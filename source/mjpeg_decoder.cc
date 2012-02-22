@@ -29,13 +29,7 @@ typedef signed int INT32;
 #endif
 
 extern "C" {
-// TODO(fbarchard): Port libjpeg_turbo to arm/neon
-#if defined(__arm__)
-// On ARM, require a system-installed libjpeg if JPEG support is enabled.
 #include <jpeglib.h>
-#else
-#include "third_party/libjpeg_turbo/src/jpeglib.h"
-#endif
 }
 
 namespace libyuv {

@@ -11,9 +11,13 @@
     {
       'target_name': 'libyuv',
       'type': 'static_library',
+      'defines': [
+        #'HAVE_JPEG',
+      ],
       'include_dirs': [
         'include',
         '.',
+	#'third_party/libjpeg_turbo',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -42,32 +46,16 @@
         'source/cpu_id.cc',
         'source/format_conversion.cc',
         'source/planar_functions.cc',
+        #'source/mjpeg_decoder.cc',
         'source/rotate.cc',
+        'source/rotate_neon.cc',
         'source/row_common.cc',
+        'source/row_posix.cc',
+        'source/row_neon.cc',
+        'source/row_win.cc',
         'source/scale.cc',
         'source/video_common.cc',
       ],
-      'conditions': [
-        ['OS=="win"', {
-         'sources': [
-           'source/row_win.cc',
-         ],
-        },{ # else
-         'sources': [
-            'source/row_posix.cc',
-          ],
-        }],
-        ['target_arch=="arm"',{
-          'conditions': [
-            ['arm_neon==1', {
-              'sources' : [
-                'source/rotate_neon.cc',
-                'source/row_neon.cc',
-              ],
-            }],
-          ],
-        }],
-      ]
     },
   ], # targets
 }
