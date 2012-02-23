@@ -1489,78 +1489,75 @@ int MJPGToI420(const uint8* sample,
   }
 
   // TODO(fbarchard): Port to C
-  MJpegDecoder* mjpeg_decoder = new MJpegDecoder();
-  bool ret = mjpeg_decoder->LoadFrame(sample, sample_size);
-  if (ret && (mjpeg_decoder->GetWidth() != w ||
-              mjpeg_decoder->GetHeight() != h)) {
+  MJpegDecoder mjpeg_decoder;
+  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  if (ret && (mjpeg_decoder.GetWidth() != w ||
+              mjpeg_decoder.GetHeight() != h)) {
     // ERROR: MJPEG frame has unexpected dimensions
-    mjpeg_decoder->UnloadFrame();
-    delete mjpeg_decoder;
+    mjpeg_decoder.UnloadFrame();
     return 1;  // runtime failure
   }
   if (ret) {
     I420Buffers bufs = { y, y_stride, u, u_stride, v, v_stride, dw, dh };
     // YUV420
-    if (mjpeg_decoder->GetColorSpace() ==
+    if (mjpeg_decoder.GetColorSpace() ==
             MJpegDecoder::kColorSpaceYCbCr &&
-        mjpeg_decoder->GetNumComponents() == 3 &&
-        mjpeg_decoder->GetVertSampFactor(0) == 2 &&
-        mjpeg_decoder->GetHorizSampFactor(0) == 2 &&
-        mjpeg_decoder->GetVertSampFactor(1) == 1 &&
-        mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
-        mjpeg_decoder->GetVertSampFactor(2) == 1 &&
-        mjpeg_decoder->GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder->DecodeToCallback(&JpegCopyI420, &bufs, dw, dh);
+        mjpeg_decoder.GetNumComponents() == 3 &&
+        mjpeg_decoder.GetVertSampFactor(0) == 2 &&
+        mjpeg_decoder.GetHorizSampFactor(0) == 2 &&
+        mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+        mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+        mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+        mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegCopyI420, &bufs, dw, dh);
     // YUV422
-    } else if (mjpeg_decoder->GetColorSpace() ==
+    } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
-               mjpeg_decoder->GetNumComponents() == 3 &&
-               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(0) == 2 &&
-               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
-               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder->DecodeToCallback(&JpegI422ToI420, &bufs, dw, dh);
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 2 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToI420, &bufs, dw, dh);
     // YUV444
-    } else if (mjpeg_decoder->GetColorSpace() ==
+    } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
-               mjpeg_decoder->GetNumComponents() == 3 &&
-               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(0) == 1 &&
-               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
-               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder->DecodeToCallback(&JpegI444ToI420, &bufs, dw, dh);
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToI420, &bufs, dw, dh);
     // YUV411
-    } else if (mjpeg_decoder->GetColorSpace() ==
+    } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
-               mjpeg_decoder->GetNumComponents() == 3 &&
-               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(0) == 4 &&
-               mjpeg_decoder->GetVertSampFactor(1) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(1) == 1 &&
-               mjpeg_decoder->GetVertSampFactor(2) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder->DecodeToCallback(&JpegI411ToI420, &bufs, dw, dh);
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 4 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI411ToI420, &bufs, dw, dh);
     // YUV400
-    } else if (mjpeg_decoder->GetColorSpace() ==
+    } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceGrayscale &&
-               mjpeg_decoder->GetNumComponents() == 1 &&
-               mjpeg_decoder->GetVertSampFactor(0) == 1 &&
-               mjpeg_decoder->GetHorizSampFactor(0) == 1) {
-      ret = mjpeg_decoder->DecodeToCallback(&JpegI400ToI420, &bufs, dw, dh);
+               mjpeg_decoder.GetNumComponents() == 1 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToI420, &bufs, dw, dh);
     } else {
       // TODO(fbarchard): Implement conversion for any other colorspace/sample
       // factors that occur in practice.  411 is supported by libjpeg
       // ERROR: Unable to convert MJPEG frame because format is not supported
-      mjpeg_decoder->UnloadFrame();
-      delete mjpeg_decoder;
+      mjpeg_decoder.UnloadFrame();
       return 1;
     }
   }
-  delete mjpeg_decoder;
   return 0;
 }
 #endif
