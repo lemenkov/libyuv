@@ -1316,6 +1316,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
     cmp        eax, 0
     je         xloop1
     cmp        eax, 128
@@ -1334,7 +1335,6 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   xloop:
     movdqa     xmm0, [esi]
     movdqa     xmm2, [esi + edx]
-    lea        esi, [esi + 16]
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     punpcklbw  xmm0, xmm7
@@ -1350,43 +1350,40 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     psrlw      xmm0, 8
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
 
   xloop1:
     movdqa     xmm0, [esi]
-    lea        esi, [esi + 16]
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop1
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
 
   xloop2:
     movdqa     xmm0, [esi]
-    movdqa     xmm2, [esi + edx]
-    lea        esi, [esi + 16]
-    pavgb      xmm0, xmm2
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
+    pavgb      xmm0, [esi + edx]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop2
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
@@ -1407,6 +1404,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
     cmp        eax, 0
     je         xloop1
     cmp        eax, 128
@@ -1423,7 +1421,6 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   xloop:
     movdqa     xmm0, [esi]
     movdqa     xmm2, [esi + edx]
-    lea        esi, [esi + 16]
     movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm2
     punpckhbw  xmm1, xmm2
@@ -1432,47 +1429,43 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     psrlw      xmm0, 7
     psrlw      xmm1, 7
     packuswb   xmm0, xmm1
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
 
   xloop1:
     movdqa     xmm0, [esi]
-    lea        esi, [esi + 16]
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop1
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
 
   xloop2:
     movdqa     xmm0, [esi]
-    movdqa     xmm2, [esi + edx]
-    lea        esi, [esi + 16]
-    pavgb      xmm0, xmm2
-    movdqa     [edi], xmm0
-    lea        edi, [edi + 16]
+    pavgb      xmm0, [esi + edx]
     sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
     ja         xloop2
 
-    mov        al, [edi - 1]
-    mov        [edi], al
+    mov        al, [esi + edi - 1]
+    mov        [esi + edi], al
     pop        edi
     pop        esi
     ret
-
   }
 }
 
@@ -2081,6 +2074,7 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "mov    0x14(%esp),%edx                    \n"
     "mov    0x18(%esp),%ecx                    \n"
     "mov    0x1c(%esp),%eax                    \n"
+    "sub    %esi, %edi                         \n"
     "cmp    $0x0,%eax                          \n"
     "je     2f                                 \n"
     "cmp    $0x80,%eax                         \n"
@@ -2098,7 +2092,6 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
 "1:"
     "movdqa (%esi),%xmm0                       \n"
     "movdqa (%esi,%edx,1),%xmm2                \n"
-    "lea    0x10(%esi),%esi                    \n"
     "movdqa %xmm0,%xmm1                        \n"
     "movdqa %xmm2,%xmm3                        \n"
     "punpcklbw %xmm7,%xmm0                     \n"
@@ -2114,42 +2107,40 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "psrlw  $0x8,%xmm0                         \n"
     "psrlw  $0x8,%xmm1                         \n"
     "packuswb %xmm1,%xmm0                      \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     1b                                 \n"
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
 
 "2:"
     "movdqa (%esi),%xmm0                       \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     2b                                 \n"
 
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
 
 "3:"
     "movdqa (%esi),%xmm0                       \n"
-    "movdqa (%esi,%edx,1),%xmm2                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "pavgb  %xmm2,%xmm0                        \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
+    "pavgb  (%esi,%edx,1),%xmm0                \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     3b                                 \n"
 
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2169,6 +2160,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "mov    0x14(%esp),%edx                    \n"
     "mov    0x18(%esp),%ecx                    \n"
     "mov    0x1c(%esp),%eax                    \n"
+    "sub    %esi, %edi                         \n"
     "cmp    $0x0,%eax                          \n"
     "je     2f                                 \n"
     "cmp    $0x80,%eax                         \n"
@@ -2184,7 +2176,6 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 "1:"
     "movdqa (%esi),%xmm0                       \n"
     "movdqa (%esi,%edx,1),%xmm2                \n"
-    "lea    0x10(%esi),%esi                    \n"
     "movdqa %xmm0,%xmm1                        \n"
     "punpcklbw %xmm2,%xmm0                     \n"
     "punpckhbw %xmm2,%xmm1                     \n"
@@ -2193,40 +2184,40 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "psrlw  $0x7,%xmm0                         \n"
     "psrlw  $0x7,%xmm1                         \n"
     "packuswb %xmm1,%xmm0                      \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     1b                                 \n"
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
 
 "2:"
     "movdqa (%esi),%xmm0                       \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     2b                                 \n"
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
 
 "3:"
     "movdqa (%esi),%xmm0                       \n"
-    "movdqa (%esi,%edx,1),%xmm2                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "pavgb  %xmm2,%xmm0                        \n"
-    "movdqa %xmm0,(%edi)                       \n"
-    "lea    0x10(%edi),%edi                    \n"
+    "pavgb  (%esi,%edx,1),%xmm0                \n"
     "sub    $0x10,%ecx                         \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
+    "lea    0x10(%esi),%esi                    \n"
     "ja     3b                                 \n"
-    "mov    -0x1(%edi),%al                     \n"
-    "mov    %al,(%edi)                         \n"
+
+    "mov    -0x1(%esi,%edi,1),%al              \n"
+    "mov    %al,(%esi,%edi,1)                  \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2921,16 +2912,30 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif
 
-static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
-                              int dst_width, int dx) {
-  int x = 0;
-  for (int j = 0; j < dst_width; ++j) {
-    int xi = x >> 16;
-    int xf1 = x & 0xffff;
-    int xf0 = 65536 - xf1;
+// (1-f)a + fb can be replaced with a + f(b-a)
+#define BLENDER(a, b, f) ((int)(a) + ((f) * ((int)(b) - (int)(a)) >> 16))
 
-    *dst_ptr++ = (src_ptr[xi] * xf0 + src_ptr[xi + 1] * xf1) >> 16;
+// TODO(fbarchard): consider +0x8000 for rounding if it can be done for free.
+static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
+                              int dst_width, int x, int dx) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    int xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
     x += dx;
+    xi = x >> 16;
+    a = src_ptr[xi];
+    b = src_ptr[xi + 1];
+    dst_ptr[1] = BLENDER(a, b, x & 0xffff);
+    x += dx;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    int xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
   }
 }
 
@@ -3340,10 +3345,9 @@ static __inline uint32 SumBox(int iboxwidth, int iboxheight,
   return sum;
 }
 
-static void ScalePlaneBoxRow(int dst_width, int boxheight,
-                             int dx, int src_stride,
-                             const uint8* src_ptr, uint8* dst_ptr) {
-  int x = 0;
+static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
+                               int x, int dx, int src_stride,
+                               const uint8* src_ptr, uint8* dst_ptr) {
   for (int i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
@@ -3362,14 +3366,13 @@ static __inline uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   return sum;
 }
 
-static void ScaleAddCols2_C(int dst_width, int boxheight, int dx,
+static void ScaleAddCols2_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
   int scaletbl[2];
   int minboxwidth = (dx >> 16);
   scaletbl[0] = 65536 / (minboxwidth * boxheight);
   scaletbl[1] = 65536 / ((minboxwidth + 1) * boxheight);
   int *scaleptr = scaletbl - minboxwidth;
-  int x = 0;
   for (int i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
@@ -3378,11 +3381,10 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int dx,
   }
 }
 
-static void ScaleAddCols1_C(int dst_width, int boxheight, int dx,
+static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
   int boxwidth = (dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
-  int x = 0;
   for (int i = 0; i < dst_width; ++i) {
     *dst_ptr++ = SumPixels(boxwidth, src_ptr + x) * scaleval >> 16;
     x += boxwidth;
@@ -3404,33 +3406,32 @@ static void ScalePlaneBox(int src_width, int src_height,
                           const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dy = (src_height << 16) / dst_height;
   int dx = (src_width << 16) / dst_width;
+  int dy = (src_height << 16) / dst_height;
+  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int maxy = (src_height << 16);
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxInputWidth) ||
       dst_height * 2 > src_height) {
     uint8* dst = dst_ptr;
-    int dy = (src_height << 16) / dst_height;
-    int dx = (src_width << 16) / dst_width;
-    int y = 0;
     for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
-      const uint8* const src = src_ptr + iy * src_stride;
+      const uint8* src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > (src_height << 16)) {
-        y = (src_height << 16);
+      if (y > maxy) {
+        y = maxy;
       }
       int boxheight = (y >> 16) - iy;
-      ScalePlaneBoxRow(dst_width, boxheight,
-                       dx, src_stride,
-                       src, dst);
-
+      ScalePlaneBoxRow_C(dst_width, boxheight,
+                         x, dx, src_stride,
+                         src, dst);
       dst += dst_stride;
     }
   } else {
     ALIGN16(uint16 row[kMaxInputWidth]);
     void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
                          uint16* dst_ptr, int src_width, int src_height);
-    void (*ScaleAddCols)(int dst_width, int boxheight, int dx,
+    void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
                          const uint16* src_ptr, uint8* dst_ptr);
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
@@ -3447,17 +3448,16 @@ static void ScalePlaneBox(int src_width, int src_height,
       ScaleAddCols = ScaleAddCols1_C;
     }
 
-    int y = 0;
     for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
-      const uint8* const src = src_ptr + iy * src_stride;
+      const uint8* src = src_ptr + iy * src_stride;
       y += dy;
       if (y > (src_height << 16)) {
         y = (src_height << 16);
       }
       int boxheight = (y >> 16) - iy;
       ScaleAddRows(src, src_stride, row, src_width, boxheight);
-      ScaleAddCols(dst_width, boxheight, dx, row, dst_ptr);
+      ScaleAddCols(dst_width, boxheight, x, dx, row, dst_ptr);
       dst_ptr += dst_stride;
     }
   }
@@ -3470,33 +3470,34 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
                                      int dst_width, int dst_height,
                                      int src_stride, int dst_stride,
                                      const uint8* src_ptr, uint8* dst_ptr) {
-  uint8* dst = dst_ptr;
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
-  int maxx = ((src_width - 1) << 16) - 1;
-  int maxy = ((src_height - 1) << 16) - 1;
-  int y = (dst_height < src_height) ? 32768 :
-      (src_height << 16) / dst_height - 32768;
+  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int maxx = (src_width > 1) ? ((src_width - 1) << 16) - 1 : 0;
+  int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
   for (int i = 0; i < dst_height; ++i) {
-    int cy = (y < 0) ? 0 : y;
-    int yi = cy >> 16;
-    int yf = cy & 0xffff;
-    const uint8* const src = src_ptr + yi * src_stride;
-    int x = (dst_width < src_width) ? 32768 :
-        (src_width << 16) / dst_width - 32768;
+    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+    int yi = y >> 16;
+    int yf = y & 0xffff;
+    const uint8* src0 = src_ptr + yi * src_stride;
+    const uint8* src1 = (yi < src_height - 1) ? src0 + src_stride : src0;
+    uint8* dst = dst_ptr;
     for (int j = 0; j < dst_width; ++j) {
-      int cx = (x < 0) ? 0 : x;
-      int xi = cx >> 16;
-      int xf = cx & 0xffff;
-      int r0 = (src[xi] * (65536 - xf) + src[xi + 1] * xf) >> 16;
-      int r1 = (src[xi + src_stride] * (65536 - xf) +
-          src[xi + src_stride + 1] * xf) >> 16;
-      *dst++ = (r0 * (65536 - yf) + r1 * yf) >> 16;
+      int xi = x >> 16;
+      int xf = x & 0xffff;
+      int x1 = (xi < src_width - 1) ? xi + 1 : xi;
+      int a = src0[xi];
+      int b = src0[x1];
+      int r0 = BLENDER(a, b, xf);
+      a = src1[xi];
+      b = src1[x1];
+      int r1 = BLENDER(a, b, xf);
+      *dst++ = BLENDER(r0, r1, yf);
       x += dx;
       if (x > maxx)
         x = maxx;
     }
-    dst += dst_stride - dst_width;
+    dst_ptr += dst_stride;
     y += dy;
     if (y > maxy)
       y = maxy;
@@ -3513,8 +3514,6 @@ void ScalePlaneBilinear(int src_width, int src_height,
                         const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dy = (src_height << 16) / dst_height;
-  int dx = (src_width << 16) / dst_width;
   if (!IS_ALIGNED(src_width, 8) || (src_width > kMaxInputWidth)) {
     ScalePlaneBilinearSimple(src_width, src_height, dst_width, dst_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
@@ -3524,8 +3523,6 @@ void ScalePlaneBilinear(int src_width, int src_height,
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                             int src_stride,
                             int dst_width, int source_y_fraction);
-    void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
-                            int dst_width, int dx);
 #if defined(HAS_SCALEFILTERROWS_NEON)
     if (TestCpuFlag(kCpuHasNEON)) {
       ScaleFilterRows = ScaleFilterRows_NEON;
@@ -3546,16 +3543,18 @@ void ScalePlaneBilinear(int src_width, int src_height,
     {
       ScaleFilterRows = ScaleFilterRows_C;
     }
-    ScaleFilterCols = ScaleFilterCols_C;
 
-    int y = 0;
-    int maxy = ((src_height - 1) << 16) - 1; // max is filter of last 2 rows.
+    int dx = (src_width << 16) / dst_width;
+    int dy = (src_height << 16) / dst_height;
+    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+    int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+    int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
     for (int j = 0; j < dst_height; ++j) {
-      int iy = y >> 16;
-      int fy = (y >> 8) & 255;
-      const uint8* const src = src_ptr + iy * src_stride;
-      ScaleFilterRows(row, src, src_stride, src_width, fy);
-      ScaleFilterCols(dst_ptr, row, dst_width, dx);
+      int yi = y >> 16;
+      int yf = (y >> 8) & 255;
+      const uint8* src = src_ptr + yi * src_stride;
+      ScaleFilterRows(row, src, src_stride, src_width, yf);
+      ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
       dst_ptr += dst_stride;
       y += dy;
       if (y > maxy) {
@@ -3575,18 +3574,20 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr) {
-  uint8* dst = dst_ptr;
   int dx = (src_width << 16) / dst_width;
-  for (int y = 0; y < dst_height; ++y) {
-    const uint8* const src = src_ptr + (y * src_height / dst_height) *
-        src_stride;
-    // TODO(fbarchard): Round X coordinate by setting x=0x8000.
-    int x = 0;
+  int dy = (src_height << 16) / dst_height;
+  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  for (int j = 0; j < dst_height; ++j) {
+    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+    int yi = y >> 16;
+    const uint8* src = src_ptr + yi * src_stride;
+    uint8* dst = dst_ptr;
     for (int i = 0; i < dst_width; ++i) {
       *dst++ = src[x >> 16];
       x += dx;
     }
-    dst += dst_stride - dst_width;
+    dst_ptr += dst_stride;
+    y += dy;
   }
 }
 
@@ -3790,9 +3791,9 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
   int dst_halfwidth = (dst_width + 1) >> 1;
   int dst_halfheight = (dst_height + 1) >> 1;
   int aheight = dst_height - dst_yoffset * 2;  // actual output height
-  const uint8* const src_y = src;
-  const uint8* const src_u = src + src_width * src_height;
-  const uint8* const src_v = src + src_width * src_height +
+  const uint8* src_y = src;
+  const uint8* src_u = src + src_width * src_height;
+  const uint8* src_v = src + src_width * src_height +
                              src_halfwidth * src_halfheight;
   uint8* dst_y = dst + dst_yoffset * dst_width;
   uint8* dst_u = dst + dst_width * dst_height +
