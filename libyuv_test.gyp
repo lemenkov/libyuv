@@ -16,7 +16,7 @@
          # The tests are based on gtest
          'testing/gtest.gyp:gtest',
          'testing/gtest.gyp:gtest_main',
-         #'third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+         'third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
       ],
       'sources': [
          # headers

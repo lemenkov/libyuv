@@ -12,12 +12,12 @@
       'target_name': 'libyuv',
       'type': 'static_library',
       'defines': [
-        #'HAVE_JPEG',
+        'HAVE_JPEG',
       ],
       'include_dirs': [
         'include',
         '.',
-	#'third_party/libjpeg_turbo',
+        'third_party/libjpeg_turbo',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -46,7 +46,7 @@
         'source/cpu_id.cc',
         'source/format_conversion.cc',
         'source/planar_functions.cc',
-        #'source/mjpeg_decoder.cc',
+        'source/mjpeg_decoder.cc',
         'source/rotate.cc',
         'source/rotate_neon.cc',
         'source/row_common.cc',
