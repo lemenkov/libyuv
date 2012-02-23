@@ -12,7 +12,7 @@
       'target_name': 'libyuv',
       'type': 'static_library',
       'dependencies': [
-         'third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+         '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
       ],
       'defines': [
         'HAVE_JPEG',
@@ -20,7 +20,6 @@
       'include_dirs': [
         'include',
         '.',
-        'third_party/libjpeg_turbo',
       ],
       'direct_dependent_settings': {
         'include_dirs': [
@@ -33,10 +32,10 @@
         'include/libyuv/basic_types.h',
         'include/libyuv/convert.h',
         'include/libyuv/convert_from.h',
-        'include/libyuv/scale.h',
         'include/libyuv/planar_functions.h',
-        'include/libyuv/video_common.h',
+        'include/libyuv/scale.h',
         'include/libyuv/version.h',
+        'include/libyuv/video_common.h',
 
         # headers
         'source/rotate_priv.h',
@@ -48,13 +47,13 @@
         'source/convert_from.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
-        'source/planar_functions.cc',
         'source/mjpeg_decoder.cc',
+        'source/planar_functions.cc',
         'source/rotate.cc',
         'source/rotate_neon.cc',
         'source/row_common.cc',
-        'source/row_posix.cc',
         'source/row_neon.cc',
+        'source/row_posix.cc',
         'source/row_win.cc',
         'source/scale.cc',
         'source/video_common.cc',
