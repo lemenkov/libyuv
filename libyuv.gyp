@@ -11,6 +11,9 @@
     {
       'target_name': 'libyuv',
       'type': 'static_library',
+      'dependencies': [
+         'third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+      ],
       'defines': [
         'HAVE_JPEG',
       ],
