@@ -67,14 +67,10 @@ extern "C" {
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_MIRRORROW_NEON
 #define HAS_SPLITUV_NEON
+#define HAS_COPYROW_NEON
 #define HAS_I420TOARGBROW_NEON
 #define HAS_I420TOBGRAROW_NEON
 #define HAS_I420TOABGRROW_NEON
-#endif
-
-// The following are available on Neon platforms
-#if defined(__ARM_NEON__) && !defined(__thumb__) && !defined(YUV_DISABLE_ASM)
-#define HAS_COPYROW_NEON
 #endif
 
 #if defined(_MSC_VER)
