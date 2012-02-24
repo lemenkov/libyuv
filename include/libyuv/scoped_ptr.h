@@ -1,27 +1,35 @@
-//  (C) Copyright Greg Colvin and Beman Dawes 1998, 1999.
-//  Copyright (c) 2001, 2002 Peter Dimov
-//
-//  Permission to copy, use, modify, sell and distribute this software
-//  is granted provided this copyright notice appears in all copies.
-//  This software is provided "as is" without express or implied
-//  warranty, and with no claim as to its suitability for any purpose.
-//
-//  See http://www.boost.org/libs/smart_ptr/scoped_ptr.htm for documentation.
-//
-
-//  scoped_ptr mimics a built-in pointer except that it guarantees deletion
-//  of the object pointed to, either on destruction of the scoped_ptr or via
-//  an explicit reset(). scoped_ptr is a simple solution for simple needs;
-//  use shared_ptr or std::auto_ptr if your needs are more complex.
-
-//  scoped_ptr_malloc added in by Google.  When one of
-//  these goes out of scope, instead of doing a delete or delete[], it
-//  calls free().  scoped_ptr_malloc<char> is likely to see much more
-//  use than any other specializations.
-
-//  release() added in by Google. Use this to conditionally
-//  transfer ownership of a heap-allocated object to the caller, usually on
-//  method success.
+/*
+ *  Copyright (c) 2011 The LibYuv project authors. All Rights Reserved.
+ *  Copyright (c) 2001, 2002 Peter Dimov
+ *  Copyright (c) 1998, 1999 Greg Colvin and Beman Dawes
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ *
+ *  Permission to copy, use, modify, sell and distribute this software
+ *  is granted provided this copyright notice appears in all copies.
+ *  This software is provided "as is" without express or implied
+ *  warranty, and with no claim as to its suitability for any purpose.
+ *
+ *  See http://www.boost.org/libs/smart_ptr/scoped_ptr.htm for documentation.
+ *
+ *  scoped_ptr mimics a built-in pointer except that it guarantees deletion
+ *  of the object pointed to, either on destruction of the scoped_ptr or via
+ *  an explicit reset(). scoped_ptr is a simple solution for simple needs;
+ *  use shared_ptr or std::auto_ptr if your needs are more complex.
+ *
+ *  scoped_ptr_malloc added in by Google.  When one of
+ *  these goes out of scope, instead of doing a delete or delete[], it
+ *  calls free().  scoped_ptr_malloc<char> is likely to see much more
+ *  use than any other specializations.
+ *
+ *  release() added in by Google. Use this to conditionally
+ *  transfer ownership of a heap-allocated object to the caller, usually on
+ *  method success.
+ */
 
 // TODO(fbarchard): move into source as implementation detail
 
