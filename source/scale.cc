@@ -692,9 +692,9 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
     pand       xmm0, xmm5
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     ja         wloop
 
     ret
@@ -733,9 +733,9 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     pavgw      xmm1, xmm3
     packuswb   xmm0, xmm1
 
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     ja         wloop
 
     pop        esi
@@ -750,28 +750,26 @@ __declspec(naked)
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        eax, [esp + 4]        // src_ptr
                                      // src_stride ignored
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
     pcmpeqb    xmm5, xmm5            // generate mask 0x000000ff
     psrld      xmm5, 24
 
   wloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm1, [esi + 16]
-    lea        esi,  [esi + 32]
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
     pand       xmm0, xmm5
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi], xmm0
-    lea        edi, [edi + 8]
     sub        ecx, 8
+    movq       qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
     ja         wloop
 
-    popad
     ret
   }
 }
@@ -782,27 +780,28 @@ __declspec(naked)
 static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        ebx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_ptr
+    mov        esi, [esp + 8 + 8]    // src_stride
+    mov        edx, [esp + 8 + 12]   // dst_ptr
+    mov        ecx, [esp + 8 + 16]   // dst_width
+    lea        edi, [esi + esi * 2]  // src_stride * 3
     pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
     psrlw      xmm7, 8
-    lea        edx, [ebx + ebx * 2]  // src_stride * 3
 
   wloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm1, [esi + 16]
-    movdqa     xmm2, [esi + ebx]
-    movdqa     xmm3, [esi + ebx + 16]
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + esi]
+    movdqa     xmm3, [eax + esi + 16]
     pavgb      xmm0, xmm2            // average rows
     pavgb      xmm1, xmm3
-    movdqa     xmm2, [esi + ebx * 2]
-    movdqa     xmm3, [esi + ebx * 2 + 16]
-    movdqa     xmm4, [esi + edx]
-    movdqa     xmm5, [esi + edx + 16]
-    lea        esi, [esi + 32]
+    movdqa     xmm2, [eax + esi * 2]
+    movdqa     xmm3, [eax + esi * 2 + 16]
+    movdqa     xmm4, [eax + edi]
+    movdqa     xmm5, [eax + edi + 16]
+    lea        eax, [eax + 32]
     pavgb      xmm2, xmm4
     pavgb      xmm3, xmm5
     pavgb      xmm0, xmm2
@@ -824,12 +823,13 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
     pavgw      xmm0, xmm2
     packuswb   xmm0, xmm0
 
-    movq       qword ptr [edi], xmm0
-    lea        edi, [edi + 8]
     sub        ecx, 8
+    movq       qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
     ja         wloop
 
-    popad
+    pop        edi
+    pop        esi
     ret
   }
 }
@@ -841,29 +841,27 @@ __declspec(naked)
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        eax, [esp + 4]        // src_ptr
                                      // src_stride ignored
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
     pcmpeqb    xmm5, xmm5            // generate mask isolating 1 src 8 bytes
     psrlq      xmm5, 56
 
   wloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm1, [esi + 16]
-    lea        esi,  [esi + 32]
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
     pand       xmm0, xmm5
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1  // 32->16
     packuswb   xmm0, xmm0  // 16->8
     packuswb   xmm0, xmm0  // 8->4
-    movd       dword ptr [edi], xmm0
-    lea        edi, [edi + 4]
     sub        ecx, 4
+    movd       dword ptr [edx], xmm0
+    lea        edx, [edx + 4]
     ja         wloop
 
-    popad
     ret
   }
 }
@@ -874,27 +872,29 @@ __declspec(naked)
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        ebx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
-    lea        edx, [ebx + ebx * 2]  // src_stride * 3
+    push       esi
+    push       edi
+    push       ebp
+    mov        eax, [esp + 12 + 4]   // src_ptr
+    mov        esi, [esp + 12 + 8]   // src_stride
+    mov        edx, [esp + 12 + 12]  // dst_ptr
+    mov        ecx, [esp + 12 + 16]  // dst_width
+    lea        edi, [esi + esi * 2]  // src_stride * 3
     pxor       xmm7, xmm7
 
   wloop:
-    movdqa     xmm0, [esi]           // average 8 rows to 1
-    movdqa     xmm1, [esi + 16]
-    movdqa     xmm2, [esi + ebx]
-    movdqa     xmm3, [esi + ebx + 16]
+    movdqa     xmm0, [eax]           // average 8 rows to 1
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + esi]
+    movdqa     xmm3, [eax + esi + 16]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
-    movdqa     xmm2, [esi + ebx * 2]
-    movdqa     xmm3, [esi + ebx * 2 + 16]
-    movdqa     xmm4, [esi + edx]
-    movdqa     xmm5, [esi + edx + 16]
-    lea        ebp, [esi + ebx * 4]
-    lea        esi, [esi + 32]
+    movdqa     xmm2, [eax + esi * 2]
+    movdqa     xmm3, [eax + esi * 2 + 16]
+    movdqa     xmm4, [eax + edi]
+    movdqa     xmm5, [eax + edi + 16]
+    lea        ebp, [eax + esi * 4]
+    lea        eax, [eax + 32]
     pavgb      xmm2, xmm4
     pavgb      xmm3, xmm5
     pavgb      xmm0, xmm2
@@ -902,15 +902,15 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 
     movdqa     xmm2, [ebp]
     movdqa     xmm3, [ebp + 16]
-    movdqa     xmm4, [ebp + ebx]
-    movdqa     xmm5, [ebp + ebx + 16]
+    movdqa     xmm4, [ebp + esi]
+    movdqa     xmm5, [ebp + esi + 16]
     pavgb      xmm2, xmm4
     pavgb      xmm3, xmm5
-    movdqa     xmm4, [ebp + ebx * 2]
-    movdqa     xmm5, [ebp + ebx * 2 + 16]
-    movdqa     xmm6, [ebp + edx]
+    movdqa     xmm4, [ebp + esi * 2]
+    movdqa     xmm5, [ebp + esi * 2 + 16]
+    movdqa     xmm6, [ebp + edi]
     pavgb      xmm4, xmm6
-    movdqa     xmm6, [ebp + edx + 16]
+    movdqa     xmm6, [ebp + edi + 16]
     pavgb      xmm5, xmm6
     pavgb      xmm2, xmm4
     pavgb      xmm3, xmm5
@@ -925,13 +925,15 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     psrlw      xmm0, 3
     packuswb   xmm0, xmm0
     packuswb   xmm0, xmm0
-    movd       dword ptr [edi], xmm0
 
-    lea        edi, [edi + 4]
     sub        ecx, 4
+    movd       dword ptr [edx], xmm0
+    lea        edx, [edx + 4]
     ja         wloop
 
-    popad
+    pop        ebp
+    pop        edi
+    pop        esi
     ret
   }
 }
@@ -947,32 +949,30 @@ __declspec(naked)
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
+    mov        eax, [esp + 4]        // src_ptr
                                      // src_stride ignored
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
     movdqa     xmm3, _shuf0
     movdqa     xmm4, _shuf1
     movdqa     xmm5, _shuf2
 
   wloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm1, [esi + 16]
-    lea        esi,  [esi + 32]
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
     movdqa     xmm2, xmm1
     palignr    xmm1, xmm0, 8
     pshufb     xmm0, xmm3
     pshufb     xmm1, xmm4
     pshufb     xmm2, xmm5
-    movq       qword ptr [edi], xmm0
-    movq       qword ptr [edi + 8], xmm1
-    movq       qword ptr [edi + 16], xmm2
-    lea        edi, [edi + 24]
+    movq       qword ptr [edx], xmm0
+    movq       qword ptr [edx + 8], xmm1
+    movq       qword ptr [edx + 16], xmm2
+    lea        edx, [edx + 24]
     sub        ecx, 24
     ja         wloop
 
-    popad
     ret
   }
 }
@@ -997,11 +997,11 @@ __declspec(naked)
 static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        ebx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    push       esi
+    mov        eax, [esp + 4 + 4]    // src_ptr
+    mov        esi, [esp + 4 + 8]    // src_stride
+    mov        edx, [esp + 4 + 12]   // dst_ptr
+    mov        ecx, [esp + 4 + 16]   // dst_width
     movdqa     xmm2, _shuf01
     movdqa     xmm3, _shuf11
     movdqa     xmm4, _shuf21
@@ -1010,27 +1010,27 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm7, _round34
 
   wloop:
-    movdqa     xmm0, [esi]           // pixels 0..7
-    movdqa     xmm1, [esi+ebx]
+    movdqa     xmm0, [eax]           // pixels 0..7
+    movdqa     xmm1, [eax + esi]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm2
     pmaddubsw  xmm0, xmm5
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi], xmm0
-    movdqu     xmm0, [esi+8]         // pixels 8..15
-    movdqu     xmm1, [esi+ebx+8]
+    movq       qword ptr [edx], xmm0
+    movdqu     xmm0, [eax + 8]       // pixels 8..15
+    movdqu     xmm1, [eax + esi + 8]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm3
     pmaddubsw  xmm0, xmm6
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi+8], xmm0
-    movdqa     xmm0, [esi+16]        // pixels 16..23
-    movdqa     xmm1, [esi+ebx+16]
-    lea        esi, [esi+32]
+    movq       qword ptr [edx + 8], xmm0
+    movdqa     xmm0, [eax + 16]      // pixels 16..23
+    movdqa     xmm1, [eax + esi + 16]
+    lea        eax, [eax + 32]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
     movdqa     xmm1, _madd21
@@ -1038,12 +1038,12 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi+16], xmm0
-    lea        edi, [edi+24]
     sub        ecx, 24
+    movq       qword ptr [edx + 16], xmm0
+    lea        edx, [edx + 24]
     ja         wloop
 
-    popad
+    pop        esi
     ret
   }
 }
@@ -1054,11 +1054,11 @@ __declspec(naked)
 static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        ebx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    push       esi
+    mov        eax, [esp + 4 + 4]    // src_ptr
+    mov        esi, [esp + 4 + 8]    // src_stride
+    mov        edx, [esp + 4 + 12]   // dst_ptr
+    mov        ecx, [esp + 4 + 16]   // dst_width
     movdqa     xmm2, _shuf01
     movdqa     xmm3, _shuf11
     movdqa     xmm4, _shuf21
@@ -1067,8 +1067,8 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm7, _round34
 
   wloop:
-    movdqa     xmm0, [esi]           // pixels 0..7
-    movdqa     xmm1, [esi+ebx]
+    movdqa     xmm0, [eax]           // pixels 0..7
+    movdqa     xmm1, [eax + esi]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm2
@@ -1076,9 +1076,9 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi], xmm0
-    movdqu     xmm0, [esi+8]         // pixels 8..15
-    movdqu     xmm1, [esi+ebx+8]
+    movq       qword ptr [edx], xmm0
+    movdqu     xmm0, [eax + 8]       // pixels 8..15
+    movdqu     xmm1, [eax + esi + 8]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm3
@@ -1086,10 +1086,10 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi+8], xmm0
-    movdqa     xmm0, [esi+16]        // pixels 16..23
-    movdqa     xmm1, [esi+ebx+16]
-    lea        esi, [esi+32]
+    movq       qword ptr [edx + 8], xmm0
+    movdqa     xmm0, [eax + 16]      // pixels 16..23
+    movdqa     xmm1, [eax + esi + 16]
+    lea        eax, [eax + 32]
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
@@ -1098,12 +1098,12 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    movq       qword ptr [edi+16], xmm0
-    lea        edi, [edi+24]
     sub        ecx, 24
+    movq       qword ptr [edx + 16], xmm0
+    lea        edx, [edx+24]
     ja         wloop
 
-    popad
+    pop        esi
     ret
   }
 }
@@ -1116,30 +1116,28 @@ __declspec(naked)
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        edx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    mov        eax, [esp + 4]        // src_ptr
+                                     // src_stride ignored
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
     movdqa     xmm4, _shuf38a
     movdqa     xmm5, _shuf38b
 
   xloop:
-    movdqa     xmm0, [esi]           // 16 pixels -> 0,1,2,3,4,5
-    movdqa     xmm1, [esi + 16]      // 16 pixels -> 6,7,8,9,10,11
-    lea        esi, [esi + 32]
+    movdqa     xmm0, [eax]           // 16 pixels -> 0,1,2,3,4,5
+    movdqa     xmm1, [eax + 16]      // 16 pixels -> 6,7,8,9,10,11
+    lea        eax, [eax + 32]
     pshufb     xmm0, xmm4
     pshufb     xmm1, xmm5
     paddusb    xmm0, xmm1
 
-    movq       qword ptr [edi], xmm0 // write 12 pixels
-    movhlps    xmm1, xmm0
-    movd       [edi + 8], xmm1
-    lea        edi, [edi + 12]
     sub        ecx, 12
+    movq       qword ptr [edx], xmm0 // write 12 pixels
+    movhlps    xmm1, xmm0
+    movd       [edx + 8], xmm1
+    lea        edx, [edx + 12]
     ja         xloop
 
-    popad
     ret
   }
 }
@@ -1149,19 +1147,20 @@ __declspec(naked)
 static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        edx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    push       esi
+    push       ebx
+    mov        eax, [esp + 8 + 4]    // src_ptr
+    mov        esi, [esp + 8 + 8]    // src_stride
+    mov        edx, [esp + 8 + 12]   // dst_ptr
+    mov        ecx, [esp + 8 + 16]   // dst_width
     movdqa     xmm4, _shufac0
     movdqa     xmm5, _shufac3
     movdqa     xmm6, _scaleac3
     pxor       xmm7, xmm7
 
   xloop:
-    movdqa     xmm0, [esi]           // sum up 3 rows into xmm0/1
-    movdqa     xmm2, [esi + edx]
+    movdqa     xmm0, [eax]           // sum up 3 rows into xmm0/1
+    movdqa     xmm2, [eax + esi]
     movhlps    xmm1, xmm0
     movhlps    xmm3, xmm2
     punpcklbw  xmm0, xmm7
@@ -1170,8 +1169,8 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     punpcklbw  xmm3, xmm7
     paddusw    xmm0, xmm2
     paddusw    xmm1, xmm3
-    movdqa     xmm2, [esi + edx * 2]
-    lea        esi, [esi + 16]
+    movdqa     xmm2, [eax + esi * 2]
+    lea        eax, [eax + 16]
     movhlps    xmm3, xmm2
     punpcklbw  xmm2, xmm7
     punpcklbw  xmm3, xmm7
@@ -1196,14 +1195,15 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     pmulhuw    xmm2, xmm6            // divide by 9,9,6, 9,9,6
     packuswb   xmm2, xmm2
 
-    movd       [edi], xmm2           // write 6 pixels
-    pextrw     eax, xmm2, 2
-    mov        [edi + 4], ax
-    lea        edi, [edi + 6]
     sub        ecx, 6
+    movd       [edx], xmm2           // write 6 pixels
+    pextrw     ebx, xmm2, 2
+    mov        [edx + 4], bx
+    lea        edx, [edx + 6]
     ja         xloop
 
-    popad
+    pop        ebx
+    pop        esi
     ret
   }
 }
@@ -1213,20 +1213,21 @@ __declspec(naked)
 static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        edx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
+    push       esi
+    push       ebx
+    mov        eax, [esp + 8 + 4]    // src_ptr
+    mov        esi, [esp + 8 + 8]    // src_stride
+    mov        edx, [esp + 8 + 12]   // dst_ptr
+    mov        ecx, [esp + 8 + 16]   // dst_width
     movdqa     xmm4, _shufab0
     movdqa     xmm5, _shufab1
     movdqa     xmm6, _shufab2
     movdqa     xmm7, _scaleab2
 
   xloop:
-    movdqa     xmm2, [esi]           // average 2 rows into xmm2
-    pavgb      xmm2, [esi + edx]
-    lea        esi, [esi + 16]
+    movdqa     xmm2, [eax]           // average 2 rows into xmm2
+    pavgb      xmm2, [eax + esi]
+    lea        eax, [eax + 16]
 
     movdqa     xmm0, xmm2            // 16 pixels -> 0,1,2,3,4,5 of xmm0
     pshufb     xmm0, xmm4
@@ -1239,65 +1240,72 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     pmulhuw    xmm0, xmm7            // divide by 3,3,2, 3,3,2
     packuswb   xmm0, xmm0
 
-    movd       [edi], xmm0           // write 6 pixels
-    pextrw     eax, xmm0, 2
-    mov        [edi + 4], ax
-    lea        edi, [edi + 6]
     sub        ecx, 6
+    movd       [edx], xmm0           // write 6 pixels
+    pextrw     ebx, xmm0, 2
+    mov        [edx + 4], bx
+    lea        edx, [edx + 6]
     ja         xloop
 
-    popad
+    pop        ebx
+    pop        esi
     ret
   }
 }
 
 #define HAS_SCALEADDROWS_SSE2
 
-// Reads 8xN bytes and produces 16 shorts at a time.
+// Reads 16xN bytes and produces 16 shorts at a time.
 __declspec(naked)
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width,
                               int src_height) {
   __asm {
-    pushad
-    mov        esi, [esp + 32 + 4]   // src_ptr
-    mov        edx, [esp + 32 + 8]   // src_stride
-    mov        edi, [esp + 32 + 12]  // dst_ptr
-    mov        ecx, [esp + 32 + 16]  // dst_width
-    mov        ebx, [esp + 32 + 20]  // height
-    pxor       xmm5, xmm5
+    push       esi
+    push       edi
+    push       ebx
+    push       ebp
+    mov        esi, [esp + 16 + 4]   // src_ptr
+    mov        edx, [esp + 16 + 8]   // src_stride
+    mov        edi, [esp + 16 + 12]  // dst_ptr
+    mov        ecx, [esp + 16 + 16]  // dst_width
+    mov        ebx, [esp + 16 + 20]  // height
+    pxor       xmm4, xmm4
     dec        ebx
 
   xloop:
     // first row
-    movdqa     xmm2, [esi]
+    movdqa     xmm0, [esi]
     lea        eax, [esi + edx]
-    movhlps    xmm3, xmm2
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm4
+    punpckhbw  xmm1, xmm4
+    lea        esi, [esi + 16]
     mov        ebp, ebx
-    punpcklbw  xmm2, xmm5
-    punpcklbw  xmm3, xmm5
 
     // sum remaining rows
   yloop:
-    movdqa     xmm0, [eax]       // read 16 pixels
+    movdqa     xmm2, [eax]       // read 16 pixels
     lea        eax, [eax + edx]  // advance to next row
-    movhlps    xmm1, xmm0
-    punpcklbw  xmm0, xmm5
-    punpcklbw  xmm1, xmm5
-    paddusw    xmm2, xmm0        // sum 16 words
-    paddusw    xmm3, xmm1
+    movdqa     xmm3, xmm2
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    paddusw    xmm0, xmm2        // sum 16 words
+    paddusw    xmm1, xmm3
     sub        ebp, 1
     ja         yloop
 
-    movdqa     [edi], xmm2
-    movdqa     [edi + 16], xmm3
+    movdqa     [edi], xmm0
+    movdqa     [edi + 16], xmm1
     lea        edi, [edi + 32]
-    lea        esi, [esi + 16]
 
     sub        ecx, 16
     ja         xloop
 
-    popad
+    pop        ebp
+    pop        ebx
+    pop        edi
+    pop        esi
     ret
   }
 }
@@ -1508,9 +1516,9 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     paddsw     xmm0, xmm1
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
+    sub        ecx, 24
     movq       qword ptr [edx+16], xmm0
     lea        edx, [edx+24]
-    sub        ecx, 24
     ja         wloop
     ret
   }
@@ -1527,7 +1535,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
-"1:"
+"1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
   "lea        0x20(%0),%0                      \n"
@@ -1551,7 +1559,7 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
-"1:"
+"1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
   "movdqa     (%0,%3,1),%%xmm2                 \n"
@@ -1586,7 +1594,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrld      $0x18,%%xmm5                     \n"
-"1:"
+"1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
   "lea        0x20(%0),%0                      \n"
@@ -1613,7 +1621,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
   "pcmpeqb    %%xmm7,%%xmm7                    \n"
   "psrlw      $0x8,%%xmm7                      \n"
   "lea        (%4,%4,2),%3                     \n"
-"1:"
+"1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
   "movdqa     (%0,%4,1),%%xmm2                 \n"
@@ -1663,27 +1671,72 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
-  "pcmpeqb    %%xmm5,%%xmm5                    \n"
-  "psrlq      $0x38,%%xmm5                     \n"
-"1:"
-  "movdqa     (%0),%%xmm0                      \n"
-  "movdqa     0x10(%0),%%xmm1                  \n"
-  "lea        0x20(%0),%0                      \n"
-  "pand       %%xmm5,%%xmm0                    \n"
-  "pand       %%xmm5,%%xmm1                    \n"
-  "packuswb   %%xmm1,%%xmm0                    \n"
-  "packuswb   %%xmm0,%%xmm0                    \n"
-  "packuswb   %%xmm0,%%xmm0                    \n"
-  "movd       %%xmm0,(%1)                      \n"
-  "lea        0x4(%1),%1                       \n"
-  "sub        $0x4,%2                          \n"
-  "ja         1b                               \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrlq     $0x38,%%xmm5                    \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "pand      %%xmm5,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,(%1)                     \n"
+    "lea       0x4(%1),%1                      \n"
+    "sub       $0x4,%2                         \n"
+    "ja        1b                              \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   :
   : "memory", "cc"
-);
+ );
+}
+
+#define HAS_SCALEADDROWS_SSE2
+static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+                              uint16* dst_ptr, int src_width, int src_height) {
+  int tmp_height = 0;
+  intptr_t tmp_src = 0;
+  asm volatile (
+    "pxor      %%xmm4,%%xmm4                   \n"
+    "sub       $0x1,%3                         \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "lea       (%0,%6,1),%5                    \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm4,%%xmm0                   \n"
+    "punpckhbw %%xmm4,%%xmm1                   \n"
+    "lea       0x10(%0),%0                     \n"
+    "mov       %3,%4                           \n"
+  "2:                                          \n"
+    "movdqa    (%5),%%xmm2                     \n"
+    "lea       (%5,%6,1),%5                    \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm2                   \n"
+    "punpckhbw %%xmm4,%%xmm3                   \n"
+    "paddusw   %%xmm2,%%xmm0                   \n"
+    "paddusw   %%xmm3,%%xmm1                   \n"
+    "sub       $0x1,%4                         \n"
+    "ja        2b                              \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "movdqa    %%xmm1,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "ja        1b                              \n"
+  : "+r"(src_ptr),     // %0
+    "+r"(dst_ptr),     // %1
+    "+rm"(src_width),  // %2
+    "+rm"(src_height), // %3
+    "+r"(tmp_height),  // %4
+    "+r"(tmp_src)      // %5
+  : "r"(static_cast<intptr_t>(src_stride))  // %6
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
 }
 
 #if defined(__i386__)
@@ -1740,9 +1793,9 @@ extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     "psrlw  $0x3,%xmm0                         \n"
     "packuswb %xmm0,%xmm0                      \n"
     "packuswb %xmm0,%xmm0                      \n"
+    "sub    $0x4,%ecx                          \n"
     "movd   %xmm0,(%edi)                       \n"
     "lea    0x4(%edi),%edi                     \n"
-    "sub    $0x4,%ecx                          \n"
     "ja     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
@@ -1827,9 +1880,9 @@ extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "paddsw %xmm7,%xmm0                        \n"
     "psrlw  $0x2,%xmm0                         \n"
     "packuswb %xmm0,%xmm0                      \n"
+    "sub    $0x18,%ecx                         \n"
     "movq   %xmm0,0x10(%edi)                   \n"
     "lea    0x18(%edi),%edi                    \n"
-    "sub    $0x18,%ecx                         \n"
     "ja     1b                                 \n"
 
     "popa                                      \n"
@@ -1884,9 +1937,9 @@ extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "paddsw %xmm7,%xmm0                        \n"
     "psrlw  $0x2,%xmm0                         \n"
     "packuswb %xmm0,%xmm0                      \n"
+    "sub    $0x18,%ecx                         \n"
     "movq   %xmm0,0x10(%edi)                   \n"
     "lea    0x18(%edi),%edi                    \n"
-    "sub    $0x18,%ecx                         \n"
     "ja     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
@@ -1914,9 +1967,9 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "paddusb %xmm1,%xmm0                       \n"
     "movq   %xmm0,(%edi)                       \n"
     "movhlps %xmm0,%xmm1                       \n"
+    "sub    $0xc,%ecx                          \n"
     "movd   %xmm1,0x8(%edi)                    \n"
     "lea    0xc(%edi),%edi                     \n"
-    "sub    $0xc,%ecx                          \n"
     "ja     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
@@ -2016,49 +2069,6 @@ extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 #endif // __PIC__
-
-#define HAS_SCALEADDROWS_SSE2
-extern "C" void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
-                                  uint16* dst_ptr, int src_width,
-                                  int src_height);
-  asm(
-    DECLARE_FUNCTION(ScaleAddRows_SSE2)
-    "pusha                                     \n"
-    "mov    0x24(%esp),%esi                    \n"
-    "mov    0x28(%esp),%edx                    \n"
-    "mov    0x2c(%esp),%edi                    \n"
-    "mov    0x30(%esp),%ecx                    \n"
-    "mov    0x34(%esp),%ebx                    \n"
-    "pxor   %xmm5,%xmm5                        \n"
-
-"1:"
-    "movdqa (%esi),%xmm2                       \n"
-    "lea    (%esi,%edx,1),%eax                 \n"
-    "movhlps %xmm2,%xmm3                       \n"
-    "lea    -0x1(%ebx),%ebp                    \n"
-    "punpcklbw %xmm5,%xmm2                     \n"
-    "punpcklbw %xmm5,%xmm3                     \n"
-
-"2:"
-    "movdqa (%eax),%xmm0                       \n"
-    "lea    (%eax,%edx,1),%eax                 \n"
-    "movhlps %xmm0,%xmm1                       \n"
-    "punpcklbw %xmm5,%xmm0                     \n"
-    "punpcklbw %xmm5,%xmm1                     \n"
-    "paddusw %xmm0,%xmm2                       \n"
-    "paddusw %xmm1,%xmm3                       \n"
-    "sub    $0x1,%ebp                          \n"
-    "ja     2b                                 \n"
-
-    "movdqa %xmm2,(%edi)                       \n"
-    "movdqa %xmm3,0x10(%edi)                   \n"
-    "lea    0x20(%edi),%edi                    \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "sub    $0x10,%ecx                         \n"
-    "ja     1b                                 \n"
-    "popa                                      \n"
-    "ret                                       \n"
-);
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2
@@ -2551,46 +2561,6 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "r"(_shufab2),   // %6
     "r"(_scaleab2)   // %7
   : "memory", "cc", "rax", "xmm6", "xmm7"
-);
-}
-
-#define HAS_SCALEADDROWS_SSE2
-static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
-                              uint16* dst_ptr, int src_width,
-                              int src_height) {
-  asm volatile (
-  "pxor       %%xmm5,%%xmm5                    \n"
-"1:"
-  "movdqa     (%0),%%xmm2                      \n"
-  "lea        (%0,%4,1),%%r10                  \n"
-  "movhlps    %%xmm2,%%xmm3                    \n"
-  "lea        -0x1(%3),%%r11                   \n"
-  "punpcklbw  %%xmm5,%%xmm2                    \n"
-  "punpcklbw  %%xmm5,%%xmm3                    \n"
-
-"2:"
-  "movdqa     (%%r10),%%xmm0                   \n"
-  "lea        (%%r10,%4,1),%%r10               \n"
-  "movhlps    %%xmm0,%%xmm1                    \n"
-  "punpcklbw  %%xmm5,%%xmm0                    \n"
-  "punpcklbw  %%xmm5,%%xmm1                    \n"
-  "paddusw    %%xmm0,%%xmm2                    \n"
-  "paddusw    %%xmm1,%%xmm3                    \n"
-  "sub        $0x1,%%r11                       \n"
-  "ja         2b                               \n"
-
-  "movdqa     %%xmm2,(%1)                      \n"
-  "movdqa     %%xmm3,0x10(%1)                  \n"
-  "lea        0x20(%1),%1                      \n"
-  "lea        0x10(%0),%0                      \n"
-  "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
-  : "+r"(src_ptr),     // %0
-    "+r"(dst_ptr),     // %1
-    "+r"(src_width),   // %2
-    "+r"(src_height)   // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
-  : "memory", "cc", "r10", "r11"
 );
 }
 

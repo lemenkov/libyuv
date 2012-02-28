@@ -80,7 +80,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 __declspec(naked)
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
-__asm {
+  __asm {
     push      edi
     push      esi
     push      ebp
@@ -154,9 +154,9 @@ __asm {
     movq      qword ptr [edx], xmm3
     movdqa    xmm7, xmm3
     palignr   xmm7, xmm7, 8
+    sub       ecx, 8
     movq      qword ptr [edx + esi], xmm7
     lea       edx, [edx + 2 * esi]
-    sub       ecx, 8
     ja        convertloop
 
     pop       ebp
@@ -172,7 +172,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                 uint8* dst_a, int dst_stride_a,
                                 uint8* dst_b, int dst_stride_b,
                                 int w) {
-__asm {
+  __asm {
     push      ebx
     push      esi
     push      edi
@@ -278,11 +278,11 @@ __asm {
     movlpd    qword ptr [edx], xmm3
     movhpd    qword ptr [ebx], xmm3
     punpckhdq xmm0, xmm7
+    sub       ecx, 8
     movlpd    qword ptr [edx + esi], xmm0
     lea       edx, [edx + 2 * esi]
     movhpd    qword ptr [ebx + ebp], xmm0
     lea       ebx, [ebx + 2 * ebp]
-    sub       ecx, 8
     ja        convertloop
 
     mov       esp, [esp + 16]
@@ -365,9 +365,9 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
   "movq       %%xmm3,(%1)                      \n"
   "movdqa     %%xmm3,%%xmm7                    \n"
   "palignr    $0x8,%%xmm7,%%xmm7               \n"
+  "sub        $0x8,%2                          \n"
   "movq       %%xmm7,(%1,%4)                   \n"
   "lea        (%1,%4,2),%1                     \n"
-  "sub        $0x8,%2                          \n"
   "ja         1b                               \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1
@@ -490,11 +490,11 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "movlpd %xmm3,(%edx)                       \n"
     "movhpd %xmm3,(%ebx)                       \n"
     "punpckhdq %xmm7,%xmm0                     \n"
+    "sub    $0x8,%ecx                          \n"
     "movlpd %xmm0,(%edx,%esi,1)                \n"
     "lea    (%edx,%esi,2),%edx                 \n"
     "movhpd %xmm0,(%ebx,%ebp,1)                \n"
     "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "sub    $0x8,%ecx                          \n"
     "ja     1b                                 \n"
     "mov    0x10(%esp),%esp                    \n"
     "pop    %ebp                               \n"
@@ -628,9 +628,9 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
   "movq       %%xmm11,(%1)                     \n"
   "movdqa     %%xmm11,%%xmm15                  \n"
   "palignr    $0x8,%%xmm15,%%xmm15             \n"
+  "sub        $0x10,%2                         \n"
   "movq       %%xmm15,(%1,%4)                  \n"
   "lea        (%1,%4,2),%1                     \n"
-  "sub        $0x10,%2                         \n"
   "ja         1b                               \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1
@@ -734,11 +734,11 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   "movlpd     %%xmm3,(%1)                      \n"
   "movhpd     %%xmm3,(%2)                      \n"
   "punpckhdq  %%xmm7,%%xmm8                    \n"
+  "sub        $0x8,%3                          \n"
   "movlpd     %%xmm8,(%1,%5)                   \n"
   "lea        (%1,%5,2),%1                     \n"
   "movhpd     %%xmm8,(%2,%6)                   \n"
   "lea        (%2,%6,2),%2                     \n"
-  "sub        $0x8,%3                          \n"
   "ja         1b                               \n"
   : "+r"(src),    // %0
     "+r"(dst_a),  // %1
@@ -1023,11 +1023,11 @@ __asm {
     movdqa    xmm0, [eax]
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
-    movlpd    qword ptr [edx], xmm0
-    movhpd    qword ptr [edi], xmm0
-    lea       edx, [edx + 8]
-    lea       edi, [edi + 8]
     sub       ecx, 8
+    movlpd    qword ptr [edx], xmm0
+    lea       edx, [edx + 8]
+    movhpd    qword ptr [edi], xmm0
+    lea       edi, [edi + 8]
     ja        convertloop
     pop       edi
     ret
@@ -1042,18 +1042,18 @@ void MirrorRowUV_SSSE3(const uint8* src,
                         int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
-  "movdqa     %4,%%xmm5                        \n"
-  "lea        -16(%0,%3,2),%0                  \n"
-"1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "lea        -16(%0),%0                       \n"
-  "pshufb     %%xmm5,%%xmm0                    \n"
-  "movlpd     %%xmm0,(%1)                      \n"
-  "movhpd     %%xmm0,(%2)                      \n"
-  "lea        8(%1),%1                         \n"
-  "lea        8(%2),%2                         \n"
-  "sub        $8,%3                            \n"
-  "ja         1b                               \n"
+    "movdqa     %4,%%xmm5                        \n"
+    "lea        -16(%0,%3,2),%0                  \n"
+  "1:                                            \n"
+    "movdqa     (%0),%%xmm0                      \n"
+    "lea        -16(%0),%0                       \n"
+    "pshufb     %%xmm5,%%xmm0                    \n"
+    "sub        $8,%3                            \n"
+    "movlpd     %%xmm0,(%1)                      \n"
+    "lea        8(%1),%1                         \n"
+    "movhpd     %%xmm0,(%2)                      \n"
+    "lea        8(%2),%2                         \n"
+    "ja         1b                               \n"
   : "+r"(src),      // %0
     "+r"(dst_a),    // %1
     "+r"(dst_b),    // %2
