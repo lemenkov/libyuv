@@ -1704,15 +1704,15 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "sub       $0x1,%3                         \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
-    "lea       (%0,%6,1),%5                    \n"
+    "mov       %0,%5                           \n"
+    "add       %6,%0                           \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm4,%%xmm0                   \n"
     "punpckhbw %%xmm4,%%xmm1                   \n"
-    "lea       0x10(%0),%0                     \n"
     "mov       %3,%4                           \n"
   "2:                                          \n"
-    "movdqa    (%5),%%xmm2                     \n"
-    "lea       (%5,%6,1),%5                    \n"
+    "movdqa    (%0),%%xmm2                     \n"
+    "add       %6,%0                           \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
     "punpckhbw %%xmm4,%%xmm3                   \n"
@@ -1722,6 +1722,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "ja        2b                              \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
+    "lea       0x10(%5),%0                     \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "ja        1b                              \n"
@@ -1731,10 +1732,10 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "+rm"(src_height), // %3
     "+r"(tmp_height),  // %4
     "+r"(tmp_src)      // %5
-  : "r"(static_cast<intptr_t>(src_stride))  // %6
+  : "rm"(static_cast<intptr_t>(src_stride))  // %6
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
