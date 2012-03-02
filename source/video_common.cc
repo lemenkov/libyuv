@@ -11,8 +11,6 @@
 
 #include "libyuv/video_common.h"
 
-#include <sstream>
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
