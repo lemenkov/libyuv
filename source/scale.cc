@@ -1701,15 +1701,15 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   intptr_t tmp_src = 0;
   asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
-    "sub       $0x1,%3                         \n"
+    "sub       $0x1,%5                         \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
-    "mov       %0,%5                           \n"
+    "mov       %0,%3                           \n"
     "add       %6,%0                           \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm4,%%xmm0                   \n"
     "punpckhbw %%xmm4,%%xmm1                   \n"
-    "mov       %3,%4                           \n"
+    "mov       %5,%2                           \n"
   "2:                                          \n"
     "movdqa    (%0),%%xmm2                     \n"
     "add       %6,%0                           \n"
@@ -1718,27 +1718,28 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "punpckhbw %%xmm4,%%xmm3                   \n"
     "paddusw   %%xmm2,%%xmm0                   \n"
     "paddusw   %%xmm3,%%xmm1                   \n"
-    "sub       $0x1,%4                         \n"
+    "sub       $0x1,%2                         \n"
     "ja        2b                              \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
-    "lea       0x10(%5),%0                     \n"
+    "lea       0x10(%3),%0                     \n"
     "lea       0x20(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
+    "sub       $0x10,%4                        \n"
     "ja        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
-    "+rm"(src_width),  // %2
-    "+rm"(src_height), // %3
-    "+r"(tmp_height),  // %4
-    "+r"(tmp_src)      // %5
-  : "rm"(static_cast<intptr_t>(src_stride))  // %6
+    "+r"(tmp_height),  // %2
+    "+r"(tmp_src),     // %3
+    "+rm"(src_width),  // %4
+    "+rm"(src_height)  // %5
+  : "r"(static_cast<intptr_t>(src_stride))  // %6
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
+
 
 #if defined(__i386__)
 extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
@@ -2886,7 +2887,6 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 // (1-f)a + fb can be replaced with a + f(b-a)
 #define BLENDER(a, b, f) ((int)(a) + ((f) * ((int)(b) - (int)(a)) >> 16))
 
-// TODO(fbarchard): consider +0x8000 for rounding if it can be done for free.
 static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                               int dst_width, int x, int dx) {
   for (int j = 0; j < dst_width - 1; j += 2) {
