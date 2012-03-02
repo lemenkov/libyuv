@@ -54,6 +54,7 @@ extern "C" {
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROW_SSE2
+#define HAS_MIRRORROWUV_SSSE3
 #define HAS_SPLITUV_SSE2
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
@@ -66,6 +67,7 @@ extern "C" {
 // The following are available on Neon platforms
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_MIRRORROW_NEON
+#define HAS_MIRRORROWUV_NEON
 #define HAS_SPLITUV_NEON
 #define HAS_COPYROW_NEON
 #define HAS_I420TOARGBROW_NEON
@@ -125,6 +127,10 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void MirrorRow_C(const uint8* src, uint8* dst, int width);
+
+void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
+void MirrorRowUV_NEON(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
+void MirrorRowUV_C(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
 
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);

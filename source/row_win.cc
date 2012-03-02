@@ -1501,7 +1501,6 @@ __asm {
 #endif
 
 #ifdef HAS_MIRRORROW_SSE2
-
 // SSE2 version has movdqu so it can be used on unaligned buffers when SSSE3
 // version can not.
 __declspec(naked)
@@ -1524,6 +1523,41 @@ __asm {
     movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     ja        convertloop
+    ret
+  }
+}
+#endif
+
+#ifdef HAS_MIRRORROW_UV_SSSE3
+// Shuffle table for reversing the bytes of UV channels.
+static const uvec8 kShuffleMirrorUV = {
+  14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
+};
+
+__declspec(naked)
+void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
+                       int width) {
+  __asm {
+    push      edi
+    mov       eax, [esp + 4 + 4]   // src
+    mov       edx, [esp + 4 + 8]   // dst_u
+    mov       edi, [esp + 4 + 12]  // dst_v
+    mov       ecx, [esp + 4 + 16]  // width
+    movdqa    xmm1, kShuffleMirrorUV
+    lea       eax, [eax + ecx * 2 - 16]
+    sub       edi, edx
+
+ convertloop:
+    movdqa    xmm0, [eax]
+    lea       eax, [eax - 16]
+    pshufb    xmm0, xmm1
+    sub       ecx, 8
+    movlpd    qword ptr [edx], xmm0
+    movhpd    qword ptr [edx + edi], xmm0
+    lea       edx, [edx + 8]
+    ja        convertloop
+
+    pop       edi
     ret
   }
 }

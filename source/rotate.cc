@@ -23,12 +23,6 @@ extern "C" {
 
 #if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(YUV_DISABLE_ASM)
-// Note static const preferred, but gives internal compiler error on gcc 4.2
-// Shuffle table for reversing the bytes of UV channels.
-uvec8 kShuffleMirrorUV = {
-  14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
-};
-
 #if defined(__APPLE__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
@@ -759,8 +753,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 static void TransposeWx8_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int w) {
-  int i;
-  for (i = 0; i < w; ++i) {
+  for (int i = 0; i < w; ++i) {
     dst[0] = src[0 * src_stride];
     dst[1] = src[1 * src_stride];
     dst[2] = src[2 * src_stride];
@@ -777,9 +770,8 @@ static void TransposeWx8_C(const uint8* src, int src_stride,
 static void TransposeWxH_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int width, int height) {
-  int i, j;
-  for (i = 0; i < width; ++i)
-    for (j = 0; j < height; ++j)
+  for (int i = 0; i < width; ++i)
+    for (int j = 0; j < height; ++j)
       dst[i * dst_stride + j] = src[j * src_stride + i];
 }
 
@@ -1003,79 +995,6 @@ void RotateUV270(const uint8* src, int src_stride,
               dst_a, dst_stride_a,
               dst_b, dst_stride_b,
               width, height);
-}
-
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
-#define HAS_MIRRORROW_UV_SSSE3
-__declspec(naked)
-void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_a, uint8* dst_b,
-                       int width) {
-  __asm {
-    push      edi
-    mov       eax, [esp + 4 + 4]   // src
-    mov       edx, [esp + 4 + 8]   // dst_a
-    mov       edi, [esp + 4 + 12]  // dst_b
-    mov       ecx, [esp + 4 + 16]  // width
-    movdqa    xmm1, kShuffleMirrorUV
-    lea       eax, [eax + ecx * 2 - 16]
-    sub       edi, edx
-
- convertloop:
-    movdqa    xmm0, [eax]
-    lea       eax, [eax - 16]
-    pshufb    xmm0, xmm1
-    sub       ecx, 8
-    movlpd    qword ptr [edx], xmm0
-    movhpd    qword ptr [edx + edi], xmm0
-    lea       edx, [edx + 8]
-    ja        convertloop
-
-    pop       edi
-    ret
-  }
-}
-
-#elif (defined(__i386__) || defined(__x86_64__)) && \
-    !defined(YUV_DISABLE_ASM)
-#define HAS_MIRRORROW_UV_SSSE3
-void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_a, uint8* dst_b,
-                       int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
-  asm volatile (
-    "movdqa     %4,%%xmm1                        \n"
-    "lea        -16(%0,%3,2),%0                  \n"
-    "sub        %1,%2                            \n"
-  "1:                                            \n"
-    "movdqa     (%0),%%xmm0                      \n"
-    "lea        -16(%0),%0                       \n"
-    "pshufb     %%xmm1,%%xmm0                    \n"
-    "sub        $8,%3                            \n"
-    "movlpd     %%xmm0,(%1)                      \n"
-    "movhpd     %%xmm0,(%1,%2)                   \n"
-    "lea        8(%1),%1                         \n"
-    "ja         1b                               \n"
-  : "+r"(src),      // %0
-    "+r"(dst_a),    // %1
-    "+r"(dst_b),    // %2
-    "+r"(temp_width)  // %3
-  : "m"(kShuffleMirrorUV) // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1"
-#endif
-  );
-}
-#endif
-
-static void MirrorRowUV_C(const uint8* src,
-                            uint8* dst_a, uint8* dst_b,
-                            int width) {
-  src += (width << 1) - 2;
-  for (int i = 0; i < width; ++i) {
-    dst_a[i] = src[0];
-    dst_b[i] = src[1];
-    src -= 2;
-  }
 }
 
 void RotateUV180(const uint8* src, int src_stride,

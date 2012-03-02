@@ -1493,7 +1493,6 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 #endif
 
 #ifdef HAS_MIRRORROW_SSSE3
-
 // Shuffle table for reversing the bytes.
 CONST uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
@@ -1524,7 +1523,6 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #endif
 
 #ifdef HAS_MIRRORROW_SSE2
-
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
   asm volatile (
@@ -1546,6 +1544,40 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+  );
+}
+#endif
+
+#ifdef HAS_MIRRORROW_UV_SSSE3
+// Shuffle table for reversing the bytes of UV channels.
+CONST uvec8 kShuffleMirrorUV = {
+  14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
+};
+void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
+                       int width) {
+  intptr_t temp_width = static_cast<intptr_t>(width);
+  asm volatile (
+    "movdqa    %4,%%xmm1                       \n"
+    "lea       -16(%0,%3,2),%0                 \n"
+    "sub       %1,%2                           \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "lea       -16(%0),%0                      \n"
+    "pshufb    %%xmm1,%%xmm0                   \n"
+    "sub       $8,%3                           \n"
+    "movlpd    %%xmm0,(%1)                     \n"
+    "movhpd    %%xmm0,(%1,%2)                  \n"
+    "lea       8(%1),%1                        \n"
+    "ja        1b                              \n"
+  : "+r"(src),      // %0
+    "+r"(dst_u),    // %1
+    "+r"(dst_v),    // %2
+    "+r"(temp_width)  // %3
+  : "m"(kShuffleMirrorUV) // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1"

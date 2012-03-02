@@ -18,8 +18,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     // To support in-place conversion.
     uint8 r = src_abgr[0];
     uint8 g = src_abgr[1];
@@ -34,8 +34,8 @@ void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix) {
   }
 }
 
-void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     // To support in-place conversion.
     uint8 a = src_bgra[0];
     uint8 r = src_bgra[1];
@@ -50,8 +50,8 @@ void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix) {
   }
 }
 
-void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb24[0];
     uint8 g = src_rgb24[1];
     uint8 r = src_rgb24[2];
@@ -64,8 +64,8 @@ void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int pix) {
   }
 }
 
-void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 r = src_raw[0];
     uint8 g = src_raw[1];
     uint8 b = src_raw[2];
@@ -78,8 +78,8 @@ void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int pix) {
   }
 }
 
-void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb[0] & 0x1f;
     uint8 g = (src_rgb[0] >> 5) | ((src_rgb[1] & 0x07) << 3);
     uint8 r = src_rgb[1] >> 3;
@@ -92,8 +92,8 @@ void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
   }
 }
 
-void ARGB1555ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGB1555ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb[0] & 0x1f;
     uint8 g = (src_rgb[0] >> 5) | ((src_rgb[1] & 0x03) << 3);
     uint8 r = (src_rgb[1] & 0x7c) >> 2;
@@ -107,8 +107,8 @@ void ARGB1555ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
   }
 }
 
-void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 a = src_rgb[1] >> 4;
     uint8 r = src_rgb[1] & 0x0f;
     uint8 g = src_rgb[0] >> 4;
@@ -122,8 +122,8 @@ void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix) {
   }
 }
 
-void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0];
     uint8 g = src_argb[1];
     uint8 r = src_argb[2];
@@ -135,8 +135,8 @@ void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
-void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0];
     uint8 g = src_argb[1];
     uint8 r = src_argb[2];
@@ -149,8 +149,8 @@ void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
 }
 
 // TODO(fbarchard): support big endian CPU
-void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0] >> 3;
     uint8 g = src_argb[1] >> 2;
     uint8 r = src_argb[2] >> 3;
@@ -160,8 +160,8 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
-void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0] >> 3;
     uint8 g = src_argb[1] >> 3;
     uint8 r = src_argb[2] >> 3;
@@ -172,8 +172,8 @@ void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
-void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix) {
-  for (int x = 0; x < pix; ++x) {
+void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0] >> 4;
     uint8 g = src_argb[1] >> 4;
     uint8 r = src_argb[2] >> 4;
@@ -233,9 +233,9 @@ MAKEROWY(ARGB,2,1,0)
 MAKEROWY(BGRA,1,2,3)
 MAKEROWY(ABGR,0,1,2)
 
-void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix) {
+void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
-  for (int x = 0; x < pix; ++x) {
+  for (int x = 0; x < width; ++x) {
     uint8 y = src_y[0];
     dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
     dst_argb[3] = 255u;
@@ -360,20 +360,42 @@ void YToARGBRow_C(const uint8* y_buf, uint8* rgb_buf, int width) {
 
 void MirrorRow_C(const uint8* src, uint8* dst, int width) {
   src += width - 1;
-  for (int i = 0; i < width; ++i) {
-    dst[i] = src[0];
-    --src;
+  for (int x = 0; x < width - 1; x += 2) {
+    dst[x] = src[0];
+    dst[x + 1] = src[-1];
+    src -= 2;
+  }
+  if (width & 1) {
+    dst[width - 1] = src[0];
   }
 }
 
-void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
-  // Copy a row of UV.
-  for (int x = 0; x < pix; ++x) {
-    dst_u[0] = src_uv[0];
-    dst_v[0] = src_uv[1];
-    src_uv += 2;
-    dst_u += 1;
-    dst_v += 1;
+void MirrorRowUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
+  src_uv += (width - 1) << 1;
+  for (int x = 0; x < width - 1; x += 2) {
+    dst_u[x] = src_uv[0];
+    dst_u[x + 1] = src_uv[-2];
+    dst_v[x] = src_uv[1];
+    dst_v[x + 1] = src_uv[-2 + 1];
+    src_uv -= 4;
+  }
+  if (width & 1) {
+    dst_u[width - 1] = src_uv[0];
+    dst_v[width - 1] = src_uv[1];
+  }
+}
+
+void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    dst_u[x] = src_uv[0];
+    dst_u[x + 1] = src_uv[2];
+    dst_v[x] = src_uv[1];
+    dst_v[x + 1] = src_uv[3];
+    src_uv += 4;
+  }
+  if (width & 1) {
+    dst_u[width - 1] = src_uv[0];
+    dst_v[width - 1] = src_uv[1];
   }
 }
 
@@ -383,9 +405,9 @@ void CopyRow_C(const uint8* src, uint8* dst, int count) {
 
 // Filter 2 rows of YUY2 UV's (422) into U and V (420)
 void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
-                   uint8* dst_u, uint8* dst_v, int pix) {
+                   uint8* dst_u, uint8* dst_v, int width) {
   // Output a row of UV values, filtering 2 rows of YUY2
-  for (int x = 0; x < pix; x += 2) {
+  for (int x = 0; x < width; x += 2) {
     dst_u[0] = (src_yuy2[1] + src_yuy2[src_stride_yuy2 + 1] + 1) >> 1;
     dst_v[0] = (src_yuy2[3] + src_yuy2[src_stride_yuy2 + 3] + 1) >> 1;
     src_yuy2 += 4;
@@ -394,20 +416,22 @@ void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
   }
 }
 
-void YUY2ToYRow_C(const uint8* src_yuy2,
-                  uint8* dst_y, int pix) {
+void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
   // Copy a row of yuy2 Y values
-  for (int x = 0; x < pix; ++x) {
-    dst_y[0] = src_yuy2[0];
-    src_yuy2 += 2;
-    dst_y += 1;
+  for (int x = 0; x < width - 1; x += 2) {
+    dst_y[x] = src_yuy2[0];
+    dst_y[x + 1] = src_yuy2[2];
+    src_yuy2 += 4;
+  }
+  if (width & 1) {
+    dst_y[width - 1] = src_yuy2[0];
   }
 }
 
 void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
-                   uint8* dst_u, uint8* dst_v, int pix) {
+                   uint8* dst_u, uint8* dst_v, int width) {
   // Copy a row of uyvy UV values
-  for (int x = 0; x < pix; x += 2) {
+  for (int x = 0; x < width; x += 2) {
     dst_u[0] = (src_uyvy[0] + src_uyvy[src_stride_uyvy + 0] + 1) >> 1;
     dst_v[0] = (src_uyvy[2] + src_uyvy[src_stride_uyvy + 2] + 1) >> 1;
     src_uyvy += 4;
@@ -416,13 +440,15 @@ void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
   }
 }
 
-void UYVYToYRow_C(const uint8* src_uyvy,
-                  uint8* dst_y, int pix) {
+void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
   // Copy a row of uyvy Y values
-  for (int x = 0; x < pix; ++x) {
-    dst_y[0] = src_uyvy[1];
-    src_uyvy += 2;
-    dst_y += 1;
+  for (int x = 0; x < width - 1; x += 2) {
+    dst_y[x] = src_yuy2[1];
+    dst_y[x + 1] = src_yuy2[3];
+    src_yuy2 += 4;
+  }
+  if (width & 1) {
+    dst_y[width - 1] = src_yuy2[1];
   }
 }
 
