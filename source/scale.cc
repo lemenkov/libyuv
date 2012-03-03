@@ -1730,9 +1730,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),     // %1
     "+r"(tmp_height),  // %2
     "+r"(tmp_src),     // %3
-    "+rm"(src_width),  // %4
+    "+r"(src_width),  // %4
     "+rm"(src_height)  // %5
-  : "r"(static_cast<intptr_t>(src_stride))  // %6
+  : "rm"(static_cast<intptr_t>(src_stride))  // %6
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
