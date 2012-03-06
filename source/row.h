@@ -64,6 +64,11 @@ extern "C" {
 #define HAS_UYVYTOUVROW_SSE2
 #endif
 
+#if defined(_MSC_VER)
+#define HAS_ARGBBLENDROW_SSSE3
+#define HAS_ARGBBLENDROW_SSE2
+#endif
+
 // The following are available on Neon platforms
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_MIRRORROW_NEON
@@ -238,6 +243,10 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width);
+
+void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 
 // 'Any' wrappers use memcpy()
 void I420ToARGBRow_Any_SSSE3(const uint8* y_buf,

@@ -140,6 +140,43 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+
+// Alpha Blend ARGB
+int ARGBBlend(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  void (*ARGBBlendRow)(const uint8* src_argb, uint8* dst_argb, int width) =
+      ARGBBlendRow_C;
+#if defined(HAS_ARGBBLENDROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBBlendRow = ARGBBlendRow_SSE2;
+  }
+#endif
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 2)) {
+    ARGBBlendRow = ARGBBlendRow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBBlendRow(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,

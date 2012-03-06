@@ -452,6 +452,138 @@ void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
   }
 }
 
+#define BLENDER(f, b, a) (f * a + b * (a ^ 0xff) + 0x80) >> 8
+void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    uint32 a = src_argb[3];
+    if (a) {
+      if (a < 255) {
+        const uint32 fb = src_argb[0];
+        const uint32 fg = src_argb[1];
+        const uint32 fr = src_argb[2];
+        const uint32 bb = dst_argb[0];
+        const uint32 bg = dst_argb[1];
+        const uint32 br = dst_argb[2];
+        dst_argb[0] = BLENDER(fb, bb, a);
+        dst_argb[1] = BLENDER(fg, bg, a);
+        dst_argb[2] = BLENDER(fr, br, a);
+        dst_argb[3] = 255u;
+      } else {
+        *(uint32*)dst_argb = *(uint32*)src_argb;
+      }
+    }
+    a = src_argb[4 + 3];
+    if (a) {
+      if (a < 255) {
+        const uint32 fb = src_argb[4 + 0];
+        const uint32 fg = src_argb[4 + 1];
+        const uint32 fr = src_argb[4 + 2];
+        const uint32 bb = dst_argb[4 + 0];
+        const uint32 bg = dst_argb[4 + 1];
+        const uint32 br = dst_argb[4 + 2];
+        dst_argb[4 + 0] = BLENDER(fb, bb, a);
+        dst_argb[4 + 1] = BLENDER(fg, bg, a);
+        dst_argb[4 + 2] = BLENDER(fr, br, a);
+        dst_argb[4 + 3] = 255u;
+      } else {
+        *(uint32*)(dst_argb + 4) = *(uint32*)(src_argb + 4);
+      }
+    }
+    src_argb += 8;
+    dst_argb += 8;
+  }
+
+  if (width & 1) {
+    const uint32 a = src_argb[3];
+    if (a) {
+      if (a < 255) {
+        const uint32 fb = src_argb[0];
+        const uint32 fg = src_argb[1];
+        const uint32 fr = src_argb[2];
+        const uint32 bb = dst_argb[0];
+        const uint32 bg = dst_argb[1];
+        const uint32 br = dst_argb[2];
+        dst_argb[0] = BLENDER(fb, bb, a);
+        dst_argb[1] = BLENDER(fg, bg, a);
+        dst_argb[2] = BLENDER(fr, br, a);
+        dst_argb[3] = 255u;
+      } else {
+        *(uint32*)dst_argb = *(uint32*)src_argb;
+      }
+    }
+  }
+}
+
+#if 0
+void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    uint32 f = *(uint32*)src_argb;
+    uint32 a = f >> 24;
+    if (a) {
+      const uint32 b = *(uint32*)dst_argb;
+      if (a < 255) {
+        const uint32 src_rb = f & 0x00ff00ff;
+        const uint32 dst_rb = b & 0x00ff00ff;
+        const uint32 out_rb = (src_rb * a + dst_rb * (a ^ 0xff) + 0x00800080) &
+            0xff00ff00;
+
+        const uint32 src_g = f & 0x0000ff00;
+        const uint32 dst_g = b & 0x0000ff00;
+        const uint32 out_g = ((src_g * a + dst_g * (a ^ 0xff) + 0x00008000) &
+            0x00ff0000);
+
+        f = ((out_rb | out_g) >> 8) | 0xff000000;
+      }
+      *(uint32*)dst_argb = f;
+    }
+
+    f = *(uint32*)(src_argb + 4);
+    a = f >> 24;
+    if (a) {
+      const uint32 b = *(uint32*)(dst_argb + 4);
+      if (a < 255) {
+        const uint32 src_rb = f & 0x00ff00ff;
+        const uint32 dst_rb = b & 0x00ff00ff;
+        const uint32 out_rb = (src_rb * a + dst_rb * (a ^ 0xff) + 0x00800080) &
+            0xff00ff00;
+
+        const uint32 src_g = f & 0x0000ff00;
+        const uint32 dst_g = b & 0x0000ff00;
+        const uint32 out_g = ((src_g * a + dst_g * (a ^ 0xff) + 0x00008000) &
+            0x00ff0000);
+
+        f = ((out_rb | out_g) >> 8) | 0xff000000;
+      }
+      *(uint32*)(dst_argb + 4) = f;
+    }
+    src_argb += 8;
+    dst_argb += 8;
+  }
+
+  if (width & 1) {
+    uint32 f = *(uint32*)src_argb;
+    uint32 a = f >> 24;
+    if (a) {
+      const uint32 b = *(uint32*)dst_argb;
+      if (a < 255) {
+        const uint32 src_rb = f & 0x00ff00ff;
+        const uint32 dst_rb = b & 0x00ff00ff;
+        const uint32 out_rb = (src_rb * a + dst_rb * (a ^ 0xff) + 0x00800080) &
+            0xff00ff00;
+
+        const uint32 src_g = f & 0x0000ff00;
+        const uint32 dst_g = b & 0x0000ff00;
+        const uint32 out_g = ((src_g * a + dst_g * (a ^ 0xff) + 0x00008000) &
+            0x00ff0000);
+
+        f = ((out_rb | out_g) >> 8) | 0xff000000;
+      }
+      *(uint32*)dst_argb = f;
+    }
+  }
+}
+#endif
+
 // Wrappers to handle odd sizes/alignments
 #define MAKEYUVANY(NAMEANY, NAME, COPYROW)                                     \
     void NAMEANY(const uint8* y_buf,                                           \

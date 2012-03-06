@@ -1699,20 +1699,21 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width, int src_height) {
   int tmp_height = 0;
   intptr_t tmp_src = 0;
+  intptr_t tmp_src_stride = static_cast<intptr_t>(src_stride);
   asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
-    "sub       $0x1,%5                         \n"
+    "sub       $0x1,%6                         \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "mov       %0,%3                           \n"
-    "add       %6,%0                           \n"
+    "add       %4,%0                           \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm4,%%xmm0                   \n"
     "punpckhbw %%xmm4,%%xmm1                   \n"
-    "mov       %5,%2                           \n"
+    "mov       %6,%2                           \n"
   "2:                                          \n"
     "movdqa    (%0),%%xmm2                     \n"
-    "add       %6,%0                           \n"
+    "add       %4,%0                           \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
     "punpckhbw %%xmm4,%%xmm3                   \n"
@@ -1724,22 +1725,22 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "lea       0x10(%3),%0                     \n"
     "lea       0x20(%1),%1                     \n"
-    "sub       $0x10,%4                        \n"
+    "sub       $0x10,%5                        \n"
     "ja        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(tmp_height),  // %2
     "+r"(tmp_src),     // %3
-    "+r"(src_width),  // %4
-    "+rm"(src_height)  // %5
-  : "rm"(static_cast<intptr_t>(src_stride))  // %6
+    "+r"(tmp_src_stride), // %4
+    "+rm"(src_width),  // %5
+    "+rm"(src_height)  // %6
+  :
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
-
 
 #if defined(__i386__)
 extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,

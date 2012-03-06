@@ -133,6 +133,11 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
+// Alpha Blend ARGB
+int ARGBBlend(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height);
+
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
