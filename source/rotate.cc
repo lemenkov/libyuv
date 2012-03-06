@@ -749,7 +749,6 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 #endif
 #endif
 
-
 static void TransposeWx8_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int w) {

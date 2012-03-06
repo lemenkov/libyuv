@@ -198,10 +198,8 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // compute where to start writing destination
     "add         %1, %2                        \n"
-
     // work on segments that are multiples of 16
     "lsrs        r3, %2, #4                    \n"
-
     // the output is written in two block.  8 bytes followed
     // by another 8.  reading is done sequentially, from left to
     // right.  writing is done from right to left in block sizes
@@ -209,31 +207,26 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     // the first of the two blocks.  need to subtract that 8 off
     // along with 16 to get the next location.
     "mov         r3, #-24                      \n"
-
     "beq         2f                            \n"
 
     // back of destination by the size of the register that is
-    // going to be mirrord
+    // going to be mirrored
     "sub         %1, #16                       \n"
-
     // the loop needs to run on blocks of 16.  what will be left
     // over is either a negative number, the residuals that need
     // to be done, or 0.  if this isn't subtracted off here the
     // loop will run one extra time.
     "sub         %2, #16                       \n"
 
+    // mirror the bytes in the 64 bit segments.  unable to mirror
+    // the bytes in the entire 128 bits in one go.
+    // because of the inability to mirror the entire 128 bits
+     // mirror the writing out of the two 64 bit segments.
     "1:                                        \n"
       "vld1.8      {q0}, [%0]!                 \n"  // src += 16
-
-        // mirror the bytes in the 64 bit segments.  unable to mirror
-        // the bytes in the entire 128 bits in one go.
       "vrev64.8    q0, q0                      \n"
-
-        // because of the inability to mirror the entire 128 bits
-        // mirror the writing out of the two 64 bit segments.
       "vst1.8      {d1}, [%1]!                 \n"
       "vst1.8      {d0}, [%1], r3              \n"  // dst -= 16
-
       "subs        %2, #16                     \n"
     "bge         1b                            \n"
 
@@ -241,13 +234,9 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     // residuals so jump past
     "adds        %2, #16                       \n"
     "beq         5f                            \n"
-
     "add         %1, #16                       \n"
-
-    "2:                                        \n"
-
+  "2:                                          \n"
     "mov         r3, #-3                       \n"
-
     "sub         %1, #2                        \n"
     "subs        %2, #2                        \n"
     // check for 16*n+1 scenarios where segments_of_2 should not
@@ -256,24 +245,20 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
 
 // do this in neon registers as per
 // http://blogs.arm.com/software-enablement/196-coding-for-neon-part-2-dealing-with-leftovers/
-    "3:                                        \n"
+  "3:                                          \n"
     "vld2.8      {d0[0], d1[0]}, [%0]!         \n"  // src += 2
-
     "vst1.8      {d1[0]}, [%1]!                \n"
     "vst1.8      {d0[0]}, [%1], r3             \n"  // dst -= 2
-
     "subs        %2, #2                        \n"
     "bge         3b                            \n"
 
     "adds        %2, #2                        \n"
     "beq         5f                            \n"
-
-    "4:                                        \n"
+  "4:                                          \n"
     "add         %1, #1                        \n"
     "vld1.8      {d0[0]}, [%0]                 \n"
     "vst1.8      {d0[0]}, [%1]                 \n"
-
-    "5:                                        \n"
+  "5:                                          \n"
     : "+r"(src),   // %0
       "+r"(dst),   // %1
       "+r"(width)  // %2
@@ -289,37 +274,29 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
     // compute where to start writing destination
     "add         %1, %3                        \n"  // dst_a + width
     "add         %2, %3                        \n"  // dst_b + width
-
     // work on input segments that are multiples of 16, but
     // width that has been passed is output segments, half
     // the size of input.
     "lsrs        r12, %3, #3                   \n"
-
     "beq         2f                            \n"
-
     // the output is written in to two blocks.
     "mov         r12, #-8                      \n"
-
     // back of destination by the size of the register that is
     // going to be mirrord
     "sub         %1, #8                        \n"
     "sub         %2, #8                        \n"
-
     // the loop needs to run on blocks of 8.  what will be left
     // over is either a negative number, the residuals that need
     // to be done, or 0.  if this isn't subtracted off here the
     // loop will run one extra time.
     "sub         %3, #8                        \n"
 
+    // mirror the bytes in the 64 bit segments
     "1:                                        \n"
       "vld2.8      {d0, d1}, [%0]!             \n"  // src += 16
-
-      // mirror the bytes in the 64 bit segments
       "vrev64.8    q0, q0                      \n"
-
       "vst1.8      {d0}, [%1], r12             \n"  // dst_a -= 8
       "vst1.8      {d1}, [%2], r12             \n"  // dst_b -= 8
-
       "subs        %3, #8                      \n"
       "bge         1b                          \n"
 
@@ -327,26 +304,19 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
     // residuals so return
     "adds        %3, #8                        \n"
     "beq         4f                            \n"
-
     "add         %1, #8                        \n"
     "add         %2, #8                        \n"
-
-    "2:                                        \n"
-
+  "2:                                          \n"
     "mov         r12, #-1                      \n"
-
     "sub         %1, #1                        \n"
     "sub         %2, #1                        \n"
-
-    "3:                                        \n"
+  "3:                                          \n"
       "vld2.8      {d0[0], d1[0]}, [%0]!       \n"  // src += 2
-
       "vst1.8      {d0[0]}, [%1], r12          \n"  // dst_a -= 1
       "vst1.8      {d1[0]}, [%2], r12          \n"  // dst_b -= 1
-
       "subs        %3, %3, #1                  \n"
       "bgt         3b                          \n"
-    "4:                                        \n"
+  "4:                                          \n"
     : "+r"(src),    // %0
       "+r"(dst_a),  // %1
       "+r"(dst_b),  // %2

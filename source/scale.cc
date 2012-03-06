@@ -1731,7 +1731,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),     // %1
     "+r"(tmp_height),  // %2
     "+r"(tmp_src),     // %3
-    "+r"(tmp_src_stride), // %4
+    "+rm"(tmp_src_stride), // %4
     "+rm"(src_width),  // %5
     "+rm"(src_height)  // %6
   :
