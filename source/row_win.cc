@@ -1909,75 +1909,55 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 }
 #endif  // HAS_YUY2TOYROW_SSE2
 
-
-#ifdef HAS_ARGBBLENDROW_SSSE3
-// Shuffle table for copying alpha
-static const uvec8 kShuffleAlpha = {
-  7u, 7u, 7u, 7u, 7u, 7u, 0x80, 0x80, 15u, 15u, 15u, 15u, 15u, 15u, 0x80, 0x80
-};
-
-__declspec(naked)
-void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
-  __asm {
-    mov        eax, 0x00200020      // rounding constant for 8.6 fixed point
-    movd       xmm3, eax
-    pshufd     xmm3, xmm3, 0
-    mov        eax, 0x3f3f3f3f      // mask for alpha
-    movd       xmm7, eax
-    pshufd     xmm7, xmm7, 0
-    movdqa     xmm4, kShuffleAlpha
-    pcmpeqb    xmm5, xmm5       // generate mask 0x00ff00ff
-    psrlw      xmm5, 8
-    pcmpeqb    xmm6, xmm6       // generate 0x00010001 for negating
-    psrlw      xmm6, 15
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    sub        edx, eax
-
- convertloop:
-    movq       xmm0, qword ptr [eax]      // fetch 2 pixels
-    movq       xmm1, qword ptr [eax + edx]
-    punpcklbw  xmm1, xmm0       // mix 2 pixels aArRgGbB_aArRgGbB
-    movdqa     xmm2, xmm1       // alpha from byte 7 and 15
-    pshufb     xmm2, xmm4
-    pxor       xmm2, xmm5
-    psrlw      xmm2, 2
-    pand       xmm2, xmm7
-    paddw      xmm2, xmm6       // -a = (a^255)+1
-    pmaddubsw  xmm1, xmm2
-    paddw      xmm1, xmm3       // round
-    psrlw      xmm1, 6
-
-    packuswb   xmm1, xmm1       // pack 2 pixels
-    sub        ecx, 2
-    movq       qword ptr [eax + edx], xmm1
-    lea        eax, [eax + 8]
-    ja         convertloop
-
-    ret
-  }
-}
-#endif  // HAS_ARGBBLENDROW_SSSE3
-
 #ifdef HAS_ARGBBLENDROW_SSE2
 // TODO(fbarchard): Single multiply method b+a(f-b)
 // TODO(fbarchard): Unroll and pair
-// TODO(fbarchard): Test for transparent and opaque common cases
+// TODO(fbarchard): Port to gcc
 __declspec(naked)
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   __asm {
+    push       esi
+    mov        esi, [esp + 4 + 4]   // src_argb
+    mov        edx, [esp + 4 + 8]   // dst_argb
+    mov        ecx, [esp + 4 + 12]  // width
     pcmpeqb    xmm4, xmm4       // generate 0xffffffff do negative alpha
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    sub        edx, eax
+    sub        edx, esi
+
+    mov        eax, [esi]       // get first pixel
+    sub        ecx, 1           // ensure there are at least 2 pixels
+    je         last1            // last pixel?
+    cmp        eax, 0xFF000000  // opaque?
+    jae        opaqueloop
+    cmp        eax, 0x00FFFFFF  // translucient?
+    ja         translucientloop
+
+    align      16
+ transparentloop:
+    sub        ecx, 1
+    lea        esi, [esi + 4]
+    je         last1
+    mov        eax, [esi]       // handle remaining pixel
+    cmp        eax, 0x00FFFFFF  // transparent?
+    jbe        transparentloop
+    cmp        eax, 0xFF000000  // translucient?
+    jb         translucientloop
+
+    align      16
+ opaqueloop:
+    mov        dword ptr [esi + edx], eax
+    lea        esi, [esi + 4]
     sub        ecx, 1
     je         last1
+    mov        eax, [esi]       // handle remaining pixel
+    cmp        eax, 0xFF000000  // opaque?
+    jae        opaqueloop
+    cmp        eax, 0x00FFFFFF  // transparent?
+    jbe        transparentloop
 
- convertloop:
-    movq       xmm0, qword ptr [eax]      // fetch 2 pixels
-    movq       xmm1, qword ptr [eax + edx]
+    align      4
+ translucientloop:
+    movq       xmm0, qword ptr [esi]      // fetch 2 pixels
+    movq       xmm1, qword ptr [esi + edx]
     punpcklbw  xmm0, xmm0       // src 16 bits
     punpcklbw  xmm1, xmm1       // dst 16 bits
     pshuflw    xmm2, xmm0, 0xff // src alpha
@@ -1989,19 +1969,25 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     paddw      xmm0, xmm1
     psrlw      xmm0, 8
     packuswb   xmm0, xmm0       // pack 2 pixels
+    movq       qword ptr [esi + edx], xmm0
+    lea        esi, [esi + 8]
     sub        ecx, 2
-    movq       qword ptr [eax + edx], xmm0
-    lea        eax, [eax + 8]
-    ja         convertloop
+    jbe        last1
+    mov        eax, [esi]       // handle remaining pixel
+    cmp        eax, 0x00FFFFFF  // transparent?
+    jbe        transparentloop
+    cmp        eax, 0xFF000000  // translucient?
+    jb         translucientloop
+    jmp        opaqueloop
 
+    align      4
  last1:
     add        ecx, 1
     je         done
 
-    mov        ecx,  [eax]      // handle remaining pixel
-    movd       xmm0, ecx
-    mov        ecx,  [eax + edx]
-    movd       xmm1, ecx
+    movd       xmm0, eax
+    mov        eax,  [esi + edx]
+    movd       xmm1, eax
     punpcklbw  xmm0, xmm0       // src 16 bits
     punpcklbw  xmm1, xmm1       // dst 16 bits
     pshuflw    xmm2, xmm0, 0xff // src alpha
@@ -2012,17 +1998,16 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     pmulhuw    xmm1, xmm3       // dst * (a ^ 0xffff)
     paddw      xmm0, xmm1
     psrlw      xmm0, 8
-    packuswb   xmm0, xmm0       // pack 2 pixels
-
-    movd       ecx, xmm0
-    mov        dword ptr [eax + edx], ecx
+    packuswb   xmm0, xmm0       // pack to bytes
+    movd       eax, xmm0
+    mov        dword ptr [esi + edx], eax
 
  done:
-
+    pop        esi
     ret
   }
 }
-#endif  // HAS_ARGBBLENDROW_SSSE3
+#endif  // HAS_ARGBBLENDROW_SSE2
 
 #endif  // _M_IX86
 

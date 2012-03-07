@@ -996,6 +996,7 @@ void RotateUV270(const uint8* src, int src_stride,
               width, height);
 }
 
+// Rotate 180 is a horizontal and vertical flip.
 void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_a, int dst_stride_a,
                  uint8* dst_b, int dst_stride_b,

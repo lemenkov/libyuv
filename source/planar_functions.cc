@@ -162,12 +162,6 @@ int ARGBBlend(const uint8* src_argb, int src_stride_argb,
     ARGBBlendRow = ARGBBlendRow_SSE2;
   }
 #endif
-#if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 2)) {
-    ARGBBlendRow = ARGBBlendRow_SSSE3;
-  }
-#endif
 
   for (int y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb, dst_argb, width);

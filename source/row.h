@@ -65,7 +65,6 @@ extern "C" {
 #endif
 
 #if defined(_MSC_VER)
-#define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBBLENDROW_SSE2
 #endif
 
@@ -244,7 +243,6 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width);
 
-void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 
