@@ -685,6 +685,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -714,6 +715,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -757,6 +759,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
     pcmpeqb    xmm5, xmm5            // generate mask 0x000000ff
     psrld      xmm5, 24
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -790,6 +793,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
     pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
     psrlw      xmm7, 8
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -848,6 +852,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
     pcmpeqb    xmm5, xmm5            // generate mask isolating 1 src 8 bytes
     psrlq      xmm5, 56
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -882,6 +887,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     lea        edi, [esi + esi * 2]  // src_stride * 3
     pxor       xmm7, xmm7
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]           // average 8 rows to 1
     movdqa     xmm1, [eax + 16]
@@ -957,6 +963,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm4, _shuf1
     movdqa     xmm5, _shuf2
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -1009,6 +1016,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm6, _madd11
     movdqa     xmm7, _round34
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]           // pixels 0..7
     movdqa     xmm1, [eax + esi]
@@ -1066,6 +1074,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm6, _madd11
     movdqa     xmm7, _round34
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]           // pixels 0..7
     movdqa     xmm1, [eax + esi]
@@ -1123,6 +1132,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm4, _shuf38a
     movdqa     xmm5, _shuf38b
 
+    align      16
   xloop:
     movdqa     xmm0, [eax]           // 16 pixels -> 0,1,2,3,4,5
     movdqa     xmm1, [eax + 16]      // 16 pixels -> 6,7,8,9,10,11
@@ -1158,6 +1168,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm6, _scaleac3
     pxor       xmm7, xmm7
 
+    align      16
   xloop:
     movdqa     xmm0, [eax]           // sum up 3 rows into xmm0/1
     movdqa     xmm2, [eax + esi]
@@ -1224,6 +1235,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     movdqa     xmm6, _shufab2
     movdqa     xmm7, _scaleab2
 
+    align      16
   xloop:
     movdqa     xmm2, [eax]           // average 2 rows into xmm2
     pavgb      xmm2, [eax + esi]
@@ -1256,8 +1268,6 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEADDROWS_SSE2
 
 // Reads 16xN bytes and produces 16 shorts at a time.
-// TODO(fbarchard): support 1 rows
-// TODO(fbarchard): align loops
 __declspec(naked)
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width,
@@ -1275,6 +1285,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     pxor       xmm4, xmm4
     dec        ebx
 
+    align      16
   xloop:
     // first row
     movdqa     xmm0, [esi]
@@ -1284,8 +1295,11 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     punpckhbw  xmm1, xmm4
     lea        esi, [esi + 16]
     mov        ebp, ebx
+    test       ebp, ebp
+    je         ydone
 
     // sum remaining rows
+    align      16
   yloop:
     movdqa     xmm2, [eax]       // read 16 pixels
     lea        eax, [eax + edx]  // advance to next row
@@ -1296,7 +1310,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     paddusw    xmm1, xmm3
     sub        ebp, 1
     ja         yloop
-
+  ydone:
     movdqa     [edi], xmm0
     movdqa     [edi + 16], xmm1
     lea        edi, [edi + 32]
@@ -1342,6 +1356,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     pshufd     xmm5, xmm5, 0
     pxor       xmm7, xmm7
 
+    align      16
   xloop:
     movdqa     xmm0, [esi]
     movdqa     xmm2, [esi + edx]
@@ -1371,6 +1386,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    align      16
   xloop1:
     movdqa     xmm0, [esi]
     sub        ecx, 16
@@ -1384,6 +1400,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    align      16
   xloop2:
     movdqa     xmm0, [esi]
     pavgb      xmm0, [esi + edx]
@@ -1428,6 +1445,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
+    align      16
   xloop:
     movdqa     xmm0, [esi]
     movdqa     xmm2, [esi + edx]
@@ -1450,6 +1468,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    align      16
   xloop1:
     movdqa     xmm0, [esi]
     sub        ecx, 16
@@ -1463,6 +1482,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    align      16
   xloop2:
     movdqa     xmm0, [esi]
     pavgb      xmm0, [esi + edx]
@@ -1496,6 +1516,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     xmm6, _madd11
     movdqa     xmm7, _madd21
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]           // pixels 0..7
     pshufb     xmm0, xmm2
@@ -1712,6 +1733,8 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "punpcklbw %%xmm4,%%xmm0                   \n"
     "punpckhbw %%xmm4,%%xmm1                   \n"
     "mov       %5,%2                           \n"
+    "test      %2,%2                           \n"
+    "je        3f                              \n"
   "2:                                          \n"
     "movdqa    (%0),%%xmm2                     \n"
     "add       %6,%0                           \n"
@@ -1722,6 +1745,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "paddusw   %%xmm3,%%xmm1                   \n"
     "sub       $0x1,%2                         \n"
     "ja        2b                              \n"
+  "3:                                          \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "lea       0x10(%3),%0                     \n"

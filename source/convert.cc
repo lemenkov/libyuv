@@ -1746,8 +1746,8 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
       r = NV12ToI420Rotate(src, src_width,
                            src_uv, aligned_src_width,
                            y, y_stride,
-                           u, u_stride,
                            v, v_stride,
+                           u, u_stride,
                            dst_width, inv_dst_height, rotation);
       break;
     case FOURCC_M420:

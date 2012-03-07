@@ -722,6 +722,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
     lea        ecx, [ebp * 4]
     sub        edx, ecx             // stride - width * 4
 
+    align      16
   convertloop:
     mov        ecx, ebp
     rep stosd

@@ -83,9 +83,11 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
     mov       edx, [esp + 12 + 12]  // dst
     mov       esi, [esp + 12 + 16]  // dst_stride
     mov       ecx, [esp + 12 + 20]  // width
- convertloop:
+
     // Read in the data from the source pointer.
     // First round of bit swap.
+    align      16
+ convertloop:
     movq      xmm0, qword ptr [eax]
     lea       ebp, [eax + 8]
     movq      xmm1, qword ptr [eax + edi]
@@ -182,6 +184,8 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     and       esp, ~15
     mov       [esp + 16], ecx
     mov       ecx, [ecx + 16 + 28]  // w
+
+    align      16
  convertloop:
     // Read in the data from the source pointer.
     // First round of bit swap.

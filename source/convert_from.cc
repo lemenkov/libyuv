@@ -222,6 +222,7 @@ static void I42xToYUY2Row_SSE2(const uint8* src_y,
     mov        ecx, [esp + 8 + 20]   // width
     sub        edx, esi
 
+    align      16
   convertloop:
     movq       xmm2, qword ptr [esi] // U
     movq       xmm3, qword ptr [esi + edx] // V
@@ -260,6 +261,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
     mov        ecx, [esp + 8 + 20]   // width
     sub        edx, esi
 
+    align      16
   convertloop:
     movq       xmm2, qword ptr [esi] // U
     movq       xmm3, qword ptr [esi + edx] // V

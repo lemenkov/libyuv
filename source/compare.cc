@@ -89,6 +89,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     pxor       xmm5, xmm5
     sub        edx, eax
 
+    align      16
   wloop:
     movdqa     xmm1, [eax]
     movdqa     xmm2, [eax + edx]
