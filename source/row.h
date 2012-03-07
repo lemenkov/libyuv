@@ -62,9 +62,6 @@ extern "C" {
 #define HAS_UYVYTOYROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_UYVYTOUVROW_SSE2
-#endif
-
-#if defined(_MSC_VER)
 #define HAS_ARGBBLENDROW_SSE2
 #endif
 

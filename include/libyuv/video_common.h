@@ -36,6 +36,7 @@ extern "C" {
 //   http://www.fourcc.org/yuv.php
 //   http://v4l2spec.bytesex.org/spec/book1.htm
 //   http://developer.apple.com/quicktime/icefloe/dispatch020.html
+//   http://msdn.microsoft.com/en-us/library/windows/desktop/dd206750(v=vs.85).aspx#nv12
 
 enum FourCC {
   // Canonical fourcc codes used in our code.

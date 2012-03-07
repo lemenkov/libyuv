@@ -1256,6 +1256,8 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEADDROWS_SSE2
 
 // Reads 16xN bytes and produces 16 shorts at a time.
+// TODO(fbarchard): support 1 rows
+// TODO(fbarchard): align loops
 __declspec(naked)
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width,
@@ -1699,7 +1701,6 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width, int src_height) {
   int tmp_height = 0;
   intptr_t tmp_src = 0;
-  intptr_t tmp_src_stride = static_cast<intptr_t>(src_stride);
   asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
     "sub       $0x1,%5                         \n"
@@ -1731,9 +1732,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_ptr),     // %1
     "+r"(tmp_height),  // %2
     "+r"(tmp_src),     // %3
-    "+rm"(src_width),  // %4
+    "+r"(src_width),  // %4
     "+rm"(src_height)  // %5
-  : "rm"(tmp_src_stride)  // %6
+  : "rm"(static_cast<intptr_t>(src_stride))  // %6
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
