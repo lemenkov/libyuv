@@ -218,10 +218,10 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     // loop will run one extra time.
     "sub         %2, #16                       \n"
 
-    // mirror the bytes in the 64 bit segments.  unable to mirror
+    // mirror the bytes in the 64 bit segments. unable to mirror
     // the bytes in the entire 128 bits in one go.
     // because of the inability to mirror the entire 128 bits
-     // mirror the writing out of the two 64 bit segments.
+    // mirror the writing out of the two 64 bit segments.
     "1:                                        \n"
       "vld1.8      {q0}, [%0]!                 \n"  // src += 16
       "vrev64.8    q0, q0                      \n"

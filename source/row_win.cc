@@ -477,7 +477,6 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Port to gcc
 __declspec(naked)
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -1965,40 +1964,42 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        edx, [esp + 4 + 8]   // dst_argb
     mov        ecx, [esp + 4 + 12]  // width
     pcmpeqb    xmm4, xmm4       // generate 0xffffffff do negative alpha
+    pcmpeqb    xmm5, xmm5       // generate 0xff000000 for alpha
+    pslld      xmm5, 24
     sub        edx, esi
     mov        eax, [esi]       // get first pixel
     sub        ecx, 1           // ensure there are at least 2 pixels
-    je         last1            // last pixel?
+    jle        last1            // last pixel?
     cmp        eax, 0xFF000000  // opaque?
     jae        opaqueloop
-    cmp        eax, 0x00FFFFFF  // translucient?
-    ja         translucientloop
+    cmp        eax, 0x00FFFFFF  // translucent?
+    ja         translucentloop
 
     align      16
  transparentloop:
     sub        ecx, 1
     lea        esi, [esi + 4]
-    je         last1
-    mov        eax, [esi]       // handle remaining pixel
+    jle        last1
+    mov        eax, [esi]       // get next pixel
     cmp        eax, 0x00FFFFFF  // transparent?
     jbe        transparentloop
-    cmp        eax, 0xFF000000  // translucient?
-    jb         translucientloop
+    cmp        eax, 0xFF000000  // translucent?
+    jb         translucentloop
 
     align      16
  opaqueloop:
     mov        dword ptr [esi + edx], eax
     lea        esi, [esi + 4]
     sub        ecx, 1
-    je         last1
-    mov        eax, [esi]       // handle remaining pixel
+    jle        last1
+    mov        eax, [esi]       // get next pixel
     cmp        eax, 0xFF000000  // opaque?
     jae        opaqueloop
     cmp        eax, 0x00FFFFFF  // transparent?
     jbe        transparentloop
 
     align      16
- translucientloop:
+ translucentloop:
     movq       xmm0, qword ptr [esi]      // fetch 2 pixels
     movq       xmm1, qword ptr [esi + edx]
     punpcklbw  xmm0, xmm0       // src 16 bits
@@ -2009,39 +2010,42 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     pxor       xmm3, xmm4
     pmulhuw    xmm0, xmm2       // src * a
     pmulhuw    xmm1, xmm3       // dst * (a ^ 0xffff)
-    paddw      xmm0, xmm1
+    paddusw    xmm0, xmm1
     psrlw      xmm0, 8
     packuswb   xmm0, xmm0       // pack 2 pixels
+    por        xmm0, xmm5       // set alpha
     movq       qword ptr [esi + edx], xmm0
     lea        esi, [esi + 8]
     sub        ecx, 2
-    jbe        last1
-    mov        eax, [esi]       // handle remaining pixel
+    jle        last1
+    mov        eax, [esi]
     cmp        eax, 0x00FFFFFF  // transparent?
     jbe        transparentloop
-    cmp        eax, 0xFF000000  // translucient?
-    jb         translucientloop
+    cmp        eax, 0xFF000000  // translucent?
+    jb         translucentloop
     jmp        opaqueloop
 
     align      16
  last1:
     add        ecx, 1
-    je         done
+    cmp        ecx, 1           // 1 left?
+    jl         done
 
+    mov        eax, [esi]       // get next pixel
     movd       xmm0, eax
     mov        eax,  [esi + edx]
     movd       xmm1, eax
     punpcklbw  xmm0, xmm0       // src 16 bits
     punpcklbw  xmm1, xmm1       // dst 16 bits
     pshuflw    xmm2, xmm0, 0xff // src alpha
-    pshufhw    xmm2, xmm2, 0xff
     movdqa     xmm3, xmm2       // dst alpha
     pxor       xmm3, xmm4
     pmulhuw    xmm0, xmm2       // src * a
     pmulhuw    xmm1, xmm3       // dst * (a ^ 0xffff)
-    paddw      xmm0, xmm1
+    paddusw    xmm0, xmm1
     psrlw      xmm0, 8
     packuswb   xmm0, xmm0       // pack to bytes
+    por        xmm0, xmm5       // set alpha
     movd       eax, xmm0
     mov        dword ptr [esi + edx], eax
 

@@ -1931,29 +1931,29 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "sub       %0,%1                           \n"
     "mov       (%0),%3                         \n"
     "sub       $0x1,%2                         \n"
-    "je        8f                              \n"  // last1
+    "jle       8f                              \n"  // last1
     "cmp       $0xff000000,%3                  \n"
     "jae       2f                              \n"  // opaqueloop
     "cmp       $0xffffff,%3                    \n"
-    "ja        3f                              \n"  // translucientloop
+    "ja        3f                              \n"  // translucentloop
 
   // transparentloop
   "1:                                          \n"
     "sub       $0x1,%2                         \n"
     "lea       0x4(%0),%0                      \n"
-    "je        8f                              \n"  // last1
+    "jle       8f                              \n"  // last1
     "mov       (%0),%3                         \n"
     "cmp       $0xffffff,%3                    \n"
     "jbe       1b                              \n"  // transparentloop
     "cmp       $0xff000000,%3                  \n"
-    "jb        3f                              \n"  // translucientloop
+    "jb        3f                              \n"  // translucentloop
 
   // opaqueloop
   "2:                                          \n"
     "mov       %3,(%0,%1,1)                    \n"
     "lea       0x4(%0),%0                      \n"
     "sub       $0x1,%2                         \n"
-    "je        8f                              \n"  // last1
+    "jle       8f                              \n"  // last1
     "mov       (%0),%3                         \n"
     "cmp       $0xff000000,%3                  \n"
     "jae       2b                              \n"  // opaqueloop
@@ -1961,48 +1961,50 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "jbe       1b                              \n"  // transparentloop
     "nop                                       \n"
 
-  // translucientloop
+  // translucentloop
   "3:                                          \n"
-    "movq      (%0),%%xmm0                     \n"
-    "movq      (%0,%1,1),%%xmm1                \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
-    "punpcklbw %%xmm1,%%xmm1                   \n"
-    "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
-    "pshufhw   $0xff,%%xmm2,%%xmm2             \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "pmulhuw   %%xmm3,%%xmm1                   \n"
-    "paddw     %%xmm1,%%xmm0                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "movq      %%xmm0,(%0,%1,1)                \n"
-    "lea       0x8(%0),%0                      \n"
-    "sub       $0x2,%2                         \n"
-    "jbe       8f                              \n"  // last1
-    "mov       (%0),%3                         \n"
-    "cmp       $0xffffff,%3                    \n"
-    "jbe       1b                              \n"  // transparentloop
-    "cmp       $0xff000000,%3                  \n"
-    "jb        3b                              \n"  // translucientloop
-    "jmp       2b                              \n"  // opaqueloop
-
-  // last1
-  "8:                                          \n"
-    "add       $0x1,%2                         \n"
-    "je        9f                              \n"  // done
     "movd      %3,%%xmm0                       \n"
     "mov       (%0,%1,1),%3                    \n"
     "movd      %3,%%xmm1                       \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "punpcklbw %%xmm1,%%xmm1                   \n"
     "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
-    "pshufhw   $0xff,%%xmm2,%%xmm2             \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "pxor      %%xmm4,%%xmm3                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
     "pmulhuw   %%xmm3,%%xmm1                   \n"
-    "paddw     %%xmm1,%%xmm0                   \n"
+    "paddusw   %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,%3                       \n"
+    "mov       %3,(%0,%1,1)                    \n"
+    "lea       0x8(%0),%0                      \n"
+    "sub       $0x2,%2                         \n"
+    "jle       8f                              \n"  // last1
+    "mov       (%0),%3                         \n"
+    "cmp       $0xffffff,%3                    \n"
+    "jbe       1b                              \n"  // transparentloop
+    "cmp       $0xff000000,%3                  \n"
+    "jb        3b                              \n"  // translucentloop
+    "jmp       2b                              \n"  // opaqueloop
+
+  // last1
+  "8:                                          \n"
+    "add       $0x1,%2                         \n"  // 1 pixel left?
+    "cmp       $0x1,%2                         \n"
+    "jl        9f                              \n"  // done
+    "mov       (%0),%3                         \n"
+    "movd      %3,%%xmm0                       \n"
+    "mov       (%0,%1,1),%3                    \n"
+    "movd      %3,%%xmm1                       \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpcklbw %%xmm1,%%xmm1                   \n"
+    "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "pxor      %%xmm4,%%xmm3                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "pmulhuw   %%xmm3,%%xmm1                   \n"
+    "paddusw   %%xmm1,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,%3                       \n"
