@@ -1928,6 +1928,8 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   uint32 pixel = 0;
   asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pslld     $24,%%xmm5                      \n"
     "sub       %0,%1                           \n"
     "mov       (%0),%3                         \n"
     "sub       $0x1,%2                         \n"
@@ -1959,16 +1961,15 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "jae       2b                              \n"  // opaqueloop
     "cmp       $0xffffff,%3                    \n"
     "jbe       1b                              \n"  // transparentloop
-    "nop                                       \n"
 
   // translucentloop
   "3:                                          \n"
-    "movd      %3,%%xmm0                       \n"
-    "mov       (%0,%1,1),%3                    \n"
-    "movd      %3,%%xmm1                       \n"
+    "movq      (%0),%%xmm0                     \n"
+    "movq      (%0,%1,1),%%xmm1                \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "punpcklbw %%xmm1,%%xmm1                   \n"
     "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
+    "pshufhw   $0xff,%%xmm2,%%xmm2             \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "pxor      %%xmm4,%%xmm3                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
@@ -1976,8 +1977,8 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "paddusw   %%xmm1,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,%3                       \n"
-    "mov       %3,(%0,%1,1)                    \n"
+    "por       %%xmm5,%%xmm0                   \n"
+    "movq      %%xmm0,(%0,%1,1)                \n"
     "lea       0x8(%0),%0                      \n"
     "sub       $0x2,%2                         \n"
     "jle       8f                              \n"  // last1
@@ -2019,7 +2020,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
   );
 }
