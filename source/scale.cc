@@ -1433,13 +1433,12 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
+    shr        eax, 1
     cmp        eax, 0
     je         xloop1
-    cmp        eax, 128
+    cmp        eax, 64
     je         xloop2
-
-    shr        eax, 1
-    mov        ah,al
+    mov        ah, al
     neg        al
     add        al, 128
     movd       xmm5, eax
@@ -2199,11 +2198,11 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "mov    0x18(%esp),%ecx                    \n"
     "mov    0x1c(%esp),%eax                    \n"
     "sub    %esi, %edi                         \n"
+    "shr    %eax                               \n"
     "cmp    $0x0,%eax                          \n"
     "je     2f                                 \n"
-    "cmp    $0x80,%eax                         \n"
+    "cmp    $0x40,%eax                         \n"
     "je     3f                                 \n"
-    "shr    %eax                               \n"
     "mov    %al,%ah                            \n"
     "neg    %al                                \n"
     "add    $0x80,%al                          \n"
@@ -2688,7 +2687,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                   const uint8* src_ptr, int src_stride,
                                   int dst_width, int source_y_fraction) {
-  if (source_y_fraction == 0) {
+  if (source_y_fraction <= 1) {
     asm volatile (
    "1:"
       "movdqa     (%1),%%xmm0                  \n"
