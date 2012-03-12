@@ -140,6 +140,16 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Alpha Blend ARGB
+void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width) {
+#if defined(HAS_ARGBBLENDROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBBlendRow_SSE2(src_argb, dst_argb, width);
+    return;
+  }
+#endif
+  ARGBBlendRow_C(src_argb, dst_argb, width);
+}
 
 // Alpha Blend ARGB
 int ARGBBlend(const uint8* src_argb, int src_stride_argb,
