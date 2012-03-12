@@ -58,7 +58,7 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
     "vmlal.s16  q8, d5, d5                     \n"
     "vmlal.s16  q10, d7, d7                    \n"
     "subs       %2, %2, #16                    \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
 
     "vadd.u32   q7, q7, q8                     \n"
     "vadd.u32   q9, q9, q10                    \n"
@@ -94,6 +94,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     movdqa     xmm1, [eax]
     movdqa     xmm2, [eax + edx]
     lea        eax,  [eax + 16]
+    sub        ecx, 16
     movdqa     xmm3, xmm1
     psubusb    xmm1, xmm2
     psubusb    xmm2, xmm3
@@ -105,8 +106,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     pmaddwd    xmm2, xmm2
     paddd      xmm0, xmm1
     paddd      xmm0, xmm2
-    sub        ecx, 16
-    ja         wloop
+    jg         wloop
 
     pshufd     xmm1, xmm0, 0EEh
     paddd      xmm0, xmm1
@@ -131,6 +131,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     "movdqa    (%0),%%xmm1                     \n"
     "movdqa    (%0,%1,1),%%xmm2                \n"
     "lea       0x10(%0),%0                     \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
     "psubusb   %%xmm2,%%xmm1                   \n"
     "psubusb   %%xmm3,%%xmm2                   \n"
@@ -142,8 +143,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
     "pmaddwd   %%xmm2,%%xmm2                   \n"
     "paddd     %%xmm1,%%xmm0                   \n"
     "paddd     %%xmm2,%%xmm0                   \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
 
     "pshufd    $0xee,%%xmm0,%%xmm1             \n"
     "paddd     %%xmm1,%%xmm0                   \n"

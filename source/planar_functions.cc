@@ -685,7 +685,7 @@ static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
     "1:                                        \n"
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
     "vst1.u32  {q0}, [%0]!                     \n"  // store
-    "bhi       1b                              \n"
+    "bgt       1b                              \n"
   : "+r"(dst),  // %0
     "+r"(count) // %1
   : "r"(v32)    // %2
@@ -738,7 +738,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
     rep stosd
     add        edi, edx
     sub        ebx, 1
-    ja         convertloop
+    jg         convertloop
 
     pop        ebp
     pop        edi

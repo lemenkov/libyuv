@@ -40,10 +40,10 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
     movdqa     xmm0, [eax]
     lea        eax, [eax + 16]
     pshufb     xmm0, xmm5
+    sub        ecx, 4
     movd       [edx], xmm0
     lea        edx, [edx + 4]
-    sub        ecx, 4
-    ja         wloop
+    jg         wloop
     ret
   }
 }
@@ -60,10 +60,10 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
     "movdqa (%0),%%xmm0                        \n"
     "lea    0x10(%0),%0                        \n"
     "pshufb %%xmm5,%%xmm0                      \n"
+    "sub    $0x4,%2                            \n"
     "movd   %%xmm0,(%1)                        \n"
     "lea    0x4(%1),%1                         \n"
-    "sub    $0x4,%2                            \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_bayer), // %1
     "+r"(pix)        // %2

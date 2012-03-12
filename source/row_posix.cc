@@ -125,7 +125,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_y),     // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -140,14 +140,15 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm5                       \n"
+    "sub       %0,%1                           \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
-    "lea       0x10(%0),%0                     \n"
     "pshufb    %%xmm5,%%xmm0                   \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+
   : "+r"(src_abgr),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -162,14 +163,14 @@ void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm5                       \n"
+    "sub       %0,%1                           \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
-    "lea       0x10(%0),%0                     \n"
     "pshufb    %%xmm5,%%xmm0                   \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
   : "+r"(src_bgra),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -206,10 +207,10 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     "pshufb    %%xmm4,%%xmm3                   \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "por       %%xmm5,%%xmm3                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm3,0x30(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_rgb24),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -246,10 +247,10 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
     "pshufb    %%xmm4,%%xmm3                   \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "por       %%xmm5,%%xmm3                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm3,0x30(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_raw),   // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
@@ -298,7 +299,7 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "movdqa    %%xmm2,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -350,7 +351,7 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "movdqa    %%xmm2,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -389,7 +390,7 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "movdqa    %%xmm1,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -429,7 +430,7 @@ void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int pix) {
     "movdqa    %%xmm2,0x20(%1)                 \n"
     "lea       0x30(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -469,7 +470,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int pix) {
     "movdqa    %%xmm2,0x20(%1)                 \n"
     "lea       0x30(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -508,7 +509,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
     "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -551,7 +552,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
     "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -582,7 +583,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
     "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
@@ -614,10 +615,10 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -650,10 +651,10 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -718,11 +719,11 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_argb0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -786,11 +787,11 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_argb0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -823,10 +824,10 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_bgra),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -859,10 +860,10 @@ void BGRAToYRow_Unaligned_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_bgra),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -922,11 +923,11 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_bgra0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -990,11 +991,11 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_bgra0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -1027,10 +1028,10 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_abgr),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1063,10 +1064,10 @@ void ABGRToYRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_abgr),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1126,11 +1127,11 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_abgr0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -1194,11 +1195,11 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
     "movlps    %%xmm0,(%1)                     \n"
     "movhps    %%xmm0,(%1,%2,1)                \n"
     "lea       0x8(%1),%1                      \n"
-    "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_abgr0),       // %0
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
@@ -1305,7 +1306,7 @@ void OMITFP I420ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm1,0x10(%3)                 \n"
     "lea       0x20(%3),%3                     \n"
     "sub       $0x8,%4                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
     "+r"(v_buf),    // %2
@@ -1340,7 +1341,7 @@ void OMITFP I420ToBGRARow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,0x10(%3)                 \n"
     "lea       0x20(%3),%3                     \n"
     "sub       $0x8,%4                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
     "+r"(v_buf),    // %2
@@ -1374,7 +1375,7 @@ void OMITFP I420ToABGRRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm1,0x10(%3)                 \n"
     "lea       0x20(%3),%3                     \n"
     "sub       $0x8,%4                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
     "+r"(v_buf),    // %2
@@ -1427,10 +1428,10 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
+    "sub       $0x4,%4                         \n"
     "movdqa    %%xmm0,(%3)                     \n"
     "lea       0x10(%3),%3                     \n"
-    "sub       $0x4,%4                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(y_buf),    // %0
     "+r"(u_buf),    // %1
     "+r"(v_buf),    // %2
@@ -1479,7 +1480,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     "lea       32(%1),%1                       \n"
 
     "sub       $0x8,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(y_buf),    // %0
     "+r"(rgb_buf),  // %1
     "+rm"(width)    // %2
@@ -1509,7 +1510,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
@@ -1539,7 +1540,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
     "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
@@ -1572,7 +1573,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     "movlpd    %%xmm0,(%1)                     \n"
     "movhpd    %%xmm0,(%1,%2)                  \n"
     "lea       8(%1),%1                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),      // %0
     "+r"(dst_u),    // %1
     "+r"(dst_v),    // %2
@@ -1608,7 +1609,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "movdqa     %%xmm2,(%1,%2)                   \n"
     "lea        0x10(%1),%1                      \n"
     "sub        $0x10,%3                         \n"
-    "ja         1b                               \n"
+    "jg         1b                               \n"
   : "+r"(src_uv),     // %0
     "+r"(dst_u),      // %1
     "+r"(dst_v),      // %2
@@ -1633,7 +1634,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     "movdqa    %%xmm1,0x10(%0,%1)              \n"
     "lea       0x20(%0),%0                     \n"
     "sub       $0x20,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(count)  // %2
@@ -1676,7 +1677,7 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1714,7 +1715,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
     "movq      %%xmm1,(%1,%2)                  \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_yuy2),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2
@@ -1739,10 +1740,10 @@ void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1782,7 +1783,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2,
     "movq      %%xmm1,(%1,%2)                  \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_yuy2),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2
@@ -1804,10 +1805,10 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1845,7 +1846,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "movq      %%xmm1,(%1,%2)                  \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_uyvy),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2
@@ -1868,10 +1869,10 @@ void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
-    "sub       $0x10,%2                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -1909,7 +1910,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "movq      %%xmm1,(%1,%2)                  \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_uyvy),    // %0
     "+r"(dst_u),       // %1
     "+r"(dst_y),       // %2

@@ -122,7 +122,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     movdqa     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 8
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -134,16 +134,16 @@ __asm {
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
     movdqa    xmm5, kShuffleMaskABGRToARGB
+    sub       edx, eax
 
     align      16
  convertloop:
     movdqa    xmm0, [eax]
-    lea       eax, [eax + 16]
     pshufb    xmm0, xmm5
-    movdqa    [edx], xmm0
-    lea       edx, [edx + 16]
     sub       ecx, 4
-    ja        convertloop
+    movdqa    [eax + edx], xmm0
+    lea       eax, [eax + 16]
+    jg        convertloop
     ret
   }
 }
@@ -155,16 +155,16 @@ __asm {
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
     movdqa    xmm5, kShuffleMaskBGRAToARGB
+    sub       edx, eax
 
     align      16
  convertloop:
     movdqa    xmm0, [eax]
-    lea       eax, [eax + 16]
     pshufb    xmm0, xmm5
-    movdqa    [edx], xmm0
-    lea       edx, [edx + 16]
     sub       ecx, 4
-    ja        convertloop
+    movdqa    [eax + edx], xmm0
+    lea       eax, [eax + 16]
+    jg        convertloop
     ret
   }
 }
@@ -200,10 +200,10 @@ __asm {
     pshufb    xmm3, xmm4
     movdqa    [edx + 16], xmm1
     por       xmm3, xmm5
+    sub       ecx, 16
     movdqa    [edx + 48], xmm3
     lea       edx, [edx + 64]
-    sub       ecx, 16
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -240,10 +240,10 @@ __asm {
     pshufb    xmm3, xmm4
     movdqa    [edx + 16], xmm1
     por       xmm3, xmm5
+    sub       ecx, 16
     movdqa    [edx + 48], xmm3
     lea       edx, [edx + 64]
-    sub       ecx, 16
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -300,7 +300,7 @@ __asm {
     movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -354,7 +354,7 @@ __asm {
     movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -394,7 +394,7 @@ __asm {
     movdqa    [eax * 2 + edx + 16], xmm1  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -433,7 +433,7 @@ __asm {
     movdqa    [edx + 32], xmm2   // store 2
     lea       edx, [edx + 48]
     sub       ecx, 16
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -472,7 +472,7 @@ __asm {
     movdqa    [edx + 32], xmm2   // store 2
     lea       edx, [edx + 48]
     sub       ecx, 16
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -510,7 +510,7 @@ __asm {
     movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
     lea       edx, [edx + 8]
     sub       ecx, 4
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -553,7 +553,7 @@ __asm {
     movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
     lea       edx, [edx + 8]
     sub       ecx, 4
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -583,7 +583,7 @@ __asm {
     movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB4444
     lea       edx, [edx + 8]
     sub       ecx, 4
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -618,7 +618,7 @@ __asm {
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -652,7 +652,7 @@ __asm {
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -686,7 +686,7 @@ __asm {
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -720,7 +720,7 @@ __asm {
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -754,7 +754,7 @@ __asm {
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -785,10 +785,10 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -847,11 +847,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -916,11 +917,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -981,11 +983,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -1050,11 +1053,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -1115,11 +1119,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -1184,11 +1189,12 @@ __asm {
     paddb      xmm0, xmm5            // -> unsigned
 
     // step 3 - store 8 U and 8 V values
+    sub        ecx, 16
     movlps     qword ptr [edx], xmm0 // U
     movhps     qword ptr [edx + edi], xmm0 // V
     lea        edx, [edx + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     pop        esi
     ret
@@ -1293,9 +1299,8 @@ void I420ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
-
     sub        ecx, 8
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1334,9 +1339,8 @@ void I420ToBGRARow_SSSE3(const uint8* y_buf,
     movdqa     [edx], xmm5
     movdqa     [edx + 16], xmm0
     lea        edx,  [edx + 32]
-
     sub        ecx, 8
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1375,9 +1379,8 @@ void I420ToABGRRow_SSSE3(const uint8* y_buf,
     movdqa     [edx], xmm2
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
-
     sub        ecx, 8
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1441,9 +1444,8 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     punpcklwd  xmm0, xmm2           // BGRA 4 pixels
     movdqa     [edx], xmm0
     lea        edx,  [edx + 16]
-
     sub        ecx, 4
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1490,9 +1492,8 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
-
     sub        ecx, 8
-    ja         convertloop
+    jg         convertloop
 
     ret
   }
@@ -1523,7 +1524,7 @@ __asm {
     sub       ecx, 16
     movdqa    [edx], xmm0
     lea       edx, [edx + 16]
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -1553,7 +1554,7 @@ __asm {
     sub       ecx, 16
     movdqu    [edx], xmm0
     lea       edx, [edx + 16]
-    ja        convertloop
+    jg        convertloop
     ret
   }
 }
@@ -1587,7 +1588,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     movlpd    qword ptr [edx], xmm0
     movhpd    qword ptr [edx + edi], xmm0
     lea       edx, [edx + 8]
-    ja        convertloop
+    jg        convertloop
 
     pop       edi
     ret
@@ -1625,7 +1626,8 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     movdqa     [edx + edi], xmm2
     lea        edx, [edx + 16]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
+
     pop        edi
     ret
   }
@@ -1650,7 +1652,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     movdqa     [eax + edx + 16], xmm1
     lea        eax, [eax + 32]
     sub        ecx, 32
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -1693,10 +1695,10 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2,
     pand       xmm0, xmm5   // even bytes are Y
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -1737,7 +1739,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
     movq       qword ptr [edx + edi], xmm1
     lea        edx, [edx + 8]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1763,10 +1765,10 @@ void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
     pand       xmm0, xmm5   // even bytes are Y
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
+    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -1807,7 +1809,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
     movq       qword ptr [edx + edi], xmm1
     lea        edx, [edx + 8]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1831,10 +1833,10 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy,
     psrlw      xmm0, 8    // odd bytes are Y
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -1875,7 +1877,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
     movq       qword ptr [edx + edi], xmm1
     lea        edx, [edx + 8]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -1899,10 +1901,10 @@ void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
     psrlw      xmm0, 8    // odd bytes are Y
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
+    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     ret
   }
 }
@@ -1943,7 +1945,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
     movq       qword ptr [edx + edi], xmm1
     lea        edx, [edx + 8]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi

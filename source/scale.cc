@@ -64,7 +64,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
     "vld2.u8    {q0,q1}, [%0]!                 \n"  // load even pixels into q0, odd into q1
     "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst),              // %1
       "+r"(dst_width)         // %2
@@ -88,7 +88,7 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
     "vrshrn.u16 d1, q1, #2                     \n"
     "vst1.u8    {q0}, [%2]!                    \n"
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(src_ptr),          // %0
       "+r"(src_stride),       // %1
       "+r"(dst),              // %2
@@ -109,7 +109,7 @@ static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
     "vst1.u32   {d0[1]}, [%1]!                 \n"
 
     "subs       %2, #4                         \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -143,7 +143,7 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
     "vst1.u32   {d0[0]}, [%1]!                 \n"
 
     "subs       %2, #4                         \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
 
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
@@ -165,7 +165,7 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
     "vmov         d2, d3                       \n" // order needs to be d0, d1, d2
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
     "subs         %2, #24                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -219,7 +219,7 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
 
     "subs         %2, #24                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -258,7 +258,7 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
 
     "subs         %2, #24                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -292,7 +292,7 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
     "vst1.u8      {d4}, [%1]!                  \n"
     "vst1.u32     {d5[0]}, [%1]!               \n"
     "subs         %2, #12                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
@@ -397,7 +397,7 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
     "vst1.u8      {d3}, [%1]!                  \n"
     "vst1.u32     {d4[0]}, [%1]!               \n"
     "subs         %2, #12                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -492,7 +492,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     "vst1.u8      {d3}, [%1]!                  \n"
     "vst1.u32     {d4[0]}, [%1]!               \n"
     "subs         %2, #12                      \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
@@ -529,14 +529,14 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
     "vrshrn.u16   d0, q13, #8                  \n"
     "vrshrn.u16   d1, q14, #8                  \n"
     "vst1.u8      {q0}, [%0]!                  \n"
-    "bhi          1b                           \n"
+    "bgt          1b                           \n"
     "b            4f                           \n"
 
     "2:                                        \n"
     "vld1.u8      {q0}, [%1]!                  \n"
     "subs         %3, #16                      \n"
     "vst1.u8      {q0}, [%0]!                  \n"
-    "bhi          2b                           \n"
+    "bgt          2b                           \n"
     "b            4f                           \n"
 
     "3:                                        \n"
@@ -545,7 +545,7 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
     "subs         %3, #16                      \n"
     "vrhadd.u8    q0, q1                       \n"
     "vst1.u8      {q0}, [%0]!                  \n"
-    "bhi          3b                           \n"
+    "bgt          3b                           \n"
     "4:                                        \n"
     "vst1.u8      {d1[7]}, [%0]                \n"
     : "+r"(dst_ptr),          // %0
@@ -697,7 +697,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    ja         wloop
+    jg         wloop
 
     ret
   }
@@ -739,7 +739,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    ja         wloop
+    jg         wloop
 
     pop        esi
     ret
@@ -772,7 +772,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 8
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
-    ja         wloop
+    jg         wloop
 
     ret
   }
@@ -831,7 +831,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 8
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
-    ja         wloop
+    jg         wloop
 
     pop        edi
     pop        esi
@@ -866,7 +866,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 4
     movd       dword ptr [edx], xmm0
     lea        edx, [edx + 4]
-    ja         wloop
+    jg         wloop
 
     ret
   }
@@ -936,7 +936,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     sub        ecx, 4
     movd       dword ptr [edx], xmm0
     lea        edx, [edx + 4]
-    ja         wloop
+    jg         wloop
 
     pop        ebp
     pop        edi
@@ -979,7 +979,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
     movq       qword ptr [edx + 16], xmm2
     lea        edx, [edx + 24]
     sub        ecx, 24
-    ja         wloop
+    jg         wloop
 
     ret
   }
@@ -1050,7 +1050,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     sub        ecx, 24
     movq       qword ptr [edx + 16], xmm0
     lea        edx, [edx + 24]
-    ja         wloop
+    jg         wloop
 
     pop        esi
     ret
@@ -1111,7 +1111,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     sub        ecx, 24
     movq       qword ptr [edx + 16], xmm0
     lea        edx, [edx+24]
-    ja         wloop
+    jg         wloop
 
     pop        esi
     ret
@@ -1147,7 +1147,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     movhlps    xmm1, xmm0
     movd       [edx + 8], xmm1
     lea        edx, [edx + 12]
-    ja         xloop
+    jg         xloop
 
     ret
   }
@@ -1212,7 +1212,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     pextrw     ebx, xmm2, 2
     mov        [edx + 4], bx
     lea        edx, [edx + 6]
-    ja         xloop
+    jg         xloop
 
     pop        ebx
     pop        esi
@@ -1258,7 +1258,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     pextrw     ebx, xmm0, 2
     mov        [edx + 4], bx
     lea        edx, [edx + 6]
-    ja         xloop
+    jg         xloop
 
     pop        ebx
     pop        esi
@@ -1310,14 +1310,14 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     paddusw    xmm0, xmm2        // sum 16 words
     paddusw    xmm1, xmm3
     sub        ebp, 1
-    ja         yloop
+    jg         yloop
   ydone:
     movdqa     [edi], xmm0
     movdqa     [edi + 16], xmm1
     lea        edi, [edi + 32]
 
     sub        ecx, 16
-    ja         xloop
+    jg         xloop
 
     pop        ebp
     pop        ebx
@@ -1379,7 +1379,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop
+    jg         xloop
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1393,7 +1393,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop1
+    jg         xloop1
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1408,7 +1408,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop2
+    jg         xloop2
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1460,7 +1460,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop
+    jg         xloop
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1474,7 +1474,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop1
+    jg         xloop1
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1489,7 +1489,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    ja         xloop2
+    jg         xloop2
 
     mov        al, [esi + edi - 1]
     mov        [esi + edi], al
@@ -1542,7 +1542,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     sub        ecx, 24
     movq       qword ptr [edx+16], xmm0
     lea        edx, [edx+24]
-    ja         wloop
+    jg         wloop
     ret
   }
 }
@@ -1568,7 +1568,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
   "movdqa     %%xmm0,(%1)                      \n"
   "lea        0x10(%1),%1                      \n"
   "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
@@ -1602,7 +1602,7 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   "movdqa     %%xmm0,(%1)                      \n"
   "lea        0x10(%1),%1                      \n"
   "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
@@ -1628,7 +1628,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
   "movq       %%xmm0,(%1)                      \n"
   "lea        0x8(%1),%1                       \n"
   "sub        $0x8,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
@@ -1677,7 +1677,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
   "movq       %%xmm0,(%1)                      \n"
   "lea        0x8(%1),%1                       \n"
   "sub        $0x8,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width),   // %2
@@ -1708,7 +1708,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
     "movd      %%xmm0,(%1)                     \n"
     "lea       0x4(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
@@ -1744,14 +1744,14 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
     "paddusw   %%xmm2,%%xmm0                   \n"
     "paddusw   %%xmm3,%%xmm1                   \n"
     "sub       $0x1,%2                         \n"
-    "ja        2b                              \n"
+    "jg        2b                              \n"
   "3:                                          \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
     "lea       0x10(%3),%0                     \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x10,%4                        \n"
-    "ja        1b                              \n"
+    "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(tmp_height),  // %2
@@ -1823,7 +1823,7 @@ extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
     "sub    $0x4,%ecx                          \n"
     "movd   %xmm0,(%edi)                       \n"
     "lea    0x4(%edi),%edi                     \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -1857,7 +1857,7 @@ extern "C" void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
     "movq   %xmm2,0x10(%edi)                   \n"
     "lea    0x18(%edi),%edi                    \n"
     "sub    $0x18,%ecx                         \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -1910,7 +1910,7 @@ extern "C" void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "sub    $0x18,%ecx                         \n"
     "movq   %xmm0,0x10(%edi)                   \n"
     "lea    0x18(%edi),%edi                    \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
 
     "popa                                      \n"
     "ret                                       \n"
@@ -1967,7 +1967,7 @@ extern "C" void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "sub    $0x18,%ecx                         \n"
     "movq   %xmm0,0x10(%edi)                   \n"
     "lea    0x18(%edi),%edi                    \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -1997,7 +1997,7 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "sub    $0xc,%ecx                          \n"
     "movd   %xmm1,0x8(%edi)                    \n"
     "lea    0xc(%edi),%edi                     \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -2054,7 +2054,7 @@ extern "C" void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "mov    %ax,0x4(%edi)                      \n"
     "lea    0x6(%edi),%edi                     \n"
     "sub    $0x6,%ecx                          \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -2091,7 +2091,7 @@ extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "mov    %ax,0x4(%edi)                      \n"
     "lea    0x6(%edi),%edi                     \n"
     "sub    $0x6,%ecx                          \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "popa                                      \n"
     "ret                                       \n"
 );
@@ -2147,7 +2147,7 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2160,7 +2160,7 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     2b                                 \n"
+    "jg     2b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2174,7 +2174,7 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     3b                                 \n"
+    "jg     3b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2224,7 +2224,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2237,7 +2237,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     2b                                 \n"
+    "jg     2b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2251,7 +2251,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "sub    $0x10,%ecx                         \n"
     "movdqa %xmm0,(%esi,%edi,1)                \n"
     "lea    0x10(%esi),%esi                    \n"
-    "ja     3b                                 \n"
+    "jg     3b                                 \n"
 
     "mov    -0x1(%esi,%edi,1),%al              \n"
     "mov    %al,(%esi,%edi,1)                  \n"
@@ -2310,7 +2310,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
   "movd       %%xmm0,(%1)                      \n"
   "lea        0x4(%1),%1                       \n"
   "sub        $0x4,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2340,7 +2340,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
   "movq       %%xmm2,0x10(%1)                  \n"
   "lea        0x18(%1),%1                      \n"
   "sub        $0x18,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2392,7 +2392,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movq       %%xmm0,0x10(%1)                  \n"
   "lea        0x18(%1),%1                      \n"
   "sub        $0x18,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2452,7 +2452,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movq       %%xmm0,0x10(%1)                  \n"
   "lea        0x18(%1),%1                      \n"
   "sub        $0x18,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2486,7 +2486,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
   "movd       %%xmm1,0x8(%1)                   \n"
   "lea        0xc(%1),%1                       \n"
   "sub        $0xc,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2541,7 +2541,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "mov        %%ax,0x4(%1)                     \n"
   "lea        0x6(%1),%1                       \n"
   "sub        $0x6,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2578,7 +2578,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "mov        %%ax,0x4(%1)                     \n"
   "lea        0x6(%1),%1                       \n"
   "sub        $0x6,%2                          \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
@@ -2604,7 +2604,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0
@@ -2624,7 +2624,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0
@@ -2668,7 +2668,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0
@@ -2695,7 +2695,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0
@@ -2715,7 +2715,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0
@@ -2750,7 +2750,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "movdqa     %%xmm0,(%0)                  \n"
       "lea        0x10(%0),%0                  \n"
       "sub        $0x10,%2                     \n"
-      "ja         1b                           \n"
+      "jg         1b                           \n"
       "mov        -0x1(%0),%%al                \n"
       "mov        %%al,(%0)                    \n"
       : "+r"(dst_ptr),     // %0

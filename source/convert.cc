@@ -77,10 +77,10 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   convertloop:
     movdqa     xmm0, [eax]
     pavgb      xmm0, [eax + edx]
+    sub        ecx, 16
     movdqa     [eax + edi], xmm0
     lea        eax,  [eax + 16]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
     pop        edi
     ret
   }
@@ -95,10 +95,10 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "pavgb      (%0,%3),%%xmm0                   \n"
+  "sub        $0x10,%2                         \n"
   "movdqa     %%xmm0,(%0,%1)                   \n"
   "lea        0x10(%0),%0                      \n"
-  "sub        $0x10,%2                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_uv),  // %0
     "+r"(dst_uv),  // %1
     "+r"(pix)      // %2
@@ -495,10 +495,10 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     lea        esi, [esi + 8]
     psrlw      xmm1, 8     // V
     packuswb   xmm1, xmm1
+    sub        ecx, 16
     movq       qword ptr [edi], xmm1
     lea        edi, [edi + 8]
-    sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -534,10 +534,10 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
   "lea        0x8(%2),%2                       \n"
   "psrlw      $0x8,%%xmm1                      \n"
   "packuswb   %%xmm1,%%xmm1                    \n"
+  "sub        $0x10,%4                         \n"
   "movq       %%xmm1,(%3)                      \n"
   "lea        0x8(%3),%3                       \n"
-  "sub        $0x10,%4                         \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src_yuy2),    // %0
     "+r"(dst_y),       // %1
     "+r"(dst_u),       // %2

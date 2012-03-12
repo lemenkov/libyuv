@@ -237,7 +237,7 @@ static void I42xToYUY2Row_SSE2(const uint8* src_y,
     movdqa     [edi + 16], xmm1
     lea        edi, [edi + 32]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -276,7 +276,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
     movdqa     [edi + 16], xmm2
     lea        edi, [edi + 32]
     sub        ecx, 16
-    ja         convertloop
+    jg         convertloop
 
     pop        edi
     pop        esi
@@ -305,7 +305,7 @@ static void I42xToYUY2Row_SSE2(const uint8* src_y,
     "movdqa    %%xmm1,0x10(%3)                   \n"
     "lea       0x20(%3),%3                       \n"
     "sub       $0x10,%4                          \n"
-    "ja         1b                               \n"
+    "jg         1b                               \n"
     : "+r"(src_y),  // %0
       "+r"(src_u),  // %1
       "+r"(src_v),  // %2
@@ -340,7 +340,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
     "movdqa    %%xmm2,0x10(%3)                   \n"
     "lea       0x20(%3),%3                       \n"
     "sub       $0x10,%4                          \n"
-    "ja         1b                               \n"
+    "jg         1b                               \n"
     : "+r"(src_y),  // %0
       "+r"(src_u),  // %1
       "+r"(src_v),  // %2
@@ -1084,134 +1084,135 @@ int ConvertFromI420(const uint8* y, int y_stride,
   if (y == NULL || u == NULL || v == NULL || dst_sample == NULL) {
     return -1;
   }
+  int r = 0;
   switch (format) {
     // Single plane formats
     case FOURCC_YUY2:
-      I420ToYUY2(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride : width * 2,
-                 width, height);
+      r = I420ToYUY2(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 2,
+                     width, height);
       break;
     case FOURCC_UYVY:
-      I420ToUYVY(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride : width * 2,
-                 width, height);
+      r = I420ToUYVY(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 2,
+                     width, height);
       break;
     case FOURCC_V210:
-      I420ToV210(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride :
-                     (width + 47) / 48 * 128,
-                 width, height);
+      r = I420ToV210(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride :
+                         (width + 47) / 48 * 128,
+                     width, height);
       break;
     case FOURCC_RGBP:
-      I420ToRGB565(y, y_stride,
-                   u, u_stride,
-                   v, v_stride,
-                   dst_sample,
-                   dst_sample_stride ? dst_sample_stride : width * 2,
-                   width, height);
+      r = I420ToRGB565(y, y_stride,
+                       u, u_stride,
+                       v, v_stride,
+                       dst_sample,
+                       dst_sample_stride ? dst_sample_stride : width * 2,
+                       width, height);
       break;
     case FOURCC_RGBO:
-      I420ToARGB1555(y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_sample,
-                     dst_sample_stride ? dst_sample_stride : width * 2,
-                     width, height);
+      r = I420ToARGB1555(y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_sample,
+                         dst_sample_stride ? dst_sample_stride : width * 2,
+                         width, height);
       break;
     case FOURCC_R444:
-      I420ToARGB4444(y, y_stride,
+      r = I420ToARGB4444(y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_sample,
+                         dst_sample_stride ? dst_sample_stride : width * 2,
+                         width, height);
+      break;
+    case FOURCC_24BG:
+      r = I420ToRGB24(y, y_stride,
+                      u, u_stride,
+                      v, v_stride,
+                      dst_sample,
+                      dst_sample_stride ? dst_sample_stride : width * 3,
+                      width, height);
+      break;
+    case FOURCC_RAW:
+      r = I420ToRAW(y, y_stride,
+                    u, u_stride,
+                    v, v_stride,
+                    dst_sample,
+                    dst_sample_stride ? dst_sample_stride : width * 3,
+                    width, height);
+      break;
+    case FOURCC_ARGB:
+      r = I420ToARGB(y, y_stride,
                      u, u_stride,
                      v, v_stride,
                      dst_sample,
-                     dst_sample_stride ? dst_sample_stride : width * 2,
+                     dst_sample_stride ? dst_sample_stride : width * 4,
                      width, height);
       break;
-    case FOURCC_24BG:
-      I420ToRGB24(y, y_stride,
-                  u, u_stride,
-                  v, v_stride,
-                  dst_sample,
-                  dst_sample_stride ? dst_sample_stride : width * 3,
-                  width, height);
-      break;
-    case FOURCC_RAW:
-      I420ToRAW(y, y_stride,
-                u, u_stride,
-                v, v_stride,
-                dst_sample,
-                dst_sample_stride ? dst_sample_stride : width * 3,
-                width, height);
-      break;
-    case FOURCC_ARGB:
-      I420ToARGB(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride : width * 4,
-                 width, height);
-      break;
     case FOURCC_BGRA:
-      I420ToBGRA(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride : width * 4,
-                 width, height);
+      r = I420ToBGRA(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 4,
+                     width, height);
       break;
     case FOURCC_ABGR:
-      I420ToABGR(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample,
-                 dst_sample_stride ? dst_sample_stride : width * 4,
-                 width, height);
+      r = I420ToABGR(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 4,
+                     width, height);
       break;
     case FOURCC_BGGR:
-      I420ToBayerBGGR(y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_sample,
-                      dst_sample_stride ? dst_sample_stride : width,
-                      width, height);
+      r = I420ToBayerBGGR(y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_sample,
+                          dst_sample_stride ? dst_sample_stride : width,
+                          width, height);
       break;
     case FOURCC_GBRG:
-      I420ToBayerGBRG(y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_sample,
-                      dst_sample_stride ? dst_sample_stride : width,
-                      width, height);
+      r = I420ToBayerGBRG(y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_sample,
+                          dst_sample_stride ? dst_sample_stride : width,
+                          width, height);
       break;
     case FOURCC_GRBG:
-      I420ToBayerGRBG(y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_sample,
-                      dst_sample_stride ? dst_sample_stride : width,
-                      width, height);
+      r = I420ToBayerGRBG(y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_sample,
+                          dst_sample_stride ? dst_sample_stride : width,
+                          width, height);
       break;
     case FOURCC_RGGB:
-      I420ToBayerRGGB(y, y_stride,
-                      u, u_stride,
-                      v, v_stride,
-                      dst_sample,
-                      dst_sample_stride ? dst_sample_stride : width,
-                      width, height);
+      r = I420ToBayerRGGB(y, y_stride,
+                          u, u_stride,
+                          v, v_stride,
+                          dst_sample,
+                          dst_sample_stride ? dst_sample_stride : width,
+                          width, height);
       break;
     case FOURCC_I400:
-      I400Copy(y, y_stride,
-               dst_sample,
-               dst_sample_stride ? dst_sample_stride : width,
-               width, height);
+      r = I400Copy(y, y_stride,
+                   dst_sample,
+                   dst_sample_stride ? dst_sample_stride : width,
+                   width, height);
       break;
     // Triplanar formats
     // TODO(fbarchard): halfstride instead of halfwidth
@@ -1228,13 +1229,13 @@ int ConvertFromI420(const uint8* y, int y_stride,
         dst_v = dst_sample + width * height;
         dst_u = dst_v + halfwidth * halfheight;
       }
-      I420Copy(y, y_stride,
-               u, u_stride,
-               v, v_stride,
-               dst_sample, width,
-               dst_u, halfwidth,
-               dst_v, halfwidth,
-               width, height);
+      r = I420Copy(y, y_stride,
+                   u, u_stride,
+                   v, v_stride,
+                   dst_sample, width,
+                   dst_u, halfwidth,
+                   dst_v, halfwidth,
+                   width, height);
       break;
     }
     case FOURCC_I422:
@@ -1249,13 +1250,13 @@ int ConvertFromI420(const uint8* y, int y_stride,
         dst_v = dst_sample + width * height;
         dst_u = dst_v + halfwidth * height;
       }
-      I420ToI422(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample, width,
-                 dst_u, halfwidth,
-                 dst_v, halfwidth,
-                 width, height);
+      r = I420ToI422(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample, width,
+                     dst_u, halfwidth,
+                     dst_v, halfwidth,
+                     width, height);
       break;
     }
     case FOURCC_I444:
@@ -1269,26 +1270,26 @@ int ConvertFromI420(const uint8* y, int y_stride,
         dst_v = dst_sample + width * height;
         dst_u = dst_v + width * height;
       }
-      I420ToI444(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample, width,
-                 dst_u, width,
-                 dst_v, width,
-                 width, height);
+      r = I420ToI444(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample, width,
+                     dst_u, width,
+                     dst_v, width,
+                     width, height);
       break;
     }
     case FOURCC_I411: {
       int quarterwidth = (width + 3) / 4;
       uint8* dst_u = dst_sample + width * height;
       uint8* dst_v = dst_u + quarterwidth * height;
-      I420ToI411(y, y_stride,
-                 u, u_stride,
-                 v, v_stride,
-                 dst_sample, width,
-                 dst_u, quarterwidth,
-                 dst_v, quarterwidth,
-                 width, height);
+      r = I420ToI411(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample, width,
+                     dst_u, quarterwidth,
+                     dst_v, quarterwidth,
+                     width, height);
       break;
     }
 
@@ -1296,7 +1297,7 @@ int ConvertFromI420(const uint8* y, int y_stride,
     default:
       return -1;  // unknown fourcc - return failure code.
   }
-  return 0;
+  return r;
 }
 
 #ifdef __cplusplus

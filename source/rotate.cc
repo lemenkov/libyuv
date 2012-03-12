@@ -153,7 +153,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
     sub       ecx, 8
     movq      qword ptr [edx + esi], xmm7
     lea       edx, [edx + 2 * esi]
-    ja        convertloop
+    jg        convertloop
 
     pop       ebp
     pop       esi
@@ -281,7 +281,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     lea       edx, [edx + 2 * esi]
     movhpd    qword ptr [ebx + ebp], xmm0
     lea       ebx, [ebx + 2 * ebp]
-    ja        convertloop
+    jg        convertloop
 
     mov       esp, [esp + 16]
     pop       ebp
@@ -366,7 +366,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
     "sub        $0x8,%2                          \n"
     "movq       %%xmm7,(%1,%4)                   \n"
     "lea        (%1,%4,2),%1                     \n"
-    "ja         1b                               \n"
+    "jg         1b                               \n"
     : "+r"(src),    // %0
       "+r"(dst),    // %1
       "+r"(width)   // %2
@@ -493,7 +493,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "lea    (%edx,%esi,2),%edx                 \n"
     "movhpd %xmm0,(%ebx,%ebp,1)                \n"
     "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "ja     1b                                 \n"
+    "jg     1b                                 \n"
     "mov    0x10(%esp),%esp                    \n"
     "pop    %ebp                               \n"
     "pop    %edi                               \n"
@@ -629,7 +629,7 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
   "sub        $0x10,%2                         \n"
   "movq       %%xmm15,(%1,%4)                  \n"
   "lea        (%1,%4,2),%1                     \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
@@ -737,7 +737,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   "lea        (%1,%5,2),%1                     \n"
   "movhpd     %%xmm8,(%2,%6)                   \n"
   "lea        (%2,%6,2),%2                     \n"
-  "ja         1b                               \n"
+  "jg         1b                               \n"
   : "+r"(src),    // %0
     "+r"(dst_a),  // %1
     "+r"(dst_b),  // %2
@@ -755,8 +755,8 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 
 static void TransposeWx8_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
-                           int w) {
-  for (int i = 0; i < w; ++i) {
+                           int width) {
+  for (int i = 0; i < width; ++i) {
     dst[0] = src[0 * src_stride];
     dst[1] = src[1 * src_stride];
     dst[2] = src[2 * src_stride];
@@ -888,9 +888,9 @@ void RotatePlane180(const uint8* src, int src_stride,
 static void TransposeUVWx8_C(const uint8* src, int src_stride,
                              uint8* dst_a, int dst_stride_a,
                              uint8* dst_b, int dst_stride_b,
-                             int w) {
+                             int width) {
   int i;
-  for (i = 0; i < w; ++i) {
+  for (i = 0; i < width; ++i) {
     dst_a[0] = src[0 * src_stride + 0];
     dst_b[0] = src[0 * src_stride + 1];
     dst_a[1] = src[1 * src_stride + 0];
@@ -916,10 +916,10 @@ static void TransposeUVWx8_C(const uint8* src, int src_stride,
 static void TransposeUVWxH_C(const uint8* src, int src_stride,
                              uint8* dst_a, int dst_stride_a,
                              uint8* dst_b, int dst_stride_b,
-                             int w, int h) {
+                             int width, int height) {
   int i, j;
-  for (i = 0; i < w * 2; i += 2)
-    for (j = 0; j < h; ++j) {
+  for (i = 0; i < width * 2; i += 2)
+    for (j = 0; j < height; ++j) {
       dst_a[j + ((i >> 1) * dst_stride_a)] = src[i + (j * src_stride)];
       dst_b[j + ((i >> 1) * dst_stride_b)] = src[i + (j * src_stride) + 1];
     }

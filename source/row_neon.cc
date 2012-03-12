@@ -73,7 +73,7 @@ YUVTORGB
     "vmov.u8    d23, #255                      \n"
     "vst4.u8    {d20, d21, d22, d23}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(y_buf),    // %0
       "+r"(u_buf),    // %1
       "+r"(v_buf),    // %2
@@ -106,7 +106,7 @@ YUVTORGB
     "vmov.u8    d19, #255                      \n"
     "vst4.u8    {d19, d20, d21, d22}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(y_buf),    // %0
       "+r"(u_buf),    // %1
       "+r"(v_buf),    // %2
@@ -139,7 +139,7 @@ YUVTORGB
     "vmov.u8    d23, #255                      \n"
     "vst4.u8    {d20, d21, d22, d23}, [%3]!    \n"
     "subs       %4, %4, #8                     \n"
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(y_buf),    // %0
       "+r"(u_buf),    // %1
       "+r"(v_buf),    // %2
@@ -163,7 +163,7 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vst1.u8    {q0}, [%1]!                    \n"  // store U
     "vst1.u8    {q1}, [%2]!                    \n"  // Store V
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(src_uv),  // %0
       "+r"(dst_u),   // %1
       "+r"(dst_v),   // %2
@@ -183,7 +183,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
     "vldm       %0!,{q0,q1,q2,q3}              \n"  // load 64
     "subs       %2, %2, #64                    \n"  // 64 processed per loop
     "vstm       %1!,{q0,q1,q2,q3}              \n"  // store 64
-    "bhi        1b                             \n"
+    "bgt        1b                             \n"
     : "+r"(src),   // %0
       "+r"(dst),   // %1
       "+r"(count)  // %2  // Output registers
