@@ -10,6 +10,10 @@
 
 #include "row.h"
 
+#if defined(_M_IX86)
+#include "emmintrin.h"
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -1959,7 +1963,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 // TODO(fbarchard): Unroll and pair
 // TODO(fbarchard): branch hints __emit 0x3E taken, 0x2E not taken
 __declspec(naked)
-void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+void OrigARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   __asm {
     push       esi
     mov        esi, [esp + 4 + 4]   // src_argb
@@ -2056,6 +2060,180 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     ret
   }
 }
+
+#define UNATTENUATED 1
+#define ALIGNED 1
+#define SETALPHA 1
+
+void ARGBBlendPixel_SSE2(const uint8* src_argb, uint8* dst_argb) {
+  const uint32* s = reinterpret_cast<const uint32*>(src_argb);
+  uint32* d = reinterpret_cast<uint32*>(dst_argb);
+  __m128i rb_mask = _mm_set1_epi32(0x00FF00FF);
+#if SETALPHA
+  __m128i alpha_255 = _mm_set1_epi32(0xFF000000);
+#endif
+  __m128i c_256 = _mm_set1_epi16(0x0100);  // 8 copies of 256 (16-bit)
+
+  {
+    // Load 4 pixels
+    __m128i src_pixel = _mm_cvtsi32_si128(*s);
+    __m128i dst_pixel = _mm_cvtsi32_si128(*d);
+
+    // (a0, g0, a1, g1, a2, g2, a3, g3)  (low byte of each word)
+    __m128i src_alpha = _mm_srli_epi16(src_pixel, 8);
+
+    // (a0, a0, a1, a1, a2, g2, a3, g3)
+    src_alpha = _mm_shufflehi_epi16(src_alpha, 0xF5);
+
+    // (a0, a0, a1, a1, a2, a2, a3, a3)
+    src_alpha = _mm_shufflelo_epi16(src_alpha, 0xF5);
+
+#if UNATTENUATED
+    __m128i src_rb = _mm_and_si128(rb_mask, src_pixel);
+    __m128i src_ag = _mm_srli_epi16(src_pixel, 8);
+
+    // Multiply by red and blue by src alpha.
+    src_rb = _mm_mullo_epi16(src_rb, src_alpha);
+    // Multiply by alpha and green by src alpha.
+    src_ag = _mm_mullo_epi16(src_ag, src_alpha);
+
+    // Divide by 256.
+    src_rb = _mm_srli_epi16(src_rb, 8);
+
+    // Mask out high bits (already in the right place)
+    src_ag = _mm_andnot_si128(rb_mask, src_ag);
+
+    // Combine back into RGBA.
+    src_pixel = _mm_or_si128(src_rb, src_ag);
+#endif
+    // Subtract alphas from 256, to get 1..256
+    __m128i dst_alpha = _mm_sub_epi16(c_256, src_alpha);
+    //__m128i dst_alpha = _mm_xor_si128(src_alpha, rb_mask);
+
+    __m128i dst_rb = _mm_and_si128(rb_mask, dst_pixel);
+    __m128i dst_ag = _mm_srli_epi16(dst_pixel, 8);
+
+    // Multiply by red and blue by src alpha.
+    dst_rb = _mm_mullo_epi16(dst_rb, dst_alpha);
+    // Multiply by alpha and green by src alpha.
+    dst_ag = _mm_mullo_epi16(dst_ag, dst_alpha);
+
+    // Divide by 256.
+    dst_rb = _mm_srli_epi16(dst_rb, 8);
+
+    // Mask out high bits (already in the right place)
+    dst_ag = _mm_andnot_si128(rb_mask, dst_ag);
+
+    // Combine back into RGBA.
+    dst_pixel = _mm_or_si128(dst_rb, dst_ag);
+
+    // Add result
+    dst_pixel = _mm_adds_epu8(src_pixel, dst_pixel);
+#if SETALPHA
+    dst_pixel = _mm_adds_epu8(alpha_255, dst_pixel);
+#endif
+    *d = _mm_cvtsi128_si32(dst_pixel);
+  }
+}
+
+void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+#if ALIGNED
+  while (width >= 1 && ((uintptr_t)(dst_argb) & 15)) {
+    ARGBBlendPixel_SSE2(src_argb, dst_argb);
+    src_argb += 4;
+    dst_argb += 4;
+    --width;
+  }
+#endif
+  const __m128i *s = reinterpret_cast<const __m128i*>(src_argb);
+  __m128i *d = reinterpret_cast<__m128i*>(dst_argb);
+  __m128i rb_mask = _mm_set1_epi32(0x00FF00FF);
+#if SETALPHA
+  __m128i alpha_255 = _mm_set1_epi32(0xFF000000);
+#endif
+  __m128i c_256 = _mm_set1_epi16(0x0100);  // 8 copies of 256 (16-bit)
+
+  while (width >= 4) {
+    // Load 4 pixels
+    __m128i src_pixel = _mm_loadu_si128(s);
+#if ALIGNED
+    __m128i dst_pixel = _mm_load_si128(d);
+#else
+    __m128i dst_pixel = _mm_loadu_si128(d);
+#endif
+    // (a0, g0, a1, g1, a2, g2, a3, g3)  (low byte of each word)
+    __m128i src_alpha = _mm_srli_epi16(src_pixel, 8);
+
+    // (a0, a0, a1, a1, a2, g2, a3, g3)
+    src_alpha = _mm_shufflehi_epi16(src_alpha, 0xF5);
+
+    // (a0, a0, a1, a1, a2, a2, a3, a3)
+    src_alpha = _mm_shufflelo_epi16(src_alpha, 0xF5);
+
+#if UNATTENUATED
+    __m128i src_rb = _mm_and_si128(rb_mask, src_pixel);
+    __m128i src_ag = _mm_srli_epi16(src_pixel, 8);
+
+    // Multiply by red and blue by src alpha.
+    src_rb = _mm_mullo_epi16(src_rb, src_alpha);
+    // Multiply by alpha and green by src alpha.
+    src_ag = _mm_mullo_epi16(src_ag, src_alpha);
+
+    // Divide by 256.
+    src_rb = _mm_srli_epi16(src_rb, 8);
+
+    // Mask out high bits (already in the right place)
+    src_ag = _mm_andnot_si128(rb_mask, src_ag);
+
+    // Combine back into RGBA.
+    src_pixel = _mm_or_si128(src_rb, src_ag);
+#endif
+    // Subtract alphas from 256, to get 1..256
+    __m128i dst_alpha = _mm_sub_epi16(c_256, src_alpha);
+    //__m128i dst_alpha = _mm_xor_si128(src_alpha, rb_mask);
+
+    __m128i dst_rb = _mm_and_si128(rb_mask, dst_pixel);
+    __m128i dst_ag = _mm_srli_epi16(dst_pixel, 8);
+
+    // Multiply by red and blue by src alpha.
+    dst_rb = _mm_mullo_epi16(dst_rb, dst_alpha);
+    // Multiply by alpha and green by src alpha.
+    dst_ag = _mm_mullo_epi16(dst_ag, dst_alpha);
+
+    // Divide by 256.
+    dst_rb = _mm_srli_epi16(dst_rb, 8);
+
+    // Mask out high bits (already in the right place)
+    dst_ag = _mm_andnot_si128(rb_mask, dst_ag);
+
+    // Combine back into RGBA.
+    dst_pixel = _mm_or_si128(dst_rb, dst_ag);
+
+    // Add result
+    dst_pixel = _mm_adds_epu8(src_pixel, dst_pixel);
+#if SETALPHA
+    dst_pixel = _mm_adds_epu8(alpha_255, dst_pixel);
+#endif
+#if ALIGNED
+    _mm_store_si128(d, dst_pixel);
+#else
+    _mm_storeu_si128(d, dst_pixel);
+#endif
+    s++;
+    d++;
+    width -= 4;
+  }
+  src_argb = reinterpret_cast<const uint8*>(s);
+  dst_argb = reinterpret_cast<uint8*>(d);
+  while (width >= 1) {
+    ARGBBlendPixel_SSE2(src_argb, dst_argb);
+    src_argb += 4;
+    dst_argb += 4;
+    --width;
+  }
+
+}
+
 #endif  // HAS_ARGBBLENDROW_SSE2
 
 #endif  // _M_IX86
