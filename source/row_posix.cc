@@ -1925,106 +1925,151 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #endif  // HAS_YUY2TOYROW_SSE2
 
 #ifdef HAS_ARGBBLENDROW_SSE2
-void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  uint32 pixel = 0;
+// Blend 8 pixels at a time
+// Destination aligned to 16 bytes, multiple of 4 pixels
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
+                               int width) {
   asm volatile (
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pcmpeqb   %%xmm7,%%xmm7                   \n"
+    "psrlw     $0xf,%%xmm7                     \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrlw     $0x8,%%xmm6                     \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pslld     $24,%%xmm5                      \n"
-    "sub       %0,%1                           \n"
-    "mov       (%0),%3                         \n"
-    "sub       $0x1,%2                         \n"
-    "jle       8f                              \n"  // last1
-    "cmp       $0xff000000,%3                  \n"
-    "jae       2f                              \n"  // opaqueloop
-    "cmp       $0xffffff,%3                    \n"
-    "ja        3f                              \n"  // translucentloop
+    "psllw     $0x8,%%xmm5                     \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
 
-  // transparentloop
+  // 8 pixel loop
   "1:                                          \n"
-    "sub       $0x1,%2                         \n"
-    "lea       0x4(%0),%0                      \n"
-    "jle       8f                              \n"  // last1
-    "mov       (%0),%3                         \n"
-    "cmp       $0xffffff,%3                    \n"
-    "jbe       1b                              \n"  // transparentloop
-    "cmp       $0xff000000,%3                  \n"
-    "jb        3f                              \n"  // translucentloop
-
-  // opaqueloop
-  "2:                                          \n"
-    "mov       %3,(%0,%1,1)                    \n"
-    "lea       0x4(%0),%0                      \n"
-    "sub       $0x1,%2                         \n"
-    "jle       8f                              \n"  // last1
-    "mov       (%0),%3                         \n"
-    "cmp       $0xff000000,%3                  \n"
-    "jae       2b                              \n"  // opaqueloop
-    "cmp       $0xffffff,%3                    \n"
-    "jbe       1b                              \n"  // transparentloop
-
-  // translucentloop
-  "3:                                          \n"
-    "movq      (%0),%%xmm0                     \n"
-    "movq      (%0,%1,1),%%xmm1                \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
-    "punpcklbw %%xmm1,%%xmm1                   \n"
-    "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
-    "pshufhw   $0xff,%%xmm2,%%xmm2             \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
+    "movdqu    (%0),%%xmm3                     \n"  // first 4 pixels
+    "movdqa    %%xmm3,%%xmm0                   \n"
     "pxor      %%xmm4,%%xmm3                   \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "pmulhuw   %%xmm3,%%xmm1                   \n"
-    "paddusw   %%xmm1,%%xmm0                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "por       %%xmm5,%%xmm0                   \n"
-    "movq      %%xmm0,(%0,%1,1)                \n"
-    "lea       0x8(%0),%0                      \n"
-    "sub       $0x2,%2                         \n"
-    "jle       8f                              \n"  // last1
-    "mov       (%0),%3                         \n"
-    "cmp       $0xffffff,%3                    \n"
-    "jbe       1b                              \n"  // transparentloop
-    "cmp       $0xff000000,%3                  \n"
-    "jb        3b                              \n"  // translucentloop
-    "jmp       2b                              \n"  // opaqueloop
-
-  // last1
-  "8:                                          \n"
-    "add       $0x1,%2                         \n"  // 1 pixel left?
-    "cmp       $0x1,%2                         \n"
-    "jl        9f                              \n"  // done
-    "mov       (%0),%3                         \n"
-    "movd      %3,%%xmm0                       \n"
-    "mov       (%0,%1,1),%3                    \n"
-    "movd      %3,%%xmm1                       \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
-    "punpcklbw %%xmm1,%%xmm1                   \n"
-    "pshuflw   $0xff,%%xmm0,%%xmm2             \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
+    "movdqa    (%1),%%xmm2                     \n"
+    "psrlw     $0x8,%%xmm3                     \n"
+    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pand      %%xmm6,%%xmm2                   \n"
+    "paddw     %%xmm7,%%xmm3                   \n"
+    "pmullw    %%xmm3,%%xmm2                   \n"
+    "movdqa    (%1),%%xmm1                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "por       %%xmm4,%%xmm0                   \n"
+    "pmullw    %%xmm3,%%xmm1                   \n"
+    "movdqu    0x10(%0),%%xmm3                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "paddusb   %%xmm2,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "jle       9f                              \n"
+    "movdqa    %%xmm3,%%xmm0                   \n"  // next 4 pixels
     "pxor      %%xmm4,%%xmm3                   \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "pmulhuw   %%xmm3,%%xmm1                   \n"
-    "paddusw   %%xmm1,%%xmm0                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,%3                       \n"
-    "mov       %3,(%0,%1,1)                    \n"
-
-  // done
+    "movdqa    0x10(%1),%%xmm2                 \n"
+    "psrlw     $0x8,%%xmm3                     \n"
+    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pand      %%xmm6,%%xmm2                   \n"
+    "paddw     %%xmm7,%%xmm3                   \n"
+    "pmullw    %%xmm3,%%xmm2                   \n"
+    "movdqa    0x10(%1),%%xmm1                 \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "por       %%xmm4,%%xmm0                   \n"
+    "pmullw    %%xmm3,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "paddusb   %%xmm2,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "jg        1b                              \n"
   "9:                                          \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
-    "+r"(width),       // %2
-    "+r"(pixel)        // %3
+    "+r"(width)        // %2
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
   );
 }
+
+// Blend 1 pixel at a time, unaligned
+void ARGBBlendRow1_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm7,%%xmm7                   \n"
+    "psrlw     $0xf,%%xmm7                     \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrlw     $0x8,%%xmm6                     \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psllw     $0x8,%%xmm5                     \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
+
+  // 1 pixel loop
+  "1:                                          \n"
+    "movd      (%0),%%xmm3                     \n"
+    "lea       0x4(%0),%0                      \n"
+    "movdqa    %%xmm3,%%xmm0                   \n"
+    "pxor      %%xmm4,%%xmm3                   \n"
+    "movd      (%1),%%xmm2                     \n"
+    "psrlw     $0x8,%%xmm3                     \n"
+    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
+    "pand      %%xmm6,%%xmm2                   \n"
+    "paddw     %%xmm7,%%xmm3                   \n"
+    "pmullw    %%xmm3,%%xmm2                   \n"
+    "movd      (%1),%%xmm1                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "por       %%xmm4,%%xmm0                   \n"
+    "pmullw    %%xmm3,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "paddusb   %%xmm2,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x1,%2                         \n"
+    "movd      %%xmm0,(%1)                     \n"
+    "lea       0x4(%1),%1                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+
+void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
+    src_argb += count * 4;
+    dst_argb += count * 4;
+    width -= count;
+  }
+  // Do multiple of 4 pixels
+  if (width & ~3) {
+    ARGBBlendRow_Aligned_SSE2(src_argb, dst_argb, width & ~3);
+  }
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlendRow1_SSE2(src_argb, dst_argb, width);
+  }
+}
+
 #endif  // HAS_ARGBBLENDROW_SSE2
 
 #endif  // defined(__x86_64__) || defined(__i386__)

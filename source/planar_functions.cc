@@ -170,6 +170,10 @@ int ARGBBlend(const uint8* src_argb, int src_stride_argb,
 #if defined(HAS_ARGBBLENDROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBBlendRow = ARGBBlendRow_SSE2;
+    if (IS_ALIGNED(width, 4) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      ARGBBlendRow = ARGBBlendRow_Aligned_SSE2;
+    }
   }
 #endif
 

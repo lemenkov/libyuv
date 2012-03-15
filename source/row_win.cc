@@ -1959,279 +1959,146 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #endif  // HAS_YUY2TOYROW_SSE2
 
 #ifdef HAS_ARGBBLENDROW_SSE2
-// TODO(fbarchard): Single multiply method b+a(f-b)
-// TODO(fbarchard): Unroll and pair
-// TODO(fbarchard): branch hints __emit 0x3E taken, 0x2E not taken
-__declspec(naked)
-void OrigARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+// Blend 8 pixels at a time
+// Destination aligned to 16 bytes, multiple of 4 pixels
+// TODO(fbarchard): SSSE3 version with pshufb for alpha and maybe pmaddubsw
+__declspec(naked) __declspec(align(16))
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
+                               int width) {
   __asm {
-    push       esi
-    mov        esi, [esp + 4 + 4]   // src_argb
-    mov        edx, [esp + 4 + 8]   // dst_argb
-    mov        ecx, [esp + 4 + 12]  // width
-    pcmpeqb    xmm4, xmm4       // generate 0xffffffff do negative alpha
-    pcmpeqb    xmm5, xmm5       // generate 0xff000000 for alpha
-    pslld      xmm5, 24
-    sub        edx, esi
-    mov        eax, [esi]       // get first pixel
-    sub        ecx, 1           // ensure there are at least 2 pixels
-    jle        last1            // last pixel?
-    cmp        eax, 0xFF000000  // opaque?
-    jae        opaqueloop
-    cmp        eax, 0x00FFFFFF  // translucent?
-    ja         translucentloop
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    pcmpeqb    xmm7, xmm7       // generate constant 1
+    psrlw      xmm7, 15
+    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
+    psrlw      xmm6, 8
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
 
     align      16
- transparentloop:
-    sub        ecx, 1
-    lea        esi, [esi + 4]
-    jle        last1
-    mov        eax, [esi]       // get next pixel
-    cmp        eax, 0x00FFFFFF  // transparent?
-    jbe        transparentloop
-    cmp        eax, 0xFF000000  // translucent?
-    jb         translucentloop
+ convertloop:
+    movdqu     xmm3, [eax]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [edx]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256-alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [edx]      // _a_g
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    movdqu     xmm3, [eax + 16]
+    lea        eax, [eax + 32]
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx], xmm0
+    jle        done
 
-    align      16
- opaqueloop:
-    mov        dword ptr [esi + edx], eax
-    lea        esi, [esi + 4]
-    sub        ecx, 1
-    jle        last1
-    mov        eax, [esi]       // get next pixel
-    cmp        eax, 0xFF000000  // opaque?
-    jae        opaqueloop
-    cmp        eax, 0x00FFFFFF  // transparent?
-    jbe        transparentloop
-
-    align      16
- translucentloop:
-    movq       xmm0, qword ptr [esi]      // fetch 2 pixels
-    movq       xmm1, qword ptr [esi + edx]
-    punpcklbw  xmm0, xmm0       // src 16 bits
-    punpcklbw  xmm1, xmm1       // dst 16 bits
-    pshuflw    xmm2, xmm0, 0xff // src alpha
-    pshufhw    xmm2, xmm2, 0xff
-    movdqa     xmm3, xmm2       // dst alpha
-    pxor       xmm3, xmm4
-    pmulhuw    xmm0, xmm2       // src * a
-    pmulhuw    xmm1, xmm3       // dst * (a ^ 0xffff)
-    paddusw    xmm0, xmm1
-    psrlw      xmm0, 8
-    packuswb   xmm0, xmm0       // pack 2 pixels
-    por        xmm0, xmm5       // set alpha
-    movq       qword ptr [esi + edx], xmm0
-    lea        esi, [esi + 8]
-    sub        ecx, 2
-    jle        last1
-    mov        eax, [esi]
-    cmp        eax, 0x00FFFFFF  // transparent?
-    jbe        transparentloop
-    cmp        eax, 0xFF000000  // translucent?
-    jb         translucentloop
-    jmp        opaqueloop
-
-    align      16
- last1:
-    add        ecx, 1
-    cmp        ecx, 1           // 1 left?
-    jl         done
-
-    mov        eax, [esi]       // get next pixel
-    movd       xmm0, eax
-    mov        eax,  [esi + edx]
-    movd       xmm1, eax
-    punpcklbw  xmm0, xmm0       // src 16 bits
-    punpcklbw  xmm1, xmm1       // dst 16 bits
-    pshuflw    xmm2, xmm0, 0xff // src alpha
-    movdqa     xmm3, xmm2       // dst alpha
-    pxor       xmm3, xmm4
-    pmulhuw    xmm0, xmm2       // src * a
-    pmulhuw    xmm1, xmm3       // dst * (a ^ 0xffff)
-    paddusw    xmm0, xmm1
-    psrlw      xmm0, 8
-    packuswb   xmm0, xmm0       // pack to bytes
-    por        xmm0, xmm5       // set alpha
-    movd       eax, xmm0
-    mov        dword ptr [esi + edx], eax
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [edx + 16]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256-alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [edx + 16] // _a_g
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx + 16], xmm0
+    lea        edx, [edx + 32]
+    jg         convertloop
 
  done:
-    pop        esi
     ret
   }
 }
 
-#define UNATTENUATED 1
-#define ALIGNED 1
-#define SETALPHA 1
+// Blend 1 pixel at a time, unaligned
+__declspec(naked) __declspec(align(16))
+void ARGBBlendRow1_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    pcmpeqb    xmm7, xmm7       // generate constant 1
+    psrlw      xmm7, 15
+    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
+    psrlw      xmm6, 8
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
 
-void ARGBBlendPixel_SSE2(const uint8* src_argb, uint8* dst_argb) {
-  const uint32* s = reinterpret_cast<const uint32*>(src_argb);
-  uint32* d = reinterpret_cast<uint32*>(dst_argb);
-  __m128i rb_mask = _mm_set1_epi32(0x00FF00FF);
-#if SETALPHA
-  __m128i alpha_255 = _mm_set1_epi32(0xFF000000);
-#endif
-  __m128i c_256 = _mm_set1_epi16(0x0100);  // 8 copies of 256 (16-bit)
-
-  {
-    // Load 4 pixels
-    __m128i src_pixel = _mm_cvtsi32_si128(*s);
-    __m128i dst_pixel = _mm_cvtsi32_si128(*d);
-
-    // (a0, g0, a1, g1, a2, g2, a3, g3)  (low byte of each word)
-    __m128i src_alpha = _mm_srli_epi16(src_pixel, 8);
-
-    // (a0, a0, a1, a1, a2, g2, a3, g3)
-    src_alpha = _mm_shufflehi_epi16(src_alpha, 0xF5);
-
-    // (a0, a0, a1, a1, a2, a2, a3, a3)
-    src_alpha = _mm_shufflelo_epi16(src_alpha, 0xF5);
-
-#if UNATTENUATED
-    __m128i src_rb = _mm_and_si128(rb_mask, src_pixel);
-    __m128i src_ag = _mm_srli_epi16(src_pixel, 8);
-
-    // Multiply by red and blue by src alpha.
-    src_rb = _mm_mullo_epi16(src_rb, src_alpha);
-    // Multiply by alpha and green by src alpha.
-    src_ag = _mm_mullo_epi16(src_ag, src_alpha);
-
-    // Divide by 256.
-    src_rb = _mm_srli_epi16(src_rb, 8);
-
-    // Mask out high bits (already in the right place)
-    src_ag = _mm_andnot_si128(rb_mask, src_ag);
-
-    // Combine back into RGBA.
-    src_pixel = _mm_or_si128(src_rb, src_ag);
-#endif
-    // Subtract alphas from 256, to get 1..256
-    __m128i dst_alpha = _mm_sub_epi16(c_256, src_alpha);
-    //__m128i dst_alpha = _mm_xor_si128(src_alpha, rb_mask);
-
-    __m128i dst_rb = _mm_and_si128(rb_mask, dst_pixel);
-    __m128i dst_ag = _mm_srli_epi16(dst_pixel, 8);
-
-    // Multiply by red and blue by src alpha.
-    dst_rb = _mm_mullo_epi16(dst_rb, dst_alpha);
-    // Multiply by alpha and green by src alpha.
-    dst_ag = _mm_mullo_epi16(dst_ag, dst_alpha);
-
-    // Divide by 256.
-    dst_rb = _mm_srli_epi16(dst_rb, 8);
-
-    // Mask out high bits (already in the right place)
-    dst_ag = _mm_andnot_si128(rb_mask, dst_ag);
-
-    // Combine back into RGBA.
-    dst_pixel = _mm_or_si128(dst_rb, dst_ag);
-
-    // Add result
-    dst_pixel = _mm_adds_epu8(src_pixel, dst_pixel);
-#if SETALPHA
-    dst_pixel = _mm_adds_epu8(alpha_255, dst_pixel);
-#endif
-    *d = _mm_cvtsi128_si32(dst_pixel);
+    align      16
+ convertloop:
+    movd       xmm3, [eax]
+    lea        eax, [eax + 4]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movd       xmm2, [edx]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256-alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movd       xmm1, [edx]      // _a_g
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jg         convertloop
+    ret
   }
 }
 
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-#if ALIGNED
-  while (width >= 1 && ((uintptr_t)(dst_argb) & 15)) {
-    ARGBBlendPixel_SSE2(src_argb, dst_argb);
-    src_argb += 4;
-    dst_argb += 4;
-    --width;
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
+    src_argb += count * 4;
+    dst_argb += count * 4;
+    width -= count;
   }
-#endif
-  const __m128i *s = reinterpret_cast<const __m128i*>(src_argb);
-  __m128i *d = reinterpret_cast<__m128i*>(dst_argb);
-  __m128i rb_mask = _mm_set1_epi32(0x00FF00FF);
-#if SETALPHA
-  __m128i alpha_255 = _mm_set1_epi32(0xFF000000);
-#endif
-  __m128i c_256 = _mm_set1_epi16(0x0100);  // 8 copies of 256 (16-bit)
-
-  while (width >= 4) {
-    // Load 4 pixels
-    __m128i src_pixel = _mm_loadu_si128(s);
-#if ALIGNED
-    __m128i dst_pixel = _mm_load_si128(d);
-#else
-    __m128i dst_pixel = _mm_loadu_si128(d);
-#endif
-    // (a0, g0, a1, g1, a2, g2, a3, g3)  (low byte of each word)
-    __m128i src_alpha = _mm_srli_epi16(src_pixel, 8);
-
-    // (a0, a0, a1, a1, a2, g2, a3, g3)
-    src_alpha = _mm_shufflehi_epi16(src_alpha, 0xF5);
-
-    // (a0, a0, a1, a1, a2, a2, a3, a3)
-    src_alpha = _mm_shufflelo_epi16(src_alpha, 0xF5);
-
-#if UNATTENUATED
-    __m128i src_rb = _mm_and_si128(rb_mask, src_pixel);
-    __m128i src_ag = _mm_srli_epi16(src_pixel, 8);
-
-    // Multiply by red and blue by src alpha.
-    src_rb = _mm_mullo_epi16(src_rb, src_alpha);
-    // Multiply by alpha and green by src alpha.
-    src_ag = _mm_mullo_epi16(src_ag, src_alpha);
-
-    // Divide by 256.
-    src_rb = _mm_srli_epi16(src_rb, 8);
-
-    // Mask out high bits (already in the right place)
-    src_ag = _mm_andnot_si128(rb_mask, src_ag);
-
-    // Combine back into RGBA.
-    src_pixel = _mm_or_si128(src_rb, src_ag);
-#endif
-    // Subtract alphas from 256, to get 1..256
-    __m128i dst_alpha = _mm_sub_epi16(c_256, src_alpha);
-    //__m128i dst_alpha = _mm_xor_si128(src_alpha, rb_mask);
-
-    __m128i dst_rb = _mm_and_si128(rb_mask, dst_pixel);
-    __m128i dst_ag = _mm_srli_epi16(dst_pixel, 8);
-
-    // Multiply by red and blue by src alpha.
-    dst_rb = _mm_mullo_epi16(dst_rb, dst_alpha);
-    // Multiply by alpha and green by src alpha.
-    dst_ag = _mm_mullo_epi16(dst_ag, dst_alpha);
-
-    // Divide by 256.
-    dst_rb = _mm_srli_epi16(dst_rb, 8);
-
-    // Mask out high bits (already in the right place)
-    dst_ag = _mm_andnot_si128(rb_mask, dst_ag);
-
-    // Combine back into RGBA.
-    dst_pixel = _mm_or_si128(dst_rb, dst_ag);
-
-    // Add result
-    dst_pixel = _mm_adds_epu8(src_pixel, dst_pixel);
-#if SETALPHA
-    dst_pixel = _mm_adds_epu8(alpha_255, dst_pixel);
-#endif
-#if ALIGNED
-    _mm_store_si128(d, dst_pixel);
-#else
-    _mm_storeu_si128(d, dst_pixel);
-#endif
-    s++;
-    d++;
-    width -= 4;
+  // Do multiple of 4 pixels
+  if (width & ~3) {
+    ARGBBlendRow_Aligned_SSE2(src_argb, dst_argb, width & ~3);
   }
-  src_argb = reinterpret_cast<const uint8*>(s);
-  dst_argb = reinterpret_cast<uint8*>(d);
-  while (width >= 1) {
-    ARGBBlendPixel_SSE2(src_argb, dst_argb);
-    src_argb += 4;
-    dst_argb += 4;
-    --width;
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlendRow1_SSE2(src_argb, dst_argb, width);
   }
-
 }
 
 #endif  // HAS_ARGBBLENDROW_SSE2

@@ -452,7 +452,7 @@ void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
   }
 }
 
-#define BLENDER(f, b, a) (f * a + b * (a ^ 0xff) + 0x80) >> 8
+#define BLENDER(f, b, a) (((256 - a) * b) >> 8) + f
 void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     uint32 a = src_argb[3];

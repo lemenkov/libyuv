@@ -240,10 +240,13 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width);
 
+// ARGB preattenuated alpha blend.
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
+                               int width);
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 
-// 'Any' wrappers use memcpy()
+// 'Any' functions handle any size and alignment.
 void I420ToARGBRow_Any_SSSE3(const uint8* y_buf,
                              const uint8* u_buf,
                              const uint8* v_buf,
