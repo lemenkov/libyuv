@@ -76,6 +76,10 @@ extern "C" {
 #define HAS_I420TOABGRROW_NEON
 #endif
 
+#if defined(_MSC_VER) && !defined(YUV_DISABLE_ASM)
+#define HAS_ARGBBLENDROW_SSSE3
+#endif
+
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 typedef __declspec(align(16)) signed char vec8[16];
@@ -241,8 +245,11 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      int width);
 
 // ARGB preattenuated alpha blend.
+void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                               int width);
 void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
                                int width);
+void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 

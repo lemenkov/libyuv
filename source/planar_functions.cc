@@ -176,6 +176,15 @@ int ARGBBlend(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlendRow = ARGBBlendRow_SSSE3;
+    if (IS_ALIGNED(width, 4) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      ARGBBlendRow = ARGBBlendRow_Aligned_SSSE3;
+    }
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb, dst_argb, width);
