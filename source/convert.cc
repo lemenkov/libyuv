@@ -1588,6 +1588,33 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
     inv_dst_height = -inv_dst_height;
   }
   int r = 0;
+
+  // For formats that need 2 pass rotation, convert into buffer first
+  bool need_rot = rotation && format != FOURCC_NV12 &&
+      format != FOURCC_NV21 && format != FOURCC_I420 &&
+      format != FOURCC_YV12;
+  uint8* tmp_y = y;
+  uint8* tmp_u = u;
+  uint8* tmp_v = v;
+  int tmp_y_stride = y_stride;
+  int tmp_u_stride = u_stride;
+  int tmp_v_stride = v_stride;
+  uint8* buf = 0;
+  int abs_dst_height = (dst_height < 0) ? -dst_height : dst_height;
+  if (need_rot) {
+    int y_size = dst_width * abs_dst_height;
+    int uv_size = ((dst_width + 1) / 2) * ((abs_dst_height + 1) / 2);
+    buf = new uint8[y_size + uv_size * 2];
+    if (!buf) {
+      return 1;  // Out of memory runtime error.
+    }
+    y = buf;
+    u = y + y_size;
+    v = u + uv_size;
+    y_stride = dst_width;
+    u_stride = v_stride = ((dst_width + 1) / 2);
+  }
+
   switch (format) {
     // Single plane formats
     case FOURCC_YUY2:
@@ -1870,8 +1897,22 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
       break;
 #endif
     default:
-      return -1;  // unknown fourcc - return failure code.
+      r = -1;  // unknown fourcc - return failure code.
   }
+
+  if (need_rot) {
+    if (!r) {
+      r = I420Rotate(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     tmp_y, tmp_y_stride,
+                     tmp_u, tmp_u_stride,
+                     tmp_v, tmp_v_stride,
+                     dst_width, abs_dst_height, rotation);
+    }
+    delete buf;
+  }
+
   return r;
 }
 
