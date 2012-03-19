@@ -39,8 +39,8 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_NEON
 
-static uint32 SumSquareError_NEON(const uint8* src_a,
-                                  const uint8* src_b, int count) {
+static uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b,
+                                  int count) {
   volatile uint32 sse;
   asm volatile (
     "vmov.u8    q7, #0                         \n"
@@ -79,8 +79,8 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
 #elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_SSE2
 __declspec(naked)
-static uint32 SumSquareError_SSE2(const uint8* src_a,
-                                  const uint8* src_b, int count) {
+static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
+                                  int count) {
   __asm {
     mov        eax, [esp + 4]    // src_a
     mov        edx, [esp + 8]    // src_b
@@ -119,8 +119,8 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 
 #elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_SSE2
-static uint32 SumSquareError_SSE2(const uint8* src_a,
-                                  const uint8* src_b, int count) {
+static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
+                                  int count) {
   uint32 sse;
   asm volatile (
     "pxor      %%xmm0,%%xmm0                   \n"
@@ -165,8 +165,8 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 }
 #endif
 
-static uint32 SumSquareError_C(const uint8* src_a,
-                               const uint8* src_b, int count) {
+static uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b,
+                               int count) {
   uint32 sse = 0u;
   for (int x = 0; x < count; ++x) {
     int diff = src_a[0] - src_b[0];
@@ -177,23 +177,20 @@ static uint32 SumSquareError_C(const uint8* src_a,
   return sse;
 }
 
-uint64 ComputeSumSquareError(const uint8* src_a,
-                             const uint8* src_b, int count) {
-  uint32 (*SumSquareError)(const uint8* src_a,
-                           const uint8* src_b, int count);
+uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
+                             int count) {
+  uint32 (*SumSquareError)(const uint8* src_a, const uint8* src_b, int count) =
+      SumSquareError_C;
 #if defined(HAS_SUMSQUAREERROR_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     SumSquareError = SumSquareError_NEON;
-  } else
+  }
 #elif defined(HAS_SUMSQUAREERROR_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_a, 16) && IS_ALIGNED(src_b, 16)) {
     SumSquareError = SumSquareError_SSE2;
-  } else
-#endif
-  {
-    SumSquareError = SumSquareError_C;
   }
+#endif
   // 32K values will fit a 32bit int return value from SumSquareError.
   // After each block of 32K, accumulate into 64 bit int.
   const int kBlockSize = 1 << 15;  // 32768;
@@ -222,17 +219,18 @@ uint64 ComputeSumSquareError(const uint8* src_a,
 uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
                                   const uint8* src_b, int stride_b,
                                   int width, int height) {
-  uint32 (*SumSquareError)(const uint8* src_a,
-                           const uint8* src_b, int count);
+  uint32 (*SumSquareError)(const uint8* src_a, const uint8* src_b, int count) =
+      SumSquareError_C;
 #if defined(HAS_SUMSQUAREERROR_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(width, 16)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     SumSquareError = SumSquareError_NEON;
-  } else
-#endif
-  {
-    SumSquareError = SumSquareError_C;
   }
+#elif defined(HAS_SUMSQUAREERROR_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(src_a, 16) && IS_ALIGNED(src_b, 16)) {
+    SumSquareError = SumSquareError_SSE2;
+  }
+#endif
 
   uint64 sse = 0;
   for (int h = 0; h < height; ++h) {

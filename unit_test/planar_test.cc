@@ -95,7 +95,6 @@ TEST_F (libyuvTest, I420To##FMT##_CvsOPT) {                                    \
               dst_rgb_opt, src_width << 2,                                     \
               src_width, src_height);                                          \
   int err = 0;                                                                 \
-  int i = 0;                                                                   \
   for (int i = 0; i < src_height; ++i) {                                       \
     for (int j = 0; j < src_width << 2; ++j) {                                 \
       int diff = (int)(dst_rgb_c[i * src_height + j]) -                        \
