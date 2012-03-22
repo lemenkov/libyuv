@@ -19,7 +19,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
-#include "row.h"
+#include "source/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -78,7 +78,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
     movdqa     xmm0, [eax]
     pavgb      xmm0, [eax + edx]
     sub        ecx, 16
-    movdqa     [eax + edi], xmm0
+    movdqa     [eax + edi], xmm0     // NOLINT
     lea        eax,  [eax + 16]
     jg         convertloop
     pop        edi
@@ -86,11 +86,11 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
 #define HAS_HALFROW_SSE2
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
- asm volatile (
+  asm volatile(
   "sub        %0,%1                            \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
@@ -137,7 +137,7 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   }
   int halfwidth = (width + 1) >> 1;
   void (*HalfRow)(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix);
+                  uint8* dst_uv, int pix) = HalfRow_C;
 #if defined(HAS_HALFROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(halfwidth, 16) &&
@@ -146,11 +146,8 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
     HalfRow = HalfRow_SSE2;
-  } else
-#endif
-  {
-    HalfRow = HalfRow_C;
   }
+#endif
 
   // Copy Y plane
   if (dst_y) {
@@ -186,7 +183,7 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width);
-#elif (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
+#elif defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) && \
     !defined(YUV_DISABLE_ASM)
 void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
@@ -213,14 +210,13 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   }
   int halfwidth = (width + 1) >> 1;
   void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
-                        uint8* dst_ptr, int dst_width);
+                        uint8* dst_ptr, int dst_width) = ScaleRowDown2Int_C;
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(halfwidth, 16)) {
     ScaleRowDown2 = ScaleRowDown2Int_NEON;
-  } else
-#endif
-#if defined(HAS_SCALEROWDOWN2_SSE2)
+  }
+#elif defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(halfwidth, 16) &&
       IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
@@ -228,10 +224,8 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
     ScaleRowDown2 = ScaleRowDown2Int_SSE2;
-#endif
-  {
-    ScaleRowDown2 = ScaleRowDown2Int_C;
   }
+#endif
 
   // Copy Y plane
   if (dst_y) {
@@ -395,11 +389,12 @@ static int X420ToI420(const uint8* src_y,
   }
 
   int halfwidth = (width + 1) >> 1;
-  void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+  void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) =
+      SplitUV_C;
 #if defined(HAS_SPLITUV_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
     SplitUV = SplitUV_NEON;
-  } else
+  }
 #elif defined(HAS_SPLITUV_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(halfwidth, 16) &&
@@ -407,11 +402,8 @@ static int X420ToI420(const uint8* src_y,
       IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
     SplitUV = SplitUV_SSE2;
-  } else
-#endif
-  {
-    SplitUV = SplitUV_C;
   }
+#endif
 
   if (dst_y) {
     CopyPlane2(src_y, src_stride_y0, src_stride_y1, dst_y, dst_stride_y,
@@ -483,7 +475,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     pand       xmm2, xmm5   // even bytes are Y
     pand       xmm3, xmm5
     packuswb   xmm2, xmm3
-    movdqa     [edx], xmm2
+    movdqa     [edx], xmm2  // NOLINT
     lea        edx, [edx + 16]
     psrlw      xmm0, 8      // YUYV -> UVUV
     psrlw      xmm1, 8
@@ -491,12 +483,12 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
-    movq       qword ptr [esi], xmm0
+    movq       qword ptr [esi], xmm0  // NOLINT
     lea        esi, [esi + 8]
     psrlw      xmm1, 8     // V
     packuswb   xmm1, xmm1
     sub        ecx, 16
-    movq       qword ptr [edi], xmm1
+    movq       qword ptr [edi], xmm1  // NOLINT
     lea        edi, [edi + 8]
     jg         convertloop
 
@@ -506,11 +498,11 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
-  asm volatile (
+  asm volatile(
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
 "1:                                            \n"
@@ -604,19 +596,17 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  void (*SplitYUY2)(const uint8* src_yuy2,
-                    uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix);
+  void (*SplitYUY2)(const uint8* src_yuy2, uint8* dst_y, uint8* dst_u,
+                    uint8* dst_v, int pix) = SplitYUY2_C;
 #if defined(HAS_SPLITYUY2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     SplitYUY2 = SplitYUY2_SSE2;
-  } else
-#endif
-  {
-    SplitYUY2 = SplitYUY2_C;
   }
+#endif
+
   for (int y = 0; y < height; y += 2) {
     CopyRow(src_y, dst_y, width);
     dst_y += dst_stride_y;
@@ -800,13 +790,13 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
 #endif
 
 #ifdef LIBYUV_LITTLE_ENDIAN
-#define READWORD(p) (*((uint32*) (p)))
+#define READWORD(p) (*reinterpret_cast<const uint32*>(p))
 #else
 static inline uint32 READWORD(const uint8* p) {
-  return (uint32) p[0] |
-         ((uint32) (p[1]) << 8) |
-         ((uint32) (p[2]) << 16) |
-         ((uint32) (p[3]) << 24);
+  return static_cast<uint32>(p[0]) |
+      (static_cast<uint32>(p[1]) << 8) |
+      (static_cast<uint32>(p[2]) << 16) |
+      (static_cast<uint32>(p[3]) << 24);
 }
 #endif
 
@@ -1599,7 +1589,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   int tmp_y_stride = y_stride;
   int tmp_u_stride = u_stride;
   int tmp_v_stride = v_stride;
-  uint8* buf = 0;
+  uint8* buf = NULL;
   int abs_dst_height = (dst_height < 0) ? -dst_height : dst_height;
   if (need_rot) {
     int y_size = dst_width * abs_dst_height;
@@ -1618,7 +1608,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   switch (format) {
     // Single plane formats
     case FOURCC_YUY2:
-      src = sample + (aligned_src_width * crop_y + crop_x) * 2 ;
+      src = sample + (aligned_src_width * crop_y + crop_x) * 2;
       r = YUY2ToI420(src, aligned_src_width * 2,
                      y, y_stride,
                      u, u_stride,

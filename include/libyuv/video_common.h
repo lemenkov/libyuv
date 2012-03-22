@@ -25,6 +25,7 @@ extern "C" {
 //////////////////////////////////////////////////////////////////////////////
 // Definition of FourCC codes
 //////////////////////////////////////////////////////////////////////////////
+
 // Convert four characters to a FourCC code.
 // Needs to be a macro otherwise the OS X compiler complains when the kFormat*
 // constants are used in a switch.
@@ -57,9 +58,9 @@ enum FourCC {
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
-  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'), // bgr565
-  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'), // abgr1555
-  FOURCC_R444 = FOURCC('R', '4', '4', '4'), // argb4444
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
   FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),

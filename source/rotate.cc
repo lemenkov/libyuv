@@ -13,8 +13,8 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/convert.h"
 #include "libyuv/planar_functions.h"
-#include "rotate_priv.h"
-#include "row.h"
+#include "source/rotate_priv.h"
+#include "source/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -295,7 +295,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 #define HAS_TRANSPOSE_WX8_SSSE3
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
-  asm volatile (
+  asm volatile(
     // Read in the data from the source pointer.
     // First round of bit swap.
   "1:                                            \n"
@@ -506,7 +506,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 #define HAS_TRANSPOSE_WX8_FAST_SSSE3
 static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
                                     uint8* dst, int dst_stride, int width) {
-  asm volatile (
+  asm volatile(
   // Read in the data from the source pointer.
   // First round of bit swap.
 "1:                                            \n"
@@ -646,7 +646,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                 uint8* dst_a, int dst_stride_a,
                                 uint8* dst_b, int dst_stride_b,
                                 int w) {
-  asm volatile (
+  asm volatile(
   // Read in the data from the source pointer.
   // First round of bit swap.
 "1:                                            \n"

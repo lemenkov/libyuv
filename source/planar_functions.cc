@@ -13,7 +13,7 @@
 #include <string.h> // for memset()
 
 #include "libyuv/cpu_id.h"
-#include "row.h"
+#include "source/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -693,7 +693,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
 #if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SETROW_NEON
 static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
-  asm volatile (
+  asm volatile(
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
     "1:                                        \n"
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
@@ -763,7 +763,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
 #define HAS_SETROW_X86
 static void SetRow8_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
-  asm volatile (
+  asm volatile(
     "shr       $0x2,%1                         \n"
     "rep stosl                                 \n"
   : "+D"(dst),  // %0
@@ -778,7 +778,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
   for (int y = 0; y < height; ++y) {
     size_t width_tmp = static_cast<size_t>(width);
     uint32* d = reinterpret_cast<uint32*>(dst);
-    asm volatile (
+    asm volatile(
       "rep stosl                               \n"
     : "+D"(d),  // %0
       "+c"(width_tmp) // %1

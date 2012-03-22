@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
+#include "unit_test/unit_test.h"
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/cpu_id.h"
@@ -153,7 +152,7 @@ TEST_F(libyuvTest, BenchmarkPsnr_C) {
                   _benchmark_width, _benchmark_height);
 
   c_time = (get_time() - c_time) / _benchmark_iterations;
-  printf ("BenchmarkPsnr_C - %8d us c\n", (int)(c_time*1e6));
+  printf("BenchmarkPsnr_C - %8.2f us c\n", c_time * 1e6);
 
   MaskCpuFlags(-1);
 
@@ -176,7 +175,7 @@ TEST_F(libyuvTest, BenchmarkPsnr_OPT) {
                   _benchmark_width, _benchmark_height);
 
   opt_time = (get_time() - opt_time) / _benchmark_iterations;
-  printf ("BenchmarkPsnr_OPT - %8d us opt\n", (int)(opt_time*1e6));
+  printf("BenchmarkPsnr_OPT - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);
 
@@ -274,7 +273,7 @@ TEST_F(libyuvTest, BenchmarkSsim_C) {
                   _benchmark_width, _benchmark_height);
 
   c_time = (get_time() - c_time) / _benchmark_iterations;
-  printf ("BenchmarkSsim_C - %8d us c\n", (int)(c_time*1e6));
+  printf("BenchmarkSsim_C - %8.2f us c\n", c_time * 1e6);
 
   MaskCpuFlags(-1);
 
@@ -297,7 +296,7 @@ TEST_F(libyuvTest, BenchmarkSsim_OPT) {
                   _benchmark_width, _benchmark_height);
 
   opt_time = (get_time() - opt_time) / _benchmark_iterations;
-  printf ("BenchmarkPsnr_OPT - %8d us opt\n", (int)(opt_time*1e6));
+  printf("BenchmarkPsnr_OPT - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);
 
