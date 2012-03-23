@@ -398,11 +398,11 @@ static void I42xToUYVYRow_C(const uint8* src_y, const uint8* src_u, const uint8*
 // gcc provided macros
 #if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-#define LIBYUV_LITTLE_ENDIAN
+#define INCLUDE_LIBYUV_LITTLE_ENDIAN
 #endif
 // Visual C for x86 defines these
 #elif defined(_M_X64) || defined(_M_IX86)
-#define LIBYUV_LITTLE_ENDIAN
+#define INCLUDE_LIBYUV_LITTLE_ENDIAN
 #endif
 
 #ifdef LIBYUV_LITTLE_ENDIAN

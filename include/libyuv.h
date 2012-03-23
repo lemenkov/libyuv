@@ -8,9 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
-#ifndef LIBYUV_INCLUDE_LIBYUV_H_
-#define LIBYUV_INCLUDE_LIBYUV_H_
+#ifndef INCLUDE_LIBYUV_H_
+#define INCLUDE_LIBYUV_H_
 
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
@@ -23,4 +22,5 @@
 #include "libyuv/scale.h"
 #include "libyuv/version.h"
 #include "libyuv/video_common.h"
-#endif  // LIBYUV_INCLUDE_LIBYUV_H_
+
+#endif  // INCLUDE_LIBYUV_H_

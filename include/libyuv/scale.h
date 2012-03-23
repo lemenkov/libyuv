@@ -67,4 +67,4 @@ void SetUseReferenceImpl(bool use);
 }  // namespace libyuv
 #endif
 
-#endif // INCLUDE_LIBYUV_SCALE_H_
+#endif  // INCLUDE_LIBYUV_SCALE_H_

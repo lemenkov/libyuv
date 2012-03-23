@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LIBYUV_MJPEG_DECODER_H_
-#define LIBYUV_MJPEG_DECODER_H_
+#ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_
+#define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
 #include "libyuv/basic_types.h"
 #include "libyuv/scoped_ptr.h"
@@ -135,7 +135,7 @@ class MJpegDecoder {
   };
 
   struct BufferVector {
-    Buffer *buffers;
+    Buffer* buffers;
     int len;
     int pos;
   };
@@ -143,7 +143,8 @@ class MJpegDecoder {
   // Methods that are passed to jpeglib.
   static int fill_input_buffer(jpeg_decompress_struct *cinfo);
   static void init_source(jpeg_decompress_struct *cinfo);
-  static void skip_input_data(jpeg_decompress_struct *cinfo, long num_bytes);
+  static void skip_input_data(jpeg_decompress_struct *cinfo,
+                              long num_bytes);  // NOLINT
   static void term_source(jpeg_decompress_struct *cinfo);
 
   static void ErrorHandler(jpeg_common_struct *cinfo);
@@ -183,4 +184,4 @@ class MJpegDecoder {
 
 }  // namespace libyuv
 
-#endif  // LIBYUV_MJPEG_DECODER_H_
+#endif  // INCLUDE_LIBYUV_MJPEG_DECODER_H_

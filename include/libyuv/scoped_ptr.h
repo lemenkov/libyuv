@@ -33,8 +33,8 @@
 
 // TODO(fbarchard): move into source as implementation detail
 
-#ifndef LIBYUV_SCOPED_PTR_H__
-#define LIBYUV_SCOPED_PTR_H__
+#ifndef INCLUDE_LIBYUV_SCOPED_PTR_H_
+#define INCLUDE_LIBYUV_SCOPED_PTR_H_
 
 #include <cstddef>             // for std::ptrdiff_t
 #include <stdlib.h>            // for free() decl
@@ -255,4 +255,4 @@ void swap(scoped_ptr_malloc<T,FF>& a, scoped_ptr_malloc<T,FF>& b) {
 
 } // namespace libyuv
 
-#endif  // #ifndef LIBYUV_SCOPED_PTR_H__
+#endif  // INCLUDE_LIBYUV_SCOPED_PTR_H_

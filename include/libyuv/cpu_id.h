@@ -37,8 +37,9 @@ static __inline int TestCpuFlag(int test_flag) {
 
 // For testing, allow CPU flags to be disabled.
 // ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.
-// -1 to enable all cpu specific optimizations.
-// 0 to disable all cpu specific optimizations.
+// MaskCpuFlags(-1) to enable all cpu specific optimizations.
+// MaskCpuFlags(kCpuInitialized) to disable all cpu specific optimizations.
+// MaskCpuFlags(0) to re-initialize all cpu detection.
 void MaskCpuFlags(int enable_flags);
 
 #ifdef __cplusplus
