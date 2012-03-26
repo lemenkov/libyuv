@@ -10,10 +10,6 @@
 
 #include "source/row.h"
 
-#if defined(_M_IX86)
-#include "emmintrin.h"
-#endif
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -2079,7 +2075,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
     int count = width;
-    if (((intptr_t)(dst_argb) & 3) == 0) {
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
     ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
@@ -2186,7 +2182,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
     int count = width;
-    if (((intptr_t)(dst_argb) & 3) == 0) {
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
     ARGBBlendRow1_SSE2(src_argb, dst_argb, count);

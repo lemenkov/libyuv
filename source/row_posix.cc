@@ -109,7 +109,7 @@ CONST uvec8 kShuffleMaskARGBToRAW = {
 };
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pslld     $0x18,%%xmm5                    \n"
   "1:                                          \n"
@@ -138,7 +138,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
 }
 
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %3,%%xmm5                       \n"
     "sub       %0,%1                           \n"
   "1:                                          \n"
@@ -161,7 +161,7 @@ void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
 }
 
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %3,%%xmm5                       \n"
     "sub       %0,%1                           \n"
   "1:                                          \n"
@@ -183,7 +183,7 @@ void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
 }
 
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"  // generate mask 0xff000000
     "pslld     $0x18,%%xmm5                    \n"
     "movdqa    %3,%%xmm4                       \n"
@@ -223,7 +223,7 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
 }
 
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"  // generate mask 0xff000000
     "pslld     $0x18,%%xmm5                    \n"
     "movdqa    %3,%%xmm4                       \n"
@@ -263,7 +263,7 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
 }
 
 void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "mov       $0x1080108,%%eax                \n"
     "movd      %%eax,%%xmm5                    \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
@@ -312,7 +312,7 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "mov       $0x1080108,%%eax                \n"
     "movd      %%eax,%%xmm5                    \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
@@ -364,7 +364,7 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "mov       $0xf0f0f0f,%%eax                \n"
     "movd      %%eax,%%xmm4                    \n"
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
@@ -403,7 +403,7 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %3,%%xmm6                       \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -443,7 +443,7 @@ void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %3,%%xmm6                       \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -483,7 +483,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm3,%%xmm3                   \n"
     "psrld     $0x1b,%%xmm3                    \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
@@ -522,7 +522,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "psrld     $0x1b,%%xmm4                    \n"
     "movdqa    %%xmm4,%%xmm5                   \n"
@@ -565,7 +565,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "psllw     $0xc,%%xmm4                     \n"
     "movdqa    %%xmm4,%%xmm3                   \n"
@@ -596,7 +596,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
 }
 
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -632,7 +632,7 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -674,7 +674,7 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 // and considered unsafe.
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -687,7 +687,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -738,7 +738,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -751,7 +751,7 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
@@ -805,7 +805,7 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -841,7 +841,7 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
 }
 
 void BGRAToYRow_Unaligned_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -878,7 +878,7 @@ void BGRAToYRow_Unaligned_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
 
 void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
                        uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -891,7 +891,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -942,7 +942,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
 
 void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
                                  uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -955,7 +955,7 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
@@ -1009,7 +1009,7 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
 }
 
 void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -1045,7 +1045,7 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
 }
 
 void ABGRToYRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
   "1:                                          \n"
@@ -1082,7 +1082,7 @@ void ABGRToYRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
 
 void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
                        uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -1095,7 +1095,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -1146,7 +1146,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
 
 void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
                                  uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
@@ -1159,7 +1159,7 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "xmm3", "xmm4", "xmm5"
 #endif
   );
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
@@ -1291,7 +1291,7 @@ void OMITFP I420ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* v_buf,
                                 uint8* rgb_buf,
                                 int width) {
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1325,7 +1325,7 @@ void OMITFP I420ToBGRARow_SSSE3(const uint8* y_buf,
                                 const uint8* v_buf,
                                 uint8* rgb_buf,
                                 int width) {
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1360,7 +1360,7 @@ void OMITFP I420ToABGRRow_SSSE3(const uint8* y_buf,
                                 const uint8* v_buf,
                                 uint8* rgb_buf,
                                 int width) {
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1394,7 +1394,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* v_buf,
                                 uint8* rgb_buf,
                                 int width) {
-  asm volatile(
+  asm volatile (
     "sub       %1,%2                           \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1450,7 +1450,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
     "mov       $0x10001000,%%eax               \n"
@@ -1501,7 +1501,7 @@ CONST uvec8 kShuffleMirror = {
 
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
-  asm volatile(
+  asm volatile (
     "movdqa    %3,%%xmm5                       \n"
     "lea       -0x10(%0),%0                    \n"
   "1:                                          \n"
@@ -1526,7 +1526,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_MIRRORROW_SSE2
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
-  asm volatile(
+  asm volatile (
     "lea       -0x10(%0),%0                    \n"
   "1:                                          \n"
     "movdqu    (%0,%2),%%xmm0                  \n"
@@ -1561,7 +1561,7 @@ CONST uvec8 kShuffleMirrorUV = {
 void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
                        int width) {
   intptr_t temp_width = static_cast<intptr_t>(width);
-  asm volatile(
+  asm volatile (
     "movdqa    %4,%%xmm1                       \n"
     "lea       -16(%0,%3,2),%0                 \n"
     "sub       %1,%2                           \n"
@@ -1589,7 +1589,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 
 #ifdef HAS_SPLITUV_SSE2
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb    %%xmm5,%%xmm5                    \n"
     "psrlw      $0x8,%%xmm5                      \n"
     "sub        %1,%2                            \n"
@@ -1625,7 +1625,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 
 #ifdef HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
-  asm volatile(
+  asm volatile (
     "sub        %0,%1                          \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -1650,7 +1650,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 #ifdef HAS_COPYROW_X86
 void CopyRow_X86(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = static_cast<size_t>(width);
-  asm volatile(
+  asm volatile (
     "shr       $0x2,%2                         \n"
     "rep movsl                                 \n"
   : "+S"(src),  // %0
@@ -1664,7 +1664,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_YUY2TOYROW_SSE2
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
   "1:                                          \n"
@@ -1691,7 +1691,7 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
 
 void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
                       uint8* dst_u, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     "sub       %1,%2                           \n"
@@ -1730,7 +1730,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
 
 void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
                                uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
   "1:                                          \n"
@@ -1759,7 +1759,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2,
                                 int stride_yuy2,
                                 uint8* dst_u, uint8* dst_y,
                                 int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     "sub       %1,%2                           \n"
@@ -1797,7 +1797,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2,
 }
 
 void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
@@ -1822,7 +1822,7 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix) {
 
 void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
                       uint8* dst_u, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     "sub       %1,%2                           \n"
@@ -1861,7 +1861,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
 
 void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
                                uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
     "movdqu    0x10(%0),%%xmm1                 \n"
@@ -1886,7 +1886,7 @@ void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
 
 void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
                                 uint8* dst_u, uint8* dst_y, int pix) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     "sub       %1,%2                           \n"
@@ -1929,7 +1929,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 // Destination aligned to 16 bytes, multiple of 4 pixels
 void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
                                int width) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
     "psrlw     $0xf,%%xmm7                     \n"
     "pcmpeqb   %%xmm6,%%xmm6                   \n"
@@ -1999,7 +1999,7 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
 
 // Blend 1 pixel at a time, unaligned
 void ARGBBlendRow1_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
     "psrlw     $0xf,%%xmm7                     \n"
     "pcmpeqb   %%xmm6,%%xmm6                   \n"
@@ -2049,7 +2049,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
     int count = width;
-    if (((intptr_t)(dst_argb) & 3) == 0) {
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
     ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
