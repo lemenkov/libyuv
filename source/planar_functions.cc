@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (c) 2011 The LibYuv project authors. All Rights Reserved.
  *
@@ -71,6 +70,7 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
       MirrorRow = MirrorRow_SSSE3;
     }
 #endif
+  }
 #endif
 
   // Mirror plane
@@ -204,10 +204,10 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width) = I420ToARGBRow_C;
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_Any_NEON;
@@ -248,10 +248,10 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I444ToARGBRow)(const uint8* y_buf,
-                                      const uint8* u_buf,
-                                      const uint8* v_buf,
-                                      uint8* rgb_buf,
-                                      int width) = I444ToARGBRow_C;
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I444ToARGBRow_C;
 #if defined(HAS_I444TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 8) &&
@@ -841,7 +841,7 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   }
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
 #if defined(HAS_SETROW_X86)
-  SetRows(dst, value, width, dst_stride_argb, height);
+  SetRows32_X86(dst, value, width, dst_stride_argb, height);
 #elif defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -849,8 +849,8 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     return 0;
   }
   SetRows32_C(dst, value, width, dst_stride_argb, height);
-  return 0;
 #endif
+  return 0;
 }
 
 #ifdef __cplusplus
