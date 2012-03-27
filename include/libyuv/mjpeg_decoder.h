@@ -12,7 +12,6 @@
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
 #include "libyuv/basic_types.h"
-#include "libyuv/scoped_ptr.h"
 
 struct jpeg_common_struct;
 struct jpeg_decompress_struct;
@@ -164,9 +163,9 @@ class MJpegDecoder {
   Buffer buf_;
   BufferVector buf_vec_;
 
-  libyuv::scoped_ptr<jpeg_decompress_struct> decompress_struct_;
-  libyuv::scoped_ptr<jpeg_source_mgr> source_mgr_;
-  libyuv::scoped_ptr<SetJmpErrorMgr> error_mgr_;
+  jpeg_decompress_struct* decompress_struct_;
+  jpeg_source_mgr* source_mgr_;
+  SetJmpErrorMgr* error_mgr_;
 
   // true iff at least one component has scanline padding. (i.e.,
   // GetComponentScanlinePadding() != 0.)
