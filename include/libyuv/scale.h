@@ -25,6 +25,13 @@ enum FilterMode {
   kFilterBox = 2  // Highest quality
 };
 
+// Scale a YUV plane.
+void ScalePlane(const uint8* src, int src_stride,
+                int src_width, int src_height,
+                uint8* dst, int dst_stride,
+                int dst_width, int dst_height,
+                FilterMode filtering);
+
 // Scales a YUV 4:2:0 image from the src width and height to the
 // dst width and height.
 // If filtering is kFilterNone, a simple nearest-neighbor algorithm is

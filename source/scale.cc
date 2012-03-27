@@ -3631,11 +3631,16 @@ static void ScalePlaneDown(int src_width, int src_height,
   }
 }
 
-static void ScalePlane(const uint8* src, int src_stride,
-                       int src_width, int src_height,
-                       uint8* dst, int dst_stride,
-                       int dst_width, int dst_height,
-                       FilterMode filtering, bool use_ref) {
+// Scale a plane.
+//
+// This function in turn calls a scaling function
+// suitable for handling the desired resolutions.
+
+void ScalePlane(const uint8* src, int src_stride,
+                int src_width, int src_height,
+                uint8* dst, int dst_stride,
+                int dst_width, int dst_height,
+                FilterMode filtering) {
 #ifdef CPU_X86
   // environment variable overrides for testing.
   char *filter_override = getenv("LIBYUV_FILTER");
@@ -3650,7 +3655,7 @@ static void ScalePlane(const uint8* src, int src_stride,
     CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
   } else if (dst_width <= src_width && dst_height <= src_height) {
     // Scale down.
-    if (use_ref) {
+    if (use_reference_impl_) {
       // For testing, allow the optimized versions to be disabled.
       ScalePlaneDown(src_width, src_height, dst_width, dst_height,
                      src_stride, dst_stride, src, dst, filtering);
@@ -3689,13 +3694,9 @@ static void ScalePlane(const uint8* src, int src_stride,
   }
 }
 
-/**
- * Scale a plane.
- *
- * This function in turn calls a scaling function
- * suitable for handling the desired resolutions.
- *
- */
+// Scale an I420 image.
+//
+// This function in turn calls a scaling function for each plane.
 
 int I420Scale(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
@@ -3728,13 +3729,13 @@ int I420Scale(const uint8* src_y, int src_stride_y,
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,
-             filtering, use_reference_impl_);
+             filtering);
   ScalePlane(src_u, src_stride_u, src_halfwidth, src_halfheight,
              dst_u, dst_stride_u, dst_halfwidth, dst_halfheight,
-             filtering, use_reference_impl_);
+             filtering);
   ScalePlane(src_v, src_stride_v, src_halfwidth, src_halfheight,
              dst_v, dst_stride_v, dst_halfwidth, dst_halfheight,
-             filtering, use_reference_impl_);
+             filtering);
   return 0;
 }
 
@@ -3769,13 +3770,13 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,
-             filtering, use_reference_impl_);
+             filtering);
   ScalePlane(src_u, src_stride_u, src_halfwidth, src_halfheight,
              dst_u, dst_stride_u, dst_halfwidth, dst_halfheight,
-             filtering, use_reference_impl_);
+             filtering);
   ScalePlane(src_v, src_stride_v, src_halfwidth, src_halfheight,
              dst_v, dst_stride_v, dst_halfwidth, dst_halfheight,
-             filtering, use_reference_impl_);
+             filtering);
   return 0;
 }
 
