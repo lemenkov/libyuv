@@ -1377,7 +1377,7 @@ struct I420Buffers {
 };
 
 static void JpegCopyI420(void* opaque,
-                         const uint8** data,
+                         const uint8* const* data,
                          const int* strides,
                          int rows) {
   I420Buffers* dest = static_cast<I420Buffers*>(opaque);
@@ -1395,7 +1395,7 @@ static void JpegCopyI420(void* opaque,
 }
 
 static void JpegI422ToI420(void* opaque,
-                           const uint8** data,
+                           const uint8* const* data,
                            const int* strides,
                            int rows) {
   I420Buffers* dest = static_cast<I420Buffers*>(opaque);
@@ -1413,7 +1413,7 @@ static void JpegI422ToI420(void* opaque,
 }
 
 static void JpegI444ToI420(void* opaque,
-                           const uint8** data,
+                           const uint8* const* data,
                            const int* strides,
                            int rows) {
   I420Buffers* dest = static_cast<I420Buffers*>(opaque);
@@ -1431,7 +1431,7 @@ static void JpegI444ToI420(void* opaque,
 }
 
 static void JpegI411ToI420(void* opaque,
-                           const uint8** data,
+                           const uint8* const* data,
                            const int* strides,
                            int rows) {
   I420Buffers* dest = static_cast<I420Buffers*>(opaque);
@@ -1449,7 +1449,7 @@ static void JpegI411ToI420(void* opaque,
 }
 
 static void JpegI400ToI420(void* opaque,
-                           const uint8** data,
+                           const uint8* const* data,
                            const int* strides,
                            int rows) {
   I420Buffers* dest = static_cast<I420Buffers*>(opaque);

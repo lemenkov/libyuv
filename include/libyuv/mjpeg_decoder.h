@@ -42,7 +42,7 @@ struct SetJmpErrorMgr;
 class MJpegDecoder {
  public:
   typedef void (*CallbackFunction)(void* opaque,
-                                   const uint8** data,
+                                   const uint8* const* data,
                                    const int* strides,
                                    int rows);
 
