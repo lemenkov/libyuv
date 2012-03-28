@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LIBYUV_SOURCE_ROW_H_
-#define LIBYUV_SOURCE_ROW_H_
+#ifndef SOURCE_ROW_H_
+#define SOURCE_ROW_H_
 
 #include "libyuv/basic_types.h"
 
@@ -76,20 +76,22 @@ extern "C" {
 #define HAS_I420TOABGRROW_NEON
 #endif
 
-#if defined(_MSC_VER) && !defined(YUV_DISABLE_ASM)
+// The following are only available on Win32
+// TODO(fbarchard): Port to GCC
+#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
 #define HAS_ARGBBLENDROW_SSSE3
 #endif
 
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
-typedef __declspec(align(16)) signed char vec8[16];
-typedef __declspec(align(16)) unsigned char uvec8[16];
-typedef __declspec(align(16)) signed short vec16[8];
+typedef __declspec(align(16)) int8 vec8[16];
+typedef __declspec(align(16)) uint8 uvec8[16];
+typedef __declspec(align(16)) int16 vec16[8];
 #else // __GNUC__
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-typedef signed char __attribute__((vector_size(16))) vec8;
-typedef unsigned char __attribute__((vector_size(16))) uvec8;
-typedef signed short __attribute__((vector_size(16))) vec16;
+typedef int8 __attribute__((vector_size(16))) vec8;
+typedef uint8 __attribute__((vector_size(16))) uvec8;
+typedef int16 __attribute__((vector_size(16))) vec16;
 #endif
 
 void I420ToARGBRow_NEON(const uint8* y_buf,
@@ -341,4 +343,4 @@ void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
 }  // namespace libyuv
 #endif
 
-#endif  // LIBYUV_SOURCE_ROW_H_
+#endif  // SOURCE_ROW_H_
