@@ -8,9 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
-* Common definitions for video, including fourcc and VideoFormat
-*/
+// Common definitions for video, including fourcc and VideoFormat
 
 #ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_
 #define INCLUDE_LIBYUV_VIDEO_COMMON_H_

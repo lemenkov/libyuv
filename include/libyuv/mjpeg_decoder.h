@@ -24,7 +24,7 @@ static const uint32 kUnknownDataSize = 0xFFFFFFFF;
 enum JpegSubsamplingType {
   kJpegYuv420,
   kJpegYuv422,
-  kJpegYuv411,   // TODO(fbarchard): Test 411
+  kJpegYuv411,
   kJpegYuv444,
   kJpegYuv400,
   kJpegUnknown
@@ -42,7 +42,7 @@ struct SetJmpErrorMgr;
 class MJpegDecoder {
  public:
   typedef void (*CallbackFunction)(void* opaque,
-                                   const uint8*  const * data,
+                                   const uint8** data,
                                    const int* strides,
                                    int rows);
 
@@ -140,13 +140,13 @@ class MJpegDecoder {
   };
 
   // Methods that are passed to jpeglib.
-  static int fill_input_buffer(jpeg_decompress_struct *cinfo);
-  static void init_source(jpeg_decompress_struct *cinfo);
-  static void skip_input_data(jpeg_decompress_struct *cinfo,
+  static int fill_input_buffer(jpeg_decompress_struct* cinfo);
+  static void init_source(jpeg_decompress_struct* cinfo);
+  static void skip_input_data(jpeg_decompress_struct* cinfo,
                               long num_bytes);  // NOLINT
-  static void term_source(jpeg_decompress_struct *cinfo);
+  static void term_source(jpeg_decompress_struct* cinfo);
 
-  static void ErrorHandler(jpeg_common_struct *cinfo);
+  static void ErrorHandler(jpeg_common_struct* cinfo);
 
   void AllocOutputBuffers(int num_outbufs);
   void DestroyOutputBuffers();
@@ -173,7 +173,7 @@ class MJpegDecoder {
 
   // Temporaries used to point to scanline outputs.
   int num_outbufs_;  // Outermost size of all arrays below.
-  uint8** *scanlines_;
+  uint8*** scanlines_;
   int* scanlines_sizes_;
   // Temporary buffer used for decoding when we can't decode directly to the
   // output buffers. Large enough for just one iMCU row.
