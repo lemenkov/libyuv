@@ -874,14 +874,40 @@ void RotatePlane180(const uint8* src, int src_stride,
   {
     MirrorRow = MirrorRow_C;
   }
-
-  // Rotate by 180 is a mirror and vertical flip
-  src += src_stride * (height - 1);
-
-  for (int y = 0; y < height; ++y) {
-    MirrorRow(src, dst, width);
-    src -= src_stride;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+    CopyRow = CopyRow_NEON;
+  }
+#elif defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+#if defined(HAS_COPYROW_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) &&
+        IS_ALIGNED(width, 32) &&
+        IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+      CopyRow = CopyRow_SSE2;
+    }
+#endif
+  }
+#endif
+  if (width > kMaxStride) {
+    return;
+  }
+  // Swap first and last row and mirror the content.  Uses a temporary row.
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  const uint8* src_bot = src + src_stride * (height - 1);
+  uint8* dst_bot = dst + dst_stride * (height - 1);
+  int half_height = (height + 1) >> 1;
+  // Odd height will harmlessly mirror the middle row twice.
+  for (int y = 0; y < half_height; ++y) {
+    MirrorRow(src, row, width);  // Mirror first row into a buffer
+    src += src_stride;
+    MirrorRow(src_bot, dst, width);  // Mirror last row into first row
     dst += dst_stride;
+    CopyRow(row, dst_bot, width);  // Copy first mirrored row into last
+    src_bot -= src_stride;
+    dst_bot -= dst_stride;
   }
 }
 

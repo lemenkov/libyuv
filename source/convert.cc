@@ -1579,10 +1579,14 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   }
   int r = 0;
 
-  // For formats that need 2 pass rotation, convert into buffer first
-  bool need_rot = rotation && format != FOURCC_NV12 &&
+  // One pass rotation is available for some formats.  For the rest, convert
+  // to I420 (with optional vertical flipping) into a temporary I420 buffer,
+  // and then rotate the I420 to the final destination buffer.
+  // For in-place conversion, if destination y is same as source sample,
+  // also enable temporary buffer.
+  bool need_buf = (rotation && format != FOURCC_NV12 &&
       format != FOURCC_NV21 && format != FOURCC_I420 &&
-      format != FOURCC_YV12;
+      format != FOURCC_YV12) || y == sample;
   uint8* tmp_y = y;
   uint8* tmp_u = u;
   uint8* tmp_v = v;
@@ -1591,7 +1595,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
   int tmp_v_stride = v_stride;
   uint8* buf = NULL;
   int abs_dst_height = (dst_height < 0) ? -dst_height : dst_height;
-  if (need_rot) {
+  if (need_buf) {
     int y_size = dst_width * abs_dst_height;
     int uv_size = ((dst_width + 1) / 2) * ((abs_dst_height + 1) / 2);
     buf = new uint8[y_size + uv_size * 2];
@@ -1890,7 +1894,7 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
       r = -1;  // unknown fourcc - return failure code.
   }
 
-  if (need_rot) {
+  if (need_buf) {
     if (!r) {
       r = I420Rotate(y, y_stride,
                      u, u_stride,
