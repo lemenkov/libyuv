@@ -78,7 +78,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
     movdqa     xmm0, [eax]
     pavgb      xmm0, [eax + edx]
     sub        ecx, 16
-    movdqa     [eax + edi], xmm0     // NOLINT
+    movdqa     [eax + edi], xmm0
     lea        eax,  [eax + 16]
     jg         convertloop
     pop        edi
@@ -475,7 +475,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     pand       xmm2, xmm5   // even bytes are Y
     pand       xmm3, xmm5
     packuswb   xmm2, xmm3
-    movdqa     [edx], xmm2  // NOLINT
+    movdqa     [edx], xmm2
     lea        edx, [edx + 16]
     psrlw      xmm0, 8      // YUYV -> UVUV
     psrlw      xmm1, 8
@@ -483,12 +483,12 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     movdqa     xmm1, xmm0
     pand       xmm0, xmm5  // U
     packuswb   xmm0, xmm0
-    movq       qword ptr [esi], xmm0  // NOLINT
+    movq       qword ptr [esi], xmm0
     lea        esi, [esi + 8]
     psrlw      xmm1, 8     // V
     packuswb   xmm1, xmm1
     sub        ecx, 16
-    movq       qword ptr [edi], xmm1  // NOLINT
+    movq       qword ptr [edi], xmm1
     lea        edi, [edi + 8]
     jg         convertloop
 

@@ -105,7 +105,7 @@ CONST uvec8 kShuffleMaskARGBToRGB24 = {
 
 // Shuffle table for converting ARGB to RAW.
 CONST uvec8 kShuffleMaskARGBToRAW = {
-  2u, 1u,0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
+  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -1727,6 +1727,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
 #endif
   );
 }
+
 
 void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
                                uint8* dst_y, int pix) {

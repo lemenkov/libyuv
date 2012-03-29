@@ -269,14 +269,14 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN38_NEON
-const uint8 shuf38[16] __attribute__ ((aligned(16))) =
+const uvec8 shuf38 =
   { 0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0 };
-const uint8 shuf38_2[16] __attribute__ ((aligned(16))) =
+const uvec8 shuf38_2 =
   { 0, 8, 16, 2, 10, 17, 4, 12, 18, 6, 14, 19, 0, 0, 0, 0 };
-const unsigned short mult38_div6[8] __attribute__ ((aligned(16))) =
+const vec16 mult38_div6 =
   { 65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12,
     65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12 };
-const unsigned short mult38_div9[8] __attribute__ ((aligned(16))) =
+const vec16 mult38_div9 =
   { 65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18,
     65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18 };
 
@@ -566,11 +566,11 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
  */
 
 // Constants for SSE2 code
-#elif (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__)) && \
+#elif defined(_M_IX86) || defined(__i386__) || defined(__x86_64__) && \
     !defined(YUV_DISABLE_ASM)
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__)) && \
+#elif defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__) && \
     defined(__i386__)
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
@@ -583,7 +583,7 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
     ".private_extern _" #name "                \n"                             \
     ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
-#elif (defined(__MINGW32__) || defined(__CYGWIN__)) && defined(__i386__)
+#elif defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
     ".align 4,0x90                             \n"                             \
@@ -1547,7 +1547,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
 
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
@@ -2095,7 +2095,7 @@ extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "popa                                      \n"
     "ret                                       \n"
 );
-#endif // __PIC__
+#endif  // __PIC__
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2
@@ -2910,7 +2910,8 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 #endif
 
 // (1-f)a + fb can be replaced with a + f(b-a)
-#define BLENDER(a, b, f) ((int)(a) + ((f) * ((int)(b) - (int)(a)) >> 16))
+#define BLENDER(a, b, f) (static_cast<int>(a) + \
+    ((f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
 
 static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                               int dst_width, int x, int dx) {
@@ -3067,24 +3068,22 @@ static void ScalePlaneDown2(int src_width, int src_height,
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
   void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
-                        uint8* dst_ptr, int dst_width);
+                        uint8* dst_ptr, int dst_width) =
+      filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(dst_width, 16)) {
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
-  } else
-#endif
-#if defined(HAS_SCALEROWDOWN2_SSE2)
+  }
+#elif defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 16) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
-  } else
-#endif
-  {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
   }
+#endif
+
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
@@ -3107,23 +3106,21 @@ static void ScalePlaneDown4(int src_width, int src_height,
   assert(IS_ALIGNED(src_width, 4));
   assert(IS_ALIGNED(src_height, 4));
   void (*ScaleRowDown4)(const uint8* src_ptr, int src_stride,
-                        uint8* dst_ptr, int dst_width);
+                        uint8* dst_ptr, int dst_width) =
+      filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
 #if defined(HAS_SCALEROWDOWN4_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(dst_width, 4)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Int_NEON : ScaleRowDown4_NEON;
-  } else
-#endif
-#if defined(HAS_SCALEROWDOWN4_SSE2)
+  }
+#elif defined(HAS_SCALEROWDOWN4_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 8) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
-  } else
-#endif
-  {
-    ScaleRowDown4 = filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
   }
+#endif
+
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown4(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += (src_stride << 2);
@@ -3146,18 +3143,17 @@ static void ScalePlaneDown8(int src_width, int src_height,
   assert(IS_ALIGNED(src_width, 8));
   assert(IS_ALIGNED(src_height, 8));
   void (*ScaleRowDown8)(const uint8* src_ptr, int src_stride,
-                        uint8* dst_ptr, int dst_width);
+                        uint8* dst_ptr, int dst_width) =
+      filtering && (dst_width <= kMaxOutputWidth) ?
+      ScaleRowDown8Int_C : ScaleRowDown8_C;
 #if defined(HAS_SCALEROWDOWN8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 4) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleRowDown8 = filtering ? ScaleRowDown8Int_SSE2 : ScaleRowDown8_SSE2;
-  } else
-#endif
-  {
-    ScaleRowDown8 = filtering && (dst_width <= kMaxOutputWidth) ?
-        ScaleRowDown8Int_C : ScaleRowDown8_C;
   }
+#endif
+
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown8(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += (src_stride << 3);
@@ -3181,6 +3177,13 @@ static void ScalePlaneDown34(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
   void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+  if (!filtering) {
+    ScaleRowDown34_0 = ScaleRowDown34_C;
+    ScaleRowDown34_1 = ScaleRowDown34_C;
+  } else {
+    ScaleRowDown34_0 = ScaleRowDown34_0_Int_C;
+    ScaleRowDown34_1 = ScaleRowDown34_1_Int_C;
+  }
 #if defined(HAS_SCALEROWDOWN34_NEON)
   if (TestCpuFlag(kCpuHasNEON) && (dst_width % 24 == 0)) {
     if (!filtering) {
@@ -3190,7 +3193,14 @@ static void ScalePlaneDown34(int src_width, int src_height,
       ScaleRowDown34_0 = ScaleRowDown34_0_Int_NEON;
       ScaleRowDown34_1 = ScaleRowDown34_1_Int_NEON;
     }
-  } else
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN34_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && (dst_width % 24 == 0) &&
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) && filtering) {
+    ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSE2;
+    ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSE2;
+  }
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0) &&
@@ -3202,24 +3212,8 @@ static void ScalePlaneDown34(int src_width, int src_height,
       ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSSE3;
       ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSSE3;
     }
-  } else
-#endif
-#if defined(HAS_SCALEROWDOWN34_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && (dst_width % 24 == 0) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) && filtering) {
-    ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSE2;
-    ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSE2;
-  } else
-#endif
-  {
-    if (!filtering) {
-      ScaleRowDown34_0 = ScaleRowDown34_C;
-      ScaleRowDown34_1 = ScaleRowDown34_C;
-    } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Int_C;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Int_C;
-    }
   }
+#endif
 
   for (int y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
@@ -3272,6 +3266,13 @@ static void ScalePlaneDown38(int src_width, int src_height,
                            uint8* dst_ptr, int dst_width);
   void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
+  if (!filtering) {
+    ScaleRowDown38_3 = ScaleRowDown38_C;
+    ScaleRowDown38_2 = ScaleRowDown38_C;
+  } else {
+    ScaleRowDown38_3 = ScaleRowDown38_3_Int_C;
+    ScaleRowDown38_2 = ScaleRowDown38_2_Int_C;
+  }
 #if defined(HAS_SCALEROWDOWN38_NEON)
   if (TestCpuFlag(kCpuHasNEON) && (dst_width % 12 == 0)) {
     if (!filtering) {
@@ -3281,9 +3282,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
       ScaleRowDown38_3 = ScaleRowDown38_3_Int_NEON;
       ScaleRowDown38_2 = ScaleRowDown38_2_Int_NEON;
     }
-  } else
-#endif
-#if defined(HAS_SCALEROWDOWN38_SSSE3)
+  }
+#elif defined(HAS_SCALEROWDOWN38_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     if (!filtering) {
@@ -3293,17 +3293,9 @@ static void ScalePlaneDown38(int src_width, int src_height,
       ScaleRowDown38_3 = ScaleRowDown38_3_Int_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_2_Int_SSSE3;
     }
-  } else
-#endif
-  {
-    if (!filtering) {
-      ScaleRowDown38_3 = ScaleRowDown38_C;
-      ScaleRowDown38_2 = ScaleRowDown38_C;
-    } else {
-      ScaleRowDown38_3 = ScaleRowDown38_3_Int_C;
-      ScaleRowDown38_2 = ScaleRowDown38_2_Int_C;
-    }
   }
+#endif
+
   for (int y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
@@ -3426,23 +3418,21 @@ static void ScalePlaneBox(int src_width, int src_height,
   } else {
     ALIGN16(uint16 row[kMaxInputWidth]);
     void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
-                         uint16* dst_ptr, int src_width, int src_height);
+                         uint16* dst_ptr, int src_width, int src_height)=
+        ScaleAddRows_C;
     void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
                          const uint16* src_ptr, uint8* dst_ptr);
-#if defined(HAS_SCALEADDROWS_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
-      ScaleAddRows = ScaleAddRows_SSE2;
-    } else
-#endif
-    {
-      ScaleAddRows = ScaleAddRows_C;
-    }
     if (dx & 0xffff) {
       ScaleAddCols = ScaleAddCols2_C;
     } else {
       ScaleAddCols = ScaleAddCols1_C;
     }
+#if defined(HAS_SCALEADDROWS_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) &&
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+      ScaleAddRows = ScaleAddRows_SSE2;
+    }
+#endif
 
     for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
@@ -3518,27 +3508,25 @@ void ScalePlaneBilinear(int src_width, int src_height,
     ALIGN16(uint8 row[kMaxInputWidth + 1]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                             int src_stride,
-                            int dst_width, int source_y_fraction);
+                            int dst_width, int source_y_fraction) =
+        ScaleFilterRows_C;
 #if defined(HAS_SCALEFILTERROWS_NEON)
     if (TestCpuFlag(kCpuHasNEON)) {
       ScaleFilterRows = ScaleFilterRows_NEON;
-    } else
-#endif
-#if defined(HAS_SCALEFILTERROWS_SSSE3)
-    if (TestCpuFlag(kCpuHasSSSE3) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
-      ScaleFilterRows = ScaleFilterRows_SSSE3;
-    } else
+    }
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
         IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
-    } else
-#endif
-    {
-      ScaleFilterRows = ScaleFilterRows_C;
     }
+#endif
+#if defined(HAS_SCALEFILTERROWS_SSSE3)
+    if (TestCpuFlag(kCpuHasSSSE3) &&
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+      ScaleFilterRows = ScaleFilterRows_SSSE3;
+    }
+#endif
 
     int dx = (src_width << 16) / dst_width;
     int dy = (src_height << 16) / dst_height;
@@ -3645,7 +3633,7 @@ void ScalePlane(const uint8* src, int src_stride,
   // environment variable overrides for testing.
   char *filter_override = getenv("LIBYUV_FILTER");
   if (filter_override) {
-    filtering = (FilterMode)atoi(filter_override);
+    filtering = (FilterMode)atoi(filter_override);  // NOLINT
   }
 #endif
   // Use specialized scales to improve performance for common resolutions.

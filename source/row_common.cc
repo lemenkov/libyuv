@@ -471,7 +471,7 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[3] = 255u;
       } else {
         *reinterpret_cast<uint32*>(dst_argb) =
-            *reinterpret_cast<uint32*>(src_argb);
+            *reinterpret_cast<const uint32*>(src_argb);
       }
     }
     a = src_argb[4 + 3];
@@ -489,7 +489,7 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[4 + 3] = 255u;
       } else {
         *reinterpret_cast<uint32*>(dst_argb + 4) =
-            *reinterpret_cast<uint32*>(src_argb + 4);
+            *reinterpret_cast<const uint32*>(src_argb + 4);
       }
     }
     src_argb += 8;
@@ -512,7 +512,7 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[3] = 255u;
       } else {
         *reinterpret_cast<uint32*>(dst_argb) =
-            *reinterpret_cast<uint32*>(src_argb);
+            *reinterpret_cast<const uint32*>(src_argb);
       }
     }
   }

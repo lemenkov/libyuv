@@ -96,7 +96,7 @@ static const uvec8 kShuffleMaskARGBToRGB24 = {
 
 // Shuffle table for converting ARGB to RAW.
 static const uvec8 kShuffleMaskARGBToRAW = {
-  2u, 1u,0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
+  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
 __declspec(naked)
@@ -1252,7 +1252,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm psubw      xmm1, kUVBiasG                                            \
     __asm psubw      xmm2, kUVBiasR                                            \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
-    __asm movq       xmm3, qword ptr [eax]                                     \
+    __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm4                                                \
     __asm psubsw     xmm3, kYSub16                                             \

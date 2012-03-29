@@ -283,7 +283,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
     ret
   }
 }
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
 #define HAS_I42XTOYUY2ROW_SSE2
 static void I42xToYUY2Row_SSE2(const uint8* src_y,
                                const uint8* src_u,
@@ -355,7 +355,9 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
 }
 #endif
 
-static void I42xToYUY2Row_C(const uint8* src_y, const uint8* src_u, const uint8* src_v,
+static void I42xToYUY2Row_C(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
                             uint8* dst_frame, int width) {
     for (int x = 0; x < width - 1; x += 2) {
       dst_frame[0] = src_y[0];
@@ -375,7 +377,9 @@ static void I42xToYUY2Row_C(const uint8* src_y, const uint8* src_u, const uint8*
     }
 }
 
-static void I42xToUYVYRow_C(const uint8* src_y, const uint8* src_u, const uint8* src_v,
+static void I42xToUYVYRow_C(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
                             uint8* dst_frame, int width) {
     for (int x = 0; x < width - 1; x += 2) {
       dst_frame[0] = src_u[0];
@@ -406,7 +410,7 @@ static void I42xToUYVYRow_C(const uint8* src_y, const uint8* src_u, const uint8*
 #endif
 
 #ifdef LIBYUV_LITTLE_ENDIAN
-#define WRITEWORD(p, v) (*((uint32*) (p))) = v
+#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
 #else
 
 static inline void WRITEWORD(uint8* p, uint32 v) {
@@ -453,8 +457,8 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
     dst_stride_frame = -dst_stride_frame;
   }
   void (*I42xToYUY2Row)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width);
-  I42xToYUY2Row = I42xToYUY2Row_C;
+                        const uint8* src_v, uint8* dst_frame, int width) =
+      I42xToYUY2Row_C;
 #if defined(HAS_I42XTOYUY2ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
@@ -489,8 +493,8 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
     dst_stride_frame = -dst_stride_frame;
   }
   void (*I42xToYUY2Row)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width);
-  I42xToYUY2Row = I42xToYUY2Row_C;
+                        const uint8* src_v, uint8* dst_frame, int width) =
+      I42xToYUY2Row_C;
 #if defined(HAS_I42XTOYUY2ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
@@ -531,8 +535,8 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
     dst_stride_frame = -dst_stride_frame;
   }
   void (*I42xToUYVYRow)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width);
-  I42xToUYVYRow = I42xToUYVYRow_C;
+                        const uint8* src_v, uint8* dst_frame, int width) =
+      I42xToUYVYRow_C;
 #if defined(HAS_I42XTOUYVYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
@@ -567,8 +571,8 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
     dst_stride_frame = -dst_stride_frame;
   }
   void (*I42xToUYVYRow)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width);
-  I42xToUYVYRow = I42xToUYVYRow_C;
+                        const uint8* src_v, uint8* dst_frame, int width) =
+      I42xToUYVYRow_C;
 #if defined(HAS_I42XTOUYVYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
@@ -598,7 +602,7 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (width * 16 / 6 > kMaxStride || // row buffer of V210 is required
+  if (width * 16 / 6 > kMaxStride ||  // Row buffer of V210 is required.
       src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
     return -1;
   }
@@ -614,8 +618,8 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
   UYVYToV210Row = UYVYToV210Row_C;
 
   void (*I42xToUYVYRow)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width);
-  I42xToUYVYRow = I42xToUYVYRow_C;
+                        const uint8* src_v, uint8* dst_frame, int width) =
+      I42xToUYVYRow_C;
 #if defined(HAS_I42XTOUYVYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
@@ -655,17 +659,17 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       I420ToARGBRow = I420ToARGBRow_NEON;
     }
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_Any_SSSE3;
@@ -673,11 +677,9 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       I420ToARGBRow = I420ToARGBRow_SSSE3;
     }
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
+
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, dst_argb, width);
     dst_argb += dst_stride_argb;
@@ -703,17 +705,17 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
     dst_stride_bgra = -dst_stride_bgra;
   }
   void (*I420ToBGRARow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToBGRARow_C;
 #if defined(HAS_I420TOBGRAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToBGRARow = I420ToBGRARow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       I420ToBGRARow = I420ToBGRARow_NEON;
     }
-  } else
+  }
 #elif defined(HAS_I420TOBGRAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToBGRARow = I420ToBGRARow_Any_SSSE3;
@@ -721,11 +723,9 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
         IS_ALIGNED(dst_bgra, 16) && IS_ALIGNED(dst_stride_bgra, 16)) {
       I420ToBGRARow = I420ToBGRARow_SSSE3;
     }
-  } else
-#endif
-  {
-    I420ToBGRARow = I420ToBGRARow_C;
   }
+#endif
+
   for (int y = 0; y < height; ++y) {
     I420ToBGRARow(src_y, src_u, src_v, dst_bgra, width);
     dst_bgra += dst_stride_bgra;
@@ -751,17 +751,17 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
     dst_stride_abgr = -dst_stride_abgr;
   }
   void (*I420ToABGRRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToABGRRow_C;
 #if defined(HAS_I420TOABGRROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToABGRRow = I420ToABGRRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       I420ToABGRRow = I420ToABGRRow_NEON;
     }
-  } else
+  }
 #elif defined(HAS_I420TOABGRROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToABGRRow = I420ToABGRRow_Any_SSSE3;
@@ -769,11 +769,9 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
         IS_ALIGNED(dst_abgr, 16) && IS_ALIGNED(dst_stride_abgr, 16)) {
       I420ToABGRRow = I420ToABGRRow_SSSE3;
     }
-  } else
-#endif
-  {
-    I420ToABGRRow = I420ToABGRRow_C;
   }
+#endif
+
   for (int y = 0; y < height; ++y) {
     I420ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
     dst_abgr += dst_stride_abgr;
@@ -799,25 +797,23 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_NEON;
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToRGB24Row)(const uint8* src_argb, uint8* dst_rgb, int pix);
+  void (*ARGBToRGB24Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+      ARGBToRGB24Row_C;
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToRGB24Row = ARGBToRGB24Row_Any_SSSE3;
@@ -825,11 +821,8 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBToRGB24Row = ARGBToRGB24Row_SSSE3;
     }
-  } else
-#endif
-  {
-    ARGBToRGB24Row = ARGBToRGB24Row_C;
   }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, row, width);
@@ -857,25 +850,23 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_NEON;
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToRAWRow)(const uint8* src_argb, uint8* dst_rgb, int pix);
+  void (*ARGBToRAWRow)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+      ARGBToRAWRow_C;
 #if defined(HAS_ARGBTORAWROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToRAWRow = ARGBToRAWRow_Any_SSSE3;
@@ -883,11 +874,8 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBToRAWRow = ARGBToRAWRow_SSSE3;
     }
-  } else
-#endif
-  {
-    ARGBToRAWRow = ARGBToRAWRow_C;
   }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, row, width);
@@ -915,36 +903,31 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
     dst_stride_rgb = -dst_stride_rgb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_NEON;
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToRGB565Row)(const uint8* src_rgb, uint8* dst_rgb, int pix);
+  void (*ARGBToRGB565Row)(const uint8* src_rgb, uint8* dst_rgb, int pix) =
+      ARGBToRGB565Row_C;
 #if defined(HAS_ARGBTORGB565ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
     }
-  } else
-#endif
-  {
-    ARGBToRGB565Row = ARGBToRGB565Row_C;
   }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, row, width);
@@ -972,36 +955,31 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_NEON;
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToARGB1555Row)(const uint8* src_argb, uint8* dst_rgb, int pix);
+  void (*ARGBToARGB1555Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+      ARGBToARGB1555Row_C;
 #if defined(HAS_ARGBTOARGB1555ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB1555Row = ARGBToARGB1555Row_SSE2;
     }
-  } else
-#endif
-  {
-    ARGBToARGB1555Row = ARGBToARGB1555Row_C;
   }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, row, width);
@@ -1029,36 +1007,31 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*I420ToARGBRow)(const uint8* y_buf,
-                                  const uint8* u_buf,
-                                  const uint8* v_buf,
-                                  uint8* rgb_buf,
-                                  int width);
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I420ToARGBRow_C;
 #if defined(HAS_I420TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I420ToARGBRow = I420ToARGBRow_NEON;
-  } else
+  }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I420ToARGBRow = I420ToARGBRow_SSSE3;
-  } else
-#endif
-  {
-    I420ToARGBRow = I420ToARGBRow_C;
   }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToARGB4444Row)(const uint8* src_argb, uint8* dst_rgb, int pix);
+  void (*ARGBToARGB4444Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+     ARGBToARGB4444Row_C;
 #if defined(HAS_ARGBTOARGB4444ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBToARGB4444Row = ARGBToARGB4444Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB4444Row = ARGBToARGB4444Row_SSE2;
     }
-  } else
-#endif
-  {
-    ARGBToARGB4444Row = ARGBToARGB4444Row_C;
   }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I420ToARGBRow(src_y, src_u, src_v, row, width);
@@ -1080,7 +1053,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                     uint8* dst_sample, int dst_sample_stride,
                     int width, int height,
                     uint32 format) {
-
   if (y == NULL || u == NULL || v == NULL || dst_sample == NULL) {
     return -1;
   }
