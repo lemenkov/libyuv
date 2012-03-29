@@ -25,7 +25,7 @@ static const uvec8 vtbl_4x4_transpose =
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride,
                        int width) {
-  asm volatile(
+  asm volatile (
     // loops are on blocks of 8.  loop will stop when
     // counter gets to or below 0.  starting the counter
     // at w-8 allow for this
@@ -191,7 +191,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width) {
-  asm volatile(
+  asm volatile (
     // loops are on blocks of 8.  loop will stop when
     // counter gets to or below 0.  starting the counter
     // at w-8 allow for this

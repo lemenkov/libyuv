@@ -42,7 +42,7 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 static uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b,
                                   int count) {
   volatile uint32 sse;
-  asm volatile(
+  asm volatile (
     "vmov.u8    q7, #0                         \n"
     "vmov.u8    q9, #0                         \n"
     "vmov.u8    q8, #0                         \n"
@@ -116,12 +116,12 @@ static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
   }
 }
 
-#elif (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
 #define HAS_SUMSQUAREERROR_SSE2
 static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
                                   int count) {
   uint32 sse;
-  asm volatile(
+  asm volatile (
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"

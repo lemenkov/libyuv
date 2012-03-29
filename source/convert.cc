@@ -90,7 +90,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
 #define HAS_HALFROW_SSE2
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
-  asm volatile(
+  asm volatile (
   "sub        %0,%1                            \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
@@ -502,7 +502,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {
-  asm volatile(
+  asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
 "1:                                            \n"

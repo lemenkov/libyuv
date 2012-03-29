@@ -62,4 +62,4 @@ double I420Ssim(const uint8* src_y_a, int stride_y_a,
 }  // namespace libyuv
 #endif
 
-#endif // INCLUDE_LIBYUV_COMPARE_H_
+#endif  // INCLUDE_LIBYUV_COMPARE_H_

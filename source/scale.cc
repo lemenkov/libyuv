@@ -59,7 +59,7 @@ void SetUseReferenceImpl(bool use) {
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
                         uint8* dst, int dst_width) {
-  asm volatile(
+  asm volatile (
     "1:                                        \n"
     "vld2.u8    {q0,q1}, [%0]!                 \n"  // load even pixels into q0, odd into q1
     "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
@@ -75,7 +75,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
 
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
-  asm volatile(
+  asm volatile (
     "add        %1, %0                         \n"  // change the stride to row 2 pointer
     "1:                                        \n"
     "vld1.u8    {q0,q1}, [%0]!                 \n"  // load row 1 and post increment
@@ -101,7 +101,7 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN4_NEON
 static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
                                uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "1:                                        \n"
     "vld2.u8    {d0, d1}, [%0]!                \n"
     "vtrn.u8    d1, d0                         \n"
@@ -120,7 +120,7 @@ static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
 
 static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "add        r4, %0, %3                     \n"
     "add        r5, r4, %3                     \n"
     "add        %3, r5, %3                     \n"
@@ -159,7 +159,7 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
 // Point samples 32 pixels to 24 pixels.
 static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
                                 uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "1:                                        \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
     "vmov         d2, d3                       \n" // order needs to be d0, d1, d2
@@ -176,7 +176,7 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
 
 static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
     "1:                                        \n"
@@ -231,7 +231,7 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
     "1:                                        \n"
@@ -283,7 +283,7 @@ const unsigned short mult38_div9[8] __attribute__ ((aligned(16))) =
 // 32 -> 12
 static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
                                 uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "vld1.u8      {q3}, [%3]                   \n"
     "1:                                        \n"
     "vld1.u8      {d0, d1, d2, d3}, [%0]!      \n"
@@ -304,7 +304,7 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
 // 32x3 -> 12x1
 static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
     "vld1.u8      {q14}, [%5]                  \n"
     "vld1.u8      {q15}, [%6]                  \n"
@@ -413,7 +413,7 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
 // 32x2 -> 12x1
 static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
     "vld1.u8      {q14}, [%5]                  \n"
     "add          %3, %0                       \n"
@@ -508,7 +508,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 static void ScaleFilterRows_NEON(uint8* dst_ptr,
                               const uint8* src_ptr, int src_stride,
                               int dst_width, int source_y_fraction) {
-  asm volatile(
+  asm volatile (
     "cmp          %4, #0                       \n"
     "beq          2f                           \n"
     "add          %2, %1                       \n"
@@ -1555,7 +1555,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 #define HAS_SCALEROWDOWN2_SSE2
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
 "1:                                            \n"
@@ -1579,7 +1579,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
 "1:                                            \n"
@@ -1614,7 +1614,7 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN4_SSE2
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrld      $0x18,%%xmm5                     \n"
 "1:                                            \n"
@@ -1640,7 +1640,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   intptr_t temp = 0;
-  asm volatile(
+  asm volatile (
   "pcmpeqb    %%xmm7,%%xmm7                    \n"
   "psrlw      $0x8,%%xmm7                      \n"
   "lea        (%4,%4,2),%3                     \n"
@@ -1693,7 +1693,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN8_SSE2
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlq     $0x38,%%xmm5                    \n"
   "1:                                          \n"
@@ -1722,7 +1722,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width, int src_height) {
   int tmp_height = 0;
   intptr_t tmp_src = 0;
-  asm volatile(
+  asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
     "sub       $0x1,%5                         \n"
   "1:                                          \n"
@@ -2263,7 +2263,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 #elif defined(__x86_64__)
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "lea        (%3,%3,2),%%r10                  \n"
   "pxor       %%xmm7,%%xmm7                    \n"
 "1:"
@@ -2322,7 +2322,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN34_SSSE3
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%3),%%xmm3                      \n"
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
@@ -2353,7 +2353,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%4),%%xmm2                      \n"  // _shuf01
   "movdqa     (%5),%%xmm3                      \n"  // _shuf11
   "movdqa     (%6),%%xmm4                      \n"  // _shuf21
@@ -2410,7 +2410,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%4),%%xmm2                      \n"  // _shuf01
   "movdqa     (%5),%%xmm3                      \n"  // _shuf11
   "movdqa     (%6),%%xmm4                      \n"  // _shuf21
@@ -2471,7 +2471,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN38_SSSE3
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%3),%%xmm4                      \n"
   "movdqa     (%4),%%xmm5                      \n"
 "1:"
@@ -2498,7 +2498,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
   "movdqa     (%6),%%xmm6                      \n"
@@ -2555,7 +2555,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
-  asm volatile(
+  asm volatile (
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
   "movdqa     (%6),%%xmm6                      \n"
@@ -2597,7 +2597,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  const uint8* src_ptr, int src_stride,
                                  int dst_width, int source_y_fraction) {
   if (source_y_fraction == 0) {
-    asm volatile(
+    asm volatile (
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "lea        0x10(%1),%1                  \n"
@@ -2615,7 +2615,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     );
     return;
   } else if (source_y_fraction == 128) {
-    asm volatile(
+    asm volatile (
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%3,1),%%xmm2             \n"
@@ -2635,7 +2635,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     );
     return;
   } else {
-    asm volatile(
+    asm volatile (
       "mov        %3,%%eax                     \n"
       "movd       %%eax,%%xmm6                 \n"
       "punpcklwd  %%xmm6,%%xmm6                \n"
@@ -2688,7 +2688,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                   const uint8* src_ptr, int src_stride,
                                   int dst_width, int source_y_fraction) {
   if (source_y_fraction <= 1) {
-    asm volatile(
+    asm volatile (
    "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "lea        0x10(%1),%1                  \n"
@@ -2706,7 +2706,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     );
     return;
   } else if (source_y_fraction == 128) {
-    asm volatile(
+    asm volatile (
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%3,1),%%xmm2             \n"
@@ -2726,7 +2726,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     );
     return;
   } else {
-    asm volatile(
+    asm volatile (
       "mov        %3,%%eax                     \n"
       "shr        %%eax                        \n"
       "mov        %%al,%%ah                    \n"

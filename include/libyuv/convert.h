@@ -215,4 +215,4 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
 }  // namespace libyuv
 #endif
 
-#endif // INCLUDE_LIBYUV_CONVERT_H_
+#endif  // INCLUDE_LIBYUV_CONVERT_H_

@@ -61,7 +61,7 @@ void I420ToARGBRow_NEON(const uint8* y_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
                         int width) {
-  asm volatile(
+  asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"
     "vmov.u8    d26, #128                      \n"
@@ -93,7 +93,7 @@ void I420ToBGRARow_NEON(const uint8* y_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
                         int width) {
-  asm volatile(
+  asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"
     "vmov.u8    d26, #128                      \n"
@@ -126,7 +126,7 @@ void I420ToABGRRow_NEON(const uint8* y_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
                         int width) {
-  asm volatile(
+  asm volatile (
     "vld1.u8    {d24}, [%5]                    \n"
     "vld1.u8    {d25}, [%6]                    \n"
     "vmov.u8    d26, #128                      \n"
@@ -157,7 +157,7 @@ YUVTORGB
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile(
+  asm volatile (
   "1:                                          \n"
     "vld2.u8    {q0,q1}, [%0]!                 \n"  // load 16 pairs of UV
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
@@ -177,7 +177,7 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
 #ifdef HAS_COPYROW_NEON
 // Copy multiple of 64
 void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
-  asm volatile(
+  asm volatile (
   "1:                                          \n"
     "pld        [%0, #0xC0]                    \n"  // preload
     "vldm       %0!,{q0,q1,q2,q3}              \n"  // load 64
@@ -195,7 +195,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 
 #ifdef HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
-  asm volatile(
+  asm volatile (
     // compute where to start writing destination
     "add         %1, %2                        \n"
     // work on segments that are multiples of 16
@@ -270,7 +270,7 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_MIRRORROWUV_NEON
 void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
-  asm volatile(
+  asm volatile (
     // compute where to start writing destination
     "add         %1, %3                        \n"  // dst_a + width
     "add         %2, %3                        \n"  // dst_b + width

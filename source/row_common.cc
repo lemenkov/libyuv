@@ -10,8 +10,9 @@
 
 #include "source/row.h"
 
-#include "libyuv/basic_types.h"
 #include <string.h>  // For memcpy
+
+#include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -195,7 +196,7 @@ static __inline int RGBToV(uint8 r, uint8 g, uint8 b) {
   return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
 }
 
-#define MAKEROWY(NAME,R,G,B) \
+#define MAKEROWY(NAME, R, G, B) \
 void NAME ## ToYRow_C(const uint8* src_argb0, uint8* dst_y, int width) {       \
   for (int x = 0; x < width; ++x) {                                            \
     dst_y[0] = RGBToY(src_argb0[R], src_argb0[G], src_argb0[B]);               \
@@ -229,9 +230,9 @@ void NAME ## ToUVRow_C(const uint8* src_rgb0, int src_stride_rgb,              \
   }                                                                            \
 }
 
-MAKEROWY(ARGB,2,1,0)
-MAKEROWY(BGRA,1,2,3)
-MAKEROWY(ABGR,0,1,2)
+MAKEROWY(ARGB, 2, 1, 0)
+MAKEROWY(BGRA, 1, 2, 3)
+MAKEROWY(ABGR, 0, 1, 2)
 
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
@@ -263,11 +264,11 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 static __inline uint32 Clip(int32 val) {
   if (val < 0) {
-    return (uint32) 0;
-  } else if (val > 255){
-    return (uint32) 255;
+    return static_cast<uint32>(0);
+  } else if (val > 255) {
+    return static_cast<uint32>(255);
   }
-  return (uint32) val;
+  return static_cast<uint32>(val);
 }
 
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
@@ -469,7 +470,8 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[2] = BLENDER(fr, br, a);
         dst_argb[3] = 255u;
       } else {
-        *(uint32*)dst_argb = *(uint32*)src_argb;
+        *reinterpret_cast<uint32*>(dst_argb) =
+            *reinterpret_cast<uint32*>(src_argb);
       }
     }
     a = src_argb[4 + 3];
@@ -486,7 +488,8 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[4 + 2] = BLENDER(fr, br, a);
         dst_argb[4 + 3] = 255u;
       } else {
-        *(uint32*)(dst_argb + 4) = *(uint32*)(src_argb + 4);
+        *reinterpret_cast<uint32*>(dst_argb + 4) =
+            *reinterpret_cast<uint32*>(src_argb + 4);
       }
     }
     src_argb += 8;
@@ -508,7 +511,8 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
         dst_argb[2] = BLENDER(fr, br, a);
         dst_argb[3] = 255u;
       } else {
-        *(uint32*)dst_argb = *(uint32*)src_argb;
+        *reinterpret_cast<uint32*>(dst_argb) =
+            *reinterpret_cast<uint32*>(src_argb);
       }
     }
   }

@@ -53,7 +53,7 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
 #define HAS_ARGBTOBAYERROW_SSSE3
 static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
                                  uint32 selector, int pix) {
-  asm volatile(
+  asm volatile (
     "movd   %3,%%xmm5                          \n"
     "pshufd $0x0,%%xmm5,%%xmm5                 \n"
 "1:                                            \n"

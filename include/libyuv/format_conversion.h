@@ -44,8 +44,8 @@ int BayerRGGBToI420(const uint8* src_bayer, int src_stride_bayer,
                     int width, int height);
 
 // Temporary API mapper
-#define BayerRGBToI420(b,bs,f,y,ys,u,us,v,vs,w,h) \
-    BayerToI420(b,bs,y,ys,u,us,v,vs,w,h,f)
+#define BayerRGBToI420(b, bs, f, y, ys, u, us, v, vs, w, h) \
+    BayerToI420(b, bs, y, ys, u, us, v, vs, w, h, f)
 
 int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
                 uint8* dst_y, int dst_stride_y,
@@ -80,8 +80,8 @@ int I420ToBayerRGGB(const uint8* src_y, int src_stride_y,
                     int width, int height);
 
 // Temporary API mapper
-#define I420ToBayerRGB(y,ys,u,us,v,vs,b,bs,f,w,h) \
-    I420ToBayer(y,ys,u,us,v,vs,b,bs,w,h,f)
+#define I420ToBayerRGB(y, ys, u, us, v, vs, b, bs, f, w, h) \
+    I420ToBayer(y, ys, u, us, v, vs, b, bs, w, h, f)
 
 int I420ToBayer(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
@@ -108,7 +108,7 @@ int BayerRGGBToARGB(const uint8* src_bayer, int src_stride_bayer,
                     int width, int height);
 
 // Temporary API mapper
-#define BayerRGBToARGB(b,bs,f,a,as,w,h) BayerToARGB(b,bs,a,as,w,h,f)
+#define BayerRGBToARGB(b, bs, f, a, as, w, h) BayerToARGB(b, bs, a, as, w, h, f)
 
 int BayerToARGB(const uint8* src_bayer, int src_stride_bayer,
                 uint8* dst_argb, int dst_stride_argb,
@@ -133,7 +133,7 @@ int ARGBToBayerRGGB(const uint8* src_argb, int src_stride_argb,
                     int width, int height);
 
 // Temporary API mapper
-#define ARGBToBayerRGB(a,as,b,bs,f,w,h) ARGBToBayer(b,bs,a,as,w,h,f)
+#define ARGBToBayerRGB(a, as, b, bs, f, w, h) ARGBToBayer(b, bs, a, as, w, h, f)
 
 int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_bayer, int dst_stride_bayer,

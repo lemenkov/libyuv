@@ -139,4 +139,4 @@ int ConvertFromI420(const uint8* y, int y_stride,
 }  // namespace libyuv
 #endif
 
-#endif // INCLUDE_LIBYUV_CONVERT_FROM_H_
+#endif  // INCLUDE_LIBYUV_CONVERT_FROM_H_
