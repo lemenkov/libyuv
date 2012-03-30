@@ -1389,6 +1389,109 @@ void OMITFP I420ToABGRRow_SSSE3(const uint8* y_buf,
   );
 }
 
+void OMITFP I420ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
+                                          const uint8* u_buf,
+                                          const uint8* v_buf,
+                                          uint8* rgb_buf,
+                                          int width) {
+  asm volatile (
+    "sub       %1,%2                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+  "1:                                          \n"
+    YUVTORGB
+    "punpcklbw %%xmm1,%%xmm0                   \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm2,%%xmm0                   \n"
+    "punpckhwd %%xmm2,%%xmm1                   \n"
+    "movdqu    %%xmm0,(%3)                     \n"
+    "movdqu    %%xmm1,0x10(%3)                 \n"
+    "lea       0x20(%3),%3                     \n"
+    "sub       $0x8,%4                         \n"
+    "jg        1b                              \n"
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+rm"(width)    // %4
+  : "r"(&kYuvConstants.kUVToB) // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void OMITFP I420ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
+                                          const uint8* u_buf,
+                                          const uint8* v_buf,
+                                          uint8* rgb_buf,
+                                          int width) {
+  asm volatile (
+    "sub       %1,%2                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+  "1:                                          \n"
+    YUVTORGB
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "punpcklbw %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm5                   \n"
+    "movdqa    %%xmm5,%%xmm0                   \n"
+    "punpcklwd %%xmm1,%%xmm5                   \n"
+    "punpckhwd %%xmm1,%%xmm0                   \n"
+    "movdqu    %%xmm5,(%3)                     \n"
+    "movdqu    %%xmm0,0x10(%3)                 \n"
+    "lea       0x20(%3),%3                     \n"
+    "sub       $0x8,%4                         \n"
+    "jg        1b                              \n"
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+rm"(width)    // %4
+  : "r"(&kYuvConstants.kUVToB) // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void OMITFP I420ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
+                                          const uint8* u_buf,
+                                          const uint8* v_buf,
+                                          uint8* rgb_buf,
+                                          int width) {
+  asm volatile (
+    "sub       %1,%2                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+  "1:                                          \n"
+    YUVTORGB
+    "punpcklbw %%xmm1,%%xmm2                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm1                   \n"
+    "punpcklwd %%xmm0,%%xmm2                   \n"
+    "punpckhwd %%xmm0,%%xmm1                   \n"
+    "movdqu    %%xmm2,(%3)                     \n"
+    "movdqu    %%xmm1,0x10(%3)                 \n"
+    "lea       0x20(%3),%3                     \n"
+    "sub       $0x8,%4                         \n"
+    "jg        1b                              \n"
+  : "+r"(y_buf),    // %0
+    "+r"(u_buf),    // %1
+    "+r"(v_buf),    // %2
+    "+r"(rgb_buf),  // %3
+    "+rm"(width)    // %4
+  : "r"(&kYuvConstants.kUVToB) // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,

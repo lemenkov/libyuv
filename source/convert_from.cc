@@ -671,11 +671,13 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #elif defined(HAS_I420TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I420ToARGBRow = I420ToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8) &&
-        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-      I420ToARGBRow = I420ToARGBRow_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I420ToARGBRow = I420ToARGBRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        I420ToARGBRow = I420ToARGBRow_SSSE3;
+      }
     }
   }
 #endif
@@ -717,11 +719,13 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
     }
   }
 #elif defined(HAS_I420TOBGRAROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I420ToBGRARow = I420ToBGRARow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8) &&
-        IS_ALIGNED(dst_bgra, 16) && IS_ALIGNED(dst_stride_bgra, 16)) {
-      I420ToBGRARow = I420ToBGRARow_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I420ToBGRARow = I420ToBGRARow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_bgra, 16) && IS_ALIGNED(dst_stride_bgra, 16)) {
+        I420ToBGRARow = I420ToBGRARow_SSSE3;
+      }
     }
   }
 #endif
@@ -763,11 +767,13 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
     }
   }
 #elif defined(HAS_I420TOABGRROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I420ToABGRRow = I420ToABGRRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8) &&
-        IS_ALIGNED(dst_abgr, 16) && IS_ALIGNED(dst_stride_abgr, 16)) {
-      I420ToABGRRow = I420ToABGRRow_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I420ToABGRRow = I420ToABGRRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_abgr, 16) && IS_ALIGNED(dst_stride_abgr, 16)) {
+        I420ToABGRRow = I420ToABGRRow_SSSE3;
+      }
     }
   }
 #endif
@@ -816,7 +822,9 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
       ARGBToRGB24Row_C;
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToRGB24Row = ARGBToRGB24Row_Any_SSSE3;
+    if (width * 3 <= kMaxStride) {
+      ARGBToRGB24Row = ARGBToRGB24Row_Any_SSSE3;
+    }
     if (IS_ALIGNED(width, 16) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBToRGB24Row = ARGBToRGB24Row_SSSE3;
@@ -869,7 +877,9 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
       ARGBToRAWRow_C;
 #if defined(HAS_ARGBTORAWROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToRAWRow = ARGBToRAWRow_Any_SSSE3;
+    if (width * 3 <= kMaxStride) {
+      ARGBToRAWRow = ARGBToRAWRow_Any_SSSE3;
+    }
     if (IS_ALIGNED(width, 16) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBToRAWRow = ARGBToRAWRow_SSSE3;
@@ -922,7 +932,9 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
       ARGBToRGB565Row_C;
 #if defined(HAS_ARGBTORGB565ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
+    if (width * 2 <= kMaxStride) {
+      ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
+    }
     if (IS_ALIGNED(width, 4)) {
       ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
     }
@@ -974,7 +986,9 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
       ARGBToARGB1555Row_C;
 #if defined(HAS_ARGBTOARGB1555ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
+    if (width * 2 <= kMaxStride) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
+    }
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB1555Row = ARGBToARGB1555Row_SSE2;
     }
@@ -1026,7 +1040,9 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
      ARGBToARGB4444Row_C;
 #if defined(HAS_ARGBTOARGB4444ROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBToARGB4444Row = ARGBToARGB4444Row_Any_SSE2;
+    if (width * 2 <= kMaxStride) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_Any_SSE2;
+    }
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB4444Row = ARGBToARGB4444Row_SSE2;
     }

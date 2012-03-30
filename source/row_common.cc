@@ -519,29 +519,33 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 
 // Wrappers to handle odd sizes/alignments
-#define MAKEYUVANY(NAMEANY, NAME, COPYROW)                                     \
+#define YUVANY(NAMEANY, I420TORGB_SSE, I420TORGB_C)                            \
     void NAMEANY(const uint8* y_buf,                                           \
                  const uint8* u_buf,                                           \
                  const uint8* v_buf,                                           \
                  uint8* rgb_buf,                                               \
                  int width) {                                                  \
-      SIMD_ALIGNED(uint8 row[kMaxStride]);                                     \
-      NAME(y_buf, u_buf, v_buf, row, width);                                   \
-      COPYROW(row, rgb_buf, width << 2);                                       \
+      int n = width & ~7;                                                      \
+      I420TORGB_SSE(y_buf, u_buf, v_buf, rgb_buf, n);                          \
+      I420TORGB_C(y_buf + n,                                                   \
+                   u_buf + (n >> 1),                                           \
+                   v_buf + (n >> 1),                                           \
+                   rgb_buf + n * 4, width & 7);                                \
     }
 
 #if defined(HAS_I420TOARGBROW_SSSE3)
-MAKEYUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_SSSE3, CopyRow_X86)
-MAKEYUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_SSSE3, CopyRow_X86)
-MAKEYUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_SSSE3, CopyRow_X86)
+YUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_Unaligned_SSSE3, I420ToARGBRow_C)
+YUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_Unaligned_SSSE3, I420ToBGRARow_C)
+YUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_Unaligned_SSSE3, I420ToABGRRow_C)
 #endif
 #if defined(HAS_I420TOARGBROW_NEON)
-MAKEYUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON, CopyRow_C)
-MAKEYUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON, CopyRow_C)
-MAKEYUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON, CopyRow_C)
+YUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON, I420ToARGBRow_C)
+YUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON, I420ToBGRARow_C)
+YUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON, I420ToABGRRow_C)
 #endif
+#undef YUVANY
 
-#define MAKEYUVANYRGB(NAMEANY, ARGBTORGB, BPP)                                 \
+#define RGBANY(NAMEANY, ARGBTORGB, BPP)                                        \
     void NAMEANY(const uint8* argb_buf,                                        \
                  uint8* rgb_buf,                                               \
                  int width) {                                                  \
@@ -551,41 +555,45 @@ MAKEYUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON, CopyRow_C)
     }
 
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
-MAKEYUVANYRGB(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, 3)
-MAKEYUVANYRGB(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, 3)
-MAKEYUVANYRGB(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, 2)
-MAKEYUVANYRGB(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, 2)
-MAKEYUVANYRGB(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 2)
+RGBANY(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, 3)
+RGBANY(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, 3)
+RGBANY(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, 2)
+RGBANY(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, 2)
+RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 2)
 #endif
+#undef RGBANY
 
 #ifdef HAS_ARGBTOYROW_SSSE3
-
-#define MAKEYANY(NAMEANY, ARGBTOY_SSE, BPP)                                    \
+#define YANY(NAMEANY, ARGBTOY_SSE, BPP)                                        \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       ARGBTOY_SSE(src_argb, dst_y, width - 16);                                \
       ARGBTOY_SSE(src_argb + (width - 16) * BPP, dst_y + (width - 16), 16);    \
     }
 
-MAKEYANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
-MAKEYANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
-MAKEYANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
-MAKEYANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
-MAKEYANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
+YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
+YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
+YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
+YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
+YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
+#undef YANY
 
-#define MAKEUVANY(NAMEANY, ARGBTOUV_SSE, ARGBTOUV_C, BPP)                      \
-    void NAMEANY(const uint8* src_argb0, int src_stride_argb,                  \
+#define UVANY(NAMEANY, ARGBTOUV_SSE, ARGBTOUV_C, BPP)                          \
+    void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
-      ARGBTOUV_SSE(src_argb0, src_stride_argb, dst_u, dst_v, width & ~15);     \
-      ARGBTOUV_C(src_argb0 + (width & ~15) * BPP, src_stride_argb,             \
-                 dst_u + (width & ~15) / 2, dst_v + (width & ~15) / 2,         \
+      int n = width & ~15;                                                     \
+      ARGBTOUV_SSE(src_argb, src_stride_argb, dst_u, dst_v, n);                \
+      ARGBTOUV_C(src_argb  + n * BPP, src_stride_argb,                         \
+                 dst_u + (n >> 1),                                             \
+                 dst_v + (n >> 1),                                             \
                  width & 15);                                                  \
     }
 
-MAKEUVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
-MAKEUVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
-MAKEUVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
-MAKEUVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
-MAKEUVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
+UVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
+UVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
+UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
+UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
+UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
+#undef UVANY
 #endif
 
 #ifdef __cplusplus

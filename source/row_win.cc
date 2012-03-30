@@ -1389,6 +1389,126 @@ void I420ToABGRRow_SSSE3(const uint8* y_buf,
 }
 
 __declspec(naked)
+void I420ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    YUVTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm5           // RA
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void I420ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    YUVTORGB
+
+    // Step 3: Weave into BGRA
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    punpcklbw  xmm1, xmm0           // GB
+    punpcklbw  xmm5, xmm2           // AR
+    movdqa     xmm0, xmm5
+    punpcklwd  xmm5, xmm1           // BGRA first 4 pixels
+    punpckhwd  xmm0, xmm1           // BGRA next 4 pixels
+    movdqu     [edx], xmm5
+    movdqu     [edx + 16], xmm0
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
+void I420ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    YUVTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm2, xmm1           // RG
+    punpcklbw  xmm0, xmm5           // BA
+    movdqa     xmm1, xmm2
+    punpcklwd  xmm2, xmm0           // RGBA first 4 pixels
+    punpckhwd  xmm1, xmm0           // RGBA next 4 pixels
+    movdqu     [edx], xmm2
+    movdqu     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked)
 void I444ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,

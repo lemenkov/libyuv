@@ -18,7 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#define kMaxStride (2048 * 4)
+#define kMaxStride (2560 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(COVERAGE_ENABLED) || defined(TARGET_IPHONE_SIMULATOR)
@@ -209,14 +209,14 @@ void I420ToABGRRow_C(const uint8* y_buf,
                      int width);
 
 void I444ToARGBRow_C(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        int width);
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width);
 
 void YToARGBRow_C(const uint8* y_buf,
-                             uint8* rgb_buf,
-                             int width);
+                  uint8* rgb_buf,
+                  int width);
 
 void I420ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
@@ -235,6 +235,24 @@ void I420ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* v_buf,
                          uint8* rgb_buf,
                          int width);
+
+void I420ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+
+void I420ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
+
+void I420ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgb_buf,
+                                   int width);
 
 void I444ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
