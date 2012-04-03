@@ -518,6 +518,77 @@ void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   }
 }
 
+// Blend src_argb0 over src_argb1 and store to dst_argb.
+// dst_argb may be src_argb0 or src_argb1.
+void ARGBBlend2Row_C(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    uint32 a = src_argb0[3];
+    if (a == 0) {
+      *reinterpret_cast<uint32*>(dst_argb) =
+          *reinterpret_cast<const uint32*>(src_argb1);
+    } else if (a == 255) {
+      *reinterpret_cast<uint32*>(dst_argb) =
+          *reinterpret_cast<const uint32*>(src_argb0);
+    } else {
+      const uint32 fb = src_argb0[0];
+      const uint32 fg = src_argb0[1];
+      const uint32 fr = src_argb0[2];
+      const uint32 bb = src_argb1[0];
+      const uint32 bg = src_argb1[1];
+      const uint32 br = src_argb1[2];
+      dst_argb[0] = BLENDER(fb, bb, a);
+      dst_argb[1] = BLENDER(fg, bg, a);
+      dst_argb[2] = BLENDER(fr, br, a);
+      dst_argb[3] = 255u;
+    }
+    a = src_argb0[4 + 3];
+    if (a == 0) {
+      *reinterpret_cast<uint32*>(dst_argb + 4) =
+          *reinterpret_cast<const uint32*>(src_argb1 + 4);
+    } else if (a == 255) {
+      *reinterpret_cast<uint32*>(dst_argb + 4) =
+          *reinterpret_cast<const uint32*>(src_argb0 + 4);
+    } else {
+      const uint32 fb = src_argb0[4 + 0];
+      const uint32 fg = src_argb0[4 + 1];
+      const uint32 fr = src_argb0[4 + 2];
+      const uint32 bb = src_argb1[4 + 0];
+      const uint32 bg = src_argb1[4 + 1];
+      const uint32 br = src_argb1[4 + 2];
+      dst_argb[4 + 0] = BLENDER(fb, bb, a);
+      dst_argb[4 + 1] = BLENDER(fg, bg, a);
+      dst_argb[4 + 2] = BLENDER(fr, br, a);
+      dst_argb[4 + 3] = 255u;
+    }
+    src_argb0 += 8;
+    src_argb1 += 8;
+    dst_argb += 8;
+  }
+
+  if (width & 1) {
+    uint32 a = src_argb0[3];
+    if (a == 0) {
+      *reinterpret_cast<uint32*>(dst_argb) =
+          *reinterpret_cast<const uint32*>(src_argb1);
+    } else if (a == 255) {
+      *reinterpret_cast<uint32*>(dst_argb) =
+          *reinterpret_cast<const uint32*>(src_argb0);
+    } else {
+      const uint32 fb = src_argb0[0];
+      const uint32 fg = src_argb0[1];
+      const uint32 fr = src_argb0[2];
+      const uint32 bb = src_argb1[0];
+      const uint32 bg = src_argb1[1];
+      const uint32 br = src_argb1[2];
+      dst_argb[0] = BLENDER(fb, bb, a);
+      dst_argb[1] = BLENDER(fg, bg, a);
+      dst_argb[2] = BLENDER(fr, br, a);
+      dst_argb[3] = 255u;
+    }
+  }
+}
+
 // Wrappers to handle odd sizes/alignments
 #define YUVANY(NAMEANY, I420TORGB_SSE, I420TORGB_C)                            \
     void NAMEANY(const uint8* y_buf,                                           \

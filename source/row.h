@@ -273,6 +273,18 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 
+// ARGB preattenuated alpha blend with 2 sources and a destination.
+void ARGBBlend2Row_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                                 uint8* dst_argb, int width);
+void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                                uint8* dst_argb, int width);
+void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                         uint8* dst_argb, int width);
+void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                        uint8* dst_argb, int width);
+void ARGBBlend2Row_C(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width);
+
 // 'Any' functions handle any size and alignment.
 void I420ToARGBRow_Any_SSSE3(const uint8* y_buf,
                              const uint8* u_buf,

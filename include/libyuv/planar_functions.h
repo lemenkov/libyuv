@@ -26,12 +26,12 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value);
 
-// Copy a plane of data (I420 to I400)
+// Copy a plane of data (I420 to I400).
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// I420 mirror
+// I420 mirror.
 int I420Mirror(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -71,7 +71,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert I400 to ARGB.  Reverse of ARGBToI400
+// Convert I400 to ARGB.  Reverse of ARGBToI400.
 int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                          uint8* dst_argb, int dst_stride_argb,
                          int width, int height);
@@ -86,7 +86,7 @@ int RGB24ToARGB(const uint8* src_bg24, int src_stride_bg24,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height);
 
-// Deprecated function name
+// Deprecated function name.
 #define BG24ToARGB RGB24ToARGB
 
 // Convert ABGR to ARGB. Also used for ARGB to ABGR.
@@ -114,7 +114,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// Draw a rectangle into I420
+// Draw a rectangle into I420.
 int I420Rect(uint8* dst_y, int dst_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
@@ -122,7 +122,7 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
              int width, int height,
              int value_y, int value_u, int value_v);
 
-// Draw a rectangle into ARGB
+// Draw a rectangle into ARGB.
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int x, int y,
              int width, int height,
@@ -133,20 +133,32 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-// Alpha Blend ARGB row of pixels
+// Alpha Blend ARGB row of pixels.
 void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width);
 
-// Alpha Blend ARGB
+// Alpha Blend 2 rows of ARGB pixels and store to destination.
+void ARGBBlend2Row(const uint8* src_argb0, const uint8* src_argb1,
+                   uint8* dst_argb, int width);
+
+// Alpha Blend ARGB.
 int ARGBBlend(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
 
+// Alpha Blend 2 ARGB images and store to destination.
+int ARGB2Blend(const uint8* src_argb0, int src_stride_argb0,
+               const uint8* src_argb1, int src_stride_argb1,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
+// Convert I422 to YUY2.
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
+// Convert I422 to UYVY.
 int I422ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,

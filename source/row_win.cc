@@ -2324,6 +2324,288 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
+
+
+
+
+
+
+///////////////////////////////////////
+///////////////////// 2 source versions
+///////////////////////////////////////
+
+
+
+
+
+
+
+#ifdef HAS_ARGBBLENDROW_SSE2
+// Blend 8 pixels at a time
+// Destination aligned to 16 bytes, multiple of 4 pixels
+__declspec(naked) __declspec(align(16))
+void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                                uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm7, xmm7       // generate constant 1
+    psrlw      xmm7, 15
+    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
+    psrlw      xmm6, 8
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
+
+    align      16
+ convertloop:
+    movdqu     xmm3, [eax]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [esi]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [esi]      // _a_g
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    movdqu     xmm3, [eax + 16]
+    lea        eax, [eax + 32]
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx], xmm0
+    jle        done
+
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [esi + 16] // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [esi + 16] // _a_g
+    lea        esi, [esi + 32]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx + 16], xmm0
+    lea        edx, [edx + 32]
+    jg         convertloop
+
+ done:
+    pop        esi
+    ret
+  }
+}
+
+// Blend 1 pixel at a time, unaligned
+__declspec(naked) __declspec(align(16))
+void ARGBBlend2Row1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                         uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm7, xmm7       // generate constant 1
+    psrlw      xmm7, 15
+    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
+    psrlw      xmm6, 8
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
+
+    align      16
+ convertloop:
+    movd       xmm3, [eax]
+    lea        eax, [eax + 4]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movd       xmm2, [esi]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movd       xmm1, [esi]      // _a_g
+    lea        esi, [esi + 4]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+
+void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                        uint8* dst_argb, int width) {
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    src_argb0 += count * 4;
+    src_argb1 += count * 4;
+    dst_argb += count * 4;
+    width -= count;
+  }
+  // Do multiple of 4 pixels
+  if (width & ~3) {
+    ARGBBlend2Row_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
+  }
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb0 += (width & ~3) * 4;
+    src_argb1 += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBBLENDROW_SSE2
+
+#ifdef HAS_ARGBBLENDROW_SSSE3
+// Blend 8 pixels at a time
+// Shuffle table for reversing the bytes.
+
+// Same as SSE2, but replaces
+//    psrlw      xmm3, 8          // alpha
+//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+//    pshuflw    xmm3, xmm3,0F5h
+// with..
+//    pshufb     xmm3, kShuffleAlpha // alpha
+
+// Destination aligned to 16 bytes, multiple of 4 pixels
+__declspec(naked) __declspec(align(16))
+void ARGBBlend2Row_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                                 uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm7, xmm7       // generate constant 1
+    psrlw      xmm7, 15
+    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
+    psrlw      xmm6, 8
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
+
+    align      16
+ convertloop:
+    movdqu     xmm3, [eax]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    pshufb     xmm3, kShuffleAlpha // alpha
+    movdqa     xmm2, [esi]      // _r_b
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [esi]      // _a_g
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    movdqu     xmm3, [eax + 16]
+    lea        eax, [eax + 32]
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx], xmm0
+    jle        done
+
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [esi + 16] // _r_b
+    pshufb     xmm3, kShuffleAlpha // alpha
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [esi + 16] // _a_g
+    lea        esi, [esi + 32]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx + 16], xmm0
+    lea        edx, [edx + 32]
+    jg         convertloop
+
+ done:
+    pop        esi
+    ret
+  }
+}
+
+void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                        uint8* dst_argb, int width) {
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    src_argb0 += count * 4;
+    src_argb1 += count * 4;
+    dst_argb += count * 4;
+    width -= count;
+  }
+  // Do multiple of 4 pixels
+  if (width & ~3) {
+    ARGBBlend2Row_Aligned_SSSE3(src_argb0, src_argb1, dst_argb, width & ~3);
+  }
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb0 += (width & ~3) * 4;
+    src_argb1 += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBBLENDROW_SSSE3
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus

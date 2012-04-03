@@ -139,6 +139,12 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 
 // Alpha Blend ARGB
 void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width) {
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlendRow_SSSE3(src_argb, dst_argb, width);
+    return;
+  }
+#endif
 #if defined(HAS_ARGBBLENDROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBBlendRow_SSE2(src_argb, dst_argb, width);
@@ -148,7 +154,26 @@ void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width) {
   ARGBBlendRow_C(src_argb, dst_argb, width);
 }
 
+// Alpha Blend 2 rows of ARGB pixels and store to destination.
+void ARGBBlend2Row(const uint8* src_argb0, const uint8* src_argb1,
+                   uint8* dst_argb, int width) {
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlend2Row_SSSE3(src_argb0, src_argb1, dst_argb, width);
+    return;
+  }
+#endif
+#if defined(HAS_ARGBBLENDROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBBlend2Row_SSE2(src_argb0, src_argb1, dst_argb, width);
+    return;
+  }
+#endif
+  ARGBBlend2Row_C(src_argb0, src_argb1, dst_argb, width);
+}
+
 // Alpha Blend ARGB
+// TODO(fbarchard): Call 3 pointer low levels to reduce code size.
 int ARGBBlend(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
@@ -186,6 +211,51 @@ int ARGBBlend(const uint8* src_argb, int src_stride_argb,
   for (int y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Alpha Blend 2 ARGB images and store to destination.
+int ARGB2Blend(const uint8* src_argb0, int src_stride_argb0,
+               const uint8* src_argb1, int src_stride_argb1,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+
+  void (*ARGBBlend2Row)(const uint8* src_argb, const uint8* src_argb1,
+                        uint8* dst_argb, int width) = ARGBBlend2Row_C;
+#if defined(HAS_ARGBBLENDROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBBlend2Row = ARGBBlend2Row_SSE2;
+    if (IS_ALIGNED(width, 4) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      ARGBBlend2Row = ARGBBlend2Row_Aligned_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlend2Row = ARGBBlend2Row_SSSE3;
+    if (IS_ALIGNED(width, 4) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      ARGBBlend2Row = ARGBBlend2Row_Aligned_SSSE3;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBBlend2Row(src_argb0, src_argb1, dst_argb, width);
+    src_argb0 += src_stride_argb0;
+    src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
   return 0;
