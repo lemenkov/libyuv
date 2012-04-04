@@ -133,23 +133,18 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-// Alpha Blend ARGB row of pixels.
-void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width);
+typedef void (*ARGBBlendRow)(const uint8* src_argb0,
+                             const uint8* src_argb1,
+                             uint8* dst_argb, int width);
 
-// Alpha Blend 2 rows of ARGB pixels and store to destination.
-void ARGBBlend2Row(const uint8* src_argb0, const uint8* src_argb1,
-                   uint8* dst_argb, int width);
+// Get function to Alpha Blend ARGB pixels and store to destination.
+ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width);
 
-// Alpha Blend ARGB.
-int ARGBBlend(const uint8* src_argb, int src_stride_argb,
+// Alpha Blend ARGB images and store to destination.
+int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
+              const uint8* src_argb1, int src_stride_argb1,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
-
-// Alpha Blend 2 ARGB images and store to destination.
-int ARGB2Blend(const uint8* src_argb0, int src_stride_argb0,
-               const uint8* src_argb1, int src_stride_argb1,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height);
 
 // Convert I422 to YUY2.
 int I422ToYUY2(const uint8* src_y, int src_stride_y,

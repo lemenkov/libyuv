@@ -18,6 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// TODO(fbarchard): Remove kMaxStride
 #define kMaxStride (2560 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
@@ -26,8 +27,9 @@ extern "C" {
 #endif
 
 // The following are available on all x86 platforms
-#if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_BGRATOARGBROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
@@ -66,7 +68,7 @@ extern "C" {
 #endif
 
 // The following are available on Neon platforms
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORROWUV_NEON
 #define HAS_SPLITUV_NEON
@@ -78,7 +80,7 @@ extern "C" {
 
 // The following are only available on Win32
 // TODO(fbarchard): Port to GCC
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBBLENDROW_SSSE3
 #endif
 
@@ -265,25 +267,18 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      int width);
 
 // ARGB preattenuated alpha blend.
-void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
-                               int width);
-void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
-                               int width);
-void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width);
-
-// ARGB preattenuated alpha blend with 2 sources and a destination.
-void ARGBBlend2Row_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                                 uint8* dst_argb, int width);
-void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                                 uint8* dst_argb, int width);
-void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                         uint8* dst_argb, int width);
-void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                               uint8* dst_argb, int width);
+void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width);
-void ARGBBlend2Row_C(const uint8* src_argb0, const uint8* src_argb1,
-                     uint8* dst_argb, int width);
+void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                            uint8* dst_argb, int width);
+void ARGBBlendRow_Any_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                           uint8* dst_argb, int width);
+void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
+                    uint8* dst_argb, int width);
 
 // 'Any' functions handle any size and alignment.
 void I420ToARGBRow_Any_SSSE3(const uint8* y_buf,

@@ -25,18 +25,37 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// hash seed of 5381 recommended.
-uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
+// Internal C version of HashDjb2 with int sized count for efficiency.
+static uint32 HashDjb2_C(const uint8* src, int count, uint32 seed) {
   uint32 hash = seed;
-  if (count > 0) {
-    do {
-      hash = hash * 33 + *src++;
-    } while (--count);
+  for (int i = 0; i < count; ++i) {
+    hash += (hash << 5) + src[i];
   }
   return hash;
 }
 
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+// hash seed of 5381 recommended.
+uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
+  const int kBlockSize = 1 << 15;  // 32768;
+  while (count >= static_cast<uint64>(kBlockSize)) {
+    seed = HashDjb2_C(src, kBlockSize, seed);
+    src += kBlockSize;
+    count -= kBlockSize;
+  }
+  int remainder = static_cast<int>(count) & ~15;
+  if (remainder) {
+    seed = HashDjb2_C(src, remainder, seed);
+    src += remainder;
+    count -= remainder;
+  }
+  remainder = static_cast<int>(count) & 15;
+  if (remainder) {
+    seed = HashDjb2_C(src, remainder, seed);
+  }
+  return seed;
+}
+
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SUMSQUAREERROR_NEON
 
 static uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b,
@@ -75,9 +94,9 @@ static uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b,
   return sse;
 }
 
-#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_SUMSQUAREERROR_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
                                   int count) {
   __asm {
@@ -94,7 +113,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
     movdqa     xmm2, [eax + edx]
     lea        eax,  [eax + 16]
     sub        ecx, 16
-    movdqa     xmm3, xmm1
+    movdqa     xmm3, xmm1  // abs trick
     psubusb    xmm1, xmm2
     psubusb    xmm2, xmm3
     por        xmm1, xmm2
@@ -116,7 +135,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_SUMSQUAREERROR_SSE2
 static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
                                   int count) {
@@ -167,11 +186,9 @@ static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
 static uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b,
                                int count) {
   uint32 sse = 0u;
-  for (int x = 0; x < count; ++x) {
-    int diff = src_a[0] - src_b[0];
+  for (int i = 0; i < count; ++i) {
+    int diff = src_a[i] - src_b[i];
     sse += static_cast<uint32>(diff * diff);
-    src_a += 1;
-    src_b += 1;
   }
   return sse;
 }
@@ -187,6 +204,7 @@ uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
 #elif defined(HAS_SUMSQUAREERROR_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_a, 16) && IS_ALIGNED(src_b, 16)) {
+    // Note only used for multiples of 16 so count is not checked.
     SumSquareError = SumSquareError_SSE2;
   }
 #endif
@@ -225,8 +243,9 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
     SumSquareError = SumSquareError_NEON;
   }
 #elif defined(HAS_SUMSQUAREERROR_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(src_a, 16) && IS_ALIGNED(src_b, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(src_a, 16) && IS_ALIGNED(stride_a, 16) &&
+      IS_ALIGNED(src_b, 16) && IS_ALIGNED(stride_b, 16)) {
     SumSquareError = SumSquareError_SSE2;
   }
 #endif

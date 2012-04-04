@@ -137,87 +137,38 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// Alpha Blend ARGB
-void ARGBBlendRow(const uint8* src_argb, uint8* dst_argb, int width) {
-#if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBBlendRow_SSSE3(src_argb, dst_argb, width);
-    return;
-  }
-#endif
+// Get a blender that optimized for the CPU, alignment and pixel count.
+// As there are 6 blenders to choose from, the caller should try to use
+// the same blend function for all pixels if possible.
+ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
+  void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width) = ARGBBlendRow_C;
 #if defined(HAS_ARGBBLENDROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlendRow_SSE2(src_argb, dst_argb, width);
-    return;
-  }
-#endif
-  ARGBBlendRow_C(src_argb, dst_argb, width);
-}
-
-// Alpha Blend 2 rows of ARGB pixels and store to destination.
-void ARGBBlend2Row(const uint8* src_argb0, const uint8* src_argb1,
-                   uint8* dst_argb, int width) {
-#if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBBlend2Row_SSSE3(src_argb0, src_argb1, dst_argb, width);
-    return;
-  }
-#endif
-#if defined(HAS_ARGBBLENDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlend2Row_SSE2(src_argb0, src_argb1, dst_argb, width);
-    return;
-  }
-#endif
-  ARGBBlend2Row_C(src_argb0, src_argb1, dst_argb, width);
-}
-
-// Alpha Blend ARGB
-// TODO(fbarchard): Call 3 pointer low levels to reduce code size.
-int ARGBBlend(const uint8* src_argb, int src_stride_argb,
-              uint8* dst_argb, int dst_stride_argb,
-              int width, int height) {
-  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
-    src_stride_argb = -src_stride_argb;
-  }
-
-  void (*ARGBBlendRow)(const uint8* src_argb, uint8* dst_argb, int width) =
-      ARGBBlendRow_C;
-#if defined(HAS_ARGBBLENDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlendRow = ARGBBlendRow_SSE2;
-    if (IS_ALIGNED(width, 4) &&
-        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-      ARGBBlendRow = ARGBBlendRow_Aligned_SSE2;
+    ARGBBlendRow = ARGBBlendRow1_SSE2;
+    if (width >= 4) {
+      ARGBBlendRow = ARGBBlendRow_Any_SSE2;
+      if (IS_ALIGNED(width, 4) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        ARGBBlendRow = ARGBBlendRow_Aligned_SSE2;
+      }
     }
   }
 #endif
 #if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBBlendRow = ARGBBlendRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4) {
+    ARGBBlendRow = ARGBBlendRow_Any_SSSE3;
     if (IS_ALIGNED(width, 4) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBBlendRow = ARGBBlendRow_Aligned_SSSE3;
     }
   }
 #endif
-
-  for (int y = 0; y < height; ++y) {
-    ARGBBlendRow(src_argb, dst_argb, width);
-    src_argb += src_stride_argb;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
+  return ARGBBlendRow;
 }
 
 // Alpha Blend 2 ARGB images and store to destination.
-int ARGB2Blend(const uint8* src_argb0, int src_stride_argb0,
+int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
                const uint8* src_argb1, int src_stride_argb1,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -230,30 +181,12 @@ int ARGB2Blend(const uint8* src_argb0, int src_stride_argb0,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
-
-  void (*ARGBBlend2Row)(const uint8* src_argb, const uint8* src_argb1,
-                        uint8* dst_argb, int width) = ARGBBlend2Row_C;
-#if defined(HAS_ARGBBLENDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlend2Row = ARGBBlend2Row_SSE2;
-    if (IS_ALIGNED(width, 4) &&
-        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-      ARGBBlend2Row = ARGBBlend2Row_Aligned_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBBlend2Row = ARGBBlend2Row_SSSE3;
-    if (IS_ALIGNED(width, 4) &&
-        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-      ARGBBlend2Row = ARGBBlend2Row_Aligned_SSSE3;
-    }
-  }
-#endif
+  void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width) =
+      GetARGBBlend(dst_argb, dst_stride_argb, width);
 
   for (int y = 0; y < height; ++y) {
-    ARGBBlend2Row(src_argb0, src_argb1, dst_argb, width);
+    ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
@@ -725,7 +658,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
 // SetRow8 writes 'count' bytes using a 32 bit value repeated
 // SetRow32 writes 'count' words using a 32 bit value repeated
 
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SETROW_NEON
 static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
@@ -749,9 +682,9 @@ static void SetRows32_NEON(uint8* dst, uint32 v32, int width,
   }
 }
 
-#elif defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_SETROW_X86
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void SetRow8_X86(uint8* dst, uint32 v32, int count) {
   __asm {
     mov        edx, edi
@@ -765,7 +698,7 @@ static void SetRow8_X86(uint8* dst, uint32 v32, int count) {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void SetRows32_X86(uint8* dst, uint32 v32, int width,
                          int dst_stride, int height) {
   __asm {
@@ -793,7 +726,7 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_SETROW_X86
 static void SetRow8_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
@@ -903,6 +836,7 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
   return 0;
 }
 
+// TODO(fbarchard): Add TestCpuFlag(kCpuHasX86) to allow C code to be tested.
 // Draw a rectangle into ARGB
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
@@ -916,12 +850,14 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
 #if defined(HAS_SETROW_X86)
   SetRows32_X86(dst, value, width, dst_stride_argb, height);
-#elif defined(HAS_SETROW_NEON)
+#else
+#if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     SetRows32_NEON(dst, value, width, dst_stride_argb, height);
     return 0;
   }
+#endif
   SetRows32_C(dst, value, width, dst_stride_argb, height);
 #endif
   return 0;

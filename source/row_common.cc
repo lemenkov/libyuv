@@ -454,73 +454,10 @@ void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
 }
 
 #define BLENDER(f, b, a) (((256 - a) * b) >> 8) + f
-void ARGBBlendRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
-  for (int x = 0; x < width - 1; x += 2) {
-    uint32 a = src_argb[3];
-    if (a) {
-      if (a < 255) {
-        const uint32 fb = src_argb[0];
-        const uint32 fg = src_argb[1];
-        const uint32 fr = src_argb[2];
-        const uint32 bb = dst_argb[0];
-        const uint32 bg = dst_argb[1];
-        const uint32 br = dst_argb[2];
-        dst_argb[0] = BLENDER(fb, bb, a);
-        dst_argb[1] = BLENDER(fg, bg, a);
-        dst_argb[2] = BLENDER(fr, br, a);
-        dst_argb[3] = 255u;
-      } else {
-        *reinterpret_cast<uint32*>(dst_argb) =
-            *reinterpret_cast<const uint32*>(src_argb);
-      }
-    }
-    a = src_argb[4 + 3];
-    if (a) {
-      if (a < 255) {
-        const uint32 fb = src_argb[4 + 0];
-        const uint32 fg = src_argb[4 + 1];
-        const uint32 fr = src_argb[4 + 2];
-        const uint32 bb = dst_argb[4 + 0];
-        const uint32 bg = dst_argb[4 + 1];
-        const uint32 br = dst_argb[4 + 2];
-        dst_argb[4 + 0] = BLENDER(fb, bb, a);
-        dst_argb[4 + 1] = BLENDER(fg, bg, a);
-        dst_argb[4 + 2] = BLENDER(fr, br, a);
-        dst_argb[4 + 3] = 255u;
-      } else {
-        *reinterpret_cast<uint32*>(dst_argb + 4) =
-            *reinterpret_cast<const uint32*>(src_argb + 4);
-      }
-    }
-    src_argb += 8;
-    dst_argb += 8;
-  }
-
-  if (width & 1) {
-    const uint32 a = src_argb[3];
-    if (a) {
-      if (a < 255) {
-        const uint32 fb = src_argb[0];
-        const uint32 fg = src_argb[1];
-        const uint32 fr = src_argb[2];
-        const uint32 bb = dst_argb[0];
-        const uint32 bg = dst_argb[1];
-        const uint32 br = dst_argb[2];
-        dst_argb[0] = BLENDER(fb, bb, a);
-        dst_argb[1] = BLENDER(fg, bg, a);
-        dst_argb[2] = BLENDER(fr, br, a);
-        dst_argb[3] = 255u;
-      } else {
-        *reinterpret_cast<uint32*>(dst_argb) =
-            *reinterpret_cast<const uint32*>(src_argb);
-      }
-    }
-  }
-}
 
 // Blend src_argb0 over src_argb1 and store to dst_argb.
 // dst_argb may be src_argb0 or src_argb1.
-void ARGBBlend2Row_C(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
                      uint8* dst_argb, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     uint32 a = src_argb0[3];

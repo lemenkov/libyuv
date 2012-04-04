@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 // This module is for GCC x86 and x64
-#if (defined(__x86_64__) || defined(__i386__)) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 
 // GCC 4.2 on OSX has link error when passing static or const to inline.
 // TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
@@ -2031,162 +2031,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #ifdef HAS_ARGBBLENDROW_SSE2
 // Blend 8 pixels at a time
 // Destination aligned to 16 bytes, multiple of 4 pixels
-void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
-                               int width) {
-  asm volatile (
-    "pcmpeqb   %%xmm7,%%xmm7                   \n"
-    "psrlw     $0xf,%%xmm7                     \n"
-    "pcmpeqb   %%xmm6,%%xmm6                   \n"
-    "psrlw     $0x8,%%xmm6                     \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psllw     $0x8,%%xmm5                     \n"
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
-
-  // 8 pixel loop
-  "1:                                          \n"
-    "movdqu    (%0),%%xmm3                     \n"  // first 4 pixels
-    "movdqa    %%xmm3,%%xmm0                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movdqa    (%1),%%xmm2                     \n"
-    "psrlw     $0x8,%%xmm3                     \n"
-    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movdqa    (%1),%%xmm1                     \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "movdqu    0x10(%0),%%xmm3                 \n"
-    "lea       0x20(%0),%0                     \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "jle       9f                              \n"
-    "movdqa    %%xmm3,%%xmm0                   \n"  // next 4 pixels
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movdqa    0x10(%1),%%xmm2                 \n"
-    "psrlw     $0x8,%%xmm3                     \n"
-    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movdqa    0x10(%1),%%xmm1                 \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,0x10(%1)                 \n"
-    "lea       0x20(%1),%1                     \n"
-    "jg        1b                              \n"
-  "9:                                          \n"
-  : "+r"(src_argb),    // %0
-    "+r"(dst_argb),    // %1
-    "+r"(width)        // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
-  );
-}
-
-// Blend 1 pixel at a time, unaligned
-void ARGBBlendRow1_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  asm volatile (
-    "pcmpeqb   %%xmm7,%%xmm7                   \n"
-    "psrlw     $0xf,%%xmm7                     \n"
-    "pcmpeqb   %%xmm6,%%xmm6                   \n"
-    "psrlw     $0x8,%%xmm6                     \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psllw     $0x8,%%xmm5                     \n"
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
-
-  // 1 pixel loop
-  "1:                                          \n"
-    "movd      (%0),%%xmm3                     \n"
-    "lea       0x4(%0),%0                      \n"
-    "movdqa    %%xmm3,%%xmm0                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movd      (%1),%%xmm2                     \n"
-    "psrlw     $0x8,%%xmm3                     \n"
-    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movd      (%1),%%xmm1                     \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "sub       $0x1,%2                         \n"
-    "movd      %%xmm0,(%1)                     \n"
-    "lea       0x4(%1),%1                      \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),    // %0
-    "+r"(dst_argb),    // %1
-    "+r"(width)        // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
-  );
-}
-
-void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  // Do 1 to 3 pixels to get destination aligned.
-  if ((uintptr_t)(dst_argb) & 15) {
-    int count = width;
-    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
-      count = (-(intptr_t)(dst_argb) >> 2) & 3;
-    }
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
-    src_argb += count * 4;
-    dst_argb += count * 4;
-    width -= count;
-  }
-  // Do multiple of 4 pixels
-  if (width & ~3) {
-    ARGBBlendRow_Aligned_SSE2(src_argb, dst_argb, width & ~3);
-  }
-  // Do remaining 1 to 3 pixels
-  if (width & 3) {
-    src_argb += (width & ~3) * 4;
-    dst_argb += (width & ~3) * 4;
-    width &= 3;
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, width);
-  }
-}
-
-#endif  // HAS_ARGBBLENDROW_SSE2
-
-
-
-
-
-
-
-
-#ifdef HAS_ARGBBLENDROW_SSE2
-// Blend 8 pixels at a time
-// Destination aligned to 16 bytes, multiple of 4 pixels
-void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                                uint8* dst_argb, int width) {
   asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
@@ -2259,7 +2104,7 @@ void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 
 // Blend 1 pixel at a time, unaligned
-void ARGBBlend2Row1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                          uint8* dst_argb, int width) {
   asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
@@ -2309,15 +2154,15 @@ void ARGBBlend2Row1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 
-void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                        uint8* dst_argb, int width) {
+void ARGBBlendRow_Any_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                            uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
     int count = width;
     if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
     src_argb0 += count * 4;
     src_argb1 += count * 4;
     dst_argb += count * 4;
@@ -2325,7 +2170,7 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   }
   // Do multiple of 4 pixels
   if (width & ~3) {
-    ARGBBlend2Row_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
+    ARGBBlendRow_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
   }
   // Do remaining 1 to 3 pixels
   if (width & 3) {
@@ -2333,18 +2178,10 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     src_argb1 += (width & ~3) * 4;
     dst_argb += (width & ~3) * 4;
     width &= 3;
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, width);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSE2
-
-
-
-
-
-
-
-
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 

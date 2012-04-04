@@ -55,7 +55,7 @@ void SetUseReferenceImpl(bool use) {
  *
  */
 
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
                         uint8* dst, int dst_width) {
@@ -566,12 +566,13 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
  */
 
 // Constants for SSE2 code
-#elif defined(_M_IX86) || defined(__i386__) || defined(__x86_64__) && \
-    !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && \
+    (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
+
 #if defined(_MSC_VER)
 #define TALIGN16(t, var) __declspec(align(16)) t _ ## var
-#elif defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__) && \
-    defined(__i386__)
+#elif defined(__i386__) && \
+    (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__))
 #define TALIGN16(t, var) t var __attribute__((aligned(16)))
 #else
 #define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
@@ -670,12 +671,12 @@ extern "C" TALIGN16(const uint16, scaleab2[8]) =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 #endif
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
 #define HAS_SCALEROWDOWN2_SSE2
 // Reads 32 pixels, throws half away and writes 16 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
@@ -704,7 +705,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 }
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width) {
   __asm {
@@ -749,7 +750,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN4_SSE2
 // Point samples 32 pixels to 8 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
@@ -780,7 +781,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
 
 // Blends 32x4 rectangle to 8x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
@@ -842,7 +843,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEROWDOWN8_SSE2
 // Point samples 32 pixels to 4 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
@@ -874,7 +875,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
 
 // Blends 32x8 rectangle to 4x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
@@ -952,7 +953,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1001,7 +1002,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1059,7 +1060,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1122,7 +1123,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 // 3/8 point sampler
 
 // Scale 32 pixels to 12
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1154,7 +1155,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 // Scale 16x3 pixels to 6x1 with interpolation
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1221,7 +1222,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 // Scale 16x2 pixels to 6x1 with interpolation
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1269,7 +1270,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEADDROWS_SSE2
 
 // Reads 16xN bytes and produces 16 shorts at a time.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
                               uint16* dst_ptr, int src_width,
                               int src_height) {
@@ -1329,7 +1330,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
 #define HAS_SCALEFILTERROWS_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                                  int src_stride, int dst_width,
                                  int source_y_fraction) {
@@ -1420,7 +1421,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version.
 #define HAS_SCALEFILTERROWS_SSSE3
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                                   int src_stride, int dst_width,
                                   int source_y_fraction) {
@@ -1501,7 +1502,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                                     int dst_width) {
   __asm {
@@ -1547,7 +1548,7 @@ static void ScaleFilterCols34_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
@@ -1766,7 +1767,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
-#if defined(__i386__)
+#if !defined(YUV_DISABLE_ASM) && defined(__i386__)
 extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width);
   asm(
@@ -2260,7 +2261,7 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "ret                                       \n"
 );
 
-#elif defined(__x86_64__)
+#elif !defined(YUV_DISABLE_ASM) && defined(__x86_64__)
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                   uint8* dst_ptr, int dst_width) {
   asm volatile (

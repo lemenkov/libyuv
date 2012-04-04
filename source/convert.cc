@@ -61,9 +61,9 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_HALFROW_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
   __asm {
@@ -86,7 +86,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_HALFROW_SSE2
 static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
@@ -179,12 +179,13 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 
 // Blends 32x2 pixels to 16x1
 // source in scale.cc
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width);
-#elif defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) && \
-    !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+
 void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
                            uint8* dst_ptr, int dst_width);
 #endif
@@ -450,9 +451,9 @@ int M420ToI420(const uint8* src_m420, int src_stride_m420,
                     width, height);
 }
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_SPLITYUY2_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void SplitYUY2_SSE2(const uint8* src_yuy2,
                            uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix) {
   __asm {
@@ -498,7 +499,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_SPLITYUY2_SSE2
 static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
                            uint8* dst_u, uint8* dst_v, int pix) {

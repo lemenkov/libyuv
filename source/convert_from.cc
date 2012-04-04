@@ -205,9 +205,9 @@ int I400Copy(const uint8* src_y, int src_stride_y,
 // UYVY - Macro-pixel = 2 image pixels
 // U0Y0V0Y1
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_I42XTOYUY2ROW_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void I42xToYUY2Row_SSE2(const uint8* src_y,
                                const uint8* src_u,
                                const uint8* src_v,
@@ -246,7 +246,7 @@ static void I42xToYUY2Row_SSE2(const uint8* src_y,
 }
 
 #define HAS_I42XTOUYVYROW_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void I42xToUYVYRow_SSE2(const uint8* src_y,
                                const uint8* src_u,
                                const uint8* src_v,
@@ -283,7 +283,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
     ret
   }
 }
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_I42XTOYUY2ROW_SSE2
 static void I42xToYUY2Row_SSE2(const uint8* src_y,
                                const uint8* src_u,

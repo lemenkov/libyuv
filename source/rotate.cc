@@ -21,8 +21,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 #if defined(__APPLE__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
@@ -59,9 +59,9 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          int width);
 #endif
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_TRANSPOSE_WX8_SSSE3
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
   __asm {
@@ -153,7 +153,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 }
 
 #define HAS_TRANSPOSE_UVWX8_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                 uint8* dst_a, int dst_stride_a,
                                 uint8* dst_b, int dst_stride_b,
@@ -281,7 +281,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     ret
   }
 }
-#elif defined(__i386__) || defined(__x86_64__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__i386__) || defined(__x86_64__))
 #define HAS_TRANSPOSE_WX8_SSSE3
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                                uint8* dst, int dst_stride, int width) {
@@ -369,7 +369,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
   );
 }
 
-#if defined (__i386__)
+#if !defined(YUV_DISABLE_ASM) && defined (__i386__)
 #define HAS_TRANSPOSE_UVWX8_SSE2
 extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                                     uint8* dst_a, int dst_stride_a,
@@ -491,7 +491,7 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "pop    %ebx                               \n"
     "ret                                       \n"
 );
-#elif defined(__x86_64__)
+#elif !defined(YUV_DISABLE_ASM) && defined(__x86_64__)
 // 64 bit version has enough registers to do 16x8 to 8x16 at a time.
 #define HAS_TRANSPOSE_WX8_FAST_SSSE3
 static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,

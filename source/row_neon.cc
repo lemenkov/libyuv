@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 // This module is for GCC Neon
-#if defined(__ARM_NEON__) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 
 #define YUVTORGB                                                               \
     "vld1.u8    {d0}, [%0]!                    \n"                             \

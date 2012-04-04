@@ -24,9 +24,9 @@ extern "C" {
 // and vst would select which 2 components to write.  The low level would need
 // to be ARGBToBG, ARGBToGB, ARGBToRG, ARGBToGR
 
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBTOBAYERROW_SSSE3
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
                                  uint8* dst_bayer, uint32 selector, int pix) {
   __asm {
@@ -36,6 +36,7 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
     mov        ecx, [esp + 16]   // pix
     pshufd     xmm5, xmm5, 0
 
+    align      16
   wloop:
     movdqa     xmm0, [eax]
     lea        eax, [eax + 16]
@@ -48,7 +49,7 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb,
   }
 }
 
-#elif defined(__x86_64__) || defined(__i386__) && !defined(YUV_DISABLE_ASM)
+#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
 
 #define HAS_ARGBTOBAYERROW_SSSE3
 static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,

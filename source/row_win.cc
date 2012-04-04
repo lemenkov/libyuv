@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 // This module is for Visual C x86
-#if defined(_M_IX86) && !defined(YUV_DISABLE_ASM)
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
@@ -99,7 +99,7 @@ static const uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
     mov        eax, [esp + 4]        // src_y
@@ -127,7 +127,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_abgr
@@ -148,7 +148,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_bgra
@@ -169,7 +169,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_rgb24
@@ -208,7 +208,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
                         int pix) {
 __asm {
@@ -255,7 +255,7 @@ __asm {
 // v * (256 + 8)
 // G shift of 5 is incorporated, so shift is 5 + 8 and 5 + 3
 // 20 instructions
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
                           int pix) {
 __asm {
@@ -306,7 +306,7 @@ __asm {
 }
 
 // 24 instructions
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
                             int pix) {
 __asm {
@@ -360,7 +360,7 @@ __asm {
 }
 
 // 18 instructions
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
 __asm {
@@ -399,7 +399,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
@@ -438,7 +438,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
@@ -477,7 +477,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
@@ -516,7 +516,7 @@ __asm {
 }
 
 // TODO(fbarchard): Improve sign extension/packing
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
@@ -558,7 +558,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
     mov       eax, [esp + 4]   // src_argb
@@ -589,7 +589,7 @@ __asm {
 }
 
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -623,7 +623,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -657,7 +657,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -691,7 +691,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -725,7 +725,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -759,7 +759,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -793,7 +793,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -859,7 +859,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -929,7 +929,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -995,7 +995,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -1065,7 +1065,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -1131,7 +1131,7 @@ __asm {
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
 __asm {
@@ -1268,7 +1268,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm packuswb   xmm2, xmm2           /* R */                              \
   }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -1308,7 +1308,7 @@ void I420ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToBGRARow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -1348,7 +1348,7 @@ void I420ToBGRARow_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -1388,7 +1388,7 @@ void I420ToABGRRow_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
@@ -1428,7 +1428,7 @@ void I420ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
@@ -1468,7 +1468,7 @@ void I420ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I420ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
@@ -1508,7 +1508,7 @@ void I420ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void I444ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -1575,7 +1575,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 #endif
 
 #ifdef HAS_YTOARGBROW_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
@@ -1628,7 +1628,7 @@ static const uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 __asm {
     mov       eax, [esp + 4]   // src
@@ -1653,7 +1653,7 @@ __asm {
 #ifdef HAS_MIRRORROW_SSE2
 // SSE2 version has movdqu so it can be used on unaligned buffers when SSSE3
 // version can not.
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 __asm {
     mov       eax, [esp + 4]   // src
@@ -1686,7 +1686,7 @@ static const uvec8 kShuffleMirrorUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
 };
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
                        int width) {
   __asm {
@@ -1717,7 +1717,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 #endif
 
 #ifdef HAS_SPLITUV_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   __asm {
     push       edi
@@ -1756,7 +1756,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 
 #ifdef HAS_COPYROW_SSE2
 // CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
     mov        eax, [esp + 4]   // src
@@ -1779,7 +1779,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 #endif  // HAS_COPYROW_SSE2
 
 #ifdef HAS_COPYROW_X86
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void CopyRow_X86(const uint8* src, uint8* dst, int count) {
   __asm {
     mov        eax, esi
@@ -1797,7 +1797,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 #endif
 
 #ifdef HAS_YUY2TOYROW_SSE2
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void YUY2ToYRow_SSE2(const uint8* src_yuy2,
                      uint8* dst_y, int pix) {
   __asm {
@@ -1823,7 +1823,7 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
                       uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
@@ -1867,7 +1867,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
                                uint8* dst_y, int pix) {
   __asm {
@@ -1893,7 +1893,7 @@ void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
                                 uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
@@ -1937,7 +1937,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void UYVYToYRow_SSE2(const uint8* src_uyvy,
                      uint8* dst_y, int pix) {
   __asm {
@@ -1961,7 +1961,7 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
                       uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
@@ -2005,7 +2005,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
                                uint8* dst_y, int pix) {
   __asm {
@@ -2029,7 +2029,7 @@ void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
   }
 }
 
-__declspec(naked)
+__declspec(naked) __declspec(align(16))
 void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
                                 uint8* dst_u, uint8* dst_y, int pix) {
   __asm {
@@ -2078,273 +2078,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 // Blend 8 pixels at a time
 // Destination aligned to 16 bytes, multiple of 4 pixels
 __declspec(naked) __declspec(align(16))
-void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb, uint8* dst_argb,
-                               int width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-
-    align      16
- convertloop:
-    movdqu     xmm3, [eax]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [edx]      // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [edx]      // _a_g
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    movdqu     xmm3, [eax + 16]
-    lea        eax, [eax + 32]
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx], xmm0
-    jle        done
-
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [edx + 16] // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [edx + 16] // _a_g
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx + 16], xmm0
-    lea        edx, [edx + 32]
-    jg         convertloop
-
- done:
-    ret
-  }
-}
-
-// Blend 1 pixel at a time, unaligned
-__declspec(naked) __declspec(align(16))
-void ARGBBlendRow1_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-
-    align      16
- convertloop:
-    movd       xmm3, [eax]
-    lea        eax, [eax + 4]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movd       xmm2, [edx]      // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movd       xmm1, [edx]      // _a_g
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 1
-    movd       [edx], xmm0
-    lea        edx, [edx + 4]
-    jg         convertloop
-    ret
-  }
-}
-
-void ARGBBlendRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  // Do 1 to 3 pixels to get destination aligned.
-  if ((uintptr_t)(dst_argb) & 15) {
-    int count = width;
-    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
-      count = (-(intptr_t)(dst_argb) >> 2) & 3;
-    }
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
-    src_argb += count * 4;
-    dst_argb += count * 4;
-    width -= count;
-  }
-  // Do multiple of 4 pixels
-  if (width & ~3) {
-    ARGBBlendRow_Aligned_SSE2(src_argb, dst_argb, width & ~3);
-  }
-  // Do remaining 1 to 3 pixels
-  if (width & 3) {
-    src_argb += (width & ~3) * 4;
-    dst_argb += (width & ~3) * 4;
-    width &= 3;
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, width);
-  }
-}
-#endif  // HAS_ARGBBLENDROW_SSE2
-
-#ifdef HAS_ARGBBLENDROW_SSSE3
-// Blend 8 pixels at a time
-// Shuffle table for reversing the bytes.
-static const uvec8 kShuffleAlpha = {
-  3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
-  11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
-};
-
-// Same as SSE2, but replaces
-//    psrlw      xmm3, 8          // alpha
-//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-//    pshuflw    xmm3, xmm3,0F5h
-// with..
-//    pshufb     xmm3, kShuffleAlpha // alpha
-
-// Destination aligned to 16 bytes, multiple of 4 pixels
-__declspec(naked) __declspec(align(16))
-void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
-                                int width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-
-    align      16
- convertloop:
-    movdqu     xmm3, [eax]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    pshufb     xmm3, kShuffleAlpha // alpha
-    movdqa     xmm2, [edx]      // _r_b
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [edx]      // _a_g
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    movdqu     xmm3, [eax + 16]
-    lea        eax, [eax + 32]
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx], xmm0
-    jle        done
-
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [edx + 16] // _r_b
-    pshufb     xmm3, kShuffleAlpha // alpha
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [edx + 16] // _a_g
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx + 16], xmm0
-    lea        edx, [edx + 32]
-    jg         convertloop
-
- done:
-    ret
-  }
-}
-
-void ARGBBlendRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
-  // Do 1 to 3 pixels to get destination aligned.
-  if ((uintptr_t)(dst_argb) & 15) {
-    int count = width;
-    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
-      count = (-(intptr_t)(dst_argb) >> 2) & 3;
-    }
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, count);
-    src_argb += count * 4;
-    dst_argb += count * 4;
-    width -= count;
-  }
-  // Do multiple of 4 pixels
-  if (width & ~3) {
-    ARGBBlendRow_Aligned_SSSE3(src_argb, dst_argb, width & ~3);
-  }
-  // Do remaining 1 to 3 pixels
-  if (width & 3) {
-    src_argb += (width & ~3) * 4;
-    dst_argb += (width & ~3) * 4;
-    width &= 3;
-    ARGBBlendRow1_SSE2(src_argb, dst_argb, width);
-  }
-}
-#endif  // HAS_ARGBBLENDROW_SSSE3
-
-
-
-
-
-
-
-///////////////////////////////////////
-///////////////////// 2 source versions
-///////////////////////////////////////
-
-
-
-
-
-
-
-#ifdef HAS_ARGBBLENDROW_SSE2
-// Blend 8 pixels at a time
-// Destination aligned to 16 bytes, multiple of 4 pixels
-__declspec(naked) __declspec(align(16))
-void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                                 uint8* dst_argb, int width) {
   __asm {
     push       esi
@@ -2418,7 +2152,7 @@ void ARGBBlend2Row_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 // Blend 1 pixel at a time, unaligned
 __declspec(naked) __declspec(align(16))
-void ARGBBlend2Row1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                          uint8* dst_argb, int width) {
   __asm {
     push       esi
@@ -2467,7 +2201,7 @@ void ARGBBlend2Row1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 
-void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Any_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
@@ -2475,7 +2209,7 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
     src_argb0 += count * 4;
     src_argb1 += count * 4;
     dst_argb += count * 4;
@@ -2483,7 +2217,7 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   }
   // Do multiple of 4 pixels
   if (width & ~3) {
-    ARGBBlend2Row_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
+    ARGBBlendRow_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
   }
   // Do remaining 1 to 3 pixels
   if (width & 3) {
@@ -2491,12 +2225,18 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     src_argb1 += (width & ~3) * 4;
     dst_argb += (width & ~3) * 4;
     width &= 3;
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, width);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSE2
 
 #ifdef HAS_ARGBBLENDROW_SSSE3
+// Shuffle table for reversing the bytes.
+static const uvec8 kShuffleAlpha = {
+  3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
+  11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
+};
+
 // Blend 8 pixels at a time
 // Shuffle table for reversing the bytes.
 
@@ -2509,7 +2249,7 @@ void ARGBBlend2Row_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 // Destination aligned to 16 bytes, multiple of 4 pixels
 __declspec(naked) __declspec(align(16))
-void ARGBBlend2Row_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                                  uint8* dst_argb, int width) {
   __asm {
     push       esi
@@ -2577,7 +2317,7 @@ void ARGBBlend2Row_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 
-void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width) {
   // Do 1 to 3 pixels to get destination aligned.
   if ((uintptr_t)(dst_argb) & 15) {
@@ -2585,7 +2325,7 @@ void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
     src_argb0 += count * 4;
     src_argb1 += count * 4;
     dst_argb += count * 4;
@@ -2593,7 +2333,7 @@ void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   }
   // Do multiple of 4 pixels
   if (width & ~3) {
-    ARGBBlend2Row_Aligned_SSSE3(src_argb0, src_argb1, dst_argb, width & ~3);
+    ARGBBlendRow_Aligned_SSSE3(src_argb0, src_argb1, dst_argb, width & ~3);
   }
   // Do remaining 1 to 3 pixels
   if (width & 3) {
@@ -2601,7 +2341,7 @@ void ARGBBlend2Row_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     src_argb1 += (width & ~3) * 4;
     dst_argb += (width & ~3) * 4;
     width &= 3;
-    ARGBBlend2Row1_SSE2(src_argb0, src_argb1, dst_argb, width);
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
