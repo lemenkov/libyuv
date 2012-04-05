@@ -42,10 +42,16 @@ TEST_F(libyuvTest, TestDjb2) {
     uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
     EXPECT_EQ(h1, h2);
   }
+  int h = 1;
+  for (int i = 0; i <= 16 ; ++i) {
+    printf("%d ", h);
+    h *= 33;
+  }
+
   free_aligned_buffer_16(src_a)
 }
 
-TEST_F(libyuvTest, BenchmakDjb2) {
+TEST_F(libyuvTest, BenchmakDjb2_C) {
   const int kMaxTest = 1280 * 720;
 
   align_buffer_16(src_a, kMaxTest)
@@ -53,10 +59,29 @@ TEST_F(libyuvTest, BenchmakDjb2) {
     src_a[i] = i;
   }
   uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
+  uint32 h1;
+  MaskCpuFlags(kCpuInitialized);
   for (int i = 0; i < _benchmark_iterations; ++i) {
-    uint32 h1 = HashDjb2(src_a, kMaxTest, 5381);
-    EXPECT_EQ(h1, h2);
+    h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
+  MaskCpuFlags(-1);
+  EXPECT_EQ(h1, h2);
+  free_aligned_buffer_16(src_a)
+}
+
+TEST_F(libyuvTest, BenchmakDjb2_OPT) {
+  const int kMaxTest = 1280 * 720;
+
+  align_buffer_16(src_a, kMaxTest)
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i] = i;
+  }
+  uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
+  uint32 h1;
+  for (int i = 0; i < _benchmark_iterations; ++i) {
+    h1 = HashDjb2(src_a, kMaxTest, 5381);
+  }
+  EXPECT_EQ(h1, h2);
   free_aligned_buffer_16(src_a)
 }
 
