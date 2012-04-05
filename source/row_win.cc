@@ -2075,11 +2075,13 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 #endif  // HAS_YUY2TOYROW_SSE2
 
 #ifdef HAS_ARGBBLENDROW_SSE2
-// Blend 8 pixels at a time
-// Destination aligned to 16 bytes, multiple of 4 pixels
+// Blend 8 pixels at a time.
+// src_argb0 unaligned.
+// src_argb1 and dst_argb aligned to 16 bytes.
+// width must be multiple of 4 pixels.
 __declspec(naked) __declspec(align(16))
 void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                                uint8* dst_argb, int width) {
+                               uint8* dst_argb, int width) {
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]   // src_argb0
@@ -2100,14 +2102,14 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     movdqu     xmm3, [eax]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [esi]      // _r_b
+    movdqu     xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
     pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
     pshuflw    xmm3, xmm3,0F5h
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [esi]      // _a_g
+    movdqu     xmm1, [esi]      // _a_g
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
     pmullw     xmm1, xmm3       // _a_g * alpha
@@ -2123,14 +2125,14 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [esi + 16] // _r_b
+    movdqu     xmm2, [esi + 16] // _r_b
     psrlw      xmm3, 8          // alpha
     pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
     pshuflw    xmm3, xmm3,0F5h
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [esi + 16] // _a_g
+    movdqu     xmm1, [esi + 16] // _a_g
     lea        esi, [esi + 32]
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
@@ -2150,7 +2152,7 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 
-// Blend 1 pixel at a time, unaligned
+// Blend 1 pixel at a time, unaligned.
 __declspec(naked) __declspec(align(16))
 void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                          uint8* dst_argb, int width) {
@@ -2247,7 +2249,7 @@ static const uvec8 kShuffleAlpha = {
 // with..
 //    pshufb     xmm3, kShuffleAlpha // alpha
 
-// Destination aligned to 16 bytes, multiple of 4 pixels
+// Destination aligned to 16 bytes, multiple of 4 pixels.
 __declspec(naked) __declspec(align(16))
 void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                                  uint8* dst_argb, int width) {
@@ -2272,11 +2274,11 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
     pshufb     xmm3, kShuffleAlpha // alpha
-    movdqa     xmm2, [esi]      // _r_b
+    movdqu     xmm2, [esi]      // _r_b
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [esi]      // _a_g
+    movdqu     xmm1, [esi]      // _a_g
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
     pmullw     xmm1, xmm3       // _a_g * alpha
@@ -2292,12 +2294,12 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [esi + 16] // _r_b
+    movdqu     xmm2, [esi + 16] // _r_b
     pshufb     xmm3, kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [esi + 16] // _a_g
+    movdqu     xmm1, [esi + 16] // _a_g
     lea        esi, [esi + 32]
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
@@ -2331,7 +2333,7 @@ void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     dst_argb += count * 4;
     width -= count;
   }
-  // Do multiple of 4 pixels
+  // Do multiple of 4 pixels.
   if (width & ~3) {
     ARGBBlendRow_Aligned_SSSE3(src_argb0, src_argb1, dst_argb, width & ~3);
   }
