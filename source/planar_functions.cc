@@ -29,17 +29,17 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
     CopyRow = CopyRow_NEON;
   }
-#elif defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(width, 4)) {
-    CopyRow = CopyRow_X86;
-#if defined(HAS_COPYROW_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(width, 32) &&
-        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-      CopyRow = CopyRow_SSE2;
-    }
 #endif
+#if defined(HAS_COPYROW_X86)
+  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+  }
+#endif
+#if defined(HAS_COPYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    CopyRow = CopyRow_SSE2;
   }
 #endif
 
@@ -755,7 +755,6 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
 }
 #endif
 
-#if !defined(HAS_SETROW_X86)
 static void SetRow8_C(uint8* dst, uint32 v8, int count) {
 #ifdef _MSC_VER
   for (int x = 0; x < count; ++x) {
@@ -776,24 +775,24 @@ static void SetRows32_C(uint8* dst, uint32 v32, int width,
     dst += dst_stride;
   }
 }
-#endif
 
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value) {
-#if defined(HAS_SETROW_X86)
-  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow8_X86;
-#else
   void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow8_C;
-#endif
-
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     SetRow = SetRow8_NEON;
   }
-#elif defined(HAS_SETROW_SSE2)
+#endif
+#if defined(HAS_SETROW_X86)
+  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
+    SetRow = SetRow8_X86;
+  }
+#endif
+#if defined(HAS_SETROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
@@ -836,7 +835,6 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
   return 0;
 }
 
-// TODO(fbarchard): Add TestCpuFlag(kCpuHasX86) to allow C code to be tested.
 // Draw a rectangle into ARGB
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
@@ -848,9 +846,6 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     return -1;
   }
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-#if defined(HAS_SETROW_X86)
-  SetRows32_X86(dst, value, width, dst_stride_argb, height);
-#else
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -858,8 +853,13 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     return 0;
   }
 #endif
-  SetRows32_C(dst, value, width, dst_stride_argb, height);
+#if defined(HAS_SETROW_X86)
+  if (TestCpuFlag(kCpuHasX86)) {
+    SetRows32_X86(dst, value, width, dst_stride_argb, height);
+    return 0;
+  }
 #endif
+  SetRows32_C(dst, value, width, dst_stride_argb, height);
   return 0;
 }
 

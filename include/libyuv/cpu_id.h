@@ -17,14 +17,16 @@ extern "C" {
 #endif
 
 // These flags are only valid on x86 processors
-static const int kCpuHasSSE2 = 1;
-static const int kCpuHasSSSE3 = 2;
+static const int kCpuHasX86 = 1;
+static const int kCpuHasSSE2 = 2;
+static const int kCpuHasSSSE3 = 4;
+static const int kCpuHasSSE41 = 8;
 
 // These flags are only valid on ARM processors
-static const int kCpuHasNEON = 4;
+static const int kCpuHasNEON = 16;
 
 // Internal flag to indicate cpuid is initialized.
-static const int kCpuInitialized = 8;
+static const int kCpuInitialized = 32;
 
 // Detect CPU has SSE2 etc.
 // test_flag parameter should be one of kCpuHas constants above

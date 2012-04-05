@@ -75,15 +75,21 @@ int InitCpuFlags() {
   __cpuid(cpu_info, 1);
   cpu_info_ = (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0) |
               (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
-              kCpuInitialized;
+              (cpu_info[2] & 0x00080000 ? kCpuHasSSE41 : 0) |
+              kCpuInitialized | kCpuHasX86;
 
   // environment variable overrides for testing.
+  if (getenv("LIBYUV_DISABLE_X86")) {
+    cpu_info_ &= ~kCpuHasX86;
+  }
   if (getenv("LIBYUV_DISABLE_SSE2")) {
     cpu_info_ &= ~kCpuHasSSE2;
   }
-  // environment variable overrides for testing.
   if (getenv("LIBYUV_DISABLE_SSSE3")) {
     cpu_info_ &= ~kCpuHasSSSE3;
+  }
+  if (getenv("LIBYUV_DISABLE_SSE41")) {
+    cpu_info_ &= ~kCpuHasSSE41;
   }
 #elif defined(__linux__) && defined(__ARM_NEON__)
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo") | kCpuInitialized;

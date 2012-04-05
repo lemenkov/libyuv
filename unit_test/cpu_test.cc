@@ -19,16 +19,33 @@
 
 namespace libyuv {
 
+TEST_F(libyuvTest, TestVersion) {
+  EXPECT_GE(LIBYUV_VERSION, 169);
+}
+
+TEST_F(libyuvTest, TestCpuHas) {
+#if LIBYUV_VERSION >= 236
+  int has_x86 = TestCpuFlag(kCpuHasX86);
+  printf("Has X86 %d\n", has_x86);
+#endif
+  int has_sse2 = TestCpuFlag(kCpuHasSSE2);
+  printf("Has SSE2 %d\n", has_sse2);
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  printf("Has SSSE3 %d\n", has_ssse3);
+#if LIBYUV_VERSION >= 236
+  int has_sse41 = TestCpuFlag(kCpuHasSSE41);
+  printf("Has SSE4.1 %d\n", has_sse41);
+#endif
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+  printf("Has NEON %d\n", has_neon);
+}
+
 // For testing purposes call the proc/cpuinfo parser directly
 extern "C" int ArmCpuCaps(const char* cpuinfoname);
 
 TEST_F(libyuvTest, TestLinuxNeon) {
   EXPECT_EQ(0, ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
   EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("unit_test/testdata/tegra3.txt"));
-}
-
-TEST_F(libyuvTest, TestVersion) {
-  EXPECT_GE(LIBYUV_VERSION, 169);
 }
 
 }  // namespace libyuv
