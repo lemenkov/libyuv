@@ -42,11 +42,13 @@ TEST_F(libyuvTest, TestDjb2) {
     uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
     EXPECT_EQ(h1, h2);
   }
+  // Hash constant generator using for tables in compare
   int h = 1;
   for (int i = 0; i <= 16 ; ++i) {
-    printf("%d ", h);
+    printf("%08x ", h);
     h *= 33;
   }
+  printf("\n");
 
   free_aligned_buffer_16(src_a)
 }
@@ -80,6 +82,22 @@ TEST_F(libyuvTest, BenchmakDjb2_OPT) {
   uint32 h1;
   for (int i = 0; i < _benchmark_iterations; ++i) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
+  }
+  EXPECT_EQ(h1, h2);
+  free_aligned_buffer_16(src_a)
+}
+
+TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
+  const int kMaxTest = 1280 * 720;
+
+  align_buffer_16(src_a, kMaxTest + 1)
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i + 1] = i;
+  }
+  uint32 h2 = ReferenceHashDjb2(src_a + 1, kMaxTest, 5381);
+  uint32 h1;
+  for (int i = 0; i < _benchmark_iterations; ++i) {
+    h1 = HashDjb2(src_a + 1, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
   free_aligned_buffer_16(src_a)

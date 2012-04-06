@@ -91,15 +91,18 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_SSE41")) {
     cpu_info_ &= ~kCpuHasSSE41;
   }
+  if (getenv("LIBYUV_DISABLE_ASM")) {
+    cpu_info_ = kCpuInitialized;
+  }
 #elif defined(__linux__) && defined(__ARM_NEON__)
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo") | kCpuInitialized;
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
   // to disable Neon on devices that do not have it.
-  cpu_info_ = kCpuHasNEON | kCpuInitialized;
+  cpu_info_ = kCpuHasNEON | kCpuInitialized | kCpuHasARM;
 #else
-  cpu_info_ = kCpuInitialized;
+  cpu_info_ = kCpuInitialized | kCpuHasARM;
 #endif
   return cpu_info_;
 }

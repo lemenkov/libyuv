@@ -89,13 +89,13 @@ extern "C" {
 typedef __declspec(align(16)) int8 vec8[16];
 typedef __declspec(align(16)) uint8 uvec8[16];
 typedef __declspec(align(16)) int16 vec16[8];
-typedef __declspec(align(16)) int32 vec32[4];
+typedef __declspec(align(16)) uint32 uvec32[4];
 #else  // __GNUC__
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 typedef int8 __attribute__((vector_size(16))) vec8;
 typedef uint8 __attribute__((vector_size(16))) uvec8;
 typedef int16 __attribute__((vector_size(16))) vec16;
-typedef int32 __attribute__((vector_size(16))) vec32;
+typedef uint32 __attribute__((vector_size(16))) uvec32;
 #endif
 
 void I420ToARGBRow_NEON(const uint8* y_buf,

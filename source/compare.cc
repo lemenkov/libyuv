@@ -37,116 +37,32 @@ static uint32 HashDjb2_C(const uint8* src, int count, uint32 seed) {
 
 // This module is for Visual C x86
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-
 #define HAS_HASHDJB2_SSE41
-static const vec32 kMulL33 = {
-  0xEC41D4E1, // 33 * 33 * 33 * 33 * 33 * 33 * 33
-  33 * 33 * 33 * 33 * 33 * 33,
-  33 * 33 * 33 * 33 * 33,
-  33 * 33 * 33 * 33 * 1 };
-static const vec32 kMulH33 = {
-  33 * 33 * 33,
-  33 * 33,
-  33,
-  1 };
-static const vec32 kHash4x33 = { 33 * 33 * 33 * 33, 0, 0, 0 };
-static const vec32 kHash8x33 = {
-  0x747C7101, // 33 * 33 * 33 * 33 * 33 * 33 * 33 * 33,
-  0, 0, 0 };
-
-
-// hash0 = initial state
-// hash1 = hash0 * 33 + src[0]
-// hash2 = hash1 * 33 + src[1] = (hash0 * 33 + src[0]) * 33 + src[1]
-// hash3 = hash2 * 33 + src[2] = (hash1 * 33 + src[1]) * 33 + src[2] =
-//   ((hash0 * 33 + src[0]) * 33 + src[1]) * 33 + src[2]
-// hash4 = hash3 * 33 + src[3] = (hash2 * 33 + src[2]) * 33 + src[3] =
-//   ((hash1 * 33 + src[1]) * 33 + src[2]) * 33 + src[3] =
-//   (((hash0 * 33 + src[0]) * 33 + src[1]) * 33 + src[2]) * 33 + src[3]
-
-// movzxbd    xmm1, [eax]     // SSE4.1 requires VS2010
-// pmulld requires Studio2008
-// does 8 at a time, unaligned
-__declspec(naked) __declspec(align(16))
-static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
-  __asm {
-    mov        eax, [esp + 4]    // src
-    mov        ecx, [esp + 8]    // count
-    movd       xmm0, [esp + 12]  // seed
-    pxor       xmm7, xmm7        // constant 0 for unpck
-    movdqa     xmm4, kHash8x33
-    movdqa     xmm5, kMulL33
-    movdqa     xmm6, kMulH33
-
-    align      16
-  wloop:
-    movq       xmm1, qword ptr [eax] // src[0-7]
-    lea        eax, [eax + 8]
-    punpcklbw  xmm1, xmm7
-    movdqa     xmm3, xmm1
-    punpcklwd  xmm1, xmm7
- // pmulld     xmm1, xmm5
- _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 _asm _emit 0x40 _asm _emit 0xCD
-    punpckhwd  xmm3, xmm7
- // pmulld     xmm3, xmm6
- _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 _asm _emit 0x40 _asm _emit 0xDE
-    sub        ecx, 8
- // pmulld     xmm0, xmm4        // hash *= 33 ^ 8
- _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 _asm _emit 0x40 _asm _emit 0xC4
-    paddd      xmm1, xmm3        // add 2nd 4 to first 4
-    pshufd     xmm2, xmm1, 14    // upper 2 dwords
-    paddd      xmm1, xmm2
-    pshufd     xmm2, xmm1, 1
-    paddd      xmm1, xmm2
-    paddd      xmm0, xmm1
-    jg         wloop
-
-    movd       eax, xmm0        // return hash
-    ret
-  }
-}
-
-#define HAS_HASHDJB2_ALIGNED_SSE41
-static const vec32 kHash16x33 = { -1831214591, 0, 0, 0 };  // 33 ^ 16
-static const vec32 kHashMul0 = {
-  204809697,  // 33 ^ 15
-  -1555599935,  // 33 ^ 14
-  994064801,  // 33 ^ 13
-  1331628417,  // 33 ^ 12
+static const uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
+static const uvec32 kHashMul0 = {
+  0x0c3525e1,  // 33 ^ 15
+  0xa3476dc1,  // 33 ^ 14
+  0x3b4039a1,  // 33 ^ 13
+  0x4f5f0981,  // 33 ^ 12
 };
-static const vec32 kHashMul1 = {
-  821255521,  // 33 ^ 11
-  -2057521855,  // 33 ^ 10
-  67801377,  // 33 ^ 9
-  1954312449,  // 33 ^ 8
+static const uvec32 kHashMul1 = {
+  0x30f35d61,  // 33 ^ 11
+  0x855cb541,  // 33 ^ 10
+  0x040a9121,  // 33 ^ 9
+  0x747c7101,  // 33 ^ 8
 };
-static const vec32 kHashMul2 = {
-  -331229983,  // 33 ^ 7
-  1291467969,  // 33 ^ 6
-  39135393,  // 33 ^ 5
-  1185921,  // 33 ^ 4
+static const uvec32 kHashMul2 = {
+  0xec41d4e1,  // 33 ^ 7
+  0x4cfa3cc1,  // 33 ^ 6
+  0x025528a1,  // 33 ^ 5
+  0x00121881,  // 33 ^ 4
 };
-static const vec32 kHashMul3 = {
-  35937,  // 33 ^ 3
-  1089,  // 33 ^ 2
-  33,  // 33 ^ 1
-  1,  // 33 ^ 0
+static const uvec32 kHashMul3 = {
+  0x00008c61,  // 33 ^ 3
+  0x00000441,  // 33 ^ 2
+  0x00000021,  // 33 ^ 1
+  0x00000001,  // 33 ^ 0
 };
-
-// movzxbd    xmm1, [eax]     // SSE4.1 requires VS2010
-// pmulld requires Studio2008
-// does 16 at a time, aligned
-// TODO(fbarchard): For SSE2 version use pmuludq
-// pmulld     xmm1, xmm5
-// becomes
-// movdqa xmm2, xmm1
-// pmuludq xmm1, [33*33*33, 0, 33, 0]
-// psrldq xmm2, 8
-// pmuludq xmm2, [33*33, 0, 1, 0]
-// paddd xmm1, xmm2
-// pshufd xmm2, xmm1, 2
-// paddd xmm1, xmm2
-
 
 //27: 66 0F 38 40 C6     pmulld      xmm0,xmm6
 //44: 66 0F 38 40 DD     pmulld      xmm3,xmm5
@@ -157,7 +73,7 @@ static const vec32 kHashMul3 = {
   _asm _emit 0x40 _asm _emit reg
 
 __declspec(naked) __declspec(align(16))
-static uint32 HashDjb2_Aligned_SSE41(const uint8* src, int count, uint32 seed) {
+static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
   __asm {
     mov        eax, [esp + 4]    // src
     mov        ecx, [esp + 8]    // count
@@ -168,7 +84,7 @@ static uint32 HashDjb2_Aligned_SSE41(const uint8* src, int count, uint32 seed) {
 
     align      16
   wloop:
-    movdqa     xmm1, [eax]       // src[0-15]
+    movdqu     xmm1, [eax]       // src[0-15]
     lea        eax, [eax + 16]
     pmulld(0xc6)                 // pmulld      xmm0,xmm6  hash *= 33 ^ 8
     movdqa     xmm5, kHashMul0
@@ -205,80 +121,26 @@ static uint32 HashDjb2_Aligned_SSE41(const uint8* src, int count, uint32 seed) {
     ret
   }
 }
-
-#if 0
-// This following works but is slower than movdqa version
-// 66 0f 38 31 08       pmovzxbd xmm1, [eax]
-// 66 0f 38 31 50 04    pmovzxbd xmm2, [eax + 4]
-// 66 0f 38 31 58 08    pmovzxbd xmm3, [eax + 8]
-// 66 0f 38 31 60 0c    pmovzxbd xmm4, [eax + 12]
-
-#define pmovzxbd0(rmem) _asm _emit 0x66 _asm _emit 0x0f _asm _emit 0x38 \
-    _asm _emit 0x31 _asm _emit rmem
-#define pmovzxbd(rmem0, rmem1) _asm _emit 0x66 _asm _emit 0x0f _asm _emit 0x38 \
-    _asm _emit 0x31 _asm _emit rmem0 _asm _emit rmem1
-
-__declspec(naked) __declspec(align(16))
-static uint32 HashDjb2_Unaligned_SSE41(const uint8* src, int count,
-                                       uint32 seed) {
-  __asm {
-    mov        eax, [esp + 4]    // src
-    mov        ecx, [esp + 8]    // count
-    movd       xmm0, [esp + 12]  // seed
-
-    movdqa     xmm5, kHash16x33
-
-    align      16
-  wloop:
-    pmovzxbd0(0x08)              // src[0-3] pmovzxbd xmm1, [eax]
-    pmulld     xmm1, kHashMul0
-    pmovzxbd(0x50, 0x04)         // src[4-7] pmovzxbd xmm2, [eax + 4]
-    pmulld     xmm2, kHashMul1
-    pmovzxbd(0x58, 0x08)         // src[8-11] pmovzxbd xmm3, [eax + 8]
-    pmulld     xmm3, kHashMul2
-    pmovzxbd(0x60, 0x0c)         // src[12-15] pmovzxbd xmm4, [eax + 12]
-    pmulld     xmm4, kHashMul3
-    lea        eax, [eax + 16]
-    pmulld     xmm0, xmm5        // hash *= 33 ^ 8
-    paddd      xmm1, xmm2        // add 16 results
-    paddd      xmm3, xmm4
-    sub        ecx, 16
-    paddd      xmm1, xmm3
-    pshufd     xmm2, xmm1, 14    // upper 2 dwords
-    paddd      xmm1, xmm2
-    pshufd     xmm2, xmm1, 1
-    paddd      xmm1, xmm2
-    paddd      xmm0, xmm1
-    jg         wloop
-
-    movd       eax, xmm0        // return hash
-    ret
-  }
-}
-#endif
-
 #endif
 
 // hash seed of 5381 recommended.
 uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
-  uint32 (*Hash)(const uint8* src, int count, uint32 seed) = HashDjb2_C;
+  uint32 (*HashDjb2_SSE)(const uint8* src, int count, uint32 seed) = HashDjb2_C;
 #if defined(HAS_HASHDJB2_SSE41)
-  if (TestCpuFlag(kCpuHasSSE41) && IS_ALIGNED(count, 8)) {
-    Hash = HashDjb2_SSE41;
-    if (IS_ALIGNED(count, 16)) {
-      Hash = HashDjb2_Aligned_SSE41;
-    }
+  if (TestCpuFlag(kCpuHasSSE41)) {
+    HashDjb2_SSE = HashDjb2_SSE41;
   }
 #endif
+
   const int kBlockSize = 1 << 15;  // 32768;
   while (count >= static_cast<uint64>(kBlockSize)) {
-    seed = Hash(src, kBlockSize, seed);
+    seed = HashDjb2_SSE(src, kBlockSize, seed);
     src += kBlockSize;
     count -= kBlockSize;
   }
   int remainder = static_cast<int>(count) & ~15;
   if (remainder) {
-    seed = Hash(src, remainder, seed);
+    seed = HashDjb2_SSE(src, remainder, seed);
     src += remainder;
     count -= remainder;
   }

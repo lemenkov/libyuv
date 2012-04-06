@@ -36,6 +36,10 @@ TEST_F(libyuvTest, TestCpuHas) {
   int has_sse41 = TestCpuFlag(kCpuHasSSE41);
   printf("Has SSE4.1 %d\n", has_sse41);
 #endif
+#if LIBYUV_VERSION >= 238
+  int has_arm = TestCpuFlag(kCpuHasARM);
+  printf("Has ARM %d\n", has_arm);
+#endif
   int has_neon = TestCpuFlag(kCpuHasNEON);
   printf("Has NEON %d\n", has_neon);
 }
