@@ -458,7 +458,7 @@ void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
 // Blend src_argb0 over src_argb1 and store to dst_argb.
 // dst_argb may be src_argb0 or src_argb1.
 void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
-                     uint8* dst_argb, int width) {
+                    uint8* dst_argb, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     uint32 a = src_argb0[3];
     if (a == 0) {
@@ -525,6 +525,66 @@ void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
     }
   }
 }
+
+#ifdef HAS_ARGBBLENDROW_SSE2
+void ARGBBlendRow_Any_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                           uint8* dst_argb, int width) {
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    src_argb0 += count * 4;
+    src_argb1 += count * 4;
+    dst_argb += count * 4;
+    width -= count;
+  }
+  // Do multiple of 4 pixels
+  if (width & ~3) {
+    ARGBBlendRow_Aligned_SSE2(src_argb0, src_argb1, dst_argb, width & ~3);
+  }
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb0 += (width & ~3) * 4;
+    src_argb1 += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBBLENDROW_SSE2
+
+#ifdef HAS_ARGBBLENDROW_SSSE3
+void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                            uint8* dst_argb, int width) {
+  // Do 1 to 3 pixels to get destination aligned.
+  if ((uintptr_t)(dst_argb) & 15) {
+    int count = width;
+    if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
+      count = (-(intptr_t)(dst_argb) >> 2) & 3;
+    }
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    src_argb0 += count * 4;
+    src_argb1 += count * 4;
+    dst_argb += count * 4;
+    width -= count;
+  }
+  // Do multiple of 4 pixels.
+  if (width & ~3) {
+    ARGBBlendRow_Aligned_SSSE3(src_argb0, src_argb1, dst_argb, width & ~3);
+  }
+  // Do remaining 1 to 3 pixels
+  if (width & 3) {
+    src_argb0 += (width & ~3) * 4;
+    src_argb1 += (width & ~3) * 4;
+    dst_argb += (width & ~3) * 4;
+    width &= 3;
+    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
+  }
+}
+#endif  // HAS_ARGBBLENDROW_SSSE3
 
 // Wrappers to handle odd sizes/alignments
 #define YUVANY(NAMEANY, I420TORGB_SSE, I420TORGB_C)                            \

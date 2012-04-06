@@ -65,6 +65,7 @@ extern "C" {
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_UYVYTOUVROW_SSE2
 #define HAS_ARGBBLENDROW_SSE2
+#define HAS_ARGBBLENDROW_SSSE3
 #endif
 
 // The following are available on Neon platforms
@@ -76,12 +77,6 @@ extern "C" {
 #define HAS_I420TOARGBROW_NEON
 #define HAS_I420TOBGRAROW_NEON
 #define HAS_I420TOABGRROW_NEON
-#endif
-
-// The following are only available on Win32
-// TODO(fbarchard): Port to GCC
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_ARGBBLENDROW_SSSE3
 #endif
 
 #if defined(_MSC_VER)
