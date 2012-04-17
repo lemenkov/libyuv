@@ -863,6 +863,105 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+// Multiply source RGB by alpha and store to destination.
+static void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb,
+                               int width) {
+  for (int i = 0; i < width; ++i) {
+    const uint32 b = src_argb[0];
+    const uint32 g = src_argb[1];
+    const uint32 r = src_argb[2];
+    const uint32 a = src_argb[3];
+    dst_argb[0] = (b * a + 128) / 255;
+    dst_argb[1] = (g * a + 128) / 255;
+    dst_argb[2] = (r * a + 128) / 255;
+    dst_argb[3] = a;
+    src_argb += 4;
+    dst_argb += 4;
+  }
+}
+
+// Convert unattentuated ARGB values to preattenuated ARGB by multiplying RGB by
+// by alpha.
+// An unattenutated ARGB alpha blend uses the formula
+// p = a * f + (1 - a) * b
+// where
+//   p is output pixel
+//   f is foreground pixel
+//   b is background pixel
+//   a is alpha value from foreground pixel
+// An preattenutated ARGB alpha blend uses the formula
+// p = f + (1 - a) * b
+// where
+//   f is foreground pixel premultiplied by alpha
+
+int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
+                  uint8* dst_argb, int dst_stride_argb,
+                  int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    ARGBAttenuateRow_C(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Divide source RGB by alpha and store to destination.
+static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
+                                 int width) {
+  for (int i = 0; i < width; ++i) {
+    uint32 b = src_argb[0];
+    uint32 g = src_argb[1];
+    uint32 r = src_argb[2];
+    const uint32 a = src_argb[3];
+    if (a) {
+      b = (b * 255 + 127) / a;
+      if (b > 255) {
+        b = 255;
+      }
+      g = (g * 255 + 127) / a;
+      if (g > 255) {
+        g = 255;
+      }
+      r = (r * 255 + 127) / a;
+      if (r > 255) {
+        r = 255;
+      }
+    }
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    src_argb += 4;
+    dst_argb += 4;
+  }
+}
+
+// Convert unattentuated ARGB values to preattenuated ARGB by multiplying RGB by
+// by alpha.
+int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
+                    uint8* dst_argb, int dst_stride_argb,
+                    int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  for (int y = 0; y < height; ++y) {
+    ARGBUnattenuateRow_C(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
