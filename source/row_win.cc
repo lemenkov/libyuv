@@ -2292,6 +2292,50 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
+#ifdef HAS_ARGBATTENUATE_SSE2
+// Attenuate 4 pixels at a time.
+// aligned to 16 bytes
+__declspec(naked) __declspec(align(16))
+void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb0
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    sub        edx, eax
+    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
+    pslld      xmm4, 24
+    pcmpeqb    xmm5, xmm5       // generate mask 0x00ffffff
+    psrld      xmm5, 8
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]      // read 4 pixels
+    punpcklbw  xmm0, xmm0       // first 2
+    pshufhw    xmm2, xmm0,0FFh  // 8 alpha words
+    pshuflw    xmm2, xmm2,0FFh
+    pmulhuw    xmm0, xmm2       // rgb * a
+    movdqa     xmm1, [eax]      // read 4 pixels
+    punpckhbw  xmm1, xmm1       // next 2 pixels
+    pshufhw    xmm2, xmm1,0FFh  // 8 alpha words
+    pshuflw    xmm2, xmm2,0FFh
+    pmulhuw    xmm1, xmm2       // rgb * a
+    movdqa     xmm3, [eax]      // alphas
+    psrlw      xmm0, 8
+    pand       xmm3, xmm4
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    pand       xmm0, xmm5       // keep original alphas
+    por        xmm0, xmm3
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    ret
+  }
+}
+
+#endif  // HAS_ARGBATTENUATE_SSE2
 #endif  // _M_IX86
 
 #ifdef __cplusplus

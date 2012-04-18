@@ -664,6 +664,42 @@ UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
 #undef UVANY
 #endif
 
+// Multiply source RGB by alpha and store to destination.
+// b = (b * a + 127) / 255;
+void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
+  for (int i = 0; i < width - 1; i += 2) {
+    uint32 b = src_argb[0];
+    uint32 g = src_argb[1];
+    uint32 r = src_argb[2];
+    uint32 a = src_argb[3];
+    dst_argb[0] = (b * a + 255) >> 8;
+    dst_argb[1] = (g * a + 255) >> 8;
+    dst_argb[2] = (r * a + 255) >> 8;
+    dst_argb[3] = a;
+    b = src_argb[4];
+    g = src_argb[5];
+    r = src_argb[6];
+    a = src_argb[7];
+    dst_argb[4] = (b * a + 255) >> 8;
+    dst_argb[5] = (g * a + 255) >> 8;
+    dst_argb[6] = (r * a + 255) >> 8;
+    dst_argb[7] = a;
+    src_argb += 8;
+    dst_argb += 8;
+  }
+
+  if (width & 1) {
+    const uint32 b = src_argb[0];
+    const uint32 g = src_argb[1];
+    const uint32 r = src_argb[2];
+    const uint32 a = src_argb[3];
+    dst_argb[0] = (b * a + 255) >> 8;
+    dst_argb[1] = (g * a + 255) >> 8;
+    dst_argb[2] = (r * a + 255) >> 8;
+    dst_argb[3] = a;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

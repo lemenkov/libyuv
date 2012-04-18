@@ -2164,7 +2164,7 @@ CONST uvec8 kShuffleAlpha = {
   11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
 };
 void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                               uint8* dst_argb, int width) {
+                                uint8* dst_argb, int width) {
   asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
     "psrlw     $0xf,%%xmm7                     \n"
@@ -2231,6 +2231,51 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
+
+#ifdef HAS_ARGBATTENUATE_SSE2
+// Attenuate 4 pixels at a time.
+// aligned to 16 bytes
+void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrld     $0x8,%%xmm5                     \n"
+  // 4 pixel loop
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "pshufhw   $0xff,%%xmm0,%%xmm2             \n"
+    "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "punpckhbw %%xmm1,%%xmm1                   \n"
+    "pshufhw   $0xff,%%xmm1,%%xmm2             \n"
+    "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
+    "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "movdqa    (%0),%%xmm3                     \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "pand      %%xmm4,%%xmm3                   \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm0                   \n"
+    "por       %%xmm3,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBATTENUATE_SSE2
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 

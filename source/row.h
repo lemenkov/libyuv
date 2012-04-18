@@ -66,6 +66,7 @@ extern "C" {
 #define HAS_UYVYTOUVROW_SSE2
 #define HAS_ARGBBLENDROW_SSE2
 #define HAS_ARGBBLENDROW_SSSE3
+#define HAS_ARGBATTENUATE_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -359,6 +360,9 @@ void YUY2ToYRow_Any_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
 void UYVYToUVRow_Any_SSE2(const uint8* src_uyvy, int src_stride_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
+
+void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

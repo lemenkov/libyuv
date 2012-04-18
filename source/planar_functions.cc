@@ -863,24 +863,6 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
-// Multiply source RGB by alpha and store to destination.
-// b = (b * a + 127) / 255;
-static void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb,
-                               int width) {
-  for (int i = 0; i < width; ++i) {
-    const uint32 b = src_argb[0];
-    const uint32 g = src_argb[1];
-    const uint32 r = src_argb[2];
-    const uint32 a = src_argb[3];
-    dst_argb[0] = (b * a + 127) / 255;
-    dst_argb[1] = (g * a + 127) / 255;
-    dst_argb[2] = (r * a + 127) / 255;
-    dst_argb[3] = a;
-    src_argb += 4;
-    dst_argb += 4;
-  }
-}
-
 // Convert unattentuated ARGB values to preattenuated ARGB.
 // An unattenutated ARGB alpha blend uses the formula
 // p = a * f + (1 - a) * b
@@ -902,9 +884,18 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
+  void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
+                           int width) = ARGBAttenuateRow_C;
+#if defined(HAS_ARGBATTENUATE_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
-    ARGBAttenuateRow_C(src_argb, dst_argb, width);
+    ARGBAttenuateRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
@@ -916,6 +907,43 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
 // g = (g * 255 + (a / 2)) / a;
 // r = (r * 255 + (a / 2)) / a;
 // Reciprocal method is off by 1 on some values. ie 125
+// 8.16 fixed point inverse table
+#define T(a) 0x1000000 / a
+static uint32 fixed_invtbl[256] = {
+  0, T(0x01), T(0x02), T(0x03), T(0x04), T(0x05), T(0x06), T(0x07),
+  T(0x08), T(0x09), T(0x0a), T(0x0b), T(0x0c), T(0x0d), T(0x0e), T(0x0f),
+  T(0x10), T(0x11), T(0x12), T(0x13), T(0x14), T(0x15), T(0x16), T(0x17),
+  T(0x18), T(0x19), T(0x1a), T(0x1b), T(0x1c), T(0x1d), T(0x1e), T(0x1f),
+  T(0x20), T(0x21), T(0x22), T(0x23), T(0x24), T(0x25), T(0x26), T(0x27),
+  T(0x28), T(0x29), T(0x2a), T(0x2b), T(0x2c), T(0x2d), T(0x2e), T(0x2f),
+  T(0x30), T(0x31), T(0x32), T(0x33), T(0x34), T(0x35), T(0x36), T(0x37),
+  T(0x38), T(0x39), T(0x3a), T(0x3b), T(0x3c), T(0x3d), T(0x3e), T(0x3f),
+  T(0x40), T(0x41), T(0x42), T(0x43), T(0x44), T(0x45), T(0x46), T(0x47),
+  T(0x48), T(0x49), T(0x4a), T(0x4b), T(0x4c), T(0x4d), T(0x4e), T(0x4f),
+  T(0x50), T(0x51), T(0x52), T(0x53), T(0x54), T(0x55), T(0x56), T(0x57),
+  T(0x58), T(0x59), T(0x5a), T(0x5b), T(0x5c), T(0x5d), T(0x5e), T(0x5f),
+  T(0x60), T(0x61), T(0x62), T(0x63), T(0x64), T(0x65), T(0x66), T(0x67),
+  T(0x68), T(0x69), T(0x6a), T(0x6b), T(0x6c), T(0x6d), T(0x6e), T(0x6f),
+  T(0x70), T(0x71), T(0x72), T(0x73), T(0x74), T(0x75), T(0x76), T(0x77),
+  T(0x78), T(0x79), T(0x7a), T(0x7b), T(0x7c), T(0x7d), T(0x7e), T(0x7f),
+  T(0x80), T(0x81), T(0x82), T(0x83), T(0x84), T(0x85), T(0x86), T(0x87),
+  T(0x88), T(0x89), T(0x8a), T(0x8b), T(0x8c), T(0x8d), T(0x8e), T(0x8f),
+  T(0x90), T(0x91), T(0x92), T(0x93), T(0x94), T(0x95), T(0x96), T(0x97),
+  T(0x98), T(0x99), T(0x9a), T(0x9b), T(0x9c), T(0x9d), T(0x9e), T(0x9f),
+  T(0xa0), T(0xa1), T(0xa2), T(0xa3), T(0xa4), T(0xa5), T(0xa6), T(0xa7),
+  T(0xa8), T(0xa9), T(0xaa), T(0xab), T(0xac), T(0xad), T(0xae), T(0xaf),
+  T(0xb0), T(0xb1), T(0xb2), T(0xb3), T(0xb4), T(0xb5), T(0xb6), T(0xb7),
+  T(0xb8), T(0xb9), T(0xba), T(0xbb), T(0xbc), T(0xbd), T(0xbe), T(0xbf),
+  T(0xc0), T(0xc1), T(0xc2), T(0xc3), T(0xc4), T(0xc5), T(0xc6), T(0xc7),
+  T(0xc8), T(0xc9), T(0xca), T(0xcb), T(0xcc), T(0xcd), T(0xce), T(0xcf),
+  T(0xd0), T(0xd1), T(0xd2), T(0xd3), T(0xd4), T(0xd5), T(0xd6), T(0xd7),
+  T(0xd8), T(0xd9), T(0xda), T(0xdb), T(0xdc), T(0xdd), T(0xde), T(0xdf),
+  T(0xe0), T(0xe1), T(0xe2), T(0xe3), T(0xe4), T(0xe5), T(0xe6), T(0xe7),
+  T(0xe8), T(0xe9), T(0xea), T(0xeb), T(0xec), T(0xed), T(0xee), T(0xef),
+  T(0xf0), T(0xf1), T(0xf2), T(0xf3), T(0xf4), T(0xf5), T(0xf6), T(0xf7),
+  T(0xf8), T(0xf9), T(0xfa), T(0xfb), T(0xfc), T(0xfd), T(0xfe), T(0xff) };
+#undef T
+
 static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
                                  int width) {
   for (int i = 0; i < width; ++i) {
@@ -924,7 +952,7 @@ static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
     uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
     if (a) {
-      const uint32 ia = (0x1000000 + (a >> 1)) / a;  // 8.16 fixed point
+      const uint32 ia = fixed_invtbl[a];  // 8.16 fixed point
       b = (b * ia + 0x8000) >> 16;
       g = (g * ia + 0x8000) >> 16;
       r = (r * ia + 0x8000) >> 16;
@@ -957,9 +985,18 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
+  void (*ARGBUnattenuateRow)(const uint8* src_argb, uint8* dst_argb,
+                             int width) = ARGBUnattenuateRow_C;
+#if defined(HAS_ARGBUNATTENUATE_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBUnattenuateRow = ARGBUnattenuateRow_SSE2;
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
-    ARGBUnattenuateRow_C(src_argb, dst_argb, width);
+    ARGBUnattenuateRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }

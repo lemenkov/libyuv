@@ -18,6 +18,12 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 
+#if defined(_MSC_VER)
+#define SIMD_ALIGNED(var) __declspec(align(16)) var
+#else  // __GNUC__
+#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#endif
+
 namespace libyuv {
 
 TEST_F (libyuvTest, BenchmarkI420ToARGB_C) {
@@ -116,10 +122,10 @@ TESTI420TO(BGRA)
 TESTI420TO(ABGR)
 
 TEST_F (libyuvTest, TestAttenuate) {
-  uint8 orig_pixels[256][4];
-  uint8 atten_pixels[256][4];
-  uint8 unatten_pixels[256][4];
-  uint8 atten2_pixels[256][4];
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 atten_pixels[256][4]);
+  SIMD_ALIGNED(uint8 unatten_pixels[256][4]);
+  SIMD_ALIGNED(uint8 atten2_pixels[256][4]);
   for (int i = 0; i < 256; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
@@ -128,13 +134,14 @@ TEST_F (libyuvTest, TestAttenuate) {
   }
   ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 256, 1);
   ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 256, 1);
-  ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
-
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
+  }
   for (int i = 0; i < 256; ++i) {
-    EXPECT_NEAR(atten_pixels[i][0], atten2_pixels[i][0], 1);
-    EXPECT_NEAR(atten_pixels[i][1], atten2_pixels[i][1], 1);
-    EXPECT_NEAR(atten_pixels[i][2], atten2_pixels[i][2], 1);
-    EXPECT_NEAR(atten_pixels[i][3], atten2_pixels[i][3], 1);
+    EXPECT_NEAR(atten_pixels[i][0], atten2_pixels[i][0], 2);
+    EXPECT_NEAR(atten_pixels[i][1], atten2_pixels[i][1], 2);
+    EXPECT_NEAR(atten_pixels[i][2], atten2_pixels[i][2], 2);
+    EXPECT_NEAR(atten_pixels[i][3], atten2_pixels[i][3], 2);
   }
   // Make sure transparent, 50% and opaque are fully accurate.
   EXPECT_EQ(0, atten_pixels[0][0]);
