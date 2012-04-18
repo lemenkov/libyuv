@@ -864,6 +864,7 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
 }
 
 // Multiply source RGB by alpha and store to destination.
+// b = (b * a + 127) / 255;
 static void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb,
                                int width) {
   for (int i = 0; i < width; ++i) {
@@ -871,17 +872,16 @@ static void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb,
     const uint32 g = src_argb[1];
     const uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
-    dst_argb[0] = (b * a + 128) / 255;
-    dst_argb[1] = (g * a + 128) / 255;
-    dst_argb[2] = (r * a + 128) / 255;
+    dst_argb[0] = (b * a + 127) / 255;
+    dst_argb[1] = (g * a + 127) / 255;
+    dst_argb[2] = (r * a + 127) / 255;
     dst_argb[3] = a;
     src_argb += 4;
     dst_argb += 4;
   }
 }
 
-// Convert unattentuated ARGB values to preattenuated ARGB by multiplying RGB by
-// by alpha.
+// Convert unattentuated ARGB values to preattenuated ARGB.
 // An unattenutated ARGB alpha blend uses the formula
 // p = a * f + (1 - a) * b
 // where
@@ -912,6 +912,10 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
 }
 
 // Divide source RGB by alpha and store to destination.
+// b = (b * 255 + (a / 2)) / a;
+// g = (g * 255 + (a / 2)) / a;
+// r = (r * 255 + (a / 2)) / a;
+// Reciprocal method is off by 1 on some values. ie 125
 static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
                                  int width) {
   for (int i = 0; i < width; ++i) {
@@ -920,15 +924,17 @@ static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
     uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
     if (a) {
-      b = (b * 255 + 127) / a;
+      const uint32 ia = (0x1000000 + (a >> 1)) / a;  // 8.16 fixed point
+      b = (b * ia + 0x8000) >> 16;
+      g = (g * ia + 0x8000) >> 16;
+      r = (r * ia + 0x8000) >> 16;
+      // Clamping should not be necessary but is free in assembly.
       if (b > 255) {
         b = 255;
       }
-      g = (g * 255 + 127) / a;
       if (g > 255) {
         g = 255;
       }
-      r = (r * 255 + 127) / a;
       if (r > 255) {
         r = 255;
       }
@@ -942,8 +948,7 @@ static void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb,
   }
 }
 
-// Convert unattentuated ARGB values to preattenuated ARGB by multiplying RGB by
-// by alpha.
+// Convert unattentuated ARGB values to preattenuated ARGB.
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height) {

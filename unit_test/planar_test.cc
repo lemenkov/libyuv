@@ -115,4 +115,51 @@ TESTI420TO(ARGB)
 TESTI420TO(BGRA)
 TESTI420TO(ABGR)
 
+TEST_F (libyuvTest, TestAttenuate) {
+  uint8 orig_pixels[256][4];
+  uint8 atten_pixels[256][4];
+  uint8 unatten_pixels[256][4];
+  uint8 atten2_pixels[256][4];
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+  ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 256, 1);
+  ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 256, 1);
+  ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
+
+  for (int i = 0; i < 256; ++i) {
+    EXPECT_NEAR(atten_pixels[i][0], atten2_pixels[i][0], 1);
+    EXPECT_NEAR(atten_pixels[i][1], atten2_pixels[i][1], 1);
+    EXPECT_NEAR(atten_pixels[i][2], atten2_pixels[i][2], 1);
+    EXPECT_NEAR(atten_pixels[i][3], atten2_pixels[i][3], 1);
+  }
+  // Make sure transparent, 50% and opaque are fully accurate.
+  EXPECT_EQ(0, atten_pixels[0][0]);
+  EXPECT_EQ(0, atten_pixels[0][1]);
+  EXPECT_EQ(0, atten_pixels[0][2]);
+  EXPECT_EQ(0, atten_pixels[0][3]);
+  EXPECT_EQ(64, atten_pixels[128][0]);
+  EXPECT_EQ(32, atten_pixels[128][1]);
+  EXPECT_EQ(21,  atten_pixels[128][2]);
+  EXPECT_EQ(128, atten_pixels[128][3]);
+  EXPECT_EQ(255, atten_pixels[255][0]);
+  EXPECT_EQ(127, atten_pixels[255][1]);
+  EXPECT_EQ(85,  atten_pixels[255][2]);
+  EXPECT_EQ(255, atten_pixels[255][3]);
+
+  // Test unattenuation clamps
+  orig_pixels[0][0] = 200;
+  orig_pixels[0][1] = 129;
+  orig_pixels[0][2] = 127;
+  orig_pixels[0][3] = 128;
+  ARGBUnattenuate(&orig_pixels[0][0], 0, &unatten_pixels[0][0], 0, 1, 1);
+  EXPECT_EQ(255, unatten_pixels[0][0]);
+  EXPECT_EQ(255, unatten_pixels[0][1]);
+  EXPECT_EQ(254, unatten_pixels[0][2]);
+  EXPECT_EQ(128, unatten_pixels[0][3]);
+}
+
 }

@@ -86,7 +86,7 @@ static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
   wloop:
     movdqu     xmm1, [eax]       // src[0-15]
     lea        eax, [eax + 16]
-    pmulld(0xc6)                 // pmulld      xmm0,xmm6  hash *= 33 ^ 8
+    pmulld(0xc6)                 // pmulld      xmm0,xmm6  hash *= 33 ^ 16
     movdqa     xmm5, kHashMul0
     movdqa     xmm2, xmm1
     punpcklbw  xmm2, xmm7        // src[0-7]
