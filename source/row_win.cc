@@ -2334,8 +2334,58 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     ret
   }
 }
-
 #endif  // HAS_ARGBATTENUATE_SSE2
+
+#ifdef HAS_ARGBATTENUATE_SSSE3
+// Shuffle table duplicating alpha
+static const uvec8 kShuffleAlpha0 = {
+  3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
+};
+static const uvec8 kShuffleAlpha1 = {
+  11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
+  15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
+};
+__declspec(naked) __declspec(align(16))
+void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb0
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    sub        edx, eax
+    pcmpeqb    xmm3, xmm3       // generate mask 0xff000000
+    pslld      xmm3, 24
+    movdqa     xmm4, kShuffleAlpha0
+    movdqa     xmm5, kShuffleAlpha1
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]      // read 4 pixels
+    pshufb     xmm0, xmm4       // isolate first 2 alphas 
+    movdqa     xmm1, [eax]      // read 4 pixels
+    punpcklbw  xmm1, xmm1       // first 2 pixel rgbs
+    pmulhuw    xmm0, xmm1       // rgb * a
+    movdqa     xmm1, [eax]      // read 4 pixels
+    pshufb     xmm1, xmm5       // isolate next 2 alphas
+    movdqa     xmm2, [eax]      // read 4 pixels
+    punpckhbw  xmm2, xmm2       // next 2 pixel rgbs
+    pmulhuw    xmm1, xmm2       // rgb * a
+    movdqa     xmm2, [eax]      // mask original alpha
+    pand       xmm2, xmm3
+    psrlw      xmm0, 8
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    por        xmm0, xmm2       // copy original alpha
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    ret
+  }
+}
+
+#endif  // HAS_ARGBATTENUATE_SSSE3
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus

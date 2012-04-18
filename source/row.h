@@ -69,6 +69,11 @@ extern "C" {
 #define HAS_ARGBATTENUATE_SSE2
 #endif
 
+// The following are available on Windows 32 bit
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
+#define HAS_ARGBATTENUATE_SSSE3
+#endif
+
 // The following are available on Neon platforms
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_MIRRORROW_NEON
@@ -363,6 +368,7 @@ void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
 
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

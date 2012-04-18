@@ -893,6 +893,13 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
   }
 #endif
+#if defined(HAS_ARGBATTENUATE_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     ARGBAttenuateRow(src_argb, dst_argb, width);
