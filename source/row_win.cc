@@ -2347,6 +2347,7 @@ static const uvec8 kShuffleAlpha1 = {
 };
 __declspec(naked) __declspec(align(16))
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
+  __asm {
     mov        eax, [esp + 4]   // src_argb0
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
