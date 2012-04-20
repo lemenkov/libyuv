@@ -8,13 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-
 #include <stdlib.h>
 #include <time.h>
 
-#include "libyuv/rotate.h"
 #include "../source/rotate_priv.h"
+#include "libyuv/rotate.h"
+#include "unit_test/unit_test.h"
 
 namespace libyuv {
 
@@ -33,8 +32,8 @@ TEST_F(libyuvTest, Transpose) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 8; iw < _rotate_max_w && !err; ++iw)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 8; iw < rotate_max_w_ && !err; ++iw)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
       ow = ih;
       oh = iw;
@@ -77,8 +76,8 @@ TEST_F(libyuvTest, TransposeUV) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = ih;
@@ -134,8 +133,8 @@ TEST_F(libyuvTest, RotatePlane90) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 8; iw < _rotate_max_w && !err; ++iw)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 8; iw < rotate_max_w_ && !err; ++iw)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = ih;
@@ -191,8 +190,8 @@ TEST_F(libyuvTest, RotateUV90) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = ih;
@@ -265,8 +264,8 @@ TEST_F(libyuvTest, RotateUV180) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = iw >> 1;
@@ -339,8 +338,8 @@ TEST_F(libyuvTest, RotateUV270) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 2)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = ih;
@@ -414,8 +413,8 @@ TEST_F(libyuvTest, RotatePlane180) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 8; iw < _rotate_max_w && !err; ++iw)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 8; iw < rotate_max_w_ && !err; ++iw)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = iw;
@@ -459,8 +458,8 @@ TEST_F(libyuvTest, RotatePlane270) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 8; iw < _rotate_max_w && !err; ++iw)
-    for (ih = 8; ih < _rotate_max_h && !err; ++ih) {
+  for (iw = 8; iw < rotate_max_w_ && !err; ++iw)
+    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
       int i;
 
       ow = ih;
@@ -516,8 +515,8 @@ TEST_F(libyuvTest, RotatePlane90and270) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
-    for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4)
+    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
       int i;
 
       ow = ih;
@@ -561,8 +560,8 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
   int iw, ih;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
-    for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4)
+    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
       int i;
 
       int ow = ih;
@@ -618,8 +617,8 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
   int iw, ih, ow, oh;
   int err = 0;
 
-  for (iw = 16; iw < _rotate_max_w && !err; iw += 4)
-    for (ih = 16; ih < _rotate_max_h && !err; ih += 4) {
+  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4)
+    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
       int i;
 
       ow = ih;

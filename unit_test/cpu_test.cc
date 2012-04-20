@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-
 #include <stdlib.h>
 #include <string.h>
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/version.h"
+#include "unit_test/unit_test.h"
 
 namespace libyuv {
 

@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "unit_test.h"
-
 #include <stdlib.h>
 #include <time.h>
 
@@ -17,6 +15,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "unit_test/unit_test.h"
 
 #if defined(_MSC_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
@@ -26,20 +25,20 @@
 
 namespace libyuv {
 
-TEST_F (libyuvTest, BenchmarkI420ToARGB_C) {
-  align_buffer_16(src_y, _benchmark_width * _benchmark_height);
-  align_buffer_16(src_u, ((_benchmark_width * _benchmark_height) >> 2));
-  align_buffer_16(src_v, ((_benchmark_width * _benchmark_height) >> 2));
-  align_buffer_16(dst_argb, ((_benchmark_width << 2) * _benchmark_height));
+TEST_F(libyuvTest, BenchmarkI420ToARGB_C) {
+  align_buffer_16(src_y, benchmark_width_ * benchmark_height_);
+  align_buffer_16(src_u, (benchmark_width_ * benchmark_height_) >> 2);
+  align_buffer_16(src_v, (benchmark_width_ * benchmark_height_) >> 2);
+  align_buffer_16(dst_argb, (benchmark_width_ << 2) * benchmark_height_);
 
   MaskCpuFlags(kCpuInitialized);
 
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    I420ToARGB(src_y, _benchmark_width,
-               src_u, _benchmark_width >> 1,
-               src_v, _benchmark_width >> 1,
-               dst_argb, _benchmark_width << 2,
-               _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    I420ToARGB(src_y, benchmark_width_,
+               src_u, benchmark_width_ >> 1,
+               src_v, benchmark_width_ >> 1,
+               dst_argb, benchmark_width_ << 2,
+               benchmark_width_, benchmark_height_);
 
   MaskCpuFlags(-1);
 
@@ -51,18 +50,18 @@ TEST_F (libyuvTest, BenchmarkI420ToARGB_C) {
   free_aligned_buffer_16(dst_argb)
 }
 
-TEST_F (libyuvTest, BenchmarkI420ToARGB_OPT) {
-  align_buffer_16(src_y, _benchmark_width * _benchmark_height);
-  align_buffer_16(src_u, (_benchmark_width * _benchmark_height) >> 2);
-  align_buffer_16(src_v, (_benchmark_width * _benchmark_height) >> 2);
-  align_buffer_16(dst_argb, (_benchmark_width << 2) * _benchmark_height);
+TEST_F(libyuvTest, BenchmarkI420ToARGB_OPT) {
+  align_buffer_16(src_y, benchmark_width_ * benchmark_height_);
+  align_buffer_16(src_u, (benchmark_width_ * benchmark_height_) >> 2);
+  align_buffer_16(src_v, (benchmark_width_ * benchmark_height_) >> 2);
+  align_buffer_16(dst_argb, (benchmark_width_ << 2) * benchmark_height_);
 
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    I420ToARGB(src_y, _benchmark_width,
-               src_u, _benchmark_width >> 1,
-               src_v, _benchmark_width >> 1,
-               dst_argb, _benchmark_width << 2,
-               _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    I420ToARGB(src_y, benchmark_width_,
+               src_u, benchmark_width_ >> 1,
+               src_v, benchmark_width_ >> 1,
+               dst_argb, benchmark_width_ << 2,
+               benchmark_width_, benchmark_height_);
 
   free_aligned_buffer_16(src_y)
   free_aligned_buffer_16(src_u)
@@ -71,7 +70,7 @@ TEST_F (libyuvTest, BenchmarkI420ToARGB_OPT) {
 }
 
 #define TESTI420TO(FMT)                                                        \
-TEST_F (libyuvTest, I420To##FMT##_CvsOPT) {                                    \
+TEST_F(libyuvTest, I420To##FMT##_CvsOPT) {                                     \
   const int src_width = 1280;                                                  \
   const int src_height = 720;                                                  \
   align_buffer_16(src_y, src_width * src_height);                              \
@@ -103,8 +102,8 @@ TEST_F (libyuvTest, I420To##FMT##_CvsOPT) {                                    \
   int err = 0;                                                                 \
   for (int i = 0; i < src_height; ++i) {                                       \
     for (int j = 0; j < src_width << 2; ++j) {                                 \
-      int diff = (int)(dst_rgb_c[i * src_height + j]) -                        \
-                 (int)(dst_rgb_opt[i * src_height + j]);                       \
+      int diff = static_cast<int>(dst_rgb_c[i * src_height + j]) -             \
+                 static_cast<int>(dst_rgb_opt[i * src_height + j]);            \
       if (abs(diff) > 2)                                                       \
         err++;                                                                 \
     }                                                                          \
@@ -121,11 +120,48 @@ TESTI420TO(ARGB)
 TESTI420TO(BGRA)
 TESTI420TO(ABGR)
 
-TEST_F (libyuvTest, TestAttenuate) {
+TEST_F(libyuvTest, TestAttenuate) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
   SIMD_ALIGNED(uint8 atten_pixels[256][4]);
   SIMD_ALIGNED(uint8 unatten_pixels[256][4]);
   SIMD_ALIGNED(uint8 atten2_pixels[256][4]);
+
+  // Test unattenuation clamps
+  orig_pixels[0][0] = 200u;
+  orig_pixels[0][1] = 129u;
+  orig_pixels[0][2] = 127u;
+  orig_pixels[0][3] = 128u;
+  // Test unattenuation transparent and opaque are unaffected
+  orig_pixels[1][0] = 16u;
+  orig_pixels[1][1] = 64u;
+  orig_pixels[1][2] = 192u;
+  orig_pixels[1][3] = 0u;
+  orig_pixels[2][0] = 16u;
+  orig_pixels[2][1] = 64u;
+  orig_pixels[2][2] = 192u;
+  orig_pixels[2][3] = 255u;
+  orig_pixels[3][0] = 16u;
+  orig_pixels[3][1] = 64u;
+  orig_pixels[3][2] = 192u;
+  orig_pixels[3][3] = 128u;
+  ARGBUnattenuate(&orig_pixels[0][0], 0, &unatten_pixels[0][0], 0, 4, 1);
+  EXPECT_EQ(255u, unatten_pixels[0][0]);
+  EXPECT_EQ(255u, unatten_pixels[0][1]);
+  EXPECT_EQ(254u, unatten_pixels[0][2]);
+  EXPECT_EQ(128u, unatten_pixels[0][3]);
+  EXPECT_EQ(16u, unatten_pixels[1][0]);
+  EXPECT_EQ(64u, unatten_pixels[1][1]);
+  EXPECT_EQ(192u, unatten_pixels[1][2]);
+  EXPECT_EQ(0u, unatten_pixels[1][3]);
+  EXPECT_EQ(16u, unatten_pixels[2][0]);
+  EXPECT_EQ(64u, unatten_pixels[2][1]);
+  EXPECT_EQ(192u, unatten_pixels[2][2]);
+  EXPECT_EQ(255u, unatten_pixels[2][3]);
+  EXPECT_EQ(32u, unatten_pixels[3][0]);
+  EXPECT_EQ(128u, unatten_pixels[3][1]);
+  EXPECT_EQ(255u, unatten_pixels[3][2]);
+  EXPECT_EQ(128u, unatten_pixels[3][3]);
+
   for (int i = 0; i < 256; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
@@ -156,17 +192,5 @@ TEST_F (libyuvTest, TestAttenuate) {
   EXPECT_EQ(127, atten_pixels[255][1]);
   EXPECT_EQ(85,  atten_pixels[255][2]);
   EXPECT_EQ(255, atten_pixels[255][3]);
-
-  // Test unattenuation clamps
-  orig_pixels[0][0] = 200;
-  orig_pixels[0][1] = 129;
-  orig_pixels[0][2] = 127;
-  orig_pixels[0][3] = 128;
-  ARGBUnattenuate(&orig_pixels[0][0], 0, &unatten_pixels[0][0], 0, 1, 1);
-  EXPECT_EQ(255, unatten_pixels[0][0]);
-  EXPECT_EQ(255, unatten_pixels[0][1]);
-  EXPECT_EQ(254, unatten_pixels[0][2]);
-  EXPECT_EQ(128, unatten_pixels[0][3]);
 }
-
 }

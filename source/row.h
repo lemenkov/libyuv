@@ -67,11 +67,8 @@ extern "C" {
 #define HAS_ARGBBLENDROW_SSE2
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBATTENUATE_SSE2
-#endif
-
-// The following are available on Windows 32 bit
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBATTENUATE_SSSE3
+#define HAS_ARGBUNATTENUATE_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -312,11 +309,11 @@ void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                          uint8* dst_u, uint8* dst_v, int width);
+                           uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                          uint8* dst_u, uint8* dst_v, int width);
+                           uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
-                          uint8* dst_u, uint8* dst_v, int width);
+                           uint8* dst_u, uint8* dst_v, int width);
 
 void I420ToARGBRow_Any_NEON(const uint8* y_buf,
                             const uint8* u_buf,
@@ -369,6 +366,9 @@ void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
+
+void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -1730,6 +1730,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
     "sub        %0,%1                          \n"
+    ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
@@ -2192,9 +2193,9 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     "movdqu    0x10(%0),%%xmm3                 \n"
     "lea       0x20(%0),%0                     \n"
     "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb    %%xmm2,%%xmm0                  \n"
+    "paddusb   %%xmm2,%%xmm0                  \n"
     "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb    %%xmm1,%%xmm0                  \n"
+    "paddusb   %%xmm1,%%xmm0                  \n"
     "sub       $0x4,%3                         \n"
     "movdqa    %%xmm0,(%2)                     \n"
     "jle       9f                              \n"
@@ -2242,6 +2243,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "pslld     $0x18,%%xmm4                    \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrld     $0x8,%%xmm5                     \n"
+
   // 4 pixel loop
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2254,13 +2256,13 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "pshufhw   $0xff,%%xmm1,%%xmm2             \n"
     "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "movdqa    (%0),%%xmm3                     \n"
+    "movdqa    (%0),%%xmm2                     \n"
     "psrlw     $0x8,%%xmm0                     \n"
-    "pand      %%xmm4,%%xmm3                   \n"
+    "pand      %%xmm4,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm0                   \n"
-    "por       %%xmm3,%%xmm0                   \n"
+    "por       %%xmm2,%%xmm0                   \n"
     "sub       $0x4,%2                         \n"
     "movdqa    %%xmm0,(%0,%1,1)                \n"
     "lea       0x10(%0),%0                     \n"
@@ -2276,6 +2278,156 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   );
 }
 #endif  // HAS_ARGBATTENUATE_SSE2
+
+#ifdef HAS_ARGBATTENUATE_SSSE3
+// Shuffle table duplicating alpha
+CONST uvec8 kShuffleAlpha0 = {
+  3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
+};
+CONST uvec8 kShuffleAlpha1 = {
+  11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
+  15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
+};
+// Attenuate 4 pixels at a time.
+// aligned to 16 bytes
+void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm3,%%xmm3                   \n"
+    "pslld     $0x18,%%xmm3                    \n"
+    "movdqa    %3,%%xmm4                       \n"
+    "movdqa    %4,%%xmm5                       \n"
+
+  // 4 pixel loop
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "pshufb    %%xmm4,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "punpcklbw %%xmm1,%%xmm1                   \n"
+    "pmulhuw   %%xmm1,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "movdqa    (%0),%%xmm2                     \n"
+    "punpckhbw %%xmm2,%%xmm2                   \n"
+    "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "movdqa    (%0),%%xmm2                     \n"
+    "pand      %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "por       %%xmm2,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width)        // %2
+  : "m"(kShuffleAlpha0),  // %3
+    "m"(kShuffleAlpha1)  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBATTENUATE_SSSE3
+
+#ifdef HAS_ARGBUNATTENUATE_SSE2
+// Divide source RGB by alpha and store to destination.
+// b = (b * 255 + (a / 2)) / a;
+// g = (g * 255 + (a / 2)) / a;
+// r = (r * 255 + (a / 2)) / a;
+// Reciprocal method is off by 1 on some values. ie 125
+// 8.16 fixed point inverse table
+#define T(a) 0x10000 / a
+CONST uint32 fixed_invtbl8[256] = {
+  0x100, 0xffff, T(0x02), T(0x03), T(0x04), T(0x05), T(0x06), T(0x07),
+  T(0x08), T(0x09), T(0x0a), T(0x0b), T(0x0c), T(0x0d), T(0x0e), T(0x0f),
+  T(0x10), T(0x11), T(0x12), T(0x13), T(0x14), T(0x15), T(0x16), T(0x17),
+  T(0x18), T(0x19), T(0x1a), T(0x1b), T(0x1c), T(0x1d), T(0x1e), T(0x1f),
+  T(0x20), T(0x21), T(0x22), T(0x23), T(0x24), T(0x25), T(0x26), T(0x27),
+  T(0x28), T(0x29), T(0x2a), T(0x2b), T(0x2c), T(0x2d), T(0x2e), T(0x2f),
+  T(0x30), T(0x31), T(0x32), T(0x33), T(0x34), T(0x35), T(0x36), T(0x37),
+  T(0x38), T(0x39), T(0x3a), T(0x3b), T(0x3c), T(0x3d), T(0x3e), T(0x3f),
+  T(0x40), T(0x41), T(0x42), T(0x43), T(0x44), T(0x45), T(0x46), T(0x47),
+  T(0x48), T(0x49), T(0x4a), T(0x4b), T(0x4c), T(0x4d), T(0x4e), T(0x4f),
+  T(0x50), T(0x51), T(0x52), T(0x53), T(0x54), T(0x55), T(0x56), T(0x57),
+  T(0x58), T(0x59), T(0x5a), T(0x5b), T(0x5c), T(0x5d), T(0x5e), T(0x5f),
+  T(0x60), T(0x61), T(0x62), T(0x63), T(0x64), T(0x65), T(0x66), T(0x67),
+  T(0x68), T(0x69), T(0x6a), T(0x6b), T(0x6c), T(0x6d), T(0x6e), T(0x6f),
+  T(0x70), T(0x71), T(0x72), T(0x73), T(0x74), T(0x75), T(0x76), T(0x77),
+  T(0x78), T(0x79), T(0x7a), T(0x7b), T(0x7c), T(0x7d), T(0x7e), T(0x7f),
+  T(0x80), T(0x81), T(0x82), T(0x83), T(0x84), T(0x85), T(0x86), T(0x87),
+  T(0x88), T(0x89), T(0x8a), T(0x8b), T(0x8c), T(0x8d), T(0x8e), T(0x8f),
+  T(0x90), T(0x91), T(0x92), T(0x93), T(0x94), T(0x95), T(0x96), T(0x97),
+  T(0x98), T(0x99), T(0x9a), T(0x9b), T(0x9c), T(0x9d), T(0x9e), T(0x9f),
+  T(0xa0), T(0xa1), T(0xa2), T(0xa3), T(0xa4), T(0xa5), T(0xa6), T(0xa7),
+  T(0xa8), T(0xa9), T(0xaa), T(0xab), T(0xac), T(0xad), T(0xae), T(0xaf),
+  T(0xb0), T(0xb1), T(0xb2), T(0xb3), T(0xb4), T(0xb5), T(0xb6), T(0xb7),
+  T(0xb8), T(0xb9), T(0xba), T(0xbb), T(0xbc), T(0xbd), T(0xbe), T(0xbf),
+  T(0xc0), T(0xc1), T(0xc2), T(0xc3), T(0xc4), T(0xc5), T(0xc6), T(0xc7),
+  T(0xc8), T(0xc9), T(0xca), T(0xcb), T(0xcc), T(0xcd), T(0xce), T(0xcf),
+  T(0xd0), T(0xd1), T(0xd2), T(0xd3), T(0xd4), T(0xd5), T(0xd6), T(0xd7),
+  T(0xd8), T(0xd9), T(0xda), T(0xdb), T(0xdc), T(0xdd), T(0xde), T(0xdf),
+  T(0xe0), T(0xe1), T(0xe2), T(0xe3), T(0xe4), T(0xe5), T(0xe6), T(0xe7),
+  T(0xe8), T(0xe9), T(0xea), T(0xeb), T(0xec), T(0xed), T(0xee), T(0xef),
+  T(0xf0), T(0xf1), T(0xf2), T(0xf3), T(0xf4), T(0xf5), T(0xf6), T(0xf7),
+  T(0xf8), T(0xf9), T(0xfa), T(0xfb), T(0xfc), T(0xfd), T(0xfe), 0x100 };
+#undef T
+
+// Unattenuate 4 pixels at a time.
+// aligned to 16 bytes
+void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
+                             int width) {
+  uintptr_t alpha = 0;
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
+
+  // 4 pixel loop
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movzb     0x3(%0),%3                      \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "movd      0x0(%4,%3,4),%%xmm2             \n"
+    "movzb     0x7(%0),%3                      \n"
+    "movd      0x0(%4,%3,4),%%xmm3             \n"
+    "pshuflw   $0xc0,%%xmm2,%%xmm2             \n"
+    "pshuflw   $0xc0,%%xmm3,%%xmm3             \n"
+    "movlhps   %%xmm3,%%xmm2                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "movzb     0xb(%0),%3                      \n"
+    "punpckhbw %%xmm1,%%xmm1                   \n"
+    "movd      0x0(%4,%3,4),%%xmm2             \n"
+    "movzb     0xf(%0),%3                      \n"
+    "movd      0x0(%4,%3,4),%%xmm3             \n"
+    "pshuflw   $0xc0,%%xmm2,%%xmm2             \n"
+    "pshuflw   $0xc0,%%xmm3,%%xmm3             \n"
+    "movlhps   %%xmm3,%%xmm2                   \n"
+    "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "movdqa    (%0),%%xmm2                     \n"
+    "pand      %%xmm4,%%xmm2                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "por       %%xmm2,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width),       // %2
+    "+r"(alpha)        // %3
+  : "r"(fixed_invtbl8)  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBUNATTENUATE_SSE2
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 

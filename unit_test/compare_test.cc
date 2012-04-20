@@ -63,7 +63,7 @@ TEST_F(libyuvTest, BenchmakDjb2_C) {
   uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
   uint32 h1;
   MaskCpuFlags(kCpuInitialized);
-  for (int i = 0; i < _benchmark_iterations; ++i) {
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
   MaskCpuFlags(-1);
@@ -80,7 +80,7 @@ TEST_F(libyuvTest, BenchmakDjb2_OPT) {
   }
   uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
   uint32 h1;
-  for (int i = 0; i < _benchmark_iterations; ++i) {
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
@@ -96,7 +96,7 @@ TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
   }
   uint32 h2 = ReferenceHashDjb2(src_a + 1, kMaxTest, 5381);
   uint32 h1;
-  for (int i = 0; i < _benchmark_iterations; ++i) {
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     h1 = HashDjb2(src_a + 1, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
@@ -110,7 +110,7 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   align_buffer_16(src_b, max_width)
 
   MaskCpuFlags(kCpuInitialized);
-  for (int i = 0; i < _benchmark_iterations; ++i) {
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     ComputeSumSquareError(src_a, src_b, max_width);
   }
 
@@ -128,7 +128,7 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
   align_buffer_16(src_a, max_width)
   align_buffer_16(src_b, max_width)
 
-  for (int i = 0; i < _benchmark_iterations; ++i) {
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     ComputeSumSquareError(src_a, src_b, max_width);
   }
 
@@ -183,18 +183,18 @@ TEST_F(libyuvTest, SumSquareError) {
 }
 
 TEST_F(libyuvTest, BenchmarkPsnr_C) {
-  align_buffer_16(src_a, _benchmark_width * _benchmark_height)
-  align_buffer_16(src_b, _benchmark_width * _benchmark_height)
+  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
+  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
 
   MaskCpuFlags(kCpuInitialized);
 
   double c_time = get_time();
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    CalcFramePsnr(src_a, _benchmark_width,
-                  src_b, _benchmark_width,
-                  _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    CalcFramePsnr(src_a, benchmark_width_,
+                  src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
 
-  c_time = (get_time() - c_time) / _benchmark_iterations;
+  c_time = (get_time() - c_time) / benchmark_iterations_;
   printf("BenchmarkPsnr_C - %8.2f us c\n", c_time * 1e6);
 
   MaskCpuFlags(-1);
@@ -206,18 +206,18 @@ TEST_F(libyuvTest, BenchmarkPsnr_C) {
 }
 
 TEST_F(libyuvTest, BenchmarkPsnr_OPT) {
-  align_buffer_16(src_a, _benchmark_width * _benchmark_height)
-  align_buffer_16(src_b, _benchmark_width * _benchmark_height)
+  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
+  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
 
   MaskCpuFlags(-1);
 
   double opt_time = get_time();
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    CalcFramePsnr(src_a, _benchmark_width,
-                  src_b, _benchmark_width,
-                  _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    CalcFramePsnr(src_a, benchmark_width_,
+                  src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
 
-  opt_time = (get_time() - opt_time) / _benchmark_iterations;
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
   printf("BenchmarkPsnr_OPT - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);
@@ -304,18 +304,18 @@ TEST_F(libyuvTest, Psnr) {
 }
 
 TEST_F(libyuvTest, BenchmarkSsim_C) {
-  align_buffer_16(src_a, _benchmark_width * _benchmark_height)
-  align_buffer_16(src_b, _benchmark_width * _benchmark_height)
+  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
+  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
 
   MaskCpuFlags(kCpuInitialized);
 
   double c_time = get_time();
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    CalcFrameSsim(src_a, _benchmark_width,
-                  src_b, _benchmark_width,
-                  _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    CalcFrameSsim(src_a, benchmark_width_,
+                  src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
 
-  c_time = (get_time() - c_time) / _benchmark_iterations;
+  c_time = (get_time() - c_time) / benchmark_iterations_;
   printf("BenchmarkSsim_C - %8.2f us c\n", c_time * 1e6);
 
   MaskCpuFlags(-1);
@@ -327,18 +327,18 @@ TEST_F(libyuvTest, BenchmarkSsim_C) {
 }
 
 TEST_F(libyuvTest, BenchmarkSsim_OPT) {
-  align_buffer_16(src_a, _benchmark_width * _benchmark_height)
-  align_buffer_16(src_b, _benchmark_width * _benchmark_height)
+  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
+  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
 
   MaskCpuFlags(-1);
 
   double opt_time = get_time();
-  for (int i = 0; i < _benchmark_iterations; ++i)
-    CalcFrameSsim(src_a, _benchmark_width,
-                  src_b, _benchmark_width,
-                  _benchmark_width, _benchmark_height);
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    CalcFrameSsim(src_a, benchmark_width_,
+                  src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
 
-  opt_time = (get_time() - opt_time) / _benchmark_iterations;
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
   printf("BenchmarkPsnr_OPT - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);
