@@ -269,14 +269,14 @@ static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN38_NEON
-const uvec8 shuf38 =
+const uvec8 kShuf38 =
   { 0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0 };
-const uvec8 shuf38_2 =
+const uvec8 kShuf38_2 =
   { 0, 8, 16, 2, 10, 17, 4, 12, 18, 6, 14, 19, 0, 0, 0, 0 };
-const vec16 mult38_div6 =
+const vec16 kMult38_Div6 =
   { 65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12,
     65536 / 12, 65536 / 12, 65536 / 12, 65536 / 12 };
-const vec16 mult38_div9 =
+const vec16 kMult38_Div9 =
   { 65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18,
     65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18 };
 
@@ -296,7 +296,7 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
     : "+r"(src_ptr),          // %0
       "+r"(dst_ptr),          // %1
       "+r"(dst_width)         // %2
-    : "r"(shuf38)             // %3
+    : "r"(&kShuf38)           // %3
     : "d0", "d1", "d2", "d3", "d4", "d5", "memory", "cc"
   );
 }
@@ -402,9 +402,9 @@ static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
       "+r"(src_stride)        // %3
-    : "r"(mult38_div6),       // %4
-      "r"(shuf38_2),          // %5
-      "r"(mult38_div9)        // %6
+    : "r"(&kMult38_Div6),     // %4
+      "r"(&kShuf38_2),        // %5
+      "r"(&kMult38_Div9)      // %6
     : "r4", "q0", "q1", "q2", "q3", "q8", "q9",
       "q13", "q14", "q15", "memory", "cc"
   );
@@ -497,8 +497,8 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
       "+r"(dst_ptr),          // %1
       "+r"(dst_width),        // %2
       "+r"(src_stride)        // %3
-    : "r"(mult38_div6),       // %4
-      "r"(shuf38_2)           // %5
+    : "r"(kMult38_Div6),       // %4
+      "r"(kShuf38_2)           // %5
     : "q0", "q1", "q2", "q3", "q13", "q14", "memory", "cc"
   );
 }
@@ -636,10 +636,10 @@ extern "C" TALIGN16(const uint8, madd21[16]) =
 extern "C" TALIGN16(const int16, round34[8]) =
   { 2, 2, 2, 2, 2, 2, 2, 2 };
 
-extern "C" TALIGN16(const uint8, shuf38a[16]) =
+extern "C" TALIGN16(const uint8, kShuf38a[16]) =
   { 0, 3, 6, 8, 11, 14, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
 
-extern "C" TALIGN16(const uint8, shuf38b[16]) =
+extern "C" TALIGN16(const uint8, kShuf38b[16]) =
   { 128, 128, 128, 128, 128, 128, 0, 3, 6, 8, 11, 14, 128, 128, 128, 128 };
 
 // Arrange words 0,3,6 into 0,1,2
@@ -1131,8 +1131,8 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    movdqa     xmm4, _shuf38a
-    movdqa     xmm5, _shuf38b
+    movdqa     xmm4, _kShuf38a
+    movdqa     xmm5, _kShuf38b
 
     align      16
   xloop:
@@ -1983,8 +1983,8 @@ extern "C" void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
     "mov    0x28(%esp),%edx                    \n"
     "mov    0x2c(%esp),%edi                    \n"
     "mov    0x30(%esp),%ecx                    \n"
-    "movdqa _shuf38a ,%xmm4                    \n"
-    "movdqa _shuf38b ,%xmm5                    \n"
+    "movdqa _kShuf38a ,%xmm4                    \n"
+    "movdqa _kShuf38b ,%xmm5                    \n"
 
 "1:"
     "movdqa (%esi),%xmm0                       \n"
@@ -2491,8 +2491,8 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
-  : "r"(_shuf38a),  // %3
-    "r"(_shuf38b)   // %4
+  : "r"(_kShuf38a),  // %3
+    "r"(_kShuf38b)   // %4
   : "memory", "cc"
 );
 }

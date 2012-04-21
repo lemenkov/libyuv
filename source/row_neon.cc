@@ -79,8 +79,8 @@ YUVTORGB
       "+r"(v_buf),    // %2
       "+r"(rgb_buf),  // %3
       "+r"(width)     // %4
-    : "r"(kUVToRB),   // %5
-      "r"(kUVToG)     // %6
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -112,8 +112,8 @@ YUVTORGB
       "+r"(v_buf),    // %2
       "+r"(rgb_buf),  // %3
       "+r"(width)     // %4
-    : "r"(kUVToRB),   // %5
-      "r"(kUVToG)     // %6
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -145,8 +145,8 @@ YUVTORGB
       "+r"(v_buf),    // %2
       "+r"(rgb_buf),  // %3
       "+r"(width)     // %4
-    : "r"(kUVToRB),   // %5
-      "r"(kUVToG)     // %6
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
     : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );

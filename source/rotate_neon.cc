@@ -19,7 +19,7 @@ extern "C" {
 
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 
-static const uvec8 vtbl_4x4_transpose =
+static const uvec8 kVTbl4x4Transpose =
   { 0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
 
 void TransposeWx8_NEON(const uint8* src, int src_stride,
@@ -179,12 +179,12 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
       "+r"(dst),              // %2
       "+r"(dst_stride),       // %3
       "+r"(width)             // %4
-    : "r"(vtbl_4x4_transpose) // %5
+    : "r"(&kVTbl4x4Transpose) // %5
     : "memory", "cc", "r9", "q0", "q1", "q2", "q3"
   );
 }
 
-static const uvec8 vtbl_4x4_transpose_di =
+static const uvec8 kVTbl4x4TransposeDi =
   { 0,  8,  1,  9,  2, 10,  3, 11,  4, 12,  5, 13,  6, 14,  7, 15 };
 
 void TransposeUVWx8_NEON(const uint8* src, int src_stride,
@@ -384,14 +384,14 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                        \n"
 
-    : "+r"(src),              // %0
-      "+r"(src_stride),       // %1
-      "+r"(dst_a),            // %2
-      "+r"(dst_stride_a),     // %3
-      "+r"(dst_b),            // %4
-      "+r"(dst_stride_b),     // %5
-      "+r"(width)             // %6
-    : "r"(vtbl_4x4_transpose_di)// %7
+    : "+r"(src),                 // %0
+      "+r"(src_stride),          // %1
+      "+r"(dst_a),               // %2
+      "+r"(dst_stride_a),        // %3
+      "+r"(dst_b),               // %4
+      "+r"(dst_stride_b),        // %5
+      "+r"(width)                // %6
+    : "r"(&kVTbl4x4TransposeDi)  // %7
     : "memory", "cc", "r9",
       "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
   );
