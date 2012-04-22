@@ -174,12 +174,12 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     "4:                                        \n"
 
-    : "+r"(src),              // %0
-      "+r"(src_stride),       // %1
-      "+r"(dst),              // %2
-      "+r"(dst_stride),       // %3
-      "+r"(width)             // %4
-    : "r"(&kVTbl4x4Transpose) // %5
+    : "+r"(src),               // %0
+      "+r"(src_stride),        // %1
+      "+r"(dst),               // %2
+      "+r"(dst_stride),        // %3
+      "+r"(width)              // %4
+    : "r"(&kVTbl4x4Transpose)  // %5
     : "memory", "cc", "r9", "q0", "q1", "q2", "q3"
   );
 }

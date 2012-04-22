@@ -493,12 +493,12 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
     "vst1.u32     {d4[0]}, [%1]!               \n"
     "subs         %2, #12                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width),        // %2
-      "+r"(src_stride)        // %3
-    : "r"(kMult38_Div6),       // %4
-      "r"(kShuf38_2)           // %5
+    : "+r"(src_ptr),       // %0
+      "+r"(dst_ptr),       // %1
+      "+r"(dst_width),     // %2
+      "+r"(src_stride)     // %3
+    : "r"(&kMult38_Div6),  // %4
+      "r"(&kShuf38_2)      // %5
     : "q0", "q1", "q2", "q3", "q13", "q14", "memory", "cc"
   );
 }
