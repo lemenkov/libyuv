@@ -121,7 +121,91 @@ static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     ret
   }
 }
+
+#elif !defined(YUV_DISABLE_ASM) && \
+    (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__)))
+#define HAS_HASHDJB2_SSE41
+static const uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
+static const uvec32 kHashMul0 = {
+  0x0c3525e1,  // 33 ^ 15
+  0xa3476dc1,  // 33 ^ 14
+  0x3b4039a1,  // 33 ^ 13
+  0x4f5f0981,  // 33 ^ 12
+};
+static const uvec32 kHashMul1 = {
+  0x30f35d61,  // 33 ^ 11
+  0x855cb541,  // 33 ^ 10
+  0x040a9121,  // 33 ^ 9
+  0x747c7101,  // 33 ^ 8
+};
+static const uvec32 kHashMul2 = {
+  0xec41d4e1,  // 33 ^ 7
+  0x4cfa3cc1,  // 33 ^ 6
+  0x025528a1,  // 33 ^ 5
+  0x00121881,  // 33 ^ 4
+};
+static const uvec32 kHashMul3 = {
+  0x00008c61,  // 33 ^ 3
+  0x00000441,  // 33 ^ 2
+  0x00000021,  // 33 ^ 1
+  0x00000001,  // 33 ^ 0
+};
+static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
+  uint32 hash;
+  asm volatile (
+    "movd      %2,%%xmm0                       \n"
+    "pxor      %%xmm7,%%xmm7                   \n"
+    "movdqa    %4,%%xmm6                       \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm1                     \n"
+    "lea       0x10(%0),%0                     \n"
+    "pmulld    %%xmm6,%%xmm0                   \n"
+    "movdqa    %5,%%xmm5                       \n"
+    "movdqa    %%xmm1,%%xmm2                   \n"
+    "punpcklbw %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklwd %%xmm7,%%xmm3                   \n"
+    "pmulld    %%xmm5,%%xmm3                   \n"
+    "movdqa    %6,%%xmm5                       \n"
+    "movdqa    %%xmm2,%%xmm4                   \n"
+    "punpckhwd %%xmm7,%%xmm4                   \n"
+    "pmulld    %%xmm5,%%xmm4                   \n"
+    "movdqa    %7,%%xmm5                       \n"
+    "punpckhbw %%xmm7,%%xmm1                   \n"
+    "movdqa    %%xmm1,%%xmm2                   \n"
+    "punpcklwd %%xmm7,%%xmm2                   \n"
+    "pmulld    %%xmm5,%%xmm2                   \n"
+    "movdqa    %8,%%xmm5                       \n"
+    "punpckhwd %%xmm7,%%xmm1                   \n"
+    "pmulld    %%xmm5,%%xmm1                   \n"
+    "paddd     %%xmm4,%%xmm3                   \n"
+    "paddd     %%xmm2,%%xmm1                   \n"
+    "sub       $0x10,%1                        \n"
+    "paddd     %%xmm3,%%xmm1                   \n"
+    "pshufd    $0xe,%%xmm1,%%xmm2              \n"
+    "paddd     %%xmm2,%%xmm1                   \n"
+    "pshufd    $0x1,%%xmm1,%%xmm2              \n"
+    "paddd     %%xmm2,%%xmm1                   \n"
+    "paddd     %%xmm1,%%xmm0                   \n"
+    "jg        1b                              \n"
+    "movd      %%xmm0,%3                       \n"
+  : "+r"(src),        // %0
+    "+r"(count),      // %1
+    "+rm"(seed),      // %2
+    "=g"(hash)        // %3
+  : "m"(kHash16x33),  // %4
+    "m"(kHashMul0),   // %5
+    "m"(kHashMul1),   // %6
+    "m"(kHashMul2),   // %7
+    "m"(kHashMul3)    // %8
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
+  );
+  return hash;
+}
+#endif  // HAS_HASHDJB2_SSE41
 
 // hash seed of 5381 recommended.
 uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
