@@ -2151,7 +2151,9 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     ret
   }
 }
+#endif  // HAS_ARGBBLENDROW_SSE2
 
+#ifdef HAS_ARGBBLENDROW1_SSE2
 // Blend 1 pixel at a time, unaligned.
 __declspec(naked) __declspec(align(16))
 void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
@@ -2202,8 +2204,8 @@ void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     ret
   }
 }
+#endif  // HAS_ARGBBLENDROW1_SSE2
 
-#endif  // HAS_ARGBBLENDROW_SSE2
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleAlpha = {

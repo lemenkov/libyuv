@@ -160,12 +160,12 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
-// Convert unattentuated ARGB values to preattenuated ARGB.
+// Convert unattentuated ARGB to preattenuated ARGB.
 int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height);
 
-// Convert preattentuated ARGB values to unattenuated ARGB.
+// Convert preattentuated ARGB to unattenuated ARGB.
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height);

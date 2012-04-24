@@ -10,7 +10,6 @@
 
 #include "libyuv/planar_functions.h"
 
-#include <stdio.h>  // printf()
 #include <string.h>  // for memset()
 
 #include "libyuv/cpu_id.h"
@@ -144,9 +143,10 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
   void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width) = ARGBBlendRow_C;
-#if defined(HAS_ARGBBLENDROW_SSE2)
+#if defined(HAS_ARGBBLENDROW1_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBBlendRow = ARGBBlendRow1_SSE2;
+#if defined(HAS_ARGBBLENDROW_SSE2)
     if (width >= 4) {
       ARGBBlendRow = ARGBBlendRow_Any_SSE2;
       if (IS_ALIGNED(width, 4) &&
@@ -154,6 +154,7 @@ ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
         ARGBBlendRow = ARGBBlendRow_Aligned_SSE2;
       }
     }
+#endif
   }
 #endif
 #if defined(HAS_ARGBBLENDROW_SSSE3)
@@ -864,7 +865,7 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
-// Convert unattentuated ARGB values to preattenuated ARGB.
+// Convert unattentuated ARGB to preattenuated ARGB.
 // An unattenutated ARGB alpha blend uses the formula
 // p = a * f + (1 - a) * b
 // where
@@ -910,7 +911,7 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// Convert unattentuated ARGB values to preattenuated ARGB.
+// Convert preattentuated ARGB to unattenuated ARGB.
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height) {
