@@ -64,13 +64,13 @@ static const uvec32 kHashMul3 = {
   0x00000001,  // 33 ^ 0
 };
 
-//27: 66 0F 38 40 C6     pmulld      xmm0,xmm6
-//44: 66 0F 38 40 DD     pmulld      xmm3,xmm5
-//59: 66 0F 38 40 E5     pmulld      xmm4,xmm5
-//72: 66 0F 38 40 D5     pmulld      xmm2,xmm5
-//83: 66 0F 38 40 CD     pmulld      xmm1,xmm5
+// 27: 66 0F 38 40 C6     pmulld      xmm0,xmm6
+// 44: 66 0F 38 40 DD     pmulld      xmm3,xmm5
+// 59: 66 0F 38 40 E5     pmulld      xmm4,xmm5
+// 72: 66 0F 38 40 D5     pmulld      xmm2,xmm5
+// 83: 66 0F 38 40 CD     pmulld      xmm1,xmm5
 #define pmulld(reg) _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 \
-  _asm _emit 0x40 _asm _emit reg
+    _asm _emit 0x40 _asm _emit reg
 
 __declspec(naked) __declspec(align(16))
 static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
@@ -124,27 +124,34 @@ static uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
 
 #elif !defined(YUV_DISABLE_ASM) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__)))
+// GCC 4.2 on OSX has link error when passing static or const to inline.
+// TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
+#ifdef __APPLE__
+#define CONST
+#else
+#define CONST static const
+#endif
 #define HAS_HASHDJB2_SSE41
-static const uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
-static const uvec32 kHashMul0 = {
+CONST uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
+CONST uvec32 kHashMul0 = {
   0x0c3525e1,  // 33 ^ 15
   0xa3476dc1,  // 33 ^ 14
   0x3b4039a1,  // 33 ^ 13
   0x4f5f0981,  // 33 ^ 12
 };
-static const uvec32 kHashMul1 = {
+CONST uvec32 kHashMul1 = {
   0x30f35d61,  // 33 ^ 11
   0x855cb541,  // 33 ^ 10
   0x040a9121,  // 33 ^ 9
   0x747c7101,  // 33 ^ 8
 };
-static const uvec32 kHashMul2 = {
+CONST uvec32 kHashMul2 = {
   0xec41d4e1,  // 33 ^ 7
   0x4cfa3cc1,  // 33 ^ 6
   0x025528a1,  // 33 ^ 5
   0x00121881,  // 33 ^ 4
 };
-static const uvec32 kHashMul3 = {
+CONST uvec32 kHashMul3 = {
   0x00008c61,  // 33 ^ 3
   0x00000441,  // 33 ^ 2
   0x00000021,  // 33 ^ 1

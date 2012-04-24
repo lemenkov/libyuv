@@ -2235,6 +2235,58 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
+
+#ifdef HAS_ARGBBLENDROW1_SSSE3
+// Blend 1 pixel at a time, unaligned
+void ARGBBlendRow1_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
+                         uint8* dst_argb, int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm7,%%xmm7                   \n"
+    "psrlw     $0xf,%%xmm7                     \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrlw     $0x8,%%xmm6                     \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psllw     $0x8,%%xmm5                     \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
+
+  // 1 pixel loop
+  "1:                                          \n"
+    "movd      (%0),%%xmm3                     \n"
+    "lea       0x4(%0),%0                      \n"
+    "movdqa    %%xmm3,%%xmm0                   \n"
+    "pxor      %%xmm4,%%xmm3                   \n"
+    "movd      (%1),%%xmm2                     \n"
+    "pshufb    %4,%%xmm3                       \n"
+    "pand      %%xmm6,%%xmm2                   \n"
+    "paddw     %%xmm7,%%xmm3                   \n"
+    "pmullw    %%xmm3,%%xmm2                   \n"
+    "movd      (%1),%%xmm1                     \n"
+    "lea       0x4(%1),%1                      \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "por       %%xmm4,%%xmm0                   \n"
+    "pmullw    %%xmm3,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "paddusb   %%xmm2,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x1,%3                         \n"
+    "movd      %%xmm0,(%2)                     \n"
+    "lea       0x4(%2),%2                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb0),    // %0
+    "+r"(src_argb1),    // %1
+    "+r"(dst_argb),     // %2
+    "+r"(width)         // %3
+  : "m"(kShuffleAlpha)  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif  // HAS_ARGBBLENDROW1_SSSE3
+
 #ifdef HAS_ARGBATTENUATE_SSE2
 // Attenuate 4 pixels at a time.
 // aligned to 16 bytes

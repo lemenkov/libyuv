@@ -143,6 +143,21 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
   void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width) = ARGBBlendRow_C;
+#if defined(HAS_ARGBBLENDROW1_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlendRow = ARGBBlendRow1_SSSE3;
+#if defined(HAS_ARGBBLENDROW_SSSE3)
+    if (width >= 4) {
+      ARGBBlendRow = ARGBBlendRow_Any_SSSE3;
+      if (IS_ALIGNED(width, 4) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        ARGBBlendRow = ARGBBlendRow_Aligned_SSSE3;
+      }
+    }
+#endif
+    return ARGBBlendRow;
+  }
+#endif
 #if defined(HAS_ARGBBLENDROW1_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBBlendRow = ARGBBlendRow1_SSE2;
@@ -155,15 +170,6 @@ ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
       }
     }
 #endif
-  }
-#endif
-#if defined(HAS_ARGBBLENDROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4) {
-    ARGBBlendRow = ARGBBlendRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 4) &&
-        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-      ARGBBlendRow = ARGBBlendRow_Aligned_SSSE3;
-    }
   }
 #endif
   return ARGBBlendRow;

@@ -565,7 +565,7 @@ void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     if (count > 4 && ((intptr_t)(dst_argb) & 3) == 0) {
       count = (-(intptr_t)(dst_argb) >> 2) & 3;
     }
-    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, count);
+    ARGBBlendRow1_SSSE3(src_argb0, src_argb1, dst_argb, count);
     src_argb0 += count * 4;
     src_argb1 += count * 4;
     dst_argb += count * 4;
@@ -581,7 +581,7 @@ void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     src_argb1 += (width & ~3) * 4;
     dst_argb += (width & ~3) * 4;
     width &= 3;
-    ARGBBlendRow1_SSE2(src_argb0, src_argb1, dst_argb, width);
+    ARGBBlendRow1_SSSE3(src_argb0, src_argb1, dst_argb, width);
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
