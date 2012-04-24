@@ -2770,41 +2770,77 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 // CPU agnostic row functions
 static void ScaleRowDown2_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
-    *dst++ = *src_ptr;
-    src_ptr += 2;
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[2];
+    dst += 2;
+    src_ptr += 4;
+  }
+  if (dst_width & 1) {
+    dst[0] = src_ptr[0];
   }
 }
 
 void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
                         uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
-    *dst++ = (src_ptr[0] + src_ptr[1] +
-              src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
-    src_ptr += 2;
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = (src_ptr[0] + src_ptr[1] +
+             src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
+    dst[1] = (src_ptr[2] + src_ptr[3] +
+             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] + 2) >> 2;
+    dst += 2;
+    src_ptr += 4;
+  }
+  if (dst_width & 1) {
+    dst[0] = (src_ptr[0] + src_ptr[1] +
+             src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
   }
 }
 
 static void ScaleRowDown4_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
-    *dst++ = *src_ptr;
-    src_ptr += 4;
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[4];
+    dst += 2;
+    src_ptr += 8;
+  }
+  if (dst_width & 1) {
+    dst[0] = src_ptr[0];
   }
 }
 
 static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
-    *dst++ = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
-              src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
-              src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
-              src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
-              src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
-              src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
-              src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] +
-              8) >> 4;
-    src_ptr += 4;
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
+             src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
+             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
+             src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
+             src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
+             src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
+             src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] +
+             8) >> 4;
+    dst[1] = (src_ptr[4] + src_ptr[5] + src_ptr[6] + src_ptr[7] +
+             src_ptr[src_stride + 4] + src_ptr[src_stride + 5] +
+             src_ptr[src_stride + 6] + src_ptr[src_stride + 7] +
+             src_ptr[src_stride * 2 + 4] + src_ptr[src_stride * 2 + 5] +
+             src_ptr[src_stride * 2 + 6] + src_ptr[src_stride * 2 + 7] +
+             src_ptr[src_stride * 3 + 4] + src_ptr[src_stride * 3 + 5] +
+             src_ptr[src_stride * 3 + 6] + src_ptr[src_stride * 3 + 7] +
+             8) >> 4;
+    dst += 2;
+    src_ptr += 8;
+  }
+  if (dst_width & 1) {
+    dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
+             src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
+             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
+             src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
+             src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
+             src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
+             src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] +
+             8) >> 4;
   }
 }
 
@@ -2815,9 +2851,14 @@ static const int kMaxRow12 = kMaxOutputWidth * 2;
 
 static void ScaleRowDown8_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
-    *dst++ = *src_ptr;
-    src_ptr += 8;
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[8];
+    dst += 2;
+    src_ptr += 16;
+  }
+  if (dst_width & 1) {
+    dst[0] = src_ptr[0];
   }
 }
 
