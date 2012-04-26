@@ -170,6 +170,11 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height);
 
+// Get function to add or subtract rows of bytes to a 16 bit buffer.  For blur.
+typedef void (*AddRow)(const uint8* src, uint16* dst, int width);
+AddRow GetAddRow(uint16* dst, int width);
+AddRow GetSubRow(uint16* dst, int width);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

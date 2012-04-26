@@ -1716,6 +1716,65 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 }
 #endif
 
+#ifdef HAS_ADDROW_SSE2
+// dst and width aligned to 16
+__declspec(naked) __declspec(align(16))
+void AddRow_SSE2(const uint8* src, uint16* dst, int width) {
+__asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // width
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    movdqu     xmm2, [eax]       // read 16 bytes
+    lea        eax, [eax + 16]
+    movdqa     xmm0, [edx]       // read first 8 words
+    movdqa     xmm1, [edx + 16]  // read next 8 words
+    movdqa     xmm3, xmm2
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    paddusw    xmm0, xmm2        // add 16 words
+    paddusw    xmm1, xmm3
+    sub        ecx, 16
+    movdqa     [edx], xmm0       // store 16 words
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         convertloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void SubRow_SSE2(const uint8* src, uint16* dst, int width) {
+__asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // width
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    movdqu     xmm2, [eax]       // read 16 bytes
+    lea        eax, [eax + 16]
+    movdqa     xmm0, [edx]       // read first 8 words
+    movdqa     xmm1, [edx + 16]  // read next 8 words
+    movdqa     xmm3, xmm2
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    psubusw    xmm0, xmm2        // sub 16 words
+    psubusw    xmm1, xmm3
+    sub        ecx, 16
+    movdqa     [edx], xmm0       // store 16 words
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ADDROW_SSE2
+
 #ifdef HAS_SPLITUV_SSE2
 __declspec(naked) __declspec(align(16))
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {

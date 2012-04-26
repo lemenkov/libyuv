@@ -193,4 +193,31 @@ TEST_F(libyuvTest, TestAttenuate) {
   EXPECT_EQ(85,  atten_pixels[255][2]);
   EXPECT_EQ(255, atten_pixels[255][3]);
 }
+
+TEST_F(libyuvTest, TestAddRow) {
+  SIMD_ALIGNED(uint8 orig_pixels[256]);
+  SIMD_ALIGNED(uint16 added_pixels[256]);
+
+  libyuv::AddRow AddRow = GetAddRow(added_pixels, 256);
+  libyuv::AddRow SubRow = GetSubRow(added_pixels, 256);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i] = i;
+  }
+  memset(added_pixels, 0, sizeof(uint16) * 256);
+
+  AddRow(orig_pixels, added_pixels, 256);
+  EXPECT_EQ(7u, added_pixels[7]);
+  EXPECT_EQ(250u, added_pixels[250]);
+  AddRow(orig_pixels, added_pixels, 256);
+  EXPECT_EQ(14u, added_pixels[7]);
+  EXPECT_EQ(500u, added_pixels[250]);
+  SubRow(orig_pixels, added_pixels, 256);
+  EXPECT_EQ(7u, added_pixels[7]);
+  EXPECT_EQ(250u, added_pixels[250]);
+
+  for (int i = 0; i < 1000 * (1280 * 720 * 4 / 256); ++i) {
+    AddRow(orig_pixels, added_pixels, 256);
+  }
+}
 }

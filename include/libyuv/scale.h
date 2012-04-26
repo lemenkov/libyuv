@@ -66,6 +66,14 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
                 bool interpolate);
 
+typedef void (*ARGBBlendRow)(const uint8* src_argb0,
+                             const uint8* src_argb1,
+                             uint8* dst_argb, int width);
+
+// Get function to Alpha Blend ARGB pixels and store to destination.
+ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width);
+
+
 // For testing, allow disabling of optimizations.
 void SetUseReferenceImpl(bool use);
 
