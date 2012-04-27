@@ -52,6 +52,11 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  uint8* dst_frame, int dst_stride_frame,
                  int width, int height);
 
+// Convert YUY2 to ARGB.
+int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
