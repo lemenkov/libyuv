@@ -57,6 +57,7 @@ void SetUseReferenceImpl(bool use) {
 
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SCALEROWDOWN2_NEON
+// Note - not static due to reuse in convert for 444 to 420.
 void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
                         uint8* dst, int dst_width) {
   asm volatile (
@@ -739,6 +740,80 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 
     sub        ecx, 16
     movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         wloop
+
+    pop        esi
+    ret
+  }
+}
+
+// Reads 32 pixels, throws half away and writes 16 pixels.
+// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+__declspec(naked) __declspec(align(16))
+static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
+                                         uint8* dst_ptr, int dst_width) {
+  __asm {
+    mov        eax, [esp + 4]        // src_ptr
+                                     // src_stride ignored
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+    align      16
+  wloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    pand       xmm0, xmm5
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         wloop
+
+    ret
+  }
+}
+// Blends 32x2 rectangle to 16x1.
+// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+__declspec(naked) __declspec(align(16))
+static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
+                                            int src_stride,
+                                            uint8* dst_ptr, int dst_width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]    // src_ptr
+    mov        esi, [esp + 4 + 8]    // src_stride
+    mov        edx, [esp + 4 + 12]   // dst_ptr
+    mov        ecx, [esp + 4 + 16]   // dst_width
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+    align      16
+  wloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
+    lea        eax,  [eax + 32]
+    pavgb      xmm0, xmm2            // average rows
+    pavgb      xmm1, xmm3
+
+    movdqa     xmm2, xmm0            // average columns (32 to 16 pixels)
+    psrlw      xmm0, 8
+    movdqa     xmm3, xmm1
+    psrlw      xmm1, 8
+    pand       xmm2, xmm5
+    pand       xmm3, xmm5
+    pavgw      xmm0, xmm2
+    pavgw      xmm1, xmm3
+    packuswb   xmm0, xmm1
+
+    sub        ecx, 16
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         wloop
 
@@ -1578,8 +1653,8 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 );
 }
 
-static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
-                                  uint8* dst_ptr, int dst_width) {
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+                           uint8* dst_ptr, int dst_width) {
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
@@ -1601,6 +1676,65 @@ static void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   "pavgw      %%xmm3,%%xmm1                    \n"
   "packuswb   %%xmm1,%%xmm0                    \n"
   "movdqa     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "jg         1b                               \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  : "r"(static_cast<intptr_t>(src_stride))   // %3
+  : "memory", "cc"
+);
+}
+
+static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
+                                         uint8* dst_ptr, int dst_width) {
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "lea        0x20(%0),%0                      \n"
+  "pand       %%xmm5,%%xmm0                    \n"
+  "pand       %%xmm5,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqu     %%xmm0,(%1)                      \n"
+  "lea        0x10(%1),%1                      \n"
+  "sub        $0x10,%2                         \n"
+  "jg         1b                               \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  :
+  : "memory", "cc"
+);
+}
+
+static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
+                                            int src_stride,
+                                            uint8* dst_ptr, int dst_width) {
+  asm volatile (
+  "pcmpeqb    %%xmm5,%%xmm5                    \n"
+  "psrlw      $0x8,%%xmm5                      \n"
+"1:                                            \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     0x10(%0),%%xmm1                  \n"
+  "movdqu     (%0,%3,1),%%xmm2                 \n"
+  "movdqu     0x10(%0,%3,1),%%xmm3             \n"
+  "lea        0x20(%0),%0                      \n"
+  "pavgb      %%xmm2,%%xmm0                    \n"
+  "pavgb      %%xmm3,%%xmm1                    \n"
+  "movdqa     %%xmm0,%%xmm2                    \n"
+  "psrlw      $0x8,%%xmm0                      \n"
+  "movdqa     %%xmm1,%%xmm3                    \n"
+  "psrlw      $0x8,%%xmm1                      \n"
+  "pand       %%xmm5,%%xmm2                    \n"
+  "pand       %%xmm5,%%xmm3                    \n"
+  "pavgw      %%xmm2,%%xmm0                    \n"
+  "pavgw      %%xmm3,%%xmm1                    \n"
+  "packuswb   %%xmm1,%%xmm0                    \n"
+  "movdqu     %%xmm0,(%1)                      \n"
   "lea        0x10(%1),%1                      \n"
   "sub        $0x10,%2                         \n"
   "jg         1b                               \n"
@@ -3118,11 +3252,13 @@ static void ScalePlaneDown2(int src_width, int src_height,
     ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
   }
 #elif defined(HAS_SCALEROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst_width, 16) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
+    ScaleRowDown2 = filtering ? ScaleRowDown2Int_Unaligned_SSE2 :
+        ScaleRowDown2_Unaligned_SSE2;
+    if (IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
+        IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+      ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
+    }
   }
 #endif
 
