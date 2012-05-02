@@ -74,6 +74,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
     mov        ecx, [esp + 4 + 16]   // pix
     sub        edi, eax
 
+    align      16
   convertloop:
     movdqa     xmm0, [eax]
     pavgb      xmm0, [eax + edx]
@@ -92,6 +93,7 @@ static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                          uint8* dst_uv, int pix) {
   asm volatile (
   "sub        %0,%1                            \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "pavgb      (%0,%3),%%xmm0                   \n"
@@ -467,6 +469,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2,
     pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
     psrlw      xmm5, 8
 
+    align      16
   convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
@@ -506,6 +509,7 @@ static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"

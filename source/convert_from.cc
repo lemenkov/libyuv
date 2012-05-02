@@ -291,6 +291,7 @@ static void I42xToYUY2Row_SSE2(const uint8* src_y,
                                uint8* dst_frame, int width) {
  asm volatile (
     "sub        %1,%2                            \n"
+    ".p2align  4                                 \n"
   "1:                                            \n"
     "movq      (%1),%%xmm2                       \n"
     "movq      (%1,%2,1),%%xmm3                  \n"
@@ -326,6 +327,7 @@ static void I42xToUYVYRow_SSE2(const uint8* src_y,
                                uint8* dst_frame, int width) {
  asm volatile (
     "sub        %1,%2                            \n"
+    ".p2align  4                                 \n"
   "1:                                            \n"
     "movq      (%1),%%xmm2                       \n"
     "movq      (%1,%2,1),%%xmm3                  \n"

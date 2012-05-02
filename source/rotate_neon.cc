@@ -32,6 +32,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "sub         %4, #8                        \n"
 
     // handle 8x8 blocks.  this should be the majority of the plane
+    ".p2align  4                               \n"
     "1:                                        \n"
       "mov         r9, %0                      \n"
 
@@ -198,6 +199,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "sub         %6, #8                        \n"
 
     // handle 8x8 blocks.  this should be the majority of the plane
+    ".p2align  4                               \n"
     "1:                                        \n"
       "mov         r9, %0                      \n"
 

@@ -57,6 +57,7 @@ static void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
   asm volatile (
     "movd   %3,%%xmm5                          \n"
     "pshufd $0x0,%%xmm5,%%xmm5                 \n"
+    ".p2align  4                               \n"
 "1:                                            \n"
     "movdqa (%0),%%xmm0                        \n"
     "lea    0x10(%0),%0                        \n"

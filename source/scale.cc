@@ -1457,8 +1457,10 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
     pop        edi
     pop        esi
     ret
@@ -1471,8 +1473,10 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop1
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
     pop        edi
     pop        esi
     ret
@@ -1486,8 +1490,10 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop2
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
     pop        edi
     pop        esi
     ret
@@ -1538,8 +1544,11 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
+
     pop        edi
     pop        esi
     ret
@@ -1552,8 +1561,10 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop1
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
     pop        edi
     pop        esi
     ret
@@ -1567,8 +1578,10 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop2
 
-    mov        al, [esi + edi - 1]
-    mov        [esi + edi], al
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
     pop        edi
     pop        esi
     ret
@@ -1634,6 +1647,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1658,6 +1672,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1692,6 +1707,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqu     (%0),%%xmm0                      \n"
   "movdqu     0x10(%0),%%xmm1                  \n"
@@ -1717,6 +1733,7 @@ static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrlw      $0x8,%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqu     (%0),%%xmm0                      \n"
   "movdqu     0x10(%0),%%xmm1                  \n"
@@ -1752,6 +1769,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "pcmpeqb    %%xmm5,%%xmm5                    \n"
   "psrld      $0x18,%%xmm5                     \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1779,6 +1797,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
   "pcmpeqb    %%xmm7,%%xmm7                    \n"
   "psrlw      $0x8,%%xmm7                      \n"
   "lea        (%4,%4,2),%3                     \n"
+  ".p2align  4                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -1831,6 +1850,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlq     $0x38,%%xmm5                    \n"
+    ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
@@ -1860,6 +1880,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
     "sub       $0x1,%5                         \n"
+    ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "mov       %0,%3                           \n"
@@ -2284,8 +2305,10 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     1b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2297,8 +2320,10 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     2b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2311,8 +2336,10 @@ extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     3b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2361,8 +2388,10 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     1b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2374,8 +2403,10 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     2b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2388,8 +2419,10 @@ extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "lea    0x10(%esi),%esi                    \n"
     "jg     3b                                 \n"
 
-    "mov    -0x1(%esi,%edi,1),%al              \n"
-    "mov    %al,(%esi,%edi,1)                  \n"
+    "punpckhbw %xmm0,%xmm0                     \n"
+    "pshufhw $0xff,%xmm0,%xmm0                 \n"
+    "punpckhqdq %xmm0,%xmm0                    \n"
+    "movdqa %xmm0,(%esi,%edi,1)                \n"
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "ret                                       \n"
@@ -2401,6 +2434,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
   asm volatile (
   "lea        (%3,%3,2),%%r10                  \n"
   "pxor       %%xmm7,%%xmm7                    \n"
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -2461,6 +2495,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
   "movdqa     (%3),%%xmm3                      \n"
   "movdqa     (%4),%%xmm4                      \n"
   "movdqa     (%5),%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm2                  \n"
@@ -2496,6 +2531,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movdqa     (%8),%%xmm6                      \n"  // _madd11
   "movdqa     (%9),%%xmm7                      \n"  // _round34
   "movdqa     (%10),%%xmm8                     \n"  // _madd21
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     (%0,%3),%%xmm1                   \n"
@@ -2553,6 +2589,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movdqa     (%8),%%xmm6                      \n"  // _madd11
   "movdqa     (%9),%%xmm7                      \n"  // _round34
   "movdqa     (%10),%%xmm8                     \n"  // _madd21
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     (%0,%3,1),%%xmm1                 \n"
@@ -2609,6 +2646,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
   asm volatile (
   "movdqa     (%3),%%xmm4                      \n"
   "movdqa     (%4),%%xmm5                      \n"
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     0x10(%0),%%xmm1                  \n"
@@ -2638,6 +2676,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movdqa     (%5),%%xmm5                      \n"
   "movdqa     (%6),%%xmm6                      \n"
   "pxor       %%xmm7,%%xmm7                    \n"
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     (%0,%3,1),%%xmm2                 \n"
@@ -2695,6 +2734,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
   "movdqa     (%5),%%xmm5                      \n"
   "movdqa     (%6),%%xmm6                      \n"
   "movdqa     (%7),%%xmm7                      \n"
+  ".p2align  4                                 \n"
 "1:"
   "movdqa     (%0),%%xmm2                      \n"
   "pavgb      (%0,%3,1),%%xmm2                 \n"
@@ -2733,6 +2773,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  int dst_width, int source_y_fraction) {
   if (source_y_fraction == 0) {
     asm volatile (
+    ".p2align  4                               \n"
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "lea        0x10(%1),%1                  \n"
@@ -2751,6 +2792,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     return;
   } else if (source_y_fraction == 128) {
     asm volatile (
+    ".p2align  4                               \n"
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%3,1),%%xmm2             \n"
@@ -2781,6 +2823,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
       "punpcklwd  %%xmm5,%%xmm5                \n"
       "pshufd     $0x0,%%xmm5,%%xmm5           \n"
       "pxor       %%xmm7,%%xmm7                \n"
+      ".p2align  4                             \n"
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%4,1),%%xmm2             \n"
@@ -2824,6 +2867,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
                                   int dst_width, int source_y_fraction) {
   if (source_y_fraction <= 1) {
     asm volatile (
+    ".p2align  4                               \n"
    "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "lea        0x10(%1),%1                  \n"
@@ -2842,6 +2886,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     return;
   } else if (source_y_fraction == 128) {
     asm volatile (
+    ".p2align  4                               \n"
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%3,1),%%xmm2             \n"
@@ -2870,6 +2915,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
       "movd       %%eax,%%xmm5                 \n"
       "punpcklwd  %%xmm5,%%xmm5                \n"
       "pshufd     $0x0,%%xmm5,%%xmm5           \n"
+      ".p2align  4                             \n"
     "1:"
       "movdqa     (%1),%%xmm0                  \n"
       "movdqa     (%1,%4,1),%%xmm2             \n"
@@ -2904,12 +2950,13 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 // CPU agnostic row functions
 static void ScaleRowDown2_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  uint8* dend = dst + dst_width - 1;
+  do {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[2];
     dst += 2;
     src_ptr += 4;
-  }
+  } while (dst < dend);
   if (dst_width & 1) {
     dst[0] = src_ptr[0];
   }
@@ -2917,28 +2964,30 @@ static void ScaleRowDown2_C(const uint8* src_ptr, int,
 
 void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
                         uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = (src_ptr[0] + src_ptr[1] +
-             src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
-    dst[1] = (src_ptr[2] + src_ptr[3] +
-             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] + 2) >> 2;
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
+    dst[1] = (s[2] + s[3] + t[2] + t[3] + 2) >> 2;
     dst += 2;
-    src_ptr += 4;
-  }
+    s += 4;
+    t += 4;
+  } while (dst < dend);
   if (dst_width & 1) {
-    dst[0] = (src_ptr[0] + src_ptr[1] +
-             src_ptr[src_stride] + src_ptr[src_stride + 1] + 2) >> 2;
+    dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
   }
 }
 
 static void ScaleRowDown4_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  uint8* dend = dst + dst_width - 1;
+  do {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[4];
     dst += 2;
     src_ptr += 8;
-  }
+  } while (dst < dend);
   if (dst_width & 1) {
     dst[0] = src_ptr[0];
   }
@@ -2946,34 +2995,36 @@ static void ScaleRowDown4_C(const uint8* src_ptr, int,
 
 static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  intptr_t stride = src_stride;
+  uint8* dend = dst + dst_width - 1;
+  do {
     dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
-             src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
-             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
-             src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
-             src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
-             src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
-             src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] +
+             src_ptr[stride + 0] + src_ptr[stride + 1] +
+             src_ptr[stride + 2] + src_ptr[stride + 3] +
+             src_ptr[stride * 2 + 0] + src_ptr[stride * 2 + 1] +
+             src_ptr[stride * 2 + 2] + src_ptr[stride * 2 + 3] +
+             src_ptr[stride * 3 + 0] + src_ptr[stride * 3 + 1] +
+             src_ptr[stride * 3 + 2] + src_ptr[stride * 3 + 3] +
              8) >> 4;
     dst[1] = (src_ptr[4] + src_ptr[5] + src_ptr[6] + src_ptr[7] +
-             src_ptr[src_stride + 4] + src_ptr[src_stride + 5] +
-             src_ptr[src_stride + 6] + src_ptr[src_stride + 7] +
-             src_ptr[src_stride * 2 + 4] + src_ptr[src_stride * 2 + 5] +
-             src_ptr[src_stride * 2 + 6] + src_ptr[src_stride * 2 + 7] +
-             src_ptr[src_stride * 3 + 4] + src_ptr[src_stride * 3 + 5] +
-             src_ptr[src_stride * 3 + 6] + src_ptr[src_stride * 3 + 7] +
+             src_ptr[stride + 4] + src_ptr[stride + 5] +
+             src_ptr[stride + 6] + src_ptr[stride + 7] +
+             src_ptr[stride * 2 + 4] + src_ptr[stride * 2 + 5] +
+             src_ptr[stride * 2 + 6] + src_ptr[stride * 2 + 7] +
+             src_ptr[stride * 3 + 4] + src_ptr[stride * 3 + 5] +
+             src_ptr[stride * 3 + 6] + src_ptr[stride * 3 + 7] +
              8) >> 4;
     dst += 2;
     src_ptr += 8;
-  }
+  } while (dst < dend);
   if (dst_width & 1) {
     dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
-             src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
-             src_ptr[src_stride + 2] + src_ptr[src_stride + 3] +
-             src_ptr[src_stride * 2 + 0] + src_ptr[src_stride * 2 + 1] +
-             src_ptr[src_stride * 2 + 2] + src_ptr[src_stride * 2 + 3] +
-             src_ptr[src_stride * 3 + 0] + src_ptr[src_stride * 3 + 1] +
-             src_ptr[src_stride * 3 + 2] + src_ptr[src_stride * 3 + 3] +
+             src_ptr[stride + 0] + src_ptr[stride + 1] +
+             src_ptr[stride + 2] + src_ptr[stride + 3] +
+             src_ptr[stride * 2 + 0] + src_ptr[stride * 2 + 1] +
+             src_ptr[stride * 2 + 2] + src_ptr[stride * 2 + 3] +
+             src_ptr[stride * 3 + 0] + src_ptr[stride * 3 + 1] +
+             src_ptr[stride * 3 + 2] + src_ptr[stride * 3 + 3] +
              8) >> 4;
   }
 }
@@ -2985,12 +3036,13 @@ static const int kMaxRow12 = kMaxOutputWidth * 2;
 
 static void ScaleRowDown8_C(const uint8* src_ptr, int,
                             uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  uint8* dend = dst + dst_width - 1;
+  do {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[8];
     dst += 2;
     src_ptr += 16;
-  }
+  } while (dst < dend);
   if (dst_width & 1) {
     dst[0] = src_ptr[0];
   }
@@ -3026,9 +3078,9 @@ static void ScaleRowDown34_C(const uint8* src_ptr, int,
 static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  uint8* dend = d + dst_width;
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
+  uint8* dend = d + dst_width;
   do {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -3049,9 +3101,9 @@ static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  uint8* dend = d + dst_width;
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
+  uint8* dend = d + dst_width;
   do {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -3073,8 +3125,8 @@ static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
 static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
                                 int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  uint8* dend = dst_ptr + dst_width;
   const uint8* s = src_ptr;
+  uint8* dend = dst_ptr + dst_width;
   do {
     dst_ptr[0] = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     dst_ptr[1] = (s[1] * 1 + s[2] * 1 + 1) >> 1;
@@ -3150,20 +3202,21 @@ static void ScaleRowDown38_C(const uint8* src_ptr, int,
 static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
+  intptr_t stride = src_stride;
   for (int i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
-        src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
-        src_ptr[src_stride + 2] + src_ptr[src_stride * 2 + 0] +
-        src_ptr[src_stride * 2 + 1] + src_ptr[src_stride * 2 + 2]) *
+        src_ptr[stride + 0] + src_ptr[stride + 1] +
+        src_ptr[stride + 2] + src_ptr[stride * 2 + 0] +
+        src_ptr[stride * 2 + 1] + src_ptr[stride * 2 + 2]) *
         (65536 / 9) >> 16;
     dst_ptr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
-        src_ptr[src_stride + 3] + src_ptr[src_stride + 4] +
-        src_ptr[src_stride + 5] + src_ptr[src_stride * 2 + 3] +
-        src_ptr[src_stride * 2 + 4] + src_ptr[src_stride * 2 + 5]) *
+        src_ptr[stride + 3] + src_ptr[stride + 4] +
+        src_ptr[stride + 5] + src_ptr[stride * 2 + 3] +
+        src_ptr[stride * 2 + 4] + src_ptr[stride * 2 + 5]) *
         (65536 / 9) >> 16;
     dst_ptr[2] = (src_ptr[6] + src_ptr[7] +
-        src_ptr[src_stride + 6] + src_ptr[src_stride + 7] +
-        src_ptr[src_stride * 2 + 6] + src_ptr[src_stride * 2 + 7]) *
+        src_ptr[stride + 6] + src_ptr[stride + 7] +
+        src_ptr[stride * 2 + 6] + src_ptr[stride * 2 + 7]) *
         (65536 / 6) >> 16;
     src_ptr += 8;
     dst_ptr += 3;
@@ -3174,15 +3227,16 @@ static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
+  intptr_t stride = src_stride;
   for (int i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
-        src_ptr[src_stride + 0] + src_ptr[src_stride + 1] +
-        src_ptr[src_stride + 2]) * (65536 / 6) >> 16;
+        src_ptr[stride + 0] + src_ptr[stride + 1] +
+        src_ptr[stride + 2]) * (65536 / 6) >> 16;
     dst_ptr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
-        src_ptr[src_stride + 3] + src_ptr[src_stride + 4] +
-        src_ptr[src_stride + 5]) * (65536 / 6) >> 16;
+        src_ptr[stride + 3] + src_ptr[stride + 4] +
+        src_ptr[stride + 5]) * (65536 / 6) >> 16;
     dst_ptr[2] = (src_ptr[6] + src_ptr[7] +
-        src_ptr[src_stride + 6] + src_ptr[src_stride + 7]) *
+        src_ptr[stride + 6] + src_ptr[stride + 7]) *
         (65536 / 4) >> 16;
     src_ptr += 8;
     dst_ptr += 3;
