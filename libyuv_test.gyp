@@ -27,6 +27,7 @@
          'unit_test/planar_test.cc',
          'unit_test/rotate_test.cc',
          'unit_test/scale_test.cc',
+         'unit_test/scale_argb_test.cc',
          'unit_test/unit_test.cc',
       ],
       'conditions': [

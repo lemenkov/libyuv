@@ -23,12 +23,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if defined(_MSC_VER)
-#define ALIGN16(var) __declspec(align(16)) var
-#else
-#define ALIGN16(var) var __attribute__((aligned(16)))
-#endif
-
 // Note: A Neon reference manual
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0204j/CJAJIIGG.html
 // Note: Some SSE2 reference manuals
@@ -571,12 +565,12 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
     (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
 
 #if defined(_MSC_VER)
-#define TALIGN16(t, var) __declspec(align(16)) t _ ## var
+#define TSIMD_ALIGNED(t, var) __declspec(align(16)) t _ ## var
 #elif defined(__i386__) && \
     (defined(__APPLE__) || defined(__MINGW32__) || defined(__CYGWIN__))
-#define TALIGN16(t, var) t var __attribute__((aligned(16)))
+#define TSIMD_ALIGNED(t, var) t var __attribute__((aligned(16)))
 #else
-#define TALIGN16(t, var) t _ ## var __attribute__((aligned(16)))
+#define TSIMD_ALIGNED(t, var) t _ ## var __attribute__((aligned(16)))
 #endif
 
 #if defined(__APPLE__) && defined(__i386__)
@@ -598,77 +592,77 @@ static void ScaleFilterRows_NEON(uint8* dst_ptr,
 #endif
 
 // Offsets for source bytes 0 to 9
-extern "C" TALIGN16(const uint8, shuf0[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf0[16]) =
   { 0, 1, 3, 4, 5, 7, 8, 9, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 11 to 20 with 8 subtracted = 3 to 12.
-extern "C" TALIGN16(const uint8, shuf1[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf1[16]) =
   { 3, 4, 5, 7, 8, 9, 11, 12, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
-extern "C" TALIGN16(const uint8, shuf2[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf2[16]) =
   { 5, 7, 8, 9, 11, 12, 13, 15, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Offsets for source bytes 0 to 10
-extern "C" TALIGN16(const uint8, shuf01[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf01[16]) =
   { 0, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10 };
 
 // Offsets for source bytes 10 to 21 with 8 subtracted = 3 to 13.
-extern "C" TALIGN16(const uint8, shuf11[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf11[16]) =
   { 2, 3, 4, 5, 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13 };
 
 // Offsets for source bytes 21 to 31 with 16 subtracted = 5 to 31.
-extern "C" TALIGN16(const uint8, shuf21[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shuf21[16]) =
   { 5, 6, 6, 7, 8, 9, 9, 10, 10, 11, 12, 13, 13, 14, 14, 15 };
 
 // Coefficients for source bytes 0 to 10
-extern "C" TALIGN16(const uint8, madd01[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, madd01[16]) =
   { 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2 };
 
 // Coefficients for source bytes 10 to 21
-extern "C" TALIGN16(const uint8, madd11[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, madd11[16]) =
   { 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1 };
 
 // Coefficients for source bytes 21 to 31
-extern "C" TALIGN16(const uint8, madd21[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, madd21[16]) =
   { 2, 2, 1, 3, 3, 1, 2, 2, 1, 3, 3, 1, 2, 2, 1, 3 };
 
 // Coefficients for source bytes 21 to 31
-extern "C" TALIGN16(const int16, round34[8]) =
+extern "C" TSIMD_ALIGNED(const int16, round34[8]) =
   { 2, 2, 2, 2, 2, 2, 2, 2 };
 
-extern "C" TALIGN16(const uint8, kShuf38a[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, kShuf38a[16]) =
   { 0, 3, 6, 8, 11, 14, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
 
-extern "C" TALIGN16(const uint8, kShuf38b[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, kShuf38b[16]) =
   { 128, 128, 128, 128, 128, 128, 0, 3, 6, 8, 11, 14, 128, 128, 128, 128 };
 
 // Arrange words 0,3,6 into 0,1,2
-extern "C" TALIGN16(const uint8, shufac0[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shufac0[16]) =
   { 0, 1, 6, 7, 12, 13, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128 };
 
 // Arrange words 0,3,6 into 3,4,5
-extern "C" TALIGN16(const uint8, shufac3[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shufac3[16]) =
   { 128, 128, 128, 128, 128, 128, 0, 1, 6, 7, 12, 13, 128, 128, 128, 128 };
 
 // Scaling values for boxes of 3x3 and 2x3
-extern "C" TALIGN16(const uint16, scaleac3[8]) =
+extern "C" TSIMD_ALIGNED(const uint16, scaleac3[8]) =
   { 65536 / 9, 65536 / 9, 65536 / 6, 65536 / 9, 65536 / 9, 65536 / 6, 0, 0 };
 
 // Arrange first value for pixels 0,1,2,3,4,5
-extern "C" TALIGN16(const uint8, shufab0[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shufab0[16]) =
   { 0, 128, 3, 128, 6, 128, 8, 128, 11, 128, 14, 128, 128, 128, 128, 128 };
 
 // Arrange second value for pixels 0,1,2,3,4,5
-extern "C" TALIGN16(const uint8, shufab1[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shufab1[16]) =
   { 1, 128, 4, 128, 7, 128, 9, 128, 12, 128, 15, 128, 128, 128, 128, 128 };
 
 // Arrange third value for pixels 0,1,2,3,4,5
-extern "C" TALIGN16(const uint8, shufab2[16]) =
+extern "C" TSIMD_ALIGNED(const uint8, shufab2[16]) =
   { 2, 128, 5, 128, 128, 128, 10, 128, 13, 128, 128, 128, 128, 128, 128, 128 };
 
 // Scaling values for boxes of 3x2 and 2x2
-extern "C" TALIGN16(const uint16, scaleab2[8]) =
+extern "C" TSIMD_ALIGNED(const uint16, scaleab2[8]) =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 #endif
 
@@ -3052,7 +3046,7 @@ static void ScaleRowDown8_C(const uint8* src_ptr, int,
 // uses ScaleRowDown8_C instead.
 static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
                                uint8* dst, int dst_width) {
-  ALIGN16(uint8 src_row[kMaxRow12 * 2]);
+  SIMD_ALIGNED(uint8 src_row[kMaxRow12 * 2]);
   assert(dst_width <= kMaxOutputWidth);
   ScaleRowDown4Int_C(src_ptr, src_stride, src_row, dst_width * 2);
   ScaleRowDown4Int_C(src_ptr + src_stride * 4, src_stride,
@@ -3171,7 +3165,7 @@ static const int kMaxInputWidth = 2560;
 static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  ALIGN16(uint8 row[kMaxInputWidth]);
+  SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 4);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
@@ -3180,7 +3174,7 @@ static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
 static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  ALIGN16(uint8 row[kMaxInputWidth]);
+  SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 2);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
@@ -3648,7 +3642,7 @@ static void ScalePlaneBox(int src_width, int src_height,
       dst += dst_stride;
     }
   } else {
-    ALIGN16(uint16 row[kMaxInputWidth]);
+    SIMD_ALIGNED(uint16 row[kMaxInputWidth]);
     void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
                          uint16* dst_ptr, int src_width, int src_height)=
         ScaleAddRows_C;
@@ -3737,7 +3731,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
   } else {
-    ALIGN16(uint8 row[kMaxInputWidth + 1]);
+    SIMD_ALIGNED(uint8 row[kMaxInputWidth + 1]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                             int src_stride,
                             int dst_width, int source_y_fraction) =

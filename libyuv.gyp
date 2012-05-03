@@ -56,6 +56,7 @@
         'source/row_posix.cc',
         'source/row_win.cc',
         'source/scale.cc',
+        'source/scale_argb.cc',
         'source/video_common.cc',
       ],
     },

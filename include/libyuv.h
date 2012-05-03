@@ -20,6 +20,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/scale.h"
+#include "libyuv/scale_argb.h"
 #include "libyuv/version.h"
 #include "libyuv/video_common.h"
 

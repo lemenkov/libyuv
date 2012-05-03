@@ -61,7 +61,7 @@ static int TestFilter(int src_width, int src_height,
     }
   }
 
-  const int runs = 128;
+  const int runs = 1000;
   align_buffer_16(dst_y_c, dst_y_plane_size)
   align_buffer_16(dst_u_c, dst_uv_plane_size)
   align_buffer_16(dst_v_c, dst_uv_plane_size)
@@ -111,7 +111,7 @@ static int TestFilter(int src_width, int src_height,
   for (i = b; i < (dst_height + b); ++i) {
     for (j = b; j < (dst_width + b); ++j) {
       int abs_diff = abs(dst_y_c[(i * dst_stride_y) + j] -
-                          dst_y_opt[(i * dst_stride_y) + j]);
+                         dst_y_opt[(i * dst_stride_y) + j]);
       if (abs_diff > max_diff)
         max_diff = abs_diff;
     }
@@ -120,11 +120,11 @@ static int TestFilter(int src_width, int src_height,
   for (i = b; i < (dst_height_uv + b); ++i) {
     for (j = b; j < (dst_width_uv + b); ++j) {
       int abs_diff = abs(dst_u_c[(i * dst_stride_uv) + j] -
-                          dst_u_opt[(i * dst_stride_uv) + j]);
+                         dst_u_opt[(i * dst_stride_uv) + j]);
       if (abs_diff > max_diff)
         max_diff = abs_diff;
       abs_diff = abs(dst_v_c[(i * dst_stride_uv) + j] -
-                      dst_v_opt[(i * dst_stride_uv) + j]);
+                     dst_v_opt[(i * dst_stride_uv) + j]);
       if (abs_diff > max_diff)
         max_diff = abs_diff;
 
@@ -157,9 +157,9 @@ TEST_F(libyuvTest, ScaleDownBy2) {
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
-    err += TestFilter (src_width, src_height,
-                       dst_width, dst_height,
-                       static_cast<FilterMode>(f));
+    err += TestFilter(src_width, src_height,
+                      dst_width, dst_height,
+                      static_cast<FilterMode>(f));
 
   EXPECT_EQ(0, err);
 }
@@ -173,9 +173,9 @@ TEST_F(libyuvTest, ScaleDownBy4) {
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
-    err += TestFilter (src_width, src_height,
-                       dst_width, dst_height,
-                       static_cast<FilterMode>(f));
+    err += TestFilter(src_width, src_height,
+                      dst_width, dst_height,
+                      static_cast<FilterMode>(f));
 
   EXPECT_EQ(0, err);
 }
@@ -189,9 +189,9 @@ TEST_F(libyuvTest, ScaleDownBy34) {
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
-    err += TestFilter (src_width, src_height,
-                       dst_width, dst_height,
-                       static_cast<FilterMode>(f));
+    err += TestFilter(src_width, src_height,
+                      dst_width, dst_height,
+                      static_cast<FilterMode>(f));
 
   EXPECT_EQ(0, err);
 }
@@ -201,13 +201,12 @@ TEST_F(libyuvTest, ScaleDownBy38) {
   int src_height = 720;
   int dst_width = src_width * 3 / 8;
   int dst_height = src_height * 3 / 8;
-
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
-    err += TestFilter (src_width, src_height,
-                       dst_width, dst_height,
-                       static_cast<FilterMode>(f));
+    err += TestFilter(src_width, src_height,
+                      dst_width, dst_height,
+                      static_cast<FilterMode>(f));
 
   EXPECT_EQ(0, err);
 }
@@ -217,13 +216,12 @@ TEST_F(libyuvTest, ScalePlaneBilinear) {
   int src_height = 720;
   int dst_width = 1366;
   int dst_height = 768;
-
   int err = 0;
 
   for (int f = 0; f < 3; ++f)
-    err += TestFilter (src_width, src_height,
-                       dst_width, dst_height,
-                       static_cast<FilterMode>(f));
+    err += TestFilter(src_width, src_height,
+                      dst_width, dst_height,
+                      static_cast<FilterMode>(f));
 
   EXPECT_EQ(0, err);
 }
