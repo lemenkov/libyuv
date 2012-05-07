@@ -327,6 +327,9 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 );
 }
 
+#if defined(__x86_64__)
+// TODO(fbarchard): 32 bit gcc runs out of registers.  fix.
+
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
 // TODO(fbarchard): write single inline instead of 3 and use single mul of diff
 #define HAS_SCALEARGBFILTERROWS_SSE2
@@ -524,6 +527,7 @@ static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr,
   }
   return;
 }
+#endif  // 64 bit
 #endif
 
 static void ScaleARGBRowDown2_C(const uint8* src_ptr, int,
