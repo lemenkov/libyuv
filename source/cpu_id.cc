@@ -11,34 +11,12 @@
 #include "libyuv/cpu_id.h"
 
 #include <stdlib.h>  // For getenv()
-#ifdef _MSC_VER
-#include <intrin.h>  // For __cpuid()
-#endif
 
 // For ArmCpuCaps() but unittested on all platforms
 #include <stdio.h>
 #include <string.h>
 
 #include "libyuv/basic_types.h"  // For CPU_X86
-
-// TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
-#if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
-    "mov %%ebx, %%edi                          \n"
-    "cpuid                                     \n"
-    "xchg %%edi, %%ebx                         \n"
-    : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#elif defined(__i386__) || defined(__x86_64__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
-    "cpuid                                     \n"
-    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#endif
 
 #ifdef __cplusplus
 namespace libyuv {
