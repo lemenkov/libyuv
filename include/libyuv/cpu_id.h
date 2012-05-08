@@ -11,29 +11,6 @@
 #ifndef INCLUDE_LIBYUV_CPU_ID_H_
 #define INCLUDE_LIBYUV_CPU_ID_H_
 
-#ifdef _MSC_VER
-#include <intrin.h>  // For __cpuid()
-#endif
-
-// TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
-#if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
-    "mov %%ebx, %%edi                          \n"
-    "cpuid                                     \n"
-    "xchg %%edi, %%ebx                         \n"
-    : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#elif defined(__i386__) || defined(__x86_64__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
-    "cpuid                                     \n"
-    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#endif
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -67,6 +44,9 @@ static __inline int TestCpuFlag(int test_flag) {
 // MaskCpuFlags(kCpuInitialized) to disable all cpu specific optimizations.
 // MaskCpuFlags(0) to re-initialize all cpu detection.
 void MaskCpuFlags(int enable_flags);
+
+// Low level cpuid for X86.  Returns zeros on other CPUs.
+void CpuId(int cpu_info[4], int info_type);
 
 #ifdef __cplusplus
 }  // extern "C"
