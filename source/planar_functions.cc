@@ -775,13 +775,14 @@ __declspec(naked) __declspec(align(16))
 static void SetRows32_X86(uint8* dst, uint32 v32, int width,
                          int dst_stride, int height) {
   __asm {
+    push       esi
     push       edi
     push       ebp
-    mov        edi, [esp + 8 + 4]   // dst
-    mov        eax, [esp + 8 + 8]   // v32
-    mov        ebp, [esp + 8 + 12]  // width
-    mov        edx, [esp + 8 + 16]  // dst_stride
-    mov        ebx, [esp + 8 + 20]  // height
+    mov        edi, [esp + 12 + 4]   // dst
+    mov        eax, [esp + 12 + 8]   // v32
+    mov        ebp, [esp + 12 + 12]  // width
+    mov        edx, [esp + 12 + 16]  // dst_stride
+    mov        esi, [esp + 12 + 20]  // height
     lea        ecx, [ebp * 4]
     sub        edx, ecx             // stride - width * 4
 
@@ -790,11 +791,12 @@ static void SetRows32_X86(uint8* dst, uint32 v32, int width,
     mov        ecx, ebp
     rep stosd
     add        edi, edx
-    sub        ebx, 1
+    sub        esi, 1
     jg         convertloop
 
     pop        ebp
     pop        edi
+    pop        esi
     ret
   }
 }

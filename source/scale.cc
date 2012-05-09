@@ -55,7 +55,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
   asm volatile (
     "1:                                        \n"
     // load even pixels into q0, odd into q1
-    "vld2.u8    {q0,q1}, [%0]!                 \n"  
+    "vld2.u8    {q0,q1}, [%0]!                 \n"
     "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
     "bgt        1b                             \n"
@@ -71,14 +71,14 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (
     // change the stride to row 2 pointer
-    "add        %1, %0                         \n"  
+    "add        %1, %0                         \n"
     "1:                                        \n"
     "vld1.u8    {q0,q1}, [%0]!                 \n"  // load row 1 and post inc
     "vld1.u8    {q2,q3}, [%1]!                 \n"  // load row 2 and post inc
     "vpaddl.u8  q0, q0                         \n"  // row 1 add adjacent
     "vpaddl.u8  q1, q1                         \n"
     // row 2 add adjacent, add row 1 to row 2
-    "vpadal.u8  q0, q2                         \n"  
+    "vpadal.u8  q0, q2                         \n"
     "vpadal.u8  q1, q3                         \n"
     "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
     "vrshrn.u16 d1, q1, #2                     \n"
@@ -1399,6 +1399,10 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
+// Normal formula for bilinear interpolation is:
+//   source_y_fraction * row1 + (1 - source_y_fraction) row0
+// SSE2 version using the a single multiply of difference:
+//   source_y_fraction * (row1 - row0) + row0
 #define HAS_SCALEFILTERROWS_SSE2
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
@@ -1424,8 +1428,6 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     pshufd     xmm5, xmm5, 0
     pxor       xmm4, xmm4
 
-    // f * row1 + (1 - frac) row0
-    // frac * (row1 - row0) + row0
     align      16
   xloop:
     movdqa     xmm0, [esi]  // row0
@@ -3677,11 +3679,13 @@ void ScalePlane(const uint8* src, int src_stride,
       // optimized, 3/8
       ScalePlaneDown38(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);
-    } else if (4 * dst_width == src_width && 4 * dst_height == src_height) {
+    } else if (4 * dst_width == src_width && 4 * dst_height == src_height &&
+               filtering != kFilterBilinear) {
       // optimized, 1/4
       ScalePlaneDown4(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);
-    } else if (8 * dst_width == src_width && 8 * dst_height == src_height) {
+    } else if (8 * dst_width == src_width && 8 * dst_height == src_height &&
+               filtering != kFilterBilinear) {
       // optimized, 1/8
       ScalePlaneDown8(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);

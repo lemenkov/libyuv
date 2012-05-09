@@ -22,7 +22,7 @@ extern "C" {
 enum FilterMode {
   kFilterNone = 0,  // Point sample; Fastest
   kFilterBilinear = 1,  // Faster than box, but lower quality scaling down.
-  kFilterBox = 2  // Highest quality
+  kFilterBox = 2  // Highest quality (not supported for ARGB)
 };
 
 int ARGBScale(const uint8* src_argb, int src_stride_argb,
