@@ -102,7 +102,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy2) {
   const int dst_height = src_height / 2;
   int err = 0;
 
-  for (int f = 0; f < 1; ++f) {
+  for (int f = 0; f < 2; ++f) {
     err += ARGBTestFilter(src_width, src_height,
                           dst_width, dst_height,
                           static_cast<FilterMode>(f));
@@ -119,7 +119,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy4) {
   const int dst_height = src_height / 4;
   int err = 0;
 
-  for (int f = 0; f < 1; ++f) {
+  for (int f = 0; f < 2; ++f) {
     err += ARGBTestFilter(src_width, src_height,
                           dst_width, dst_height,
                           static_cast<FilterMode>(f));
@@ -136,7 +136,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy34) {
   const int dst_height = src_height * 3 / 4;
   int err = 0;
 
-  for (int f = 0; f < 1; ++f) {
+  for (int f = 0; f < 2; ++f) {
     err += ARGBTestFilter(src_width, src_height,
                           dst_width, dst_height,
                           static_cast<FilterMode>(f));
@@ -152,7 +152,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy38) {
   int dst_height = src_height * 3 / 8;
   int err = 0;
 
-  for (int f = 0; f < 1; ++f) {
+  for (int f = 0; f < 2; ++f) {
     err += ARGBTestFilter(src_width, src_height,
                           dst_width, dst_height,
                           static_cast<FilterMode>(f));
@@ -168,7 +168,7 @@ TEST_F(libyuvTest, ARGBScalePlaneBilinear) {
   int dst_height = 768;
   int err = 0;
 
-  for (int f = 0; f < 1; ++f) {
+  for (int f = 0; f < 2; ++f) {
     err += ARGBTestFilter(src_width, src_height,
                           dst_width, dst_height,
                           static_cast<FilterMode>(f));

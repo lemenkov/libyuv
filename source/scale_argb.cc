@@ -543,7 +543,7 @@ static void ScaleARGBFilterRows_C(uint8* dst_ptr,
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
-  uint8* end = dst_ptr + dst_width;
+  uint8* end = dst_ptr + (dst_width << 2);
   do {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
     dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
@@ -557,7 +557,11 @@ static void ScaleARGBFilterRows_C(uint8* dst_ptr,
     src_ptr1 += 8;
     dst_ptr += 8;
   } while (dst_ptr < end);
-  dst_ptr[0] = dst_ptr[-1];
+  // Duplicate the last pixel (4 bytes) for filtering.
+  dst_ptr[0] = dst_ptr[-4];
+  dst_ptr[1] = dst_ptr[-3];
+  dst_ptr[2] = dst_ptr[-2];
+  dst_ptr[3] = dst_ptr[-1];
 }
 
 /**
