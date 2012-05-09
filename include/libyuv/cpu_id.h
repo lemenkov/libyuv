@@ -30,7 +30,7 @@ static const int kCpuHasNEON = 32;
 static const int kCpuInitialized = 64;
 
 // Detect CPU has SSE2 etc.
-// test_flag parameter should be one of kCpuHas constants above
+// Test_flag parameter should be one of kCpuHas constants above.
 // returns non-zero if instruction set is detected
 static __inline int TestCpuFlag(int test_flag) {
   extern int cpu_info_;
@@ -41,8 +41,7 @@ static __inline int TestCpuFlag(int test_flag) {
 // For testing, allow CPU flags to be disabled.
 // ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.
 // MaskCpuFlags(-1) to enable all cpu specific optimizations.
-// MaskCpuFlags(kCpuInitialized) to disable all cpu specific optimizations.
-// MaskCpuFlags(0) to re-initialize all cpu detection.
+// MaskCpuFlags(0) to disable all cpu specific optimizations.
 void MaskCpuFlags(int enable_flags);
 
 // Low level cpuid for X86.  Returns zeros on other CPUs.

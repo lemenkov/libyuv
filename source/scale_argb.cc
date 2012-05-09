@@ -720,7 +720,6 @@ static void ScaleARGBDown2(int src_width, int src_height,
   }
 }
 
-
 /**
  * ScaleARGB ARGB Even
  *

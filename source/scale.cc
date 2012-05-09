@@ -1972,7 +1972,6 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
-    "lea       0x10(%1),%1                     \n"
     "jg        3b                              \n"
     ".p2align  4                               \n"
   "4:                                          \n"
