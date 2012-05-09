@@ -23,8 +23,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Note: A Neon reference manual
-// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0204j/CJAJIIGG.html
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
 
@@ -56,7 +54,8 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
                         uint8* dst, int dst_width) {
   asm volatile (
     "1:                                        \n"
-    "vld2.u8    {q0,q1}, [%0]!                 \n"  // load even pixels into q0, odd into q1
+    // load even pixels into q0, odd into q1
+    "vld2.u8    {q0,q1}, [%0]!                 \n"  
     "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
     "bgt        1b                             \n"
@@ -71,13 +70,15 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (
-    "add        %1, %0                         \n"  // change the stride to row 2 pointer
+    // change the stride to row 2 pointer
+    "add        %1, %0                         \n"  
     "1:                                        \n"
-    "vld1.u8    {q0,q1}, [%0]!                 \n"  // load row 1 and post increment
-    "vld1.u8    {q2,q3}, [%1]!                 \n"  // load row 2 and post increment
+    "vld1.u8    {q0,q1}, [%0]!                 \n"  // load row 1 and post inc
+    "vld1.u8    {q2,q3}, [%1]!                 \n"  // load row 2 and post inc
     "vpaddl.u8  q0, q0                         \n"  // row 1 add adjacent
     "vpaddl.u8  q1, q1                         \n"
-    "vpadal.u8  q0, q2                         \n"  // row 2 add adjacent, add row 1 to row 2
+    // row 2 add adjacent, add row 1 to row 2
+    "vpadal.u8  q0, q2                         \n"  
     "vpadal.u8  q1, q3                         \n"
     "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
     "vrshrn.u16 d1, q1, #2                     \n"
@@ -120,7 +121,7 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
     "add        r5, r4, %3                     \n"
     "add        %3, r5, %3                     \n"
     "1:                                        \n"
-    "vld1.u8    {q0}, [%0]!                    \n"   // load up 16x4 block of input data
+    "vld1.u8    {q0}, [%0]!                    \n"   // load up 16x4
     "vld1.u8    {q1}, [r4]!                    \n"
     "vld1.u8    {q2}, [r5]!                    \n"
     "vld1.u8    {q3}, [%3]!                    \n"
@@ -157,7 +158,7 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
   asm volatile (
     "1:                                        \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
-    "vmov         d2, d3                       \n" // order needs to be d0, d1, d2
+    "vmov         d2, d3                       \n" // order d0, d1, d2
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
     "subs         %2, #24                      \n"
     "bgt          1b                           \n"
@@ -501,8 +502,8 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 // 16x2 -> 16x1
 #define HAS_SCALEFILTERROWS_NEON
 static void ScaleFilterRows_NEON(uint8* dst_ptr,
-                              const uint8* src_ptr, int src_stride,
-                              int dst_width, int source_y_fraction) {
+                                 const uint8* src_ptr, int src_stride,
+                                 int dst_width, int source_y_fraction) {
   asm volatile (
     "cmp          %4, #0                       \n"
     "beq          2f                           \n"
@@ -1417,41 +1418,37 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     cmp        eax, 128
     je         xloop2
 
-    movd       xmm6, eax            // xmm6 = y fraction
-    punpcklwd  xmm6, xmm6
-    pshufd     xmm6, xmm6, 0
-    neg        eax                  // xmm5 = 256 - y fraction
-    add        eax, 256
-    movd       xmm5, eax
+    movd       xmm5, eax            // xmm5 = y fraction
+    punpcklbw  xmm5, xmm5
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
-    pxor       xmm7, xmm7
+    pxor       xmm4, xmm4
 
+    // f * row1 + (1 - frac) row0
+    // frac * (row1 - row0) + row0
     align      16
   xloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm2, [esi + edx]
+    movdqa     xmm0, [esi]  // row0
+    movdqa     xmm2, [esi + edx]  // row1
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
-    punpcklbw  xmm0, xmm7
-    punpcklbw  xmm2, xmm7
-    punpckhbw  xmm1, xmm7
-    punpckhbw  xmm3, xmm7
-    pmullw     xmm0, xmm5           // scale row 0
-    pmullw     xmm1, xmm5
-    pmullw     xmm2, xmm6           // scale row 1
-    pmullw     xmm3, xmm6
-    paddusw    xmm0, xmm2           // sum rows
-    paddusw    xmm1, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm1, 8
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    punpcklbw  xmm0, xmm4
+    punpckhbw  xmm1, xmm4
+    psubw      xmm2, xmm0  // row1 - row0
+    psubw      xmm3, xmm1
+    pmulhw     xmm2, xmm5  // scale diff
+    pmulhw     xmm3, xmm5
+    paddw      xmm0, xmm2  // sum rows
+    paddw      xmm1, xmm3
     packuswb   xmm0, xmm1
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
     movdqa     [esi + edi], xmm0
@@ -1467,7 +1464,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop1
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
     movdqa     [esi + edi], xmm0
@@ -1484,7 +1481,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop2
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
     movdqa     [esi + edi], xmm0
@@ -1514,10 +1511,11 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     je         xloop1
     cmp        eax, 64
     je         xloop2
-    mov        ah, al
-    neg        al
-    add        al, 128
-    movd       xmm5, eax
+    movd       xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    movd       xmm5, eax  // low fraction 128..1
+    punpcklbw  xmm5, xmm0
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
@@ -1538,7 +1536,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     jg         xloop
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel to allow horizontal filtering
+    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
     movdqa     [esi + edi], xmm0
@@ -1863,6 +1861,9 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
     "+r"(dst_width)   // %2
   :
   : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
  );
 }
 
@@ -1916,6 +1917,149 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
+// Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
+#define HAS_SCALEFILTERROWS_SSE2
+static void ScaleFilterRows_SSE2(uint8* dst_ptr,
+                                 const uint8* src_ptr, int src_stride,
+                                 int dst_width, int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x80,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm5,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm2                   \n"
+    "punpckhbw %%xmm4,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm0                   \n"
+    "punpckhbw %%xmm4,%%xmm1                   \n"
+    "psubw     %%xmm0,%%xmm2                   \n"
+    "psubw     %%xmm1,%%xmm3                   \n"
+    "pmulhw    %%xmm5,%%xmm2                   \n"
+    "pmulhw    %%xmm5,%%xmm3                   \n"
+    "paddw     %%xmm2,%%xmm0                   \n"
+    "paddw     %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+    ".p2align  4                               \n"
+  "4:                                          \n"
+    "punpckhbw %%xmm0,%%xmm0                   \n"
+    "pshufhw   $0xff,%%xmm0,%%xmm0             \n"
+    "punpckhqdq %%xmm0,%%xmm0                  \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
+    "+r"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+// Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
+#define HAS_SCALEFILTERROWS_SSSE3
+static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
+                                  const uint8* src_ptr, int src_stride,
+                                  int dst_width, int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x40,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm0                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "pmaddubsw %%xmm5,%%xmm0                   \n"
+    "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+    ".p2align  4                               \n"
+  "4:                                          \n"
+    "punpckhbw %%xmm0,%%xmm0                   \n"
+    "pshufhw   $0xff,%%xmm0,%%xmm0             \n"
+    "punpckhqdq %%xmm0,%%xmm0                  \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
+    "+r"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm5"
+#endif
+  );
+}
+#endif
 #if !defined(YUV_DISABLE_ASM) && defined(__i386__)
 extern "C" void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width);
@@ -2246,181 +2390,6 @@ extern "C" void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
     "ret                                       \n"
 );
 #endif  // __PIC__
-
-// Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
-#define HAS_SCALEFILTERROWS_SSE2
-extern "C" void ScaleFilterRows_SSE2(uint8* dst_ptr,
-                                     const uint8* src_ptr, int src_stride,
-                                     int dst_width, int source_y_fraction);
-  asm(
-    DECLARE_FUNCTION(ScaleFilterRows_SSE2)
-    "push   %esi                               \n"
-    "push   %edi                               \n"
-    "mov    0xc(%esp),%edi                     \n"
-    "mov    0x10(%esp),%esi                    \n"
-    "mov    0x14(%esp),%edx                    \n"
-    "mov    0x18(%esp),%ecx                    \n"
-    "mov    0x1c(%esp),%eax                    \n"
-    "sub    %esi, %edi                         \n"
-    "cmp    $0x0,%eax                          \n"
-    "je     2f                                 \n"
-    "cmp    $0x80,%eax                         \n"
-    "je     3f                                 \n"
-    "movd   %eax,%xmm6                         \n"
-    "punpcklwd %xmm6,%xmm6                     \n"
-    "pshufd $0x0,%xmm6,%xmm6                   \n"
-    "neg    %eax                               \n"
-    "add    $0x100,%eax                        \n"
-    "movd   %eax,%xmm5                         \n"
-    "punpcklwd %xmm5,%xmm5                     \n"
-    "pshufd $0x0,%xmm5,%xmm5                   \n"
-    "pxor   %xmm7,%xmm7                        \n"
-
-"1:"
-    "movdqa (%esi),%xmm0                       \n"
-    "movdqa (%esi,%edx,1),%xmm2                \n"
-    "movdqa %xmm0,%xmm1                        \n"
-    "movdqa %xmm2,%xmm3                        \n"
-    "punpcklbw %xmm7,%xmm0                     \n"
-    "punpcklbw %xmm7,%xmm2                     \n"
-    "punpckhbw %xmm7,%xmm1                     \n"
-    "punpckhbw %xmm7,%xmm3                     \n"
-    "pmullw %xmm5,%xmm0                        \n"
-    "pmullw %xmm5,%xmm1                        \n"
-    "pmullw %xmm6,%xmm2                        \n"
-    "pmullw %xmm6,%xmm3                        \n"
-    "paddusw %xmm2,%xmm0                       \n"
-    "paddusw %xmm3,%xmm1                       \n"
-    "psrlw  $0x8,%xmm0                         \n"
-    "psrlw  $0x8,%xmm1                         \n"
-    "packuswb %xmm1,%xmm0                      \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     1b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-
-"2:"
-    "movdqa (%esi),%xmm0                       \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     2b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-
-"3:"
-    "movdqa (%esi),%xmm0                       \n"
-    "pavgb  (%esi,%edx,1),%xmm0                \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     3b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-);
-
-// Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
-#define HAS_SCALEFILTERROWS_SSSE3
-extern "C" void ScaleFilterRows_SSSE3(uint8* dst_ptr,
-                                      const uint8* src_ptr, int src_stride,
-                                      int dst_width, int source_y_fraction);
-  asm(
-    DECLARE_FUNCTION(ScaleFilterRows_SSSE3)
-    "push   %esi                               \n"
-    "push   %edi                               \n"
-    "mov    0xc(%esp),%edi                     \n"
-    "mov    0x10(%esp),%esi                    \n"
-    "mov    0x14(%esp),%edx                    \n"
-    "mov    0x18(%esp),%ecx                    \n"
-    "mov    0x1c(%esp),%eax                    \n"
-    "sub    %esi, %edi                         \n"
-    "shr    %eax                               \n"
-    "cmp    $0x0,%eax                          \n"
-    "je     2f                                 \n"
-    "cmp    $0x40,%eax                         \n"
-    "je     3f                                 \n"
-    "mov    %al,%ah                            \n"
-    "neg    %al                                \n"
-    "add    $0x80,%al                          \n"
-    "movd   %eax,%xmm5                         \n"
-    "punpcklwd %xmm5,%xmm5                     \n"
-    "pshufd $0x0,%xmm5,%xmm5                   \n"
-
-"1:"
-    "movdqa (%esi),%xmm0                       \n"
-    "movdqa (%esi,%edx,1),%xmm2                \n"
-    "movdqa %xmm0,%xmm1                        \n"
-    "punpcklbw %xmm2,%xmm0                     \n"
-    "punpckhbw %xmm2,%xmm1                     \n"
-    "pmaddubsw %xmm5,%xmm0                     \n"
-    "pmaddubsw %xmm5,%xmm1                     \n"
-    "psrlw  $0x7,%xmm0                         \n"
-    "psrlw  $0x7,%xmm1                         \n"
-    "packuswb %xmm1,%xmm0                      \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     1b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-
-"2:"
-    "movdqa (%esi),%xmm0                       \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     2b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-
-"3:"
-    "movdqa (%esi),%xmm0                       \n"
-    "pavgb  (%esi,%edx,1),%xmm0                \n"
-    "sub    $0x10,%ecx                         \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "lea    0x10(%esi),%esi                    \n"
-    "jg     3b                                 \n"
-
-    "punpckhbw %xmm0,%xmm0                     \n"
-    "pshufhw $0xff,%xmm0,%xmm0                 \n"
-    "punpckhqdq %xmm0,%xmm0                    \n"
-    "movdqa %xmm0,(%esi,%edi,1)                \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "ret                                       \n"
-);
 
 #elif !defined(YUV_DISABLE_ASM) && defined(__x86_64__)
 static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
@@ -2760,185 +2729,6 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 );
 }
 
-// Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
-#define HAS_SCALEFILTERROWS_SSE2
-static void ScaleFilterRows_SSE2(uint8* dst_ptr,
-                                 const uint8* src_ptr, int src_stride,
-                                 int dst_width, int source_y_fraction) {
-  if (source_y_fraction == 0) {
-    asm volatile (
-    ".p2align  4                               \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      :
-      : "memory", "cc", "rax"
-    );
-    return;
-  } else if (source_y_fraction == 128) {
-    asm volatile (
-    ".p2align  4                               \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%3,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "pavgb      %%xmm2,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      : "r"(static_cast<intptr_t>(src_stride))  // %3
-      : "memory", "cc", "rax"
-    );
-    return;
-  } else {
-    asm volatile (
-      "mov        %3,%%eax                     \n"
-      "movd       %%eax,%%xmm6                 \n"
-      "punpcklwd  %%xmm6,%%xmm6                \n"
-      "pshufd     $0x0,%%xmm6,%%xmm6           \n"
-      "neg        %%eax                        \n"
-      "add        $0x100,%%eax                 \n"
-      "movd       %%eax,%%xmm5                 \n"
-      "punpcklwd  %%xmm5,%%xmm5                \n"
-      "pshufd     $0x0,%%xmm5,%%xmm5           \n"
-      "pxor       %%xmm7,%%xmm7                \n"
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%4,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,%%xmm1                \n"
-      "movdqa     %%xmm2,%%xmm3                \n"
-      "punpcklbw  %%xmm7,%%xmm0                \n"
-      "punpcklbw  %%xmm7,%%xmm2                \n"
-      "punpckhbw  %%xmm7,%%xmm1                \n"
-      "punpckhbw  %%xmm7,%%xmm3                \n"
-      "pmullw     %%xmm5,%%xmm0                \n"
-      "pmullw     %%xmm5,%%xmm1                \n"
-      "pmullw     %%xmm6,%%xmm2                \n"
-      "pmullw     %%xmm6,%%xmm3                \n"
-      "paddusw    %%xmm2,%%xmm0                \n"
-      "paddusw    %%xmm3,%%xmm1                \n"
-      "psrlw      $0x8,%%xmm0                  \n"
-      "psrlw      $0x8,%%xmm1                  \n"
-      "packuswb   %%xmm1,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width),   // %2
-        "+r"(source_y_fraction)  // %3
-      : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "cc", "rax", "xmm6", "xmm7"
-    );
-  }
-  return;
-}
-
-// Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
-#define HAS_SCALEFILTERROWS_SSSE3
-static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
-                                  const uint8* src_ptr, int src_stride,
-                                  int dst_width, int source_y_fraction) {
-  if (source_y_fraction <= 1) {
-    asm volatile (
-    ".p2align  4                               \n"
-   "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      :
-      : "memory", "cc", "rax"
-    );
-    return;
-  } else if (source_y_fraction == 128) {
-    asm volatile (
-    ".p2align  4                               \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%3,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "pavgb      %%xmm2,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      : "r"(static_cast<intptr_t>(src_stride))  // %3
-     : "memory", "cc", "rax"
-    );
-    return;
-  } else {
-    asm volatile (
-      "mov        %3,%%eax                     \n"
-      "shr        %%eax                        \n"
-      "mov        %%al,%%ah                    \n"
-      "neg        %%al                         \n"
-      "add        $0x80,%%al                   \n"
-      "movd       %%eax,%%xmm5                 \n"
-      "punpcklwd  %%xmm5,%%xmm5                \n"
-      "pshufd     $0x0,%%xmm5,%%xmm5           \n"
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%4,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,%%xmm1                \n"
-      "punpcklbw  %%xmm2,%%xmm0                \n"
-      "punpckhbw  %%xmm2,%%xmm1                \n"
-      "pmaddubsw  %%xmm5,%%xmm0                \n"
-      "pmaddubsw  %%xmm5,%%xmm1                \n"
-      "psrlw      $0x7,%%xmm0                  \n"
-      "psrlw      $0x7,%%xmm1                  \n"
-      "packuswb   %%xmm1,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x10,%2                     \n"
-      "jg         1b                           \n"
-      "mov        -0x1(%0),%%al                \n"
-      "mov        %%al,(%0)                    \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width),   // %2
-        "+r"(source_y_fraction)  // %3
-      : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "cc", "rax"
-    );
-  }
-  return;
-}
-#endif
 #endif
 
 // CPU agnostic row functions
@@ -3114,23 +2904,6 @@ static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
   } while (d < dend);
 }
 
-#if defined(HAS_SCALEFILTERROWS_SSE2)
-// Filter row to 3/4
-static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
-                                int dst_width) {
-  assert((dst_width % 3 == 0) && (dst_width > 0));
-  const uint8* s = src_ptr;
-  uint8* dend = dst_ptr + dst_width;
-  do {
-    dst_ptr[0] = (s[0] * 3 + s[1] * 1 + 2) >> 2;
-    dst_ptr[1] = (s[1] * 1 + s[2] * 1 + 1) >> 1;
-    dst_ptr[2] = (s[2] * 1 + s[3] * 3 + 2) >> 2;
-    dst_ptr += 3;
-    s += 4;
-  } while (dst_ptr < dend);
-}
-#endif
-
 // (1-f)a + fb can be replaced with a + f(b-a)
 #define BLENDER(a, b, f) (static_cast<int>(a) + \
     ((f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
@@ -3159,7 +2932,23 @@ static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 static const int kMaxInputWidth = 2560;
+
 #if defined(HAS_SCALEFILTERROWS_SSE2)
+// Filter row to 3/4
+static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
+                                int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  const uint8* s = src_ptr;
+  uint8* dend = dst_ptr + dst_width;
+  do {
+    dst_ptr[0] = (s[0] * 3 + s[1] * 1 + 2) >> 2;
+    dst_ptr[1] = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+    dst_ptr[2] = (s[2] * 1 + s[3] * 3 + 2) >> 2;
+    dst_ptr += 3;
+    s += 4;
+  } while (dst_ptr < dend);
+}
+
 #define HAS_SCALEROWDOWN34_SSE2
 // Filter rows 0 and 1 together, 3 : 1
 static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
@@ -3731,7 +3520,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
   } else {
-    SIMD_ALIGNED(uint8 row[kMaxInputWidth + 1]);
+    SIMD_ALIGNED(uint8 row[kMaxInputWidth + 16]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                             int src_stride,
                             int dst_width, int source_y_fraction) =

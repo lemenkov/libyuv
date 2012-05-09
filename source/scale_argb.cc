@@ -114,34 +114,30 @@ static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     cmp        eax, 128
     je         xloop2
 
-    movd       xmm6, eax            // xmm6 = y fraction
-    punpcklwd  xmm6, xmm6
-    pshufd     xmm6, xmm6, 0
-    neg        eax                  // xmm5 = 256 - y fraction
-    add        eax, 256
-    movd       xmm5, eax
+    movd       xmm5, eax            // xmm5 = y fraction
+    punpcklbw  xmm5, xmm5
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
-    pxor       xmm7, xmm7
+    pxor       xmm4, xmm4
 
+    // f * row1 + (1 - frac) row0
+    // frac * (row1 - row0) + row0
     align      16
   xloop:
-    movdqa     xmm0, [esi]
-    movdqa     xmm2, [esi + edx]
+    movdqa     xmm0, [esi]  // row0
+    movdqa     xmm2, [esi + edx]  // row1
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
-    punpcklbw  xmm0, xmm7
-    punpcklbw  xmm2, xmm7
-    punpckhbw  xmm1, xmm7
-    punpckhbw  xmm3, xmm7
-    pmullw     xmm0, xmm5           // scale row 0
-    pmullw     xmm1, xmm5
-    pmullw     xmm2, xmm6           // scale row 1
-    pmullw     xmm3, xmm6
-    paddusw    xmm0, xmm2           // sum rows
-    paddusw    xmm1, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm1, 8
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    punpcklbw  xmm0, xmm4
+    punpckhbw  xmm1, xmm4
+    psubw      xmm2, xmm0  // row1 - row0
+    psubw      xmm3, xmm1
+    pmulhw     xmm2, xmm5  // scale diff
+    pmulhw     xmm3, xmm5
+    paddw      xmm0, xmm2  // sum rows
+    paddw      xmm1, xmm3
     packuswb   xmm0, xmm1
     sub        ecx, 4
     movdqa     [esi + edi], xmm0
@@ -149,7 +145,7 @@ static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
 
     shufps     xmm0, xmm0, 0xff
-    movdqa     [esi + edi], xmm0    // duplicate last pixel to allow horizontal filtering
+    movdqa     [esi + edi], xmm0    // duplicate last pixel for filtering
     pop        edi
     pop        esi
     ret
@@ -205,10 +201,11 @@ static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     je         xloop1
     cmp        eax, 64
     je         xloop2
-    mov        ah, al
-    neg        al
-    add        al, 128
-    movd       xmm5, eax
+    movd       xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    movd       xmm5, eax  // low fraction 128..1
+    punpcklbw  xmm5, xmm0
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
@@ -230,7 +227,7 @@ static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
 
     shufps     xmm0, xmm0, 0xff
-    movdqa     [esi + edi], xmm0    // duplicate last pixel to allow horizontal filtering
+    movdqa     [esi + edi], xmm0    // duplicate last pixel for filtering
     pop        edi
     pop        esi
     ret
@@ -324,114 +321,78 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3"
 #endif
-);
+  );
 }
 
-#if defined(__x86_64__)
-// TODO(fbarchard): 32 bit gcc runs out of registers.  fix.
-
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
-// TODO(fbarchard): write single inline instead of 3 and use single mul of diff
 #define HAS_SCALEARGBFILTERROWS_SSE2
 static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr,
                                      const uint8* src_ptr, int src_stride,
                                      int dst_width, int source_y_fraction) {
-  if (source_y_fraction == 0) {
-    asm volatile (
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      :
-      : "memory", "cc"
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x80,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm5,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm2                   \n"
+    "punpckhbw %%xmm4,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm0                   \n"
+    "punpckhbw %%xmm4,%%xmm1                   \n"
+    "psubw     %%xmm0,%%xmm2                   \n"
+    "psubw     %%xmm1,%%xmm3                   \n"
+    "pmulhw    %%xmm5,%%xmm2                   \n"
+    "pmulhw    %%xmm5,%%xmm3                   \n"
+    "paddw     %%xmm2,%%xmm0                   \n"
+    "paddw     %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+    ".p2align  4                               \n"
+  "4:                                          \n"
+    "shufps    $0xff,%%xmm0,%%xmm0             \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+r"(dst_width),   // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
 #if defined(__SSE2__)
-        , "xmm0"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
-    );
-    return;
-  } else if (source_y_fraction == 128) {
-    asm volatile (
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%3,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "pavgb      %%xmm2,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      : "r"(static_cast<intptr_t>(src_stride))  // %3
-      : "memory", "cc"
-#if defined(__SSE2__)
-        , "xmm0", "xmm2"
-#endif
-    );
-    return;
-  } else {
-    asm volatile (
-      "mov        %3,%%eax                     \n"
-      "movd       %%eax,%%xmm6                 \n"
-      "punpcklwd  %%xmm6,%%xmm6                \n"
-      "pshufd     $0x0,%%xmm6,%%xmm6           \n"
-      "neg        %%eax                        \n"
-      "add        $0x100,%%eax                 \n"
-      "movd       %%eax,%%xmm5                 \n"
-      "punpcklwd  %%xmm5,%%xmm5                \n"
-      "pshufd     $0x0,%%xmm5,%%xmm5           \n"
-      "pxor       %%xmm7,%%xmm7                \n"
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%4,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,%%xmm1                \n"
-      "movdqa     %%xmm2,%%xmm3                \n"
-      "punpcklbw  %%xmm7,%%xmm0                \n"
-      "punpcklbw  %%xmm7,%%xmm2                \n"
-      "punpckhbw  %%xmm7,%%xmm1                \n"
-      "punpckhbw  %%xmm7,%%xmm3                \n"
-      "pmullw     %%xmm5,%%xmm0                \n"
-      "pmullw     %%xmm5,%%xmm1                \n"
-      "pmullw     %%xmm6,%%xmm2                \n"
-      "pmullw     %%xmm6,%%xmm3                \n"
-      "paddusw    %%xmm2,%%xmm0                \n"
-      "paddusw    %%xmm3,%%xmm1                \n"
-      "psrlw      $0x8,%%xmm0                  \n"
-      "psrlw      $0x8,%%xmm1                  \n"
-      "packuswb   %%xmm1,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width),   // %2
-        "+r"(source_y_fraction)  // %3
-      : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "cc", "eax"
-#if defined(__SSE2__)
-        , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6", "xmm7"
-#endif
-    );
-  }
-  return;
+  );
 }
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
@@ -439,95 +400,68 @@ static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr,
 static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr,
                                       const uint8* src_ptr, int src_stride,
                                       int dst_width, int source_y_fraction) {
-  if (source_y_fraction <= 1) {
-    asm volatile (
-      ".p2align  4                             \n"
-   "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      :
-      : "memory", "cc"
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x40,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm0                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "pmaddubsw %%xmm5,%%xmm0                   \n"
+    "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+  "4:                                          \n"
+    ".p2align  4                               \n"
+    "shufps    $0xff,%%xmm0,%%xmm0             \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+r"(dst_width),   // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
 #if defined(__SSE2__)
-        , "xmm0"
+    , "xmm0", "xmm1", "xmm2", "xmm5"
 #endif
-    );
-    return;
-  } else if (source_y_fraction == 128) {
-    asm volatile (
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%3,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "pavgb      %%xmm2,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width)    // %2
-      : "r"(static_cast<intptr_t>(src_stride))  // %3
-      : "memory", "cc"
-#if defined(__SSE2__)
-        , "xmm0", "xmm2"
-#endif
-    );
-    return;
-  } else {
-    asm volatile (
-      "mov        %3,%%eax                     \n"
-      "shr        %%eax                        \n"
-      "mov        %%al,%%ah                    \n"
-      "neg        %%al                         \n"
-      "add        $0x80,%%al                   \n"
-      "movd       %%eax,%%xmm5                 \n"
-      "punpcklwd  %%xmm5,%%xmm5                \n"
-      "pshufd     $0x0,%%xmm5,%%xmm5           \n"
-      ".p2align  4                             \n"
-    "1:"
-      "movdqa     (%1),%%xmm0                  \n"
-      "movdqa     (%1,%4,1),%%xmm2             \n"
-      "lea        0x10(%1),%1                  \n"
-      "movdqa     %%xmm0,%%xmm1                \n"
-      "punpcklbw  %%xmm2,%%xmm0                \n"
-      "punpckhbw  %%xmm2,%%xmm1                \n"
-      "pmaddubsw  %%xmm5,%%xmm0                \n"
-      "pmaddubsw  %%xmm5,%%xmm1                \n"
-      "psrlw      $0x7,%%xmm0                  \n"
-      "psrlw      $0x7,%%xmm1                  \n"
-      "packuswb   %%xmm1,%%xmm0                \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      "lea        0x10(%0),%0                  \n"
-      "sub        $0x04,%2                     \n"
-      "jg         1b                           \n"
-      "shufps     $0xff,%%xmm0,%%xmm0          \n"
-      "movdqa     %%xmm0,(%0)                  \n"
-      : "+r"(dst_ptr),     // %0
-        "+r"(src_ptr),     // %1
-        "+r"(dst_width),   // %2
-        "+r"(source_y_fraction)  // %3
-      : "r"(static_cast<intptr_t>(src_stride))  // %4
-      : "memory", "cc", "eax"
-#if defined(__SSE2__)
-        , "xmm0", "xmm1", "xmm2", "xmm5"
-#endif
-    );
-  }
-  return;
+  );
 }
-#endif  // 64 bit
 #endif
 
 static void ScaleARGBRowDown2_C(const uint8* src_ptr, int,
@@ -648,7 +582,8 @@ static void ScaleARGBDown2(int src_width, int src_height,
       IS_ALIGNED(dst_width, 16) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 : ScaleARGBRowDown2_SSE2;
+    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 :
+        ScaleARGBRowDown2_SSE2;
   }
 #endif
 
@@ -672,7 +607,7 @@ void ScaleARGBBilinear(int src_width, int src_height,
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(src_width <= kMaxInputWidth);
-  SIMD_ALIGNED(uint8 row[kMaxInputWidth * 4 + 4]);
+  SIMD_ALIGNED(uint8 row[kMaxInputWidth * 4 + 16]);
   void (*ScaleARGBFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                               int src_stride,
                               int dst_width, int source_y_fraction) =
