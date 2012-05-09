@@ -411,6 +411,92 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
+#define HAS_SCALEARGBROWDOWNEVEN_SSE2
+// Reads 4 pixels at a time.
+// Alignment requirement: dst_ptr 16 byte aligned.
+static void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
+                                      int src_stepx,
+                                      uint8* dst_ptr, int dst_width) {
+  intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
+  intptr_t src_stepx_x12 = 0;
+  asm volatile (
+    "lea       0x0(,%1,4),%1                   \n"
+    "lea       (%1,%1,2),%4                    \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movd      (%0),%%xmm0                     \n"
+    "movd      (%0,%1,1),%%xmm1                \n"
+    "punpckldq %%xmm1,%%xmm0                   \n"
+    "movd      (%0,%1,2),%%xmm2                \n"
+    "movd      (%0,%4,1),%%xmm3                \n"
+    "lea       (%0,%1,4),%0                    \n"
+    "punpckldq %%xmm3,%%xmm2                   \n"
+    "punpcklqdq %%xmm2,%%xmm0                  \n"
+    "sub       $0x4,%3                         \n"
+    "movdqa    %%xmm0,(%2)                     \n"
+    "lea       0x10(%2),%2                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_ptr),       // %0
+    "+r"(src_stepx_x4),  // %1
+    "+r"(dst_ptr),       // %2
+    "+r"(dst_width),     // %3
+    "+r"(src_stepx_x12)  // %4
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+  );
+}
+
+// Blends four 2x2 to 4x1.
+// Alignment requirement: dst_ptr 16 byte aligned.
+static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, int src_stride,
+                                         int src_stepx,
+                                         uint8* dst_ptr, int dst_width) {
+  intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
+  intptr_t src_stepx_x12 = 0;
+  intptr_t row1 = static_cast<intptr_t>(src_stride);
+  asm volatile (
+    "lea       0x0(,%1,4),%1                   \n"
+    "lea       (%1,%1,2),%4                    \n"
+    "lea       (%0,%5,1),%5                    \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%0),%%xmm0                     \n"
+    "movhps    (%0,%1,1),%%xmm0                \n"
+    "movq      (%0,%1,2),%%xmm1                \n"
+    "movhps    (%0,%4,1),%%xmm1                \n"
+    "lea       (%0,%1,4),%0                    \n"
+    "movq      (%5),%%xmm2                     \n"
+    "movhps    (%5,%1,1),%%xmm2                \n"
+    "movq      (%5,%1,2),%%xmm3                \n"
+    "movhps    (%5,%4,1),%%xmm3                \n"
+    "lea       (%5,%1,4),%5                    \n"
+    "pavgb     %%xmm2,%%xmm0                   \n"
+    "pavgb     %%xmm3,%%xmm1                   \n"
+    "movdqa    %%xmm0,%%xmm2                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm2             \n"
+    "pavgb     %%xmm2,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqa    %%xmm0,(%2)                     \n"
+    "lea       0x10(%2),%2                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_ptr),        // %0
+    "+r"(src_stepx_x4),   // %1
+    "+r"(dst_ptr),        // %2
+    "+rm"(dst_width),     // %3
+    "+r"(src_stepx_x12),  // %4
+    "+r"(row1)            // %5
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+  );
+}
+
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
 #define HAS_SCALEARGBFILTERROWS_SSE2
 static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr,
