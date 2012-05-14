@@ -694,13 +694,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "movdqa    %1,%%xmm3                       \n"
     "movdqa    %2,%%xmm5                       \n"
   :
-  : "m"(kARGBToU),         // %0
-    "m"(kARGBToV),         // %1
-    "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
+  : "m"(kARGBToU),  // %0
+    "m"(kARGBToV),  // %1
+    "m"(kAddUV128)  // %2
   );
   asm volatile (
     "sub       %1,%2                           \n"
@@ -762,10 +758,6 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
   : "m"(kARGBToU),         // %0
     "m"(kARGBToV),         // %1
     "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
   );
   asm volatile (
     "sub       %1,%2                           \n"
@@ -905,10 +897,6 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
   : "m"(kBGRAToU),         // %0
     "m"(kBGRAToV),         // %1
     "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
   );
   asm volatile (
     "sub       %1,%2                           \n"
@@ -970,10 +958,6 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
   : "m"(kBGRAToU),         // %0
     "m"(kBGRAToV),         // %1
     "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
   );
   asm volatile (
     "sub       %1,%2                           \n"
@@ -1113,10 +1097,6 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
   : "m"(kABGRToU),         // %0
     "m"(kABGRToV),         // %1
     "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
   );
   asm volatile (
     "sub       %1,%2                           \n"
@@ -1178,10 +1158,6 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
   : "m"(kABGRToU),         // %0
     "m"(kABGRToV),         // %1
     "m"(kAddUV128)         // %2
-  :
-#if defined(__SSE2__)
-    "xmm3", "xmm4", "xmm5"
-#endif
   );
   asm volatile (
     "sub       %1,%2                           \n"
