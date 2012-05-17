@@ -730,9 +730,9 @@ void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
 // r = (r * 255 + (a / 2)) / a;
 // Reciprocal method is off by 1 on some values. ie 125
 // 8.16 fixed point inverse table
-#define T(a) 0x1000000 / a
-static uint32 fixed_invtbl[256] = {
-  0, T(0x01), T(0x02), T(0x03), T(0x04), T(0x05), T(0x06), T(0x07),
+#define T(a) 0x10000 / a
+uint32 fixed_invtbl8[256] = {
+  0x0100, T(0x01), T(0x02), T(0x03), T(0x04), T(0x05), T(0x06), T(0x07),
   T(0x08), T(0x09), T(0x0a), T(0x0b), T(0x0c), T(0x0d), T(0x0e), T(0x0f),
   T(0x10), T(0x11), T(0x12), T(0x13), T(0x14), T(0x15), T(0x16), T(0x17),
   T(0x18), T(0x19), T(0x1a), T(0x1b), T(0x1c), T(0x1d), T(0x1e), T(0x1f),
@@ -763,7 +763,7 @@ static uint32 fixed_invtbl[256] = {
   T(0xe0), T(0xe1), T(0xe2), T(0xe3), T(0xe4), T(0xe5), T(0xe6), T(0xe7),
   T(0xe8), T(0xe9), T(0xea), T(0xeb), T(0xec), T(0xed), T(0xee), T(0xef),
   T(0xf0), T(0xf1), T(0xf2), T(0xf3), T(0xf4), T(0xf5), T(0xf6), T(0xf7),
-  T(0xf8), T(0xf9), T(0xfa), T(0xfb), T(0xfc), T(0xfd), T(0xfe), T(0xff) };
+  T(0xf8), T(0xf9), T(0xfa), T(0xfb), T(0xfc), T(0xfd), T(0xfe), 0x0100 };
 #undef T
 
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
@@ -773,10 +773,10 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
     uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
     if (a) {
-      const uint32 ia = fixed_invtbl[a];  // 8.16 fixed point
-      b = (b * ia + 0x8000) >> 16;
-      g = (g * ia + 0x8000) >> 16;
-      r = (r * ia + 0x8000) >> 16;
+      const uint32 ia = fixed_invtbl8[a];  // 8.16 fixed point
+      b = (b * ia) >> 8;
+      g = (g * ia) >> 8;
+      r = (r * ia) >> 8;
       // Clamping should not be necessary but is free in assembly.
       if (b > 255) {
         b = 255;

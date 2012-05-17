@@ -110,6 +110,12 @@ typedef uint16 __attribute__((vector_size(16))) uvec16;
 typedef uint32 __attribute__((vector_size(16))) uvec32;
 #endif
 
+#if defined(__APPLE__) || defined(__x86_64__)
+#define OMITFP
+#else
+#define OMITFP __attribute__((optimize("omit-frame-pointer")))
+#endif
+
 void I420ToARGBRow_NEON(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
@@ -388,6 +394,8 @@ void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 
+// Inverse table for unattenuate, shared by C and SSE2.
+extern uint32 fixed_invtbl8[256];
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 

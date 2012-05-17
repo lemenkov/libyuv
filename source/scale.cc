@@ -298,8 +298,9 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
 }
 
 // 32x3 -> 12x1
-static void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr, int src_stride,
-                                      uint8* dst_ptr, int dst_width) {
+static void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
+                                             int src_stride,
+                                             uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
     "vld1.u8      {q14}, [%5]                  \n"
