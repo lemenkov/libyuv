@@ -220,4 +220,57 @@ TEST_F(libyuvTest, TestAddRow) {
     AddRow(orig_pixels, added_pixels, 256);
   }
 }
+
+TEST_F(libyuvTest, TestARGBGray) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+
+  // Test blue
+  orig_pixels[0][0] = 255u;
+  orig_pixels[0][1] = 0u;
+  orig_pixels[0][2] = 0u;
+  orig_pixels[0][3] = 128u;
+  // Test green
+  orig_pixels[1][0] = 0u;
+  orig_pixels[1][1] = 255u;
+  orig_pixels[1][2] = 0u;
+  orig_pixels[1][3] = 0u;
+  // Test red
+  orig_pixels[2][0] = 0u;
+  orig_pixels[2][1] = 0u;
+  orig_pixels[2][2] = 255u;
+  orig_pixels[2][3] = 255u;
+  // Test color
+  orig_pixels[3][0] = 16u;
+  orig_pixels[3][1] = 64u;
+  orig_pixels[3][2] = 192u;
+  orig_pixels[3][3] = 224u;
+  ARGBGray(&orig_pixels[0][0], 0, 0, 0, 4, 1);
+  EXPECT_EQ(27u, orig_pixels[0][0]);
+  EXPECT_EQ(27u, orig_pixels[0][1]);
+  EXPECT_EQ(27u, orig_pixels[0][2]);
+  EXPECT_EQ(128u, orig_pixels[0][3]);
+  EXPECT_EQ(151u, orig_pixels[1][0]);
+  EXPECT_EQ(151u, orig_pixels[1][1]);
+  EXPECT_EQ(151u, orig_pixels[1][2]);
+  EXPECT_EQ(0u, orig_pixels[1][3]);
+  EXPECT_EQ(75u, orig_pixels[2][0]);
+  EXPECT_EQ(75u, orig_pixels[2][1]);
+  EXPECT_EQ(75u, orig_pixels[2][2]);
+  EXPECT_EQ(255u, orig_pixels[2][3]);
+  EXPECT_EQ(96u, orig_pixels[3][0]);
+  EXPECT_EQ(96u, orig_pixels[3][1]);
+  EXPECT_EQ(96u, orig_pixels[3][2]);
+  EXPECT_EQ(224u, orig_pixels[3][3]);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBGray(&orig_pixels[0][0], 0, 0, 0, 256, 1);
+  }
 }
+}  // namespace libyuv

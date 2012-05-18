@@ -1037,6 +1037,28 @@ AddRow GetSubRow(uint16* dst, int width) {
   return SubRowF;
 }
 
+// Make a rectangle of ARGB gray scale.
+int ARGBGray(uint8* dst_argb, int dst_stride_argb,
+             int dst_x, int dst_y,
+             int width, int height) {
+  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+  void (*ARGBGrayRow)(uint8* dst_argb, int width) = ARGBGrayRow_C;
+#if defined(HAS_ARGBGRAYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBGrayRow = ARGBGrayRow_SSSE3;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    ARGBGrayRow(dst, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -12,18 +12,12 @@
 #define INCLUDE_LIBYUV_SCALE_ARGB_H_
 
 #include "libyuv/basic_types.h"
+#include "libyuv/scale.h"  // For FilterMode
 
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
-
-// Supported filtering
-enum FilterMode {
-  kFilterNone = 0,  // Point sample; Fastest
-  kFilterBilinear = 1,  // Faster than box, but lower quality scaling down.
-  kFilterBox = 2  // Highest quality (not supported for ARGB)
-};
 
 int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int src_width, int src_height,

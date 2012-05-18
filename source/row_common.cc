@@ -234,6 +234,21 @@ MAKEROWY(ARGB, 2, 1, 0)
 MAKEROWY(BGRA, 1, 2, 3)
 MAKEROWY(ABGR, 0, 1, 2)
 
+// http://en.wikipedia.org/wiki/Grayscale.
+// 0.11 * B + 0.59 * G + 0.30 * R
+// Coefficients rounded to multiple of 2 for consistency with SSSE3 version.
+static __inline int RGBToGray(uint8 r, uint8 g, uint8 b) {
+  return (( 76 * r + 152 * g +  28 * b) >> 8);
+}
+
+void ARGBGrayRow_C(uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    uint8 y = RGBToGray(dst_argb[2], dst_argb[1], dst_argb[0]);
+    dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
+    dst_argb += 4;
+  }
+}
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

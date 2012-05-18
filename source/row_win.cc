@@ -93,10 +93,14 @@ static const uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
 };
 
-
 // Shuffle table for converting ARGB to RAW.
 static const uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
+};
+
+// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
+static const vec8 kARGBToGray = {
+  14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
 };
 
 __declspec(naked) __declspec(align(16))
@@ -2553,6 +2557,50 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 }
 #endif  // HAS_ARGBUNATTENUATE_SSE2
 
+#ifdef HAS_ARGBGRAYROW_SSSE3
+// Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
+__declspec(naked) __declspec(align(16))
+void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   /* dst_argb */
+    mov        ecx, [esp + 8]   /* width */
+    movdqa     xmm4, kARGBToGray
+    pcmpeqb    xmm5, xmm5            // generate mask 0xff000000
+    pslld      xmm5, 24
+    pcmpeqb    xmm3, xmm3            // generate mask 0x00ffffff
+    psrld      xmm3, 8
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    movdqa     xmm6, [eax]  // preserve alpha
+    movdqa     xmm7, [eax + 16]
+    pand       xmm6, xmm5
+    pand       xmm7, xmm5
+    phaddw     xmm0, xmm1
+    psrlw      xmm0, 7
+    packuswb   xmm0, xmm0  // 8 Y values
+
+    punpcklbw  xmm0, xmm0
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm0
+    punpckhwd  xmm1, xmm1
+    pand       xmm0, xmm3  // mask in alpha
+    pand       xmm1, xmm3
+    por        xmm0, xmm6
+    por        xmm1, xmm7
+    sub        ecx, 8
+    movdqa     [eax], xmm0
+    movdqa     [eax + 16], xmm1
+    lea        eax, [eax + 32]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ARGBGRAYROW_SSSE3
 #endif  // _M_IX86
 
 #ifdef __cplusplus
