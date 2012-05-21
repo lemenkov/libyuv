@@ -72,6 +72,7 @@ extern "C" {
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_ARGBGRAYROW_SSSE3
+#define HAS_ARGBSEPIAROW_SSSE3
 #endif
 
 // The following are available only useful when SSSE3 is unavailable.
@@ -402,6 +403,9 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 
 void ARGBGrayRow_C(uint8* dst_argb, int width);
 void ARGBGrayRow_SSSE3(uint8* dst_argb, int width);
+
+void ARGBSepiaRow_C(uint8* dst_argb, int width);
+void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

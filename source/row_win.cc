@@ -98,11 +98,6 @@ static const uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
-// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
-static const vec8 kARGBToGray = {
-  14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
-};
-
 __declspec(naked) __declspec(align(16))
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
@@ -2558,6 +2553,11 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBUNATTENUATE_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
+// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
+static const vec8 kARGBToGray = {
+  14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
+};
+
 // Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
 __declspec(naked) __declspec(align(16))
 void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
@@ -2565,33 +2565,28 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
     mov        eax, [esp + 4]   /* dst_argb */
     mov        ecx, [esp + 8]   /* width */
     movdqa     xmm4, kARGBToGray
-    pcmpeqb    xmm5, xmm5            // generate mask 0xff000000
-    pslld      xmm5, 24
-    pcmpeqb    xmm3, xmm3            // generate mask 0x00ffffff
-    psrld      xmm3, 8
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]
+    movdqa     xmm0, [eax]  // G
     movdqa     xmm1, [eax + 16]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
-    movdqa     xmm6, [eax]  // preserve alpha
-    movdqa     xmm7, [eax + 16]
-    pand       xmm6, xmm5
-    pand       xmm7, xmm5
     phaddw     xmm0, xmm1
     psrlw      xmm0, 7
-    packuswb   xmm0, xmm0  // 8 Y values
-
-    punpcklbw  xmm0, xmm0
+    packuswb   xmm0, xmm0   // 8 G bytes
+    movdqa     xmm2, [eax]  // A
+    movdqa     xmm3, [eax + 16]
+    psrld      xmm2, 24
+    psrld      xmm3, 24
+    packuswb   xmm2, xmm3
+    packuswb   xmm2, xmm2   // 8 A bytes
+    movdqa     xmm3, xmm0   // Weave into GG, GA, then GGGA
+    punpcklbw  xmm0, xmm0   // 8 GG words
+    punpcklbw  xmm3, xmm2   // 8 GA words
     movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm0
-    punpckhwd  xmm1, xmm1
-    pand       xmm0, xmm3  // mask in alpha
-    pand       xmm1, xmm3
-    por        xmm0, xmm6
-    por        xmm1, xmm7
+    punpcklwd  xmm0, xmm3   // GGGA first 4
+    punpckhwd  xmm1, xmm3   // GGGA next 4
     sub        ecx, 8
     movdqa     [eax], xmm0
     movdqa     [eax + 16], xmm1
@@ -2601,7 +2596,79 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
   }
 }
 #endif  // HAS_ARGBGRAYROW_SSSE3
+
+#ifdef HAS_ARGBSEPIAROW_SSSE3
+//    b = (r * 35 + g * 68 + b * 17) >> 7
+//    g = (r * 45 + g * 88 + b * 22) >> 7
+//    r = (r * 50 + g * 98 + b * 24) >> 7
+// Constant for ARGB color to sepia tone
+static const vec8 kARGBToSepiaB = {
+  17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0
+};
+
+static const vec8 kARGBToSepiaG = {
+  22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0
+};
+
+static const vec8 kARGBToSepiaR = {
+  24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
+};
+
+// Convert 8 ARGB pixels (64 bytes) to 8 Sepia ARGB pixels
+__declspec(naked) __declspec(align(16))
+void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   /* dst_argb */
+    mov        ecx, [esp + 8]   /* width */
+    movdqa     xmm2, kARGBToSepiaB
+    movdqa     xmm3, kARGBToSepiaG
+    movdqa     xmm4, kARGBToSepiaR
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]  // B
+    movdqa     xmm6, [eax + 16]
+    pmaddubsw  xmm0, xmm2
+    pmaddubsw  xmm6, xmm2
+    phaddw     xmm0, xmm6
+    psrlw      xmm0, 7
+    packuswb   xmm0, xmm0   // 8 B values
+    movdqa     xmm5, [eax]  // G
+    movdqa     xmm1, [eax + 16]
+    pmaddubsw  xmm5, xmm3
+    pmaddubsw  xmm1, xmm3
+    phaddw     xmm5, xmm1
+    psrlw      xmm5, 7
+    packuswb   xmm5, xmm5   // 8 G values
+    punpcklbw  xmm0, xmm5   // 8 BG values
+    movdqa     xmm5, [eax]  // R
+    movdqa     xmm1, [eax + 16]
+    pmaddubsw  xmm5, xmm4
+    pmaddubsw  xmm1, xmm4
+    phaddw     xmm5, xmm1
+    psrlw      xmm5, 7
+    packuswb   xmm5, xmm5   // 8 R values
+    movdqa     xmm6, [eax]  // A
+    movdqa     xmm1, [eax + 16]
+    psrld      xmm6, 24
+    psrld      xmm1, 24
+    packuswb   xmm6, xmm1
+    packuswb   xmm6, xmm6   // 8 A values
+    punpcklbw  xmm5, xmm6   // 8 RA values
+    movdqa     xmm1, xmm0   // Weave BG, RA together
+    punpcklwd  xmm0, xmm5   // BGRA first 4
+    punpckhwd  xmm1, xmm5   // BGRA next 4
+    sub        ecx, 8
+    movdqa     [eax], xmm0
+    movdqa     [eax + 16], xmm1
+    lea        eax, [eax + 32]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ARGBSEPIAROW_SSSE3
 #endif  // _M_IX86
+
 
 #ifdef __cplusplus
 }  // extern "C"

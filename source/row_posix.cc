@@ -108,11 +108,6 @@ CONST uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
-// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
-CONST vec8 kARGBToGray = {
-  14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
-};
-
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -2533,15 +2528,15 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBUNATTENUATE_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
+// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
+CONST vec8 kARGBToGray = {
+  14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
+};
+
 // Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
 void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
   asm volatile (
     "movdqa    %2,%%xmm4                       \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pslld     $0x18,%%xmm5                    \n"
-    "pcmpeqb   %%xmm3,%%xmm3                   \n"
-    "psrld     $0x8,%%xmm3                     \n"
-
   // 8 pixel loop                              \n"
     ".p2align  4                               \n"
   "1:                                          \n"
@@ -2549,36 +2544,113 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
     "movdqa    0x10(%0),%%xmm1                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
-    "movdqa    (%0),%%xmm6                     \n"
-    "movdqa    0x10(%0),%%xmm7                 \n"
-    "pand      %%xmm5,%%xmm6                   \n"
-    "pand      %%xmm5,%%xmm7                   \n"
     "phaddw    %%xmm1,%%xmm0                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm2                     \n"
+    "movdqa    0x10(%0),%%xmm3                 \n"
+    "psrld     $0x18,%%xmm2                    \n"
+    "psrld     $0x18,%%xmm3                    \n"
+    "packuswb  %%xmm3,%%xmm2                   \n"
+    "packuswb  %%xmm2,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm3                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpcklbw %%xmm2,%%xmm3                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm0,%%xmm0                   \n"
-    "punpckhwd %%xmm1,%%xmm1                   \n"
-    "pand      %%xmm3,%%xmm0                   \n"
-    "pand      %%xmm3,%%xmm1                   \n"
-    "por       %%xmm6,%%xmm0                   \n"
-    "por       %%xmm7,%%xmm1                   \n"
+    "punpcklwd %%xmm3,%%xmm0                   \n"
+    "punpckhwd %%xmm3,%%xmm1                   \n"
     "sub       $0x8,%1                         \n"
     "movdqa    %%xmm0,(%0)                     \n"
     "movdqa    %%xmm1,0x10(%0)                 \n"
     "lea       0x20(%0),%0                     \n"
     "jg        1b                              \n"
-  : "+r"(dst_argb),  // %0
-    "+r"(width)      // %1
+  : "+r"(dst_argb),   // %0
+    "+r"(width)       // %1
   : "m"(kARGBToGray)  // %2
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
 #endif  // HAS_ARGBGRAYROW_SSSE3
+
+#ifdef HAS_ARGBSEPIAROW_SSSE3
+//    b = (r * 35 + g * 68 + b * 17) >> 7
+//    g = (r * 45 + g * 88 + b * 22) >> 7
+//    r = (r * 50 + g * 98 + b * 24) >> 7
+// Constant for ARGB color to sepia tone
+CONST vec8 kARGBToSepiaB = {
+  17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0
+};
+
+CONST vec8 kARGBToSepiaG = {
+  22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0
+};
+
+CONST vec8 kARGBToSepiaR = {
+  24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
+};
+
+// Convert 8 ARGB pixels (64 bytes) to 8 Sepia ARGB pixels
+void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
+  asm volatile (
+    "movdqa    %2,%%xmm2                       \n"
+    "movdqa    %3,%%xmm3                       \n"
+    "movdqa    %4,%%xmm4                       \n"
+  // 8 pixel loop                              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm2,%%xmm0                   \n"
+    "pmaddubsw %%xmm2,%%xmm6                   \n"
+    "phaddw    %%xmm6,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm5                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "pmaddubsw %%xmm3,%%xmm5                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "phaddw    %%xmm1,%%xmm5                   \n"
+    "psrlw     $0x7,%%xmm5                     \n"
+    "packuswb  %%xmm5,%%xmm5                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm5                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "pmaddubsw %%xmm4,%%xmm5                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "phaddw    %%xmm1,%%xmm5                   \n"
+    "psrlw     $0x7,%%xmm5                     \n"
+    "packuswb  %%xmm5,%%xmm5                   \n"
+    "movdqa    (%0),%%xmm6                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "psrld     $0x18,%%xmm6                    \n"
+    "psrld     $0x18,%%xmm1                    \n"
+    "packuswb  %%xmm1,%%xmm6                   \n"
+    "packuswb  %%xmm6,%%xmm6                   \n"
+    "punpcklbw %%xmm6,%%xmm5                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm5,%%xmm0                   \n"
+    "punpckhwd %%xmm5,%%xmm1                   \n"
+    "sub       $0x8,%1                         \n"
+    "movdqa    %%xmm0,(%0)                     \n"
+    "movdqa    %%xmm1,0x10(%0)                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(dst_argb),      // %0
+    "+r"(width)          // %1
+  : "m"(kARGBToSepiaB),  // %2
+    "m"(kARGBToSepiaG),  // %3
+    "m"(kARGBToSepiaR)   // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBSEPIAROW_SSSE3
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

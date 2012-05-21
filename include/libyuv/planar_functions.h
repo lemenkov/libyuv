@@ -138,6 +138,11 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int x, int y,
              int width, int height);
 
+// Make a rectangle of ARGB Sepia tone.
+int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
+              int x, int y,
+              int width, int height);
+
 // Copy ARGB to ARGB.
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,

@@ -249,6 +249,29 @@ void ARGBGrayRow_C(uint8* dst_argb, int width) {
   }
 }
 
+// Convert a row of image to Sepia tone.
+void ARGBSepiaRow_C(uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    int b = dst_argb[0];
+    int g = dst_argb[1];
+    int r = dst_argb[2];
+    int sb = (r * 35 + g * 68 + b * 17) >> 7;
+    int sg = (r * 45 + g * 88 + b * 22) >> 7;
+    int sr = (r * 50 + g * 98 + b * 24) >> 7;
+    if (sr > 255) {
+      sr = 255;
+    }
+    if (sg > 255) {
+      sg = 255;
+    }
+    // b does not over flow.  a is preserved from original.
+    dst_argb[0] = sb;
+    dst_argb[1] = sg;
+    dst_argb[2] = sr;
+    dst_argb += 4;
+  }
+}
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

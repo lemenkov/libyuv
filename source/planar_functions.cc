@@ -1059,6 +1059,28 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+// Make a rectangle of ARGB Sepia tone.
+int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
+              int dst_x, int dst_y,
+              int width, int height) {
+  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+  void (*ARGBSepiaRow)(uint8* dst_argb, int width) = ARGBSepiaRow_C;
+#if defined(HAS_ARGBSEPIAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBSepiaRow = ARGBSepiaRow_SSSE3;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    ARGBSepiaRow(dst, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
