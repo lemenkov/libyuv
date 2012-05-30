@@ -57,14 +57,15 @@ void CpuId(int cpu_info[4], int info_type) {
 }
 
 // based on libvpx arm_cpudetect.c
-// For Arm, but testable on any CPU
-int ArmCpuCaps(const char* cpuinfoname) {
+// For Arm, but public to allow testing on any CPU
+int ArmCpuCaps(const char* cpuinfo_name) {
   int flags = 0;
-  FILE* fin = fopen(cpuinfoname, "r");
+  FILE* fin = fopen(cpuinfo_name, "r");
   if (fin) {
     char buf[512];
     while (fgets(buf, 511, fin)) {
       if (memcmp(buf, "Features", 8) == 0) {
+        flags |= kCpuInitialized;
         char* p = strstr(buf, " neon");
         if (p && (p[5] == ' ' || p[5] == '\n')) {
           flags |= kCpuHasNEON;
@@ -81,7 +82,7 @@ int ArmCpuCaps(const char* cpuinfoname) {
 int cpu_info_ = 0;
 
 int InitCpuFlags() {
-#ifdef CPU_X86
+#if defined(CPU_X86)
   int cpu_info[4];
   __cpuid(cpu_info, 1);
   cpu_info_ = ((cpu_info[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
@@ -113,15 +114,17 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = kCpuInitialized;
   }
-#elif defined(__linux__) && defined(__ARM_NEON__)
-  cpu_info_ = ArmCpuCaps("/proc/cpuinfo") | kCpuInitialized;
+#elif defined(__arm__)
+#if defined(__linux__) && defined(__ARM_NEON__)
+  // linux arm parse text file for neon detect.
+  cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
   // to disable Neon on devices that do not have it.
-  cpu_info_ = kCpuHasNEON | kCpuInitialized | kCpuHasARM;
-#else
-  cpu_info_ = kCpuInitialized | kCpuHasARM;
+  cpu_info_ = kCpuHasNEON;
+#endif
+  cpu_info_ |= kCpuInitialized | kCpuHasARM;
 #endif
   return cpu_info_;
 }

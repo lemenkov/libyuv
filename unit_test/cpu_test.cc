@@ -89,8 +89,18 @@ TEST_F(libyuvTest, TestCpuId) {
 extern "C" int ArmCpuCaps(const char* cpuinfoname);
 
 TEST_F(libyuvTest, TestLinuxNeon) {
-  EXPECT_EQ(0, ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
-  EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("unit_test/testdata/tegra3.txt"));
+  int testdata = ArmCpuCaps("unit_test/testdata/arm_v7.txt");
+  if (testdata) {
+    EXPECT_EQ(kCpuInitialized,
+              ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
+    EXPECT_EQ((kCpuInitialized | kCpuHasNEON),
+              ArmCpuCaps("unit_test/testdata/tegra3.txt"));
+  } else {
+    printf("WARNING: unable to load \"unit_test/testdata/arm_v7.txt\"\n");
+  }
+#if defined(__linux__) && defined(__ARM_NEON__)
+  EXPECT_NE(0, ArmCpuCaps("/proc/cpuinfo"));
+#endif
 }
 
 }  // namespace libyuv
