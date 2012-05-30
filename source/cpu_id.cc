@@ -104,6 +104,12 @@ int InitCpuFlags() {
   if (getenv("LIBYUV_DISABLE_SSE41")) {
     cpu_info_ &= ~kCpuHasSSE41;
   }
+  if (getenv("LIBYUV_DISABLE_SSE42")) {
+    cpu_info_ &= ~kCpuHasSSE42;
+  }
+  if (getenv("LIBYUV_DISABLE_AVX")) {
+    cpu_info_ &= ~kCpuHasAVX;
+  }
   if (getenv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = kCpuInitialized;
   }
