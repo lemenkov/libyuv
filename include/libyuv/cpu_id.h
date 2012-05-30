@@ -16,18 +16,20 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// These flags are only valid on x86 processors
-static const int kCpuHasX86 = 1;
-static const int kCpuHasSSE2 = 2;
-static const int kCpuHasSSSE3 = 4;
-static const int kCpuHasSSE41 = 8;
+// Internal flag to indicate cpuid is initialized.
+static const int kCpuInitialized = 1;
 
 // These flags are only valid on ARM processors
-static const int kCpuHasARM = 16;
-static const int kCpuHasNEON = 32;
+static const int kCpuHasARM = 2;
+static const int kCpuHasNEON = 4;
 
-// Internal flag to indicate cpuid is initialized.
-static const int kCpuInitialized = 64;
+// These flags are only valid on x86 processors
+static const int kCpuHasX86 = 8;
+static const int kCpuHasSSE2 = 16;
+static const int kCpuHasSSSE3 = 32;
+static const int kCpuHasSSE41 = 64;
+static const int kCpuHasSSE42 = 128;
+static const int kCpuHasAVX = 256;
 
 // Detect CPU has SSE2 etc.
 // Test_flag parameter should be one of kCpuHas constants above.

@@ -84,9 +84,11 @@ int InitCpuFlags() {
 #ifdef CPU_X86
   int cpu_info[4];
   __cpuid(cpu_info, 1);
-  cpu_info_ = (cpu_info[3] & 0x04000000 ? kCpuHasSSE2 : 0) |
-              (cpu_info[2] & 0x00000200 ? kCpuHasSSSE3 : 0) |
-              (cpu_info[2] & 0x00080000 ? kCpuHasSSE41 : 0) |
+  cpu_info_ = ((cpu_info[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
+              ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
+              ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
+              ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
+              (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
               kCpuInitialized | kCpuHasX86;
 
   // environment variable overrides for testing.

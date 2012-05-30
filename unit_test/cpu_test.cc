@@ -19,10 +19,16 @@
 namespace libyuv {
 
 TEST_F(libyuvTest, TestVersion) {
-  EXPECT_GE(LIBYUV_VERSION, 169);
+  EXPECT_GE(LIBYUV_VERSION, 169);  // 169 is first version to support version.
 }
 
 TEST_F(libyuvTest, TestCpuHas) {
+  int cpu_flags = TestCpuFlag(~kCpuInitialized);
+  printf("Cpu Flags %x\n", cpu_flags);
+  int has_arm = TestCpuFlag(kCpuHasARM);
+  printf("Has ARM %d\n", has_arm);
+  int has_neon = TestCpuFlag(kCpuHasNEON);
+  printf("Has NEON %d\n", has_neon);
   int has_x86 = TestCpuFlag(kCpuHasX86);
   printf("Has X86 %d\n", has_x86);
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
@@ -31,10 +37,10 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has SSSE3 %d\n", has_ssse3);
   int has_sse41 = TestCpuFlag(kCpuHasSSE41);
   printf("Has SSE4.1 %d\n", has_sse41);
-  int has_arm = TestCpuFlag(kCpuHasARM);
-  printf("Has ARM %d\n", has_arm);
-  int has_neon = TestCpuFlag(kCpuHasNEON);
-  printf("Has NEON %d\n", has_neon);
+  int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+  printf("Has SSE4.2 %d\n", has_sse42);
+  int has_avx = TestCpuFlag(kCpuHasAVX);
+  printf("Has AVX %d\n", has_avx);
 }
 
 #if defined(__i386__) || defined(__x86_64__) || \
