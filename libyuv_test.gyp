@@ -9,13 +9,16 @@
 {
   'targets': [
     {
-     'target_name': 'libyuv_unittest',
+      'target_name': 'libyuv_unittest',
       'type': 'executable',
       'dependencies': [
          'libyuv.gyp:libyuv',
          # The tests are based on gtest
          'testing/gtest.gyp:gtest',
          'testing/gtest.gyp:gtest_main',
+      ],
+      'defines': [
+        'LIBYUV_SVNREVISION="<!(svnversion -n)"',
       ],
       'sources': [
          # headers
@@ -29,6 +32,7 @@
          'unit_test/scale_test.cc',
          'unit_test/scale_argb_test.cc',
          'unit_test/unit_test.cc',
+         'unit_test/version_test.cc',
       ],
       'conditions': [
         ['OS=="linux"', {

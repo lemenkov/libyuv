@@ -86,18 +86,21 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
 
+// Deprecated function name.
+#define BG24ToARGB RGB24ToARGB
+
 // Convert RGB24 to ARGB.
 int RGB24ToARGB(const uint8* src_bg24, int src_stride_bg24,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height);
 
-// Deprecated function name.
-#define BG24ToARGB RGB24ToARGB
-
 // Convert ABGR to ARGB. Also used for ARGB to ABGR.
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
+
+// Palindromes.
+#define ARGBToBGRA BGRAToARGB
 
 // Convert BGRA to ARGB. Also used for ARGB to BGRA.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,

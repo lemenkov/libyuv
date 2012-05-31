@@ -18,10 +18,6 @@
 
 namespace libyuv {
 
-TEST_F(libyuvTest, TestVersion) {
-  EXPECT_GE(LIBYUV_VERSION, 169);  // 169 is first version to support version.
-}
-
 TEST_F(libyuvTest, TestCpuHas) {
   int cpu_flags = TestCpuFlag(~kCpuInitialized);
   printf("Cpu Flags %x\n", cpu_flags);
