@@ -110,10 +110,10 @@ void ARGB1555ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
 
 void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
-    uint8 a = src_rgb[1] >> 4;
-    uint8 r = src_rgb[1] & 0x0f;
-    uint8 g = src_rgb[0] >> 4;
     uint8 b = src_rgb[0] & 0x0f;
+    uint8 g = src_rgb[0] >> 4;
+    uint8 r = src_rgb[1] & 0x0f;
+    uint8 a = src_rgb[1] >> 4;
     dst_argb[0] = (b << 4) | b;
     dst_argb[1] = (g << 4) | g;
     dst_argb[2] = (r << 4) | r;
@@ -166,7 +166,7 @@ void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 b = src_argb[0] >> 3;
     uint8 g = src_argb[1] >> 3;
     uint8 r = src_argb[2] >> 3;
-    uint8 a = src_argb[2] >> 7;
+    uint8 a = src_argb[3] >> 7;
     *reinterpret_cast<uint16*>(dst_rgb) = (a << 15) | (r << 10) | (g << 5) | b;
     dst_rgb += 2;
     src_argb += 4;
@@ -178,7 +178,7 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 b = src_argb[0] >> 4;
     uint8 g = src_argb[1] >> 4;
     uint8 r = src_argb[2] >> 4;
-    uint8 a = src_argb[2] >> 4;
+    uint8 a = src_argb[3] >> 4;
     *reinterpret_cast<uint16*>(dst_rgb) = (a << 12) | (r << 8) | (g << 4) | b;
     dst_rgb += 2;
     src_argb += 4;

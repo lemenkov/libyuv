@@ -57,6 +57,11 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// Convert UYVY to ARGB.
+int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -101,6 +106,7 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
 
 // Palindromes.
 #define ARGBToBGRA BGRAToARGB
+#define ARGBToABGR ABGRToARGB
 
 // Convert BGRA to ARGB. Also used for ARGB to BGRA.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
@@ -116,6 +122,11 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
 int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
               uint8* dst_rgb, int dst_stride_rgb,
               int width, int height);
+
+// Convert ARGB To RGB565.
+int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
+                 uint8* dst_rgb565, int dst_stride_rgb565,
+                 int width, int height);
 
 // Convert ARGB to I400.
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
