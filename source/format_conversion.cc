@@ -446,18 +446,18 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  void (*I420ToARGBRow)(const uint8* y_buf,
+  void (*I422ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        int width) = I420ToARGBRow_C;
-#if defined(HAS_I420TOARGBROW_NEON)
+                        int width) = I422ToARGBRow_C;
+#if defined(HAS_I422TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    I420ToARGBRow = I420ToARGBRow_NEON;
+    I422ToARGBRow = I422ToARGBRow_NEON;
   }
-#elif defined(HAS_I420TOARGBROW_SSSE3)
+#elif defined(HAS_I422TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    I420ToARGBRow = I420ToARGBRow_SSSE3;
+    I422ToARGBRow = I422ToARGBRow_SSSE3;
   }
 #endif
   SIMD_ALIGNED(uint8 row[kMaxStride]);
@@ -478,7 +478,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   }
 
   for (int y = 0; y < height; ++y) {
-    I420ToARGBRow(src_y, src_u, src_v, row, width);
+    I422ToARGBRow(src_y, src_u, src_v, row, width);
     ARGBToBayerRow(row, dst_bayer, index_map[y & 1], width);
     dst_bayer += dst_stride_bayer;
     src_y += src_stride_y;

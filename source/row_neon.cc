@@ -18,7 +18,7 @@ extern "C" {
 // This module is for GCC Neon
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 
-#define YUVTORGB                                                               \
+#define YUV422TORGB                                                            \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
     "vld1.u32   {d2[1]}, [%2]!                 \n"                             \
@@ -46,17 +46,17 @@ extern "C" {
     "vtrn.u8    d22, d23                       \n"                             \
     "vtrn.u8    d16, d17                       \n"                             \
 
-#if defined(HAS_I420TOARGBROW_NEON) || \
-    defined(HAS_I420TOBGRAROW_NEON) || \
-    defined(HAS_I420TOABGRROW_NEON)
+#if defined(HAS_I422TOARGBROW_NEON) || \
+    defined(HAS_I422TOBGRAROW_NEON) || \
+    defined(HAS_I422TOABGRROW_NEON)
 static const vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
                                0, 0, 0, 0, 0, 0, 0, 0 };
 static const vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
                              0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 
-#ifdef HAS_I420TOARGBROW_NEON
-void I420ToARGBRow_NEON(const uint8* y_buf,
+#ifdef HAS_I422TOARGBROW_NEON
+void I422ToARGBRow_NEON(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
@@ -68,7 +68,7 @@ void I420ToARGBRow_NEON(const uint8* y_buf,
     "vmov.u16   q14, #74                       \n"
     "vmov.u16   q15, #16                       \n"
   "1:                                          \n"
-YUVTORGB
+    YUV422TORGB
     "vmov.u8    d21, d16                       \n"
     "vmov.u8    d23, #255                      \n"
     "vst4.u8    {d20, d21, d22, d23}, [%3]!    \n"
@@ -85,10 +85,10 @@ YUVTORGB
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
-#endif
+#endif  // HAS_I422TOARGBROW_NEON
 
-#ifdef HAS_I420TOBGRAROW_NEON
-void I420ToBGRARow_NEON(const uint8* y_buf,
+#ifdef HAS_I422TOBGRAROW_NEON
+void I422ToBGRARow_NEON(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
@@ -100,7 +100,7 @@ void I420ToBGRARow_NEON(const uint8* y_buf,
     "vmov.u16   q14, #74                       \n"
     "vmov.u16   q15, #16                       \n"
   "1:                                          \n"
-YUVTORGB
+    YUV422TORGB
     "vswp.u8    d20, d22                       \n"
     "vmov.u8    d21, d16                       \n"
     "vmov.u8    d19, #255                      \n"
@@ -118,10 +118,10 @@ YUVTORGB
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
-#endif
+#endif  // HAS_I422TOBGRAROW_NEON
 
-#ifdef HAS_I420TOABGRROW_NEON
-void I420ToABGRRow_NEON(const uint8* y_buf,
+#ifdef HAS_I422TOABGRROW_NEON
+void I422ToABGRRow_NEON(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
@@ -133,7 +133,7 @@ void I420ToABGRRow_NEON(const uint8* y_buf,
     "vmov.u16   q14, #74                       \n"
     "vmov.u16   q15, #16                       \n"
   "1:                                          \n"
-YUVTORGB
+    YUV422TORGB
     "vswp.u8    d20, d22                       \n"
     "vmov.u8    d21, d16                       \n"
     "vmov.u8    d23, #255                      \n"
@@ -151,7 +151,7 @@ YUVTORGB
                       "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
-#endif
+#endif  // HAS_I422TOABGRROW_NEON
 
 #ifdef HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
@@ -172,7 +172,7 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
     : "memory", "cc", "q0", "q1" // Clobber List
   );
 }
-#endif
+#endif  // HAS_SPLITUV_NEON
 
 #ifdef HAS_COPYROW_NEON
 // Copy multiple of 64
@@ -266,7 +266,7 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     : "memory", "cc", "r3", "q0"
   );
 }
-#endif
+#endif  // HAS_MIRRORROW_NEON
 
 #ifdef HAS_MIRRORROWUV_NEON
 void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
@@ -325,7 +325,7 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
     : "memory", "cc", "r12", "q0"
   );
 }
-#endif
+#endif  // HAS_MIRRORROWUV_NEON
 
 #endif  // __ARM_NEON__
 

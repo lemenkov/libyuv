@@ -25,88 +25,44 @@
 
 namespace libyuv {
 
-TEST_F(libyuvTest, BenchmarkI420ToARGB_C) {
-  align_buffer_16(src_y, benchmark_width_ * benchmark_height_);
-  align_buffer_16(src_u, (benchmark_width_ * benchmark_height_) >> 2);
-  align_buffer_16(src_v, (benchmark_width_ * benchmark_height_) >> 2);
-  align_buffer_16(dst_argb, (benchmark_width_ << 2) * benchmark_height_);
-
-  MaskCpuFlags(kCpuInitialized);
-
-  for (int i = 0; i < benchmark_iterations_; ++i)
-    I420ToARGB(src_y, benchmark_width_,
-               src_u, benchmark_width_ >> 1,
-               src_v, benchmark_width_ >> 1,
-               dst_argb, benchmark_width_ << 2,
-               benchmark_width_, benchmark_height_);
-
-  MaskCpuFlags(-1);
-
-  EXPECT_EQ(0, 0);
-
-  free_aligned_buffer_16(src_y)
-  free_aligned_buffer_16(src_u)
-  free_aligned_buffer_16(src_v)
-  free_aligned_buffer_16(dst_argb)
-}
-
-TEST_F(libyuvTest, BenchmarkI420ToARGB_OPT) {
-  align_buffer_16(src_y, benchmark_width_ * benchmark_height_);
-  align_buffer_16(src_u, (benchmark_width_ * benchmark_height_) >> 2);
-  align_buffer_16(src_v, (benchmark_width_ * benchmark_height_) >> 2);
-  align_buffer_16(dst_argb, (benchmark_width_ << 2) * benchmark_height_);
-
-  for (int i = 0; i < benchmark_iterations_; ++i)
-    I420ToARGB(src_y, benchmark_width_,
-               src_u, benchmark_width_ >> 1,
-               src_v, benchmark_width_ >> 1,
-               dst_argb, benchmark_width_ << 2,
-               benchmark_width_, benchmark_height_);
-
-  free_aligned_buffer_16(src_y)
-  free_aligned_buffer_16(src_u)
-  free_aligned_buffer_16(src_v)
-  free_aligned_buffer_16(dst_argb)
-}
-
-#define TESTI420TO(FMT, BPP)                                                   \
-TEST_F(libyuvTest, I420To##FMT##_CvsOPT) {                                     \
+#define TESTPLANARTOB(FMT_A, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)               \
+TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_CvsOPT) {                              \
   const int src_width = 1280;                                                  \
   const int src_height = 720;                                                  \
   align_buffer_16(src_y, src_width * src_height);                              \
-  align_buffer_16(src_u, (src_width * src_height) >> 2);                       \
-  align_buffer_16(src_v, (src_width * src_height) >> 2);                       \
-  align_buffer_16(dst_rgb_c, (src_width * BPP) * src_height);                  \
-  align_buffer_16(dst_rgb_opt, (src_width * BPP) * src_height);                \
+  align_buffer_16(src_u, src_width / SUBSAMP_X * src_height / SUBSAMP_Y);      \
+  align_buffer_16(src_v, src_width / SUBSAMP_X * src_height / SUBSAMP_Y);      \
+  align_buffer_16(dst_rgb_c, (src_width * BPP_B) * src_height);                \
+  align_buffer_16(dst_rgb_opt, (src_width * BPP_B) * src_height);              \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < src_height; ++i)                                         \
     for (int j = 0; j < src_width; ++j)                                        \
       src_y[(i * src_width) + j] = (random() & 0xff);                          \
-  for (int i = 0; i < src_height >> 1; ++i)                                    \
-    for (int j = 0; j < src_width >> 1; ++j) {                                 \
-      src_u[(i * src_width >> 1) + j] = (random() & 0xff);                     \
-      src_v[(i * src_width >> 1) + j] = (random() & 0xff);                     \
+  for (int i = 0; i < src_height / SUBSAMP_X; ++i)                             \
+    for (int j = 0; j < src_width / SUBSAMP_Y; ++j) {                          \
+      src_u[(i * src_width / SUBSAMP_X) + j] = (random() & 0xff);              \
+      src_v[(i * src_width / SUBSAMP_X) + j] = (random() & 0xff);              \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
-  I420To##FMT(src_y, src_width,                                                \
-              src_u, src_width >> 1,                                           \
-              src_v, src_width >> 1,                                           \
-              dst_rgb_c, src_width * BPP,                                      \
+  ##FMT_A##To##FMT_B(src_y, src_width,                                         \
+              src_u, src_width / SUBSAMP_X,                                    \
+              src_v, src_width / SUBSAMP_X,                                    \
+              dst_rgb_c, src_width * BPP_B,                                    \
               src_width, src_height);                                          \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
-    I420To##FMT(src_y, src_width,                                              \
-                src_u, src_width >> 1,                                         \
-                src_v, src_width >> 1,                                         \
-                dst_rgb_opt, src_width * BPP,                                  \
+    ##FMT_A##To##FMT_B(src_y, src_width,                                       \
+                src_u, src_width / SUBSAMP_X,                                  \
+                src_v, src_width / SUBSAMP_X,                                  \
+                dst_rgb_opt, src_width * BPP_B,                                \
                 src_width, src_height);                                        \
   }                                                                            \
   int err = 0;                                                                 \
   for (int i = 0; i < src_height; ++i) {                                       \
-    for (int j = 0; j < src_width * BPP; ++j) {                                \
-      int diff = static_cast<int>(dst_rgb_c[i * src_width * BPP + j]) -        \
-                 static_cast<int>(dst_rgb_opt[i * src_width * BPP + j]);       \
+    for (int j = 0; j < src_width * BPP_B; ++j) {                              \
+      int diff = static_cast<int>(dst_rgb_c[i * src_width * BPP_B + j]) -      \
+                 static_cast<int>(dst_rgb_opt[i * src_width * BPP_B + j]);     \
       if (abs(diff) > 2)                                                       \
         err++;                                                                 \
     }                                                                          \
@@ -119,14 +75,17 @@ TEST_F(libyuvTest, I420To##FMT##_CvsOPT) {                                     \
   free_aligned_buffer_16(dst_rgb_opt)                                          \
 }
 
-TESTI420TO(ARGB, 4)
-TESTI420TO(BGRA, 4)
-TESTI420TO(ABGR, 4)
-TESTI420TO(RAW, 3)
-TESTI420TO(RGB24, 3)
-TESTI420TO(RGB565, 2)
-TESTI420TO(ARGB1555, 2)
-TESTI420TO(ARGB4444, 2)
+TESTPLANARTOB(I420, 2, 2, ARGB, 4)
+TESTPLANARTOB(I420, 2, 2, BGRA, 4)
+TESTPLANARTOB(I420, 2, 2, ABGR, 4)
+TESTPLANARTOB(I420, 2, 2, RAW, 3)
+TESTPLANARTOB(I420, 2, 2, RGB24, 3)
+TESTPLANARTOB(I420, 2, 2, RGB565, 2)
+TESTPLANARTOB(I420, 2, 2, ARGB1555, 2)
+TESTPLANARTOB(I420, 2, 2, ARGB4444, 2)
+TESTPLANARTOB(I411, 4, 1, ARGB, 4)
+TESTPLANARTOB(I422, 2, 1, ARGB, 4)
+TESTPLANARTOB(I444, 1, 1, ARGB, 4)
 
 #define TESTATOB(FMT_A, BPP_A, FMT_B, BPP_B)                                   \
 TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_CvsOPT) {                              \

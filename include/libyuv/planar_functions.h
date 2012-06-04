@@ -31,6 +31,13 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
+// Convert I420 to I400.  (calls CopyPlane ignoring u/v)
+int I420ToI400(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // I420 mirror.
 int I420Mirror(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -62,6 +69,13 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// Convert I444 to ARGB.
+int I444ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert I422 to ARGB.
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -69,8 +83,8 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert I444 to ARGB.
-int I444ToARGB(const uint8* src_y, int src_stride_y,
+// Convert I411 to ARGB.
+int I411ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,

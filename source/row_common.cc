@@ -359,7 +359,8 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
                                         (255u << ashift);
 }
 
-void I420ToARGBRow_C(const uint8* y_buf,
+// Also used for 420
+void I422ToARGBRow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
                      uint8* rgb_buf,
@@ -377,7 +378,7 @@ void I420ToARGBRow_C(const uint8* y_buf,
   }
 }
 
-void I420ToBGRARow_C(const uint8* y_buf,
+void I422ToBGRARow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
                      uint8* rgb_buf,
@@ -395,7 +396,7 @@ void I420ToBGRARow_C(const uint8* y_buf,
   }
 }
 
-void I420ToABGRRow_C(const uint8* y_buf,
+void I422ToABGRRow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
                      uint8* rgb_buf,
@@ -424,6 +425,32 @@ void I444ToARGBRow_C(const uint8* y_buf,
     u_buf += 1;
     v_buf += 1;
     rgb_buf += 4;  // Advance 1 pixel.
+  }
+}
+
+void I411ToARGBRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  for (int x = 0; x < width - 3; x += 4) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(y_buf[2], u_buf[0], v_buf[0], rgb_buf + 8, 24, 16, 8, 0);
+    YuvPixel(y_buf[3], u_buf[0], v_buf[0], rgb_buf + 12, 24, 16, 8, 0);
+    y_buf += 4;
+    u_buf += 1;
+    v_buf += 1;
+    rgb_buf += 16;  // Advance 4 pixels.
+  }
+  if (width & 2) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 16, 8, 0);
+    y_buf += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
   }
 }
 
@@ -686,8 +713,8 @@ void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
-// Wrappers to handle odd sizes/alignments
-#define YUVANY(NAMEANY, I420TORGB_SSE, I420TORGB_C)                            \
+// Wrappers to handle odd width
+#define YANY(NAMEANY, I420TORGB_SSE, I420TORGB_C, UV_SHIFT)                    \
     void NAMEANY(const uint8* y_buf,                                           \
                  const uint8* u_buf,                                           \
                  const uint8* v_buf,                                           \
@@ -696,22 +723,24 @@ void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
       int n = width & ~7;                                                      \
       I420TORGB_SSE(y_buf, u_buf, v_buf, rgb_buf, n);                          \
       I420TORGB_C(y_buf + n,                                                   \
-                   u_buf + (n >> 1),                                           \
-                   v_buf + (n >> 1),                                           \
-                   rgb_buf + n * 4, width & 7);                                \
+                  u_buf + (n >> UV_SHIFT),                                     \
+                  v_buf + (n >> UV_SHIFT),                                     \
+                  rgb_buf + n * 4, width & 7);                                 \
     }
 
-#if defined(HAS_I420TOARGBROW_SSSE3)
-YUVANY(I420ToARGBRow_Any_SSSE3, I420ToARGBRow_Unaligned_SSSE3, I420ToARGBRow_C)
-YUVANY(I420ToBGRARow_Any_SSSE3, I420ToBGRARow_Unaligned_SSSE3, I420ToBGRARow_C)
-YUVANY(I420ToABGRRow_Any_SSSE3, I420ToABGRRow_Unaligned_SSSE3, I420ToABGRRow_C)
+#if defined(HAS_I422TOARGBROW_SSSE3)
+YANY(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_Unaligned_SSSE3, I444ToARGBRow_C, 0)
+YANY(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_Unaligned_SSSE3, I422ToARGBRow_C, 1)
+YANY(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_Unaligned_SSSE3, I411ToARGBRow_C, 2)
+YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C, 1)
+YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C, 1)
 #endif
-#if defined(HAS_I420TOARGBROW_NEON)
-YUVANY(I420ToARGBRow_Any_NEON, I420ToARGBRow_NEON, I420ToARGBRow_C)
-YUVANY(I420ToBGRARow_Any_NEON, I420ToBGRARow_NEON, I420ToBGRARow_C)
-YUVANY(I420ToABGRRow_Any_NEON, I420ToABGRRow_NEON, I420ToABGRRow_C)
+#if defined(HAS_I422TOARGBROW_NEON)
+YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C)
+YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C)
+YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C)
 #endif
-#undef YUVANY
+#undef YANY
 
 #define RGBANY(NAMEANY, ARGBTORGB, BPP)                                        \
     void NAMEANY(const uint8* argb_buf,                                        \
