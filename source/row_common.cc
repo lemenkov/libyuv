@@ -151,37 +151,75 @@ void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int width) {
 
 // TODO(fbarchard): support big endian CPU
 void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
-  for (int x = 0; x < width; ++x) {
-    uint8 b = src_argb[0] >> 3;
-    uint8 g = src_argb[1] >> 2;
-    uint8 r = src_argb[2] >> 3;
-    *reinterpret_cast<uint16*>(dst_rgb) = (r << 11) | (g << 5) | b;
-    dst_rgb += 2;
-    src_argb += 4;
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 b0 = src_argb[0] >> 3;
+    uint8 g0 = src_argb[1] >> 2;
+    uint8 r0 = src_argb[2] >> 3;
+    uint8 b1 = src_argb[4] >> 3;
+    uint8 g1 = src_argb[5] >> 2;
+    uint8 r1 = src_argb[6] >> 3;
+    *reinterpret_cast<uint32*>(dst_rgb) = b0 | (g0 << 5) | (r0 << 11) |
+        (b1 << 16) | (g1 << 21) | (r1 << 27);
+    dst_rgb += 4;
+    src_argb += 8;
+  }
+  if (width & 1) {
+    uint8 b0 = src_argb[0] >> 3;
+    uint8 g0 = src_argb[1] >> 2;
+    uint8 r0 = src_argb[2] >> 3;
+    *reinterpret_cast<uint16*>(dst_rgb) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
 void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
-  for (int x = 0; x < width; ++x) {
-    uint8 b = src_argb[0] >> 3;
-    uint8 g = src_argb[1] >> 3;
-    uint8 r = src_argb[2] >> 3;
-    uint8 a = src_argb[3] >> 7;
-    *reinterpret_cast<uint16*>(dst_rgb) = (a << 15) | (r << 10) | (g << 5) | b;
-    dst_rgb += 2;
-    src_argb += 4;
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 b0 = src_argb[0] >> 3;
+    uint8 g0 = src_argb[1] >> 3;
+    uint8 r0 = src_argb[2] >> 3;
+    uint8 a0 = src_argb[3] >> 7;
+    uint8 b1 = src_argb[4] >> 3;
+    uint8 g1 = src_argb[5] >> 3;
+    uint8 r1 = src_argb[6] >> 3;
+    uint8 a1 = src_argb[7] >> 7;
+    *reinterpret_cast<uint32*>(dst_rgb) =
+        b0 | (g0 << 5) | (r0 << 10) | (a0 << 15) |
+        (b1 << 16) | (g1 << 21) | (r1 << 26) | (a1 << 31);
+    dst_rgb += 4;
+    src_argb += 8;
+  }
+  if (width & 1) {
+    uint8 b0 = src_argb[0] >> 3;
+    uint8 g0 = src_argb[1] >> 3;
+    uint8 r0 = src_argb[2] >> 3;
+    uint8 a0 = src_argb[3] >> 7;
+    *reinterpret_cast<uint16*>(dst_rgb) =
+        b0 | (g0 << 5) | (r0 << 10) | (a0 << 15);
   }
 }
 
 void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
-  for (int x = 0; x < width; ++x) {
-    uint8 b = src_argb[0] >> 4;
-    uint8 g = src_argb[1] >> 4;
-    uint8 r = src_argb[2] >> 4;
-    uint8 a = src_argb[3] >> 4;
-    *reinterpret_cast<uint16*>(dst_rgb) = (a << 12) | (r << 8) | (g << 4) | b;
-    dst_rgb += 2;
-    src_argb += 4;
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 b0 = src_argb[0] >> 4;
+    uint8 g0 = src_argb[1] >> 4;
+    uint8 r0 = src_argb[2] >> 4;
+    uint8 a0 = src_argb[3] >> 4;
+    uint8 b1 = src_argb[4] >> 4;
+    uint8 g1 = src_argb[5] >> 4;
+    uint8 r1 = src_argb[6] >> 4;
+    uint8 a1 = src_argb[7] >> 4;
+    *reinterpret_cast<uint32*>(dst_rgb) =
+        b0 | (g0 << 4) | (r0 << 8) | (a0 << 12) |
+        (b1 << 16) | (g1 << 20) | (r1 << 24) | (a1 << 28);
+    dst_rgb += 4;
+    src_argb += 8;
+  }
+  if (width & 1) {
+    uint8 b0 = src_argb[0] >> 4;
+    uint8 g0 = src_argb[1] >> 4;
+    uint8 r0 = src_argb[2] >> 4;
+    uint8 a0 = src_argb[3] >> 4;
+    *reinterpret_cast<uint16*>(dst_rgb) =
+        b0 | (g0 << 4) | (r0 << 8) | (a0 << 12);
   }
 }
 

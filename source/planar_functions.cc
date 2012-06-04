@@ -338,6 +338,34 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Convert ARGB to I400.
+int ARGBToI400(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
+#if defined(HAS_ARGBTOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    ARGBToYRow = ARGBToYRow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBToYRow(src_argb, dst_y, width);
+    src_argb += src_stride_argb;
+    dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -393,34 +421,6 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   return 0;
 }
 
-// Convert ARGB to I400.
-int ARGBToI400(const uint8* src_argb, int src_stride_argb,
-               uint8* dst_y, int dst_stride_y,
-               int width, int height) {
-  if (height < 0) {
-    height = -height;
-    src_argb = src_argb + (height - 1) * src_stride_argb;
-    src_stride_argb = -src_stride_argb;
-  }
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
-      ARGBToYRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = ARGBToYRow_SSSE3;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    ARGBToYRow(src_argb, dst_y, width);
-    src_argb += src_stride_argb;
-    dst_y += dst_stride_y;
-  }
-  return 0;
-}
-
 // Convert RAW to ARGB.
 int RAWToARGB(const uint8* src_raw, int src_stride_raw,
               uint8* dst_argb, int dst_stride_argb,
@@ -470,6 +470,87 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
   for (int y = 0; y < height; ++y) {
     RGB24ToARGBRow(src_rgb24, dst_argb, width);
     src_rgb24 += src_stride_rgb24;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert RGB565 to ARGB.
+int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_rgb565 = src_rgb565 + (height - 1) * src_stride_rgb565;
+    src_stride_rgb565 = -src_stride_rgb565;
+  }
+  void (*RGB565ToARGBRow)(const uint8* src_rgb565, uint8* dst_argb, int pix) =
+      RGB565ToARGBRow_C;
+#if defined(HAS_RGB565TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    RGB565ToARGBRow(src_rgb565, dst_argb, width);
+    src_rgb565 += src_stride_rgb565;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert ARGB1555 to ARGB.
+int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
+    src_stride_argb1555 = -src_stride_argb1555;
+  }
+  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb, int pix) =
+      ARGB1555ToARGBRow_C;
+#if defined(HAS_ARGB1555TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGB1555ToARGBRow(src_argb1555, dst_argb, width);
+    src_argb1555 += src_stride_argb1555;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert ARGB4444 to ARGB.
+int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
+    src_stride_argb4444 = -src_stride_argb4444;
+  }
+  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb, int pix) =
+      ARGB4444ToARGBRow_C;
+#if defined(HAS_ARGB4444TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGB4444ToARGBRow(src_argb4444, dst_argb, width);
+    src_argb4444 += src_stride_argb4444;
     dst_argb += dst_stride_argb;
   }
   return 0;
@@ -550,15 +631,14 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
   }
   void (*ARGBToRGB565Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
       ARGBToRGB565Row_C;
-#if defined(HAS_ARGBTORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
+#if defined(HAS_ARGBTORGB565ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-    if (width * 3 <= kMaxStride) {
-      ARGBToRGB565Row = ARGBToRGB565Row_Any_SSSE3;
+    if (width * 2 <= kMaxStride) {
+      ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
     }
-    if (IS_ALIGNED(width, 16) &&
-        IS_ALIGNED(dst_rgb565, 16) && IS_ALIGNED(dst_stride_rgb565, 16)) {
-      ARGBToRGB565Row = ARGBToRGB565Row_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
     }
   }
 #endif
@@ -567,6 +647,68 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
     ARGBToRGB565Row(src_argb, dst_rgb565, width);
     src_argb += src_stride_argb;
     dst_rgb565 += dst_stride_rgb565;
+  }
+  return 0;
+}
+
+// Convert ARGB To ARGB1555.
+int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb1555, int dst_stride_argb1555,
+                   int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToARGB1555Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+      ARGBToARGB1555Row_C;
+#if defined(HAS_ARGBTOARGB1555ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+    if (width * 2 <= kMaxStride) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
+    }
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_SSE2;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBToARGB1555Row(src_argb, dst_argb1555, width);
+    src_argb += src_stride_argb;
+    dst_argb1555 += dst_stride_argb1555;
+  }
+  return 0;
+}
+
+// Convert ARGB To ARGB4444.
+int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb4444, int dst_stride_argb4444,
+                   int width, int height) {
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToARGB4444Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+      ARGBToARGB4444Row_C;
+#if defined(HAS_ARGBTOARGB4444ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+    if (width * 2 <= kMaxStride) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_Any_SSE2;
+    }
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_SSE2;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBToARGB4444Row(src_argb, dst_argb4444, width);
+    src_argb += src_stride_argb;
+    dst_argb4444 += dst_stride_argb4444;
   }
   return 0;
 }

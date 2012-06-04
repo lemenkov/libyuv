@@ -272,7 +272,7 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "mov       $0x1080108,%%eax                \n"
     "movd      %%eax,%%xmm5                    \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-    "mov       $0x20082008,%%eax               \n"
+    "mov       $0x20802080,%%eax               \n"
     "movd      %%eax,%%xmm6                    \n"
     "pshufd    $0x0,%%xmm6,%%xmm6              \n"
     "pcmpeqb   %%xmm3,%%xmm3                   \n"

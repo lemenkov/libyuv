@@ -104,9 +104,10 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Palindromes.
+// Aliases.
 #define ARGBToBGRA BGRAToARGB
 #define ARGBToABGR ABGRToARGB
+#define ARGBToARGB ARGBCopy
 
 // Convert BGRA to ARGB. Also used for ARGB to BGRA.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
@@ -127,6 +128,31 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
 int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height);
+
+// Convert ARGB To ARGB1555.
+int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb1555, int dst_stride_argb1555,
+                   int width, int height);
+
+// Convert ARGB To ARGB4444.
+int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb4444, int dst_stride_argb4444,
+                   int width, int height);
+
+// Convert RGB565 To ARGB.
+int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height);
+
+// Convert ARGB1555 To ARGB.
+int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height);
+
+// Convert ARGB4444 To ARGB.
+int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
+                   uint8* dst_argb, int dst_stride_argb,
+                   int width, int height);
 
 // Convert ARGB to I400.
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,

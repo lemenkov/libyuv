@@ -261,7 +261,7 @@ __asm {
     mov       eax, 0x01080108  // generate multiplier to repeat 5 bits
     movd      xmm5, eax
     pshufd    xmm5, xmm5, 0
-    mov       eax, 0x20082008  // multiplier shift by 5 and then repeat 6 bits
+    mov       eax, 0x20802080  // multiplier shift by 5 and then repeat 6 bits
     movd      xmm6, eax
     pshufd    xmm6, xmm6, 0
     pcmpeqb   xmm3, xmm3       // generate mask 0xf800f800 for Red

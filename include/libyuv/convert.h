@@ -22,6 +22,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Alias
+#define I420ToI420 I420Copy
+
 // Copy I420 to I420.
 int I420Copy(const uint8* src_y, int src_stride_y,
              const uint8* src_u, int src_stride_u,
