@@ -1212,7 +1212,6 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
 #endif
   );
 }
-
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 #ifdef HAS_I422TOARGBROW_SSSE3
@@ -1251,73 +1250,32 @@ struct {
   { YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
-// Convert 8 pixels: 8 UV and 8 Y
-#define YUV444TORGB                                                            \
+// Read 8 UV from 411
+#define READYUV444                                                             \
     "movq       (%1),%%xmm0                    \n"                             \
     "movq       (%1,%2,1),%%xmm1               \n"                             \
     "lea        0x8(%1),%1                     \n"                             \
     "punpcklbw  %%xmm1,%%xmm0                  \n"                             \
-    "movdqa     %%xmm0,%%xmm1                  \n"                             \
-    "movdqa     %%xmm0,%%xmm2                  \n"                             \
-    "pmaddubsw  (%5),%%xmm0                    \n"                             \
-    "pmaddubsw  16(%5),%%xmm1                  \n"                             \
-    "pmaddubsw  32(%5),%%xmm2                  \n"                             \
-    "psubw      48(%5),%%xmm0                  \n"                             \
-    "psubw      64(%5),%%xmm1                  \n"                             \
-    "psubw      80(%5),%%xmm2                  \n"                             \
-    "movq       (%0),%%xmm3                    \n"                             \
-    "lea        0x8(%0),%0                     \n"                             \
-    "punpcklbw  %%xmm4,%%xmm3                  \n"                             \
-    "psubsw     96(%5),%%xmm3                  \n"                             \
-    "pmullw     112(%5),%%xmm3                 \n"                             \
-    "paddsw     %%xmm3,%%xmm0                  \n"                             \
-    "paddsw     %%xmm3,%%xmm1                  \n"                             \
-    "paddsw     %%xmm3,%%xmm2                  \n"                             \
-    "psraw      $0x6,%%xmm0                    \n"                             \
-    "psraw      $0x6,%%xmm1                    \n"                             \
-    "psraw      $0x6,%%xmm2                    \n"                             \
-    "packuswb   %%xmm0,%%xmm0                  \n"                             \
-    "packuswb   %%xmm1,%%xmm1                  \n"                             \
-    "packuswb   %%xmm2,%%xmm2                  \n"
 
-// Convert 8 pixels: 4 UV and 8 Y
-#define YUV422TORGB                                                            \
+// Read 4 UV from 422, upsample to 8 UV
+#define READYUV422                                                             \
     "movd       (%1),%%xmm0                    \n"                             \
     "movd       (%1,%2,1),%%xmm1               \n"                             \
     "lea        0x4(%1),%1                     \n"                             \
     "punpcklbw  %%xmm1,%%xmm0                  \n"                             \
     "punpcklwd  %%xmm0,%%xmm0                  \n"                             \
-    "movdqa     %%xmm0,%%xmm1                  \n"                             \
-    "movdqa     %%xmm0,%%xmm2                  \n"                             \
-    "pmaddubsw  (%5),%%xmm0                    \n"                             \
-    "pmaddubsw  16(%5),%%xmm1                  \n"                             \
-    "pmaddubsw  32(%5),%%xmm2                  \n"                             \
-    "psubw      48(%5),%%xmm0                  \n"                             \
-    "psubw      64(%5),%%xmm1                  \n"                             \
-    "psubw      80(%5),%%xmm2                  \n"                             \
-    "movq       (%0),%%xmm3                    \n"                             \
-    "lea        0x8(%0),%0                     \n"                             \
-    "punpcklbw  %%xmm4,%%xmm3                  \n"                             \
-    "psubsw     96(%5),%%xmm3                  \n"                             \
-    "pmullw     112(%5),%%xmm3                 \n"                             \
-    "paddsw     %%xmm3,%%xmm0                  \n"                             \
-    "paddsw     %%xmm3,%%xmm1                  \n"                             \
-    "paddsw     %%xmm3,%%xmm2                  \n"                             \
-    "psraw      $0x6,%%xmm0                    \n"                             \
-    "psraw      $0x6,%%xmm1                    \n"                             \
-    "psraw      $0x6,%%xmm2                    \n"                             \
-    "packuswb   %%xmm0,%%xmm0                  \n"                             \
-    "packuswb   %%xmm1,%%xmm1                  \n"                             \
-    "packuswb   %%xmm2,%%xmm2                  \n"
 
-// Convert 8 pixels: 2 UV and 8 Y
-#define YUV411TORGB                                                            \
+// Read 2 UV from 411, upsample to 8 UV
+#define READYUV411                                                             \
     "movd       (%1),%%xmm0                    \n"                             \
     "movd       (%1,%2,1),%%xmm1               \n"                             \
     "lea        0x2(%1),%1                     \n"                             \
     "punpcklbw  %%xmm1,%%xmm0                  \n"                             \
     "punpcklwd  %%xmm0,%%xmm0                  \n"                             \
     "punpckldq  %%xmm0,%%xmm0                  \n"                             \
+
+// Convert 8 pixels: 8 UV and 8 Y
+#define YUVTORGB                                                               \
     "movdqa     %%xmm0,%%xmm1                  \n"                             \
     "movdqa     %%xmm0,%%xmm2                  \n"                             \
     "pmaddubsw  (%5),%%xmm0                    \n"                             \
@@ -1352,7 +1310,8 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV444TORGB
+    READYUV444
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1387,7 +1346,8 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1422,7 +1382,8 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV411TORGB
+    READYUV411
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1457,7 +1418,8 @@ void OMITFP I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV444TORGB
+    READYUV444
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1492,7 +1454,8 @@ void OMITFP I422ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1527,7 +1490,8 @@ void OMITFP I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV411TORGB
+    READYUV411
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1562,7 +1526,8 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "punpcklbw %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm5                   \n"
@@ -1598,7 +1563,8 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
@@ -1633,7 +1599,8 @@ void OMITFP I422ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "punpcklbw %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm5                   \n"
@@ -1669,7 +1636,8 @@ void OMITFP I422ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    YUV422TORGB
+    READYUV422
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
@@ -1741,7 +1709,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 #endif
   );
 }
-#endif
+#endif  // HAS_YTOARGBROW_SSE2
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
@@ -1772,7 +1740,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #endif
   );
 }
-#endif
+#endif  // HAS_MIRRORROW_SSSE3
 
 #ifdef HAS_MIRRORROW_SSE2
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
@@ -1803,7 +1771,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 #endif
   );
 }
-#endif
+#endif  // HAS_MIRRORROW_SSE2
 
 #ifdef HAS_MIRRORROW_UV_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
@@ -1838,7 +1806,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 #endif
   );
 }
-#endif
+#endif  // HAS_MIRRORROW_UV_SSSE3
 
 #ifdef HAS_ADDROW_SSE2
 // dst and width aligned to 16
@@ -1939,7 +1907,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 #endif
   );
 }
-#endif
+#endif  // HAS_SPLITUV_SSE2
 
 #ifdef HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
@@ -1979,7 +1947,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
   : "memory", "cc"
   );
 }
-#endif
+#endif  // HAS_COPYROW_X86
 
 #ifdef HAS_YUY2TOYROW_SSE2
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
