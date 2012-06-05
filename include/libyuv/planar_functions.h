@@ -47,16 +47,33 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert NV12 to ARGB.  Also used for NV21.
+// Convert NV12 to ARGB.
 int NV12ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height);
 
-// Convert NV12 to RGB565.  Also used for NV21.
+// Convert NV21 to ARGB.
+int NV21ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_vu, int src_stride_vu,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
+// Convert M420 to ARGB.
+int M420ToARGB(const uint8* src_m420, int src_stride_m420,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
+// Convert NV12 to RGB565.
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
-                 uint8* dst_frame, int dst_stride_frame,
+                 uint8* dst_rgb565, int dst_stride_rgb565,
+                 int width, int height);
+
+// Convert NV21 to RGB565.
+int NV21ToRGB565(const uint8* src_y, int src_stride_y,
+                 const uint8* src_uv, int src_stride_uv,
+                 uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height);
 
 // Convert YUY2 to ARGB.

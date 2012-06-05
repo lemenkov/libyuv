@@ -367,7 +367,7 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
 // Useful for bandwidth constrained transports like USB 1.0 and 2.0 and for
 // easy conversion to I420.
 // M420 format description:
-// M420 is row biplanar 420: 2 rows of Y and 1 row of VU.
+// M420 is row biplanar 420: 2 rows of Y and 1 row of UV.
 // Chroma is half width / half height. (420)
 // src_stride_m420 is row planar.  Normally this will be the width in pixels.
 //   The UV plane is half width, but 2 values, so src_stride_m420 applies to

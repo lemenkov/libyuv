@@ -1230,6 +1230,18 @@ static const vec8 kUVToG = {
   UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
 };
 
+static const vec8 kVUToB = {
+  VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB,
+};
+
+static const vec8 kVUToR = {
+  VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR,
+};
+
+static const vec8 kVUToG = {
+  VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+};
+
 static const vec16 kYToRgb = { YG, YG, YG, YG, YG, YG, YG, YG };
 static const vec16 kYSub16 = { 16, 16, 16, 16, 16, 16, 16, 16 };
 static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
@@ -1265,6 +1277,13 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm punpckldq  xmm0, xmm0           /* UVUV (upsample) */                \
   }
 
+// Read 4 UV from NV12, upsample to 8 UV
+#define READNV12 __asm {                                                       \
+    __asm movq       xmm0, qword ptr [esi]          /* UV */                   \
+    __asm lea        esi,  [esi + 8]                                           \
+    __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
+  }
+
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
@@ -1273,6 +1292,34 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm pmaddubsw  xmm0, kUVToB        /* scale B UV */                      \
     __asm pmaddubsw  xmm1, kUVToG        /* scale G UV */                      \
     __asm pmaddubsw  xmm2, kUVToR        /* scale R UV */                      \
+    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */           \
+    __asm psubw      xmm1, kUVBiasG                                            \
+    __asm psubw      xmm2, kUVBiasR                                            \
+    /* Step 2: Find Y contribution to 8 R,G,B values */                        \
+    __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
+    __asm lea        eax, [eax + 8]                                            \
+    __asm punpcklbw  xmm3, xmm4                                                \
+    __asm psubsw     xmm3, kYSub16                                             \
+    __asm pmullw     xmm3, kYToRgb                                             \
+    __asm paddsw     xmm0, xmm3           /* B += Y */                         \
+    __asm paddsw     xmm1, xmm3           /* G += Y */                         \
+    __asm paddsw     xmm2, xmm3           /* R += Y */                         \
+    __asm psraw      xmm0, 6                                                   \
+    __asm psraw      xmm1, 6                                                   \
+    __asm psraw      xmm2, 6                                                   \
+    __asm packuswb   xmm0, xmm0           /* B */                              \
+    __asm packuswb   xmm1, xmm1           /* G */                              \
+    __asm packuswb   xmm2, xmm2           /* R */                              \
+  }
+
+// Convert 8 pixels: 8 VU and 8 Y
+#define YVUTORGB __asm {                                                       \
+    /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
+    __asm movdqa     xmm1, xmm0                                                \
+    __asm movdqa     xmm2, xmm0                                                \
+    __asm pmaddubsw  xmm0, kVUToB        /* scale B UV */                      \
+    __asm pmaddubsw  xmm1, kVUToG        /* scale G UV */                      \
+    __asm pmaddubsw  xmm2, kVUToR        /* scale R UV */                      \
     __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */           \
     __asm psubw      xmm1, kUVBiasG                                            \
     __asm psubw      xmm2, kUVBiasR                                            \
@@ -1423,6 +1470,82 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+__declspec(naked) __declspec(align(16))
+void NV12ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* uv_buf,
+                         uint8* argb_buf,
+                         int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // UV
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    READNV12
+    YUVTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm5           // RA
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+__declspec(naked) __declspec(align(16))
+void NV21ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* uv_buf,
+                         uint8* argb_buf,
+                         int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // VU
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    READNV12
+    YVUTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm5           // RA
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+
 // 8 pixels, unaligned.
 // 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes)
 __declspec(naked) __declspec(align(16))
@@ -1548,6 +1671,83 @@ void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     jg         convertloop
 
     pop        edi
+    pop        esi
+    ret
+  }
+}
+
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+__declspec(naked) __declspec(align(16))
+void NV12ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* uv_buf,
+                                   uint8* argb_buf,
+                                   int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // UV
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    READNV12
+    YUVTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm5           // RA
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+__declspec(naked) __declspec(align(16))
+void NV21ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* uv_buf,
+                                   uint8* argb_buf,
+                                   int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // VU
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pxor       xmm4, xmm4
+
+    align      16
+ convertloop:
+    READNV12
+    YVUTORGB
+
+    // Step 3: Weave into ARGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm5           // RA
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
+    lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
     pop        esi
     ret
   }
