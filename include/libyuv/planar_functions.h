@@ -173,6 +173,13 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
+// ARGB little endian (bgra in memory) to I422
+int ARGBToI422(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // Draw a rectangle into I420.
 int I420Rect(uint8* dst_y, int dst_stride_y,
              uint8* dst_u, int dst_stride_u,
