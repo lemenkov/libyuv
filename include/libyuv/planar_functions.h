@@ -251,6 +251,13 @@ typedef void (*AddRow)(const uint8* src, uint16* dst, int width);
 AddRow GetAddRow(uint16* dst, int width);
 AddRow GetSubRow(uint16* dst, int width);
 
+// Convert MJPG to ARGB.
+int MJPGToARGB(const uint8* sample,
+               size_t sample_size,
+               uint8* argb, int argb_stride,
+               int w, int h,
+               int dw, int dh);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
