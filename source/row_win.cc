@@ -3011,6 +3011,197 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   }
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
+
+#ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
+// Consider float CumulativeSum.
+// Consider calling CumulativeSum one row at time as needed.
+// Consider circular CumulativeSum buffer of radius * 2 + 1 height.
+// Convert cumulative sum for an area to an average for 1 pixel.
+// topleft is pointer to top left of CumulativeSum buffer for area.
+// botleft is pointer to bottom left of CumulativeSum buffer.
+// width is offset from left to right of area in CumulativeSum buffer measured
+//   in number of ints.
+// area is the number of pixels in the area being averaged.
+// dst points to pixel to store result to.
+// count is number of averaged pixels to produce.
+// Does 4 pixels at a time, requires CumulativeSum pointers to be 16 byte
+// aligned.
+void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
+                                 int width, int area, uint8* dst, int count) {
+  __asm {
+    mov        eax, topleft  // eax topleft
+    mov        esi, botleft  // esi botleft
+    mov        edx, width
+    movd       xmm4, area
+    mov        edi, dst
+    mov        ecx, count
+    cvtdq2ps   xmm4, xmm4
+    rcpss      xmm4, xmm4  // 1.0f / area
+    pshufd     xmm4, xmm4, 0
+    sub        ecx, 4
+    jl         l4b
+
+    // 4 pixel loop
+    align      4
+  l4:
+    // top left
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + 32]
+    movdqa     xmm3, [eax + 48]
+
+    // - top right
+    psubd      xmm0, [eax + edx * 4]
+    psubd      xmm1, [eax + edx * 4 + 16]
+    psubd      xmm2, [eax + edx * 4 + 32]
+    psubd      xmm3, [eax + edx * 4 + 48]
+    lea        eax, [eax + 64]
+
+    // - bottom left
+    psubd      xmm0, [esi]
+    psubd      xmm1, [esi + 16]
+    psubd      xmm2, [esi + 32]
+    psubd      xmm3, [esi + 48]
+
+    // + bottom right
+    paddd      xmm0, [esi + edx * 4]
+    paddd      xmm1, [esi + edx * 4 + 16]
+    paddd      xmm2, [esi + edx * 4 + 32]
+    paddd      xmm3, [esi + edx * 4 + 48]
+    lea        esi, [esi + 64]
+
+    cvtdq2ps   xmm0, xmm0   // Average = Sum * 1 / Area
+    cvtdq2ps   xmm1, xmm1
+    mulps      xmm0, xmm4
+    mulps      xmm1, xmm4
+    cvtdq2ps   xmm2, xmm2
+    cvtdq2ps   xmm3, xmm3
+    mulps      xmm2, xmm4
+    mulps      xmm3, xmm4
+    cvtps2dq   xmm0, xmm0
+    cvtps2dq   xmm1, xmm1
+    cvtps2dq   xmm2, xmm2
+    cvtps2dq   xmm3, xmm3
+    packssdw   xmm0, xmm1
+    packssdw   xmm2, xmm3
+    packuswb   xmm0, xmm2
+    movdqu     [edi], xmm0
+    lea        edi, [edi + 16]
+    sub        ecx, 4
+    jge        l4
+
+  l4b:
+    add        ecx, 4 - 1
+    jl         l1b
+
+    // 1 pixel loop
+    align      4
+  l1:
+    movdqa     xmm0, [eax]
+    psubd      xmm0, [eax + edx * 4]
+    lea        eax, [eax + 16]
+    psubd      xmm0, [esi]
+    paddd      xmm0, [esi + edx * 4]
+    lea        esi, [esi + 16]
+    cvtdq2ps   xmm0, xmm0
+    mulps      xmm0, xmm4
+    cvtps2dq   xmm0, xmm0
+    packssdw   xmm0, xmm0
+    packuswb   xmm0, xmm0
+    movd       dword ptr [edi], xmm0
+    lea        edi, [edi + 4]
+    sub        ecx, 1
+    jge        l1
+  l1b:
+  }
+}
+#endif  // HAS_CUMULATIVESUMTOAVERAGE_SSE2
+
+#ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
+// Creates a table of cumulative sums where each value is a sum of all values
+// above and to the left of the value.
+void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
+                                  int32* previous_cumsum, int width) {
+  __asm {
+    mov        eax, row
+    mov        edx, cumsum
+    mov        esi, previous_cumsum
+    mov        ecx, width
+    sub        esi, edx
+    pxor       xmm0, xmm0
+    pxor       xmm1, xmm1
+
+    sub        ecx, 4
+    jl         l4b
+    test       edx, 15
+    jne        l4b
+
+    // 4 pixel loop
+    align      4
+  l4:
+    movdqu     xmm2, [eax]  // 4 argb pixels 16 bytes.
+    lea        eax, [eax + 16]
+    movdqa     xmm4, xmm2
+
+    punpcklbw  xmm2, xmm1
+    movdqa     xmm3, xmm2
+    punpcklwd  xmm2, xmm1
+    punpckhwd  xmm3, xmm1
+
+    punpckhbw  xmm4, xmm1
+    movdqa     xmm5, xmm4
+    punpcklwd  xmm4, xmm1
+    punpckhwd  xmm5, xmm1
+
+    paddd      xmm0, xmm2
+    movdqa     xmm2, [edx + esi]  // previous row above.
+    paddd      xmm2, xmm0
+
+    paddd      xmm0, xmm3
+    movdqa     xmm3, [edx + esi + 16]
+    paddd      xmm3, xmm0
+
+    paddd      xmm0, xmm4
+    movdqa     xmm4, [edx + esi + 32]
+    paddd      xmm4, xmm0
+
+    paddd      xmm0, xmm5
+    movdqa     xmm5, [edx + esi + 48]
+    paddd      xmm5, xmm0
+
+    movdqa     [edx], xmm2
+    movdqa     [edx + 16], xmm3
+    movdqa     [edx + 32], xmm4
+    movdqa     [edx + 48], xmm5
+
+    lea        edx, [edx + 64]
+    sub        ecx, 4
+    jge        l4
+
+  l4b:
+    add        ecx, 4 - 1
+    jl         l1b
+
+    // 1 pixel loop
+    align      4
+  l1:
+    movd       xmm2, dword ptr [eax]  // 1 argb pixel 4 bytes.
+    lea        eax, [eax + 4]
+    punpcklbw  xmm2, xmm4
+    punpcklwd  xmm2, xmm4
+    paddd      xmm0, xmm2
+    movdqu     xmm2, [edx + esi]
+    paddd      xmm2, xmm0
+    movdqu     [edx], xmm2
+    lea        edx, [edx + 16]
+    sub        ecx, 1
+    jge        l1
+
+ l1b:
+  }
+}
+#endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
+
 #endif  // _M_IX86
 
 

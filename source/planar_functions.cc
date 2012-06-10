@@ -1676,6 +1676,86 @@ int MJPGToARGB(const uint8* sample,
 }
 #endif
 
+// Computes table of cumulative sum for image where the value is the sum
+// of all values above and to the left of the entry.  Used by ARGBBlur.
+int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
+                             int32* dst_cumsum, int dst_stride32_cumsum,
+                             int width, int height) {
+  if (!dst_cumsum || !src_argb || width <= 0 || height <= 0) {
+    return -1;
+  }
+  void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
+      int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
+#if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
+  }
+#endif
+  memset(dst_cumsum, 0, width * sizeof(dst_cumsum[0]) * 4); // 4 ints per pixel.
+  int32* previous_cumsum = dst_cumsum;
+  for (int y = 0; y < height; ++y) {
+    ComputeCumulativeSumRow(src_argb, dst_cumsum, previous_cumsum, width);
+    previous_cumsum = dst_cumsum;
+    dst_cumsum += dst_stride32_cumsum;
+    src_argb += src_stride_argb;
+  }
+  return 0;
+}
+
+// Blur ARGB image.
+// Caller should allocate cumsum table of width * height * 16 bytes aligned
+// to 16 byte boundary.
+int ARGBBlur(const uint8* src_argb, int src_stride_argb,
+             uint8* dst_argb, int dst_stride_argb,
+             int32* dst_cumsum, int dst_stride32_cumsum,
+             int width, int height, int radius) {
+  void (*CumulativeSumToAverage)(const int32* topleft, const int32* botleft,
+      int width, int area, uint8* dst, int count) = CumulativeSumToAverage_C;
+#if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    CumulativeSumToAverage = CumulativeSumToAverage_SSE2;
+  }
+#endif
+
+  ARGBComputeCumulativeSum(src_argb, src_stride_argb,
+                           dst_cumsum, dst_stride32_cumsum,
+                           width, height);
+
+  for (int y = 0; y < height; ++y) {
+    int top_y = ((y - radius - 1) >= 0) ? (y - radius - 1) : 0;
+    int bot_y = ((y + radius) < height) ? (y + radius) : (height - 1);
+    int32* cumsum_top_row = &dst_cumsum[top_y * dst_stride32_cumsum];
+    int32* cumsum_bot_row = &dst_cumsum[bot_y * dst_stride32_cumsum];
+
+    // Left clipped.
+    int area = radius * (bot_y - top_y);
+    int boxwidth = radius * 4;
+    int x;
+    for (x = 0; x < radius + 1; ++x) {
+      CumulativeSumToAverage(cumsum_top_row, cumsum_bot_row,
+                              boxwidth, area, &dst_argb[x * 4], 1);
+      area += (bot_y - top_y);
+      boxwidth += 4;
+    }
+
+    // Middle unclipped.
+    int n = (width - 1) - radius - x + 1;
+    CumulativeSumToAverage(cumsum_top_row, cumsum_bot_row,
+                           boxwidth, area, &dst_argb[x * 4], n);
+
+    // Right clipped.
+    for (x += n; x <= width - 1; ++x) {
+      area -= (bot_y - top_y);
+      boxwidth -= 4;
+      CumulativeSumToAverage(cumsum_top_row + (x - radius - 1) * 4,
+                             cumsum_bot_row + (x - radius - 1) * 4,
+                             boxwidth, area, &dst_argb[x * 4], 1);
+    }
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

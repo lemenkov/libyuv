@@ -76,6 +76,8 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBSEPIAROW_SSSE3
+#define HAS_COMPUTECUMULATIVESUMROW_SSE2
+#define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -105,6 +107,7 @@ typedef __declspec(align(16)) int8 vec8[16];
 typedef __declspec(align(16)) uint8 uvec8[16];
 typedef __declspec(align(16)) int16 vec16[8];
 typedef __declspec(align(16)) uint16 uvec16[8];
+typedef __declspec(align(16)) int32 vec32[4];
 typedef __declspec(align(16)) uint32 uvec32[4];
 #else  // __GNUC__
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
@@ -112,6 +115,7 @@ typedef int8 __attribute__((vector_size(16))) vec8;
 typedef uint8 __attribute__((vector_size(16))) uvec8;
 typedef int16 __attribute__((vector_size(16))) vec16;
 typedef uint16 __attribute__((vector_size(16))) uvec16;
+typedef int32 __attribute__((vector_size(16))) vec32;
 typedef uint32 __attribute__((vector_size(16))) uvec32;
 #endif
 
@@ -484,6 +488,17 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width);
 
 void ARGBSepiaRow_C(uint8* dst_argb, int width);
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
+
+// Used for blur.
+void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
+                                 int width, int area, uint8* dst, int count);
+void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
+                                  int32* previous_cumsum, int width);
+
+void CumulativeSumToAverage_C(const int32* topleft, const int32* botleft,
+                              int width, int area, uint8* dst, int count);
+void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
+                               int32* previous_cumsum, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

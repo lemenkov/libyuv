@@ -353,30 +353,30 @@ TEST_F(libyuvTest, TestAttenuate) {
   EXPECT_EQ(255, atten_pixels[255][3]);
 }
 
-TEST_F(libyuvTest, TestAddRow) {
-  SIMD_ALIGNED(uint8 orig_pixels[256]);
-  SIMD_ALIGNED(uint16 added_pixels[256]);
+TEST_F(libyuvTest, TestARGBComputeCumulativeSum) {
+  SIMD_ALIGNED(uint8 orig_pixels[16][16][4]);
+  SIMD_ALIGNED(int32 added_pixels[16][16][4]);
 
-  libyuv::AddRow AddRow = GetAddRow(added_pixels, 256);
-  libyuv::AddRow SubRow = GetSubRow(added_pixels, 256);
-
-  for (int i = 0; i < 256; ++i) {
-    orig_pixels[i] = i;
+  for (int y = 0; y < 16; ++y) {
+    for (int x = 0; x < 16; ++x) {
+      orig_pixels[y][x][0] = 1u;
+      orig_pixels[y][x][1] = 2u;
+      orig_pixels[y][x][2] = 3u;
+      orig_pixels[y][x][3] = 255u;
+    }
   }
-  memset(added_pixels, 0, sizeof(uint16) * 256);
 
-  AddRow(orig_pixels, added_pixels, 256);
-  EXPECT_EQ(7u, added_pixels[7]);
-  EXPECT_EQ(250u, added_pixels[250]);
-  AddRow(orig_pixels, added_pixels, 256);
-  EXPECT_EQ(14u, added_pixels[7]);
-  EXPECT_EQ(500u, added_pixels[250]);
-  SubRow(orig_pixels, added_pixels, 256);
-  EXPECT_EQ(7u, added_pixels[7]);
-  EXPECT_EQ(250u, added_pixels[250]);
+  ARGBComputeCumulativeSum(&orig_pixels[0][0][0], 16 * 4,
+                           &added_pixels[0][0][0], 16 * 4,
+                           16, 16);
 
-  for (int i = 0; i < 1000 * (1280 * 720 * 4 / 256); ++i) {
-    AddRow(orig_pixels, added_pixels, 256);
+  for (int y = 0; y < 16; ++y) {
+    for (int x = 0; x < 16; ++x) {
+      EXPECT_EQ((x + 1) * (y + 1), added_pixels[y][x][0]);
+      EXPECT_EQ((x + 1) * (y + 1) * 2, added_pixels[y][x][1]);
+      EXPECT_EQ((x + 1) * (y + 1) * 3, added_pixels[y][x][2]);
+      EXPECT_EQ((x + 1) * (y + 1) * 255, added_pixels[y][x][3]);
+    }
   }
 }
 

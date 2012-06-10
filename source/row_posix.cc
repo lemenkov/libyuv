@@ -2932,6 +2932,177 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
 
+#ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
+// Creates a table of cumulative sums where each value is a sum of all values
+// above and to the left of the value, inclusive of the value.
+void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
+                                  int32* previous_cumsum, int width) {
+  asm volatile (
+    "sub       %1,%2                           \n"
+    "pxor      %%xmm0,%%xmm0                   \n"
+    "pxor      %%xmm1,%%xmm1                   \n"
+    "sub       $0x4,%3                         \n"
+    "jl        49f                             \n"
+    "test      $0xf,%1                         \n"
+    "jne       49f                             \n"
+
+  // 4 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "40:                                         \n"
+    "movdqu    (%0),%%xmm2                     \n"
+    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm2,%%xmm4                   \n"
+    "punpcklbw %%xmm1,%%xmm2                   \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklwd %%xmm1,%%xmm2                   \n"
+    "punpckhwd %%xmm1,%%xmm3                   \n"
+    "punpckhbw %%xmm1,%%xmm4                   \n"
+    "movdqa    %%xmm4,%%xmm5                   \n"
+    "punpcklwd %%xmm1,%%xmm4                   \n"
+    "punpckhwd %%xmm1,%%xmm5                   \n"
+    "paddd     %%xmm2,%%xmm0                   \n"
+    "movdqa    (%1,%2,1),%%xmm2                \n"
+    "paddd     %%xmm0,%%xmm2                   \n"
+    "paddd     %%xmm3,%%xmm0                   \n"
+    "movdqa    0x10(%1,%2,1),%%xmm3            \n"
+    "paddd     %%xmm0,%%xmm3                   \n"
+    "paddd     %%xmm4,%%xmm0                   \n"
+    "movdqa    0x20(%1,%2,1),%%xmm4            \n"
+    "paddd     %%xmm0,%%xmm4                   \n"
+    "paddd     %%xmm5,%%xmm0                   \n"
+    "movdqa    0x30(%1,%2,1),%%xmm5            \n"
+    "paddd     %%xmm0,%%xmm5                   \n"
+    "movdqa    %%xmm2,(%1)                     \n"
+    "movdqa    %%xmm3,0x10(%1)                 \n"
+    "movdqa    %%xmm4,0x20(%1)                 \n"
+    "movdqa    %%xmm5,0x30(%1)                 \n"
+    "lea       0x40(%1),%1                     \n"
+    "sub       $0x4,%3                         \n"
+    "jge       40b                             \n"
+
+  "49:                                         \n"
+    "add       $0x3,%3                         \n"
+    "jl        19f                             \n"
+
+  // 1 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "10:                                         \n"
+    "movd      (%0),%%xmm2                     \n"
+    "lea       0x4(%0),%0                      \n"
+    "punpcklbw %%xmm4,%%xmm2                   \n"
+    "punpcklwd %%xmm4,%%xmm2                   \n"
+    "paddd     %%xmm2,%%xmm0                   \n"
+    "movdqu    (%1,%2,1),%%xmm2                \n"
+    "paddd     %%xmm0,%%xmm2                   \n"
+    "movdqu    %%xmm2,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x1,%3                         \n"
+    "jge       10b                             \n"
+
+  "19:                                         \n"
+  : "+r"(row),  // %0
+    "+r"(cumsum),  // %1
+    "+r"(previous_cumsum),  // %2
+    "+r"(width)  // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
+
+#ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
+void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
+                                 int width, int area, uint8* dst, int count) {
+  asm volatile (
+    "movd      %5,%%xmm4                       \n"
+    "cvtdq2ps  %%xmm4,%%xmm4                   \n"
+    "rcpss     %%xmm4,%%xmm4                   \n"
+    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
+    "sub       $0x4,%3                         \n"
+    "jl        49f                             \n"
+
+  // 4 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "40:                                         \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm3                 \n"
+    "psubd     (%0,%4,4),%%xmm0                \n"
+    "psubd     0x10(%0,%4,4),%%xmm1            \n"
+    "psubd     0x20(%0,%4,4),%%xmm2            \n"
+    "psubd     0x30(%0,%4,4),%%xmm3            \n"
+    "lea       0x40(%0),%0                     \n"
+    "psubd     (%1),%%xmm0                     \n"
+    "psubd     0x10(%1),%%xmm1                 \n"
+    "psubd     0x20(%1),%%xmm2                 \n"
+    "psubd     0x30(%1),%%xmm3                 \n"
+    "paddd     (%1,%4,4),%%xmm0                \n"
+    "paddd     0x10(%1,%4,4),%%xmm1            \n"
+    "paddd     0x20(%1,%4,4),%%xmm2            \n"
+    "paddd     0x30(%1,%4,4),%%xmm3            \n"
+    "lea       0x40(%1),%1                     \n"
+    "cvtdq2ps  %%xmm0,%%xmm0                   \n"
+    "cvtdq2ps  %%xmm1,%%xmm1                   \n"
+    "mulps     %%xmm4,%%xmm0                   \n"
+    "mulps     %%xmm4,%%xmm1                   \n"
+    "cvtdq2ps  %%xmm2,%%xmm2                   \n"
+    "cvtdq2ps  %%xmm3,%%xmm3                   \n"
+    "mulps     %%xmm4,%%xmm2                   \n"
+    "mulps     %%xmm4,%%xmm3                   \n"
+    "cvtps2dq  %%xmm0,%%xmm0                   \n"
+    "cvtps2dq  %%xmm1,%%xmm1                   \n"
+    "cvtps2dq  %%xmm2,%%xmm2                   \n"
+    "cvtps2dq  %%xmm3,%%xmm3                   \n"
+    "packssdw  %%xmm1,%%xmm0                   \n"
+    "packssdw  %%xmm3,%%xmm2                   \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "movdqu    %%xmm0,(%2)                     \n"
+    "lea       0x10(%2),%2                     \n"
+    "sub       $0x4,%3                         \n"
+    "jge       40b                             \n"
+
+  "49:                                         \n"
+    "add       $0x3,%3                         \n"
+    "jl        19f                             \n"
+
+  // 1 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "10:                                         \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "psubd     (%0,%4,4),%%xmm0                \n"
+    "lea       0x10(%0),%0                     \n"
+    "psubd     (%1),%%xmm0                     \n"
+    "paddd     (%1,%4,4),%%xmm0                \n"
+    "lea       0x10(%1),%1                     \n"
+    "cvtdq2ps  %%xmm0,%%xmm0                   \n"
+    "mulps     %%xmm4,%%xmm0                   \n"
+    "cvtps2dq  %%xmm0,%%xmm0                   \n"
+    "packssdw  %%xmm0,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,(%2)                     \n"
+    "lea       0x4(%2),%2                      \n"
+    "sub       $0x1,%3                         \n"
+    "jge       10b                             \n"
+  "19:                                         \n"
+  : "+r"(topleft),  // %0
+    "+r"(botleft),  // %1
+    "+r"(dst),      // %2
+    "+rm"(count)    // %3
+  : "r"(static_cast<intptr_t>(width)),  // %4
+    "rm"(area)     // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
+#endif  // HAS_CUMULATIVESUMTOAVERAGE_SSE2
+
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

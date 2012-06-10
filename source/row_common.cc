@@ -950,6 +950,35 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   }
 }
 
+void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
+                               int32* previous_cumsum, int width) {
+  int32 row_sum[4] = {0, 0, 0, 0};
+  for (int x = 0; x < width; ++x) {
+    row_sum[0] += row[x * 4 + 0];
+    row_sum[1] += row[x * 4 + 1];
+    row_sum[2] += row[x * 4 + 2];
+    row_sum[3] += row[x * 4 + 3];
+    cumsum[x * 4 + 0] = row_sum[0]  + previous_cumsum[x * 4 + 0];
+    cumsum[x * 4 + 1] = row_sum[1]  + previous_cumsum[x * 4 + 1];
+    cumsum[x * 4 + 2] = row_sum[2]  + previous_cumsum[x * 4 + 2];
+    cumsum[x * 4 + 3] = row_sum[3]  + previous_cumsum[x * 4 + 3];
+  }
+}
+
+void CumulativeSumToAverage_C(const int32* tl, const int32* bl,
+                              int w, int area, uint8* dst, int count) {
+  float ooa = 1.0f / area;
+  for (int i = 0; i < count; ++i) {
+    dst[0] = static_cast<uint8>((bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) * ooa);
+    dst[1] = static_cast<uint8>((bl[w + 1] + tl[1] - bl[1] - tl[w + 1]) * ooa);
+    dst[2] = static_cast<uint8>((bl[w + 2] + tl[2] - bl[2] - tl[w + 2]) * ooa);
+    dst[3] = static_cast<uint8>((bl[w + 3] + tl[3] - bl[3] - tl[w + 3]) * ooa);
+    dst += 4;
+    tl += 4;
+    bl += 4;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
