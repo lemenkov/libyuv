@@ -12,7 +12,10 @@
 
 // Must be included before jpeglib
 #include <assert.h>
+#ifndef __CLR_VER
 #include <setjmp.h>
+#define HAVE_SETJMP
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,10 +28,12 @@ extern "C" {
 
 namespace libyuv {
 
+#ifdef HAVE_SETJMP
 struct SetJmpErrorMgr {
   jpeg_error_mgr base;  // Must be at the top
   jmp_buf setjmp_buffer;
 };
+#endif
 
 const int MJpegDecoder::kColorSpaceUnknown = JCS_UNKNOWN;
 const int MJpegDecoder::kColorSpaceGrayscale = JCS_GRAYSCALE;
@@ -46,10 +51,12 @@ MJpegDecoder::MJpegDecoder()
       databuf_strides_(NULL) {
   decompress_struct_ = new jpeg_decompress_struct;
   source_mgr_ = new jpeg_source_mgr;
+#ifdef HAVE_SETJMP
   error_mgr_ = new SetJmpErrorMgr;
   decompress_struct_->err = jpeg_std_error(&error_mgr_->base);
   // Override standard exit()-based error handler.
   error_mgr_->base.error_exit = &ErrorHandler;
+#endif
   decompress_struct_->client_data = NULL;
   source_mgr_->init_source = &init_source;
   source_mgr_->fill_input_buffer = &fill_input_buffer;
@@ -66,7 +73,9 @@ MJpegDecoder::~MJpegDecoder() {
   jpeg_destroy_decompress(decompress_struct_);
   delete decompress_struct_;
   delete source_mgr_;
+#ifdef HAVE_SETJMP
   delete error_mgr_;
+#endif
   DestroyOutputBuffers();
 }
 
@@ -111,11 +120,13 @@ bool MJpegDecoder::LoadFrame(const uint8* src, size_t src_len) {
   buf_.len = static_cast<int>(src_len);
   buf_vec_.pos = 0;
   decompress_struct_->client_data = &buf_vec_;
+#ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     // We called jpeg_read_header, it experienced an error, and we called
     // longjmp() and rewound the stack to here. Return error.
     return false;
   }
+#endif
   if (jpeg_read_header(decompress_struct_, TRUE) != JPEG_HEADER_OK) {
     // ERROR: Bad MJPEG header
     return false;
@@ -231,11 +242,13 @@ int MJpegDecoder::GetComponentSize(int component) {
 }
 
 bool MJpegDecoder::UnloadFrame() {
+#ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     // We called jpeg_abort_decompress, it experienced an error, and we called
     // longjmp() and rewound the stack to here. Return error.
     return false;
   }
+#endif
   jpeg_abort_decompress(decompress_struct_);
   return true;
 }
@@ -257,12 +270,14 @@ bool MJpegDecoder::DecodeToBuffers(
     // ERROR: Bad dimensions
     return false;
   }
+#ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     // We called into jpeglib, it experienced an error sometime during this
     // function call, and we called longjmp() and rewound the stack to here.
     // Return error.
     return false;
   }
+#endif
   if (!StartDecode()) {
     return false;
   }
@@ -344,12 +359,14 @@ bool MJpegDecoder::DecodeToCallback(CallbackFunction fn, void* opaque,
     // ERROR: Bad dimensions
     return false;
   }
+#ifdef HAVE_SETJMP
   if (setjmp(error_mgr_->setjmp_buffer)) {
     // We called into jpeglib, it experienced an error sometime during this
     // function call, and we called longjmp() and rewound the stack to here.
     // Return error.
     return false;
   }
+#endif
   if (!StartDecode()) {
     return false;
   }
@@ -437,6 +454,7 @@ void MJpegDecoder::term_source(j_decompress_ptr cinfo) {
   // Nothing to do.
 }
 
+#ifdef HAVE_SETJMP
 void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
   // This is called when a jpeglib command experiences an error. Unfortunately
   // jpeglib's error handling model is not very flexible, because it expects the
@@ -453,6 +471,7 @@ void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
   // and causes it to return (for a second time) with value 1.
   longjmp(mgr->setjmp_buffer, 1);
 }
+#endif
 
 void MJpegDecoder::AllocOutputBuffers(int num_outbufs) {
   if (num_outbufs != num_outbufs_) {

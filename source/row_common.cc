@@ -951,7 +951,7 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
-                               int32* previous_cumsum, int width) {
+                               const int32* previous_cumsum, int width) {
   int32 row_sum[4] = {0, 0, 0, 0};
   for (int x = 0; x < width; ++x) {
     row_sum[0] += row[x * 4 + 0];

@@ -2936,7 +2936,7 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 // Creates a table of cumulative sums where each value is a sum of all values
 // above and to the left of the value, inclusive of the value.
 void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
-                                  int32* previous_cumsum, int width) {
+                                  const int32* previous_cumsum, int width) {
   asm volatile (
     "sub       %1,%2                           \n"
     "pxor      %%xmm0,%%xmm0                   \n"

@@ -22,7 +22,8 @@ extern "C" {
 #define kMaxStride (2560 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
-#if defined(COVERAGE_ENABLED) || defined(TARGET_IPHONE_SIMULATOR)
+#if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
+    defined(TARGET_IPHONE_SIMULATOR)
 #define YUV_DISABLE_ASM
 #endif
 // True if compiling for SSSE3 as a requirement.
@@ -101,7 +102,7 @@ extern "C" {
 #define HAS_I422TOABGRROW_NEON
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 typedef __declspec(align(16)) int8 vec8[16];
 typedef __declspec(align(16)) uint8 uvec8[16];
@@ -109,7 +110,7 @@ typedef __declspec(align(16)) int16 vec16[8];
 typedef __declspec(align(16)) uint16 uvec16[8];
 typedef __declspec(align(16)) int32 vec32[4];
 typedef __declspec(align(16)) uint32 uvec32[4];
-#else  // __GNUC__
+#elif defined(__GNUC__)
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 typedef int8 __attribute__((vector_size(16))) vec8;
 typedef uint8 __attribute__((vector_size(16))) uvec8;
@@ -117,6 +118,14 @@ typedef int16 __attribute__((vector_size(16))) vec16;
 typedef uint16 __attribute__((vector_size(16))) uvec16;
 typedef int32 __attribute__((vector_size(16))) vec32;
 typedef uint32 __attribute__((vector_size(16))) uvec32;
+#else
+#define SIMD_ALIGNED(var) var
+typedef int8 vec8[16];
+typedef uint8 uvec8[16];
+typedef int16 vec16[8];
+typedef uint16 uvec16[8];
+typedef int32 vec32[4];
+typedef uint32 uvec32[4];
 #endif
 
 #if defined(__APPLE__) || defined(__x86_64__)
@@ -493,12 +502,12 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
 void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
                                  int width, int area, uint8* dst, int count);
 void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
-                                  int32* previous_cumsum, int width);
+                                  const int32* previous_cumsum, int width);
 
 void CumulativeSumToAverage_C(const int32* topleft, const int32* botleft,
                               int width, int area, uint8* dst, int count);
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
-                               int32* previous_cumsum, int width);
+                               const int32* previous_cumsum, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

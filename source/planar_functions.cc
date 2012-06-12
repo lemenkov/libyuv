@@ -1685,7 +1685,7 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
     return -1;
   }
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
-      int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
+      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
@@ -1703,14 +1703,15 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
 }
 
 // Blur ARGB image.
-// Caller should allocate cumsum table of width * height * 16 bytes aligned
-// to 16 byte boundary.
+// Caller should allocate CumulativeSum table of width * height * 16 bytes
+// aligned to 16 byte boundary.  height can be radius * 2 + 2 to save memory
+// as the buffer is treated as circular.
 int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
              int width, int height, int radius) {
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
-      int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
+      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
   void (*CumulativeSumToAverage)(const int32* topleft, const int32* botleft,
       int width, int area, uint8* dst, int count) = CumulativeSumToAverage_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
@@ -1719,6 +1720,8 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     CumulativeSumToAverage = CumulativeSumToAverage_SSE2;
   }
 #endif
+  // Compute enough CumulativeSum for first row to be blurred.  After this
+  // one row of CumulativeSum is updated at a time.
   ARGBComputeCumulativeSum(src_argb, src_stride_argb,
                            dst_cumsum, dst_stride32_cumsum,
                            width, radius);
@@ -1726,23 +1729,26 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
   src_argb = src_argb + radius * src_stride_argb;
   int32* cumsum_bot_row = &dst_cumsum[(radius - 1) * dst_stride32_cumsum];
 
-  int32* max_cumsum_bot_row =
+  const int32* max_cumsum_bot_row =
       &dst_cumsum[(radius * 2 + 2) * dst_stride32_cumsum];
-  int32* cumsum_top_row = &dst_cumsum[0];
+  const int32* cumsum_top_row = &dst_cumsum[0];
 
   for (int y = 0; y < height; ++y) {
     int top_y = ((y - radius - 1) >= 0) ? (y - radius - 1) : 0;
     int bot_y = ((y + radius) < height) ? (y + radius) : (height - 1);
     int area = radius * (bot_y - top_y);
 
+    // Increment cumsum_top_row pointer with circular buffer wrap around.
     if (top_y) {
       cumsum_top_row += dst_stride32_cumsum;
       if (cumsum_top_row >= max_cumsum_bot_row) {
         cumsum_top_row = dst_cumsum;
       }
     }
+    // Increment cumsum_bot_row pointer with circular buffer wrap around and
+    // then fill in a row of CumulativeSum.
     if ((y + radius) < height) {
-      int32* prev_cumsum_bot_row = cumsum_bot_row;
+      const int32* prev_cumsum_bot_row = cumsum_bot_row;
       cumsum_bot_row += dst_stride32_cumsum;
       if (cumsum_bot_row >= max_cumsum_bot_row) {
         cumsum_bot_row = dst_cumsum;

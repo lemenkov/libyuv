@@ -48,8 +48,8 @@ extern "C" {
 
 // Low level cpuid for X86.  Returns zeros on other CPUs.
 void CpuId(int cpu_info[4], int info_type) {
-#if defined(__i386__) || defined(__x86_64__) || \
-    defined(_M_IX86) || defined(_M_X64)
+#if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
+    defined(__i386__) || defined(__x86_64__))
     __cpuid(cpu_info, info_type);
 #else
     cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
@@ -82,7 +82,7 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 int cpu_info_ = 0;
 
 int InitCpuFlags() {
-#if defined(CPU_X86)
+#if !defined(__CLR_VER) && defined(CPU_X86)
   int cpu_info[4];
   __cpuid(cpu_info, 1);
   cpu_info_ = ((cpu_info[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
