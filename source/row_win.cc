@@ -3187,8 +3187,8 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
   l1:
     movd       xmm2, dword ptr [eax]  // 1 argb pixel 4 bytes.
     lea        eax, [eax + 4]
-    punpcklbw  xmm2, xmm4
-    punpcklwd  xmm2, xmm4
+    punpcklbw  xmm2, xmm1
+    punpcklwd  xmm2, xmm1
     paddd      xmm0, xmm2
     movdqu     xmm2, [edx + esi]
     paddd      xmm2, xmm0

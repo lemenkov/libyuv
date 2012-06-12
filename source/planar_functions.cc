@@ -1709,26 +1709,50 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
              int width, int height, int radius) {
+  void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
+      int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
   void (*CumulativeSumToAverage)(const int32* topleft, const int32* botleft,
       int width, int area, uint8* dst, int count) = CumulativeSumToAverage_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
+    ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
     CumulativeSumToAverage = CumulativeSumToAverage_SSE2;
   }
 #endif
-
   ARGBComputeCumulativeSum(src_argb, src_stride_argb,
                            dst_cumsum, dst_stride32_cumsum,
-                           width, height);
+                           width, radius);
+
+  src_argb = src_argb + radius * src_stride_argb;
+  int32* cumsum_bot_row = &dst_cumsum[(radius - 1) * dst_stride32_cumsum];
+
+  int32* max_cumsum_bot_row =
+      &dst_cumsum[(radius * 2 + 2) * dst_stride32_cumsum];
+  int32* cumsum_top_row = &dst_cumsum[0];
 
   for (int y = 0; y < height; ++y) {
     int top_y = ((y - radius - 1) >= 0) ? (y - radius - 1) : 0;
     int bot_y = ((y + radius) < height) ? (y + radius) : (height - 1);
-    int32* cumsum_top_row = &dst_cumsum[top_y * dst_stride32_cumsum];
-    int32* cumsum_bot_row = &dst_cumsum[bot_y * dst_stride32_cumsum];
+    int area = radius * (bot_y - top_y);
+
+    if (top_y) {
+      cumsum_top_row += dst_stride32_cumsum;
+      if (cumsum_top_row >= max_cumsum_bot_row) {
+        cumsum_top_row = dst_cumsum;
+      }
+    }
+    if ((y + radius) < height) {
+      int32* prev_cumsum_bot_row = cumsum_bot_row;
+      cumsum_bot_row += dst_stride32_cumsum;
+      if (cumsum_bot_row >= max_cumsum_bot_row) {
+        cumsum_bot_row = dst_cumsum;
+      }
+      ComputeCumulativeSumRow(src_argb, cumsum_bot_row, prev_cumsum_bot_row,
+                              width);
+      src_argb += src_stride_argb;
+    }
 
     // Left clipped.
-    int area = radius * (bot_y - top_y);
     int boxwidth = radius * 4;
     int x;
     for (x = 0; x < radius + 1; ++x) {
