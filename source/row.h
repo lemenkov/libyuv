@@ -41,7 +41,6 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_SSE2
 #define HAS_ARGBATTENUATE_SSSE3
 #define HAS_ARGBBLENDROW_SSSE3
-#define HAS_ARGBBLENDROW1_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
 #define HAS_ARGBTORAWROW_SSSE3
@@ -88,7 +87,6 @@ extern "C" {
 #define HAS_MIRRORROW_SSE2
 #define HAS_ARGBATTENUATE_SSE2
 #define HAS_ARGBBLENDROW_SSE2
-#define HAS_ARGBBLENDROW1_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -404,18 +402,10 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      int width);
 
 // ARGB preattenuated alpha blend.
-void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                                uint8* dst_argb, int width);
-void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                               uint8* dst_argb, int width);
-void ARGBBlendRow1_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                         uint8* dst_argb, int width);
-void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width);
-void ARGBBlendRow_Any_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                            uint8* dst_argb, int width);
-void ARGBBlendRow_Any_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                           uint8* dst_argb, int width);
+void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                       uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
                     uint8* dst_argb, int width);
 

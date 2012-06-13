@@ -163,36 +163,18 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 // Get a blender that optimized for the CPU, alignment and pixel count.
 // As there are 6 blenders to choose from, the caller should try to use
 // the same blend function for all pixels if possible.
-ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width) {
+ARGBBlendRow GetARGBBlend() {
   void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width) = ARGBBlendRow_C;
-#if defined(HAS_ARGBBLENDROW1_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBBlendRow = ARGBBlendRow1_SSSE3;
 #if defined(HAS_ARGBBLENDROW_SSSE3)
-    if (width >= 4) {
-      ARGBBlendRow = ARGBBlendRow_Any_SSSE3;
-      if (IS_ALIGNED(width, 4) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        ARGBBlendRow = ARGBBlendRow_Aligned_SSSE3;
-      }
-    }
-#endif
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBBlendRow = ARGBBlendRow_SSSE3;
     return ARGBBlendRow;
   }
 #endif
-#if defined(HAS_ARGBBLENDROW1_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlendRow = ARGBBlendRow1_SSE2;
 #if defined(HAS_ARGBBLENDROW_SSE2)
-    if (width >= 4) {
-      ARGBBlendRow = ARGBBlendRow_Any_SSE2;
-      if (IS_ALIGNED(width, 4) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        ARGBBlendRow = ARGBBlendRow_Aligned_SSE2;
-      }
-    }
-#endif
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBBlendRow = ARGBBlendRow_SSE2;
   }
 #endif
   return ARGBBlendRow;
@@ -213,8 +195,7 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
-                       uint8* dst_argb, int width) =
-      GetARGBBlend(dst_argb, dst_stride_argb, width);
+                       uint8* dst_argb, int width) = GetARGBBlend();
 
   for (int y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
@@ -626,8 +607,8 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
     src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
     src_stride_argb1555 = -src_stride_argb1555;
   }
-  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb, int pix) =
-      ARGB1555ToARGBRow_C;
+  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb,
+                            int pix) = ARGB1555ToARGBRow_C;
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 8) &&
@@ -653,8 +634,8 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
     src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
     src_stride_argb4444 = -src_stride_argb4444;
   }
-  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb, int pix) =
-      ARGB4444ToARGBRow_C;
+  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb,
+                            int pix) = ARGB4444ToARGBRow_C;
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(width, 8) &&
@@ -1691,7 +1672,7 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
   }
 #endif
-  memset(dst_cumsum, 0, width * sizeof(dst_cumsum[0]) * 4); // 4 ints per pixel.
+  memset(dst_cumsum, 0, width * sizeof(dst_cumsum[0]) * 4);  // 4 int per pixel.
   int32* previous_cumsum = dst_cumsum;
   for (int y = 0; y < height; ++y) {
     ComputeCumulativeSumRow(src_argb, dst_cumsum, previous_cumsum, width);

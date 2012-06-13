@@ -231,7 +231,7 @@ typedef void (*ARGBBlendRow)(const uint8* src_argb0,
                              uint8* dst_argb, int width);
 
 // Get function to Alpha Blend ARGB pixels and store to destination.
-ARGBBlendRow GetARGBBlend(uint8* dst_argb, int dst_stride_argb, int width);
+ARGBBlendRow GetARGBBlend();
 
 // Alpha Blend ARGB images and store to destination.
 int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,

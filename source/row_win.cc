@@ -1252,8 +1252,8 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // Read 8 UV from 411
 #define READYUV444 __asm {                                                     \
-    __asm movq       xmm0, qword ptr [esi]          /* U */                    \
-    __asm movq       xmm1, qword ptr [esi + edi]    /* V */                    \
+    __asm movq       xmm0, qword ptr [esi] /* U */                /* NOLINT */ \
+    __asm movq       xmm1, qword ptr [esi + edi] /* V */          /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
   }
@@ -1279,7 +1279,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // Read 4 UV from NV12, upsample to 8 UV
 #define READNV12 __asm {                                                       \
-    __asm movq       xmm0, qword ptr [esi]          /* UV */                   \
+    __asm movq       xmm0, qword ptr [esi] /* UV */               /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
   }
@@ -2478,13 +2478,9 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
 
 #ifdef HAS_ARGBBLENDROW_SSE2
 // Blend 8 pixels at a time.
-// src_argb0 unaligned.
-// src_argb1 and dst_argb aligned to 16 bytes.
-// width must be multiple of 4 pixels.
-// TODO(fbarchard): handle less than 4 pixels and unaligned pointer
 __declspec(naked) __declspec(align(16))
-void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                               uint8* dst_argb, int width) {
+void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                       uint8* dst_argb, int width) {
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]   // src_argb0
@@ -2500,15 +2496,53 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
     pslld      xmm4, 24
 
-    align      16
- convertloop:
-    movdqu     xmm3, [eax]
+    sub        ecx, 1
+    je         convertloop1     // only 1 pixel?
+    jl         convertloop1b
+
+    // 1 pixel loop until destination pointer is aligned.
+  alignloop1:
+    test       edx, 15          // aligned?
+    je         alignloop1b
+    movd       xmm3, [eax]
+    lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    movdqu     xmm2, [esi]      // _r_b
+    movd       xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
     pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
     pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movd       xmm1, [esi]      // _a_g
+    lea        esi, [esi + 4]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jge        alignloop1
+
+  alignloop1b:
+    add        ecx, 1 - 4
+    jl         convertloop4b
+
+    // 8 pixel loop.
+    align      4
+  convertloop4:
+    movdqu     xmm3, [eax]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    movdqu     xmm2, [esi]      // _r_b
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -2524,7 +2558,7 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
     movdqa     [edx], xmm0
-    jle        done
+    jl         convertloop4b
 
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
@@ -2547,19 +2581,62 @@ void ARGBBlendRow_Aligned_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     sub        ecx, 4
     movdqa     [edx + 16], xmm0
     lea        edx, [edx + 32]
-    jg         convertloop
+    jge        convertloop4
 
- done:
+  convertloop4b:
+    add        ecx, 4 - 1
+    jl         convertloop1b
+
+    // 1 pixel loop.
+  convertloop1:
+    movd       xmm3, [eax]
+    lea        eax, [eax + 4]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movd       xmm2, [esi]      // _r_b
+    psrlw      xmm3, 8          // alpha
+    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+    pshuflw    xmm3, xmm3,0F5h
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movd       xmm1, [esi]      // _a_g
+    lea        esi, [esi + 4]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jge        convertloop1
+
+  convertloop1b:
     pop        esi
     ret
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSE2
 
-#ifdef HAS_ARGBBLENDROW1_SSE2
-// Blend 1 pixel at a time, unaligned.
+#ifdef HAS_ARGBBLENDROW_SSSE3
+// Shuffle table for isolating alpha.
+static const uvec8 kShuffleAlpha = {
+  3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
+  11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
+};
+// Same as SSE2, but replaces
+//    psrlw      xmm3, 8          // alpha
+//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
+//    pshuflw    xmm3, xmm3,0F5h
+// with..
+//    pshufb     xmm3, kShuffleAlpha // alpha
+// Blend 8 pixels at a time
+
 __declspec(naked) __declspec(align(16))
-void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width) {
   __asm {
     push       esi
@@ -2576,16 +2653,20 @@ void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
     pslld      xmm4, 24
 
-    align      16
- convertloop:
+    sub        ecx, 1
+    je         convertloop1     // only 1 pixel?
+    jl         convertloop1b
+
+    // 1 pixel loop until destination pointer is aligned.
+  alignloop1:
+    test       edx, 15          // aligned?
+    je         alignloop1b
     movd       xmm3, [eax]
     lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
     movd       xmm2, [esi]      // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
+    pshufb     xmm3, kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -2601,52 +2682,15 @@ void ARGBBlendRow1_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     sub        ecx, 1
     movd       [edx], xmm0
     lea        edx, [edx + 4]
-    jg         convertloop
+    jge        alignloop1
 
-    pop        esi
-    ret
-  }
-}
-#endif  // HAS_ARGBBLENDROW1_SSE2
+  alignloop1b:
+    add        ecx, 1 - 4
+    jl         convertloop4b
 
-#ifdef HAS_ARGBBLENDROW_SSSE3
-// Shuffle table for reversing the bytes.
-static const uvec8 kShuffleAlpha = {
-  3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
-  11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
-};
-
-// Blend 8 pixels at a time
-// Shuffle table for reversing the bytes.
-
-// Same as SSE2, but replaces
-//    psrlw      xmm3, 8          // alpha
-//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-//    pshuflw    xmm3, xmm3,0F5h
-// with..
-//    pshufb     xmm3, kShuffleAlpha // alpha
-
-// Destination aligned to 16 bytes, multiple of 4 pixels.
-__declspec(naked) __declspec(align(16))
-void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                                uint8* dst_argb, int width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]   // src_argb0
-    mov        esi, [esp + 4 + 8]   // src_argb1
-    mov        edx, [esp + 4 + 12]  // dst_argb
-    mov        ecx, [esp + 4 + 16]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-
-    align      16
- convertloop:
+    // 8 pixel loop.
+    align      4
+  convertloop4:
     movdqu     xmm3, [eax]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
@@ -2667,7 +2711,7 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
     movdqa     [edx], xmm0
-    jle        done
+    jl         convertloop4b
 
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
@@ -2688,37 +2732,14 @@ void ARGBBlendRow_Aligned_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     sub        ecx, 4
     movdqa     [edx + 16], xmm0
     lea        edx, [edx + 32]
-    jg         convertloop
+    jge        convertloop4
 
- done:
-    pop        esi
-    ret
-  }
-}
-#endif  // HAS_ARGBBLENDROW_SSSE3
+  convertloop4b:
+    add        ecx, 4 - 1
+    jl         convertloop1b
 
-#ifdef HAS_ARGBBLENDROW1_SSSE3
-// Blend 1 pixel at a time, unaligned.
-__declspec(naked) __declspec(align(16))
-void ARGBBlendRow1_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
-                         uint8* dst_argb, int width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]   // src_argb0
-    mov        esi, [esp + 4 + 8]   // src_argb1
-    mov        edx, [esp + 4 + 12]  // dst_argb
-    mov        ecx, [esp + 4 + 16]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-
-    align      16
- convertloop:
+    // 1 pixel loop.
+  convertloop1:
     movd       xmm3, [eax]
     lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb
@@ -2740,13 +2761,14 @@ void ARGBBlendRow1_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     sub        ecx, 1
     movd       [edx], xmm0
     lea        edx, [edx + 4]
-    jg         convertloop
+    jge        convertloop1
 
+  convertloop1b:
     pop        esi
     ret
   }
 }
-#endif  // HAS_ARGBBLENDROW1_SSSE3
+#endif  // HAS_ARGBBLENDROW_SSSE3
 
 #ifdef HAS_ARGBATTENUATE_SSE2
 // Attenuate 4 pixels at a time.
