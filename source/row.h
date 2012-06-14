@@ -64,7 +64,6 @@ extern "C" {
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROWUV_SSSE3
-#define HAS_ADDROW_SSE2
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
 #define HAS_RGB565TOARGBROW_SSE2
@@ -176,11 +175,6 @@ void MirrorRow_C(const uint8* src, uint8* dst, int width);
 void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
 void MirrorRowUV_NEON(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
 void MirrorRowUV_C(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
-
-void AddRow_SSE2(const uint8* src, uint16* dst, int width);
-void SubRow_SSE2(const uint8* src, uint16* dst, int width);
-void AddRow_C(const uint8* src, uint16* dst, int width);
-void SubRow_C(const uint8* src, uint16* dst, int width);
 
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);

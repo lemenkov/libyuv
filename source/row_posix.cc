@@ -1977,70 +1977,6 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_MIRRORROW_UV_SSSE3
 
-#ifdef HAS_ADDROW_SSE2
-// dst and width aligned to 16
-void AddRow_SSE2(const uint8* src, uint16* dst, int width) {
-  asm volatile (
-    "pxor      %%xmm4,%%xmm4                   \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqu    (%0),%%xmm2                     \n"
-    "lea       0x10(%0),%0                     \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "movdqa    0x10(%1),%%xmm1                 \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
-    "punpcklbw %%xmm4,%%xmm2                   \n"
-    "punpckhbw %%xmm4,%%xmm3                   \n"
-    "paddusw   %%xmm2,%%xmm0                   \n"
-    "paddusw   %%xmm3,%%xmm1                   \n"
-    "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "movdqa    %%xmm1,0x10(%1)                 \n"
-    "lea       0x20(%1),%1                     \n"
-    "jg        1b                              \n"
-  : "+r"(src),   // %0
-    "+r"(dst),   // %1
-    "+r"(width)  // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-#endif
-  );
-}
-
-// dst and width aligned to 16
-void SubRow_SSE2(const uint8* src, uint16* dst, int width) {
-  asm volatile (
-    "pxor      %%xmm4,%%xmm4                   \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqu    (%0),%%xmm2                     \n"
-    "lea       0x10(%0),%0                     \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "movdqa    0x10(%1),%%xmm1                 \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
-    "punpcklbw %%xmm4,%%xmm2                   \n"
-    "punpckhbw %%xmm4,%%xmm3                   \n"
-    "psubusw   %%xmm2,%%xmm0                   \n"
-    "psubusw   %%xmm3,%%xmm1                   \n"
-    "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "movdqa    %%xmm1,0x10(%1)                 \n"
-    "lea       0x20(%1),%1                     \n"
-    "jg        1b                              \n"
-  : "+r"(src),   // %0
-    "+r"(dst),   // %1
-    "+r"(width)  // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-#endif
-  );
-}
-#endif  // HAS_ADDROW_SSE2
-
 #ifdef HAS_SPLITUV_SSE2
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
@@ -2436,7 +2372,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "jge       10b                             \n"
 
   "19:                                         \n"
-    "add       $1-$4,%3                        \n"
+    "add       $1-4,%3                         \n"
     "jl        49f                             \n"
 
     // 8 pixel loop.
@@ -2592,7 +2528,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     "jge       10b                             \n"
 
   "19:                                         \n"
-    "add       $1-$4,%3                        \n"
+    "add       $1-4,%3                         \n"
     "jl        49f                             \n"
 
   // 8 pixel loop.

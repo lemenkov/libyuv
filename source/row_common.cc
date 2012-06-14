@@ -521,30 +521,6 @@ void MirrorRowUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   }
 }
 
-void AddRow_C(const uint8* src, uint16* dst, int width) {
-  for (int x = 0; x < width - 1; x += 2) {
-    dst[0] += static_cast<uint16>(src[0]);
-    dst[1] += static_cast<uint16>(src[1]);
-    src += 2;
-    dst += 2;
-  }
-  if (width & 1) {
-    dst[0] += static_cast<uint16>(src[0]);
-  }
-}
-
-void SubRow_C(const uint8* src, uint16* dst, int width) {
-  for (int x = 0; x < width - 1; x += 2) {
-    dst[0] -= static_cast<uint16>(src[0]);
-    dst[1] -= static_cast<uint16>(src[1]);
-    src += 2;
-    dst += 2;
-  }
-  if (width & 1) {
-    dst[0] -= static_cast<uint16>(src[0]);
-  }
-}
-
 void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     dst_u[x] = src_uv[0];

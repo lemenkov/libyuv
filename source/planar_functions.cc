@@ -1424,32 +1424,6 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// AddRow is useful for summing up rows of an image, when implementing a
-// box filter or blur effect.
-AddRow GetAddRow(uint16* dst, int width) {
-  AddRow AddRowF = AddRow_C;
-#if defined(HAS_ADDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(width, 16)) {
-    AddRowF = AddRow_SSE2;
-  }
-#endif
-  return AddRowF;
-}
-
-// SubRow is useful when a sum of rows exists and the caller wants to
-// remove a row and add a new row without recomputing the full sum of rows.
-AddRow GetSubRow(uint16* dst, int width) {
-  AddRow SubRowF = SubRow_C;
-#if defined(HAS_ADDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(width, 16)) {
-    SubRowF = SubRow_SSE2;
-  }
-#endif
-  return SubRowF;
-}
-
 // Make a rectangle of ARGB gray scale.
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,

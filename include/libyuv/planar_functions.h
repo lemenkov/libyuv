@@ -201,33 +201,27 @@ int ARGBToI422(const uint8* src_frame, int src_stride_frame,
 int I420Rect(uint8* dst_y, int dst_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
-             int x, int y,
-             int width, int height,
+             int x, int y, int width, int height,
              int value_y, int value_u, int value_v);
 
 // Draw a rectangle into ARGB.
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
-             int x, int y,
-             int width, int height,
-             uint32 value);
+             int x, int y, int width, int height, uint32 value);
 
 // Make a rectangle of ARGB gray scale.
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
-             int x, int y,
-             int width, int height);
+             int x, int y, int width, int height);
 
 // Make a rectangle of ARGB Sepia tone.
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
-              int x, int y,
-              int width, int height);
+              int x, int y, int width, int height);
 
 // Copy ARGB to ARGB.
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-typedef void (*ARGBBlendRow)(const uint8* src_argb0,
-                             const uint8* src_argb1,
+typedef void (*ARGBBlendRow)(const uint8* src_argb0, const uint8* src_argb1,
                              uint8* dst_argb, int width);
 
 // Get function to Alpha Blend ARGB pixels and store to destination.
@@ -263,17 +257,10 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height);
 
-// Get function to add or subtract rows of bytes to a 16 bit buffer.  For blur.
-typedef void (*AddRow)(const uint8* src, uint16* dst, int width);
-AddRow GetAddRow(uint16* dst, int width);
-AddRow GetSubRow(uint16* dst, int width);
-
 // Convert MJPG to ARGB.
-int MJPGToARGB(const uint8* sample,
-               size_t sample_size,
+int MJPGToARGB(const uint8* sample, size_t sample_size,
                uint8* argb, int argb_stride,
-               int w, int h,
-               int dw, int dh);
+               int w, int h, int dw, int dh);
 
 // Computes table of cumulative sum for image where the value is the sum
 // of all values above and to the left of the entry.  Used by ARGBBlur.
