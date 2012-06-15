@@ -2474,54 +2474,31 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     add        ecx, 1 - 4
     jl         convertloop4b
 
-    // 8 pixel loop.
-    align      4
+    // 4 pixel loop.
   convertloop4:
-    movdqu     xmm3, [eax]
+    movdqu     xmm3, [eax]      // src argb
+    lea        eax, [eax + 16]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
+    movdqu     xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
     pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
     pshuflw    xmm3, xmm3,0F5h
-    movdqu     xmm2, [esi]      // _r_b
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
     movdqu     xmm1, [esi]      // _a_g
+    lea        esi, [esi + 16]
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
     pmullw     xmm1, xmm3       // _a_g * alpha
-    movdqu     xmm3, [eax + 16]
-    lea        eax, [eax + 32]
     psrlw      xmm2, 8          // _r_b convert to 8 bits again
     paddusb    xmm0, xmm2       // + src argb
     pand       xmm1, xmm5       // a_g_ convert to 8 bits again
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
     movdqa     [edx], xmm0
-    jl         convertloop4b
-
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqu     xmm2, [esi + 16] // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqu     xmm1, [esi + 16] // _a_g
-    lea        esi, [esi + 32]
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx + 16], xmm0
-    lea        edx, [edx + 32]
+    lea        edx, [edx + 16]
     jge        convertloop4
 
   convertloop4b:
@@ -2530,7 +2507,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
     // 1 pixel loop.
   convertloop1:
-    movd       xmm3, [eax]
+    movd       xmm3, [eax]      // src argb
     lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
@@ -2629,50 +2606,29 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     add        ecx, 1 - 4
     jl         convertloop4b
 
-    // 8 pixel loop.
-    align      4
+    // 4 pixel loop.
   convertloop4:
-    movdqu     xmm3, [eax]
+    movdqu     xmm3, [eax]      // src argb
+    lea        eax, [eax + 16]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    pshufb     xmm3, kShuffleAlpha // alpha
     movdqu     xmm2, [esi]      // _r_b
+    pshufb     xmm3, kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
     movdqu     xmm1, [esi]      // _a_g
+    lea        esi, [esi + 16]
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
     pmullw     xmm1, xmm3       // _a_g * alpha
-    movdqu     xmm3, [eax + 16]
-    lea        eax, [eax + 32]
     psrlw      xmm2, 8          // _r_b convert to 8 bits again
     paddusb    xmm0, xmm2       // + src argb
     pand       xmm1, xmm5       // a_g_ convert to 8 bits again
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
     movdqa     [edx], xmm0
-    jl         convertloop4b
-
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqu     xmm2, [esi + 16] // _r_b
-    pshufb     xmm3, kShuffleAlpha // alpha
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqu     xmm1, [esi + 16] // _a_g
-    lea        esi, [esi + 32]
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqa     [edx + 16], xmm0
-    lea        edx, [edx + 32]
+    lea        edx, [edx + 16]
     jge        convertloop4
 
   convertloop4b:
@@ -2681,7 +2637,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
     // 1 pixel loop.
   convertloop1:
-    movd       xmm3, [eax]
+    movd       xmm3, [eax]      // src argb
     lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
