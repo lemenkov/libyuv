@@ -1468,7 +1468,51 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+// Apply a 4x3 matrix rotation to each ARGB pixel.
+int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                    const int8* matrix_argb,
+                    int dst_x, int dst_y, int width, int height) {
+  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+  void (*ARGBColorMatrixRow)(uint8* dst_argb, const int8* matrix_argb,
+                             int width) = ARGBColorMatrixRow_C;
+#if defined(HAS_ARGBCOLORMATRIXROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBColorMatrixRow = ARGBColorMatrixRow_SSSE3;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    ARGBColorMatrixRow(dst, matrix_argb, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
 
+// Apply a color table each ARGB pixel.
+// Table contains 256 ARGB values.
+int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
+                   const uint8* table_argb,
+                   int dst_x, int dst_y, int width, int height) {
+  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+  void (*ARGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
+                            int width) = ARGBColorTableRow_C;
+#if defined(HAS_ARGBCOLORTABLEROW_X86)
+  if (TestCpuFlag(kCpuHasX86)) {
+    ARGBColorTableRow = ARGBColorTableRow_X86;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    ARGBColorTableRow(dst, table_argb, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
 #ifdef HAVE_JPEG
 struct ARGBBuffers {
   uint8* argb;

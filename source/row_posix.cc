@@ -2800,7 +2800,7 @@ CONST vec8 kARGBToSepiaR = {
   24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
 };
 
-// Convert 8 ARGB pixels (64 bytes) to 8 Sepia ARGB pixels
+// Convert 8 ARGB pixels (32 bytes) to 8 Sepia ARGB pixels.
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   asm volatile (
     "movdqa    %2,%%xmm2                       \n"
@@ -2858,6 +2858,69 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   );
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
+
+#ifdef HAS_ARGBCOLORMATRIXROW_SSSE3
+// Tranform 8 ARGB pixels (32 bytes) with color matrix.
+// Same as Sepia except matrix is provided.
+void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
+                              int width) {
+  asm volatile (
+    "movd      (%2),%%xmm2                     \n"
+    "movd      0x4(%2),%%xmm3                  \n"
+    "movd      0x8(%2),%%xmm4                  \n"
+    "pshufd    $0x0,%%xmm2,%%xmm2              \n"
+    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
+    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
+  // 8 pixel loop                              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm2,%%xmm0                   \n"
+    "pmaddubsw %%xmm2,%%xmm6                   \n"
+    "phaddw    %%xmm6,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm5                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "pmaddubsw %%xmm3,%%xmm5                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "phaddw    %%xmm1,%%xmm5                   \n"
+    "psrlw     $0x7,%%xmm5                     \n"
+    "packuswb  %%xmm5,%%xmm5                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm5                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "pmaddubsw %%xmm4,%%xmm5                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "phaddw    %%xmm1,%%xmm5                   \n"
+    "psrlw     $0x7,%%xmm5                     \n"
+    "packuswb  %%xmm5,%%xmm5                   \n"
+    "movdqa    (%0),%%xmm6                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "psrld     $0x18,%%xmm6                    \n"
+    "psrld     $0x18,%%xmm1                    \n"
+    "packuswb  %%xmm1,%%xmm6                   \n"
+    "packuswb  %%xmm6,%%xmm6                   \n"
+    "punpcklbw %%xmm6,%%xmm5                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm5,%%xmm0                   \n"
+    "punpckhwd %%xmm5,%%xmm1                   \n"
+    "sub       $0x8,%1                         \n"
+    "movdqa    %%xmm0,(%0)                     \n"
+    "movdqa    %%xmm1,0x10(%0)                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(dst_argb),      // %0
+    "+r"(width)          // %1
+  : "r"(matrix_argb)     // %2
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBCOLORMATRIXROW_SSSE3
 
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values

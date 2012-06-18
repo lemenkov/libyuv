@@ -216,6 +216,18 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int x, int y, int width, int height);
 
+// Apply a 4x3 matrix rotation to each ARGB pixel.
+// matrix_argb is 3 signed ARGB values. -128 to 127 representing -1 to 1.
+int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                    const int8* matrix_argb,
+                    int x, int y, int width, int height);
+
+// Apply a color table each ARGB pixel.
+// Table contains 256 ARGB values.
+int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
+                   const uint8* table_argb,
+                   int x, int y, int width, int height);
+
 // Copy ARGB to ARGB.
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,

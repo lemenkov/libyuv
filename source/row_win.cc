@@ -2877,7 +2877,7 @@ static const vec8 kARGBToSepiaR = {
   24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
 };
 
-// Convert 8 ARGB pixels (64 bytes) to 8 Sepia ARGB pixels
+// Convert 8 ARGB pixels (32 bytes) to 8 Sepia ARGB pixels.
 __declspec(naked) __declspec(align(16))
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   __asm {
@@ -2930,6 +2930,117 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   }
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
+#ifdef HAS_ARGBCOLORMATRIXROW_SSSE3
+// Tranform 8 ARGB pixels (32 bytes) with color matrix.
+// Same as Sepia except matrix is provided.
+// TODO(fbarchard): packuswbs only use half of the reg.  To make RGBA, combine R
+// and B into a high and low, then G/A, unpackl/hbw and then unpckl/hwd.
+// TODO(fbarchard): phaddw not paired.
+// TODO(fbarchard): Test data copying from mem instead of from reg.
+// TODO(fbarchard): packing and then unpacking the A - is simple pand/por faster
+__declspec(naked) __declspec(align(16))
+void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
+                              int width) {
+  __asm {
+    mov        eax, [esp + 4]   /* dst_argb */
+    mov        edx, [esp + 8]   /* matrix_argb */
+    mov        ecx, [esp + 12]  /* width */
+    movd       xmm2, [edx]
+    movd       xmm3, [edx + 4]
+    movd       xmm4, [edx + 8]
+    pshufd     xmm2, xmm2, 0
+    pshufd     xmm3, xmm3, 0
+    pshufd     xmm4, xmm4, 0
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]  // B
+    movdqa     xmm6, [eax + 16]
+    pmaddubsw  xmm0, xmm2
+    pmaddubsw  xmm6, xmm2
+    phaddw     xmm0, xmm6
+    psrlw      xmm0, 7
+    packuswb   xmm0, xmm0   // 8 B values
+    movdqa     xmm5, [eax]  // G
+    movdqa     xmm1, [eax + 16]
+    pmaddubsw  xmm5, xmm3
+    pmaddubsw  xmm1, xmm3
+    phaddw     xmm5, xmm1
+    psrlw      xmm5, 7
+    packuswb   xmm5, xmm5   // 8 G values
+    punpcklbw  xmm0, xmm5   // 8 BG values
+    movdqa     xmm5, [eax]  // R
+    movdqa     xmm1, [eax + 16]
+    pmaddubsw  xmm5, xmm4
+    pmaddubsw  xmm1, xmm4
+    phaddw     xmm5, xmm1
+    psrlw      xmm5, 7
+    packuswb   xmm5, xmm5   // 8 R values
+    movdqa     xmm6, [eax]  // A
+    movdqa     xmm1, [eax + 16]
+    psrld      xmm6, 24
+    psrld      xmm1, 24
+    packuswb   xmm6, xmm1
+    packuswb   xmm6, xmm6   // 8 A values
+    punpcklbw  xmm5, xmm6   // 8 RA values
+    movdqa     xmm1, xmm0   // Weave BG, RA together
+    punpcklwd  xmm0, xmm5   // BGRA first 4
+    punpckhwd  xmm1, xmm5   // BGRA next 4
+    sub        ecx, 8
+    movdqa     [eax], xmm0
+    movdqa     [eax + 16], xmm1
+    lea        eax, [eax + 32]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ARGBCOLORMATRIXROW_SSSE3
+
+#ifdef HAS_ARGBCOLORTABLEROW_X86
+// Tranform ARGB pixels with color table.
+__declspec(naked) __declspec(align(16))
+void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
+                           int width) {
+  __asm {
+    push       ebx
+    push       edi
+    push       ebp
+    mov        eax, [esp + 12 + 4]   /* dst_argb */
+    mov        edi, [esp + 12 + 8]   /* table_argb */
+    mov        ecx, [esp + 12 + 12]  /* width */
+    xor        ebx, ebx
+    xor        edx, edx
+
+    align      16
+ convertloop:
+    mov        ebp, dword ptr [eax]  // BGRA
+    mov        esi, ebp
+    and        ebp, 255
+    shr        esi, 8
+    and        esi, 255
+    mov        bl, [edi + ebp * 4 + 0]  // B
+    mov        dl, [edi + esi * 4 + 1]  // G
+    mov        ebp, dword ptr [eax]  // BGRA
+    mov        esi, ebp
+    shr        ebp, 16
+    shr        esi, 24
+    and        ebp, 255
+    mov        [eax], bl
+    mov        [eax + 1], dl
+    mov        bl, [edi + ebp * 4 + 2]  // R
+    mov        dl, [edi + esi * 4 + 3]  // A
+    mov        [eax + 2], bl
+    mov        [eax + 3], dl
+    lea        eax, [eax + 4]
+    sub        ecx, 1
+    jg         convertloop
+    pop        ebp
+    pop        edi
+    pop        ebx
+    ret
+  }
+}
+#endif  // HAS_ARGBCOLORTABLEROW_X86
 
 #ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
 // Consider float CumulativeSum.

@@ -293,19 +293,72 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width) {
     int b = dst_argb[0];
     int g = dst_argb[1];
     int r = dst_argb[2];
-    int sb = (r * 35 + g * 68 + b * 17) >> 7;
-    int sg = (r * 45 + g * 88 + b * 22) >> 7;
-    int sr = (r * 50 + g * 98 + b * 24) >> 7;
+    int sb = (b * 17 + g * 68 + r * 35) >> 7;
+    int sg = (b * 22 + g * 88 + r * 45) >> 7;
+    int sr = (b * 24 + g * 98 + r * 50) >> 7;
+    // b does not over flow.  a is preserved from original.
+    if (sg > 255) {
+      sg = 255;
+    }
     if (sr > 255) {
       sr = 255;
+    }
+    dst_argb[0] = sb;
+    dst_argb[1] = sg;
+    dst_argb[2] = sr;
+    dst_argb += 4;
+  }
+}
+
+// Apply color matrix to a row of image.  Matrix is signed.
+void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    int b = dst_argb[0];
+    int g = dst_argb[1];
+    int r = dst_argb[2];
+    int a = dst_argb[3];
+    int sb = (b * matrix_argb[0] + g * matrix_argb[1] +
+              r * matrix_argb[2] + a * matrix_argb[3]) >> 7;
+    int sg = (b * matrix_argb[4] + g * matrix_argb[5] +
+              r * matrix_argb[6] + a * matrix_argb[7]) >> 7;
+    int sr = (b * matrix_argb[8] + g * matrix_argb[9] +
+              r * matrix_argb[10] + a * matrix_argb[11]) >> 7;
+    if (sb < 0) {
+      sb = 0;
+    }
+    if (sb > 255) {
+      sb = 255;
+    }
+    if (sg < 0) {
+      sg = 0;
     }
     if (sg > 255) {
       sg = 255;
     }
-    // b does not over flow.  a is preserved from original.
+    if (sr < 0) {
+      sr = 0;
+    }
+    if (sr > 255) {
+      sr = 255;
+    }
     dst_argb[0] = sb;
     dst_argb[1] = sg;
     dst_argb[2] = sr;
+    dst_argb += 4;
+  }
+}
+
+// Apply color table to a row of image.
+void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    int b = dst_argb[0];
+    int g = dst_argb[1];
+    int r = dst_argb[2];
+    int a = dst_argb[3];
+    dst_argb[0] = table_argb[b * 4 + 0];
+    dst_argb[1] = table_argb[g * 4 + 1];
+    dst_argb[2] = table_argb[r * 4 + 2];
+    dst_argb[3] = table_argb[a * 4 + 3];
     dst_argb += 4;
   }
 }
@@ -790,9 +843,9 @@ YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C, 1)
 YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C, 1)
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
-YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C)
-YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C)
-YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C)
+YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1)
+YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1)
+YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1)
 #endif
 #undef YANY
 

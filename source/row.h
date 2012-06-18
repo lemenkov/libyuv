@@ -75,9 +75,16 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBSEPIAROW_SSSE3
+#define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #endif
+
+// The following are Windows only:
+#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
+#define HAS_ARGBCOLORTABLEROW_X86
+#endif
+
 
 // The following are disabled when SSSE3 is available:
 #if !defined(YUV_DISABLE_ASM) && \
@@ -481,6 +488,14 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width);
 
 void ARGBSepiaRow_C(uint8* dst_argb, int width);
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
+
+void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width);
+void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
+                              int width);
+
+void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width);
+void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
+                           int width);
 
 // Used for blur.
 void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
