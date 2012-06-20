@@ -2589,7 +2589,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrld     $0x8,%%xmm5                     \n"
 
-    // 4 pixel loop
+    // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2644,7 +2644,7 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     "movdqa    %3,%%xmm4                       \n"
     "movdqa    %4,%%xmm5                       \n"
 
-  // 4 pixel loop
+    // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2691,7 +2691,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
 
-  // 4 pixel loop
+    // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2745,7 +2745,8 @@ CONST vec8 kARGBToGray = {
 void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
   asm volatile (
     "movdqa    %2,%%xmm4                       \n"
-  // 8 pixel loop                              \n"
+
+    // 8 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2806,7 +2807,8 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     "movdqa    %2,%%xmm2                       \n"
     "movdqa    %3,%%xmm3                       \n"
     "movdqa    %4,%%xmm4                       \n"
-  // 8 pixel loop                              \n"
+
+    // 8 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2871,7 +2873,8 @@ void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
-  // 8 pixel loop                              \n"
+
+    // 8 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -2921,6 +2924,59 @@ void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
   );
 }
 #endif  // HAS_ARGBCOLORMATRIXROW_SSSE3
+
+#ifdef HAS_ARGBQUANTIZEROW_SSE2
+// Quantize 4 ARGB pixels (16 bytes).
+// aligned to 16 bytes
+void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width) {
+  asm volatile (
+    "movd      %2,%%xmm2                       \n"
+    "movd      %3,%%xmm3                       \n"
+    "movd      %4,%%xmm4                       \n"
+    "pshuflw   $0x40,%%xmm2,%%xmm2             \n"
+    "pshufd    $0x44,%%xmm2,%%xmm2             \n"
+    "pshuflw   $0x40,%%xmm3,%%xmm3             \n"
+    "pshufd    $0x44,%%xmm3,%%xmm3             \n"
+    "pshuflw   $0x40,%%xmm4,%%xmm4             \n"
+    "pshufd    $0x44,%%xmm4,%%xmm4             \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "pslld     $0x18,%%xmm6                    \n"
+
+    // 4 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm1                     \n"
+    "punpckhbw %%xmm5,%%xmm1                   \n"
+    "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "pmullw    %%xmm3,%%xmm0                   \n"
+    "movdqa    (%0),%%xmm7                     \n"
+    "pmullw    %%xmm3,%%xmm1                   \n"
+    "pand      %%xmm6,%%xmm7                   \n"
+    "paddw     %%xmm4,%%xmm0                   \n"
+    "paddw     %%xmm4,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "por       %%xmm7,%%xmm0                   \n"
+    "sub       $0x4,%1                         \n"
+    "movdqa    %%xmm0,(%0)                     \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(dst_argb),       // %0
+    "+r"(width)           // %1
+  : "r"(scale),           // %2
+    "r"(interval_size),   // %3
+    "r"(interval_offset)  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif  // HAS_ARGBQUANTIZEROW_SSE2
 
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values

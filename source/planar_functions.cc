@@ -1448,8 +1448,7 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 
 // Make a rectangle of ARGB Sepia tone.
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
-              int dst_x, int dst_y,
-              int width, int height) {
+              int dst_x, int dst_y, int width, int height) {
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
     return -1;
   }
@@ -1513,6 +1512,37 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
   }
   return 0;
 }
+
+// ARGBQuantize is used to posterize art.
+// e.g. rgb / qvalue * qvalue + qvalue / 2
+// But the low levels implement efficiently with 3 parameters, and could be
+// used for other high level operations.
+// The divide is replaces with a multiply by reciprocal fixed point multiply.
+// Caveat - although SSE2 saturates, the C function does not and should be used
+// with care if doing anything but quantization.
+int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
+                 int scale, int interval_size, int interval_offset,
+                 int dst_x, int dst_y, int width, int height) {
+  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0 ||
+      interval_size < 1 || interval_size > 255) {
+    return -1;
+  }
+  void (*ARGBQuantizeRow)(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width) = ARGBQuantizeRow_C;
+#if defined(HAS_ARGBQUANTIZEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBQuantizeRow = ARGBQuantizeRow_SSE2;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    ARGBQuantizeRow(dst, scale, interval_size, interval_offset, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef HAVE_JPEG
 struct ARGBBuffers {
   uint8* argb;

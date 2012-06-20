@@ -216,8 +216,11 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int x, int y, int width, int height);
 
-// Apply a 4x3 matrix rotation to each ARGB pixel.
+// Apply a matrix rotation to each ARGB pixel.
 // matrix_argb is 3 signed ARGB values. -128 to 127 representing -1 to 1.
+// The first 4 coefficients apply to B, G, R, A and produce B of the output.
+// The next 4 coefficients apply to B, G, R, A and produce G of the output.
+// The last 4 coefficients apply to B, G, R, A and produce R of the output.
 int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
                     int x, int y, int width, int height);
@@ -227,6 +230,14 @@ int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
 int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int x, int y, int width, int height);
+
+// Quantize a rectangle of ARGB.  Alpha unaffected.
+// scale is a 16 bit fractional fixed point scaler between 0 and 65535.
+// interval_size should be a value between 1 and 255.
+// interval_offset should be a value between 0 and 255.
+int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
+                 int scale, int interval_size, int interval_offset,
+                 int x, int y, int width, int height);
 
 // Copy ARGB to ARGB.
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,

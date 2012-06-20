@@ -363,6 +363,19 @@ void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width) {
   }
 }
 
+void ARGBQuantizeRow_C(uint8* dst_argb, int scale, int interval_size,
+                       int interval_offset, int width) {
+  for (int x = 0; x < width; ++x) {
+    int b = dst_argb[0];
+    int g = dst_argb[1];
+    int r = dst_argb[2];
+    dst_argb[0] = (b * scale >> 16) * interval_size + interval_offset;
+    dst_argb[1] = (g * scale >> 16) * interval_size + interval_offset;
+    dst_argb[2] = (r * scale >> 16) * interval_size + interval_offset;
+    dst_argb += 4;
+  }
+}
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

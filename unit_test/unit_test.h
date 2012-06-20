@@ -16,16 +16,26 @@
 #define align_buffer_16(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(calloc((size) + 15, sizeof(uint8)));    \
+  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 15));                   \
   var = reinterpret_cast<uint8*>                                               \
-        ((reinterpret_cast<intptr_t>(var##_mem) + 15) & (~0x0f));              \
+        ((reinterpret_cast<intptr_t>(var##_mem) + 15) & ~15);
 
 #define free_aligned_buffer_16(var) \
   free(var##_mem);  \
   var = 0;
 
-#ifdef WIN32
 
+#define align_buffer_page_end(var, size)                                       \
+  uint8* var;                                                                  \
+  uint8* var##_mem;                                                            \
+  var##_mem = reinterpret_cast<uint8*>(malloc(((size) + 4095) & ~4095));       \
+  var = var##_mem + (-(size) & 4095)
+
+#define free_aligned_buffer_page_end(var) \
+  free(var##_mem);  \
+  var = 0;
+
+#ifdef WIN32
 #include <windows.h>
 static double get_time() {
   LARGE_INTEGER t, f;
@@ -47,7 +57,6 @@ static double get_time() {
   gettimeofday(&t, &tzp);
   return t.tv_sec + t.tv_usec * 1e-6;
 }
-
 #endif
 
 class libyuvTest : public ::testing::Test {

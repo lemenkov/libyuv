@@ -2930,6 +2930,7 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   }
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
+
 #ifdef HAS_ARGBCOLORMATRIXROW_SSSE3
 // Tranform 8 ARGB pixels (32 bytes) with color matrix.
 // Same as Sepia except matrix is provided.
@@ -3041,6 +3042,53 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
   }
 }
 #endif  // HAS_ARGBCOLORTABLEROW_X86
+
+#ifdef HAS_ARGBQUANTIZEROW_SSE2
+// Quantize 4 ARGB pixels (16 bytes).
+// aligned to 16 bytes
+__declspec(naked) __declspec(align(16))
+void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width) {
+  __asm {
+    mov        eax, [esp + 4]    /* dst_argb */
+    movd       xmm2, [esp + 8]   /* scale */
+    movd       xmm3, [esp + 12]  /* interval_size */
+    movd       xmm4, [esp + 16]  /* interval_offset */
+    mov        ecx, [esp + 20]   /* width */
+    pshuflw    xmm2, xmm2, 040h
+    pshufd     xmm2, xmm2, 044h
+    pshuflw    xmm3, xmm3, 040h
+    pshufd     xmm3, xmm3, 044h
+    pshuflw    xmm4, xmm4, 040h
+    pshufd     xmm4, xmm4, 044h
+    pxor       xmm5, xmm5  // constant 0
+    pcmpeqb    xmm6, xmm6  // generate mask 0xff000000
+    pslld      xmm6, 24
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]  // read 4 pixels
+    punpcklbw  xmm0, xmm5   // first 2 pixels
+    pmulhuw    xmm0, xmm2   // pixel * scale >> 16
+    movdqa     xmm1, [eax]  // read 4 pixels
+    punpckhbw  xmm1, xmm5   // next 2 pixels
+    pmulhuw    xmm1, xmm2
+    pmullw     xmm0, xmm3   // * interval_size
+    movdqa     xmm7, [eax]  // read 4 pixels
+    pmullw     xmm1, xmm3
+    pand       xmm7, xmm6   // mask alpha
+    paddw      xmm0, xmm4   // + interval_size / 2
+    paddw      xmm1, xmm4
+    packuswb   xmm0, xmm1
+    por        xmm0, xmm7
+    sub        ecx, 4
+    movdqa     [eax], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ARGBQUANTIZEROW_SSE2
 
 #ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
 // Consider float CumulativeSum.
