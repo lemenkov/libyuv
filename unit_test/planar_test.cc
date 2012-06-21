@@ -218,9 +218,9 @@ TESTATOPLANAR(RGB24, 3, I420, 2, 2)
 TESTATOPLANAR(RGB565, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB1555, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB4444, 2, I420, 2, 2)
-//TESTATOPLANAR(ARGB, 4, I411, 4, 1)
+//  TESTATOPLANAR(ARGB, 4, I411, 4, 1)
 TESTATOPLANAR(ARGB, 4, I422, 2, 1)
-//TESTATOPLANAR(ARGB, 4, I444, 1, 1)
+//  TESTATOPLANAR(ARGB, 4, I444, 1, 1)
 // TODO(fbarchard): Implement and test 411 and 444
 
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
@@ -544,7 +544,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
 
   // Matrix for Sepia.
-  static const int8 kARGBToSepiaB[] = {
+  static const int8 kARGBToSepia[] = {
     17, 68, 35, 0,
     22, 88, 45, 0,
     24, 98, 50, 0,
@@ -571,7 +571,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   orig_pixels[3][2] = 192u;
   orig_pixels[3][3] = 224u;
   // Do 16 to test asm version.
-  ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepiaB[0], 0, 0, 16, 1);
+  ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 16, 1);
   EXPECT_EQ(33u, orig_pixels[0][0]);
   EXPECT_EQ(43u, orig_pixels[0][1]);
   EXPECT_EQ(47u, orig_pixels[0][2]);
@@ -597,7 +597,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   }
 
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
-    ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepiaB[0], 0, 0, 256, 1);
+    ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 256, 1);
   }
 }
 

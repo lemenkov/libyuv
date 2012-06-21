@@ -2936,9 +2936,6 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 // Same as Sepia except matrix is provided.
 // TODO(fbarchard): packuswbs only use half of the reg.  To make RGBA, combine R
 // and B into a high and low, then G/A, unpackl/hbw and then unpckl/hwd.
-// TODO(fbarchard): phaddw not paired.
-// TODO(fbarchard): Test data copying from mem instead of from reg.
-// TODO(fbarchard): packing and then unpacking the A - is simple pand/por faster
 __declspec(naked) __declspec(align(16))
 void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
                               int width) {
@@ -2959,23 +2956,23 @@ void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
     movdqa     xmm6, [eax + 16]
     pmaddubsw  xmm0, xmm2
     pmaddubsw  xmm6, xmm2
-    phaddw     xmm0, xmm6
-    psrlw      xmm0, 7
-    packuswb   xmm0, xmm0   // 8 B values
     movdqa     xmm5, [eax]  // G
     movdqa     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm3
     pmaddubsw  xmm1, xmm3
-    phaddw     xmm5, xmm1
-    psrlw      xmm5, 7
+    phaddsw    xmm0, xmm6   // B
+    phaddsw    xmm5, xmm1   // G
+    psraw      xmm0, 7      // B
+    psraw      xmm5, 7      // G
+    packuswb   xmm0, xmm0   // 8 B values
     packuswb   xmm5, xmm5   // 8 G values
     punpcklbw  xmm0, xmm5   // 8 BG values
     movdqa     xmm5, [eax]  // R
     movdqa     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm4
     pmaddubsw  xmm1, xmm4
-    phaddw     xmm5, xmm1
-    psrlw      xmm5, 7
+    phaddsw    xmm5, xmm1
+    psraw      xmm5, 7
     packuswb   xmm5, xmm5   // 8 R values
     movdqa     xmm6, [eax]  // A
     movdqa     xmm1, [eax + 16]
@@ -2983,8 +2980,8 @@ void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
     psrld      xmm1, 24
     packuswb   xmm6, xmm1
     packuswb   xmm6, xmm6   // 8 A values
-    punpcklbw  xmm5, xmm6   // 8 RA values
     movdqa     xmm1, xmm0   // Weave BG, RA together
+    punpcklbw  xmm5, xmm6   // 8 RA values
     punpcklwd  xmm0, xmm5   // BGRA first 4
     punpckhwd  xmm1, xmm5   // BGRA next 4
     sub        ecx, 8
