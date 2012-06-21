@@ -18,17 +18,17 @@
 namespace libyuv {
 
 static int ARGBTestFilter(int src_width, int src_height,
-                      int dst_width, int dst_height,
-                      FilterMode f) {
+                          int dst_width, int dst_height,
+                          FilterMode f) {
   const int b = 128;
-  int src_argb_plane_size = (src_width + (2 * b)) * (src_height + (2 * b)) * 4;
-  int src_stride_argb = (2 * b + src_width) * 4;
+  int src_argb_plane_size = (src_width + b * 2) * (src_height + b * 2) * 4;
+  int src_stride_argb = (b * 2 + src_width) * 4;
 
   align_buffer_16(src_argb, src_argb_plane_size)
   memset(src_argb, 1, src_argb_plane_size);
 
-  int dst_argb_plane_size = (dst_width + (2 * b)) * (dst_height + (2 * b)) * 4;
-  int dst_stride_argb = (2 * b + dst_width) * 4;
+  int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
+  int dst_stride_argb = (b * 2 + dst_width) * 4;
 
   srandom(time(NULL));
 
@@ -204,6 +204,20 @@ TEST_F(libyuvTest, ARGBScaleTo1366) {
   int src_height = 720;
   int dst_width = 1366;
   int dst_height = 768;
+
+  for (int f = 0; f < 2; ++f) {
+    int err = ARGBTestFilter(src_width, src_height,
+                             dst_width, dst_height,
+                             static_cast<FilterMode>(f));
+    EXPECT_GE(1, err);
+  }
+}
+
+TEST_F(libyuvTest, ARGBScaleTo853) {
+  int src_width = 1280;
+  int src_height = 720;
+  int dst_width = 853;
+  int dst_height = 480;
 
   for (int f = 0; f < 2; ++f) {
     int err = ARGBTestFilter(src_width, src_height,

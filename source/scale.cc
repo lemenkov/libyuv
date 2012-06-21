@@ -3361,6 +3361,8 @@ void ScalePlane(const uint8* src, int src_stride,
 // Scale an I420 image.
 // This function in turn calls a scaling function for each plane.
 
+#define UNDER_ALLOCATED_HACK 1
+
 int I420Scale(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
               const uint8* src_v, int src_stride_v,
@@ -3389,6 +3391,28 @@ int I420Scale(const uint8* src_y, int src_stride_y,
   int src_halfheight = (src_height + 1) >> 1;
   int dst_halfwidth = (dst_width + 1) >> 1;
   int dst_halfheight = (dst_height + 1) >> 1;
+
+#ifdef UNDER_ALLOCATED_HACK
+  // If caller passed width / 2 for stride, adjust halfwidth to match.
+  if ((src_width & 1) && src_stride_u && src_halfwidth > abs(src_stride_u)) {
+    src_halfwidth = src_width >> 1;
+  }
+  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > abs(dst_stride_u)) {
+    dst_halfwidth = dst_width >> 1;
+  }
+  // If caller used height / 2 when computing src_v, it will point into what
+  // should be the src_u plane.  Detect this and reduce halfheight to match.
+  int uv_src_plane_size = src_halfwidth * src_halfheight;
+  if ((src_height & 1) &&
+      (src_v > src_u) && (src_v < (src_u + uv_src_plane_size))) {
+    src_halfheight = src_height >> 1;
+  }
+  int uv_dst_plane_size = dst_halfwidth * dst_halfheight;
+  if ((dst_height & 1) &&
+      (dst_v > dst_u) && (dst_v < (dst_u + uv_dst_plane_size))) {
+    dst_halfheight = dst_height >> 1;
+  }
+#endif
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,
@@ -3430,6 +3454,28 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
   int dst_halfwidth = (dst_width + 1) >> 1;
   int dst_halfheight = (dst_height + 1) >> 1;
   FilterMode filtering = interpolate ? kFilterBox : kFilterNone;
+
+#ifdef UNDER_ALLOCATED_HACK
+  // If caller passed width / 2 for stride, adjust halfwidth to match.
+  if ((src_width & 1) && src_stride_u && src_halfwidth > abs(src_stride_u)) {
+    src_halfwidth = src_width >> 1;
+  }
+  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > abs(dst_stride_u)) {
+    dst_halfwidth = dst_width >> 1;
+  }
+  // If caller used height / 2 when computing src_v, it will point into what
+  // should be the src_u plane.  Detect this and reduce halfheight to match.
+  int uv_src_plane_size = src_halfwidth * src_halfheight;
+  if ((src_height & 1) &&
+      (src_v > src_u) && (src_v < (src_u + uv_src_plane_size))) {
+    src_halfheight = src_height >> 1;
+  }
+  int uv_dst_plane_size = dst_halfwidth * dst_halfheight;
+  if ((dst_height & 1) &&
+      (dst_v > dst_u) && (dst_v < (dst_u + uv_dst_plane_size))) {
+    dst_halfheight = dst_height >> 1;
+  }
+#endif
 
   ScalePlane(src_y, src_stride_y, src_width, src_height,
              dst_y, dst_stride_y, dst_width, dst_height,

@@ -29,7 +29,7 @@
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
   var##_mem = reinterpret_cast<uint8*>(malloc(((size) + 4095) & ~4095));       \
-  var = var##_mem + (-(size) & 4095)
+  var = var##_mem + (-(size) & 4095);
 
 #define free_aligned_buffer_page_end(var) \
   free(var##_mem);  \
