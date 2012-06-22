@@ -218,9 +218,9 @@ TESTATOPLANAR(RGB24, 3, I420, 2, 2)
 TESTATOPLANAR(RGB565, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB1555, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB4444, 2, I420, 2, 2)
-//  TESTATOPLANAR(ARGB, 4, I411, 4, 1)
+// TESTATOPLANAR(ARGB, 4, I411, 4, 1)
 TESTATOPLANAR(ARGB, 4, I422, 2, 1)
-//  TESTATOPLANAR(ARGB, 4, I444, 1, 1)
+// TESTATOPLANAR(ARGB, 4, I444, 1, 1)
 // TODO(fbarchard): Implement and test 411 and 444
 
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
@@ -622,6 +622,29 @@ TEST_F(libyuvTest, TestARGBQuantize) {
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
     ARGBQuantize(&orig_pixels[0][0], 0,
                  (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 256, 1);
+  }
+}
+
+TEST_F(libyuvTest, TestARGBMirror) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 dst_pixels[256][4]);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i / 4;
+  }
+  ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
+
+  for (int i = 0; i < 256; ++i) {
+    EXPECT_EQ(i, dst_pixels[255 - i][0]);
+    EXPECT_EQ(i / 2, dst_pixels[255 - i][1]);
+    EXPECT_EQ(i / 3, dst_pixels[255 - i][2]);
+    EXPECT_EQ(i / 4, dst_pixels[255 - i][3]);
+  }
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
   }
 }
 

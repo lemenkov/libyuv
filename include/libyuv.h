@@ -19,6 +19,7 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/rotate_argb.h"
 #include "libyuv/scale.h"
 #include "libyuv/scale_argb.h"
 #include "libyuv/version.h"

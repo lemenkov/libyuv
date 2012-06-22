@@ -47,6 +47,11 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// ARGB mirror.
+int ARGBMirror(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert NV12 to ARGB.
 int NV12ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,

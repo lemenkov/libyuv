@@ -587,6 +587,20 @@ void MirrorRowUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   }
 }
 
+void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width) {
+  const uint32* src32 = reinterpret_cast<const uint32*>(src);
+  uint32* dst32 = reinterpret_cast<uint32*>(dst);
+  src32 += width - 1;
+  for (int x = 0; x < width - 1; x += 2) {
+    dst32[x] = src32[0];
+    dst32[x + 1] = src32[-1];
+    src32 -= 2;
+  }
+  if (width & 1) {
+    dst32[width - 1] = src32[0];
+  }
+}
+
 void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     dst_u[x] = src_uv[0];

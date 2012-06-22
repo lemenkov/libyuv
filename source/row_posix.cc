@@ -1977,6 +1977,37 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_MIRRORROW_UV_SSSE3
 
+#ifdef HAS_ARGBMIRRORROW_SSSE3
+// Shuffle table for reversing the bytes.
+CONST uvec8 kShuffleMirror = {
+  12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u
+};
+
+void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
+  intptr_t temp_width = static_cast<intptr_t>(width);
+  asm volatile (
+    "movdqa    %3,%%xmm5                       \n"
+    "lea       -0x10(%0),%0                    \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0,%2,4),%%xmm0                \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(temp_width)  // %2
+  : "m"(kShuffleMirror) // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBMIRRORROW_SSSE3
+
 #ifdef HAS_SPLITUV_SSE2
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (

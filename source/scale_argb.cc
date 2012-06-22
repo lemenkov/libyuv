@@ -97,9 +97,9 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 // Reads 4 pixels at a time.
 // Alignment requirement: dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
-                                      int src_stepx,
-                                      uint8* dst_ptr, int dst_width) {
+void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
+                               int src_stepx,
+                               uint8* dst_ptr, int dst_width) {
   __asm {
     push       ebx
     push       edi
@@ -414,9 +414,9 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEARGBROWDOWNEVEN_SSE2
 // Reads 4 pixels at a time.
 // Alignment requirement: dst_ptr 16 byte aligned.
-static void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
-                                      int src_stepx,
-                                      uint8* dst_ptr, int dst_width) {
+void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
+                               int src_stepx,
+                               uint8* dst_ptr, int dst_width) {
   intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
   intptr_t src_stepx_x12 = 0;
   asm volatile (
@@ -669,9 +669,9 @@ static void ScaleARGBRowDown2Int_C(const uint8* src_ptr, int src_stride,
   }
 }
 
-static void ScaleARGBRowDownEven_C(const uint8* src_ptr, int,
-                                   int src_stepx,
-                                   uint8* dst_ptr, int dst_width) {
+void ScaleARGBRowDownEven_C(const uint8* src_ptr, int,
+                            int src_stepx,
+                            uint8* dst_ptr, int dst_width) {
   const uint32* src = reinterpret_cast<const uint32*>(src_ptr);
   uint32* dst = reinterpret_cast<uint32*>(dst_ptr);
 
