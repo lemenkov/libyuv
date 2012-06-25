@@ -1968,7 +1968,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     "+r"(dst_u),    // %1
     "+r"(dst_v),    // %2
     "+r"(temp_width)  // %3
-  : "m"(kShuffleMirrorUV) // %4
+  : "m"(kShuffleMirrorUV)  // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1"
@@ -1979,7 +1979,7 @@ void MirrorRowUV_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 
 #ifdef HAS_ARGBMIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
-CONST uvec8 kShuffleMirror = {
+CONST uvec8 kARGBShuffleMirror = {
   12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u
 };
 
@@ -1999,7 +1999,7 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
-  : "m"(kShuffleMirror) // %3
+  : "m"(kARGBShuffleMirror)  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"
