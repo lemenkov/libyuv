@@ -766,9 +766,11 @@ static void TransposeWx8_C(const uint8* src, int src_stride,
 static void TransposeWxH_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int width, int height) {
-  for (int i = 0; i < width; ++i)
-    for (int j = 0; j < height; ++j)
+  for (int i = 0; i < width; ++i) {
+    for (int j = 0; j < height; ++j) {
       dst[i * dst_stride + j] = src[j * src_stride + i];
+    }
+  }
 }
 
 void TransposePlane(const uint8* src, int src_stride,
@@ -859,16 +861,17 @@ void RotatePlane180(const uint8* src, int src_stride,
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
     CopyRow = CopyRow_NEON;
   }
-#elif defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(width, 4)) {
-    CopyRow = CopyRow_X86;
-#if defined(HAS_COPYROW_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(width, 32) &&
-        IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
-      CopyRow = CopyRow_SSE2;
-    }
 #endif
+#if defined(HAS_COPYROW_X86)
+  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_X86;
+  }
+#endif
+#if defined(HAS_COPYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
+      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
+      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+    CopyRow = CopyRow_SSE2;
   }
 #endif
   if (width > kMaxStride) {
@@ -1034,6 +1037,10 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height,
                RotationMode mode) {
+  if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
+      !dst_y || !dst_u || !dst_v) {
+    return -1;
+  }
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
 
@@ -1105,6 +1112,10 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_v, int dst_stride_v,
                      int width, int height,
                      RotationMode mode) {
+  if (!src_y || !src_uv || width <= 0 || height == 0 ||
+      !dst_y || !dst_u || !dst_v) {
+    return -1;
+  }
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
 

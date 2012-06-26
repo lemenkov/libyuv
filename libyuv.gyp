@@ -28,20 +28,28 @@
         ],
       },
       'sources': [
-        # includes
-        'include/libyuv/basic_types.h',
-        'include/libyuv/convert.h',
-        'include/libyuv/convert_from.h',
-        'include/libyuv/planar_functions.h',
-        'include/libyuv/scale.h',
-        'include/libyuv/version.h',
-        'include/libyuv/video_common.h',
+        # includes.
+	'include/libyuv.h',
+	'include/libyuv/basic_types.h',
+	'include/libyuv/compare.h',
+	'include/libyuv/convert.h',
+	'include/libyuv/convert_from.h',
+	'include/libyuv/cpu_id.h',
+	'include/libyuv/format_conversion.h',
+	'include/libyuv/mjpeg_decoder.h',
+	'include/libyuv/planar_functions.h',
+	'include/libyuv/rotate.h',
+	'include/libyuv/rotate_argb.h',
+	'include/libyuv/scale.h',
+	'include/libyuv/scale_argb.h',
+	'include/libyuv/version.h',
+	'include/libyuv/video_common.h',
 
-        # headers
+        # private includes.
         'source/rotate_priv.h',
         'source/row.h',
 
-        # sources
+        # sources.
         'source/compare.cc',
         'source/convert.cc',
         'source/convert_from.cc',
@@ -50,6 +58,7 @@
         'source/mjpeg_decoder.cc',
         'source/planar_functions.cc',
         'source/rotate.cc',
+        'source/rotate_argb.cc',
         'source/rotate_neon.cc',
         'source/row_common.cc',
         'source/row_neon.cc',
@@ -60,7 +69,7 @@
         'source/video_common.cc',
       ],
     },
-  ], # targets
+  ], # targets.
 }
 
 # Local Variables:

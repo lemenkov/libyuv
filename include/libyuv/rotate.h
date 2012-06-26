@@ -38,8 +38,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
-               int width, int height,
-               RotationMode mode);
+               int src_width, int src_height, RotationMode mode);
 
 // Rotate NV12 input and store in I420
 int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
@@ -47,8 +46,7 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_y, int dst_stride_y,
                      uint8* dst_u, int dst_stride_u,
                      uint8* dst_v, int dst_stride_v,
-                     int width, int height,
-                     RotationMode mode);
+                     int src_width, int src_height, RotationMode mode);
 
 #ifdef __cplusplus
 }  // extern "C"

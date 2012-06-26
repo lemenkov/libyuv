@@ -275,6 +275,20 @@ TEST_F(libyuvTest, ScaleTo1366) {
   }
 }
 
+TEST_F(libyuvTest, ScaleTo4074) {
+  int src_width = 2880 * 2;
+  int src_height = 1800;
+  int dst_width = 4074;
+  int dst_height = 1272;
+
+  for (int f = 0; f < 3; ++f) {
+    int err = TestFilter(src_width, src_height,
+                         dst_width, dst_height,
+                         static_cast<FilterMode>(f), 1);
+    EXPECT_GE(1, err);
+  }
+}
+
 TEST_F(libyuvTest, ScaleTo853) {
   int src_width = 1280;
   int src_height = 720;
