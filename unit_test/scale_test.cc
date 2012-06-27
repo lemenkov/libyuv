@@ -317,4 +317,47 @@ TEST_F(libyuvTest, ScaleTo853Wrong) {
   }
 }
 
+// A one off test for a screen cast resolution scale.
+TEST_F(libyuvTest, ScaleTo684) {
+  int src_width = 686;
+  int src_height = 557;
+  int dst_width = 684;
+  int dst_height = 552;
+
+  for (int f = 0; f < 3; ++f) {
+    int err = TestFilter(src_width, src_height,
+                         dst_width, dst_height,
+                         static_cast<FilterMode>(f), 1);
+    EXPECT_GE(1, err);
+  }
+}
+
+TEST_F(libyuvTest, ScaleTo342) {
+  int src_width = 686;
+  int src_height = 557;
+  int dst_width = 342;
+  int dst_height = 276;
+
+  for (int f = 0; f < 3; ++f) {
+    int err = TestFilter(src_width, src_height,
+                         dst_width, dst_height,
+                         static_cast<FilterMode>(f), 1);
+    EXPECT_GE(1, err);
+  }
+}
+
+TEST_F(libyuvTest, ScaleToHalf342) {
+  int src_width = 684;
+  int src_height = 552;
+  int dst_width = 342;
+  int dst_height = 276;
+
+  for (int f = 0; f < 3; ++f) {
+    int err = TestFilter(src_width, src_height,
+                         dst_width, dst_height,
+                         static_cast<FilterMode>(f), 1);
+    EXPECT_GE(1, err);
+  }
+}
+
 }  // namespace libyuv
