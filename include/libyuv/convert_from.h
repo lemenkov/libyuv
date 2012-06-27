@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_CONVERT_FROM_H_
+#ifndef INCLUDE_LIBYUV_CONVERT_FROM_H_  // NOLINT
 #define INCLUDE_LIBYUV_CONVERT_FROM_H_
 
 #include "libyuv/basic_types.h"
@@ -139,4 +139,4 @@ int ConvertFromI420(const uint8* y, int y_stride,
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_CONVERT_FROM_H_
+#endif  // INCLUDE_LIBYUV_CONVERT_FROM_H_  NOLINT

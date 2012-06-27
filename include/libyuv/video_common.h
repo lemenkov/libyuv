@@ -10,7 +10,7 @@
 
 // Common definitions for video, including fourcc and VideoFormat
 
-#ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_
+#ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_  // NOLINT
 #define INCLUDE_LIBYUV_VIDEO_COMMON_H_
 
 #include "libyuv/basic_types.h"
@@ -98,4 +98,4 @@ uint32 CanonicalFourCC(uint32 fourcc);
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_VIDEO_COMMON_H_
+#endif  // INCLUDE_LIBYUV_VIDEO_COMMON_H_  NOLINT

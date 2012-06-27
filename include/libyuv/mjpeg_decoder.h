@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_
+#ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_  // NOLINT
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
 #include "libyuv/basic_types.h"
@@ -183,4 +183,4 @@ class MJpegDecoder {
 
 }  // namespace libyuv
 
-#endif  // INCLUDE_LIBYUV_MJPEG_DECODER_H_
+#endif  // INCLUDE_LIBYUV_MJPEG_DECODER_H_  NOLINT

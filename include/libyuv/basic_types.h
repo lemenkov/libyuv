@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_BASIC_TYPES_H_
+#ifndef INCLUDE_LIBYUV_BASIC_TYPES_H_  // NOLINT
 #define INCLUDE_LIBYUV_BASIC_TYPES_H_
 
 #include <stddef.h>  // for NULL, size_t
@@ -70,4 +70,4 @@ typedef signed char int8;
   (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
   ((t)-1)) & ~((t)-1))))
 
-#endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_
+#endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_  NOLINT

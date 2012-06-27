@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_CPU_ID_H_
+#ifndef INCLUDE_LIBYUV_CPU_ID_H_  // NOLINT
 #define INCLUDE_LIBYUV_CPU_ID_H_
 
 #ifdef __cplusplus
@@ -56,5 +56,4 @@ void CpuId(int cpu_info[4], int info_type);
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_CPU_ID_H_
-
+#endif  // INCLUDE_LIBYUV_CPU_ID_H_  NOLINT
