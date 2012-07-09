@@ -33,6 +33,7 @@
         'include/libyuv/basic_types.h',
         'include/libyuv/compare.h',
         'include/libyuv/convert.h',
+        'include/libyuv/convert_argb.h',
         'include/libyuv/convert_from.h',
         'include/libyuv/cpu_id.h',
         'include/libyuv/format_conversion.h',
@@ -52,6 +53,7 @@
         # sources.
         'source/compare.cc',
         'source/convert.cc',
+        'source/convert_argb.cc',
         'source/convert_from.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',

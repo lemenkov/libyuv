@@ -13,6 +13,7 @@
 
 #include "libyuv/convert_from.h"
 #include "libyuv/cpu_id.h"
+#include "libyuv/convert_argb.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "unit_test/unit_test.h"

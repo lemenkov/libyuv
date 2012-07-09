@@ -35,7 +35,7 @@ extern "C" {
 //   http://www.fourcc.org/yuv.php
 //   http://v4l2spec.bytesex.org/spec/book1.htm
 //   http://developer.apple.com/quicktime/icefloe/dispatch020.html
-//   http://msdn.microsoft.com/en-us/library/windows/desktop/dd206750(v=vs.85).aspx#nv12
+//   http://msdn.microsoft.com/library/windows/desktop/dd206750.aspx#nv12
 
 enum FourCC {
   // Canonical fourcc codes used in our code.
@@ -56,9 +56,9 @@ enum FourCC {
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
-  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565
-  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555
-  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565.
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555.
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444.
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
   FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
@@ -72,19 +72,19 @@ enum FourCC {
 
   // Aliases for canonical fourcc codes, replaced with their canonical
   // equivalents by CanonicalFourCC().
-  FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420
-  FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Alias for I420
-  FOURCC_YU16 = FOURCC('Y', 'U', '1', '6'),  // Alias for I422
-  FOURCC_YU24 = FOURCC('Y', 'U', '2', '4'),  // Alias for I444
-  FOURCC_YUYV = FOURCC('Y', 'U', 'Y', 'V'),  // Alias for YUY2
-  FOURCC_YUVS = FOURCC('y', 'u', 'v', 's'),  // Alias for YUY2 on Mac
-  FOURCC_HDYC = FOURCC('H', 'D', 'Y', 'C'),  // Alias for UYVY
-  FOURCC_2VUY = FOURCC('2', 'v', 'u', 'y'),  // Alias for UYVY
-  FOURCC_JPEG = FOURCC('J', 'P', 'E', 'G'),  // Alias for MJPG
-  FOURCC_DMB1 = FOURCC('d', 'm', 'b', '1'),  // Alias for MJPG on Mac
-  FOURCC_BA81 = FOURCC('B', 'A', '8', '1'),  // Alias for BGGR
-  FOURCC_RGB3 = FOURCC('R', 'G', 'B', '3'),  // Alias for RAW
-  FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG
+  FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
+  FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Alias for I420.
+  FOURCC_YU16 = FOURCC('Y', 'U', '1', '6'),  // Alias for I422.
+  FOURCC_YU24 = FOURCC('Y', 'U', '2', '4'),  // Alias for I444.
+  FOURCC_YUYV = FOURCC('Y', 'U', 'Y', 'V'),  // Alias for YUY2.
+  FOURCC_YUVS = FOURCC('y', 'u', 'v', 's'),  // Alias for YUY2 on Mac.
+  FOURCC_HDYC = FOURCC('H', 'D', 'Y', 'C'),  // Alias for UYVY.
+  FOURCC_2VUY = FOURCC('2', 'v', 'u', 'y'),  // Alias for UYVY.
+  FOURCC_JPEG = FOURCC('J', 'P', 'E', 'G'),  // Alias for MJPG.
+  FOURCC_DMB1 = FOURCC('d', 'm', 'b', '1'),  // Alias for MJPG on Mac.
+  FOURCC_BA81 = FOURCC('B', 'A', '8', '1'),  // Alias for BGGR.
+  FOURCC_RGB3 = FOURCC('R', 'G', 'B', '3'),  // Alias for RAW.
+  FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG.
 
   // Match any fourcc.
   FOURCC_ANY  = 0xFFFFFFFF,

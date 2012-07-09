@@ -18,14 +18,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Supported rotation
+// Supported rotation.
 enum RotationMode {
-  kRotate0 = 0,  // No rotation
-  kRotate90 = 90,  // Rotate 90 degrees clockwise
-  kRotate180 = 180,  // Rotate 180 degrees
-  kRotate270 = 270,  // Rotate 270 degrees clockwise
+  kRotate0 = 0,  // No rotation.
+  kRotate90 = 90,  // Rotate 90 degrees clockwise.
+  kRotate180 = 180,  // Rotate 180 degrees.
+  kRotate270 = 270,  // Rotate 270 degrees clockwise.
 
-  // Deprecated
+  // Deprecated.
   kRotateNone = 0,
   kRotateClockwise = 90,
   kRotateCounterClockwise = 270,

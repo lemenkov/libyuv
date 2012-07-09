@@ -784,14 +784,12 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   return 0;
 }
 
-// gcc provided macros
-#if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && defined(__BIG_ENDIAN)
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-#define INCLUDE_LIBYUV_LITTLE_ENDIAN
-#endif
-// Visual C for x86 defines these
-#elif defined(_M_X64) || defined(_M_IX86)
-#define INCLUDE_LIBYUV_LITTLE_ENDIAN
+// Visual C for x86 defines these.
+#if defined(_M_X64) || defined(_M_IX86)
+#define LIBYUV_LITTLE_ENDIAN
+// GCC provided macros.
+#elif __BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN
+#define LIBYUV_LITTLE_ENDIAN
 #endif
 
 #ifdef LIBYUV_LITTLE_ENDIAN
