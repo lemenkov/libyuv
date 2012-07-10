@@ -331,7 +331,6 @@ TESTATOBRANDOM(RGB565, 2, 2, ARGB, 4)
 TESTATOBRANDOM(ARGB1555, 2, 2, ARGB, 4)
 TESTATOBRANDOM(ARGB4444, 2, 2, ARGB, 4)
 
-
 TEST_F(libyuvTest, TestAttenuate) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
   SIMD_ALIGNED(uint8 atten_pixels[256][4]);
@@ -646,6 +645,58 @@ TEST_F(libyuvTest, TestARGBMirror) {
   }
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
     ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
+  }
+}
+
+TEST_F(libyuvTest, TestShade) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 shade_pixels[256][4]);
+
+  // Test unattenuation clamps
+  orig_pixels[0][0] = 10u;
+  orig_pixels[0][1] = 20u;
+  orig_pixels[0][2] = 40u;
+  orig_pixels[0][3] = 80u;
+  // Test unattenuation transparent and opaque are unaffected
+  orig_pixels[1][0] = 0u;
+  orig_pixels[1][1] = 0u;
+  orig_pixels[1][2] = 0u;
+  orig_pixels[1][3] = 255u;
+  orig_pixels[2][0] = 0u;
+  orig_pixels[2][1] = 0u;
+  orig_pixels[2][2] = 0u;
+  orig_pixels[2][3] = 0u;
+  orig_pixels[3][0] = 0u;
+  orig_pixels[3][1] = 0u;
+  orig_pixels[3][2] = 0u;
+  orig_pixels[3][3] = 0u;
+  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 4, 1, 0x80ffffff);
+  EXPECT_EQ(10u, shade_pixels[0][0]);
+  EXPECT_EQ(20u, shade_pixels[0][1]);
+  EXPECT_EQ(40u, shade_pixels[0][2]);
+  EXPECT_EQ(40u, shade_pixels[0][3]);
+  EXPECT_EQ(0u, shade_pixels[1][0]);
+  EXPECT_EQ(0u, shade_pixels[1][1]);
+  EXPECT_EQ(0u, shade_pixels[1][2]);
+  EXPECT_EQ(128u, shade_pixels[1][3]);
+  EXPECT_EQ(0u, shade_pixels[2][0]);
+  EXPECT_EQ(0u, shade_pixels[2][1]);
+  EXPECT_EQ(0u, shade_pixels[2][2]);
+  EXPECT_EQ(0u, shade_pixels[2][3]);
+  EXPECT_EQ(0u, shade_pixels[3][0]);
+  EXPECT_EQ(0u, shade_pixels[3][1]);
+  EXPECT_EQ(0u, shade_pixels[3][2]);
+  EXPECT_EQ(0u, shade_pixels[3][3]);
+
+  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 4, 1, 0x80808080);
+  EXPECT_EQ(5u, shade_pixels[0][0]);
+  EXPECT_EQ(10u, shade_pixels[0][1]);
+  EXPECT_EQ(20u, shade_pixels[0][2]);
+  EXPECT_EQ(40u, shade_pixels[0][3]);
+
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,
+              0x80808080);
   }
 }
 

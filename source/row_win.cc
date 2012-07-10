@@ -15,12 +15,12 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for Visual C x86
+// This module is for Visual C x86.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
-// Constants for ARGB
+// Constants for ARGB.
 static const vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
@@ -33,7 +33,7 @@ static const vec8 kARGBToV = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
 };
 
-// Constants for BGRA
+// Constants for BGRA.
 static const vec8 kBGRAToY = {
   0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
 };
@@ -46,7 +46,7 @@ static const vec8 kBGRAToV = {
   0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
 };
 
-// Constants for ABGR
+// Constants for ABGR.
 static const vec8 kABGRToY = {
   33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
 };
@@ -247,13 +247,13 @@ __asm {
   }
 }
 
-// pmul method to replicate bits
-// Math to replicate bits
+// pmul method to replicate bits.
+// Math to replicate bits:
 // (v << 8) | (v << 3)
 // v * 256 + v * 8
 // v * (256 + 8)
 // G shift of 5 is incorporated, so shift is 5 + 8 and 5 + 3
-// 20 instructions
+// 20 instructions.
 __declspec(naked) __declspec(align(16))
 void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
                           int pix) {
@@ -358,7 +358,7 @@ __asm {
   }
 }
 
-// 18 instructions
+// 18 instructions.
 __declspec(naked) __declspec(align(16))
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
@@ -514,7 +514,7 @@ __asm {
   }
 }
 
-// TODO(fbarchard): Improve sign extension/packing
+// TODO(fbarchard): Improve sign extension/packing.
 __declspec(naked) __declspec(align(16))
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 __asm {
@@ -587,7 +587,7 @@ __asm {
   }
 }
 
-// Convert 16 ARGB pixels (64 bytes) to 16 Y values
+// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 __declspec(naked) __declspec(align(16))
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 __asm {
@@ -1249,8 +1249,9 @@ static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
 static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // TODO(fbarchard): NV12/NV21 fetch UV and use directly.
+// TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
 
-// Read 8 UV from 411
+// Read 8 UV from 411.
 #define READYUV444 __asm {                                                     \
     __asm movq       xmm0, qword ptr [esi] /* U */                /* NOLINT */ \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */          /* NOLINT */ \
@@ -1258,7 +1259,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
   }
 
-// Read 4 UV from 422, upsample to 8 UV
+// Read 4 UV from 422, upsample to 8 UV.
 #define READYUV422 __asm {                                                     \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
@@ -1267,7 +1268,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
   }
 
-// Read 2 UV from 411, upsample to 8 UV
+// Read 2 UV from 411, upsample to 8 UV.
 #define READYUV411 __asm {                                                     \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
@@ -1277,14 +1278,14 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm punpckldq  xmm0, xmm0           /* UVUV (upsample) */                \
   }
 
-// Read 4 UV from NV12, upsample to 8 UV
+// Read 4 UV from NV12, upsample to 8 UV.
 #define READNV12 __asm {                                                       \
     __asm movq       xmm0, qword ptr [esi] /* UV */               /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
   }
 
-// Convert 8 pixels: 8 UV and 8 Y
+// Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
@@ -1312,7 +1313,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
     __asm packuswb   xmm2, xmm2           /* R */                              \
   }
 
-// Convert 8 pixels: 8 VU and 8 Y
+// Convert 8 pixels: 8 VU and 8 Y.
 #define YVUTORGB __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
@@ -1341,7 +1342,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 // 8 pixels, dest aligned 16.
-// 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I444ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
@@ -1384,7 +1385,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, dest aligned 16.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
@@ -1427,7 +1428,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, dest aligned 16.
-// 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 // Similar to I420 but duplicate UV once more.
 __declspec(naked) __declspec(align(16))
 void I411ToARGBRow_SSSE3(const uint8* y_buf,
@@ -1471,7 +1472,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, dest aligned 16.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV12ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* uv_buf,
@@ -1509,7 +1510,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, dest aligned 16.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV21ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* uv_buf,
@@ -1547,7 +1548,7 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, unaligned.
-// 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
@@ -1590,7 +1591,7 @@ void I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, unaligned.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
@@ -1633,7 +1634,7 @@ void I422ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, unaligned.
-// 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 // Similar to I420 but duplicate UV once more.
 __declspec(naked) __declspec(align(16))
 void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
@@ -1678,7 +1679,7 @@ void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 
 
 // 8 pixels, dest aligned 16.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV12ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* uv_buf,
@@ -1716,7 +1717,7 @@ void NV12ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels, dest aligned 16.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes)
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV21ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* uv_buf,
@@ -2127,7 +2128,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 #endif  // HAS_SPLITUV_SSE2
 
 #ifdef HAS_COPYROW_SSE2
-// CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time
+// CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time.
 __declspec(naked) __declspec(align(16))
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   __asm {
@@ -2574,13 +2575,13 @@ static const uvec8 kShuffleAlpha = {
   3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
   11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
 };
-// Same as SSE2, but replaces
+// Same as SSE2, but replaces:
 //    psrlw      xmm3, 8          // alpha
 //    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
 //    pshuflw    xmm3, xmm3,0F5h
 // with..
 //    pshufb     xmm3, kShuffleAlpha // alpha
-// Blend 8 pixels at a time
+// Blend 8 pixels at a time.
 
 __declspec(naked) __declspec(align(16))
 void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
@@ -2698,7 +2699,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBATTENUATE_SSE2
 // Attenuate 4 pixels at a time.
-// aligned to 16 bytes
+// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   __asm {
@@ -2741,7 +2742,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 #endif  // HAS_ARGBATTENUATE_SSE2
 
 #ifdef HAS_ARGBATTENUATE_SSSE3
-// Shuffle table duplicating alpha
+// Shuffle table duplicating alpha.
 static const uvec8 kShuffleAlpha0 = {
   3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
 };
@@ -2791,7 +2792,7 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBUNATTENUATE_SSE2
 // Unattenuate 4 pixels at a time.
-// aligned to 16 bytes
+// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
                              int width) {
@@ -2845,12 +2846,12 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBUNATTENUATE_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
-// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
+// Constant for ARGB color to gray scale: 0.11 * B + 0.59 * G + 0.30 * R
 static const vec8 kARGBToGray = {
   14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
 };
 
-// Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
+// Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels.
 __declspec(naked) __declspec(align(16))
 void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
   __asm {
@@ -2893,7 +2894,7 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
 //    b = (r * 35 + g * 68 + b * 17) >> 7
 //    g = (r * 45 + g * 88 + b * 22) >> 7
 //    r = (r * 50 + g * 98 + b * 24) >> 7
-// Constant for ARGB color to sepia tone
+// Constant for ARGB color to sepia tone.
 static const vec8 kARGBToSepiaB = {
   17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0
 };
@@ -3071,7 +3072,7 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
 
 #ifdef HAS_ARGBQUANTIZEROW_SSE2
 // Quantize 4 ARGB pixels (16 bytes).
-// aligned to 16 bytes
+// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
                           int interval_offset, int width) {
@@ -3305,6 +3306,42 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
   }
 }
 #endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
+
+#ifdef HAS_ARGBSHADE_SSE2
+// Shade 4 pixels at a time by specified value.
+// Aligned to 16 bytes.
+__declspec(naked) __declspec(align(16))
+void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    movd       xmm2, [esp + 16]  // value
+    sub        edx, eax
+    punpcklbw  xmm2, xmm2
+    punpcklqdq xmm2, xmm2
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm0       // first 2
+    punpckhbw  xmm1, xmm1       // next 2
+    pmulhuw    xmm0, xmm2       // argb * value
+    pmulhuw    xmm1, xmm2       // argb * value
+    psrlw      xmm0, 8
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    ret
+  }
+}
+#endif  // HAS_ARGBSHADE_SSE2
 
 #endif  // _M_IX86
 

@@ -401,18 +401,15 @@ static void I42xToUYVYRow_C(const uint8* src_y,
     }
 }
 
-// Visual C for x86 defines these.
-#if defined(_M_X64) || defined(_M_IX86)
-#define LIBYUV_LITTLE_ENDIAN
-// GCC provided macros.
-#elif __BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN
+// Visual C x86 or GCC little endian.
+#if defined(_M_X64) || defined(_M_IX86) || (defined(__BYTE_ORDER) && \
+  (__BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN))
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 
 #ifdef LIBYUV_LITTLE_ENDIAN
 #define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
 #else
-
 static inline void WRITEWORD(uint8* p, uint32 v) {
   p[0] = (uint8)(v & 255);
   p[1] = (uint8)((v >> 8) & 255);

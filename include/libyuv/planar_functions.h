@@ -15,7 +15,7 @@
 
 // TODO(fbarchard): Remove the following headers includes
 #include "libyuv/convert.h"
-#include "libyuv/planar_functions.h"
+#include "libyuv/convert_argb.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -188,11 +188,6 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height);
 
-// Multiply ARGB image by ARGB value.
-int ARGBShade(const uint8* src_argb, int src_stride_argb,
-              uint8* dst_argb, int dst_stride_argb,
-              int width, int height, uint32 value);
-
 // Convert MJPG to ARGB.
 int MJPGToARGB(const uint8* sample, size_t sample_size,
                uint8* argb, int argb_stride,
@@ -211,6 +206,11 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
              int width, int height, int radius);
+
+// Multiply ARGB image by ARGB value.
+int ARGBShade(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height, uint32 value);
 
 #ifdef __cplusplus
 }  // extern "C"

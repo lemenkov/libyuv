@@ -60,8 +60,7 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
                uint8*, int,
                uint8*, int,
                int width, int height) {
-  if (!src_y || !dst_y ||
-      width <= 0 || height == 0) {
+  if (!src_y || !dst_y || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -112,8 +111,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_y || !src_u || !src_v || !dst_y || !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -143,9 +141,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
 int ARGBMirror(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
-  if (!src_argb ||
-      !dst_argb ||
-      width <= 0 || height == 0) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -224,6 +220,9 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
+  if (!src_argb || !dst_y || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -255,6 +254,9 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -298,6 +300,9 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
 int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_rgb24, int dst_stride_rgb24,
                 int width, int height) {
+  if (!src_argb || !dst_rgb24 || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -330,6 +335,9 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
 int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
               uint8* dst_raw, int dst_stride_raw,
               int width, int height) {
+  if (!src_argb || !dst_raw || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -362,6 +370,9 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
 int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
+  if (!src_argb || !dst_rgb565 || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -393,6 +404,9 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
 int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb1555, int dst_stride_argb1555,
                    int width, int height) {
+  if (!src_argb || !dst_argb1555 || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -424,6 +438,9 @@ int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
 int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb4444, int dst_stride_argb4444,
                    int width, int height) {
+  if (!src_argb || !dst_argb4444 || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -457,6 +474,9 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
+  if (!src_y || !src_uv || !dst_rgb565 || width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -499,6 +519,9 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_vu, int src_stride_vu,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
+  if (!src_y || !src_vu || !dst_rgb565 || width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -762,6 +785,9 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
 int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -796,6 +822,9 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -866,7 +895,8 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
 int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
                     int dst_x, int dst_y, int width, int height) {
-  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+  if (!dst_argb || !matrix_argb || width <= 0 || height <= 0 ||
+      dst_x < 0 || dst_y < 0) {
     return -1;
   }
   void (*ARGBColorMatrixRow)(uint8* dst_argb, const int8* matrix_argb,
@@ -890,7 +920,8 @@ int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
 int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int dst_x, int dst_y, int width, int height) {
-  if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
+  if (!dst_argb || !table_argb || width <= 0 || height <= 0 ||
+      dst_x < 0 || dst_y < 0) {
     return -1;
   }
   void (*ARGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
@@ -972,6 +1003,9 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
              int width, int height, int radius) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
   void (*CumulativeSumToAverage)(const int32* topleft, const int32* botleft,
@@ -1052,6 +1086,30 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
 int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0 || value == 0u) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBShadeRow)(const uint8* src_argb, uint8* dst_argb,
+                       int width, uint32 value) = ARGBShadeRow_C;
+#if defined(HAS_ARGBSHADE_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBShadeRow = ARGBShadeRow_SSE2;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBShadeRow(src_argb, dst_argb, width, value);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
 }
 
 #ifdef __cplusplus

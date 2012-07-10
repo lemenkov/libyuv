@@ -784,11 +784,9 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   return 0;
 }
 
-// Visual C for x86 defines these.
-#if defined(_M_X64) || defined(_M_IX86)
-#define LIBYUV_LITTLE_ENDIAN
-// GCC provided macros.
-#elif __BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN
+// Visual C x86 or GCC little endian.
+#if defined(_M_X64) || defined(_M_IX86) || (defined(__BYTE_ORDER) && \
+  (__BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN))
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 
