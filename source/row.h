@@ -80,12 +80,12 @@ extern "C" {
 #define HAS_ARGBQUANTIZEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
+#define HAS_ARGBSHADE_SSE2
 #endif
 
 // The following are Windows only:
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_ARGBSHADE_SSE2
 #endif
 
 // The following are disabled when SSSE3 is available:
