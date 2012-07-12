@@ -1082,7 +1082,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// Multiply ARGB image by ARGB value.
+// Multiply ARGB image by a specified ARGB value.
 int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value) {
@@ -1107,6 +1107,63 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
   for (int y = 0; y < height; ++y) {
     ARGBShadeRow(src_argb, dst_argb, width, value);
     src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+#if !defined(YUV_DISABLE_ASM) && (defined(_M_IX86) || \
+    (defined(__x86_64__) || defined(__i386__)))
+#define HAS_SCALEARGBFILTERROWS_SSE2
+#define HAS_SCALEARGBFILTERROWS_SSSE3
+#endif
+void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr, int src_stride,
+                           int dst_width, int source_y_fraction);
+void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                              int src_stride, int dst_width,
+                              int source_y_fraction);
+void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                               int src_stride, int dst_width,
+                               int source_y_fraction);
+
+// Interpolate 2 ARGB images by specified amount (0 to 255).
+int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
+                    const uint8* src_argb1, int src_stride_argb1,
+                    uint8* dst_argb, int dst_stride_argb,
+                    int width, int height, int interpolation) {
+  if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+  void (*ScaleARGBFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
+                              int src_stride, int dst_width,
+                              int source_y_fraction) = ScaleARGBFilterRows_C;
+#if defined(HAS_SCALEARGBFILTERROWS_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
+      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ScaleARGBFilterRows = ScaleARGBFilterRows_SSE2;
+  }
+#endif
+#if defined(HAS_SCALEARGBFILTERROWS_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
+      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    ScaleARGBFilterRows(dst_argb, src_argb0, src_argb1 - src_argb0,
+                        width, interpolation);
+    src_argb0 += src_stride_argb0;
+    src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
   return 0;

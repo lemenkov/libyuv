@@ -184,9 +184,9 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, int src_stride,
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version.
 #define HAS_SCALEARGBFILTERROWS_SSE2
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                                     int src_stride, int dst_width,
-                                     int source_y_fraction) {
+void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                              int src_stride, int dst_width,
+                              int source_y_fraction) {
   __asm {
     push       esi
     push       edi
@@ -271,9 +271,9 @@ static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version.
 #define HAS_SCALEARGBFILTERROWS_SSSE3
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
-                                      int src_stride, int dst_width,
-                                      int source_y_fraction) {
+void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                               int src_stride, int dst_width,
+                               int source_y_fraction) {
   __asm {
     push       esi
     push       edi
@@ -499,9 +499,9 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, int src_stride,
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
 #define HAS_SCALEARGBFILTERROWS_SSE2
-static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr,
-                                     const uint8* src_ptr, int src_stride,
-                                     int dst_width, int source_y_fraction) {
+void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                              int src_stride, int dst_width,
+                              int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "cmp       $0x0,%3                         \n"
@@ -570,9 +570,9 @@ static void ScaleARGBFilterRows_SSE2(uint8* dst_ptr,
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
 #define HAS_SCALEARGBFILTERROWS_SSSE3
-static void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr,
-                                      const uint8* src_ptr, int src_stride,
-                                      int dst_width, int source_y_fraction) {
+void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                               int src_stride, int dst_width,
+                               int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
@@ -743,9 +743,8 @@ static void ScaleARGBFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 static const int kMaxInputWidth = 2560;
 
 // C version 2x2 -> 2x1
-static void ScaleARGBFilterRows_C(uint8* dst_ptr,
-                                  const uint8* src_ptr, int src_stride,
-                                  int dst_width, int source_y_fraction) {
+void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr, int src_stride,
+                           int dst_width, int source_y_fraction) {
   assert(dst_width > 0);
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;

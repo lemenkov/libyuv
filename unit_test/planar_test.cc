@@ -652,12 +652,10 @@ TEST_F(libyuvTest, TestShade) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
   SIMD_ALIGNED(uint8 shade_pixels[256][4]);
 
-  // Test unattenuation clamps
   orig_pixels[0][0] = 10u;
   orig_pixels[0][1] = 20u;
   orig_pixels[0][2] = 40u;
   orig_pixels[0][3] = 80u;
-  // Test unattenuation transparent and opaque are unaffected
   orig_pixels[1][0] = 0u;
   orig_pixels[1][1] = 0u;
   orig_pixels[1][2] = 0u;
@@ -697,6 +695,78 @@ TEST_F(libyuvTest, TestShade) {
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
     ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,
               0x80808080);
+  }
+}
+
+TEST_F(libyuvTest, TestInterpolate) {
+  SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[256][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels[256][4]);
+
+  orig_pixels_0[0][0] = 10u;
+  orig_pixels_0[0][1] = 20u;
+  orig_pixels_0[0][2] = 40u;
+  orig_pixels_0[0][3] = 80u;
+  orig_pixels_0[1][0] = 0u;
+  orig_pixels_0[1][1] = 0u;
+  orig_pixels_0[1][2] = 0u;
+  orig_pixels_0[1][3] = 255u;
+  orig_pixels_0[2][0] = 0u;
+  orig_pixels_0[2][1] = 0u;
+  orig_pixels_0[2][2] = 0u;
+  orig_pixels_0[2][3] = 0u;
+  orig_pixels_0[3][0] = 0u;
+  orig_pixels_0[3][1] = 0u;
+  orig_pixels_0[3][2] = 0u;
+  orig_pixels_0[3][3] = 0u;
+
+  orig_pixels_1[0][0] = 0u;
+  orig_pixels_1[0][1] = 0u;
+  orig_pixels_1[0][2] = 0u;
+  orig_pixels_1[0][3] = 0u;
+  orig_pixels_1[1][0] = 0u;
+  orig_pixels_1[1][1] = 0u;
+  orig_pixels_1[1][2] = 0u;
+  orig_pixels_1[1][3] = 0u;
+  orig_pixels_1[2][0] = 0u;
+  orig_pixels_1[2][1] = 0u;
+  orig_pixels_1[2][2] = 0u;
+  orig_pixels_1[2][3] = 0u;
+  orig_pixels_1[3][0] = 255u;
+  orig_pixels_1[3][1] = 255u;
+  orig_pixels_1[3][2] = 255u;
+  orig_pixels_1[3][3] = 255u;
+
+  ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
+                  &interpolate_pixels[0][0], 0, 4, 1, 128);
+  EXPECT_EQ(5u, interpolate_pixels[0][0]);
+  EXPECT_EQ(10u, interpolate_pixels[0][1]);
+  EXPECT_EQ(20u, interpolate_pixels[0][2]);
+  EXPECT_EQ(40u, interpolate_pixels[0][3]);
+  EXPECT_EQ(0u, interpolate_pixels[1][0]);
+  EXPECT_EQ(0u, interpolate_pixels[1][1]);
+  EXPECT_EQ(0u, interpolate_pixels[1][2]);
+  EXPECT_NEAR(128u, interpolate_pixels[1][3], 1);  // C = 127, SSE = 128.
+  EXPECT_EQ(0u, interpolate_pixels[2][0]);
+  EXPECT_EQ(0u, interpolate_pixels[2][1]);
+  EXPECT_EQ(0u, interpolate_pixels[2][2]);
+  EXPECT_EQ(0u, interpolate_pixels[2][3]);
+  EXPECT_NEAR(128u, interpolate_pixels[3][0], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[3][1], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[3][2], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[3][3], 1);
+
+  ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
+                  &interpolate_pixels[0][0], 0, 4, 1, 0);
+
+  EXPECT_EQ(10u, interpolate_pixels[0][0]);
+  EXPECT_EQ(20u, interpolate_pixels[0][1]);
+  EXPECT_EQ(40u, interpolate_pixels[0][2]);
+  EXPECT_EQ(80u, interpolate_pixels[0][3]);
+
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
+                    &interpolate_pixels[0][0], 0, 256, 1, 128);
   }
 }
 

@@ -212,6 +212,16 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value);
 
+// Interpolate between two ARGB images using specified amount of interpolation
+// (0 to 255) and store to destination.
+// 'interpolation' is specified as 8 bit fraction where 0 means 100% src_argb0
+// and 255 means 1% src_argb0 and 99% src_argb1.
+// Internally uses ARGBScale bilinear filtering.
+int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
+                    const uint8* src_argb1, int src_stride_argb1,
+                    uint8* dst_argb, int dst_stride_argb,
+                    int width, int height, int interpolation);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
