@@ -31,7 +31,7 @@ extern "C" {
 // NOT the optimized versions. Useful for debugging and
 // when comparing the quality of the resulting YUV planes
 // as produced by the optimized and non-optimized versions.
-
+#define SSE2_DISABLED 1
 static bool use_reference_impl_ = false;
 
 void SetUseReferenceImpl(bool use) {
@@ -1377,12 +1377,13 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   }
 }
 
+#ifndef SSE2_DISABLED
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
 // Normal formula for bilinear interpolation is:
 //   source_y_fraction * row1 + (1 - source_y_fraction) row0
 // SSE2 version using the a single multiply of difference:
 //   source_y_fraction * (row1 - row0) + row0
-#define HAS_SCALEFILTERROWS_SSE2
+#define HAS_SCALEFILTERROWS_SSE2_DISABLED
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                                  int src_stride, int dst_width,
@@ -1471,7 +1472,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
-
+#endif  // SSE2_DISABLED
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version.
 #define HAS_SCALEFILTERROWS_SSSE3
 __declspec(naked) __declspec(align(16))
@@ -2247,8 +2248,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
+#ifndef SSE2_DISABLED
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
-#define HAS_SCALEFILTERROWS_SSE2
+#define HAS_SCALEFILTERROWS_SSE2_DISABLED
 static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  const uint8* src_ptr, int src_stride,
                                  int dst_width, int source_y_fraction) {
@@ -2318,6 +2320,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
 #endif
   );
 }
+#endif  // SSE2_DISABLED
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3
@@ -2388,7 +2391,6 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 #endif
   );
 }
-
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 // CPU agnostic row functions
@@ -2609,7 +2611,7 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
   } while (dst_ptr < dend);
 }
 
-#define HAS_SCALEROWDOWN34_SSE2
+#define HAS_SCALEROWDOWN34_SSE2_DISABLED
 // Filter rows 0 and 1 together, 3 : 1
 static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
                                       uint8* dst_ptr, int dst_width) {

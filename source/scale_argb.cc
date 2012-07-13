@@ -28,6 +28,7 @@ extern "C" {
 /**
  * SSE2 downscalers with bilinear interpolation.
  */
+#define SSE2_DISABLED 1
 
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
@@ -182,7 +183,8 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version.
-#define HAS_SCALEARGBFILTERROWS_SSE2
+#ifndef SSE2_DISABLED
+#define HAS_SCALEARGBFILTERROWS_SSE2_DISABLED
 __declspec(naked) __declspec(align(16))
 void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                               int src_stride, int dst_width,
@@ -267,6 +269,7 @@ void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
+#endif  // SSE2_DISABLED
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version.
 #define HAS_SCALEARGBFILTERROWS_SSSE3
@@ -497,8 +500,9 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
+#ifndef SSE2_DISABLED
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
-#define HAS_SCALEARGBFILTERROWS_SSE2
+#define HAS_SCALEARGBFILTERROWS_SSE2_DISABLED
 void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                               int src_stride, int dst_width,
                               int source_y_fraction) {
@@ -567,6 +571,7 @@ void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 #endif
   );
 }
+#endif  // SSE2_DISABLED
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
 #define HAS_SCALEARGBFILTERROWS_SSSE3
@@ -635,7 +640,7 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 #endif
   );
 }
-#endif
+#endif  // defined(__x86_64__) || defined(__i386__)
 
 static void ScaleARGBRowDown2_C(const uint8* src_ptr, int,
                                 uint8* dst_ptr, int dst_width) {
