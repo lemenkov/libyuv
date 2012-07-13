@@ -23,6 +23,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Bilinear SSE2 is disabled.
+#define SSE2_DISABLED 1
+
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
 
@@ -31,7 +34,6 @@ extern "C" {
 // NOT the optimized versions. Useful for debugging and
 // when comparing the quality of the resulting YUV planes
 // as produced by the optimized and non-optimized versions.
-#define SSE2_DISABLED 1
 static bool use_reference_impl_ = false;
 
 void SetUseReferenceImpl(bool use) {

@@ -23,12 +23,13 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// ARGB scaling uses bilinear or point, but not box filter.
+// Bilinear SSE2 is disabled.
+#define SSE2_DISABLED 1
 
+// ARGB scaling uses bilinear or point, but not box filter.
 /**
  * SSE2 downscalers with bilinear interpolation.
  */
-#define SSE2_DISABLED 1
 
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
