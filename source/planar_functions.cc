@@ -1147,9 +1147,13 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
   }
 #endif
+  uint8 last16[16];
   for (int y = 0; y < height; ++y) {
+    // Filter extrudes edge for its scaling purpose.
+    memcpy(last16, dst_argb + width * 4, 16);  // Save last 16 beyond end.
     ScaleARGBFilterRows(dst_argb, src_argb0, src_argb1 - src_argb0,
                         width, interpolation);
+    memcpy(dst_argb + width * 4, last16, 16);  // Restore last 16 beyond end.
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;

@@ -217,6 +217,7 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
 // 'interpolation' is specified as 8 bit fraction where 0 means 100% src_argb0
 // and 255 means 1% src_argb0 and 99% src_argb1.
 // Internally uses ARGBScale bilinear filtering.
+// Caveat: This function will write up to 16 bytes beyond the end of dst_argb.
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
                     uint8* dst_argb, int dst_stride_argb,
