@@ -27,7 +27,7 @@
 namespace libyuv {
 
 #define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)          \
-TEST_F(libyuvTest, ##FMT_PLANAR##To##FMT_B##_OptVsC) {                         \
+TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_y, kWidth * kHeight);                                    \
@@ -45,7 +45,7 @@ TEST_F(libyuvTest, ##FMT_PLANAR##To##FMT_B##_OptVsC) {                         \
       src_v[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
-  ##FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
+  FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                           src_u, kWidth / SUBSAMP_X,                           \
                           src_v, kWidth / SUBSAMP_X,                           \
                           dst_argb_c, kWidth * BPP_B,                          \
@@ -53,7 +53,7 @@ TEST_F(libyuvTest, ##FMT_PLANAR##To##FMT_B##_OptVsC) {                         \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
-    ##FMT_PLANAR##To##FMT_B(src_y, kWidth,                                     \
+    FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                             src_u, kWidth / SUBSAMP_X,                         \
                             src_v, kWidth / SUBSAMP_X,                         \
                             dst_argb_opt, kWidth * BPP_B,                      \
@@ -91,7 +91,7 @@ TESTPLANARTOB(I444, 1, 1, ARGB, 4)
 
 
 #define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)        \
-TEST_F(libyuvTest, ##FMT_PLANAR##To##FMT_B##_OptVsC) {                         \
+TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_y, kWidth * kHeight);                                    \
@@ -107,14 +107,14 @@ TEST_F(libyuvTest, ##FMT_PLANAR##To##FMT_B##_OptVsC) {                         \
       src_uv[(i * kWidth / SUBSAMP_X) * 2 + j] = (random() & 0xff);            \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
-  ##FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
+  FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                           src_uv, kWidth / SUBSAMP_X * 2,                      \
                           dst_argb_c, kWidth * BPP_B,                          \
                           kWidth, kHeight);                                    \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
-    ##FMT_PLANAR##To##FMT_B(src_y, kWidth,                                     \
+    FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                             src_uv, kWidth / SUBSAMP_X * 2,                    \
                             dst_argb_opt, kWidth * BPP_B,                      \
                             kWidth, kHeight);                                  \
@@ -142,7 +142,7 @@ TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2)
 TESTBIPLANARTOB(NV21, 2, 2, RGB565, 2)
 
 #define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
-TEST_F(libyuvTest, ##FMT_A##To##FMT_PLANAR##_OptVsC) {                         \
+TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_argb, (kWidth * BPP_A) * kHeight);                       \
@@ -157,7 +157,7 @@ TEST_F(libyuvTest, ##FMT_A##To##FMT_PLANAR##_OptVsC) {                         \
     for (int j = 0; j < kWidth * BPP_A; ++j)                                   \
       src_argb[(i * kWidth * BPP_A) + j] = (random() & 0xff);                  \
   MaskCpuFlags(kCpuInitialized);                                               \
-  ##FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                            \
+  FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                              \
                           dst_y_c, kWidth,                                     \
                           dst_u_c, kWidth / SUBSAMP_X,                         \
                           dst_v_c, kWidth / SUBSAMP_X,                         \
@@ -165,7 +165,7 @@ TEST_F(libyuvTest, ##FMT_A##To##FMT_PLANAR##_OptVsC) {                         \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
-    ##FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                          \
+    FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                            \
                             dst_y_opt, kWidth,                                 \
                             dst_u_opt, kWidth / SUBSAMP_X,                     \
                             dst_v_opt, kWidth / SUBSAMP_X,                     \
@@ -225,7 +225,7 @@ TESTATOPLANAR(ARGB, 4, I422, 2, 1)
 // TODO(fbarchard): Implement and test 411 and 444
 
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
-TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_OptVsC) {                              \
+TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_argb, (kWidth * BPP_A) * kHeight);                       \
@@ -236,13 +236,13 @@ TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_OptVsC) {                              \
     src_argb[i] = (random() & 0xff);                                           \
   }                                                                            \
   MaskCpuFlags(kCpuInitialized);                                               \
-  ##FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
+  FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                                \
                      dst_argb_c, kWidth * BPP_B,                               \
                      kWidth, kHeight);                                         \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
-    ##FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                            \
+    FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
                        dst_argb_opt, kWidth * BPP_B,                           \
                        kWidth, kHeight);                                       \
   }                                                                            \
@@ -281,10 +281,10 @@ TESTATOB(UYVY, 2, 2, ARGB, 4)
 TESTATOB(M420, 3 / 2, 1, ARGB, 4)
 
 #define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                   \
-TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_Random) {                              \
+TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
   srandom(time(NULL));                                                         \
   for (int times = 0; times < 1000; ++times) {                                 \
-    const int kWidth = (random() & 63) + 1;                                   \
+    const int kWidth = (random() & 63) + 1;                                    \
     const int kHeight = (random() & 31) + 1;                                   \
     align_buffer_page_end(src_argb, (kWidth * BPP_A) * kHeight);               \
     align_buffer_page_end(dst_argb_c, (kWidth * BPP_B) * kHeight);             \
@@ -293,11 +293,11 @@ TEST_F(libyuvTest, ##FMT_A##To##FMT_B##_Random) {                              \
       src_argb[i] = (random() & 0xff);                                         \
     }                                                                          \
     MaskCpuFlags(kCpuInitialized);                                             \
-    ##FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                            \
+    FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
                        dst_argb_c, kWidth * BPP_B,                             \
                        kWidth, kHeight);                                       \
     MaskCpuFlags(-1);                                                          \
-    ##FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                            \
+    FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
                        dst_argb_opt, kWidth * BPP_B,                           \
                        kWidth, kHeight);                                       \
     int err = 0;                                                               \

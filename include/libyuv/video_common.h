@@ -90,6 +90,59 @@ enum FourCC {
   FOURCC_ANY  = 0xFFFFFFFF,
 };
 
+enum FourCCBpp {
+  // Canonical fourcc codes used in our code.
+  FOURCC_BPP_I420 = 12,
+  FOURCC_BPP_I422 = 16,
+  FOURCC_BPP_I444 = 24,
+  FOURCC_BPP_I411 = 12,
+  FOURCC_BPP_I400 = 8,
+  FOURCC_BPP_YV12 = 12,
+  FOURCC_BPP_YV16 = 16,
+  FOURCC_BPP_YV24 = 24,
+  FOURCC_BPP_YUY2 = 16,
+  FOURCC_BPP_UYVY = 16,
+  FOURCC_BPP_M420 = 12,
+  FOURCC_BPP_Q420 = 12,
+  FOURCC_BPP_V210 = 22,  // 22.5 actually
+  FOURCC_BPP_24BG = 24,
+  FOURCC_BPP_ABGR = 32,
+  FOURCC_BPP_BGRA = 32,
+  FOURCC_BPP_ARGB = 32,
+  FOURCC_BPP_RGBP = 16,
+  FOURCC_BPP_RGBO = 16,
+  FOURCC_BPP_R444 = 16,
+  FOURCC_BPP_MJPG = 0,  // 0 means unknown.
+  FOURCC_BPP_RAW  = 24,
+  FOURCC_BPP_NV21 = 12,
+  FOURCC_BPP_NV12 = 12,
+  // Next four are Bayer RGB formats. The four characters define the order of
+  // the colours in each 2x2 pixel grid, going left-to-right and top-to-bottom.
+  FOURCC_BPP_RGGB = 8,
+  FOURCC_BPP_BGGR = 8,
+  FOURCC_BPP_GRBG = 8,
+  FOURCC_BPP_GBRG = 8,
+
+  // Aliases for canonical fourcc codes, replaced with their canonical
+  // equivalents by CanonicalFourCC().
+  FOURCC_BPP_IYUV = 12,
+  FOURCC_BPP_YU12 = 12,
+  FOURCC_BPP_YU16 = 16,
+  FOURCC_BPP_YU24 = 24,
+  FOURCC_BPP_YUYV = 16,
+  FOURCC_BPP_YUVS = 16,
+  FOURCC_BPP_HDYC = 16,
+  FOURCC_BPP_2VUY = 16,
+  FOURCC_BPP_JPEG = 1,
+  FOURCC_BPP_DMB1 = 1,
+  FOURCC_BPP_BA81 = 8,
+  FOURCC_BPP_RGB3 = 24,
+  FOURCC_BPP_BGR3 = 24,
+
+  // Match any fourcc.
+  FOURCC_BPP_ANY  = 0,  // 0 means unknown.
+};
+
 // Converts fourcc aliases into canonical ones.
 uint32 CanonicalFourCC(uint32 fourcc);
 
