@@ -402,8 +402,10 @@ static void I42xToUYVYRow_C(const uint8* src_y,
 }
 
 // Visual C x86 or GCC little endian.
-#if defined(_M_X64) || defined(_M_IX86) || (defined(__BYTE_ORDER) && \
-  (__BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN))
+#if defined(__x86_64__) || defined(_M_X64) || \
+  defined(__i386__) || defined(_M_IX86) || \
+  defined(__arm__) || defined(_M_ARM) || \
+  (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 

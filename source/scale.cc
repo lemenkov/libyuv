@@ -52,7 +52,7 @@ void SetUseReferenceImpl(bool use) {
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SCALEROWDOWN2_NEON
 // Note - not static due to reuse in convert for 444 to 420.
-void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
+void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                         uint8* dst, int dst_width) {
   asm volatile (
     "1:                                        \n"
@@ -69,7 +69,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, int /* src_stride */,
   );
 }
 
-void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (
     // change the stride to row 2 pointer
@@ -97,7 +97,7 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN4_NEON
-static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
+static void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
     "1:                                        \n"
@@ -116,7 +116,7 @@ static void ScaleRowDown4_NEON(const uint8* src_ptr, int /* src_stride */,
   );
 }
 
-static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   asm volatile (
     "add        r4, %0, %3                     \n"
@@ -155,7 +155,8 @@ static void ScaleRowDown4Int_NEON(const uint8* src_ptr, int src_stride,
 // Down scale from 4 to 3 pixels.  Use the neon multilane read/write
 //  to load up the every 4th pixel into a 4 different registers.
 // Point samples 32 pixels to 24 pixels.
-static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
+static void ScaleRowDown34_NEON(const uint8* src_ptr,
+                                ptrdiff_t /* src_stride */,
                                 uint8* dst_ptr, int dst_width) {
   asm volatile (
     "1:                                        \n"
@@ -172,7 +173,8 @@ static void ScaleRowDown34_NEON(const uint8* src_ptr, int /* src_stride */,
   );
 }
 
-static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vmov.u8      d24, #3                      \n"
@@ -227,7 +229,8 @@ static void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vmov.u8      d24, #3                      \n"
@@ -279,7 +282,8 @@ const vec16 kMult38_Div9 =
     65536 / 18, 65536 / 18, 65536 / 18, 65536 / 18 };
 
 // 32 -> 12
-static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
+static void ScaleRowDown38_NEON(const uint8* src_ptr,
+                                ptrdiff_t /* src_stride */,
                                 uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vld1.u8      {q3}, [%3]                   \n"
@@ -301,7 +305,7 @@ static void ScaleRowDown38_NEON(const uint8* src_ptr, int,
 
 // 32x3 -> 12x1
 static void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
-                                             int src_stride,
+                                             ptrdiff_t src_stride,
                                              uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
@@ -410,7 +414,8 @@ static void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
 }
 
 // 32x2 -> 12x1
-static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vld1.u16     {q13}, [%4]                  \n"
@@ -505,7 +510,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr, int src_stride,
 // 16x2 -> 16x1
 #define HAS_SCALEFILTERROWS_NEON
 static void ScaleFilterRows_NEON(uint8* dst_ptr,
-                                 const uint8* src_ptr, int src_stride,
+                                 const uint8* src_ptr, ptrdiff_t src_stride,
                                  int dst_width, int source_y_fraction) {
   asm volatile (
     "cmp          %4, #0                       \n"
@@ -658,7 +663,7 @@ CONST uvec16 kScaleAb2 =
 // Reads 32 pixels, throws half away and writes 16 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -687,7 +692,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -731,7 +736,8 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 // Reads 32 pixels, throws half away and writes 16 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
+                                         ptrdiff_t src_stride,
                                          uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -761,7 +767,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
-                                            int src_stride,
+                                            ptrdiff_t src_stride,
                                             uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -806,7 +812,7 @@ static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
 // Point samples 32 pixels to 8 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -837,7 +843,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x4 rectangle to 8x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -899,7 +905,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 // Point samples 32 pixels to 4 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown8_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -931,7 +937,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
 // Blends 32x8 rectangle to 4x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -1009,7 +1015,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -1058,7 +1064,8 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -1116,7 +1123,8 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -1179,7 +1187,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 32 pixels to 12
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -1211,7 +1219,8 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 16x3 pixels to 6x1 with interpolation
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -1276,7 +1285,8 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Scale 16x2 pixels to 6x1 with interpolation
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -1322,7 +1332,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
 
 // Reads 16xN bytes and produces 16 shorts at a time.
 __declspec(naked) __declspec(align(16))
-static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint16* dst_ptr, int src_width,
                               int src_height) {
   __asm {
@@ -1388,7 +1398,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 #define HAS_SCALEFILTERROWS_SSE2_DISABLED
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                                 int src_stride, int dst_width,
+                                 ptrdiff_t src_stride, int dst_width,
                                  int source_y_fraction) {
   __asm {
     push       esi
@@ -1479,7 +1489,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 #define HAS_SCALEFILTERROWS_SSSE3
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
-                                  int src_stride, int dst_width,
+                                  ptrdiff_t src_stride, int dst_width,
                                   int source_y_fraction) {
   __asm {
     push       esi
@@ -1570,7 +1580,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
 #define HAS_SCALEROWDOWN2_SSE2
-static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1598,7 +1608,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1635,7 +1645,8 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
 #endif
   );
 }
-static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
+                                         ptrdiff_t src_stride,
                                          uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1664,7 +1675,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
-                                            int src_stride,
+                                            ptrdiff_t src_stride,
                                             uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1703,7 +1714,7 @@ static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
 }
 
 #define HAS_SCALEROWDOWN4_SSE2
-static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1732,7 +1743,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   intptr_t stridex3 = 0;
   asm volatile (
@@ -1787,7 +1798,7 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN8_SSE2
-static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown8_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1817,7 +1828,7 @@ static void ScaleRowDown8_SSE2(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   intptr_t stridex3 = 0;
   intptr_t row4 = 0;
@@ -1884,7 +1895,7 @@ static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN34_SSSE3
-static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %0,%%xmm3                       \n"
@@ -1923,7 +1934,8 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %0,%%xmm2                       \n"  // kShuf01
@@ -1989,7 +2001,8 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %0,%%xmm2                       \n"  // kShuf01
@@ -2060,7 +2073,7 @@ static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEROWDOWN38_SSSE3
-static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
@@ -2091,7 +2104,8 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %0,%%xmm2                       \n"
@@ -2136,7 +2150,8 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr, int src_stride,
   );
 }
 
-static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr,
+                                       ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
     "movdqa    %0,%%xmm2                       \n"
@@ -2201,7 +2216,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr, int src_stride,
 }
 
 #define HAS_SCALEADDROWS_SSE2
-static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint16* dst_ptr, int src_width, int src_height) {
   int tmp_height = 0;
   intptr_t tmp_src = 0;
@@ -2254,7 +2269,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, int src_stride,
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
 #define HAS_SCALEFILTERROWS_SSE2_DISABLED
 static void ScaleFilterRows_SSE2(uint8* dst_ptr,
-                                 const uint8* src_ptr, int src_stride,
+                                 const uint8* src_ptr, ptrdiff_t src_stride,
                                  int dst_width, int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
@@ -2327,7 +2342,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3
 static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
-                                  const uint8* src_ptr, int src_stride,
+                                  const uint8* src_ptr, ptrdiff_t src_stride,
                                   int dst_width, int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
@@ -2396,7 +2411,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 // CPU agnostic row functions
-static void ScaleRowDown2_C(const uint8* src_ptr, int,
+static void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
   do {
@@ -2410,7 +2425,7 @@ static void ScaleRowDown2_C(const uint8* src_ptr, int,
   }
 }
 
-void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
@@ -2427,7 +2442,7 @@ void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
   }
 }
 
-static void ScaleRowDown4_C(const uint8* src_ptr, int,
+static void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
   do {
@@ -2441,7 +2456,7 @@ static void ScaleRowDown4_C(const uint8* src_ptr, int,
   }
 }
 
-static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown4Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
   uint8* dend = dst + dst_width - 1;
@@ -2482,7 +2497,7 @@ static void ScaleRowDown4Int_C(const uint8* src_ptr, int src_stride,
 static const int kMaxOutputWidth = 640;
 static const int kMaxRow12 = kMaxOutputWidth * 2;
 
-static void ScaleRowDown8_C(const uint8* src_ptr, int,
+static void ScaleRowDown8_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
   do {
@@ -2498,7 +2513,7 @@ static void ScaleRowDown8_C(const uint8* src_ptr, int,
 
 // Note calling code checks width is less than max and if not
 // uses ScaleRowDown8_C instead.
-static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown8Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
   SIMD_ALIGNED(uint8 src_row[kMaxRow12 * 2]);
   assert(dst_width <= kMaxOutputWidth);
@@ -2509,7 +2524,7 @@ static void ScaleRowDown8Int_C(const uint8* src_ptr, int src_stride,
   ScaleRowDown2Int_C(src_row, kMaxOutputWidth, dst, dst_width);
 }
 
-static void ScaleRowDown34_C(const uint8* src_ptr, int,
+static void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                              uint8* dst, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   uint8* dend = dst + dst_width;
@@ -2523,7 +2538,7 @@ static void ScaleRowDown34_C(const uint8* src_ptr, int,
 }
 
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
@@ -2546,7 +2561,7 @@ static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, int src_stride,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
@@ -2615,7 +2630,8 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 
 #define HAS_SCALEROWDOWN34_SSE2_DISABLED
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
@@ -2624,7 +2640,8 @@ static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
@@ -2633,7 +2650,7 @@ static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr, int src_stride,
 }
 #endif
 
-static void ScaleRowDown38_C(const uint8* src_ptr, int,
+static void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                              uint8* dst, int dst_width) {
   assert(dst_width % 3 == 0);
   for (int x = 0; x < dst_width; x += 3) {
@@ -2646,7 +2663,8 @@ static void ScaleRowDown38_C(const uint8* src_ptr, int,
 }
 
 // 8x3 -> 3x1
-static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_3_Int_C(const uint8* src_ptr,
+                                   ptrdiff_t src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   intptr_t stride = src_stride;
@@ -2671,7 +2689,7 @@ static void ScaleRowDown38_3_Int_C(const uint8* src_ptr, int src_stride,
 }
 
 // 8x2 -> 3x1
-static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
+static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   intptr_t stride = src_stride;
@@ -2692,7 +2710,7 @@ static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, int src_stride,
 
 // C version 8x2 -> 8x1
 static void ScaleFilterRows_C(uint8* dst_ptr,
-                              const uint8* src_ptr, int src_stride,
+                              const uint8* src_ptr, ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) {
   assert(dst_width > 0);
   int y1_fraction = source_y_fraction;
@@ -2715,7 +2733,7 @@ static void ScaleFilterRows_C(uint8* dst_ptr,
   dst_ptr[0] = dst_ptr[-1];
 }
 
-void ScaleAddRows_C(const uint8* src_ptr, int src_stride,
+void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
                     uint16* dst_ptr, int src_width, int src_height) {
   assert(src_width > 0);
   assert(src_height > 0);
@@ -2744,7 +2762,7 @@ static void ScalePlaneDown2(int src_width, int src_height,
                             FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
-  void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
 #if defined(HAS_SCALEROWDOWN2_NEON)
@@ -2784,7 +2802,7 @@ static void ScalePlaneDown4(int src_width, int src_height,
                             FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 4));
   assert(IS_ALIGNED(src_height, 4));
-  void (*ScaleRowDown4)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown4)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
 #if defined(HAS_SCALEROWDOWN4_NEON)
@@ -2821,7 +2839,7 @@ static void ScalePlaneDown8(int src_width, int src_height,
                             FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 8));
   assert(IS_ALIGNED(src_height, 8));
-  void (*ScaleRowDown8)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown8)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering && (dst_width <= kMaxOutputWidth) ?
       ScaleRowDown8Int_C : ScaleRowDown8_C;
@@ -2852,9 +2870,9 @@ static void ScalePlaneDown34(int src_width, int src_height,
                              const uint8* src_ptr, uint8* dst_ptr,
                              FilterMode filtering) {
   assert(dst_width % 3 == 0);
-  void (*ScaleRowDown34_0)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown34_0)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
-  void (*ScaleRowDown34_1)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown34_1)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
   if (!filtering) {
     ScaleRowDown34_0 = ScaleRowDown34_C;
@@ -2941,9 +2959,9 @@ static void ScalePlaneDown38(int src_width, int src_height,
                              const uint8* src_ptr, uint8* dst_ptr,
                              FilterMode filtering) {
   assert(dst_width % 3 == 0);
-  void (*ScaleRowDown38_3)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown38_3)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
-  void (*ScaleRowDown38_2)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown38_2)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
   if (!filtering) {
     ScaleRowDown38_3 = ScaleRowDown38_C;
@@ -2999,7 +3017,7 @@ static void ScalePlaneDown38(int src_width, int src_height,
 }
 
 static __inline uint32 SumBox(int iboxwidth, int iboxheight,
-                              int src_stride, const uint8* src_ptr) {
+                              ptrdiff_t src_stride, const uint8* src_ptr) {
   assert(iboxwidth > 0);
   assert(iboxheight > 0);
   uint32 sum = 0u;
@@ -3013,7 +3031,7 @@ static __inline uint32 SumBox(int iboxwidth, int iboxheight,
 }
 
 static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
-                               int x, int dx, int src_stride,
+                               int x, int dx, ptrdiff_t src_stride,
                                const uint8* src_ptr, uint8* dst_ptr) {
   for (int i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
@@ -3096,7 +3114,7 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
   } else {
     SIMD_ALIGNED(uint16 row[kMaxInputWidth]);
-    void (*ScaleAddRows)(const uint8* src_ptr, int src_stride,
+    void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
                          uint16* dst_ptr, int src_width, int src_height)=
         ScaleAddRows_C;
     void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
@@ -3186,7 +3204,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
   } else {
     SIMD_ALIGNED(uint8 row[kMaxInputWidth + 16]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
-                            int src_stride,
+                            ptrdiff_t src_stride,
                             int dst_width, int source_y_fraction) =
         ScaleFilterRows_C;
 #if defined(HAS_SCALEFILTERROWS_NEON)

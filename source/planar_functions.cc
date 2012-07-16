@@ -1116,11 +1116,12 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
     (defined(__x86_64__) || defined(__i386__)))
 #define HAS_SCALEARGBFILTERROWS_SSSE3
 #endif
-void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr, int src_stride,
+void ScaleARGBFilterRows_C(uint8* dst_ptr,
+                           const uint8* src_ptr, ptrdiff_t src_stride,
                            int dst_width, int source_y_fraction);
-void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
-                               int src_stride, int dst_width,
-                               int source_y_fraction);
+void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr,
+                               const uint8* src_ptr, ptrdiff_t src_stride,
+                               int dst_width, int source_y_fraction);
 
 // Interpolate 2 ARGB images by specified amount (0 to 255).
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
@@ -1137,7 +1138,7 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*ScaleARGBFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
-                              int src_stride, int dst_width,
+                              ptrdiff_t src_stride, int dst_width,
                               int source_y_fraction) = ScaleARGBFilterRows_C;
 #if defined(HAS_SCALEARGBFILTERROWS_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&

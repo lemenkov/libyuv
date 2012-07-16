@@ -183,15 +183,15 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 // source in scale.cc
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 #define HAS_SCALEROWDOWN2_NEON
-void ScaleRowDown2Int_NEON(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
 #elif !defined(YUV_DISABLE_ASM) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
 #endif
-void ScaleRowDown2Int_C(const uint8* src_ptr, int src_stride,
+void ScaleRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 
 int I444ToI420(const uint8* src_y, int src_stride_y,
@@ -212,7 +212,7 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
     src_stride_v = -src_stride_v;
   }
   int halfwidth = (width + 1) >> 1;
-  void (*ScaleRowDown2)(const uint8* src_ptr, int src_stride,
+  void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) = ScaleRowDown2Int_C;
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
@@ -785,8 +785,10 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
 }
 
 // Visual C x86 or GCC little endian.
-#if defined(_M_X64) || defined(_M_IX86) || (defined(__BYTE_ORDER) && \
-  (__BYTE_ORDER == __ORDER_LITTLE_ENDIAN__ || __BYTE_ORDER == __LITTLE_ENDIAN))
+#if defined(__x86_64__) || defined(_M_X64) || \
+  defined(__i386__) || defined(_M_IX86) || \
+  defined(__arm__) || defined(_M_ARM) || \
+  (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 
