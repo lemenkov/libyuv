@@ -59,10 +59,11 @@ enum FourCC {
   FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565.
   FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555.
   FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444.
-  FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
   FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
+  FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
+  FOURCC_H264 = FOURCC('H', '2', '6', '4'),
   // Next four are Bayer RGB formats. The four characters define the order of
   // the colours in each 2x2 pixel grid, going left-to-right and top-to-bottom.
   FOURCC_RGGB = FOURCC('R', 'G', 'G', 'B'),
@@ -112,10 +113,11 @@ enum FourCCBpp {
   FOURCC_BPP_RGBP = 16,
   FOURCC_BPP_RGBO = 16,
   FOURCC_BPP_R444 = 16,
-  FOURCC_BPP_MJPG = 0,  // 0 means unknown.
   FOURCC_BPP_RAW  = 24,
   FOURCC_BPP_NV21 = 12,
   FOURCC_BPP_NV12 = 12,
+  FOURCC_BPP_MJPG = 0,  // 0 means unknown.
+  FOURCC_BPP_H264 = 0,
   // Next four are Bayer RGB formats. The four characters define the order of
   // the colours in each 2x2 pixel grid, going left-to-right and top-to-bottom.
   FOURCC_BPP_RGGB = 8,

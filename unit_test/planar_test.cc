@@ -46,18 +46,18 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
-                          src_u, kWidth / SUBSAMP_X,                           \
-                          src_v, kWidth / SUBSAMP_X,                           \
-                          dst_argb_c, kWidth * BPP_B,                          \
-                          kWidth, kHeight);                                    \
+                        src_u, kWidth / SUBSAMP_X,                             \
+                        src_v, kWidth / SUBSAMP_X,                             \
+                        dst_argb_c, kWidth * BPP_B,                            \
+                        kWidth, kHeight);                                      \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
-                            src_u, kWidth / SUBSAMP_X,                         \
-                            src_v, kWidth / SUBSAMP_X,                         \
-                            dst_argb_opt, kWidth * BPP_B,                      \
-                            kWidth, kHeight);                                  \
+                          src_u, kWidth / SUBSAMP_X,                           \
+                          src_v, kWidth / SUBSAMP_X,                           \
+                          dst_argb_opt, kWidth * BPP_B,                        \
+                          kWidth, kHeight);                                    \
   }                                                                            \
   int err = 0;                                                                 \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -108,16 +108,16 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
-                          src_uv, kWidth / SUBSAMP_X * 2,                      \
-                          dst_argb_c, kWidth * BPP_B,                          \
-                          kWidth, kHeight);                                    \
+                        src_uv, kWidth / SUBSAMP_X * 2,                        \
+                        dst_argb_c, kWidth * BPP_B,                            \
+                        kWidth, kHeight);                                      \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
-                            src_uv, kWidth / SUBSAMP_X * 2,                    \
-                            dst_argb_opt, kWidth * BPP_B,                      \
-                            kWidth, kHeight);                                  \
+                          src_uv, kWidth / SUBSAMP_X * 2,                      \
+                          dst_argb_opt, kWidth * BPP_B,                        \
+                          kWidth, kHeight);                                    \
   }                                                                            \
   int err = 0;                                                                 \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -158,18 +158,18 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
       src_argb[(i * kWidth * BPP_A) + j] = (random() & 0xff);                  \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                              \
-                          dst_y_c, kWidth,                                     \
-                          dst_u_c, kWidth / SUBSAMP_X,                         \
-                          dst_v_c, kWidth / SUBSAMP_X,                         \
-                          kWidth, kHeight);                                    \
+                        dst_y_c, kWidth,                                       \
+                        dst_u_c, kWidth / SUBSAMP_X,                           \
+                        dst_v_c, kWidth / SUBSAMP_X,                           \
+                        kWidth, kHeight);                                      \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_A##To##FMT_PLANAR(src_argb, kWidth * BPP_A,                            \
-                            dst_y_opt, kWidth,                                 \
-                            dst_u_opt, kWidth / SUBSAMP_X,                     \
-                            dst_v_opt, kWidth / SUBSAMP_X,                     \
-                            kWidth, kHeight);                                  \
+                          dst_y_opt, kWidth,                                   \
+                          dst_u_opt, kWidth / SUBSAMP_X,                       \
+                          dst_v_opt, kWidth / SUBSAMP_X,                       \
+                          kWidth, kHeight);                                    \
   }                                                                            \
   int err = 0;                                                                 \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -237,14 +237,14 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
   }                                                                            \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                                \
-                     dst_argb_c, kWidth * BPP_B,                               \
-                     kWidth, kHeight);                                         \
+                   dst_argb_c, kWidth * BPP_B,                                 \
+                   kWidth, kHeight);                                           \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
-                       dst_argb_opt, kWidth * BPP_B,                           \
-                       kWidth, kHeight);                                       \
+                     dst_argb_opt, kWidth * BPP_B,                             \
+                     kWidth, kHeight);                                         \
   }                                                                            \
   int err = 0;                                                                 \
   for (int i = 0; i < kHeight * kWidth * BPP_B; ++i) {                         \
@@ -294,12 +294,12 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
     }                                                                          \
     MaskCpuFlags(kCpuInitialized);                                             \
     FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
-                       dst_argb_c, kWidth * BPP_B,                             \
-                       kWidth, kHeight);                                       \
+                     dst_argb_c, kWidth * BPP_B,                               \
+                     kWidth, kHeight);                                         \
     MaskCpuFlags(-1);                                                          \
     FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
-                       dst_argb_opt, kWidth * BPP_B,                           \
-                       kWidth, kHeight);                                       \
+                     dst_argb_opt, kWidth * BPP_B,                             \
+                     kWidth, kHeight);                                         \
     int err = 0;                                                               \
     for (int i = 0; i < kHeight * kWidth * BPP_B; ++i) {                       \
       int diff = static_cast<int>(dst_argb_c[i]) -                             \
@@ -598,6 +598,65 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
 
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
     ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 256, 1);
+  }
+}
+
+
+TEST_F(libyuvTest, TestARGBColorTable) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+
+  // Matrix for Sepia.
+  static const uint8 kARGBTable[256 * 4] = {
+    1u, 2u, 3u, 4u,
+    5u, 6u, 7u, 8u,
+    9u, 10u, 11u, 12u,
+    13u, 14u, 15u, 16u,
+  };
+
+  orig_pixels[0][0] = 0u;
+  orig_pixels[0][1] = 0u;
+  orig_pixels[0][2] = 0u;
+  orig_pixels[0][3] = 0u;
+  orig_pixels[1][0] = 1u;
+  orig_pixels[1][1] = 1u;
+  orig_pixels[1][2] = 1u;
+  orig_pixels[1][3] = 1u;
+  orig_pixels[2][0] = 2u;
+  orig_pixels[2][1] = 2u;
+  orig_pixels[2][2] = 2u;
+  orig_pixels[2][3] = 2u;
+  orig_pixels[3][0] = 0u;
+  orig_pixels[3][1] = 1u;
+  orig_pixels[3][2] = 2u;
+  orig_pixels[3][3] = 3u;
+  // Do 16 to test asm version.
+  ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 16, 1);
+  EXPECT_EQ(1u, orig_pixels[0][0]);
+  EXPECT_EQ(2u, orig_pixels[0][1]);
+  EXPECT_EQ(3u, orig_pixels[0][2]);
+  EXPECT_EQ(4u, orig_pixels[0][3]);
+  EXPECT_EQ(5u, orig_pixels[1][0]);
+  EXPECT_EQ(6u, orig_pixels[1][1]);
+  EXPECT_EQ(7u, orig_pixels[1][2]);
+  EXPECT_EQ(8u, orig_pixels[1][3]);
+  EXPECT_EQ(9u, orig_pixels[2][0]);
+  EXPECT_EQ(10u, orig_pixels[2][1]);
+  EXPECT_EQ(11u, orig_pixels[2][2]);
+  EXPECT_EQ(12u, orig_pixels[2][3]);
+  EXPECT_EQ(1u, orig_pixels[3][0]);
+  EXPECT_EQ(6u, orig_pixels[3][1]);
+  EXPECT_EQ(11u, orig_pixels[3][2]);
+  EXPECT_EQ(16u, orig_pixels[3][3]);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
   }
 }
 

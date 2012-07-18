@@ -3031,11 +3031,12 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
                            int width) {
   __asm {
     push       ebx
+    push       esi
     push       edi
     push       ebp
-    mov        eax, [esp + 12 + 4]   /* dst_argb */
-    mov        edi, [esp + 12 + 8]   /* table_argb */
-    mov        ecx, [esp + 12 + 12]  /* width */
+    mov        eax, [esp + 16 + 4]   /* dst_argb */
+    mov        edi, [esp + 16 + 8]   /* table_argb */
+    mov        ecx, [esp + 16 + 12]  /* width */
     xor        ebx, ebx
     xor        edx, edx
 
@@ -3064,6 +3065,7 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
     jg         convertloop
     pop        ebp
     pop        edi
+    pop        esi
     pop        ebx
     ret
   }

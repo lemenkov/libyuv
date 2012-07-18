@@ -86,7 +86,7 @@ extern "C" {
 // The following are Windows only:
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 // TODO(fbarchard): Investigate possible issue in this function and reenable.
-#define HAS_ARGBCOLORTABLEROW_X86_DISABLED
+#define HAS_ARGBCOLORTABLEROW_X86
 #endif
 
 // The following are disabled when SSSE3 is available:
