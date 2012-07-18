@@ -116,6 +116,11 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int x, int y, int width, int height, uint32 value);
 
+// Convert ARGB to gray scale ARGB.
+int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Make a rectangle of ARGB gray scale.
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int x, int y, int width, int height);

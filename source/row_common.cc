@@ -279,11 +279,13 @@ static __inline int RGBToGray(uint8 r, uint8 g, uint8 b) {
   return (( 76 * r + 152 * g +  28 * b) >> 8);
 }
 
-void ARGBGrayRow_C(uint8* dst_argb, int width) {
+void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
-    uint8 y = RGBToGray(dst_argb[2], dst_argb[1], dst_argb[0]);
+    uint8 y = RGBToGray(src_argb[2], src_argb[1], src_argb[0]);
     dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
+    dst_argb[3] = src_argb[3];
     dst_argb += 4;
+    src_argb += 4;
   }
 }
 

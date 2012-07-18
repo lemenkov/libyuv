@@ -802,7 +802,7 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
   }
 #endif
-#if defined(HAS_ARGBATTENUATE_SSSE3)
+#if defined(HAS_ARGBATTENUATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -832,7 +832,7 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
   }
   void (*ARGBUnattenuateRow)(const uint8* src_argb, uint8* dst_argb,
                              int width) = ARGBUnattenuateRow_C;
-#if defined(HAS_ARGBUNATTENUATE_SSE2)
+#if defined(HAS_ARGBUNATTENUATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -848,6 +848,36 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Convert ARGB to Grayed ARGB.
+int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
+                      int width) = ARGBGrayRow_C;
+#if defined(HAS_ARGBGRAYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBGrayRow = ARGBGrayRow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBGrayRow(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Make a rectangle of ARGB gray scale.
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
@@ -855,7 +885,8 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
     return -1;
   }
-  void (*ARGBGrayRow)(uint8* dst_argb, int width) = ARGBGrayRow_C;
+  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
+                      int width) = ARGBGrayRow_C;
 #if defined(HAS_ARGBGRAYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -864,7 +895,7 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 #endif
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   for (int y = 0; y < height; ++y) {
-    ARGBGrayRow(dst, width);
+    ARGBGrayRow(dst, dst, width);
     dst += dst_stride_argb;
   }
   return 0;

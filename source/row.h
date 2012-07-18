@@ -39,7 +39,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
-#define HAS_ARGBATTENUATE_SSSE3
+#define HAS_ARGBATTENUATEROW_SSSE3
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
@@ -48,7 +48,7 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_SSE2
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
-#define HAS_ARGBUNATTENUATE_SSE2
+#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_BGRATOARGBROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
@@ -489,8 +489,8 @@ extern uint32 fixed_invtbl8[256];
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 
-void ARGBGrayRow_C(uint8* dst_argb, int width);
-void ARGBGrayRow_SSSE3(uint8* dst_argb, int width);
+void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 
 void ARGBSepiaRow_C(uint8* dst_argb, int width);
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);

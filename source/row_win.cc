@@ -2741,7 +2741,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBATTENUATE_SSE2
 
-#ifdef HAS_ARGBATTENUATE_SSSE3
+#ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.
 static const uvec8 kShuffleAlpha0 = {
   3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
@@ -2788,9 +2788,9 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     ret
   }
 }
-#endif  // HAS_ARGBATTENUATE_SSSE3
+#endif  // HAS_ARGBATTENUATEROW_SSSE3
 
-#ifdef HAS_ARGBUNATTENUATE_SSE2
+#ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
 // Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
@@ -2843,7 +2843,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     ret
   }
 }
-#endif  // HAS_ARGBUNATTENUATE_SSE2
+#endif  // HAS_ARGBUNATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
 // Constant for ARGB color to gray scale: 0.11 * B + 0.59 * G + 0.30 * R
@@ -2853,11 +2853,13 @@ static const vec8 kARGBToGray = {
 
 // Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels.
 __declspec(naked) __declspec(align(16))
-void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
+void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   __asm {
-    mov        eax, [esp + 4]   /* dst_argb */
-    mov        ecx, [esp + 8]   /* width */
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_argb */
+    mov        ecx, [esp + 12]  /* width */
     movdqa     xmm4, kARGBToGray
+    sub        edx, eax
 
     align      16
  convertloop:
@@ -2881,8 +2883,8 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
     punpcklwd  xmm0, xmm3   // GGGA first 4
     punpckhwd  xmm1, xmm3   // GGGA next 4
     sub        ecx, 8
-    movdqa     [eax], xmm0
-    movdqa     [eax + 16], xmm1
+    movdqa     [eax + edx], xmm0
+    movdqa     [eax + edx + 16], xmm1
     lea        eax, [eax + 32]
     jg         convertloop
     ret

@@ -2656,7 +2656,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBATTENUATE_SSE2
 
-#ifdef HAS_ARGBATTENUATE_SSSE3
+#ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
 CONST uvec8 kShuffleAlpha0 = {
   3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
@@ -2709,9 +2709,9 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 #endif
   );
 }
-#endif  // HAS_ARGBATTENUATE_SSSE3
+#endif  // HAS_ARGBATTENUATEROW_SSSE3
 
-#ifdef HAS_ARGBUNATTENUATE_SSE2
+#ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
 // aligned to 16 bytes
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
@@ -2764,7 +2764,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #endif
   );
 }
-#endif  // HAS_ARGBUNATTENUATE_SSE2
+#endif  // HAS_ARGBUNATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
 // Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
@@ -2773,9 +2773,10 @@ CONST vec8 kARGBToGray = {
 };
 
 // Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
-void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
+void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   asm volatile (
-    "movdqa    %2,%%xmm4                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+    "sub       %0,%1                           \n"
 
     // 8 pixel loop.
     ".p2align  4                               \n"
@@ -2799,14 +2800,15 @@ void ARGBGrayRow_SSSE3(uint8* dst_argb, int width) {
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm3,%%xmm0                   \n"
     "punpckhwd %%xmm3,%%xmm1                   \n"
-    "sub       $0x8,%1                         \n"
-    "movdqa    %%xmm0,(%0)                     \n"
-    "movdqa    %%xmm1,0x10(%0)                 \n"
+    "sub       $0x8,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "movdqa    %%xmm1,0x10(%0,%1,1)            \n"
     "lea       0x20(%0),%0                     \n"
     "jg        1b                              \n"
-  : "+r"(dst_argb),   // %0
-    "+r"(width)       // %1
-  : "m"(kARGBToGray)  // %2
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
+    "+r"(width)       // %2
+  : "m"(kARGBToGray)  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
