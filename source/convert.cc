@@ -127,6 +127,11 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -201,6 +206,11 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -273,6 +283,11 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -315,6 +330,10 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -379,6 +398,11 @@ static int X420ToI420(const uint8* src_y,
                       uint8* dst_u, int dst_stride_u,
                       uint8* dst_v, int dst_stride_v,
                       int width, int height) {
+  if (!src_y || !src_uv ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -572,6 +596,11 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_yuy2 ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -738,6 +767,11 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_uyvy ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -840,7 +874,10 @@ int V210ToI420(const uint8* src_v210, int src_stride_v210,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (width * 2 * 2 > kMaxStride) {  // 2 rows of UYVY is required
+  if (width * 2 * 2 > kMaxStride) {  // 2 rows of UYVY are required.
+    return -1;
+  } else if (!src_v210 || !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -892,6 +929,12 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_argb ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_argb = src_argb + (height - 1) * src_stride_argb;
@@ -943,6 +986,12 @@ int BGRAToI420(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_bgra ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_bgra = src_bgra + (height - 1) * src_stride_bgra;
@@ -994,6 +1043,12 @@ int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_abgr ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_abgr = src_abgr + (height - 1) * src_stride_abgr;
@@ -1045,9 +1100,14 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
                 uint8* dst_u, int dst_stride_u,
                 uint8* dst_v, int dst_stride_v,
                 int width, int height) {
-  if (width * 4 > kMaxStride) {  // row buffer is required
+  if (width * 4 > kMaxStride) {  // Row buffer is required.
     return -1;
+  } else if (!src_rgb24 ||
+             !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
+      return -1;
   }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;
@@ -1110,9 +1170,14 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
               uint8* dst_u, int dst_stride_u,
               uint8* dst_v, int dst_stride_v,
               int width, int height) {
-  if (width * 4 > kMaxStride) {  // row buffer is required
+  if (width * 4 > kMaxStride) {  // Row buffer is required.
     return -1;
+  } else if (!src_raw ||
+             !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
+      return -1;
   }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_raw = src_raw + (height - 1) * src_stride_raw;
@@ -1175,9 +1240,14 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
                  uint8* dst_u, int dst_stride_u,
                  uint8* dst_v, int dst_stride_v,
                  int width, int height) {
-  if (width * 4 > kMaxStride) {  // row buffer is required
+  if (width * 4 > kMaxStride) {  // Row buffer is required.
+    return -1;
+  } else if (!src_rgb565 ||
+             !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
     return -1;
   }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_rgb565 = src_rgb565 + (height - 1) * src_stride_rgb565;
@@ -1240,9 +1310,14 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
                  uint8* dst_u, int dst_stride_u,
                  uint8* dst_v, int dst_stride_v,
                  int width, int height) {
-  if (width * 4 > kMaxStride) {  // row buffer is required
+  if (width * 4 > kMaxStride) {  // Row buffer is required.
     return -1;
+  } else if (!src_argb1555 ||
+             !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
+      return -1;
   }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
@@ -1306,9 +1381,14 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
                    uint8* dst_u, int dst_stride_u,
                    uint8* dst_v, int dst_stride_v,
                    int width, int height) {
-  if (width * 4 > kMaxStride) {  // row buffer is required
+  if (width * 4 > kMaxStride) {  // Row buffer is required.
     return -1;
+  } else if (!src_argb4444 ||
+             !dst_y || !dst_u || !dst_v ||
+             width <= 0 || height == 0) {
+      return -1;
   }
+  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
@@ -1569,7 +1649,9 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
                   int dst_width, int dst_height,
                   RotationMode rotation,
                   uint32 format) {
-  if (y == NULL || u == NULL || v == NULL || sample == NULL) {
+  if (!y || !u || !v || !sample ||
+      src_width <= 0 || dst_width <= 0  ||
+      src_height == 0 || dst_height == 0) {
     return -1;
   }
   int aligned_src_width = (src_width + 1) & ~1;

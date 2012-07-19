@@ -31,6 +31,11 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -105,6 +110,11 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u|| !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -149,6 +159,11 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -189,6 +204,10 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
 int I400Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_y, int dst_stride_y,
              int width, int height) {
+  if (!src_y || !dst_y ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -446,7 +465,8 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+  if (!src_y || !src_u || !src_v || !dst_frame ||
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -482,7 +502,8 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+  if (!src_y || !src_u || !src_v || !dst_frame ||
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -524,7 +545,8 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+  if (!src_y || !src_u || !src_v || !dst_frame ||
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -560,7 +582,8 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+  if (!src_y || !src_u || !src_v || !dst_frame ||
+      width <= 0 || height <= 0 ) {
     return -1;
   }
   // Negative height means invert the image.
@@ -601,8 +624,10 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
-  if (width * 16 / 6 > kMaxStride ||  // Row buffer of V210 is required.
-      src_y == NULL || src_u == NULL || src_v == NULL || dst_frame == NULL) {
+  if (width * 16 / 6 > kMaxStride) {  // Row buffer of V210 is required.
+    return -1;
+  } else if (!src_y || !src_u || !src_v || !dst_frame ||
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -651,6 +676,10 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  if (!src_y || !src_u || !src_v || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -699,6 +728,11 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_bgra, int dst_stride_bgra,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_bgra ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -747,6 +781,11 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_abgr, int dst_stride_abgr,
                int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_abgr ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -795,6 +834,11 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_v, int src_stride_v,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -850,6 +894,11 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
               const uint8* src_v, int src_stride_v,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -905,6 +954,11 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_v, int src_stride_v,
                  uint8* dst_rgb, int dst_stride_rgb,
                  int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_rgb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -959,6 +1013,11 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
                    const uint8* src_v, int src_stride_v,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -1013,6 +1072,11 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                    const uint8* src_v, int src_stride_v,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -1068,7 +1132,8 @@ int ConvertFromI420(const uint8* y, int y_stride,
                     uint8* dst_sample, int dst_sample_stride,
                     int width, int height,
                     uint32 format) {
-  if (y == NULL || u == NULL || v == NULL || dst_sample == NULL) {
+  if (!y || !u|| !v || !dst_sample ||
+      width <= 0 || height == 0) {
     return -1;
   }
   int r = 0;
