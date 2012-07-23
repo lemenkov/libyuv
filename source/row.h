@@ -57,8 +57,6 @@ extern "C" {
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I411TOARGBROW_SSSE3
-#define HAS_NV12TOARGBROW_SSSE3
-#define HAS_NV21TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
@@ -87,6 +85,8 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 // TODO(fbarchard): Investigate possible issue in this function and reenable.
 #define HAS_ARGBCOLORTABLEROW_X86
+#define HAS_NV12TOARGBROW_SSSE3
+#define HAS_NV21TOARGBROW_SSSE3
 #endif
 
 // The following are disabled when SSSE3 is available:

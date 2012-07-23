@@ -90,8 +90,9 @@ static int ARGBTestFilter(int src_width, int src_height,
     for (j = b * 4; j < (dst_width + b) * 4; ++j) {
       int abs_diff = abs(dst_argb_c[(i * dst_stride_argb) + j] -
                          dst_argb_opt[(i * dst_stride_argb) + j]);
-      if (abs_diff > max_diff)
+      if (abs_diff > max_diff) {
         max_diff = abs_diff;
+      }
     }
   }
 
@@ -108,10 +109,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy2) {
   const int dst_height = src_height / 2;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -122,10 +123,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy4) {
   const int dst_height = src_height / 4;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -136,10 +137,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy5) {
   const int dst_height = src_height / 5;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -150,10 +151,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy8) {
   const int dst_height = src_height / 8;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -164,10 +165,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy16) {
   const int dst_height = src_height / 16;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -178,10 +179,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy34) {
   const int dst_height = src_height * 3 / 4;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -192,10 +193,10 @@ TEST_F(libyuvTest, ARGBScaleDownBy38) {
   int dst_height = src_height * 3 / 8;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -206,10 +207,10 @@ TEST_F(libyuvTest, ARGBScaleTo1366) {
   int dst_height = 768;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -220,10 +221,10 @@ TEST_F(libyuvTest, ARGBScaleTo4074) {
   int dst_height = 1272;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -235,10 +236,10 @@ TEST_F(libyuvTest, ARGBScaleTo853) {
   int dst_height = 480;
 
   for (int f = 0; f < 2; ++f) {
-    int err = ARGBTestFilter(src_width, src_height,
-                             dst_width, dst_height,
-                             static_cast<FilterMode>(f));
-    EXPECT_GE(1, err);
+    int max_diff = ARGBTestFilter(src_width, src_height,
+                                  dst_width, dst_height,
+                                  static_cast<FilterMode>(f));
+    EXPECT_LE(max_diff, 1);
   }
 }
 

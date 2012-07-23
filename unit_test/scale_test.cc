@@ -170,10 +170,10 @@ TEST_F(libyuvTest, ScaleDownBy2) {
   const int dst_height = src_height / 2;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -184,10 +184,10 @@ TEST_F(libyuvTest, ScaleDownBy4) {
   const int dst_height = src_height / 4;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(2, err);  // This is the only scale factor with error of 2.
+    EXPECT_LE(max_diff, 2);;  // This is the only scale factor with error of 2.
   }
 }
 
@@ -198,10 +198,10 @@ TEST_F(libyuvTest, ScaleDownBy5) {
   const int dst_height = src_height / 5;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -212,10 +212,10 @@ TEST_F(libyuvTest, ScaleDownBy8) {
   const int dst_height = src_height / 8;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -226,10 +226,10 @@ TEST_F(libyuvTest, ScaleDownBy16) {
   const int dst_height = src_height / 16;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -240,10 +240,10 @@ TEST_F(libyuvTest, ScaleDownBy34) {
   const int dst_height = src_height * 3 / 4;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -254,10 +254,10 @@ TEST_F(libyuvTest, ScaleDownBy38) {
   int dst_height = src_height * 3 / 8;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -268,10 +268,10 @@ TEST_F(libyuvTest, ScaleTo1366) {
   int dst_height = 768;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -282,10 +282,10 @@ TEST_F(libyuvTest, ScaleTo4074) {
   int dst_height = 1272;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -296,10 +296,10 @@ TEST_F(libyuvTest, ScaleTo853) {
   int dst_height = 480;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -310,10 +310,10 @@ TEST_F(libyuvTest, ScaleTo853Wrong) {
   int dst_height = 480;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 0);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -325,10 +325,10 @@ TEST_F(libyuvTest, ScaleTo684) {
   int dst_height = 552;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -339,10 +339,10 @@ TEST_F(libyuvTest, ScaleTo342) {
   int dst_height = 276;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
@@ -353,10 +353,10 @@ TEST_F(libyuvTest, ScaleToHalf342) {
   int dst_height = 276;
 
   for (int f = 0; f < 3; ++f) {
-    int err = TestFilter(src_width, src_height,
+    int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1);
-    EXPECT_GE(1, err);
+    EXPECT_LE(max_diff, 1);
   }
 }
 
