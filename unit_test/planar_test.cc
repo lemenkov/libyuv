@@ -70,7 +70,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);;                                                      \
+  EXPECT_LE(max_diff, 2);                                                      \
   free_aligned_buffer_16(src_y)                                                \
   free_aligned_buffer_16(src_u)                                                \
   free_aligned_buffer_16(src_v)                                                \
@@ -131,7 +131,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 3);;                                                      \
+  EXPECT_LE(max_diff, 3);                                                      \
   free_aligned_buffer_16(src_y)                                                \
   free_aligned_buffer_16(src_uv)                                               \
   free_aligned_buffer_16(dst_argb_c)                                           \
@@ -184,7 +184,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);;                                                      \
+  EXPECT_LE(max_diff, 2);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -195,7 +195,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);;                                                      \
+  EXPECT_LE(max_diff, 2);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -206,7 +206,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);;                                                      \
+  EXPECT_LE(max_diff, 2);                                                      \
   free_aligned_buffer_16(dst_y_c)                                              \
   free_aligned_buffer_16(dst_u_c)                                              \
   free_aligned_buffer_16(dst_v_c)                                              \
@@ -260,7 +260,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
       max_diff = abs_diff;                                                     \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);;                                                      \
+  EXPECT_LE(max_diff, 2);                                                      \
   free_aligned_buffer_16(src_argb)                                             \
   free_aligned_buffer_16(dst_argb_c)                                           \
   free_aligned_buffer_16(dst_argb_opt)                                         \
@@ -316,7 +316,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
         max_diff = abs_diff;                                                   \
       }                                                                        \
     }                                                                          \
-    EXPECT_LE(max_diff, 2);;                                                    \
+    EXPECT_LE(max_diff, 2);                                                    \
     free_aligned_buffer_page_end(src_argb)                                     \
     free_aligned_buffer_page_end(dst_argb_c)                                   \
     free_aligned_buffer_page_end(dst_argb_opt)                                 \

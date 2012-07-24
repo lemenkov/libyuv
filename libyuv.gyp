@@ -7,12 +7,25 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'variables': {
+     'use_system_libjpeg%': 0,
+  },
   'targets': [
     {
       'target_name': 'libyuv',
       'type': 'static_library',
-      'dependencies': [
-         '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+      'conditions': [
+         ['use_system_libjpeg==0', {
+          'dependencies': [
+             '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+          ],
+        }, {
+          'link_settings': {
+            'libraries': [
+              '-ljpeg',
+            ],
+          },
+        }],
       ],
       'defines': [
         'HAVE_JPEG',
