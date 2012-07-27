@@ -825,10 +825,10 @@ TEST_F(libyuvTest, TestInterpolate) {
   SIMD_ALIGNED(uint8 orig_pixels_1[256][4]);
   SIMD_ALIGNED(uint8 interpolate_pixels[256][4]);
 
-  orig_pixels_0[0][0] = 10u;
-  orig_pixels_0[0][1] = 20u;
-  orig_pixels_0[0][2] = 40u;
-  orig_pixels_0[0][3] = 80u;
+  orig_pixels_0[0][0] = 16u;
+  orig_pixels_0[0][1] = 32u;
+  orig_pixels_0[0][2] = 64u;
+  orig_pixels_0[0][3] = 128u;
   orig_pixels_0[1][0] = 0u;
   orig_pixels_0[1][1] = 0u;
   orig_pixels_0[1][2] = 0u;
@@ -861,10 +861,10 @@ TEST_F(libyuvTest, TestInterpolate) {
 
   ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                   &interpolate_pixels[0][0], 0, 4, 1, 128);
-  EXPECT_EQ(5u, interpolate_pixels[0][0]);
-  EXPECT_EQ(10u, interpolate_pixels[0][1]);
-  EXPECT_EQ(20u, interpolate_pixels[0][2]);
-  EXPECT_EQ(40u, interpolate_pixels[0][3]);
+  EXPECT_EQ(8u, interpolate_pixels[0][0]);
+  EXPECT_EQ(16u, interpolate_pixels[0][1]);
+  EXPECT_EQ(32u, interpolate_pixels[0][2]);
+  EXPECT_EQ(64u, interpolate_pixels[0][3]);
   EXPECT_EQ(0u, interpolate_pixels[1][0]);
   EXPECT_EQ(0u, interpolate_pixels[1][1]);
   EXPECT_EQ(0u, interpolate_pixels[1][2]);
@@ -880,11 +880,18 @@ TEST_F(libyuvTest, TestInterpolate) {
 
   ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                   &interpolate_pixels[0][0], 0, 4, 1, 0);
+  EXPECT_EQ(16u, interpolate_pixels[0][0]);
+  EXPECT_EQ(32u, interpolate_pixels[0][1]);
+  EXPECT_EQ(64u, interpolate_pixels[0][2]);
+  EXPECT_EQ(128u, interpolate_pixels[0][3]);
 
-  EXPECT_EQ(10u, interpolate_pixels[0][0]);
-  EXPECT_EQ(20u, interpolate_pixels[0][1]);
-  EXPECT_EQ(40u, interpolate_pixels[0][2]);
-  EXPECT_EQ(80u, interpolate_pixels[0][3]);
+  ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
+                  &interpolate_pixels[0][0], 0, 4, 1, 192);
+
+  EXPECT_EQ(4u, interpolate_pixels[0][0]);
+  EXPECT_EQ(8u, interpolate_pixels[0][1]);
+  EXPECT_EQ(16u, interpolate_pixels[0][2]);
+  EXPECT_EQ(32u, interpolate_pixels[0][3]);
 
   for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,

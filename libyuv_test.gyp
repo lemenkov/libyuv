@@ -43,6 +43,26 @@
         }],
       ], # conditions
     },
+
+    {
+      'target_name': 'compare',
+      'type': 'executable',
+      'dependencies': [
+        'libyuv.gyp:libyuv',
+      ],
+      'sources': [
+        # sources
+        'util/compare.cc',
+      ],
+      'conditions': [
+        ['OS=="linux"', {
+          'cflags': [
+            '-fexceptions',
+          ],
+        }],
+      ], # conditions
+    },
+
   ], # targets
 }
 
