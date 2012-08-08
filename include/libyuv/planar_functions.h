@@ -232,8 +232,11 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
 // of destination.  Useful for scaling, rotation, mirror, texture mapping.
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
+#if defined(_MSC_VER)
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
+#define HAS_ARGBAFFINEROW_SSE2
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"

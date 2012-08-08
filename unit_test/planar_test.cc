@@ -918,25 +918,28 @@ TEST_F(libyuvTest, TestAffine) {
   EXPECT_EQ(96u, interpolate_pixels_C[128][0]);
   EXPECT_EQ(191u, interpolate_pixels_C[255][3]);
 
-#if defined(_MSC_VER)
+#if defined(HAS_ARGBAFFINEROW_SSE2)
   ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                      uv_step, 256);
   EXPECT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 256 * 4));
 #endif
 
-#if defined(_MSC_VER)
+#if defined(HAS_ARGBAFFINEROW_SSE2)
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
     for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                          uv_step, 256);
     }
-  } else
+  } else {
 #endif
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
-    ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
-                    uv_step, 256);
+    for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+      ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
+                      uv_step, 256);
+    }
+#if defined(HAS_ARGBAFFINEROW_SSE2)
   }
+#endif
 }
 
 }  // namespace libyuv
