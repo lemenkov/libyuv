@@ -3347,8 +3347,78 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 }
 #endif  // HAS_ARGBSHADE_SSE2
 
-#endif  // _M_IX86
+#ifdef HAS_ARGBAFFINEROW_SSE2
+// Copy ARGB pixels from source image with slope to a row of destination.
+__declspec(naked) __declspec(align(16))
+void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
+                        uint8* dst_argb, const float* uv_dudv, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 8]   // src_argb
+    mov        esi, [esp + 12]  // stride
+    mov        edx, [esp + 16]  // dst_argb
+    mov        ecx, [esp + 20]  // pointer to uv_dudv
+    movq       xmm2, qword ptr [ecx]  // uv
+    movq       xmm3, qword ptr [ecx + 8]  // dudv
+    mov        ecx, [esp + 24]  // width
+    shl        esi, 16          // 4, stride
+    add        esi, 4
+    movd       xmm4, esi
+    sub        ecx, 2
+    jl         l2b
 
+    movdqa     xmm0, xmm2    // x0, y0, x1, y1
+    addps      xmm0, xmm3
+    movlhps    xmm2, xmm0
+    pshufd     xmm4, xmm4, 0  // dup 4, stride
+    movlhps    xmm3, xmm3    // dudv
+    addps      xmm3, xmm3    // dudv *= 2
+    pshufd     xmm4, xmm4, 0
+
+     // 2 pixel loop
+    align      4
+  l2:
+    cvttps2dq  xmm1, xmm2    // x, y float to int
+    packssdw   xmm1, xmm1    // x, y as shorts
+    pmaddwd    xmm1, xmm4    // offset = x * 4 + y * stride
+    addps      xmm2, xmm3    // x, y += dx, dy
+    movd       esi, xmm1
+    movdqa     xmm5, xmm1
+    pshufd     xmm5, xmm5, 0x55
+    movd       xmm0, [eax + esi]  // read pixel 0
+    movd       esi, xmm5
+    movd       xmm5, [eax + esi]  // read pixel 1
+    punpckldq  xmm0, xmm5
+    sub        ecx, 2
+    movq       qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
+    jge        l2
+
+  l2b:
+    add        ecx, 2 - 1
+    jl         l1b
+
+    // 1 pixel loop
+    align      4
+  l1:
+    cvttps2dq  xmm1, xmm2    // x, y float to int
+    packssdw   xmm1, xmm1    // x, y as shorts
+    pmaddwd    xmm1, xmm4    // offset = x * 4 + y * stride
+    addps      xmm2, xmm3    // x, y += dx, dy
+    movd       esi, xmm1
+    movd       xmm0, [eax + esi]  // copy a pixel
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jge        l1
+  l1b:
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBAFFINEROW_SSE2
+
+#endif  // _M_IX86
 
 #ifdef __cplusplus
 }  // extern "C"

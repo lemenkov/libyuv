@@ -87,6 +87,7 @@ extern "C" {
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV21TOARGBROW_SSSE3
+#define HAS_ARGBAFFINEROW_SSE2
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -522,6 +523,8 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                     uint32 value);
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value);
+void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
+                        uint8* dst_argb, const float* uv_dudv, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
