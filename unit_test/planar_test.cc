@@ -899,4 +899,44 @@ TEST_F(libyuvTest, TestInterpolate) {
   }
 }
 
+TEST_F(libyuvTest, TestAffine) {
+  SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels_C[256][4]);
+
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      orig_pixels_0[i][j] = i;
+    }
+  }
+
+  float uv_step[4] = { 0.f, 0.f, 0.75f, 0.f };
+
+  ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
+                  uv_step, 256);
+  EXPECT_EQ(0u, interpolate_pixels_C[0][0]);
+  EXPECT_EQ(96u, interpolate_pixels_C[128][0]);
+  EXPECT_EQ(191u, interpolate_pixels_C[255][3]);
+
+#if defined(_MSC_VER)
+  ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
+                     uv_step, 256);
+  EXPECT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 256 * 4));
+#endif
+
+#if defined(_MSC_VER)
+  int has_sse2 = TestCpuFlag(kCpuHasSSE2);
+  if (has_sse2) {
+    for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+      ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
+                         uv_step, 256);
+    }
+  } else
+#endif
+  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
+                    uv_step, 256);
+  }
+}
+
 }  // namespace libyuv

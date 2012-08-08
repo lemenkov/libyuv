@@ -228,6 +228,13 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height, int interpolation);
 
+// Row functions for copying a pixels from a source with a slope to a row
+// of destination.  Useful for scaling, rotation, mirror, texture mapping.
+void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
+                     uint8* dst_argb, const float* uv_dudv, int width);
+void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
+                        uint8* dst_argb, const float* uv_dudv, int width);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

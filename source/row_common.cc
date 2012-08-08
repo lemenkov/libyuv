@@ -984,6 +984,25 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
 #undef REPEAT8
 #undef SHADE
 
+// Copy pixels from rotated source to destination row with a slope.
+void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
+                     uint8* dst_argb, const float* uv_dudv, int width) {
+  // Render a row of pixels from source into a buffer.
+  float uv[2];
+  uv[0] = uv_dudv[0];
+  uv[1] = uv_dudv[1];
+  for (int i = 0; i < width; ++i) {
+    int x = static_cast<int>(uv[0]);
+    int y = static_cast<int>(uv[1]);
+    *reinterpret_cast<uint32*>(dst_argb) =
+        *reinterpret_cast<const uint32*>(src_argb + y * src_argb_stride +
+                                         x * 4);
+    dst_argb += 4;
+    uv[0] += uv_dudv[2];
+    uv[1] += uv_dudv[3];
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

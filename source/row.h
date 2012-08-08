@@ -523,6 +523,9 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                     uint32 value);
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value);
+
+void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
+                     uint8* dst_argb, const float* uv_dudv, int width);
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 
