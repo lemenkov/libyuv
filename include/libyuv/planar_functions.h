@@ -228,11 +228,17 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height, int interpolation);
 
+#if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
+    defined(TARGET_IPHONE_SIMULATOR)
+#define YUV_DISABLE_ASM
+#endif
 // Row functions for copying a pixels from a source with a slope to a row
 // of destination.  Useful for scaling, rotation, mirror, texture mapping.
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
-#if defined(_MSC_VER)
+// The following are available on all x86 platforms:
+#if !defined(YUV_DISABLE_ASM) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 #define HAS_ARGBAFFINEROW_SSE2

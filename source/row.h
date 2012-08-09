@@ -79,6 +79,7 @@ extern "C" {
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #define HAS_ARGBSHADE_SSE2
+#define HAS_ARGBAFFINEROW_SSE2
 #endif
 
 // The following are Windows only:
@@ -87,7 +88,6 @@ extern "C" {
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV21TOARGBROW_SSSE3
-#define HAS_ARGBAFFINEROW_SSE2
 #endif
 
 // The following are disabled when SSSE3 is available:

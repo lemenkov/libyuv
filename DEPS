@@ -27,7 +27,7 @@ deps = {
   # Dependencies used by libjpeg-turbo
   # Optional jpeg decoder
   "trunk/third_party/libjpeg_turbo/":
-    Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@119959",
+    Var("chromium_trunk") + "/deps/third_party/libjpeg_turbo@149334",
 
   # Yasm assember required for libjpeg_turbo
   "trunk/third_party/yasm/":

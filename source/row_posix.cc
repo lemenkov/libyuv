@@ -3219,6 +3219,82 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 }
 #endif  // HAS_ARGBSHADE_SSE2
 
+#ifdef HAS_ARGBAFFINEROW_SSE2
+// Copy ARGB pixels from source image with slope to a row of destination.
+void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
+                        uint8* dst_argb, const float* uv_dudv, int width) {
+  intptr_t src_argb_stride_temp = src_argb_stride;
+  asm volatile (
+    "movq      (%3),%%xmm2                     \n"
+    "movq      0x8(%3),%%xmm3                  \n"
+    "shl       $0x10,%1                        \n"
+    "add       $0x4,%1                         \n"
+    "movd      %1,%%xmm4                       \n"
+    "xor       %1,%1                           \n"  // cleanse upper bits.
+    "sub       $0x2,%4                         \n"
+    "jl        29f                             \n"
+    "movdqa    %%xmm2,%%xmm0                   \n"
+    "addps     %%xmm3,%%xmm0                   \n"
+    "movlhps   %%xmm0,%%xmm2                   \n"
+    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
+    "movlhps   %%xmm3,%%xmm3                   \n"
+    "addps     %%xmm3,%%xmm3                   \n"
+    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
+
+  // 2 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "20:                                         \n"
+    "cvttps2dq %%xmm2,%%xmm1                   \n"
+    "packssdw  %%xmm1,%%xmm1                   \n"
+    "pmaddwd   %%xmm4,%%xmm1                   \n"
+    "addps     %%xmm3,%%xmm2                   \n"
+    "movd      %%xmm1,%1                       \n"
+    "and       $0x0fffffff,%1                  \n"
+    "movdqa    %%xmm1,%%xmm5                   \n"
+    "pshufd    $0x55,%%xmm5,%%xmm5             \n"
+    "movd      (%0,%1,1),%%xmm0                \n"
+    "movd      %%xmm5,%1                       \n"
+    "and       $0x0fffffff,%1                  \n"
+    "movd      (%0,%1,1),%%xmm5                \n"
+    "punpckldq %%xmm5,%%xmm0                   \n"
+    "sub       $0x2,%4                         \n"
+    "movq      %%xmm0,(%2)                     \n"
+    "lea       0x8(%2),%2                      \n"
+    "jge       20b                             \n"
+
+  "29:                                         \n"
+    "add       $0x1,%4                         \n"
+    "jl        19f                             \n"
+
+  // 1 pixel loop                              \n"
+    ".p2align  2                               \n"
+  "10:                                         \n"
+    "cvttps2dq %%xmm2,%%xmm1                   \n"
+    "packssdw  %%xmm1,%%xmm1                   \n"
+    "pmaddwd   %%xmm4,%%xmm1                   \n"
+    "addps     %%xmm3,%%xmm2                   \n"
+    "movd      %%xmm1,%1                       \n"
+    "and       $0x0fffffff,%1                  \n"
+    "movd      (%0,%1,1),%%xmm0                \n"
+    "sub       $0x1,%4                         \n"
+    "movd      %%xmm0,(%2)                     \n"
+    "lea       0x4(%2),%2                      \n"
+    "jge       10b                             \n"
+  "19:                                         \n"
+  : "+r"(src_argb),  // %0
+    "+r"(src_argb_stride_temp),  // %1
+    "+r"(dst_argb),  // %2
+    "+r"(uv_dudv),   // %3
+    "+rm"(width)     // %4
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBAFFINEROW_SSE2
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus
