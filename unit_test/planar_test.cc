@@ -901,8 +901,10 @@ TEST_F(libyuvTest, TestInterpolate) {
 
 TEST_F(libyuvTest, TestAffine) {
   SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
-  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
   SIMD_ALIGNED(uint8 interpolate_pixels_C[256][4]);
+#if defined(HAS_ARGBAFFINEROW_SSE2)
+  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
+#endif
 
   for (int i = 0; i < 256; ++i) {
     for (int j = 0; j < 4; ++j) {
