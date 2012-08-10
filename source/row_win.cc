@@ -3354,13 +3354,14 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width) {
   __asm {
     push       esi
-    mov        eax, [esp + 8]   // src_argb
-    mov        esi, [esp + 12]  // stride
-    mov        edx, [esp + 16]  // dst_argb
-    mov        ecx, [esp + 20]  // pointer to uv_dudv
+    push       edi
+    mov        eax, [esp + 12]   // src_argb
+    mov        esi, [esp + 16]  // stride
+    mov        edx, [esp + 20]  // dst_argb
+    mov        ecx, [esp + 24]  // pointer to uv_dudv
     movq       xmm2, qword ptr [ecx]  // uv
     movq       xmm7, qword ptr [ecx + 8]  // dudv
-    mov        ecx, [esp + 24]  // width
+    mov        ecx, [esp + 28]  // width
     shl        esi, 16          // 4, stride
     add        esi, 4
     movd       xmm5, esi
@@ -3386,24 +3387,24 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     cvttps2dq  xmm1, xmm3    // x, y float to int next 2
     packssdw   xmm0, xmm1    // x, y as 8 shorts
     pmaddwd    xmm0, xmm5    // offsets = x * 4 + y * stride.
-    addps      xmm2, xmm4    // x, y += dx, dy first 2
-    addps      xmm3, xmm4    // x, y += dx, dy next 2
     movd       esi, xmm0
+    pshufd     xmm0, xmm0, 0x39  // shift right
+    movd       edi, xmm0
     pshufd     xmm0, xmm0, 0x39  // shift right
     movd       xmm1, [eax + esi]  // read pixel 0
-    movd       esi, xmm0
-    pshufd     xmm0, xmm0, 0x39  // shift right
-    movd       xmm6, [eax + esi]  // read pixel 1
+    movd       xmm6, [eax + edi]  // read pixel 1
     punpckldq  xmm1, xmm6     // combine pixel 0 and 1
+    addps      xmm2, xmm4    // x, y += dx, dy first 2
+    movq       qword ptr [edx], xmm1
     movd       esi, xmm0
     pshufd     xmm0, xmm0, 0x39  // shift right
+    movd       edi, xmm0
     movd       xmm6, [eax + esi]  // read pixel 2
-    movd       esi, xmm0
-    movd       xmm0, [eax + esi]  // read pixel 3
+    movd       xmm0, [eax + edi]  // read pixel 3
     punpckldq  xmm6, xmm0     // combine pixel 2 and 3
-    punpcklqdq xmm1, xmm6     // combine pixel 0, 1, 2 and 3
+    addps      xmm3, xmm4    // x, y += dx, dy next 2
     sub        ecx, 4
-    movdqu     [edx], xmm1
+    movq       qword ptr 8[edx], xmm6
     lea        edx, [edx + 16]
     jge        l4
 
@@ -3425,6 +3426,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     lea        edx, [edx + 4]
     jge        l1
   l1b:
+    pop        edi
     pop        esi
     ret
   }
