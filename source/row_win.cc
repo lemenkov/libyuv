@@ -3359,53 +3359,66 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     mov        edx, [esp + 16]  // dst_argb
     mov        ecx, [esp + 20]  // pointer to uv_dudv
     movq       xmm2, qword ptr [ecx]  // uv
-    movq       xmm3, qword ptr [ecx + 8]  // dudv
+    movq       xmm7, qword ptr [ecx + 8]  // dudv
     mov        ecx, [esp + 24]  // width
     shl        esi, 16          // 4, stride
     add        esi, 4
-    movd       xmm4, esi
-    sub        ecx, 2
-    jl         l2b
+    movd       xmm5, esi
+    sub        ecx, 4
+    jl         l4b
 
+    // setup for 4 pixel loop
+    pshufd     xmm7, xmm7, 0x44  // dup dudv
+    pshufd     xmm5, xmm5, 0  // dup 4, stride
     movdqa     xmm0, xmm2    // x0, y0, x1, y1
-    addps      xmm0, xmm3
+    addps      xmm0, xmm7
     movlhps    xmm2, xmm0
-    pshufd     xmm4, xmm4, 0  // dup 4, stride
-    movlhps    xmm3, xmm3    // dudv
-    addps      xmm3, xmm3    // dudv *= 2
-    pshufd     xmm4, xmm4, 0
+    movdqa     xmm4, xmm7
+    addps      xmm4, xmm4    // dudv *= 2
+    movdqa     xmm3, xmm2    // x2, y2, x3, y3
+    addps      xmm3, xmm4
+    addps      xmm4, xmm4    // dudv *= 4
 
-     // 2 pixel loop
+    // 4 pixel loop
     align      4
-  l2:
-    cvttps2dq  xmm1, xmm2    // x, y float to int
-    packssdw   xmm1, xmm1    // x, y as shorts
-    pmaddwd    xmm1, xmm4    // offset = x * 4 + y * stride
-    addps      xmm2, xmm3    // x, y += dx, dy
-    movd       esi, xmm1
-    movdqa     xmm5, xmm1
-    pshufd     xmm5, xmm5, 0x55
-    movd       xmm0, [eax + esi]  // read pixel 0
-    movd       esi, xmm5
-    movd       xmm5, [eax + esi]  // read pixel 1
-    punpckldq  xmm0, xmm5
-    sub        ecx, 2
-    movq       qword ptr [edx], xmm0
-    lea        edx, [edx + 8]
-    jge        l2
+  l4:
+    cvttps2dq  xmm0, xmm2    // x, y float to int first 2
+    cvttps2dq  xmm1, xmm3    // x, y float to int next 2
+    packssdw   xmm0, xmm1    // x, y as 8 shorts
+    pmaddwd    xmm0, xmm5    // offsets = x * 4 + y * stride.
+    addps      xmm2, xmm4    // x, y += dx, dy first 2
+    addps      xmm3, xmm4    // x, y += dx, dy next 2
+    movd       esi, xmm0
+    pshufd     xmm0, xmm0, 0x39  // shift right
+    movd       xmm1, [eax + esi]  // read pixel 0
+    movd       esi, xmm0
+    pshufd     xmm0, xmm0, 0x39  // shift right
+    movd       xmm6, [eax + esi]  // read pixel 1
+    punpckldq  xmm1, xmm6     // combine pixel 0 and 1
+    movd       esi, xmm0
+    pshufd     xmm0, xmm0, 0x39  // shift right
+    movd       xmm6, [eax + esi]  // read pixel 2
+    movd       esi, xmm0
+    movd       xmm0, [eax + esi]  // read pixel 3
+    punpckldq  xmm6, xmm0     // combine pixel 2 and 3
+    punpcklqdq xmm1, xmm6     // combine pixel 0, 1, 2 and 3
+    sub        ecx, 4
+    movdqu     [edx], xmm1
+    lea        edx, [edx + 16]
+    jge        l4
 
-  l2b:
-    add        ecx, 2 - 1
+  l4b:
+    add        ecx, 4 - 1
     jl         l1b
 
     // 1 pixel loop
     align      4
   l1:
-    cvttps2dq  xmm1, xmm2    // x, y float to int
-    packssdw   xmm1, xmm1    // x, y as shorts
-    pmaddwd    xmm1, xmm4    // offset = x * 4 + y * stride
-    addps      xmm2, xmm3    // x, y += dx, dy
-    movd       esi, xmm1
+    cvttps2dq  xmm0, xmm2    // x, y float to int
+    packssdw   xmm0, xmm0    // x, y as shorts
+    pmaddwd    xmm0, xmm5    // offset = x * 4 + y * stride
+    addps      xmm2, xmm7    // x, y += dx, dy
+    movd       esi, xmm0
     movd       xmm0, [eax + esi]  // copy a pixel
     sub        ecx, 1
     movd       [edx], xmm0
