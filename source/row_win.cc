@@ -2636,8 +2636,39 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     add        ecx, 1 - 4
     jl         convertloop4b
 
+    test       eax, 15          // unaligned?
+    jne        convertuloop4
+    test       esi, 15          // unaligned?
+    jne        convertuloop4
+
     // 4 pixel loop.
   convertloop4:
+    movdqa     xmm3, [eax]      // src argb
+    lea        eax, [eax + 16]
+    movdqa     xmm0, xmm3       // src argb
+    pxor       xmm3, xmm4       // ~alpha
+    movdqa     xmm2, [esi]      // _r_b
+    pshufb     xmm3, kShuffleAlpha // alpha
+    pand       xmm2, xmm6       // _r_b
+    paddw      xmm3, xmm7       // 256 - alpha
+    pmullw     xmm2, xmm3       // _r_b * alpha
+    movdqa     xmm1, [esi]      // _a_g
+    lea        esi, [esi + 16]
+    psrlw      xmm1, 8          // _a_g
+    por        xmm0, xmm4       // set alpha to 255
+    pmullw     xmm1, xmm3       // _a_g * alpha
+    psrlw      xmm2, 8          // _r_b convert to 8 bits again
+    paddusb    xmm0, xmm2       // + src argb
+    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
+    paddusb    xmm0, xmm1       // + src argb
+    sub        ecx, 4
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    jge        convertloop4
+    jmp        convertloop4b
+
+    // 4 pixel unaligned loop.
+  convertuloop4:
     movdqu     xmm3, [eax]      // src argb
     lea        eax, [eax + 16]
     movdqa     xmm0, xmm3       // src argb
@@ -2659,7 +2690,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     sub        ecx, 4
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    jge        convertloop4
+    jge        convertuloop4
 
   convertloop4b:
     add        ecx, 4 - 1
