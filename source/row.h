@@ -80,6 +80,9 @@ extern "C" {
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #define HAS_ARGBSHADE_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
+// HAS_ARGBBLENDROW_SSE2 may be faster than SSSE3 version on some CPUs, so
+// enable it here instead of LIBYUV_SSSE3_ONLY section.
+#define HAS_ARGBBLENDROW_SSE2
 #endif
 
 // The following are Windows only:
@@ -96,7 +99,6 @@ extern "C" {
     !defined(LIBYUV_SSSE3_ONLY)
 #define HAS_MIRRORROW_SSE2
 #define HAS_ARGBATTENUATE_SSE2
-#define HAS_ARGBBLENDROW_SSE2
 #endif
 
 // The following are available on Neon platforms
