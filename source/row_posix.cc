@@ -3254,6 +3254,9 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 // TODO(fbarchard): Find 64 bit way to avoid masking.
 // TODO(fbarchard): Investigate why 4 pixels is slower than 2 on Core2.
 // Copy ARGB pixels from source image with slope to a row of destination.
+// Caveat - in 64 bit, movd is used with 64 bit gpr due to Mac gcc producing
+// an error if movq is used.  movd  %%xmm0,%1
+
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width) {
   intptr_t src_argb_stride_temp = src_argb_stride;
@@ -3286,7 +3289,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "packssdw  %%xmm1,%%xmm0                   \n"
     "pmaddwd   %%xmm5,%%xmm0                   \n"
 #if defined(__x86_64__)
-    "movq      %%xmm0,%1                       \n"
+    "movd      %%xmm0,%1                       \n"
     "mov       %1,%5                           \n"
     "and       $0x0fffffff,%1                  \n"
     "shr       $32,%5                          \n"
@@ -3303,7 +3306,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "addps     %%xmm4,%%xmm2                   \n"
     "movq      %%xmm1,(%2)                     \n"
 #if defined(__x86_64__)
-    "movq      %%xmm0,%1                       \n"
+    "movd      %%xmm0,%1                       \n"
     "mov       %1,%5                           \n"
     "and       $0x0fffffff,%1                  \n"
     "shr       $32,%5                          \n"
