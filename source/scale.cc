@@ -357,7 +357,7 @@ static void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
     // dst_ptr[3] = (s[6 + st * 0] + s[7 + st * 0]
     //             + s[6 + st * 1] + s[7 + st * 1]
     //             + s[6 + st * 2] + s[7 + st * 2]) / 6
-    "vqrdmulh.s16 q2, q13                      \n"
+    "vqrdmulh.s16 q2, q2, q13                  \n"
     "vmovn.u16    d4, q2                       \n"
 
     // Shuffle 2,3 reg around so that 2 can be added to the
@@ -388,7 +388,7 @@ static void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q15                      \n"
+    "vqrdmulh.s16 q0, q0, q15                  \n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent
@@ -484,7 +484,7 @@ static void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr,
     // Need to divide, but can't downshift as the the value
     //  isn't a power of 2.  So multiply by 65536 / n
     //  and take the upper 16 bits.
-    "vqrdmulh.s16 q0, q13                      \n"
+    "vqrdmulh.s16 q0, q0, q13                  \n"
 
     // Align for table lookup, vtbl requires registers to
     //  be adjacent

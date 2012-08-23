@@ -164,6 +164,7 @@ typedef void (*ARGBBlendRow)(const uint8* src_argb0, const uint8* src_argb1,
 ARGBBlendRow GetARGBBlend();
 
 // Alpha Blend ARGB images and store to destination.
+// Alpha of destination is set to 255.
 int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               const uint8* src_argb1, int src_stride_argb1,
               uint8* dst_argb, int dst_stride_argb,
