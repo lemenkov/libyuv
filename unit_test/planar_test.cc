@@ -11,9 +11,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "libyuv/convert_argb.h"
 #include "libyuv/convert_from.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/convert_argb.h"
+#include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "unit_test/unit_test.h"
@@ -228,6 +229,15 @@ TESTATOPLANAR(ARGB4444, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB, 4, I422, 2, 1)
 // TESTATOPLANAR(ARGB, 4, I444, 1, 1)
 // TODO(fbarchard): Implement and test 411 and 444
+TESTATOPLANAR(YUY2, 2, I420, 2, 2)
+TESTATOPLANAR(UYVY, 2, I420, 2, 2)
+// V210 is 22.5 bpp but 3 bytes will suffice for unittest.
+TESTATOPLANAR(V210, 3, I420, 2, 2)
+TESTATOPLANAR(I400, 1, I420, 2, 2)
+TESTATOPLANAR(BayerBGGR, 1, I420, 2, 2)
+TESTATOPLANAR(BayerRGGB, 1, I420, 2, 2)
+TESTATOPLANAR(BayerGBRG, 1, I420, 2, 2)
+TESTATOPLANAR(BayerGRBG, 1, I420, 2, 2)
 
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
