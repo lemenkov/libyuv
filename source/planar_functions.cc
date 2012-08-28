@@ -54,11 +54,11 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
   }
 }
 
-// Convert I420 to I400.  (calls CopyPlane ignoring u/v)
+// Convert I420 to I400.
 int I420ToI400(const uint8* src_y, int src_stride_y,
+               uint8*, int,  // src_u
+               uint8*, int,  // src_v
                uint8* dst_y, int dst_stride_y,
-               uint8*, int,
-               uint8*, int,
                int width, int height) {
   if (!src_y || !dst_y || width <= 0 || height == 0) {
     return -1;
