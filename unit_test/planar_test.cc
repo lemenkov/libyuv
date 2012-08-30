@@ -27,8 +27,8 @@
 
 namespace libyuv {
 
-#define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)          \
-TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
+#define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, N, NEG) \
+TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_y, kWidth * kHeight);                                    \
@@ -50,7 +50,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
                         src_u, kWidth / SUBSAMP_X,                             \
                         src_v, kWidth / SUBSAMP_X,                             \
                         dst_argb_c, kWidth * BPP_B,                            \
-                        kWidth, kHeight);                                      \
+                        kWidth, NEG##kHeight);                                 \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
@@ -58,7 +58,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
                           src_u, kWidth / SUBSAMP_X,                           \
                           src_v, kWidth / SUBSAMP_X,                           \
                           dst_argb_opt, kWidth * BPP_B,                        \
-                          kWidth, kHeight);                                    \
+                          kWidth, NEG##kHeight);                               \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -79,6 +79,10 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
 
+#define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)          \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ,)          \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, Invert, -)
+
 TESTPLANARTOB(I420, 2, 2, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, BGRA, 4)
 TESTPLANARTOB(I420, 2, 2, ABGR, 4)
@@ -92,7 +96,6 @@ TESTPLANARTOB(I422, 2, 1, ARGB, 4)
 TESTPLANARTOB(I444, 1, 1, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, YUY2, 2)
 TESTPLANARTOB(I420, 2, 2, UYVY, 2)
-// V210 is 22.5 bpp.
 TESTPLANARTOB(I420, 2, 2, V210, 45 / 16)
 TESTPLANARTOB(I420, 2, 2, I400, 1)
 TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1)
@@ -100,9 +103,9 @@ TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1)
 TESTPLANARTOB(I420, 2, 2, BayerGBRG, 1)
 TESTPLANARTOB(I420, 2, 2, BayerGRBG, 1)
 
-
-#define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)        \
-TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
+#define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,       \
+                         N, NEG)                                               \
+TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_y, kWidth * kHeight);                                    \
@@ -121,14 +124,14 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                         src_uv, kWidth / SUBSAMP_X * 2,                        \
                         dst_argb_c, kWidth * BPP_B,                            \
-                        kWidth, kHeight);                                      \
+                        kWidth, NEG##kHeight);                                 \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_uv, kWidth / SUBSAMP_X * 2,                      \
                           dst_argb_opt, kWidth * BPP_B,                        \
-                          kWidth, kHeight);                                    \
+                          kWidth, NEG##kHeight);                               \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -148,13 +151,17 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##_OptVsC) {                           \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
 
+#define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)        \
+    TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ,)        \
+    TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, Invert, -)
+
 TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4)
 TESTBIPLANARTOB(NV21, 2, 2, ARGB, 4)
 TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2)
 TESTBIPLANARTOB(NV21, 2, 2, RGB565, 2)
 
-#define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
-TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
+#define TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, N, NEG) \
+TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N##_OptVsC) {                        \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_argb, (kWidth * BPP_A) * kHeight);                       \
@@ -173,7 +180,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
                         dst_y_c, kWidth,                                       \
                         dst_u_c, kWidth / SUBSAMP_X,                           \
                         dst_v_c, kWidth / SUBSAMP_X,                           \
-                        kWidth, kHeight);                                      \
+                        kWidth, NEG##kHeight);                                 \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
@@ -181,7 +188,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
                           dst_y_opt, kWidth,                                   \
                           dst_u_opt, kWidth / SUBSAMP_X,                       \
                           dst_v_opt, kWidth / SUBSAMP_X,                       \
-                          kWidth, kHeight);                                    \
+                          kWidth, NEG##kHeight);                               \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
@@ -226,6 +233,10 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##_OptVsC) {                           \
   free_aligned_buffer_16(src_argb)                                             \
 }
 
+#define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
+    TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, ,)          \
+    TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, Invert, -)
+
 TESTATOPLANAR(ARGB, 4, I420, 2, 2)
 TESTATOPLANAR(BGRA, 4, I420, 2, 2)
 TESTATOPLANAR(ABGR, 4, I420, 2, 2)
@@ -240,7 +251,6 @@ TESTATOPLANAR(ARGB, 4, I422, 2, 1)
 // TODO(fbarchard): Implement and test 411 and 444
 TESTATOPLANAR(YUY2, 2, I420, 2, 2)
 TESTATOPLANAR(UYVY, 2, I420, 2, 2)
-// V210 is 22.5 bpp.
 TESTATOPLANAR(V210, 45 / 16, I420, 2, 2)
 TESTATOPLANAR(I400, 1, I420, 2, 2)
 TESTATOPLANAR(BayerBGGR, 1, I420, 2, 2)
@@ -248,8 +258,8 @@ TESTATOPLANAR(BayerRGGB, 1, I420, 2, 2)
 TESTATOPLANAR(BayerGBRG, 1, I420, 2, 2)
 TESTATOPLANAR(BayerGRBG, 1, I420, 2, 2)
 
-#define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
-TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
+#define TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, N, NEG)                \
+TEST_F(libyuvTest, FMT_A##To##FMT_B##N##_OptVsC) {                             \
   const int kWidth = 1280;                                                     \
   const int kHeight = 720;                                                     \
   align_buffer_16(src_argb, (kWidth * BPP_A) * kHeight);                       \
@@ -262,13 +272,13 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                                \
                    dst_argb_c, kWidth * BPP_B,                                 \
-                   kWidth, kHeight);                                           \
+                   kWidth, NEG##kHeight);                                      \
   MaskCpuFlags(-1);                                                            \
   const int runs = 1000;                                                       \
   for (int i = 0; i < runs; ++i) {                                             \
     FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
                      dst_argb_opt, kWidth * BPP_B,                             \
-                     kWidth, kHeight);                                         \
+                     kWidth, NEG##kHeight);                                    \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight * kWidth * BPP_B; ++i) {                         \
@@ -284,6 +294,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_OptVsC) {                                \
   free_aligned_buffer_16(dst_argb_c)                                           \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
+#define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, ,)                         \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, Invert, -)
 
 TESTATOB(ARGB, 4, 4, ARGB, 4)
 TESTATOB(ARGB, 4, 4, BGRA, 4)
@@ -293,7 +306,6 @@ TESTATOB(ARGB, 4, 4, RGB24, 3)
 TESTATOB(ARGB, 4, 4, RGB565, 2)
 TESTATOB(ARGB, 4, 4, ARGB1555, 2)
 TESTATOB(ARGB, 4, 4, ARGB4444, 2)
-
 TESTATOB(BGRA, 4, 4, ARGB, 4)
 TESTATOB(ABGR, 4, 4, ARGB, 4)
 TESTATOB(RAW, 3, 3, ARGB, 4)
@@ -301,7 +313,6 @@ TESTATOB(RGB24, 3, 3, ARGB, 4)
 TESTATOB(RGB565, 2, 2, ARGB, 4)
 TESTATOB(ARGB1555, 2, 2, ARGB, 4)
 TESTATOB(ARGB4444, 2, 2, ARGB, 4)
-
 TESTATOB(YUY2, 2, 2, ARGB, 4)
 TESTATOB(UYVY, 2, 2, ARGB, 4)
 TESTATOB(M420, 3 / 2, 1, ARGB, 4)

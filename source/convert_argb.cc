@@ -665,7 +665,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   SIMD_ALIGNED(uint8 rowv[kMaxStride]);
 
   for (int y = 0; y < height; ++y) {
-    YUY2ToUVRow(src_yuy2, src_stride_yuy2, rowu, rowv, width);
+    YUY2ToUVRow(src_yuy2, 0, rowu, rowv, width);
     YUY2ToYRow(src_yuy2, rowy, width);
     I422ToARGBRow(rowy, rowu, rowv, dst_argb, width);
     src_yuy2 += src_stride_yuy2;
@@ -733,9 +733,8 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   SIMD_ALIGNED(uint8 rowy[kMaxStride]);
   SIMD_ALIGNED(uint8 rowu[kMaxStride]);
   SIMD_ALIGNED(uint8 rowv[kMaxStride]);
-
   for (int y = 0; y < height; ++y) {
-    UYVYToUVRow(src_uyvy, src_stride_uyvy, rowu, rowv, width);
+    UYVYToUVRow(src_uyvy, 0, rowu, rowv, width);
     UYVYToYRow(src_uyvy, rowy, width);
     I422ToARGBRow(rowy, rowu, rowv, dst_argb, width);
     src_uyvy += src_stride_uyvy;
