@@ -2219,8 +2219,7 @@ void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
 
 void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2,
                                 int stride_yuy2,
-                                uint8* dst_u, uint8* dst_y,
-                                int pix) {
+                                uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
