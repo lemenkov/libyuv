@@ -19,7 +19,7 @@ namespace libyuv {
 
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
-                      FilterMode f, int rounding, const int benchmark_iterations_) {
+                      FilterMode f, int rounding, int benchmark_iterations_) {
   const int b = 128 * rounding;
   int src_width_uv = (src_width + rounding) >> 1;
   int src_height_uv = (src_height + rounding) >> 1;

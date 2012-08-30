@@ -19,7 +19,7 @@ namespace libyuv {
 
 static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
-                          FilterMode f, const int benchmark_iterations_) {
+                          FilterMode f, int benchmark_iterations_) {
   const int b = 128;
   int src_argb_plane_size = (src_width + b * 2) * (src_height + b * 2) * 4;
   int src_stride_argb = (b * 2 + src_width) * 4;
