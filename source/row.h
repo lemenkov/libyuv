@@ -70,7 +70,6 @@ extern "C" {
 #define HAS_UYVYTOUVROW_SSE2
 #define HAS_UYVYTOYROW_SSE2
 #define HAS_YTOARGBROW_SSE2
-#define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBSEPIAROW_SSSE3
@@ -455,33 +454,48 @@ void I422ToABGRRow_Any_NEON(const uint8* y_buf,
 
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
 void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
-                      uint8* dst_u, uint8* dst_y, int pix);
+                      uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
+                         uint8* dst_u, uint8* dst_v, int pix);
 void YUY2ToYRow_Unaligned_SSE2(const uint8* src_yuy2,
                                uint8* dst_y, int pix);
 void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2, int stride_yuy2,
-                                uint8* dst_u, uint8* dst_y, int pix);
+                                uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToUV422Row_Unaligned_SSE2(const uint8* src_yuy2,
+                                   uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int pix);
+void YUY2ToUVRow_C(const uint8* src_yuy2, int stride_yuy2,
+                   uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToUV422Row_C(const uint8* src_yuy2,
+                      uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToYRow_Any_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
+void YUY2ToUVRow_Any_SSE2(const uint8* src_yuy2, int stride_yuy2,
+                          uint8* dst_u, uint8* dst_v, int pix);
+void YUY2ToUV422Row_Any_SSE2(const uint8* src_yuy2,
+                             uint8* dst_u, uint8* dst_v, int pix);
 
 void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
 void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
-                      uint8* dst_u, uint8* dst_y, int pix);
+                      uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
+                         uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToYRow_Unaligned_SSE2(const uint8* src_uyvy,
                                uint8* dst_y, int pix);
 void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
-                                uint8* dst_u, uint8* dst_y, int pix);
-
-void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
-                   uint8* dst_u, uint8* dst_v, int pix);
-void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int pix);
-void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
-                   uint8* dst_u, uint8* dst_v, int pix);
+                                uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToUV422Row_Unaligned_SSE2(const uint8* src_uyvy,
+                                   uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToYRow_C(const uint8* src_uyvy, uint8* dst_y, int pix);
-
-void YUY2ToUVRow_Any_SSE2(const uint8* src_yuy2, int src_stride_yuy2,
-                          uint8* dst_u, uint8* dst_v, int pix);
-void YUY2ToYRow_Any_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
-void UYVYToUVRow_Any_SSE2(const uint8* src_uyvy, int src_stride_uyvy,
-                          uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToUVRow_C(const uint8* src_uyvy, int stride_uyvy,
+                   uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToUV422Row_C(const uint8* src_uyvy,
+                      uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToYRow_Any_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix);
+void UYVYToUVRow_Any_SSE2(const uint8* src_uyvy, int stride_uyvy,
+                          uint8* dst_u, uint8* dst_v, int pix);
+void UYVYToUV422Row_Any_SSE2(const uint8* src_uyvy,
+                             uint8* dst_u, uint8* dst_v, int pix);
+
 
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);

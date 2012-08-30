@@ -621,10 +621,10 @@ void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }
 
-// Filter 2 rows of YUY2 UV's (422) into U and V (420)
+// Filter 2 rows of YUY2 UV's (422) into U and V (420).
 void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
                    uint8* dst_u, uint8* dst_v, int width) {
-  // Output a row of UV values, filtering 2 rows of YUY2
+  // Output a row of UV values, filtering 2 rows of YUY2.
   for (int x = 0; x < width; x += 2) {
     dst_u[0] = (src_yuy2[1] + src_yuy2[src_stride_yuy2 + 1] + 1) >> 1;
     dst_v[0] = (src_yuy2[3] + src_yuy2[src_stride_yuy2 + 3] + 1) >> 1;
@@ -634,8 +634,22 @@ void YUY2ToUVRow_C(const uint8* src_yuy2, int src_stride_yuy2,
   }
 }
 
+// Copy row of YUY2 UV's (422) into U and V (422).
+void YUY2ToUV422Row_C(const uint8* src_yuy2,
+                      uint8* dst_u, uint8* dst_v, int width) {
+  // Output a row of UV values.
+  for (int x = 0; x < width; x += 2) {
+    dst_u[0] = src_yuy2[1];
+    dst_v[0] = src_yuy2[3];
+    src_yuy2 += 4;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
+// Copy row of YUY2 Y's (422) into Y (420/422).
 void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
-  // Copy a row of yuy2 Y values
+  // Output a row of Y values.
   for (int x = 0; x < width - 1; x += 2) {
     dst_y[x] = src_yuy2[0];
     dst_y[x + 1] = src_yuy2[2];
@@ -646,9 +660,10 @@ void YUY2ToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
   }
 }
 
+// Filter 2 rows of UYVY UV's (422) into U and V (420).
 void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
                    uint8* dst_u, uint8* dst_v, int width) {
-  // Copy a row of uyvy UV values
+  // Output a row of UV values.
   for (int x = 0; x < width; x += 2) {
     dst_u[0] = (src_uyvy[0] + src_uyvy[src_stride_uyvy + 0] + 1) >> 1;
     dst_v[0] = (src_uyvy[2] + src_uyvy[src_stride_uyvy + 2] + 1) >> 1;
@@ -658,15 +673,29 @@ void UYVYToUVRow_C(const uint8* src_uyvy, int src_stride_uyvy,
   }
 }
 
-void UYVYToYRow_C(const uint8* src_yuy2, uint8* dst_y, int width) {
-  // Copy a row of uyvy Y values
+// Copy row of UYVY UV's (422) into U and V (422).
+void UYVYToUV422Row_C(const uint8* src_uyvy,
+                      uint8* dst_u, uint8* dst_v, int width) {
+  // Output a row of UV values.
+  for (int x = 0; x < width; x += 2) {
+    dst_u[0] = src_uyvy[0];
+    dst_v[0] = src_uyvy[2];
+    src_uyvy += 4;
+    dst_u += 1;
+    dst_v += 1;
+  }
+}
+
+// Copy row of UYVY Y's (422) into Y (420/422).
+void UYVYToYRow_C(const uint8* src_uyvy, uint8* dst_y, int width) {
+  // Output a row of Y values.
   for (int x = 0; x < width - 1; x += 2) {
-    dst_y[x] = src_yuy2[1];
-    dst_y[x + 1] = src_yuy2[3];
-    src_yuy2 += 4;
+    dst_y[x] = src_uyvy[1];
+    dst_y[x + 1] = src_uyvy[3];
+    src_uyvy += 4;
   }
   if (width & 1) {
-    dst_y[width - 1] = src_yuy2[1];
+    dst_y[width - 1] = src_uyvy[1];
   }
 }
 
@@ -910,12 +939,12 @@ YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
 YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
 #undef YANY
 
-#define UVANY(NAMEANY, ARGBTOUV_SSE, ARGBTOUV_C, BPP)                          \
+#define UVANY(NAMEANY, ANYTOUV_SSE, ANYTOUV_C, BPP)                            \
     void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~15;                                                     \
-      ARGBTOUV_SSE(src_argb, src_stride_argb, dst_u, dst_v, n);                \
-      ARGBTOUV_C(src_argb  + n * BPP, src_stride_argb,                         \
+      ANYTOUV_SSE(src_argb, src_stride_argb, dst_u, dst_v, n);                 \
+      ANYTOUV_C(src_argb  + n * BPP, src_stride_argb,                          \
                  dst_u + (n >> 1),                                             \
                  dst_v + (n >> 1),                                             \
                  width & 15);                                                  \
@@ -927,6 +956,24 @@ UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
 UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
 UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
 #undef UVANY
+
+#define UV422ANY(NAMEANY, ANYTOUV_SSE, ANYTOUV_C, BPP)                         \
+    void NAMEANY(const uint8* src_argb,                                        \
+                 uint8* dst_u, uint8* dst_v, int width) {                      \
+      int n = width & ~15;                                                     \
+      ANYTOUV_SSE(src_argb, dst_u, dst_v, n);                                  \
+      ANYTOUV_C(src_argb  + n * BPP,                                           \
+                 dst_u + (n >> 1),                                             \
+                 dst_v + (n >> 1),                                             \
+                 width & 15);                                                  \
+    }
+
+UV422ANY(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_Unaligned_SSE2,               \
+         YUY2ToUV422Row_C, 2)
+UV422ANY(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_Unaligned_SSE2,               \
+         UYVYToUV422Row_C, 2)
+#undef UV422ANY
+
 #endif
 
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,

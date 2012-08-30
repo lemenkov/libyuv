@@ -618,21 +618,21 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
     src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
     src_stride_yuy2 = -src_stride_yuy2;
   }
-  void (*YUY2ToUVRow)(const uint8* src_yuy2, int src_stride_yuy2,
-                      uint8* dst_u, uint8* dst_v, int pix) = YUY2ToUVRow_C;
+  void (*YUY2ToUV422Row)(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
+      int pix) = YUY2ToUV422Row_C;
   void (*YUY2ToYRow)(const uint8* src_yuy2,
                      uint8* dst_y, int pix) = YUY2ToYRow_C;
 #if defined(HAS_YUY2TOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     if (width > 16) {
-      YUY2ToUVRow = YUY2ToUVRow_Any_SSE2;
+      YUY2ToUV422Row = YUY2ToUV422Row_Any_SSE2;
       YUY2ToYRow = YUY2ToYRow_Any_SSE2;
     }
     if (IS_ALIGNED(width, 16)) {
-      YUY2ToUVRow = YUY2ToUVRow_Unaligned_SSE2;
+      YUY2ToUV422Row = YUY2ToUV422Row_Unaligned_SSE2;
       YUY2ToYRow = YUY2ToYRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
-        YUY2ToUVRow = YUY2ToUVRow_SSE2;
+        YUY2ToUV422Row = YUY2ToUV422Row_SSE2;
         YUY2ToYRow = YUY2ToYRow_SSE2;
       }
     }
@@ -665,7 +665,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   SIMD_ALIGNED(uint8 rowv[kMaxStride]);
 
   for (int y = 0; y < height; ++y) {
-    YUY2ToUVRow(src_yuy2, 0, rowu, rowv, width);
+    YUY2ToUV422Row(src_yuy2, rowu, rowv, width);
     YUY2ToYRow(src_yuy2, rowy, width);
     I422ToARGBRow(rowy, rowu, rowv, dst_argb, width);
     src_yuy2 += src_stride_yuy2;
@@ -688,21 +688,21 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
     src_uyvy = src_uyvy + (height - 1) * src_stride_uyvy;
     src_stride_uyvy = -src_stride_uyvy;
   }
-  void (*UYVYToUVRow)(const uint8* src_uyvy, int src_stride_uyvy,
-                      uint8* dst_u, uint8* dst_v, int pix) = UYVYToUVRow_C;
+  void (*UYVYToUV422Row)(const uint8* src_uyvy, uint8* dst_u, uint8* dst_v,
+      int pix) = UYVYToUV422Row_C;
   void (*UYVYToYRow)(const uint8* src_uyvy,
                      uint8* dst_y, int pix) = UYVYToYRow_C;
 #if defined(HAS_UYVYTOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     if (width > 16) {
-      UYVYToUVRow = UYVYToUVRow_Any_SSE2;
+      UYVYToUV422Row = UYVYToUV422Row_Any_SSE2;
       UYVYToYRow = UYVYToYRow_Any_SSE2;
     }
     if (IS_ALIGNED(width, 16)) {
-      UYVYToUVRow = UYVYToUVRow_Unaligned_SSE2;
+      UYVYToUV422Row = UYVYToUV422Row_Unaligned_SSE2;
       UYVYToYRow = UYVYToYRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_uyvy, 16) && IS_ALIGNED(src_stride_uyvy, 16)) {
-        UYVYToUVRow = UYVYToUVRow_SSE2;
+        UYVYToUV422Row = UYVYToUV422Row_SSE2;
         UYVYToYRow = UYVYToYRow_SSE2;
       }
     }
@@ -733,8 +733,9 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   SIMD_ALIGNED(uint8 rowy[kMaxStride]);
   SIMD_ALIGNED(uint8 rowu[kMaxStride]);
   SIMD_ALIGNED(uint8 rowv[kMaxStride]);
+
   for (int y = 0; y < height; ++y) {
-    UYVYToUVRow(src_uyvy, 0, rowu, rowv, width);
+    UYVYToUV422Row(src_uyvy, rowu, rowv, width);
     UYVYToYRow(src_uyvy, rowy, width);
     I422ToARGBRow(rowy, rowu, rowv, dst_argb, width);
     src_uyvy += src_stride_uyvy;
