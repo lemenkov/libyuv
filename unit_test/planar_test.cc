@@ -53,8 +53,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
                         dst_argb_c, kStride,                                   \
                         kWidth, NEG kHeight);                                  \
   MaskCpuFlags(-1);                                                            \
-  const int runs = 1000;                                                       \
-  for (int i = 0; i < runs; ++i) {                                             \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_u, kWidth / SUBSAMP_X,                           \
                           src_v, kWidth / SUBSAMP_X,                           \
@@ -127,8 +126,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
                         dst_argb_c, kWidth * BPP_B,                            \
                         kWidth, NEG kHeight);                                  \
   MaskCpuFlags(-1);                                                            \
-  const int runs = 1000;                                                       \
-  for (int i = 0; i < runs; ++i) {                                             \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_uv, kWidth / SUBSAMP_X * 2,                      \
                           dst_argb_opt, kWidth * BPP_B,                        \
@@ -184,8 +182,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N##_OptVsC) {                        \
                         dst_v_c, kWidth / SUBSAMP_X,                           \
                         kWidth, NEG kHeight);                                  \
   MaskCpuFlags(-1);                                                            \
-  const int runs = 1000;                                                       \
-  for (int i = 0; i < runs; ++i) {                                             \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_PLANAR(src_argb, kStride,                                   \
                           dst_y_opt, kWidth,                                   \
                           dst_u_opt, kWidth / SUBSAMP_X,                       \
@@ -276,8 +273,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N##_OptVsC) {                             \
                    dst_argb_c, kWidth * BPP_B,                                 \
                    kWidth, NEG kHeight);                                       \
   MaskCpuFlags(-1);                                                            \
-  const int runs = 1000;                                                       \
-  for (int i = 0; i < runs; ++i) {                                             \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_B(src_argb, kWidth * STRIDE_A,                              \
                      dst_argb_opt, kWidth * BPP_B,                             \
                      kWidth, NEG kHeight);                                     \
@@ -322,7 +318,7 @@ TESTATOB(M420, 3 / 2, 1, ARGB, 4)
 #define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                   \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
   srandom(time(NULL));                                                         \
-  for (int times = 0; times < 1000; ++times) {                                 \
+  for (int times = 0; times < benchmark_iterations_; ++times) {                \
     const int kWidth = (random() & 63) + 1;                                    \
     const int kHeight = (random() & 31) + 1;                                   \
     align_buffer_page_end(src_argb, (kWidth * BPP_A) * kHeight);               \
@@ -422,7 +418,7 @@ TEST_F(libyuvTest, TestAttenuate) {
   }
   ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 256, 1);
   ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 256, 1);
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
   }
   for (int i = 0; i < 256; ++i) {
@@ -522,7 +518,7 @@ TEST_F(libyuvTest, TestARGBGray) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBGray(&orig_pixels[0][0], 0, 0, 0, 256, 1);
   }
 }
@@ -577,7 +573,7 @@ TEST_F(libyuvTest, TestARGBGrayTo) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 256, 1);
   }
 }
@@ -631,7 +627,7 @@ TEST_F(libyuvTest, TestARGBSepia) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBSepia(&orig_pixels[0][0], 0, 0, 0, 256, 1);
   }
 }
@@ -692,7 +688,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 256, 1);
   }
 }
@@ -750,7 +746,7 @@ TEST_F(libyuvTest, TestARGBColorTable) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
   }
 }
@@ -773,7 +769,7 @@ TEST_F(libyuvTest, TestARGBQuantize) {
     EXPECT_EQ(i / 3 / 8 * 8 + 8 / 2, orig_pixels[i][2]);
     EXPECT_EQ(i, orig_pixels[i][3]);
   }
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBQuantize(&orig_pixels[0][0], 0,
                  (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 256, 1);
   }
@@ -797,7 +793,7 @@ TEST_F(libyuvTest, TestARGBMirror) {
     EXPECT_EQ(i / 3, dst_pixels[255 - i][2]);
     EXPECT_EQ(i / 4, dst_pixels[255 - i][3]);
   }
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
   }
 }
@@ -846,7 +842,7 @@ TEST_F(libyuvTest, TestShade) {
   EXPECT_EQ(20u, shade_pixels[0][2]);
   EXPECT_EQ(40u, shade_pixels[0][3]);
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,
               0x80808080);
   }
@@ -925,7 +921,7 @@ TEST_F(libyuvTest, TestInterpolate) {
   EXPECT_EQ(16u, interpolate_pixels[0][2]);
   EXPECT_EQ(32u, interpolate_pixels[0][3]);
 
-  for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                     &interpolate_pixels[0][0], 0, 256, 1, 128);
   }
@@ -961,13 +957,13 @@ TEST_F(libyuvTest, TestAffine) {
 #if defined(HAS_ARGBAFFINEROW_SSE2)
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
-    for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                          uv_step, 256);
     }
   } else {
 #endif
-    for (int i = 0; i < 1000 * 1280 * 720 / 256; ++i) {
+    for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
       ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
                       uv_step, 256);
     }
