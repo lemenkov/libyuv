@@ -19,7 +19,7 @@ namespace libyuv {
 
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
-                      FilterMode f, int rounding, int benchmark_iterations_) {
+                      FilterMode f, int rounding, int benchmark_iterations) {
   const int b = 128 * rounding;
   int src_width_uv = (src_width + rounding) >> 1;
   int src_height_uv = (src_height + rounding) >> 1;
@@ -88,7 +88,7 @@ static int TestFilter(int src_width, int src_height,
 
   MaskCpuFlags(0);  // Disable all CPU optimization.
   double c_time = get_time();
-  for (i = 0; i < benchmark_iterations_; ++i) {
+  for (i = 0; i < benchmark_iterations; ++i) {
     I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
               src_u + (src_stride_uv * b) + b, src_stride_uv,
               src_v + (src_stride_uv * b) + b, src_stride_uv,
@@ -98,11 +98,11 @@ static int TestFilter(int src_width, int src_height,
               dst_v_c + (dst_stride_uv * b) + b, dst_stride_uv,
               dst_width, dst_height, f);
   }
-  c_time = (get_time() - c_time) / benchmark_iterations_;
+  c_time = (get_time() - c_time) / benchmark_iterations;
 
   MaskCpuFlags(-1);  // Enable all CPU optimization.
   double opt_time = get_time();
-  for (i = 0; i < benchmark_iterations_; ++i) {
+  for (i = 0; i < benchmark_iterations; ++i) {
     I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
               src_u + (src_stride_uv * b) + b, src_stride_uv,
               src_v + (src_stride_uv * b) + b, src_stride_uv,
@@ -112,7 +112,7 @@ static int TestFilter(int src_width, int src_height,
               dst_v_opt + (dst_stride_uv * b) + b, dst_stride_uv,
               dst_width, dst_height, f);
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  opt_time = (get_time() - opt_time) / benchmark_iterations;
 
   // Report performance of C vs OPT
   printf("filter %d - %8d us C - %8d us OPT\n",
@@ -186,7 +186,7 @@ TEST_F(libyuvTest, ScaleDownBy4) {
     int max_diff = TestFilter(src_width, src_height,
                          dst_width, dst_height,
                          static_cast<FilterMode>(f), 1, benchmark_iterations_);
-    EXPECT_LE(max_diff, 2);;  // This is the only scale factor with error of 2.
+    EXPECT_LE(max_diff, 2);  // This is the only scale factor with error of 2.
   }
 }
 
