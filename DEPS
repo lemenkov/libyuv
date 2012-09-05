@@ -36,6 +36,12 @@ deps = {
   "tools/gyp":
     From("chromium_deps", "src/tools/gyp"),
 
+  "tools/python":
+    Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
+
+  "tools/valgrind":
+    Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
+
   # Needed by build/common.gypi.
   "tools/win/supalink":
     Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
