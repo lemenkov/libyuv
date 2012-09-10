@@ -139,7 +139,7 @@ typedef int32 vec32[4];
 typedef uint32 uvec32[4];
 #endif
 
-#if defined(__APPLE__) || defined(__x86_64__)
+#if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
 #else
 #define OMITFP __attribute__((optimize("omit-frame-pointer")))
