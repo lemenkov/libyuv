@@ -12,8 +12,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  # r154697 updates yasm to 1.2 with warning fixes.
-  "chromium_revision": "154697",
+  "chromium_revision": "152335",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -51,11 +50,12 @@ deps = {
     From("chromium_deps", "src/third_party/libjpeg_turbo"),
 
   # Yasm assember required for libjpeg_turbo
+  # TODO(fbarchard): Switch back to chromium version.
   "third_party/yasm":
-    Var("chromium_trunk") + "/src/third_party/yasm@" + Var("chromium_revision"),
+    Var("chromium_trunk") + "/src/third_party/yasm@154708",
 
   "third_party/yasm/source/patched-yasm":
-    From("chromium_deps", "src/third_party/yasm/source/patched-yasm"),
+    Var("chromium_trunk") + "/deps/third_party/yasm/patched-yasm@154708",
 }
 
 deps_os = {
@@ -64,9 +64,11 @@ deps_os = {
     "third_party/cygwin":
       (Var("googlecode_url") % "webrtc") + "/deps/third_party/cygwin@2672",
 
-     # Used by libjpeg-turbo
-     "third_party/yasm/binaries":
-       From("chromium_deps", "src/third_party/yasm/binaries"),
+    # Used by libjpeg-turbo.
+    # TODO(fbarchard): Remove binaries and run yasm from build folder.
+    "third_party/yasm/binaries":
+      Var("chromium_trunk") + "/deps/third_party/yasm/binaries@154708",
+    "third_party/yasm": None,
   },
   "unix": {
     "third_party/gold":
