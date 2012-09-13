@@ -583,7 +583,7 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
                uint8* dst_frame, int dst_stride_frame,
                int width, int height) {
   if (!src_y || !src_u || !src_v || !dst_frame ||
-      width <= 0 || height <= 0 ) {
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
