@@ -848,11 +848,15 @@ TEST_F(libyuvTest, TestShade) {
   }
 }
 
-// TODO(fbarchard): Fix asan warning in this test.  libyuv bug #81
-TEST_F(libyuvTest, DISABLED_TestInterpolate) {
+TEST_F(libyuvTest, TestInterpolate) {
+  // Interpolate internally used bilinear filtering, which duplicates the last
+  // value, but the interpolate saves and restores it.  The buffer must be
+  // padded by 16 extra bytes.  TODO(fbarchard): Reimplement interpolate with
+  // code that does not duplicate the last value and remove kPad.
+  const int kPad = 16;
   SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
   SIMD_ALIGNED(uint8 orig_pixels_1[256][4]);
-  SIMD_ALIGNED(uint8 interpolate_pixels[256][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels[256 + kPad][4]);
 
   orig_pixels_0[0][0] = 16u;
   orig_pixels_0[0][1] = 32u;
