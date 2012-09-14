@@ -88,6 +88,11 @@ static const uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
+// Shuffle table for converting RGBA to ARGB.
+static const uvec8 kShuffleMaskRGBAToARGB = {
+  1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
+};
+
 // Shuffle table for converting ARGB to RGB24.
 static const uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -154,6 +159,27 @@ __asm {
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
     movdqa    xmm5, kShuffleMaskBGRAToARGB
+    sub       edx, eax
+
+    align      16
+ convertloop:
+    movdqa    xmm0, [eax]
+    pshufb    xmm0, xmm5
+    sub       ecx, 4
+    movdqa    [eax + edx], xmm0
+    lea       eax, [eax + 16]
+    jg        convertloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_rgba
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm5, kShuffleMaskRGBAToARGB
     sub       edx, eax
 
     align      16

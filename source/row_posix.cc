@@ -98,6 +98,11 @@ CONST uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
+// Shuffle table for converting RGBA to ARGB.
+CONST uvec8 kShuffleMaskRGBAToARGB = {
+  1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
+};
+
 // Shuffle table for converting ARGB to RGB24.
 CONST uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -178,6 +183,30 @@ void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   : "m"(kShuffleMaskBGRAToARGB)  // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
+  );
+}
+
+void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix) {
+  asm volatile (
+    "movdqa    %3,%%xmm5                       \n"
+    "sub       %0,%1                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+
+  : "+r"(src_rgba),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "m"(kShuffleMaskRGBAToARGB)  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm5"

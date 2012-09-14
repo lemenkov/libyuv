@@ -51,6 +51,22 @@ void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
   }
 }
 
+void RGBAToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    // To support in-place conversion.
+    uint8 a = src_abgr[0];
+    uint8 b = src_abgr[1];
+    uint8 g = src_abgr[2];
+    uint8 r = src_abgr[3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    dst_argb += 4;
+    src_abgr += 4;
+  }
+}
+
 void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb24[0];

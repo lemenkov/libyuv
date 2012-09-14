@@ -317,6 +317,39 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   return 0;
 }
 
+// Convert RGBA to ARGB.
+int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (!src_rgba || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
+    src_stride_rgba = -src_stride_rgba;
+  }
+  void (*RGBAToARGBRow)(const uint8* src_rgba, uint8* dst_argb, int pix) =
+      RGBAToARGBRow_C;
+#if defined(HAS_RGBATOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_rgba, 16) && IS_ALIGNED(src_stride_rgba, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    RGBAToARGBRow = RGBAToARGBRow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    RGBAToARGBRow(src_rgba, dst_argb, width);
+    src_rgba += src_stride_rgba;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Convert RAW to ARGB.
 int RAWToARGB(const uint8* src_raw, int src_stride_raw,
               uint8* dst_argb, int dst_stride_argb,
@@ -1003,6 +1036,12 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
     case FOURCC_ABGR:
       src = sample + (src_width * crop_y + crop_x) * 4;
       r = ABGRToARGB(src, src_width * 4,
+                     dst_argb, argb_stride,
+                     dst_width, inv_dst_height);
+      break;
+    case FOURCC_RGBA:
+      src = sample + (src_width * crop_y + crop_x) * 4;
+      r = RGBAToARGB(src, src_width * 4,
                      dst_argb, argb_stride,
                      dst_width, inv_dst_height);
       break;

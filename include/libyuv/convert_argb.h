@@ -122,6 +122,11 @@ int ABGRToARGB(const uint8* src_frame, int src_stride_frame,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// RGBA little endian (abgr in memory) to ARGB
+int RGBAToARGB(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Deprecated function name.
 #define BG24ToARGB RGB24ToARGB
 
