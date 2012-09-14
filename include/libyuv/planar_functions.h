@@ -68,6 +68,11 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
 #define ARGBToBGRA BGRAToARGB
 #define ARGBToABGR ABGRToARGB
 
+// Convert ARGB To RGBA.
+int ARGBToRGBA(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert ARGB To RGB24.
 int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_rgb24, int dst_stride_rgb24,

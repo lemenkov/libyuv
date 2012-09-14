@@ -296,6 +296,39 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Convert ARGB to RGBA.
+int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_rgba, int dst_stride_rgba,
+               int width, int height) {
+  if (!src_argb || !dst_rgba ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToRGBARow)(const uint8* src_argb, uint8* dst_rgba, int pix) =
+      ARGBToRGBARow_C;
+#if defined(HAS_ARGBTORGBAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_rgba, 16) && IS_ALIGNED(dst_stride_rgba, 16)) {
+    ARGBToRGBARow = ARGBToRGBARow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBToRGBARow(src_argb, dst_rgba, width);
+    src_argb += src_stride_argb;
+    dst_rgba += dst_stride_rgba;
+  }
+  return 0;
+}
+
 // Convert ARGB To RGB24.
 int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_rgb24, int dst_stride_rgb24,

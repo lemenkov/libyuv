@@ -38,6 +38,7 @@ extern "C" {
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
 #define HAS_RGBATOARGBROW_SSSE3
+#define HAS_ARGBTORGBAROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
 #define HAS_ARGBATTENUATEROW_SSSE3
@@ -232,12 +233,14 @@ void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix);
 void ARGB1555ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
 void ARGB4444ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int pix);
 
+void ARGBToRGBARow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
+void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);

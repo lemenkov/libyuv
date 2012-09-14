@@ -139,6 +139,21 @@ void ARGB4444ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width) {
   }
 }
 
+void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  for (int x = 0; x < width; ++x) {
+    uint8 b = src_argb[0];
+    uint8 g = src_argb[1];
+    uint8 r = src_argb[2];
+    uint8 a = src_argb[3];
+    dst_rgb[0] = a;
+    dst_rgb[1] = b;
+    dst_rgb[2] = g;
+    dst_rgb[3] = r;
+    dst_rgb += 4;
+    src_argb += 4;
+  }
+}
+
 void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   for (int x = 0; x < width; ++x) {
     uint8 b = src_argb[0];
