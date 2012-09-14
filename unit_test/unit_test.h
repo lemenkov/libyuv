@@ -66,7 +66,7 @@ class libyuvTest : public ::testing::Test {
   const int rotate_max_w_;
   const int rotate_max_h_;
 
-  const int benchmark_iterations_;
+  int benchmark_iterations_;
   const int benchmark_width_;
   const int benchmark_height_;
 };
