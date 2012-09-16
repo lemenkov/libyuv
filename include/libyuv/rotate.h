@@ -31,7 +31,7 @@ enum RotationMode {
   kRotateCounterClockwise = 270,
 };
 
-// Rotate I420 frame
+// Rotate I420 frame.
 int I420Rotate(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -40,7 +40,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int src_width, int src_height, RotationMode mode);
 
-// Rotate NV12 input and store in I420
+// Rotate NV12 input and store in I420.
 int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      const uint8* src_uv, int src_stride_uv,
                      uint8* dst_y, int dst_stride_y,

@@ -65,6 +65,10 @@ typedef signed char int8;
     defined(__i386__) || defined(_M_IX86)
 #define CPU_X86 1
 #endif
+// Detect compiler is for arm.
+#if defined(__arm__) || defined(_M_ARM)
+#define CPU_ARM 1
+#endif
 
 #define ALIGNP(p, t) \
   (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \

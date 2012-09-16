@@ -3560,6 +3560,71 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
+// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
+void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                              ptrdiff_t src_stride, int dst_width,
+                              int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x40,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm0                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "pmaddubsw %%xmm5,%%xmm0                   \n"
+    "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+  "4:                                          \n"
+    ".p2align  4                               \n"
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+r"(dst_width),   // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm5"
+#endif
+  );
+}
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

@@ -28,7 +28,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Alias
+// Alias.
 #define ARGBToARGB ARGBCopy
 
 // Copy ARGB to ARGB.
@@ -112,17 +112,17 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
 //                uint8* dst_argb, int dst_stride_argb,
 //                int width, int height);
 
-// BGRA little endian (argb in memory) to ARGB
+// BGRA little endian (argb in memory) to ARGB.
 int BGRAToARGB(const uint8* src_frame, int src_stride_frame,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// ABGR little endian (rgba in memory) to ARGB
+// ABGR little endian (rgba in memory) to ARGB.
 int ABGRToARGB(const uint8* src_frame, int src_stride_frame,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// RGBA little endian (abgr in memory) to ARGB
+// RGBA little endian (abgr in memory) to ARGB.
 int RGBAToARGB(const uint8* src_frame, int src_stride_frame,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
@@ -130,27 +130,27 @@ int RGBAToARGB(const uint8* src_frame, int src_stride_frame,
 // Deprecated function name.
 #define BG24ToARGB RGB24ToARGB
 
-// RGB little endian (bgr in memory) to ARGB
+// RGB little endian (bgr in memory) to ARGB.
 int RGB24ToARGB(const uint8* src_frame, int src_stride_frame,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height);
 
-// RGB big endian (rgb in memory) to ARGB
+// RGB big endian (rgb in memory) to ARGB.
 int RAWToARGB(const uint8* src_frame, int src_stride_frame,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
 
-// RGB16 (RGBP fourcc) little endian to ARGB
+// RGB16 (RGBP fourcc) little endian to ARGB.
 int RGB565ToARGB(const uint8* src_frame, int src_stride_frame,
                  uint8* dst_argb, int dst_stride_argb,
                  int width, int height);
 
-// RGB15 (RGBO fourcc) little endian to ARGB
+// RGB15 (RGBO fourcc) little endian to ARGB.
 int ARGB1555ToARGB(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height);
 
-// RGB12 (R444 fourcc) little endian to ARGB
+// RGB12 (R444 fourcc) little endian to ARGB.
 int ARGB4444ToARGB(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height);
@@ -164,7 +164,7 @@ int MJPGToARGB(const uint8* sample, size_t sample_size,
                int dst_width, int dst_height);
 #endif
 
-// Note Bayer formats (BGGR) to ARGB are in format_conversion.h
+// Note Bayer formats (BGGR) to ARGB are in format_conversion.h.
 
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.

@@ -20,9 +20,9 @@ extern "C" {
 
 // Supported filtering
 enum FilterMode {
-  kFilterNone = 0,  // Point sample; Fastest
+  kFilterNone = 0,  // Point sample; Fastest.
   kFilterBilinear = 1,  // Faster than box, but lower quality scaling down.
-  kFilterBox = 2  // Highest quality
+  kFilterBox = 2  // Highest quality.
 };
 
 // Scale a YUV plane.
@@ -52,7 +52,7 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               int dst_width, int dst_height,
               FilterMode filtering);
 
-// Legacy API.  Deprecated
+// Legacy API.  Deprecated.
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int src_stride_y, int src_stride_u, int src_stride_v,
           int src_width, int src_height,
@@ -61,12 +61,12 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int dst_width, int dst_height,
           bool interpolate);
 
-// Legacy API.  Deprecated
+// Legacy API.  Deprecated.
 int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
                 bool interpolate);
 
-// For testing, allow disabling of optimizations.
+// For testing, allow disabling of specialized scalers.
 void SetUseReferenceImpl(bool use);
 
 #ifdef __cplusplus

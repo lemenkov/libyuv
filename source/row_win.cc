@@ -3664,6 +3664,81 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
+// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version.
+__declspec(naked) __declspec(align(16))
+void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                              ptrdiff_t src_stride, int dst_width,
+                              int source_y_fraction) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]   // dst_ptr
+    mov        esi, [esp + 8 + 8]   // src_ptr
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
+    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
+    shr        eax, 1
+    cmp        eax, 0
+    je         xloop1
+    cmp        eax, 64
+    je         xloop2
+    movd       xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    movd       xmm5, eax  // low fraction 128..1
+    punpcklbw  xmm5, xmm0
+    punpcklwd  xmm5, xmm5
+    pshufd     xmm5, xmm5, 0
+
+    align      16
+  xloop:
+    movdqa     xmm0, [esi]
+    movdqa     xmm2, [esi + edx]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm2
+    punpckhbw  xmm1, xmm2
+    pmaddubsw  xmm0, xmm5
+    pmaddubsw  xmm1, xmm5
+    psrlw      xmm0, 7
+    psrlw      xmm1, 7
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop
+
+    pop        edi
+    pop        esi
+    ret
+
+    align      16
+  xloop1:
+    movdqa     xmm0, [esi]
+    sub        ecx, 4
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop1
+
+    pop        edi
+    pop        esi
+    ret
+
+    align      16
+  xloop2:
+    movdqa     xmm0, [esi]
+    pavgb      xmm0, [esi + edx]
+    sub        ecx, 4
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop2
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus

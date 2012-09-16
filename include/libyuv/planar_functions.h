@@ -13,7 +13,7 @@
 
 #include "libyuv/basic_types.h"
 
-// TODO(fbarchard): Remove the following headers includes
+// TODO(fbarchard): Remove the following headers includes.
 #include "libyuv/convert.h"
 #include "libyuv/convert_argb.h"
 
@@ -31,7 +31,7 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// Convert I420 to I400.  (calls CopyPlane ignoring u/v)
+// Convert I420 to I400.  (calls CopyPlane ignoring u/v).
 int I420ToI400(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -103,7 +103,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// ARGB little endian (bgra in memory) to I422
+// ARGB little endian (bgra in memory) to I422.
 int ARGBToI422(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,

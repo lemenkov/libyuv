@@ -83,9 +83,7 @@ extern "C" {
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #define HAS_ARGBSHADE_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
-// HAS_ARGBBLENDROW_SSE2 may be faster than SSSE3 version on some CPUs, so
-// enable it here instead of LIBYUV_SSSE3_ONLY section.
-#define HAS_ARGBBLENDROW_SSE2
+#define HAS_ARGBINTERPOLATEROW_SSSE3
 #endif
 
 // The following are Windows only:
@@ -102,6 +100,7 @@ extern "C" {
     !defined(LIBYUV_SSSE3_ONLY)
 #define HAS_MIRRORROW_SSE2
 #define HAS_ARGBATTENUATE_SSE2
+#define HAS_ARGBBLENDROW_SSE2
 #endif
 
 // The following are available on Neon platforms
@@ -552,6 +551,13 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
+
+void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride,
+                          int dst_width, int source_y_fraction);
+void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                              ptrdiff_t src_stride, int dst_width,
+                              int source_y_fraction);
 
 #ifdef __cplusplus
 }  // extern "C"

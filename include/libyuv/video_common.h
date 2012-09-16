@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Common definitions for video, including fourcc and VideoFormat
+// Common definitions for video, including fourcc and VideoFormat.
 
 #ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_  // NOLINT
 #define INCLUDE_LIBYUV_VIDEO_COMMON_H_
@@ -107,7 +107,7 @@ enum FourCCBpp {
   FOURCC_BPP_UYVY = 16,
   FOURCC_BPP_M420 = 12,
   FOURCC_BPP_Q420 = 12,
-  FOURCC_BPP_V210 = 22,  // 22.5 actually
+  FOURCC_BPP_V210 = 22,  // 128 / 6 actually.
   FOURCC_BPP_24BG = 24,
   FOURCC_BPP_ARGB = 32,
   FOURCC_BPP_BGRA = 32,

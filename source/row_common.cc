@@ -1081,6 +1081,29 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
   }
 }
 
+// C version 2x2 -> 2x1.
+void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride,
+                          int dst_width, int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint8* src_ptr1 = src_ptr + src_stride;
+  uint8* end = dst_ptr + (dst_width << 2);
+  do {
+    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    dst_ptr[2] = (src_ptr[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
+    dst_ptr[3] = (src_ptr[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
+    dst_ptr[4] = (src_ptr[4] * y0_fraction + src_ptr1[4] * y1_fraction) >> 8;
+    dst_ptr[5] = (src_ptr[5] * y0_fraction + src_ptr1[5] * y1_fraction) >> 8;
+    dst_ptr[6] = (src_ptr[6] * y0_fraction + src_ptr1[6] * y1_fraction) >> 8;
+    dst_ptr[7] = (src_ptr[7] * y0_fraction + src_ptr1[7] * y1_fraction) >> 8;
+    src_ptr += 8;
+    src_ptr1 += 8;
+    dst_ptr += 8;
+  } while (dst_ptr < end);
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

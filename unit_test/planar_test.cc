@@ -80,7 +80,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
 }
 
 #define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)          \
-    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ,)          \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, , +)        \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, Invert, -)
 
 TESTPLANARTOB(I420, 2, 2, ARGB, 4)
@@ -151,7 +151,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
 }
 
 #define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)        \
-    TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ,)        \
+    TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, , +)      \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, Invert, -)
 
 TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4)
@@ -233,7 +233,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N##_OptVsC) {                        \
 }
 
 #define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
-    TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, ,)          \
+    TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, , +)        \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, Invert, -)
 
 TESTATOPLANAR(ARGB, 4, I420, 2, 2)
@@ -293,7 +293,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N##_OptVsC) {                             \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, ,)                         \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, , +)                       \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, Invert, -)
 
 TESTATOB(ARGB, 4, 4, ARGB, 4)
@@ -853,14 +853,9 @@ TEST_F(libyuvTest, TestShade) {
 }
 
 TEST_F(libyuvTest, TestInterpolate) {
-  // Interpolate internally used bilinear filtering, which duplicates the last
-  // value, but the interpolate saves and restores it.  The buffer must be
-  // padded by 16 extra bytes.  TODO(fbarchard): Reimplement interpolate with
-  // code that does not duplicate the last value and remove kPad.
-  const int kPad = 16;
   SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
   SIMD_ALIGNED(uint8 orig_pixels_1[256][4]);
-  SIMD_ALIGNED(uint8 interpolate_pixels[256 + kPad][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels[256][4]);
 
   orig_pixels_0[0][0] = 16u;
   orig_pixels_0[0][1] = 32u;
@@ -930,7 +925,7 @@ TEST_F(libyuvTest, TestInterpolate) {
   EXPECT_EQ(16u, interpolate_pixels[0][2]);
   EXPECT_EQ(32u, interpolate_pixels[0][3]);
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  for (int i = 0; i < benchmark_iterations_ * (1280 * 720 / 256); ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                     &interpolate_pixels[0][0], 0, 256, 1, 128);
   }

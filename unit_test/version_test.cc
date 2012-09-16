@@ -25,7 +25,9 @@ TEST_F(libyuvTest, TestVersion) {
   printf("LIBYUV_VERSION %d\n", LIBYUV_VERSION);
 #ifdef LIBYUV_SVNREVISION
   const char *ver = strchr(LIBYUV_SVNREVISION, ':');
-  if (!ver) {
+  if (ver) {
+    ++ver;
+  } else {
     ver = LIBYUV_SVNREVISION;
   }
   int svn_revision = atoi(ver);

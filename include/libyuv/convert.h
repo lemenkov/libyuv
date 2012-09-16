@@ -12,7 +12,7 @@
 #define INCLUDE_LIBYUV_CONVERT_H_
 
 #include "libyuv/basic_types.h"
-// TODO(fbarchard): Remove the following headers includes
+// TODO(fbarchard): Remove the following headers includes.
 #include "libyuv/convert_from.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
@@ -22,7 +22,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Alias
+// Alias.
 #define I420ToI420 I420Copy
 
 // Copy I420 to I420.
@@ -112,56 +112,63 @@ int V210ToI420(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// ARGB little endian (bgra in memory) to I420
+// ARGB little endian (bgra in memory) to I420.
 int ARGBToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// BGRA little endian (argb in memory) to I420
+// BGRA little endian (argb in memory) to I420.
 int BGRAToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// ABGR little endian (rgba in memory) to I420
+// ABGR little endian (rgba in memory) to I420.
 int ABGRToI420(const uint8* src_frame, int src_stride_frame,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// RGB little endian (bgr in memory) to I420
+// RGBA little endian (rgba in memory) to I420.
+int RGBAToI420(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// RGB little endian (bgr in memory) to I420.
 int RGB24ToI420(const uint8* src_frame, int src_stride_frame,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,
                 uint8* dst_v, int dst_stride_v,
                 int width, int height);
 
-// RGB big endian (rgb in memory) to I420
+// RGB big endian (rgb in memory) to I420.
 int RAWToI420(const uint8* src_frame, int src_stride_frame,
               uint8* dst_y, int dst_stride_y,
               uint8* dst_u, int dst_stride_u,
               uint8* dst_v, int dst_stride_v,
               int width, int height);
 
-// RGB16 (RGBP fourcc) little endian to I420
+// RGB16 (RGBP fourcc) little endian to I420.
 int RGB565ToI420(const uint8* src_frame, int src_stride_frame,
                  uint8* dst_y, int dst_stride_y,
                  uint8* dst_u, int dst_stride_u,
                  uint8* dst_v, int dst_stride_v,
                  int width, int height);
 
-// RGB15 (RGBO fourcc) little endian to I420
+// RGB15 (RGBO fourcc) little endian to I420.
 int ARGB1555ToI420(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_y, int dst_stride_y,
                    uint8* dst_u, int dst_stride_u,
                    uint8* dst_v, int dst_stride_v,
                    int width, int height);
 
-// RGB12 (R444 fourcc) little endian to I420
+// RGB12 (R444 fourcc) little endian to I420.
 int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_y, int dst_stride_y,
                    uint8* dst_u, int dst_stride_u,
@@ -169,7 +176,7 @@ int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
                    int width, int height);
 
 #ifdef HAVE_JPEG
-// src_width/height provided by capture
+// src_width/height provided by capture.
 // dst_width/height for clipping determine final size.
 int MJPGToI420(const uint8* sample, size_t sample_size,
                uint8* dst_y, int dst_stride_y,

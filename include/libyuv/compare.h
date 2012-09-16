@@ -21,7 +21,7 @@ extern "C" {
 // Compute a hash for specified memory.  Seed of 5381 recommended.
 uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed);
 
-// Sum Square Error - used to compute Mean Square Error or PSNR
+// Sum Square Error - used to compute Mean Square Error or PSNR.
 uint64 ComputeSumSquareError(const uint8* src_a,
                              const uint8* src_b, int count);
 
