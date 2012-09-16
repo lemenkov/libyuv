@@ -575,7 +575,7 @@ void I422ToABGRRow_C(const uint8* y_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 0, 8, 16);
-    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 0, 8, 16, 24);
+    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 0, 8, 16);
     y_buf += 2;
     u_buf += 1;
     v_buf += 1;
