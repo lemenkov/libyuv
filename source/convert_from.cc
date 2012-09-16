@@ -828,6 +828,59 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Convert I420 to RGBA.
+int I420ToRGBA(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_rgba, int dst_stride_rgba,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_rgba ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgba = dst_rgba + (height - 1) * dst_stride_rgba;
+    dst_stride_rgba = -dst_stride_rgba;
+  }
+  void (*I422ToRGBARow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToRGBARow_C;
+#if defined(HAS_I422TORGBAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToRGBARow = I422ToRGBARow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToRGBARow = I422ToRGBARow_NEON;
+    }
+  }
+#elif defined(HAS_I422TORGBAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    I422ToRGBARow = I422ToRGBARow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToRGBARow = I422ToRGBARow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_rgba, 16) && IS_ALIGNED(dst_stride_rgba, 16)) {
+        I422ToRGBARow = I422ToRGBARow_SSSE3;
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    I422ToRGBARow(src_y, src_u, src_v, dst_rgba, width);
+    dst_rgba += dst_stride_rgba;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
 // Convert I420 to RGB24.
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
@@ -1222,6 +1275,14 @@ int ConvertFromI420(const uint8* y, int y_stride,
       break;
     case FOURCC_ABGR:
       r = I420ToABGR(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width * 4,
+                     width, height);
+      break;
+    case FOURCC_RGBA:
+      r = I420ToRGBA(y, y_stride,
                      u, u_stride,
                      v, v_stride,
                      dst_sample,

@@ -1095,6 +1095,63 @@ int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
   return 0;
 }
 
+int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (!src_rgba ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
+    src_stride_rgba = -src_stride_rgba;
+  }
+  void (*RGBAToYRow)(const uint8* src_rgba, uint8* dst_y, int pix);
+  void (*RGBAToUVRow)(const uint8* src_rgba0, int src_stride_rgba,
+                      uint8* dst_u, uint8* dst_v, int width);
+
+  RGBAToYRow = RGBAToYRow_C;
+  RGBAToUVRow = RGBAToUVRow_C;
+#if defined(HAS_RGBATOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    if (width > 16) {
+      RGBAToUVRow = RGBAToUVRow_Any_SSSE3;
+      RGBAToYRow = RGBAToYRow_Any_SSSE3;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToUVRow = RGBAToUVRow_Unaligned_SSSE3;
+      RGBAToYRow = RGBAToYRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_rgba, 16) && IS_ALIGNED(src_stride_rgba, 16)) {
+        RGBAToUVRow = RGBAToUVRow_SSSE3;
+        if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+          RGBAToYRow = RGBAToYRow_SSSE3;
+        }
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height - 1; y += 2) {
+    RGBAToUVRow(src_rgba, src_stride_rgba, dst_u, dst_v, width);
+    RGBAToYRow(src_rgba, dst_y, width);
+    RGBAToYRow(src_rgba + src_stride_rgba, dst_y + dst_stride_y, width);
+    src_rgba += src_stride_rgba * 2;
+    dst_y += dst_stride_y * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    RGBAToUVRow(src_rgba, 0, dst_u, dst_v, width);
+    RGBAToYRow(src_rgba, dst_y, width);
+  }
+  return 0;
+}
+
 int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,
@@ -1758,6 +1815,14 @@ int ConvertToI420(const uint8* sample, size_t sample_size,
     case FOURCC_ABGR:
       src = sample + (src_width * crop_y + crop_x) * 4;
       r = ABGRToI420(src, src_width * 4,
+                     y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_width, inv_dst_height);
+      break;
+    case FOURCC_RGBA:
+      src = sample + (src_width * crop_y + crop_x) * 4;
+      r = RGBAToI420(src, src_width * 4,
                      y, y_stride,
                      u, u_stride,
                      v, v_stride,

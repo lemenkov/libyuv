@@ -10,9 +10,9 @@
 
 #include "unit_test/unit_test.h"
 
-#include <cstring>
-
 #include <stdlib.h>  // For getenv()
+
+#include <cstring>
 
 // Change this to 1000 for benchmarking.
 // TODO(fbarchard): Add command line parsing to pass this as option.
@@ -23,7 +23,7 @@ libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     benchmark_height_(720) {
     const char* repeat = getenv("LIBYUV_REPEAT");
     if (repeat) {
-      benchmark_iterations_ = atoi(repeat);
+      benchmark_iterations_ = atoi(repeat);  // NOLINT
     }
 }
 

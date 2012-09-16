@@ -37,7 +37,9 @@ extern "C" {
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
-#define HAS_RGBATOARGBROW_SSSE3
+// TODO: #define HAS_RGBATOARGBROW_SSSE3
+// TODO: #define HAS_RGBATOUVROW_SSSE3
+// TODO: #define HAS_RGBATOYROW_SSSE3
 #define HAS_ARGBTORGBAROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
@@ -56,11 +58,12 @@ extern "C" {
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
-#define HAS_I444TOARGBROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
-#define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
+// TODO: #define HAS_I422TORGBAROW_SSSE3
+#define HAS_I444TOARGBROW_SSSE3
+#define HAS_I411TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROWUV_SSSE3
@@ -112,6 +115,7 @@ extern "C" {
 #define HAS_I422TOARGBROW_NEON
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TOABGRROW_NEON
+// TODO: #define HAS_I422TORGBAROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
@@ -161,13 +165,20 @@ void I422ToABGRRow_NEON(const uint8* y_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
                         int width);
+void I422ToRGBARow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
 
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RGBAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
@@ -175,11 +186,15 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
+void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                                 uint8* dst_u, uint8* dst_v, int width);
+void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
 
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
@@ -206,6 +221,7 @@ void CopyRow_C(const uint8* src, uint8* dst, int count);
 void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
+void RGBAToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 
 void ARGBToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                    uint8* dst_u, uint8* dst_v, int width);
@@ -213,19 +229,21 @@ void BGRAToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                    uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_C(const uint8* src_argb0, int src_stride_argb,
                    uint8* dst_u, uint8* dst_v, int width);
+void RGBAToUVRow_C(const uint8* src_argb0, int src_stride_argb,
+                   uint8* dst_u, uint8* dst_v, int width);
 
-void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix);
-void RGBAToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
+void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
+void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix);
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 
-void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix);
-void RGBAToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);
+void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);
+void RGBAToARGBRow_C(const uint8* src_rgba, uint8* dst_argb, int pix);
 void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int pix);
@@ -289,6 +307,12 @@ void I422ToABGRRow_C(const uint8* y_buf,
                      uint8* abgr_buf,
                      int width);
 
+void I422ToRGBARow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgba_buf,
+                     int width);
+
 void YToARGBRow_C(const uint8* y_buf,
                   uint8* rgb_buf,
                   int width);
@@ -333,6 +357,12 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
                          uint8* abgr_buf,
                          int width);
 
+void I422ToRGBARow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgba_buf,
+                         int width);
+
 void I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
@@ -371,6 +401,12 @@ void I422ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
                                    uint8* abgr_buf,
+                                   int width);
+
+void I422ToRGBARow_Unaligned_SSSE3(const uint8* y_buf,
+                                   const uint8* u_buf,
+                                   const uint8* v_buf,
+                                   uint8* rgba_buf,
                                    int width);
 
 void I444ToARGBRow_Any_SSSE3(const uint8* y_buf,
@@ -413,6 +449,12 @@ void I422ToABGRRow_Any_SSSE3(const uint8* y_buf,
                              uint8* abgr_buf,
                              int width);
 
+void I422ToRGBARow_Any_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgba_buf,
+                             int width);
+
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* argb_buf,
                      int width);
@@ -434,11 +476,14 @@ void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ABGRToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void RGBAToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
+                           uint8* dst_u, uint8* dst_v, int width);
+void RGBAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 
 void I422ToARGBRow_Any_NEON(const uint8* y_buf,
@@ -454,6 +499,12 @@ void I422ToBGRARow_Any_NEON(const uint8* y_buf,
                             int width);
 
 void I422ToABGRRow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
+
+void I422ToRGBARow_Any_NEON(const uint8* y_buf,
                             const uint8* u_buf,
                             const uint8* v_buf,
                             uint8* rgb_buf,

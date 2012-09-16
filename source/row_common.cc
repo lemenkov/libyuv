@@ -19,22 +19,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
-  for (int x = 0; x < width; ++x) {
-    // To support in-place conversion.
-    uint8 r = src_abgr[0];
-    uint8 g = src_abgr[1];
-    uint8 b = src_abgr[2];
-    uint8 a = src_abgr[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_abgr += 4;
-  }
-}
-
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
     // To support in-place conversion.
@@ -48,6 +32,22 @@ void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
     dst_argb[3] = a;
     dst_argb += 4;
     src_bgra += 4;
+  }
+}
+
+void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    // To support in-place conversion.
+    uint8 r = src_abgr[0];
+    uint8 g = src_abgr[1];
+    uint8 b = src_abgr[2];
+    uint8 a = src_abgr[3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    dst_argb += 4;
+    src_abgr += 4;
   }
 }
 
@@ -302,6 +302,7 @@ void NAME ## ToUVRow_C(const uint8* src_rgb0, int src_stride_rgb,              \
 MAKEROWY(ARGB, 2, 1, 0)
 MAKEROWY(BGRA, 1, 2, 3)
 MAKEROWY(ABGR, 0, 1, 2)
+MAKEROWY(RGBA, 3, 2, 1)
 
 // http://en.wikipedia.org/wiki/Grayscale.
 // 0.11 * B + 0.59 * G + 0.30 * R
@@ -574,7 +575,7 @@ void I422ToABGRRow_C(const uint8* y_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 0, 8, 16);
-    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 24, 0, 8, 16);
+    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 0, 8, 16, 24);
     y_buf += 2;
     u_buf += 1;
     v_buf += 1;
@@ -582,6 +583,24 @@ void I422ToABGRRow_C(const uint8* y_buf,
   }
   if (width & 1) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 0, 8, 16);
+  }
+}
+
+void I422ToRGBARow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 0, 24, 16, 8);
+    YuvPixel(y_buf[1], u_buf[0], v_buf[0], rgb_buf + 4, 0, 24, 16, 8);
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 0, 24, 16, 8);
   }
 }
 
@@ -930,11 +949,13 @@ Y2NY(NV12ToARGBRow_Any_SSSE3, NV12ToARGBRow_Unaligned_SSSE3, NV12ToARGBRow_C, 0)
 Y2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_Unaligned_SSSE3, NV21ToARGBRow_C, 0)
 YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C, 1)
 YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C, 1)
+// TODO: YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_Unaligned_SSSE3, I422ToRGBARow_C, 1)
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
 YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1)
 YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1)
 YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1)
+// TODO: YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1)
 #endif
 #undef YANY
 
@@ -966,6 +987,7 @@ RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 2)
 YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
 YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
 YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
+// TODO: YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4)
 YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
 YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
 #undef YANY
@@ -984,6 +1006,7 @@ YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
 UVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
 UVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
 UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
+// TODO: UVANY(RGBAToUVRow_Any_SSSE3, RGBAToUVRow_Unaligned_SSSE3, RGBAToUVRow_C, 4)
 UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
 UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
 #undef UVANY

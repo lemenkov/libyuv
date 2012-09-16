@@ -252,38 +252,6 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
-  if (!src_abgr || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_abgr = src_abgr + (height - 1) * src_stride_abgr;
-    src_stride_abgr = -src_stride_abgr;
-  }
-  void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix) =
-      ABGRToARGBRow_C;
-#if defined(HAS_ABGRTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ABGRToARGBRow = ABGRToARGBRow_SSSE3;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    ABGRToARGBRow(src_abgr, dst_argb, width);
-    src_abgr += src_stride_abgr;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
-}
-
 // Convert BGRA to ARGB.
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
@@ -312,6 +280,39 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   for (int y = 0; y < height; ++y) {
     BGRAToARGBRow(src_bgra, dst_argb, width);
     src_bgra += src_stride_bgra;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert ABGR to ARGB.
+int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (!src_abgr || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_abgr = src_abgr + (height - 1) * src_stride_abgr;
+    src_stride_abgr = -src_stride_abgr;
+  }
+  void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix) =
+      ABGRToARGBRow_C;
+#if defined(HAS_ABGRTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) &&
+      IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ABGRToARGBRow = ABGRToARGBRow_SSSE3;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ABGRToARGBRow(src_abgr, dst_argb, width);
+    src_abgr += src_stride_abgr;
     dst_argb += dst_stride_argb;
   }
   return 0;
