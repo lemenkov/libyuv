@@ -41,8 +41,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
       src_y[(i * kWidth) + j] = (random() & 0xff);                             \
-  for (int i = 0; i < kHeight / SUBSAMP_X; ++i)                                \
-    for (int j = 0; j < kWidth / SUBSAMP_Y; ++j) {                             \
+  for (int i = 0; i < kHeight / SUBSAMP_Y; ++i)                                \
+    for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       src_u[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
       src_v[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
     }                                                                          \
@@ -117,8 +117,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N##_OptVsC) {                        \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
       src_y[(i * kWidth) + j] = (random() & 0xff);                             \
-  for (int i = 0; i < kHeight / SUBSAMP_X; ++i)                                \
-    for (int j = 0; j < kWidth / SUBSAMP_Y * 2; ++j) {                         \
+  for (int i = 0; i < kHeight / SUBSAMP_Y; ++i)                                \
+    for (int j = 0; j < kWidth / SUBSAMP_X * 2; ++j) {                         \
       src_uv[(i * kWidth / SUBSAMP_X) * 2 + j] = (random() & 0xff);            \
     }                                                                          \
   MaskCpuFlags(kCpuInitialized);                                               \
