@@ -30,7 +30,7 @@ TEST_F(libyuvTest, TestVersion) {
   } else {
     ver = LIBYUV_SVNREVISION;
   }
-  int svn_revision = atoi(ver);
+  int svn_revision = atoi(ver);  // NOLINT
   printf("LIBYUV_SVNREVISION %d\n", svn_revision);
   EXPECT_NEAR(LIBYUV_VERSION, svn_revision, 3);  // Allow version to be close.
   if (LIBYUV_VERSION != svn_revision) {

@@ -37,7 +37,8 @@ extern "C" {
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
+                                   ptrdiff_t /* src_stride */,
                                    uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -63,7 +64,8 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t /* src_stride
 // Blends 8x2 rectangle to 4x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
+                                      ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -137,7 +139,8 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Blends four 2x2 to 4x1.
 // Alignment requirement: dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
+                                         ptrdiff_t src_stride,
                                          int src_stepx,
                                          uint8* dst_ptr, int dst_width) {
   __asm {

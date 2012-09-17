@@ -55,8 +55,8 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
       width <= 0 || height == 0) {
-     return -1;
-   }
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
