@@ -16,7 +16,7 @@
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif
-#include "source/row.h"
+#include "libyuv/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {

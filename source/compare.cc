@@ -18,7 +18,7 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
-#include "source/row.h"
+#include "libyuv/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {

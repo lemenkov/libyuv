@@ -13,8 +13,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/convert.h"
 #include "libyuv/planar_functions.h"
-#include "source/rotate_priv.h"
-#include "source/row.h"
+#include "libyuv/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {

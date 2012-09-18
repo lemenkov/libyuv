@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../source/rotate_priv.h"
 #include "libyuv/rotate.h"
 #include "unit_test/unit_test.h"
 

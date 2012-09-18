@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SOURCE_ROW_H_
-#define SOURCE_ROW_H_
+#ifndef INCLUDE_LIBYUV_ROW_H_  // NOLINT
+#define INCLUDE_LIBYUV_ROW_H_
 
 #include "libyuv/basic_types.h"
 
@@ -614,4 +614,6 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }  // namespace libyuv
 #endif
 
-#endif  // SOURCE_ROW_H_
+#endif  // INCLUDE_LIBYUV_ROW_H_
+
+

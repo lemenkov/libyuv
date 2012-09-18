@@ -17,7 +17,7 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
-#include "source/row.h"
+#include "libyuv/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
