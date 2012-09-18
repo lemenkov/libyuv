@@ -702,6 +702,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
 
 TEST_F(libyuvTest, TestARGBColorTable) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  memset(orig_pixels, 0, sizeof(orig_pixels));
 
   // Matrix for Sepia.
   static const uint8 kARGBTable[256 * 4] = {

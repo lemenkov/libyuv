@@ -47,14 +47,16 @@ extern "C" {
 #endif
 
 // Low level cpuid for X86.  Returns zeros on other CPUs.
-void CpuId(int cpu_info[4], int info_type) {
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
+void CpuId(int cpu_info[4], int info_type) {
     __cpuid(cpu_info, info_type);
-#else
-    cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
-#endif
 }
+#else
+void CpuId(int cpu_info[4], int) {
+    cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
+}
+#endif
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
