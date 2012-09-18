@@ -1697,7 +1697,12 @@ int MJPGToI420(const uint8* sample,
 // src_height is used to compute location of planes, and indicate inversion
 // sample_size is measured in bytes and is the size of the frame.
 //   With MJPEG it is the compressed size of the frame.
-int ConvertToI420(const uint8* sample, size_t sample_size,
+int ConvertToI420(const uint8* sample,
+#ifdef HAVE_JPEG
+                  size_t sample_size,
+#else
+                  size_t /* sample_size */,
+#endif
                   uint8* y, int y_stride,
                   uint8* u, int u_stride,
                   uint8* v, int v_stride,
