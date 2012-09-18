@@ -13,7 +13,7 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale_argb.h"
-#include "unit_test/unit_test.h"
+#include "../unit_test/unit_test.h"
 
 namespace libyuv {
 

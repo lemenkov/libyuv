@@ -14,7 +14,7 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/version.h"
-#include "unit_test/unit_test.h"
+#include "../unit_test/unit_test.h"
 
 namespace libyuv {
 
@@ -59,7 +59,6 @@ TEST_F(libyuvTest, TestCpuId) {
     CpuId(cpu_info, 0);
     cpu_info[0] = cpu_info[1];  // Reorder output
     cpu_info[1] = cpu_info[3];
-    cpu_info[2] = cpu_info[2];
     cpu_info[3] = 0;
     printf("Cpu Vendor: %s %x %x %x\n", reinterpret_cast<char*>(&cpu_info[0]),
            cpu_info[0], cpu_info[1], cpu_info[2]);

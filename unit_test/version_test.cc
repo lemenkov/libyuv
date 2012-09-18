@@ -13,7 +13,7 @@
 
 #include "libyuv/basic_types.h"
 #include "libyuv/version.h"
-#include "unit_test/unit_test.h"
+#include "../unit_test/unit_test.h"
 
 namespace libyuv {
 

@@ -13,7 +13,7 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/rotate_argb.h"
-#include "unit_test/unit_test.h"
+#include "../unit_test/unit_test.h"
 
 namespace libyuv {
 
