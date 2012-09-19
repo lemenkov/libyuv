@@ -1343,7 +1343,7 @@ struct {
 #define READNV12                                                               \
     "movq       (%[uv_buf]),%%xmm0             \n"                             \
     "lea        0x8(%[uv_buf]),%[uv_buf]       \n"                             \
-    "punpcklbw  %%xmm1,%%xmm0                  \n"                             \
+    "punpcklwd  %%xmm0,%%xmm0                  \n"                             \
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB                                                               \
