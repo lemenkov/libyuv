@@ -320,6 +320,12 @@ int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
     ARGBToRGBARow = ARGBToRGBARow_SSSE3;
   }
 #endif
+#if defined(HAS_ARGBTORGBAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      IS_ALIGNED(width, 16)) {
+    ARGBToRGBARow = ARGBToRGBARow_NEON;
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     ARGBToRGBARow(src_argb, dst_rgba, width);
@@ -352,6 +358,16 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
     if (IS_ALIGNED(width, 16) &&
         IS_ALIGNED(dst_rgb24, 16) && IS_ALIGNED(dst_stride_rgb24, 16)) {
       ARGBToRGB24Row = ARGBToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width * 3 <= kMaxStride) {
+      ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_NEON;
     }
   }
 #endif

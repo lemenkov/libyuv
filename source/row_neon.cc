@@ -18,6 +18,8 @@ extern "C" {
 // This module is for GCC Neon
 #if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
 
+// TODO(fbarchard): Make a fetch macro so different subsamples can be done.
+// TODO(fbarchard): Rework register usage to produce RGB in d21 - d23.
 #define YUV422TORGB                                                            \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
@@ -357,6 +359,41 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
   );
 }
 #endif  // HAS_MIRRORROWUV_NEON
+
+#ifdef HAS_ARGBTORGBAROW_NEON
+void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgba, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of ARGB.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vmov.u8    q0, q4                         \n"
+    "vst4.u8    {q0,q1,q2,q3}, [%1]!           \n"  // store 16 pixels of RGBA.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_rgba),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_ARGBTORGBAROW_NEON
+
+#ifdef HAS_ARGBTORGB24ROW_NEON
+void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb24, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of ARGB.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vst3.u8    {q1,q2,q3}, [%1]!              \n"  // store 16 pixels of RGB24.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_rgb24),  // %1
+    "+r"(pix)         // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_ARGBTORGB24ROW_NEON
 
 #endif  // __ARM_NEON__
 

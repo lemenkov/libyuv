@@ -745,6 +745,24 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 16) {
+      YUY2ToUVRow = YUY2ToUVRow_Any_NEON;
+      YUY2ToYRow = YUY2ToYRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToUVRow = YUY2ToUVRow_Unaligned_NEON;
+      YUY2ToYRow = YUY2ToYRow_Unaligned_NEON;
+      if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
+        YUY2ToUVRow = YUY2ToUVRow_NEON;
+        if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+          YUY2ToYRow = YUY2ToYRow_NEON;
+        }
+      }
+    }
+  }
+#endif
   for (int y = 0; y < height - 1; y += 2) {
     YUY2ToUVRow(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
     YUY2ToYRow(src_yuy2, dst_y, width);

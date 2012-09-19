@@ -927,6 +927,17 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB24ROW_NEON)
+  // TODO(fbarchard): One step I420ToRGB24Row_NEON.
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width * 3 <= kMaxStride) {
+      ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_NEON;
+    }
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     I422ToARGBRow(src_y, src_u, src_v, row, width);
