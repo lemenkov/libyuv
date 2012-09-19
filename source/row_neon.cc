@@ -46,9 +46,8 @@ extern "C" {
     "vtrn.u8    d22, d23                       \n"                             \
     "vtrn.u8    d16, d17                       \n"                             \
 
-#if defined(HAS_I422TOARGBROW_NEON) || \
-    defined(HAS_I422TOBGRAROW_NEON) || \
-    defined(HAS_I422TOABGRROW_NEON)
+#if defined(HAS_I422TOARGBROW_NEON) || defined(HAS_I422TOBGRAROW_NEON) ||      \
+    defined(HAS_I422TOABGRROW_NEON) || defined(HAS_I422TORGBAROW_NEON)
 static const vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
                                0, 0, 0, 0, 0, 0, 0, 0 };
 static const vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
@@ -152,6 +151,38 @@ void I422ToABGRRow_NEON(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422TOABGRROW_NEON
+
+#ifdef HAS_I422TORGBAROW_NEON
+void I422ToRGBARow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%5]                    \n"
+    "vld1.u8    {d25}, [%6]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+  "1:                                          \n"
+    YUV422TORGB
+    "vmov.u8    d21, d16                       \n"
+    "vmov.u8    d19, #255                      \n"
+    "vst4.u8    {d19, d20, d21, d22}, [%3]!    \n"
+    "subs       %4, %4, #8                     \n"
+    "bgt        1b                             \n"
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
+                      "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_I422TORGBAROW_NEON
 
 #ifdef HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v

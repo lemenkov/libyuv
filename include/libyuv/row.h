@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 // TODO(fbarchard): Remove kMaxStride
-#define kMaxStride (2560 * 4)
+#define kMaxStride (2880 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
@@ -114,7 +114,7 @@ extern "C" {
 #define HAS_I422TOARGBROW_NEON
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TOABGRROW_NEON
-// TODO(FBARCHARD): #define HAS_I422TORGBAROW_NEON
+#define HAS_I422TORGBAROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
