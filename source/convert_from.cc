@@ -882,6 +882,7 @@ int I420ToRGBA(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to RGB24.
+// TODO(fbarchard): One step I420ToRGB24Row_NEON.
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
                 const uint8* src_v, int src_stride_v,
@@ -928,7 +929,6 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
-  // TODO(fbarchard): One step I420ToRGB24Row_NEON.
   if (TestCpuFlag(kCpuHasNEON)) {
     if (width * 3 <= kMaxStride) {
       ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
@@ -953,6 +953,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to RAW.
+// TODO(fbarchard): One step I420ToRAWRow_NEON.
 int I420ToRAW(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
               const uint8* src_v, int src_stride_v,
@@ -995,6 +996,16 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
     if (IS_ALIGNED(width, 16) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
       ARGBToRAWRow = ARGBToRAWRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width * 3 <= kMaxStride) {
+      ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRAWRow = ARGBToRAWRow_NEON;
     }
   }
 #endif

@@ -395,6 +395,24 @@ void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb24, int pix) {
 }
 #endif  // HAS_ARGBTORGB24ROW_NEON
 
+#ifdef HAS_ARGBTORAWROW_NEON
+void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_raw, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of ARGB.
+    "vswp.u8    q1, q3                         \n"  // swap R, B
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vst3.u8    {q1,q2,q3}, [%1]!              \n"  // store 16 pixels of RAW.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_raw),   // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_ARGBTORAWROW_NEON
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

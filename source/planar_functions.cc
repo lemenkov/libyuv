@@ -406,6 +406,16 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORAWROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width * 3 <= kMaxStride) {
+      ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRAWRow = ARGBToRAWRow_NEON;
+    }
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     ARGBToRAWRow(src_argb, dst_raw, width);
