@@ -34,36 +34,35 @@ extern "C" {
 // The following are available on all x86 platforms:
 #if !defined(YUV_DISABLE_ASM) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+// Conversions.
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
-#define HAS_ARGBTORGBAROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
-#define HAS_ARGBATTENUATEROW_SSSE3
-#define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
 #define HAS_ARGBTORAWROW_SSSE3
 #define HAS_ARGBTORGB24ROW_SSSE3
 #define HAS_ARGBTORGB565ROW_SSE2
+#define HAS_ARGBTORGBAROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
-#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_BGRATOARGBROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
+#define HAS_I400TOARGBROW_SSE2
+#define HAS_I411TOARGBROW_SSSE3
+#define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
-#define HAS_I422TOABGRROW_SSSE3
 #define HAS_I444TOARGBROW_SSSE3
-#define HAS_I411TOARGBROW_SSSE3
-#define HAS_I400TOARGBROW_SSE2
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROWUV_SSSE3
-#define HAS_ARGBMIRRORROW_SSSE3
+#define HAS_NV12TOARGBROW_SSSE3
+#define HAS_NV21TOARGBROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
 #define HAS_RGB565TOARGBROW_SSE2
@@ -71,26 +70,31 @@ extern "C" {
 #define HAS_UYVYTOUVROW_SSE2
 #define HAS_UYVYTOYROW_SSE2
 #define HAS_YTOARGBROW_SSE2
-#define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOUV422ROW_SSE2
+#define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
-#define HAS_ARGBGRAYROW_SSSE3
-#define HAS_ARGBSEPIAROW_SSSE3
+
+// Effects
+#define HAS_ARGBMIRRORROW_SSSE3
+#define HAS_ARGBAFFINEROW_SSE2
+#define HAS_ARGBATTENUATEROW_SSSE3
+#define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
+#define HAS_ARGBGRAYROW_SSSE3
+#define HAS_ARGBINTERPOLATEROW_SSSE3
 #define HAS_ARGBQUANTIZEROW_SSE2
+#define HAS_ARGBSEPIAROW_SSSE3
+#define HAS_ARGBSHADE_SSE2
+#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
-#define HAS_ARGBSHADE_SSE2
-#define HAS_ARGBAFFINEROW_SSE2
-#define HAS_ARGBINTERPOLATEROW_SSSE3
-#define HAS_NV12TOARGBROW_SSSE3
-#define HAS_NV21TOARGBROW_SSSE3
 #endif
 
 // The following are Windows only:
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_I422TORGBAROW_SSSE3
+#define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_RGBATOARGBROW_SSSE3
 #define HAS_RGBATOUVROW_SSSE3
 #define HAS_RGBATOYROW_SSSE3
@@ -115,9 +119,11 @@ extern "C" {
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TOABGRROW_NEON
 #define HAS_I422TORGBAROW_NEON
-#define HAS_ARGBTORGBAROW_NEON
-#define HAS_ARGBTORGB24ROW_NEON
-#define HAS_ARGBTORAWROW_NEON
+#define HAS_ABGRTOARGBROW_NEON
+#define HAS_BGRATOARGBROW_NEON
+#define HAS_RGBATOARGBROW_NEON
+#define HAS_RAWTOARGBROW_NEON
+#define HAS_RGB24TOARGBROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
@@ -242,6 +248,12 @@ void RAWToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
+
+void BGRAToARGBRow_NEON(const uint8* src_bgra, uint8* dst_argb, int pix);
+void ABGRToARGBRow_NEON(const uint8* src_abgr, uint8* dst_argb, int pix);
+void RGBAToARGBRow_NEON(const uint8* src_rgba, uint8* dst_argb, int pix);
+void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix);
+void RAWToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix);
 
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int pix);
 void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int pix);

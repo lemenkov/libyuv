@@ -360,6 +360,98 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
 }
 #endif  // HAS_MIRRORROWUV_NEON
 
+#ifdef HAS_BGRATOARGBROW_NEON
+void BGRAToARGBRow_NEON(const uint8* src_bgra, uint8* dst_argb, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of BGRA.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vswp.u8    q2, q3                         \n"  // swap G, R
+    "vswp.u8    q1, q4                         \n"  // swap B, A
+    "vst4.u8    {q1,q2,q3,q4}, [%1]!           \n"  // store 16 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_bgra),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_BGRATOARGBROW_NEON
+
+#ifdef HAS_ABGRTOARGBROW_NEON
+void ABGRToARGBRow_NEON(const uint8* src_abgr, uint8* dst_argb, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of ABGR.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vswp.u8    q1, q3                         \n"  // swap R, B
+    "vst4.u8    {q1,q2,q3,q4}, [%1]!           \n"  // store 16 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_abgr),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_ABGRTOARGBROW_NEON
+
+#ifdef HAS_RGBATOARGBROW_NEON
+void RGBAToARGBRow_NEON(const uint8* src_rgba, uint8* dst_argb, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.u8    {q1,q2,q3,q4}, [%0]!           \n"  // load 16 pixels of RGBA.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vmov.u8    q5, q1                         \n"  // move A after RGB
+    "vst4.u8    {q2,q3,q4,q5}, [%1]!           \n"  // store 16 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_rgba),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4", "q5" // Clobber List
+  );
+}
+#endif  // HAS_RGBATOARGBROW_NEON
+
+#ifdef HAS_RGB24TOARGBROW_NEON
+void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix) {
+  asm volatile (
+    "vmov.u8    q4, #255                       \n"  // Alpha
+  "1:                                          \n"
+    "vld3.u8    {q1,q2,q3}, [%0]!              \n"  // load 16 pixels of RGB24.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vst4.u8    {q1,q2,q3,q4}, [%1]!           \n"  // store 16 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_rgb24),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_RGB24TOARGBROW_NEON
+
+#ifdef HAS_RAWTOARGBROW_NEON
+void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int pix) {
+  asm volatile (
+    "vmov.u8    q4, #255                       \n"  // Alpha
+  "1:                                          \n"
+    "vld3.u8    {q1,q2,q3}, [%0]!              \n"  // load 16 pixels of RAW.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vswp.u8    q1, q3                         \n"  // swap R, B
+    "vst4.u8    {q1,q2,q3,q4}, [%1]!           \n"  // store 16 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_raw),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "q1", "q2", "q3", "q4" // Clobber List
+  );
+}
+#endif  // HAS_RAWTOARGBROW_NEON
+
 #ifdef HAS_ARGBTORGBAROW_NEON
 void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgba, int pix) {
   asm volatile (
