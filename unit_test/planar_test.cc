@@ -320,13 +320,14 @@ TESTATOB(YUY2, 2, 2, ARGB, 4)
 TESTATOB(UYVY, 2, 2, ARGB, 4)
 TESTATOB(M420, 3 / 2, 1, ARGB, 4)
 
+static const int kReadPad = 16;  // Allow overread of 16 bytes.
 #define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                   \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
   srandom(time(NULL));                                                         \
   for (int times = 0; times < benchmark_iterations_; ++times) {                \
     const int kWidth = (random() & 63) + 1;                                    \
     const int kHeight = (random() & 31) + 1;                                   \
-    align_buffer_page_end(src_argb, (kWidth * BPP_A) * kHeight);               \
+    align_buffer_page_end(src_argb, (kWidth * BPP_A) * kHeight + kReadPad);    \
     align_buffer_page_end(dst_argb_c, (kWidth * BPP_B) * kHeight);             \
     align_buffer_page_end(dst_argb_opt, (kWidth * BPP_B) * kHeight);           \
     for (int i = 0; i < kHeight * kWidth * BPP_A; ++i) {                       \
