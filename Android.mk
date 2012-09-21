@@ -16,12 +16,11 @@ common_SRC_FILES := \
     source/row_posix.cc \
     source/scale.cc \
     source/scale_argb.cc \
-    source/video_common.cc
-# For Neon support, add .neon to all filenames and the following
-#    source/rotate_neon.cc
-#    source/row_neon.cc
+    source/video_common.cc \
+    source/rotate_neon.cc \
+    source/row_neon.cc
 
-common_CFLAGS := -Wall -fexceptions
+common_CFLAGS := -Wall -fexceptions -DHAVE_ARMEABI_V7A=1 -mfloat-abi=softfp -mfpu=neon
 
 common_C_INCLUDES = $(LOCAL_PATH)/include
 

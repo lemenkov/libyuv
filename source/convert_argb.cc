@@ -671,7 +671,23 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
       }
     }
   }
+#elif defined(HAS_YUY2TOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      YUY2ToYRow = YUY2ToYRow_Any_NEON;
+      if (width > 16) {
+        YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
+      }
+    }
+    if (IS_ALIGNED(width, 8)) {
+      YUY2ToYRow = YUY2ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        YUY2ToUV422Row = YUY2ToUV422Row_NEON;
+      }
+    }
+  }
 #endif
+
   void (*I422ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,

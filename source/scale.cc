@@ -2755,13 +2755,11 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
  * its original size.
  *
  */
-static void ScalePlaneDown2(int src_width, int src_height,
+static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
                             FilterMode filtering) {
-  assert(IS_ALIGNED(src_width, 2));
-  assert(IS_ALIGNED(src_height, 2));
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
@@ -2795,13 +2793,11 @@ static void ScalePlaneDown2(int src_width, int src_height,
  * This is an optimized version for scaling down a plane to 1/4 of
  * its original size.
  */
-static void ScalePlaneDown4(int src_width, int src_height,
+static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
                             FilterMode filtering) {
-  assert(IS_ALIGNED(src_width, 4));
-  assert(IS_ALIGNED(src_height, 4));
   void (*ScaleRowDown4)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
@@ -2832,13 +2828,11 @@ static void ScalePlaneDown4(int src_width, int src_height,
  * of its original size.
  *
  */
-static void ScalePlaneDown8(int src_width, int src_height,
+static void ScalePlaneDown8(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
                             FilterMode filtering) {
-  assert(IS_ALIGNED(src_width, 8));
-  assert(IS_ALIGNED(src_height, 8));
   void (*ScaleRowDown8)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering && (dst_width <= kMaxOutputWidth) ?
@@ -2864,7 +2858,7 @@ static void ScalePlaneDown8(int src_width, int src_height,
  * Provided by Frank Barchard (fbarchard@google.com)
  *
  */
-static void ScalePlaneDown34(int src_width, int src_height,
+static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,
@@ -2953,7 +2947,7 @@ static void ScalePlaneDown34(int src_width, int src_height,
  * ggghhhii
  * Boxes are 3x3, 2x3, 3x2 and 2x2
  */
-static void ScalePlaneDown38(int src_width, int src_height,
+static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,

@@ -321,8 +321,7 @@ int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBTORGBAROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(width, 16)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBToRGBARow = ARGBToRGBARow_NEON;
   }
 #endif
@@ -366,7 +365,7 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
     if (width * 3 <= kMaxStride) {
       ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
     }
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToRGB24Row = ARGBToRGB24Row_NEON;
     }
   }
@@ -411,7 +410,7 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
     if (width * 3 <= kMaxStride) {
       ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
     }
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToRAWRow = ARGBToRAWRow_NEON;
     }
   }

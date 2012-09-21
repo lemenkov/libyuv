@@ -933,7 +933,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
     if (width * 3 <= kMaxStride) {
       ARGBToRGB24Row = ARGBToRGB24Row_Any_NEON;
     }
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToRGB24Row = ARGBToRGB24Row_NEON;
     }
   }
@@ -1004,7 +1004,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
     if (width * 3 <= kMaxStride) {
       ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
     }
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToRAWRow = ARGBToRAWRow_NEON;
     }
   }

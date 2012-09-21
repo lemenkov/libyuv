@@ -791,13 +791,11 @@ void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr,
  * its original size.
  *
  */
-static void ScaleARGBDown2(int src_width, int src_height,
+static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
                            const uint8* src_ptr, uint8* dst_ptr,
                            FilterMode filtering) {
-  assert(IS_ALIGNED(src_width, 2));
-  assert(IS_ALIGNED(src_height, 2));
   void (*ScaleARGBRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width) =
       filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
