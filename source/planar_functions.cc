@@ -296,6 +296,159 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Convert I422 to BGRA.
+int I422ToBGRA(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_bgra, int dst_stride_bgra,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_bgra ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_bgra = dst_bgra + (height - 1) * dst_stride_bgra;
+    dst_stride_bgra = -dst_stride_bgra;
+  }
+  void (*I422ToBGRARow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToBGRARow_C;
+#if defined(HAS_I422TOBGRAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToBGRARow = I422ToBGRARow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToBGRARow = I422ToBGRARow_NEON;
+    }
+  }
+#elif defined(HAS_I422TOBGRAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    I422ToBGRARow = I422ToBGRARow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToBGRARow = I422ToBGRARow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_bgra, 16) && IS_ALIGNED(dst_stride_bgra, 16)) {
+        I422ToBGRARow = I422ToBGRARow_SSSE3;
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    I422ToBGRARow(src_y, src_u, src_v, dst_bgra, width);
+    dst_bgra += dst_stride_bgra;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
+// Convert I422 to ABGR.
+int I422ToABGR(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_abgr, int dst_stride_abgr,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_abgr ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
+    dst_stride_abgr = -dst_stride_abgr;
+  }
+  void (*I422ToABGRRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToABGRRow_C;
+#if defined(HAS_I422TOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToABGRRow = I422ToABGRRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToABGRRow = I422ToABGRRow_NEON;
+    }
+  }
+#elif defined(HAS_I422TOABGRROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    I422ToABGRRow = I422ToABGRRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToABGRRow = I422ToABGRRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_abgr, 16) && IS_ALIGNED(dst_stride_abgr, 16)) {
+        I422ToABGRRow = I422ToABGRRow_SSSE3;
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    I422ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
+    dst_abgr += dst_stride_abgr;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
+// Convert I422 to RGBA.
+int I422ToRGBA(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_rgba, int dst_stride_rgba,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v ||
+      !dst_rgba ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgba = dst_rgba + (height - 1) * dst_stride_rgba;
+    dst_stride_rgba = -dst_stride_rgba;
+  }
+  void (*I422ToRGBARow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToRGBARow_C;
+#if defined(HAS_I422TORGBAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToRGBARow = I422ToRGBARow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToRGBARow = I422ToRGBARow_NEON;
+    }
+  }
+#elif defined(HAS_I422TORGBAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    I422ToRGBARow = I422ToRGBARow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToRGBARow = I422ToRGBARow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_rgba, 16) && IS_ALIGNED(dst_stride_rgba, 16)) {
+        I422ToRGBARow = I422ToRGBARow_SSSE3;
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    I422ToRGBARow(src_y, src_u, src_v, dst_rgba, width);
+    dst_rgba += dst_stride_rgba;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
 // Convert ARGB to RGBA.
 int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
                uint8* dst_rgba, int dst_stride_rgba,
