@@ -58,18 +58,36 @@ void CpuId(int cpu_info[4], int) {
 }
 #endif
 
-// Low level cpuid for X86.  Returns zeros on other CPUs.
-#if !defined(__CLR_VER) && defined(_M_IX86)
-// TODO(fbarchard): Port to GCC and 64 bit Visual C.
+// X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
+#if !defined(__CLR_VER) && defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #define HAS_XGETBV
-// Return low 32 bits of BV - OS support for register saving.
-__declspec(naked)
-static uint32 XGetBV32(void) {
-  _asm _emit 0x0f
-  _asm _emit 0x01
-  _asm _emit 0xd0  // xgetbv
-  _asm ret
+static uint32 XGetBV(unsigned int xcr) {
+  return static_cast<uint32>(_xgetbv(xcr));
 }
+#elif !defined(__CLR_VER) && defined(_M_IX86)
+#define HAS_XGETBV
+__declspec(naked) __declspec(align(16))
+static uint32 XGetBV(unsigned int xcr) {
+  __asm {
+    mov        ecx, [esp + 4]    // xcr
+    xgetbv  // updates eax and edx.  edx unused/
+    ret
+  }
+}
+#elif defined(__i386__) || defined(__x86_64__)
+#define HAS_XGETBV
+static uint32 XGetBV(unsigned int xcr) {
+  uint32 xcr_feature_mask;
+  asm volatile (
+    ".byte 0x0f, 0x01, 0xd0\n"
+    : "=a"(xcr_feature_mask)
+    : "c"(xcr)
+    : "memory", "cc", "edx");  // edx unused.
+  return xcr_feature_mask;
+}
+#endif
+#ifdef HAS_XGETBV
+static const int kXCR_XFEATURE_ENABLED_MASK = 0;
 #endif
 
 // based on libvpx arm_cpudetect.c
@@ -105,13 +123,13 @@ int InitCpuFlags() {
               ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
-              // TODO(fbarchard): AVX test BV same as AVX2.
               (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
               kCpuInitialized | kCpuHasX86;
 #ifdef HAS_XGETBV
   if (cpu_info_ & kCpuHasAVX) {
     __cpuid(cpu_info, 7);
-    if ((cpu_info[1] & 0x00000020) && ((XGetBV32() & 0x06) == 0x06)) {
+    if ((cpu_info[1] & 0x00000020) &&
+        ((XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06)) {
       cpu_info_ |= kCpuHasAVX2;
     }
   }

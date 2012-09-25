@@ -962,8 +962,7 @@ int V210ToI420(const uint8* src_v210, int src_stride_v210,
       }
     }
   }
-#endif
-#if defined(HAS_UYVYTOYROW_NEON)
+#elif defined(HAS_UYVYTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     if (width > 8) {
       UYVYToYRow = UYVYToYRow_Any_NEON;

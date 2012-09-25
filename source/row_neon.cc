@@ -459,7 +459,7 @@ void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgba, int pix) {
   "1:                                          \n"
     "vld4.8     {d5, d6, d7, d8}, [%0]!        \n"  // load 8 pixels of ARGB.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vmov.u8    d4, d8                         \n"
+    "vmov.u8    d4, d8                         \n"  // move A before RGB.
     "vst4.8     {d4, d5, d6, d7}, [%1]!        \n"  // store 8 pixels of RGBA.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0

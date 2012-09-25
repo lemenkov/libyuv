@@ -998,8 +998,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
       ARGBToRAWRow = ARGBToRAWRow_SSSE3;
     }
   }
-#endif
-#if defined(HAS_ARGBTORAWROW_NEON)
+#elif defined(HAS_ARGBTORAWROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     if (width * 3 <= kMaxStride) {
       ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
