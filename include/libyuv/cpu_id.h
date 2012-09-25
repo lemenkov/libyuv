@@ -31,7 +31,7 @@ static const int kCpuHasSSSE3 = 0x40;
 static const int kCpuHasSSE41 = 0x80;
 static const int kCpuHasSSE42 = 0x100;
 static const int kCpuHasAVX = 0x200;
-// 0x400 reserved for AVX2.
+static const int kCpuHasAVX2 = 0x400;
 
 // Detect CPU has SSE2 etc.
 // Test_flag parameter should be one of kCpuHas constants above.

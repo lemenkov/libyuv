@@ -50,11 +50,25 @@ extern "C" {
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
 void CpuId(int cpu_info[4], int info_type) {
-    __cpuid(cpu_info, info_type);
+  __cpuid(cpu_info, info_type);
 }
 #else
 void CpuId(int cpu_info[4], int) {
-    cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
+  cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
+}
+#endif
+
+// Low level cpuid for X86.  Returns zeros on other CPUs.
+#if !defined(__CLR_VER) && defined(_M_IX86)
+// TODO(fbarchard): Port to GCC and 64 bit Visual C.
+#define HAS_XGETBV
+// Return low 32 bits of BV - OS support for register saving.
+__declspec(naked)
+static uint32 XGetBV32(void) {
+  _asm _emit 0x0f
+  _asm _emit 0x01
+  _asm _emit 0xd0  // xgetbv
+  _asm ret
 }
 #endif
 
@@ -91,8 +105,17 @@ int InitCpuFlags() {
               ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
+              // TODO(fbarchard): AVX test BV same as AVX2.
               (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
               kCpuInitialized | kCpuHasX86;
+#ifdef HAS_XGETBV
+  if (cpu_info_ & kCpuHasAVX) {
+    __cpuid(cpu_info, 7);
+    if ((cpu_info[1] & 0x00000020) && ((XGetBV32() & 0x06) == 0x06)) {
+      cpu_info_ |= kCpuHasAVX2;
+    }
+  }
+#endif
 
   // environment variable overrides for testing.
   if (getenv("LIBYUV_DISABLE_X86")) {
@@ -112,6 +135,9 @@ int InitCpuFlags() {
   }
   if (getenv("LIBYUV_DISABLE_AVX")) {
     cpu_info_ &= ~kCpuHasAVX;
+  }
+  if (getenv("LIBYUV_DISABLE_AVX2")) {
+    cpu_info_ &= ~kCpuHasAVX2;
   }
   if (getenv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = kCpuInitialized;

@@ -37,6 +37,8 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has SSE4.2 %x\n", has_sse42);
   int has_avx = TestCpuFlag(kCpuHasAVX);
   printf("Has AVX %x\n", has_avx);
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  printf("Has AVX2 %x\n", has_avx2);
 }
 
 #if defined(__i386__) || defined(__x86_64__) || \
