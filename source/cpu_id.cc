@@ -70,7 +70,7 @@ __declspec(naked) __declspec(align(16))
 static uint32 XGetBV(unsigned int xcr) {
   __asm {
     mov        ecx, [esp + 4]    // xcr
-    xgetbv  // updates eax and edx.  edx unused/
+    _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // xgetbv for vs2005.
     ret
   }
 }
