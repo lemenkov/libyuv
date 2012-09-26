@@ -679,9 +679,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
@@ -713,9 +713,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
@@ -747,9 +747,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
@@ -781,9 +781,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
@@ -815,9 +815,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
@@ -883,9 +883,9 @@ __asm {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
-    sub        ecx, 16
     jg         convertloop
     ret
   }
