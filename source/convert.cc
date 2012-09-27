@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 // Copy I420 with optional flipping
+LIBYUV_API
 int I420Copy(const uint8* src_y, int src_stride_y,
              const uint8* src_u, int src_stride_u,
              const uint8* src_v, int src_stride_v,
@@ -120,6 +121,7 @@ static void HalfRow_C(const uint8* src_uv, int src_uv_stride,
   }
 }
 
+LIBYUV_API
 int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -199,6 +201,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 
+LIBYUV_API
 int I444ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -276,6 +279,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
 
 // 411 chroma is 1/4 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
+LIBYUV_API
 int I411ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -325,6 +329,7 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
 }
 
 // I400 is greyscale typically used in MJPG
+LIBYUV_API
 int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -449,6 +454,7 @@ static int X420ToI420(const uint8* src_y,
 }
 
 // Convert NV12 to I420.
+LIBYUV_API
 int NV12ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
                uint8* dst_y, int dst_stride_y,
@@ -464,6 +470,7 @@ int NV12ToI420(const uint8* src_y, int src_stride_y,
 }
 
 // Convert M420 to I420.
+LIBYUV_API
 int M420ToI420(const uint8* src_m420, int src_stride_m420,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -590,6 +597,7 @@ static void SplitYUY2_C(const uint8* src_yuy2,
 
 // Convert Q420 to I420.
 // Format is rows of YY/YUYV
+LIBYUV_API
 int Q420ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_y, int dst_stride_y,
@@ -710,6 +718,7 @@ static bool TestReadSafe(const uint8* src_yuy2, int src_stride_yuy2,
 #endif
 
 // Convert YUY2 to I420.
+LIBYUV_API
 int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -778,6 +787,7 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
 }
 
 // Convert UYVY to I420.
+LIBYUV_API
 int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -896,6 +906,7 @@ static void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
 // Convert V210 to I420.
 // V210 is 10 bit version of UYVY.  16 bytes to store 6 pixels.
 // With is multiple of 48.
+LIBYUV_API
 int V210ToI420(const uint8* src_v210, int src_stride_v210,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -998,6 +1009,7 @@ int V210ToI420(const uint8* src_v210, int src_stride_v210,
   return 0;
 }
 
+LIBYUV_API
 int ARGBToI420(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -1055,6 +1067,7 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+LIBYUV_API
 int BGRAToI420(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -1112,6 +1125,7 @@ int BGRAToI420(const uint8* src_bgra, int src_stride_bgra,
   return 0;
 }
 
+LIBYUV_API
 int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -1169,6 +1183,7 @@ int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
   return 0;
 }
 
+LIBYUV_API
 int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -1226,6 +1241,7 @@ int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
   return 0;
 }
 
+LIBYUV_API
 int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,
@@ -1296,6 +1312,7 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
   return 0;
 }
 
+LIBYUV_API
 int RAWToI420(const uint8* src_raw, int src_stride_raw,
               uint8* dst_y, int dst_stride_y,
               uint8* dst_u, int dst_stride_u,
@@ -1366,6 +1383,7 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
   return 0;
 }
 
+LIBYUV_API
 int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
                  uint8* dst_y, int dst_stride_y,
                  uint8* dst_u, int dst_stride_u,
@@ -1436,6 +1454,7 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
   return 0;
 }
 
+LIBYUV_API
 int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
                  uint8* dst_y, int dst_stride_y,
                  uint8* dst_u, int dst_stride_u,
@@ -1507,6 +1526,7 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
   return 0;
 }
 
+LIBYUV_API
 int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
                    uint8* dst_y, int dst_stride_y,
                    uint8* dst_u, int dst_stride_u,
@@ -1680,6 +1700,7 @@ static void JpegI400ToI420(void* opaque,
 
 // MJPG (Motion JPeg) to I420
 // TODO(fbarchard): review w and h requirement.  dw and dh may be enough.
+LIBYUV_API
 int MJPGToI420(const uint8* sample,
                size_t sample_size,
                uint8* y, int y_stride,
@@ -1771,6 +1792,7 @@ int MJPGToI420(const uint8* sample,
 // src_height is used to compute location of planes, and indicate inversion
 // sample_size is measured in bytes and is the size of the frame.
 //   With MJPEG it is the compressed size of the frame.
+LIBYUV_API
 int ConvertToI420(const uint8* sample,
 #ifdef HAVE_JPEG
                   size_t sample_size,

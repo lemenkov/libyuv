@@ -14,6 +14,7 @@
     {
       'target_name': 'libyuv',
       'type': 'static_library',
+      # 'type': 'shared_library',
       'conditions': [
          ['use_system_libjpeg==0', {
           'dependencies': [
@@ -29,6 +30,7 @@
       ],
       'defines': [
         'HAVE_JPEG',
+        # 'LIBYUV_BUILDING_SHARED_LIBRARY',
       ],
       'include_dirs': [
         'include',

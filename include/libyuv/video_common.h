@@ -149,7 +149,7 @@ enum FourCCBpp {
 };
 
 // Converts fourcc aliases into canonical ones.
-uint32 CanonicalFourCC(uint32 fourcc);
+LIBYUV_API uint32 CanonicalFourCC(uint32 fourcc);
 
 #ifdef __cplusplus
 }  // extern "C"

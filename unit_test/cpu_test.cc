@@ -82,9 +82,6 @@ TEST_F(libyuvTest, TestCpuId) {
 }
 #endif
 
-// For testing purposes call the proc/cpuinfo parser directly
-extern "C" int ArmCpuCaps(const char* cpuinfoname);
-
 TEST_F(libyuvTest, TestLinuxNeon) {
   int testdata = ArmCpuCaps("unit_test/testdata/arm_v7.txt");
   if (testdata) {

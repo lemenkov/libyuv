@@ -3457,6 +3457,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 // Caveat - in 64 bit, movd is used with 64 bit gpr due to Mac gcc producing
 // an error if movq is used.  movd  %%xmm0,%1
 
+LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width) {
   intptr_t src_argb_stride_temp = src_argb_stride;

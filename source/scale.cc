@@ -36,6 +36,7 @@ extern "C" {
 // as produced by the optimized and non-optimized versions.
 static bool use_reference_impl_ = false;
 
+LIBYUV_API
 void SetUseReferenceImpl(bool use) {
   use_reference_impl_ = use;
 }
@@ -3314,6 +3315,7 @@ static void ScalePlaneDown(int src_width, int src_height,
 // This function in turn calls a scaling function suitable for handling
 // the desired resolutions.
 
+LIBYUV_API
 void ScalePlane(const uint8* src, int src_stride,
                 int src_width, int src_height,
                 uint8* dst, int dst_stride,
@@ -3379,6 +3381,7 @@ void ScalePlane(const uint8* src, int src_stride,
 
 #define UNDER_ALLOCATED_HACK 1
 
+LIBYUV_API
 int I420Scale(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
               const uint8* src_v, int src_stride_v,
@@ -3443,6 +3446,7 @@ int I420Scale(const uint8* src_y, int src_stride_y,
 }
 
 // Deprecated api
+LIBYUV_API
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int src_stride_y, int src_stride_u, int src_stride_v,
           int src_width, int src_height,
@@ -3506,6 +3510,7 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
 }
 
 // Deprecated api
+LIBYUV_API
 int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
                 bool interpolate) {

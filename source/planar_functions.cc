@@ -24,6 +24,7 @@ extern "C" {
 #endif
 
 // Copy a plane of data
+LIBYUV_API
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
@@ -55,6 +56,7 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to I400.
+LIBYUV_API
 int I420ToI400(const uint8* src_y, int src_stride_y,
                uint8*, int,  // src_u
                uint8*, int,  // src_v
@@ -104,6 +106,7 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
 }
 
 // Mirror I420 with optional flipping
+LIBYUV_API
 int I420Mirror(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -138,6 +141,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
 }
 
 // ARGB mirror.
+LIBYUV_API
 int ARGBMirror(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -173,6 +177,7 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
 // Get a blender that optimized for the CPU, alignment and pixel count.
 // As there are 6 blenders to choose from, the caller should try to use
 // the same blend function for all pixels if possible.
+LIBYUV_API
 ARGBBlendRow GetARGBBlend() {
   void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width) = ARGBBlendRow_C;
@@ -191,6 +196,7 @@ ARGBBlendRow GetARGBBlend() {
 }
 
 // Alpha Blend 2 ARGB images and store to destination.
+LIBYUV_API
 int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               const uint8* src_argb1, int src_stride_argb1,
               uint8* dst_argb, int dst_stride_argb,
@@ -217,6 +223,7 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
 }
 
 // Convert ARGB to I400.
+LIBYUV_API
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
@@ -249,6 +256,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
 
 // ARGB little endian (bgra in memory) to I422
 // same as I420 except UV plane is full height
+LIBYUV_API
 int ARGBToI422(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
@@ -297,6 +305,7 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert I422 to BGRA.
+LIBYUV_API
 int I422ToBGRA(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -348,6 +357,7 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I422 to ABGR.
+LIBYUV_API
 int I422ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -399,6 +409,7 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I422 to RGBA.
+LIBYUV_API
 int I422ToRGBA(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -450,6 +461,7 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
 }
 
 // Convert ARGB to RGBA.
+LIBYUV_API
 int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
                uint8* dst_rgba, int dst_stride_rgba,
                int width, int height) {
@@ -488,6 +500,7 @@ int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To RGB24.
+LIBYUV_API
 int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_rgb24, int dst_stride_rgb24,
                 int width, int height) {
@@ -533,6 +546,7 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To RAW.
+LIBYUV_API
 int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
               uint8* dst_raw, int dst_stride_raw,
               int width, int height) {
@@ -578,6 +592,7 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To RGB565.
+LIBYUV_API
 int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
@@ -612,6 +627,7 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To ARGB1555.
+LIBYUV_API
 int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb1555, int dst_stride_argb1555,
                    int width, int height) {
@@ -646,6 +662,7 @@ int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To ARGB4444.
+LIBYUV_API
 int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb4444, int dst_stride_argb4444,
                    int width, int height) {
@@ -681,6 +698,7 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
 
 // Convert NV12 to RGB565.
 // TODO(fbarchard): (Re) Optimize for Neon.
+LIBYUV_API
 int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
                  uint8* dst_rgb565, int dst_stride_rgb565,
@@ -726,6 +744,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
 }
 
 // Convert NV21 to RGB565.
+LIBYUV_API
 int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_vu, int src_stride_vu,
                  uint8* dst_rgb565, int dst_stride_rgb565,
@@ -893,6 +912,7 @@ static void SetRows32_C(uint8* dst, uint32 v32, int width,
   }
 }
 
+LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value) {
@@ -926,6 +946,7 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
 }
 
 // Draw a rectangle into I420
+LIBYUV_API
 int I420Rect(uint8* dst_y, int dst_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
@@ -953,6 +974,7 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
 }
 
 // Draw a rectangle into ARGB
+LIBYUV_API
 int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
              int width, int height,
@@ -993,6 +1015,7 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
 // where
 //   f is foreground pixel premultiplied by alpha
 
+LIBYUV_API
 int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height) {
@@ -1030,6 +1053,7 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert preattentuated ARGB to unattenuated ARGB.
+LIBYUV_API
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height) {
@@ -1060,6 +1084,7 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB to Grayed ARGB.
+LIBYUV_API
 int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -1090,6 +1115,7 @@ int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
 }
 
 // Make a rectangle of ARGB gray scale.
+LIBYUV_API
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
              int width, int height) {
@@ -1113,6 +1139,7 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 }
 
 // Make a rectangle of ARGB Sepia tone.
+LIBYUV_API
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int dst_x, int dst_y, int width, int height) {
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
@@ -1134,6 +1161,7 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
 }
 
 // Apply a 4x3 matrix rotation to each ARGB pixel.
+LIBYUV_API
 int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
                     int dst_x, int dst_y, int width, int height) {
@@ -1159,6 +1187,7 @@ int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
 
 // Apply a color table each ARGB pixel.
 // Table contains 256 ARGB values.
+LIBYUV_API
 int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int dst_x, int dst_y, int width, int height) {
@@ -1188,6 +1217,7 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
 // The divide is replaces with a multiply by reciprocal fixed point multiply.
 // Caveat - although SSE2 saturates, the C function does not and should be used
 // with care if doing anything but quantization.
+LIBYUV_API
 int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
                  int scale, int interval_size, int interval_offset,
                  int dst_x, int dst_y, int width, int height) {
@@ -1213,6 +1243,7 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
 
 // Computes table of cumulative sum for image where the value is the sum
 // of all values above and to the left of the entry.  Used by ARGBBlur.
+LIBYUV_API
 int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int32* dst_cumsum, int dst_stride32_cumsum,
                              int width, int height) {
@@ -1241,6 +1272,7 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
 // Caller should allocate CumulativeSum table of width * height * 16 bytes
 // aligned to 16 byte boundary.  height can be radius * 2 + 2 to save memory
 // as the buffer is treated as circular.
+LIBYUV_API
 int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
@@ -1325,6 +1357,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
 }
 
 // Multiply ARGB image by a specified ARGB value.
+LIBYUV_API
 int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value) {
@@ -1355,6 +1388,7 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
 }
 
 // Interpolate 2 ARGB images by specified amount (0 to 255).
+LIBYUV_API
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
                     uint8* dst_argb, int dst_stride_argb,

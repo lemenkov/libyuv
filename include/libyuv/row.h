@@ -651,8 +651,10 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value);
 
+LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
+LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 

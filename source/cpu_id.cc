@@ -49,10 +49,12 @@ extern "C" {
 // Low level cpuid for X86.  Returns zeros on other CPUs.
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
+LIBYUV_API
 void CpuId(int cpu_info[4], int info_type) {
   __cpuid(cpu_info, info_type);
 }
 #else
+LIBYUV_API
 void CpuId(int cpu_info[4], int) {
   cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
 }
@@ -92,6 +94,7 @@ static const int kXCR_XFEATURE_ENABLED_MASK = 0;
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
+LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name) {
   int flags = 0;
   FILE* fin = fopen(cpuinfo_name, "r");
@@ -113,9 +116,11 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 }
 
 // CPU detect function for SIMD instruction sets.
+LIBYUV_API
 int cpu_info_ = 0;
 
-int InitCpuFlags() {
+LIBYUV_API
+int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
   int cpu_info[4];
   __cpuid(cpu_info, 1);
@@ -175,6 +180,7 @@ int InitCpuFlags() {
   return cpu_info_;
 }
 
+LIBYUV_API
 void MaskCpuFlags(int enable_flags) {
   InitCpuFlags();
   cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;

@@ -1110,6 +1110,7 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
 #undef SHADE
 
 // Copy pixels from rotated source to destination row with a slope.
+LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width) {
   // Render a row of pixels from source into a buffer.

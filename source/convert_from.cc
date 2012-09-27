@@ -24,6 +24,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+LIBYUV_API
 int I420ToI422(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -103,6 +104,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
                         int src_stride, int dst_stride,
                         const uint8* src_ptr, uint8* dst_ptr);
 
+LIBYUV_API
 int I420ToI444(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -152,6 +154,7 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
 
 // 420 chroma is 1/2 width, 1/2 height
 // 411 chroma is 1/4 width, 1x height
+LIBYUV_API
 int I420ToI411(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -201,6 +204,7 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
 }
 
 // Copy to I400.  Source can be I420,422,444,400,NV12,NV21
+LIBYUV_API
 int I400Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_y, int dst_stride_y,
              int width, int height) {
@@ -460,6 +464,7 @@ static void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width) {
 }
 
 // TODO(fbarchard): Deprecate, move or expand 422 support?
+LIBYUV_API
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -497,6 +502,7 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+LIBYUV_API
 int I420ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -540,6 +546,7 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
 }
 
 // TODO(fbarchard): Deprecate, move or expand 422 support?
+LIBYUV_API
 int I422ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -577,6 +584,7 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+LIBYUV_API
 int I420ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -619,6 +627,7 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+LIBYUV_API
 int I420ToV210(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -671,6 +680,7 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to ARGB.
+LIBYUV_API
 int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -723,6 +733,7 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to BGRA.
+LIBYUV_API
 int I420ToBGRA(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -776,6 +787,7 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to ABGR.
+LIBYUV_API
 int I420ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -829,6 +841,7 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to RGBA.
+LIBYUV_API
 int I420ToRGBA(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -883,6 +896,7 @@ int I420ToRGBA(const uint8* src_y, int src_stride_y,
 
 // Convert I420 to RGB24.
 // TODO(fbarchard): One step I420ToRGB24Row_NEON.
+LIBYUV_API
 int I420ToRGB24(const uint8* src_y, int src_stride_y,
                 const uint8* src_u, int src_stride_u,
                 const uint8* src_v, int src_stride_v,
@@ -954,6 +968,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
 
 // Convert I420 to RAW.
 // TODO(fbarchard): One step I420ToRAWRow_NEON.
+LIBYUV_API
 int I420ToRAW(const uint8* src_y, int src_stride_y,
               const uint8* src_u, int src_stride_u,
               const uint8* src_v, int src_stride_v,
@@ -1023,6 +1038,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to RGB565.
+LIBYUV_API
 int I420ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_u, int src_stride_u,
                  const uint8* src_v, int src_stride_v,
@@ -1082,6 +1098,7 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to ARGB1555.
+LIBYUV_API
 int I420ToARGB1555(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
                    const uint8* src_v, int src_stride_v,
@@ -1141,6 +1158,7 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to ARGB4444.
+LIBYUV_API
 int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                    const uint8* src_u, int src_stride_u,
                    const uint8* src_v, int src_stride_v,
@@ -1200,6 +1218,7 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I420 to specified format
+LIBYUV_API
 int ConvertFromI420(const uint8* y, int y_stride,
                     const uint8* u, int u_stride,
                     const uint8* v, int v_stride,

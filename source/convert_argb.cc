@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 // Copy ARGB with optional flipping
+LIBYUV_API
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height) {
@@ -47,6 +48,7 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert I444 to ARGB.
+LIBYUV_API
 int I444ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -91,6 +93,7 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I422 to ARGB.
+LIBYUV_API
 int I422ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -142,6 +145,7 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I411 to ARGB.
+LIBYUV_API
 int I411ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -187,6 +191,7 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
 
 
 // Convert I400 to ARGB.
+LIBYUV_API
 int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                          uint8* dst_argb, int dst_stride_argb,
                          int width, int height) {
@@ -220,6 +225,7 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
 }
 
 // Convert I400 to ARGB.
+LIBYUV_API
 int I400ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -253,6 +259,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert BGRA to ARGB.
+LIBYUV_API
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -286,6 +293,7 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
 }
 
 // Convert ABGR to ARGB.
+LIBYUV_API
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -319,6 +327,7 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
 }
 
 // Convert RGBA to ARGB.
+LIBYUV_API
 int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -352,6 +361,7 @@ int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
 }
 
 // Convert RAW to ARGB.
+LIBYUV_API
 int RAWToARGB(const uint8* src_raw, int src_stride_raw,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
@@ -384,6 +394,7 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
 }
 
 // Convert RGB24 to ARGB.
+LIBYUV_API
 int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height) {
@@ -416,6 +427,7 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
 }
 
 // Convert RGB565 to ARGB.
+LIBYUV_API
 int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
                  uint8* dst_argb, int dst_stride_argb,
                  int width, int height) {
@@ -448,6 +460,7 @@ int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
 }
 
 // Convert ARGB1555 to ARGB.
+LIBYUV_API
 int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height) {
@@ -480,6 +493,7 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
 }
 
 // Convert ARGB4444 to ARGB.
+LIBYUV_API
 int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height) {
@@ -512,6 +526,7 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
 }
 
 // Convert NV12 to ARGB.
+LIBYUV_API
 int NV12ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
                uint8* dst_argb, int dst_stride_argb,
@@ -554,6 +569,7 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert NV21 to ARGB.
+LIBYUV_API
 int NV21ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_vu, int src_stride_vu,
                uint8* dst_argb, int dst_stride_argb,
@@ -596,6 +612,7 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
 }
 
 // Convert M420 to ARGB.
+LIBYUV_API
 int M420ToARGB(const uint8* src_m420, int src_stride_m420,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -639,6 +656,7 @@ int M420ToARGB(const uint8* src_m420, int src_stride_m420,
 }
 
 // Convert YUY2 to ARGB.
+LIBYUV_API
 int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -725,6 +743,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
 }
 
 // Convert UYVY to ARGB.
+LIBYUV_API
 int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
@@ -872,6 +891,7 @@ static void JpegI400ToARGB(void* opaque,
 
 // MJPG (Motion JPeg) to ARGB
 // TODO(fbarchard): review w and h requirement.  dw and dh may be enough.
+LIBYUV_API
 int MJPGToARGB(const uint8* sample,
                size_t sample_size,
                uint8* argb, int argb_stride,
@@ -961,6 +981,7 @@ int MJPGToARGB(const uint8* sample,
 // src_height is used to compute location of planes, and indicate inversion
 // sample_size is measured in bytes and is the size of the frame.
 //   With MJPEG it is the compressed size of the frame.
+LIBYUV_API
 int ConvertToARGB(const uint8* sample, size_t sample_size,
                   uint8* dst_argb, int argb_stride,
                   int crop_x, int crop_y,
