@@ -670,6 +670,6 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }  // namespace libyuv
 #endif
 
-#endif  // INCLUDE_LIBYUV_ROW_H_
+#endif  // INCLUDE_LIBYUV_ROW_H_  NOLINT
 
 
