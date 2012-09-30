@@ -70,9 +70,11 @@ typedef signed char int8;
 #define CPU_ARM 1
 #endif
 
+#ifndef ALIGNP
 #define ALIGNP(p, t) \
     (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
     ((t) - 1)) & ~((t) - 1))))
+#endif
 
 #if !defined(LIBYUV_API)
 #if defined(_WIN32) || defined(__CYGWIN__)
