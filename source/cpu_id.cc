@@ -61,7 +61,8 @@ void CpuId(int cpu_info[4], int) {
 #endif
 
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
-#if !defined(__CLR_VER) && defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
+#if !defined(__CLR_VER) && defined(_M_X64) && \
+    defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #define HAS_XGETBV
 static uint32 XGetBV(unsigned int xcr) {
   return static_cast<uint32>(_xgetbv(xcr));
