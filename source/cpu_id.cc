@@ -13,6 +13,10 @@
 #ifdef _MSC_VER
 #include <intrin.h>  // For __cpuid()
 #endif
+#if !defined(__CLR_VER) && defined(_M_X64) && \
+    defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
+#include <immintrin.h>  // For _xgetbv()
+#endif
 
 #include <stdlib.h>  // For getenv()
 
