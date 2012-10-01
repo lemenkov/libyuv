@@ -983,21 +983,24 @@ RGBANY(ARGBToRAWRow_Any_NEON, ARGBToRAWRow_NEON, 3)
 #endif
 #undef RGBANY
 
-#ifdef HAS_ARGBTOYROW_SSSE3
 #define YANY(NAMEANY, ARGBTOY_SSE, BPP)                                        \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       ARGBTOY_SSE(src_argb, dst_y, width - 16);                                \
       ARGBTOY_SSE(src_argb + (width - 16) * BPP, dst_y + (width - 16), 16);    \
     }
 
+#ifdef HAS_ARGBTOYROW_SSSE3
 YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
 YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
 YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
+#endif
 #ifdef HAS_RGBATOYROW_SSSE3
 YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4)
 #endif
+#ifdef HAS_YUY2TOYROW_SSE2
 YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
 YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
+#endif
 #ifdef HAS_YUY2TOYROW_NEON
 YANY(YUY2ToYRow_Any_NEON, YUY2ToYRow_NEON, 2)
 YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, 2)
@@ -1015,14 +1018,18 @@ YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, 2)
                  width & 15);                                                  \
     }
 
+#ifdef HAS_ARGBTOUVROW_SSSE3
 UVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
 UVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
 UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
+#endif
 #ifdef HAS_RGBATOYROW_SSSE3
 UVANY(RGBAToUVRow_Any_SSSE3, RGBAToUVRow_Unaligned_SSSE3, RGBAToUVRow_C, 4)
 #endif
+#ifdef HAS_YUY2TOUVROW_SSE2
 UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
 UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
+#endif
 #ifdef HAS_YUY2TOUVROW_NEON
 UVANY(YUY2ToUVRow_Any_NEON, YUY2ToUVRow_NEON, YUY2ToUVRow_C, 2)
 UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2)
@@ -1040,10 +1047,12 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2)
                  width & 15);                                                  \
     }
 
+#ifdef HAS_YUY2TOUV422ROW_SSE2
 UV422ANY(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_Unaligned_SSE2,               \
          YUY2ToUV422Row_C, 2)
 UV422ANY(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_Unaligned_SSE2,               \
          UYVYToUV422Row_C, 2)
+#endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
 UV422ANY(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON,                         \
          YUY2ToUV422Row_C, 2)
@@ -1051,8 +1060,6 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,                         \
          UYVYToUV422Row_C, 2)
 #endif
 #undef UV422ANY
-
-#endif
 
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
                                const int32* previous_cumsum, int width) {
