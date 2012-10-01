@@ -85,7 +85,7 @@ typedef signed char int8;
 #else
 #define LIBYUV_API
 #endif  // LIBYUV_BUILDING_SHARED_LIBRARY
-#elif defined(__GNUC__) && __GNUC__ >= 4 && \
+#elif defined(__GNUC__) && (__GNUC__ >= 4) && !defined(__APPLE__) && \
     (defined(LIBYUV_BUILDING_SHARED_LIBRARY) || \
     defined(LIBYUV_USING_SHARED_LIBRARY))
 #define LIBYUV_API __attribute__ ((visibility ("default")))
