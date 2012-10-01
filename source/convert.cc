@@ -484,117 +484,6 @@ int M420ToI420(const uint8* src_m420, int src_stride_m420,
                     width, height);
 }
 
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_SPLITYUY2_SSE2
-__declspec(naked) __declspec(align(16))
-static void SplitYUY2_SSE2(const uint8* src_yuy2,
-                           uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix) {
-  __asm {
-    push       esi
-    push       edi
-    mov        eax, [esp + 8 + 4]    // src_yuy2
-    mov        edx, [esp + 8 + 8]    // dst_y
-    mov        esi, [esp + 8 + 12]   // dst_u
-    mov        edi, [esp + 8 + 16]   // dst_v
-    mov        ecx, [esp + 8 + 20]   // pix
-    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
-    psrlw      xmm5, 8
-
-    align      16
-  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    lea        eax,  [eax + 32]
-    movdqa     xmm2, xmm0
-    movdqa     xmm3, xmm1
-    pand       xmm2, xmm5   // even bytes are Y
-    pand       xmm3, xmm5
-    packuswb   xmm2, xmm3
-    movdqa     [edx], xmm2
-    lea        edx, [edx + 16]
-    psrlw      xmm0, 8      // YUYV -> UVUV
-    psrlw      xmm1, 8
-    packuswb   xmm0, xmm1
-    movdqa     xmm1, xmm0
-    pand       xmm0, xmm5  // U
-    packuswb   xmm0, xmm0
-    movq       qword ptr [esi], xmm0
-    lea        esi, [esi + 8]
-    psrlw      xmm1, 8     // V
-    packuswb   xmm1, xmm1
-    sub        ecx, 16
-    movq       qword ptr [edi], xmm1
-    lea        edi, [edi + 8]
-    jg         convertloop
-
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-#define HAS_SPLITYUY2_SSE2
-static void SplitYUY2_SSE2(const uint8* src_yuy2, uint8* dst_y,
-                           uint8* dst_u, uint8* dst_v, int pix) {
-  asm volatile (
-  "pcmpeqb    %%xmm5,%%xmm5                    \n"
-  "psrlw      $0x8,%%xmm5                      \n"
-  ".p2align  4                                 \n"
-"1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "movdqa     0x10(%0),%%xmm1                  \n"
-  "lea        0x20(%0),%0                      \n"
-  "movdqa     %%xmm0,%%xmm2                    \n"
-  "movdqa     %%xmm1,%%xmm3                    \n"
-  "pand       %%xmm5,%%xmm2                    \n"
-  "pand       %%xmm5,%%xmm3                    \n"
-  "packuswb   %%xmm3,%%xmm2                    \n"
-  "movdqa     %%xmm2,(%1)                      \n"
-  "lea        0x10(%1),%1                      \n"
-  "psrlw      $0x8,%%xmm0                      \n"
-  "psrlw      $0x8,%%xmm1                      \n"
-  "packuswb   %%xmm1,%%xmm0                    \n"
-  "movdqa     %%xmm0,%%xmm1                    \n"
-  "pand       %%xmm5,%%xmm0                    \n"
-  "packuswb   %%xmm0,%%xmm0                    \n"
-  "movq       %%xmm0,(%2)                      \n"
-  "lea        0x8(%2),%2                       \n"
-  "psrlw      $0x8,%%xmm1                      \n"
-  "packuswb   %%xmm1,%%xmm1                    \n"
-  "sub        $0x10,%4                         \n"
-  "movq       %%xmm1,(%3)                      \n"
-  "lea        0x8(%3),%3                       \n"
-  "jg         1b                               \n"
-  : "+r"(src_yuy2),    // %0
-    "+r"(dst_y),       // %1
-    "+r"(dst_u),       // %2
-    "+r"(dst_v),       // %3
-    "+r"(pix)          // %4
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
-);
-}
-#endif
-
-static void SplitYUY2_C(const uint8* src_yuy2,
-                        uint8* dst_y, uint8* dst_u, uint8* dst_v, int pix) {
-  // Copy a row of YUY2.
-  for (int x = 0; x < pix; x += 2) {
-    dst_y[0] = src_yuy2[0];
-    dst_y[1] = src_yuy2[2];
-    dst_u[0] = src_yuy2[1];
-    dst_v[0] = src_yuy2[3];
-    src_yuy2 += 4;
-    dst_y += 2;
-    dst_u += 1;
-    dst_v += 1;
-  }
-}
-
 // Convert Q420 to I420.
 // Format is rows of YY/YUYV
 LIBYUV_API
@@ -620,46 +509,77 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
+  // CopyRow for rows of just Y in Q420 copied to Y plane of I420.
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
     CopyRow = CopyRow_NEON;
   }
-#elif defined(HAS_COPYROW_X86)
+#endif
+#if defined(HAS_COPYROW_X86)
   if (IS_ALIGNED(width, 4)) {
     CopyRow = CopyRow_X86;
+  }
+#endif
 #if defined(HAS_COPYROW_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
-        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-      CopyRow = CopyRow_SSE2;
-    }
-#endif
-  }
-#endif
-
-  void (*SplitYUY2)(const uint8* src_yuy2, uint8* dst_y, uint8* dst_u,
-                    uint8* dst_v, int pix) = SplitYUY2_C;
-#if defined(HAS_SPLITYUY2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    SplitYUY2 = SplitYUY2_SSE2;
+    CopyRow = CopyRow_SSE2;
   }
 #endif
 
-  for (int y = 0; y < height; y += 2) {
-    CopyRow(src_y, dst_y, width);
-    dst_y += dst_stride_y;
-    src_y += src_stride_y;
+  void (*YUY2ToUV422Row)(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
+      int pix) = YUY2ToUV422Row_C;
+  void (*YUY2ToYRow)(const uint8* src_yuy2, uint8* dst_y, int pix) =
+      YUY2ToYRow_C;
+#if defined(HAS_YUY2TOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    if (width > 16) {
+      YUY2ToUV422Row = YUY2ToUV422Row_Any_SSE2;
+      YUY2ToYRow = YUY2ToYRow_Any_SSE2;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToUV422Row = YUY2ToUV422Row_Unaligned_SSE2;
+      YUY2ToYRow = YUY2ToYRow_Unaligned_SSE2;
+      if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
+        YUY2ToUV422Row = YUY2ToUV422Row_SSE2;
+        YUY2ToYRow = YUY2ToYRow_SSE2;
+      }
+    }
+  }
+#elif defined(HAS_YUY2TOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      YUY2ToYRow = YUY2ToYRow_Any_NEON;
+      if (width > 16) {
+        YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
+      }
+    }
+    if (IS_ALIGNED(width, 8)) {
+      YUY2ToYRow = YUY2ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        YUY2ToUV422Row = YUY2ToUV422Row_NEON;
+      }
+    }
+  }
+#endif
 
-    // Copy a row of YUY2.
-    SplitYUY2(src_yuy2, dst_y, dst_u, dst_v, width);
+  for (int y = 0; y < height - 1; y += 2) {
+    CopyRow(src_y, dst_y, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+
+    YUY2ToUV422Row(src_yuy2, dst_u, dst_v, width);
+    YUY2ToYRow(src_yuy2, dst_y, width);
+    src_yuy2 += src_stride_yuy2;
     dst_y += dst_stride_y;
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
-    src_yuy2 += src_stride_yuy2;
+  }
+  if (height & 1) {
+    CopyRow(src_y, dst_y, width);
+    YUY2ToUV422Row(src_yuy2, dst_u, dst_v, width);
   }
   return 0;
 }
