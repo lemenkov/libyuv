@@ -544,7 +544,9 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
       YUY2ToYRow = YUY2ToYRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
         YUY2ToUV422Row = YUY2ToUV422Row_SSE2;
-        YUY2ToYRow = YUY2ToYRow_SSE2;
+        if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+          YUY2ToYRow = YUY2ToYRow_SSE2;
+        }
       }
     }
   }
