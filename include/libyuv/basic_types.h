@@ -84,14 +84,15 @@ typedef signed char int8;
 #define LIBYUV_API __declspec(dllimport)
 #else
 #define LIBYUV_API
-#endif
-#else
-#if defined(__GNUC__) && __GNUC__ >= 4
+#endif  // LIBYUV_BUILDING_SHARED_LIBRARY
+#else  // WIN32
+#if defined(__GNUC__) && __GNUC__ >= 4 && \
+    (defined(LIBYUV_BUILDING_SHARED_LIBRARY) || \
+    defined(LIBYUV_USING_SHARED_LIBRARY))
 #define LIBYUV_API __attribute__ ((visibility ("default")))
 #else
 #define LIBYUV_API
-#endif
-#endif
-#endif
+#endif  // __GNUC__
+#endif  // LIBYUV_API
 
 #endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_  NOLINT
