@@ -1173,21 +1173,22 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
 //      break;
     // Triplanar formats
     case FOURCC_I420:
+    case FOURCC_YU12:
     case FOURCC_YV12: {
       const uint8* src_y = sample + (src_width * crop_y + crop_x);
       const uint8* src_u;
       const uint8* src_v;
       int halfwidth = (src_width + 1) / 2;
       int halfheight = (abs_src_height + 1) / 2;
-      if (format == FOURCC_I420) {
-        src_u = sample + src_width * abs_src_height +
-            (halfwidth * crop_y + crop_x) / 2;
+      if (format == FOURCC_YV12) {
         src_v = sample + src_width * abs_src_height +
+            (halfwidth * crop_y + crop_x) / 2;
+        src_u = sample + src_width * abs_src_height +
             halfwidth * (halfheight + crop_y / 2) + crop_x / 2;
       } else {
-        src_v = sample + src_width * abs_src_height +
-            (halfwidth * crop_y + crop_x) / 2;
         src_u = sample + src_width * abs_src_height +
+            (halfwidth * crop_y + crop_x) / 2;
+        src_v = sample + src_width * abs_src_height +
             halfwidth * (halfheight + crop_y / 2) + crop_x / 2;
       }
       r = I420ToARGB(src_y, src_width,
@@ -1203,15 +1204,15 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
       const uint8* src_u;
       const uint8* src_v;
       int halfwidth = (src_width + 1) / 2;
-      if (format == FOURCC_I422) {
-        src_u = sample + src_width * abs_src_height +
-            halfwidth * crop_y + crop_x / 2;
+      if (format == FOURCC_YV16) {
         src_v = sample + src_width * abs_src_height +
+            halfwidth * crop_y + crop_x / 2;
+        src_u = sample + src_width * abs_src_height +
             halfwidth * (abs_src_height + crop_y) + crop_x / 2;
       } else {
-        src_v = sample + src_width * abs_src_height +
-            halfwidth * crop_y + crop_x / 2;
         src_u = sample + src_width * abs_src_height +
+            halfwidth * crop_y + crop_x / 2;
+        src_v = sample + src_width * abs_src_height +
             halfwidth * (abs_src_height + crop_y) + crop_x / 2;
       }
       r = I422ToARGB(src_y, src_width,
@@ -1226,12 +1227,12 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
       const uint8* src_y = sample + src_width * crop_y + crop_x;
       const uint8* src_u;
       const uint8* src_v;
-      if (format == FOURCC_I444) {
-        src_u = sample + src_width * (abs_src_height + crop_y) + crop_x;
-        src_v = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
-      } else {
+      if (format == FOURCC_YV24) {
         src_v = sample + src_width * (abs_src_height + crop_y) + crop_x;
         src_u = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
+      } else {
+        src_u = sample + src_width * (abs_src_height + crop_y) + crop_x;
+        src_v = sample + src_width * (abs_src_height * 2 + crop_y) + crop_x;
       }
       r = I444ToARGB(src_y, src_width,
                      src_u, src_width,

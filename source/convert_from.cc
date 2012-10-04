@@ -1370,17 +1370,18 @@ int ConvertFromI420(const uint8* y, int y_stride,
     // Triplanar formats
     // TODO(fbarchard): halfstride instead of halfwidth
     case FOURCC_I420:
+    case FOURCC_YU12:
     case FOURCC_YV12: {
       int halfwidth = (width + 1) / 2;
       int halfheight = (height + 1) / 2;
       uint8* dst_u;
       uint8* dst_v;
-      if (format == FOURCC_I420) {
-        dst_u = dst_sample + width * height;
-        dst_v = dst_u + halfwidth * halfheight;
-      } else {
+      if (format == FOURCC_YV12) {
         dst_v = dst_sample + width * height;
         dst_u = dst_v + halfwidth * halfheight;
+      } else {
+        dst_u = dst_sample + width * height;
+        dst_v = dst_u + halfwidth * halfheight;
       }
       r = I420Copy(y, y_stride,
                    u, u_stride,
@@ -1396,12 +1397,12 @@ int ConvertFromI420(const uint8* y, int y_stride,
       int halfwidth = (width + 1) / 2;
       uint8* dst_u;
       uint8* dst_v;
-      if (format == FOURCC_I422) {
-        dst_u = dst_sample + width * height;
-        dst_v = dst_u + halfwidth * height;
-      } else {
+      if (format == FOURCC_YV16) {
         dst_v = dst_sample + width * height;
         dst_u = dst_v + halfwidth * height;
+      } else {
+        dst_u = dst_sample + width * height;
+        dst_v = dst_u + halfwidth * height;
       }
       r = I420ToI422(y, y_stride,
                      u, u_stride,
@@ -1416,12 +1417,12 @@ int ConvertFromI420(const uint8* y, int y_stride,
     case FOURCC_YV24: {
       uint8* dst_u;
       uint8* dst_v;
-      if (format == FOURCC_I444) {
-        dst_u = dst_sample + width * height;
-        dst_v = dst_u + width * height;
-      } else {
+      if (format == FOURCC_YV24) {
         dst_v = dst_sample + width * height;
         dst_u = dst_v + width * height;
+      } else {
+        dst_u = dst_sample + width * height;
+        dst_v = dst_u + width * height;
       }
       r = I420ToI444(y, y_stride,
                      u, u_stride,
