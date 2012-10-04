@@ -1,10 +1,11 @@
-# This is the Android makefile for libyuv so that we can
-# build it with the Android NDK.
-ifneq ($(TARGET_ARCH),x86)
+# This is the Android makefile for libyuv for both platform and NDK.
+LOCAL_PATH:= $(call my-dir)
 
-LOCAL_PATH := $(call my-dir)
+include $(CLEAR_VARS)
 
-common_SRC_FILES := \
+LOCAL_CPP_EXTENSION := .cc
+
+LOCAL_SRC_FILES := \
     source/compare.cc \
     source/convert.cc \
     source/convert_from.cc \
@@ -16,33 +17,19 @@ common_SRC_FILES := \
     source/row_posix.cc \
     source/scale.cc \
     source/scale_argb.cc \
-    source/video_common.cc \
-    source/rotate_neon.cc \
-    source/row_neon.cc
+    source/video_common.cc
 
-common_CFLAGS := -Wall -fexceptions -DHAVE_ARMEABI_V7A=1 -mfloat-abi=softfp -mfpu=neon
+ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
+    LOCAL_CFLAGS += -DLIBYUV_NEON
+    LOCAL_SRC_FILES += \
+        source/rotate_neon.cc.neon \
+        source/row_neon.cc.neon
+endif
 
-common_C_INCLUDES = $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
-# For the device
-# =====================================================
-# Device static library
-
-include $(CLEAR_VARS)
-
-LOCAL_CPP_EXTENSION := .cc
-
-LOCAL_NDK_VERSION := 5
-LOCAL_SDK_VERSION := 9
-LOCAL_NDK_STL_VARIANT := stlport_static
-
-LOCAL_SRC_FILES := $(common_SRC_FILES)
-LOCAL_CFLAGS += $(common_CFLAGS)
-LOCAL_C_INCLUDES += $(common_C_INCLUDES)
-
-LOCAL_MODULE:= libyuv_static
+LOCAL_MODULE := libyuv_static
 LOCAL_MODULE_TAGS := optional
 
 include $(BUILD_STATIC_LIBRARY)
 
-endif

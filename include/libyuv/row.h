@@ -111,7 +111,7 @@ extern "C" {
 #endif
 
 // The following are available on Neon platforms
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORROWUV_NEON
 #define HAS_SPLITUV_NEON
