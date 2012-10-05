@@ -181,7 +181,13 @@ int InitCpuFlags(void) {
   cpu_info_ = kCpuHasNEON;
 #endif
   cpu_info_ |= kCpuInitialized | kCpuHasARM;
-#endif
+  if (getenv("LIBYUV_DISABLE_NEON")) {
+    cpu_info_ &= ~kCpuHasNEON;
+  }
+  if (getenv("LIBYUV_DISABLE_ASM")) {
+    cpu_info_ = kCpuInitialized;
+  }
+#endif  // __arm__
   return cpu_info_;
 }
 

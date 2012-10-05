@@ -213,9 +213,9 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
   asm volatile (
   "1:                                          \n"
     "pld        [%0, #0xC0]                    \n"  // preload
-    "vldm       %0!,{q0, q1, q2, q3}              \n"  // load 64
+    "vldm       %0!,{q0, q1, q2, q3}           \n"  // load 64
     "subs       %2, %2, #64                    \n"  // 64 processed per loop
-    "vstm       %1!,{q0, q1, q2, q3}              \n"  // store 64
+    "vstm       %1!,{q0, q1, q2, q3}           \n"  // store 64
     "bgt        1b                             \n"
     : "+r"(src),   // %0
       "+r"(dst),   // %1
@@ -587,17 +587,17 @@ void YUY2ToUVRow_NEON(const uint8* src_yuy2, int stride_yuy2,
   "1:                                          \n"
     "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of YUY2.
     "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load next row YUY2.
-    "subs       %3, %3, #16                    \n"  // 16 pixels = 8 UVs.
+    "subs       %4, %4, #16                    \n"  // 16 pixels = 8 UVs.
     "vrhadd.u8  d1, d1, d5                     \n"  // average rows of U
     "vrhadd.u8  d3, d3, d7                     \n"  // average rows of V
     "vst1.u8    {d1}, [%2]!                    \n"  // store 8 U.
     "vst1.u8    {d3}, [%3]!                    \n"  // store 8 V.
     "bgt        1b                             \n"
-  : "+r"(src_yuy2),  // %0
+  : "+r"(src_yuy2),     // %0
     "+r"(stride_yuy2),  // %1
-    "+r"(dst_u),     // %2
-    "+r"(dst_v),     // %3
-    "+r"(pix)        // %4
+    "+r"(dst_u),        // %2
+    "+r"(dst_v),        // %3
+    "+r"(pix)           // %4
   :
   : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
   );
@@ -612,17 +612,17 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
   "1:                                          \n"
     "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of UYVY.
     "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load next row UYVY.
-    "subs       %3, %3, #16                    \n"  // 16 pixels = 8 UVs.
+    "subs       %4, %4, #16                    \n"  // 16 pixels = 8 UVs.
     "vrhadd.u8  d0, d0, d4                     \n"  // average rows of U
     "vrhadd.u8  d2, d2, d6                     \n"  // average rows of V
     "vst1.u8    {d0}, [%2]!                    \n"  // store 8 U.
     "vst1.u8    {d2}, [%3]!                    \n"  // store 8 V.
     "bgt        1b                             \n"
-  : "+r"(src_uyvy),  // %0
+  : "+r"(src_uyvy),     // %0
     "+r"(stride_uyvy),  // %1
-    "+r"(dst_u),     // %2
-    "+r"(dst_v),     // %3
-    "+r"(pix)        // %4
+    "+r"(dst_u),        // %2
+    "+r"(dst_v),        // %3
+    "+r"(pix)           // %4
   :
   : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
   );
