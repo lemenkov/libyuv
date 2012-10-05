@@ -558,11 +558,9 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
         YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
       }
     }
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       YUY2ToYRow = YUY2ToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        YUY2ToUV422Row = YUY2ToUV422Row_NEON;
-      }
+      YUY2ToUV422Row = YUY2ToUV422Row_NEON;
     }
   }
 #endif
@@ -683,11 +681,9 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
         YUY2ToUVRow = YUY2ToUVRow_Any_NEON;
       }
     }
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       YUY2ToYRow = YUY2ToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        YUY2ToUVRow = YUY2ToUVRow_NEON;
-      }
+      YUY2ToUVRow = YUY2ToUVRow_NEON;
     }
   }
 #endif
@@ -752,11 +748,9 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
         UYVYToUVRow = UYVYToUVRow_Any_NEON;
       }
     }
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       UYVYToYRow = UYVYToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        UYVYToUVRow = UYVYToUVRow_NEON;
-      }
+      UYVYToUVRow = UYVYToUVRow_NEON;
     }
   }
 #endif
@@ -872,11 +866,9 @@ int V210ToI420(const uint8* src_v210, int src_stride_v210,
         UYVYToUVRow = UYVYToUVRow_Any_NEON;
       }
     }
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       UYVYToYRow = UYVYToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        UYVYToUVRow = UYVYToUVRow_NEON;
-      }
+      UYVYToUVRow = UYVYToUVRow_NEON;
     }
   }
 #endif
@@ -903,11 +895,9 @@ int V210ToI420(const uint8* src_v210, int src_stride_v210,
         UYVYToUVRow = UYVYToUVRow_Any_NEON;
       }
     }
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       UYVYToYRow = UYVYToYRow_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        UYVYToUVRow = UYVYToUVRow_NEON;
-      }
+      UYVYToUVRow = UYVYToUVRow_NEON;
     }
   }
 #endif

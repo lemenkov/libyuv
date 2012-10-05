@@ -509,15 +509,15 @@ void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_raw, int pix) {
 void YUY2ToYRow_NEON(const uint8* src_yuy2, uint8* dst_y, int pix) {
   asm volatile (
   "1:                                          \n"
-    "vld2.u8    {d0, d1}, [%0]!                \n"  // load 8 pixels of YUY2.
-    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vst1.u8    {d0}, [%1]!                    \n"  // store 8 pixels of Y.
+    "vld2.u8    {q0, q1}, [%0]!                \n"  // load 16 pixels of YUY2.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vst1.u8    {q0}, [%1]!                    \n"  // store 16 pixels of Y.
     "bgt        1b                             \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1"  // Clobber List
+  : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOYROW_NEON
@@ -526,18 +526,21 @@ void YUY2ToYRow_NEON(const uint8* src_yuy2, uint8* dst_y, int pix) {
 void UYVYToYRow_NEON(const uint8* src_uyvy, uint8* dst_y, int pix) {
   asm volatile (
   "1:                                          \n"
-    "vld2.u8    {d0, d1}, [%0]!                \n"  // load 8 pixels of UYVY.
-    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vst1.u8    {d1}, [%1]!                    \n"  // store 8 pixels of Y.
+    "vld2.u8    {q0, q1}, [%0]!                \n"  // load 16 pixels of UYVY.
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop.
+    "vst1.u8    {q1}, [%1]!                    \n"  // store 16 pixels of Y.
     "bgt        1b                             \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1"  // Clobber List
+  : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOYROW_NEON
+
+#endif  // HAS_UYVYTOYROW_NEON
+
 
 #ifdef HAS_YUY2TOYROW_NEON
 void YUY2ToUV422Row_NEON(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
@@ -627,8 +630,6 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
   : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
   );
 }
-#endif  // HAS_UYVYTOYROW_NEON
-
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
