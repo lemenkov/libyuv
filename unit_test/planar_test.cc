@@ -13,6 +13,7 @@
 
 #include "libyuv/convert_argb.h"
 #include "libyuv/convert_from.h"
+#include "libyuv/compare.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
@@ -256,6 +257,8 @@ TESTATOPLANAR(ARGB, 4, I422, 2, 1)
 // TODO(fbarchard): Implement and test 411 and 444
 TESTATOPLANAR(YUY2, 2, I420, 2, 2)
 TESTATOPLANAR(UYVY, 2, I420, 2, 2)
+TESTATOPLANAR(YUY2, 2, I422, 2, 1)
+TESTATOPLANAR(UYVY, 2, I422, 2, 1)
 TESTATOPLANAR(V210, 16 / 6, I420, 2, 2)
 TESTATOPLANAR(I400, 1, I420, 2, 2)
 TESTATOPLANAR(BayerBGGR, 1, I420, 2, 2)
@@ -302,6 +305,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N##_OptVsC) {                             \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, , +)                       \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, Invert, -)
 
+TESTATOB(I400, 1, 1, I400, 1)
 TESTATOB(ARGB, 4, 4, ARGB, 4)
 TESTATOB(ARGB, 4, 4, BGRA, 4)
 TESTATOB(ARGB, 4, 4, ABGR, 4)
@@ -982,6 +986,20 @@ TEST_F(libyuvTest, TestAffine) {
 #if defined(HAS_ARGBAFFINEROW_SSE2)
   }
 #endif
+}
+
+TEST_F(libyuvTest, Test565) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 pixels565[256][2]);
+
+  for (int i = 0; i < 256; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      orig_pixels[i][j] = i;
+    }
+  }
+  ARGBToRGB565(&orig_pixels[0][0], 0, &pixels565[0][0], 0, 256, 1);
+  uint32 checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
+  EXPECT_EQ(610919429u, checksum);
 }
 
 }  // namespace libyuv
