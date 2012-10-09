@@ -105,6 +105,130 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
   }
 }
 
+// Convert YUY2 to I422.
+LIBYUV_API
+int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
+    src_stride_yuy2 = -src_stride_yuy2;
+  }
+  void (*YUY2ToUV422Row)(const uint8* src_yuy2,
+                      uint8* dst_u, uint8* dst_v, int pix);
+  void (*YUY2ToYRow)(const uint8* src_yuy2,
+                     uint8* dst_y, int pix);
+  YUY2ToYRow = YUY2ToYRow_C;
+  YUY2ToUV422Row = YUY2ToUV422Row_C;
+#if defined(HAS_YUY2TOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    if (width > 16) {
+      YUY2ToUV422Row = YUY2ToUV422Row_Any_SSE2;
+      YUY2ToYRow = YUY2ToYRow_Any_SSE2;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToUV422Row = YUY2ToUV422Row_Unaligned_SSE2;
+      YUY2ToYRow = YUY2ToYRow_Unaligned_SSE2;
+      if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16)) {
+        YUY2ToUV422Row = YUY2ToUV422Row_SSE2;
+        if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+          YUY2ToYRow = YUY2ToYRow_SSE2;
+        }
+      }
+    }
+  }
+#elif defined(HAS_YUY2TOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      YUY2ToYRow = YUY2ToYRow_Any_NEON;
+      if (width > 16) {
+        YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
+      }
+    }
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_NEON;
+      YUY2ToUV422Row = YUY2ToUV422Row_NEON;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    YUY2ToUV422Row(src_yuy2, dst_u, dst_v, width);
+    YUY2ToYRow(src_yuy2, dst_y, width);
+    src_yuy2 += src_stride_yuy2;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  return 0;
+}
+
+// Convert UYVY to I422.
+LIBYUV_API
+int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_uyvy = src_uyvy + (height - 1) * src_stride_uyvy;
+    src_stride_uyvy = -src_stride_uyvy;
+  }
+  void (*UYVYToUV422Row)(const uint8* src_uyvy,
+                      uint8* dst_u, uint8* dst_v, int pix);
+  void (*UYVYToYRow)(const uint8* src_uyvy,
+                     uint8* dst_y, int pix);
+  UYVYToYRow = UYVYToYRow_C;
+  UYVYToUV422Row = UYVYToUV422Row_C;
+#if defined(HAS_UYVYTOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    if (width > 16) {
+      UYVYToUV422Row = UYVYToUV422Row_Any_SSE2;
+      UYVYToYRow = UYVYToYRow_Any_SSE2;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      UYVYToUV422Row = UYVYToUV422Row_Unaligned_SSE2;
+      UYVYToYRow = UYVYToYRow_Unaligned_SSE2;
+      if (IS_ALIGNED(src_uyvy, 16) && IS_ALIGNED(src_stride_uyvy, 16)) {
+        UYVYToUV422Row = UYVYToUV422Row_SSE2;
+        if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+          UYVYToYRow = UYVYToYRow_SSE2;
+        }
+      }
+    }
+  }
+#elif defined(HAS_UYVYTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      UYVYToYRow = UYVYToYRow_Any_NEON;
+      if (width > 16) {
+        UYVYToUV422Row = UYVYToUV422Row_Any_NEON;
+      }
+    }
+    if (IS_ALIGNED(width, 16)) {
+      UYVYToYRow = UYVYToYRow_NEON;
+      UYVYToUV422Row = UYVYToUV422Row_NEON;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    UYVYToUV422Row(src_uyvy, dst_u, dst_v, width);
+    UYVYToYRow(src_uyvy, dst_y, width);
+    src_uyvy += src_stride_uyvy;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  return 0;
+}
+
 // Mirror I420 with optional flipping
 LIBYUV_API
 int I420Mirror(const uint8* src_y, int src_stride_y,
@@ -721,6 +845,11 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
     NV12ToARGBRow = NV12ToARGBRow_SSSE3;
   }
 #endif
+#if defined(HAS_NV12TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width * 4 <= kMaxStride) {
+    NV12ToARGBRow = NV12ToARGBRow_NEON;
+  }
+#endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   void (*ARGBToRGB565Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
@@ -789,129 +918,6 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// SetRow8 writes 'count' bytes using a 32 bit value repeated
-// SetRow32 writes 'count' words using a 32 bit value repeated
-
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
-#define HAS_SETROW_NEON
-static void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
-  asm volatile (  // NOLINT
-    "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
-    "1:                                        \n"
-    "subs      %1, %1, #16                     \n"  // 16 bytes per loop
-    "vst1.u32  {q0}, [%0]!                     \n"  // store
-    "bgt       1b                              \n"
-    : "+r"(dst),   // %0
-      "+r"(count)  // %1
-    : "r"(v32)     // %2
-    : "q0", "memory", "cc");
-}
-
-// TODO(fbarchard): Make fully assembler
-static void SetRows32_NEON(uint8* dst, uint32 v32, int width,
-                           int dst_stride, int height) {
-  for (int y = 0; y < height; ++y) {
-    SetRow8_NEON(dst, v32, width << 2);
-    dst += dst_stride;
-  }
-}
-
-#elif !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_SETROW_X86
-__declspec(naked) __declspec(align(16))
-static void SetRow8_X86(uint8* dst, uint32 v32, int count) {
-  __asm {
-    mov        edx, edi
-    mov        edi, [esp + 4]   // dst
-    mov        eax, [esp + 8]   // v32
-    mov        ecx, [esp + 12]  // count
-    shr        ecx, 2
-    rep stosd
-    mov        edi, edx
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-static void SetRows32_X86(uint8* dst, uint32 v32, int width,
-                         int dst_stride, int height) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebp
-    mov        edi, [esp + 12 + 4]   // dst
-    mov        eax, [esp + 12 + 8]   // v32
-    mov        ebp, [esp + 12 + 12]  // width
-    mov        edx, [esp + 12 + 16]  // dst_stride
-    mov        esi, [esp + 12 + 20]  // height
-    lea        ecx, [ebp * 4]
-    sub        edx, ecx             // stride - width * 4
-
-    align      16
-  convertloop:
-    mov        ecx, ebp
-    rep stosd
-    add        edi, edx
-    sub        esi, 1
-    jg         convertloop
-
-    pop        ebp
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-#define HAS_SETROW_X86
-static void SetRow8_X86(uint8* dst, uint32 v32, int width) {
-  size_t width_tmp = static_cast<size_t>(width);
-  asm volatile (  // NOLINT
-    "shr       $0x2,%1                         \n"
-    "rep stosl                                 \n"
-    : "+D"(dst),       // %0
-      "+c"(width_tmp)  // %1
-    : "a"(v32)         // %2
-    : "memory", "cc");
-}
-
-static void SetRows32_X86(uint8* dst, uint32 v32, int width,
-                         int dst_stride, int height) {
-  for (int y = 0; y < height; ++y) {
-    size_t width_tmp = static_cast<size_t>(width);
-    uint32* d = reinterpret_cast<uint32*>(dst);
-    asm volatile (  // NOLINT
-      "rep stosl                               \n"
-      : "+D"(d),         // %0
-        "+c"(width_tmp)  // %1
-      : "a"(v32)         // %2
-      : "memory", "cc");
-    dst += dst_stride;
-  }
-}
-#endif
-
-static void SetRow8_C(uint8* dst, uint32 v8, int count) {
-#ifdef _MSC_VER
-  for (int x = 0; x < count; ++x) {
-    dst[x] = v8;
-  }
-#else
-  memset(dst, v8, count);
-#endif
-}
-
-static void SetRows32_C(uint8* dst, uint32 v32, int width,
-                        int dst_stride, int height) {
-  for (int y = 0; y < height; ++y) {
-    uint32* d = reinterpret_cast<uint32*>(dst);
-    for (int x = 0; x < width; ++x) {
-      d[x] = v32;
-    }
-    dst += dst_stride;
-  }
-}
-
 LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
@@ -927,13 +933,6 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
 #if defined(HAS_SETROW_X86)
   if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
     SetRow = SetRow8_X86;
-  }
-#endif
-#if defined(HAS_SETROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    SetRow = SetRow8_SSE2;
   }
 #endif
 
@@ -1242,7 +1241,7 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
 }
 
 // Computes table of cumulative sum for image where the value is the sum
-// of all values above and to the left of the entry.  Used by ARGBBlur.
+// of all values above and to the left of the entry. Used by ARGBBlur.
 LIBYUV_API
 int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int32* dst_cumsum, int dst_stride32_cumsum,
@@ -1270,7 +1269,7 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
 
 // Blur ARGB image.
 // Caller should allocate CumulativeSum table of width * height * 16 bytes
-// aligned to 16 byte boundary.  height can be radius * 2 + 2 to save memory
+// aligned to 16 byte boundary. height can be radius * 2 + 2 to save memory
 // as the buffer is treated as circular.
 LIBYUV_API
 int ARGBBlur(const uint8* src_argb, int src_stride_argb,
@@ -1290,7 +1289,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     CumulativeSumToAverage = CumulativeSumToAverage_SSE2;
   }
 #endif
-  // Compute enough CumulativeSum for first row to be blurred.  After this
+  // Compute enough CumulativeSum for first row to be blurred. After this
   // one row of CumulativeSum is updated at a time.
   ARGBComputeCumulativeSum(src_argb, src_stride_argb,
                            dst_cumsum, dst_stride32_cumsum,

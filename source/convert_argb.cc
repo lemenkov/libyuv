@@ -556,6 +556,14 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_NV12TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToARGBRow = NV12ToARGBRow_NEON;
+    }
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
     NV12ToARGBRow(src_y, src_uv, dst_argb, width);
@@ -571,10 +579,10 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
 // Convert NV21 to ARGB.
 LIBYUV_API
 int NV21ToARGB(const uint8* src_y, int src_stride_y,
-               const uint8* src_vu, int src_stride_vu,
+               const uint8* src_uv, int src_stride_uv,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
-  if (!src_y || !src_vu || !dst_argb ||
+  if (!src_y || !src_uv || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -585,7 +593,7 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*NV21ToARGBRow)(const uint8* y_buf,
-                        const uint8* vu_buf,
+                        const uint8* uv_buf,
                         uint8* rgb_buf,
                         int width) = NV21ToARGBRow_C;
 #if defined(HAS_NV21TOARGBROW_SSSE3)
@@ -599,13 +607,21 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_NV21TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    NV21ToARGBRow = NV21ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV21ToARGBRow = NV21ToARGBRow_NEON;
+    }
+  }
+#endif
 
   for (int y = 0; y < height; ++y) {
-    NV21ToARGBRow(src_y, src_vu, dst_argb, width);
+    NV21ToARGBRow(src_y, src_uv, dst_argb, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
-      src_vu += src_stride_vu;
+      src_uv += src_stride_uv;
     }
   }
   return 0;
@@ -890,7 +906,7 @@ static void JpegI400ToARGB(void* opaque,
 }
 
 // MJPG (Motion JPeg) to ARGB
-// TODO(fbarchard): review w and h requirement.  dw and dh may be enough.
+// TODO(fbarchard): review w and h requirement. dw and dh may be enough.
 LIBYUV_API
 int MJPGToARGB(const uint8* sample,
                size_t sample_size,
@@ -966,7 +982,7 @@ int MJPGToARGB(const uint8* sample,
       ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToARGB, &bufs, dw, dh);
     } else {
       // TODO(fbarchard): Implement conversion for any other colorspace/sample
-      // factors that occur in practice.  411 is supported by libjpeg
+      // factors that occur in practice. 411 is supported by libjpeg
       // ERROR: Unable to convert MJPEG frame because format is not supported
       mjpeg_decoder.UnloadFrame();
       return 1;
@@ -1004,7 +1020,7 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
   }
   int r = 0;
 
-  // One pass rotation is available for some formats.  For the rest, convert
+  // One pass rotation is available for some formats. For the rest, convert
   // to I420 (with optional vertical flipping) into a temporary I420 buffer,
   // and then rotate the I420 to the final destination buffer.
   // For in-place conversion, if destination dst_argb is same as source sample,

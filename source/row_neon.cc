@@ -101,8 +101,8 @@ void I422ToARGBRow_NEON(const uint8* y_buf,
       "+r"(width)     // %4
     : "r"(&kUVToRB),  // %5
       "r"(&kUVToG)    // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11",
-      "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_I422TOARGBROW_NEON
@@ -135,8 +135,8 @@ void I422ToBGRARow_NEON(const uint8* y_buf,
       "+r"(width)     // %4
     : "r"(&kUVToRB),  // %5
       "r"(&kUVToG)    // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
-                      "q10", "q11", "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_I422TOBGRAROW_NEON
@@ -169,8 +169,8 @@ void I422ToABGRRow_NEON(const uint8* y_buf,
       "+r"(width)     // %4
     : "r"(&kUVToRB),  // %5
       "r"(&kUVToG)    // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
-                      "q10", "q11", "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_I422TOABGRROW_NEON
@@ -202,11 +202,76 @@ void I422ToRGBARow_NEON(const uint8* y_buf,
       "+r"(width)     // %4
     : "r"(&kUVToRB),  // %5
       "r"(&kUVToG)    // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
-                      "q10", "q11", "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_I422TORGBAROW_NEON
+
+#ifdef HAS_I422TORGB24ROW_NEON
+void I422ToRGB24Row_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%5]                    \n"
+    "vld1.u8    {d25}, [%6]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUV422TORGB
+    "subs       %4, %4, #8                     \n"
+    "vst3.8     {d20, d21, d22}, [%3]!         \n"
+    "bgt        1b                             \n"
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_I422TORGB24ROW_NEON
+
+#ifdef HAS_I422TORAWROW_NEON
+void I422ToRAWRow_NEON(const uint8* y_buf,
+                       const uint8* u_buf,
+                       const uint8* v_buf,
+                       uint8* rgb_buf,
+                       int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%5]                    \n"
+    "vld1.u8    {d25}, [%6]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUV422TORGB
+    "subs       %4, %4, #8                     \n"
+    "vswp.u8    d20, d22                       \n"
+    "vst3.8     {d20, d21, d22}, [%3]!         \n"
+    "bgt        1b                             \n"
+    : "+r"(y_buf),    // %0
+      "+r"(u_buf),    // %1
+      "+r"(v_buf),    // %2
+      "+r"(rgb_buf),  // %3
+      "+r"(width)     // %4
+    : "r"(&kUVToRB),  // %5
+      "r"(&kUVToG)    // %6
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_I422TORAWROW_NEON
 
 #ifdef HAS_NV12TOARGBROW_NEON
 void NV12ToARGBRow_NEON(const uint8* y_buf,
@@ -233,8 +298,8 @@ void NV12ToARGBRow_NEON(const uint8* y_buf,
       "+r"(width)     // %3
     : "r"(&kUVToRB),  // %4
       "r"(&kUVToG)    // %5
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11",
-      "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_NV12TOARGBROW_NEON
@@ -264,8 +329,8 @@ void NV21ToARGBRow_NEON(const uint8* y_buf,
       "+r"(width)     // %3
     : "r"(&kUVToRB),  // %4
       "r"(&kUVToG)    // %5
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11",
-      "q12", "q13", "q14", "q15"
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_NV21TOARGBROW_NEON
@@ -312,7 +377,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 #endif  // HAS_COPYROW_NEON
 
 #ifdef HAS_SETROW_NEON
-// SetRow8 writes 'count' bytes using a 32 bit value repeated
+// SetRow8 writes 'count' bytes using a 32 bit value repeated.
 void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (  // NOLINT
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
@@ -327,7 +392,7 @@ void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
 }
 
 // TODO(fbarchard): Make fully assembler
-// SetRow32 writes 'count' words using a 32 bit value repeated
+// SetRow32 writes 'count' words using a 32 bit value repeated.
 void SetRows32_NEON(uint8* dst, uint32 v32, int width,
                     int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
@@ -344,11 +409,11 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "add         %1, %2                        \n"
     // work on segments that are multiples of 16
     "lsrs        r3, %2, #4                    \n"
-    // the output is written in two block.  8 bytes followed
-    // by another 8.  reading is done sequentially, from left to
-    // right.  writing is done from right to left in block sizes
+    // the output is written in two block. 8 bytes followed
+    // by another 8. reading is done sequentially, from left to
+    // right. writing is done from right to left in block sizes
     // %1, the destination pointer is incremented after writing
-    // the first of the two blocks.  need to subtract that 8 off
+    // the first of the two blocks. need to subtract that 8 off
     // along with 16 to get the next location.
     "mov         r3, #-24                      \n"
     "beq         2f                            \n"
@@ -356,9 +421,9 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     // back of destination by the size of the register that is
     // going to be mirrored
     "sub         %1, #16                       \n"
-    // the loop needs to run on blocks of 16.  what will be left
+    // the loop needs to run on blocks of 16. what will be left
     // over is either a negative number, the residuals that need
-    // to be done, or 0.  if this isn't subtracted off here the
+    // to be done, or 0. If this isn't subtracted off here the
     // loop will run one extra time.
     "sub         %2, #16                       \n"
 
@@ -375,7 +440,7 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "vst1.8      {d0}, [%1], r3                \n"  // dst -= 16
     "bge         1b                            \n"
 
-    // add 16 back to the counter.  if the result is 0 there is no
+    // add 16 back to the counter. if the result is 0 there is no
     // residuals so jump past
     "adds        %2, #16                       \n"
     "beq         5f                            \n"
@@ -430,9 +495,9 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
     // going to be mirrord
     "sub         %1, #8                        \n"
     "sub         %2, #8                        \n"
-    // the loop needs to run on blocks of 8.  what will be left
+    // the loop needs to run on blocks of 8. what will be left
     // over is either a negative number, the residuals that need
-    // to be done, or 0.  if this isn't subtracted off here the
+    // to be done, or 0. if this isn't subtracted off here the
     // loop will run one extra time.
     "sub         %3, #8                        \n"
 
@@ -446,7 +511,7 @@ void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
     "vst1.8      {d1}, [%2], r12               \n"  // dst_b -= 8
     "bge         1b                            \n"
 
-    // add 8 back to the counter.  if the result is 0 there is no
+    // add 8 back to the counter. if the result is 0 there is no
     // residuals so return
     "adds        %3, #8                        \n"
     "beq         4f                            \n"

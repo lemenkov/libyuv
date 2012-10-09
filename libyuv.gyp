@@ -64,6 +64,7 @@
 
         # sources.
         'source/compare.cc',
+        'source/compare_neon.cc',
         'source/convert.cc',
         'source/convert_argb.cc',
         'source/convert_from.cc',
@@ -79,6 +80,7 @@
         'source/row_posix.cc',
         'source/row_win.cc',
         'source/scale.cc',
+        'source/scale_neon.cc',
         'source/scale_argb.cc',
         'source/video_common.cc',
       ],

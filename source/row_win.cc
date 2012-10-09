@@ -18,6 +18,7 @@ extern "C" {
 // This module is for Visual C x86.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
+// TODO(fbarchard): I420ToRGB24, I420ToRAW
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constants for ARGB.
@@ -2521,6 +2522,54 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_X86
 
+#ifdef HAS_SETROW_X86
+// SetRow8 writes 'count' bytes using a 32 bit value repeated.
+__declspec(naked) __declspec(align(16))
+void SetRow8_X86(uint8* dst, uint32 v32, int count) {
+  __asm {
+    mov        edx, edi
+    mov        edi, [esp + 4]   // dst
+    mov        eax, [esp + 8]   // v32
+    mov        ecx, [esp + 12]  // count
+    shr        ecx, 2
+    rep stosd
+    mov        edi, edx
+    ret
+  }
+}
+
+// SetRow32 writes 'count' words using a 32 bit value repeated.
+__declspec(naked) __declspec(align(16))
+void SetRows32_X86(uint8* dst, uint32 v32, int width,
+                   int dst_stride, int height) {
+  __asm {
+    push       esi
+    push       edi
+    push       ebp
+    mov        edi, [esp + 12 + 4]   // dst
+    mov        eax, [esp + 12 + 8]   // v32
+    mov        ebp, [esp + 12 + 12]  // width
+    mov        edx, [esp + 12 + 16]  // dst_stride
+    mov        esi, [esp + 12 + 20]  // height
+    lea        ecx, [ebp * 4]
+    sub        edx, ecx             // stride - width * 4
+
+    align      16
+  convertloop:
+    mov        ecx, ebp
+    rep stosd
+    add        edi, edx
+    sub        esi, 1
+    jg         convertloop
+
+    pop        ebp
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_SETROW_X86
+
 #ifdef HAS_YUY2TOYROW_SSE2
 __declspec(naked) __declspec(align(16))
 void YUY2ToYRow_SSE2(const uint8* src_yuy2,
@@ -3497,7 +3546,7 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 #ifdef HAS_ARGBCOLORMATRIXROW_SSSE3
 // Tranform 8 ARGB pixels (32 bytes) with color matrix.
 // Same as Sepia except matrix is provided.
-// TODO(fbarchard): packuswbs only use half of the reg.  To make RGBA, combine R
+// TODO(fbarchard): packuswbs only use half of the reg. To make RGBA, combine R
 // and B into a high and low, then G/A, unpackl/hbw and then unpckl/hwd.
 __declspec(naked) __declspec(align(16))
 void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,

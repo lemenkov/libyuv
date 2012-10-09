@@ -58,7 +58,7 @@ static __inline int TestCpuFlag(int test_flag) {
 LIBYUV_API
 void MaskCpuFlags(int enable_flags);
 
-// Low level cpuid for X86.  Returns zeros on other CPUs.
+// Low level cpuid for X86. Returns zeros on other CPUs.
 LIBYUV_API
 void CpuId(int cpu_info[4], int info_type);
 

@@ -19,7 +19,7 @@
 
 // TODO(fbarchard): This set of functions should exactly match convert.h
 // Add missing V210 and Q420.
-// TODO(fbarchard): Add tests.  Create random content of right size and convert
+// TODO(fbarchard): Add tests. Create random content of right size and convert
 // with C vs Opt and or to I420 and compare.
 // TODO(fbarchard): Some of these functions lack parameter setting.
 
@@ -75,7 +75,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
-// Convert I400 to ARGB.  Reverse of ARGBToI400.
+// Convert I400 to ARGB. Reverse of ARGBToI400.
 LIBYUV_API
 int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                          uint8* dst_argb, int dst_stride_argb,
@@ -209,7 +209,7 @@ int MJPGToARGB(const uint8* sample, size_t sample_size,
 //    Must be less than or equal to src_width/src_height
 //    Cropping parameters are pre-rotation.
 // "rotation" can be 0, 90, 180 or 270.
-// "format" is a fourcc.  ie 'I420', 'YUY2'
+// "format" is a fourcc. ie 'I420', 'YUY2'
 // Returns 0 for successful; -1 for invalid parameter. Non-zero for failure.
 LIBYUV_API
 int ConvertToARGB(const uint8* src_frame, size_t src_size,

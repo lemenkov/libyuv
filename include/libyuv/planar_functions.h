@@ -27,13 +27,31 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value);
 
+// Alias.
+#define I400ToI400 CopyPlane
+
 // Copy a plane of data (I420 to I400).
 LIBYUV_API
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// Convert I420 to I400.  (calls CopyPlane ignoring u/v).
+// Convert YUY2 to I422.
+LIBYUV_API
+int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert UYVY to I422.
+int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert I420 to I400. (calls CopyPlane ignoring u/v).
 LIBYUV_API
 int I420ToI400(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
@@ -196,7 +214,7 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int x, int y, int width, int height);
 
-// Quantize a rectangle of ARGB.  Alpha unaffected.
+// Quantize a rectangle of ARGB. Alpha unaffected.
 // scale is a 16 bit fractional fixed point scaler between 0 and 65535.
 // interval_size should be a value between 1 and 255.
 // interval_offset should be a value between 0 and 255.
@@ -261,7 +279,7 @@ int MJPGToARGB(const uint8* sample, size_t sample_size,
                int w, int h, int dw, int dh);
 
 // Computes table of cumulative sum for image where the value is the sum
-// of all values above and to the left of the entry.  Used by ARGBBlur.
+// of all values above and to the left of the entry. Used by ARGBBlur.
 LIBYUV_API
 int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int32* dst_cumsum, int dst_stride32_cumsum,
@@ -299,7 +317,7 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
 #define YUV_DISABLE_ASM
 #endif
 // Row functions for copying a pixels from a source with a slope to a row
-// of destination.  Useful for scaling, rotation, mirror, texture mapping.
+// of destination. Useful for scaling, rotation, mirror, texture mapping.
 LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);

@@ -741,9 +741,9 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 
 // TODO(fbarchard): pass xmm constants to single block of assembly.
-// fpic on GCC 4.2 for OSX runs out of GPR registers.  "m" effectively takes
-// 3 registers - ebx, ebp and eax.  "m" can be passed with 3 normal registers,
-// or 4 if stack frame is disabled.  Doing 2 assembly blocks is a work around
+// fpic on GCC 4.2 for OSX runs out of GPR registers. "m" effectively takes
+// 3 registers - ebx, ebp and eax. "m" can be passed with 3 normal registers,
+// or 4 if stack frame is disabled. Doing 2 assembly blocks is a work around
 // and considered unsafe.
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
@@ -2143,6 +2143,34 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_COPYROW_X86
 
+#ifdef HAS_SETROW_X86
+void SetRow8_X86(uint8* dst, uint32 v32, int width) {
+  size_t width_tmp = static_cast<size_t>(width);
+  asm volatile (
+    "shr       $0x2,%1                         \n"
+    "rep stosl                                 \n"
+    : "+D"(dst),       // %0
+      "+c"(width_tmp)  // %1
+    : "a"(v32)         // %2
+    : "memory", "cc");
+}
+
+void SetRows32_X86(uint8* dst, uint32 v32, int width,
+                   int dst_stride, int height) {
+  for (int y = 0; y < height; ++y) {
+    size_t width_tmp = static_cast<size_t>(width);
+    uint32* d = reinterpret_cast<uint32*>(dst);
+    asm volatile (
+      "rep stosl                               \n"
+      : "+D"(d),         // %0
+        "+c"(width_tmp)  // %1
+      : "a"(v32)         // %2
+      : "memory", "cc");
+    dst += dst_stride;
+  }
+}
+#endif  // HAS_SETROW_X86
+
 #ifdef HAS_YUY2TOYROW_SSE2
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
   asm volatile (
@@ -2998,7 +3026,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBUNATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
-// Constant for ARGB color to gray scale.  0.11 * B + 0.59 * G + 0.30 * R
+// Constant for ARGB color to gray scale. 0.11 * B + 0.59 * G + 0.30 * R
 CONST vec8 kARGBToGray = {
   14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0, 14, 76, 38, 0
 };
@@ -3455,7 +3483,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 // TODO(fbarchard): Investigate why 4 pixels is slower than 2 on Core2.
 // Copy ARGB pixels from source image with slope to a row of destination.
 // Caveat - in 64 bit, movd is used with 64 bit gpr due to Mac gcc producing
-// an error if movq is used.  movd  %%xmm0,%1
+// an error if movq is used. movd  %%xmm0,%1
 
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,

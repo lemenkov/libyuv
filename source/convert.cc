@@ -62,6 +62,7 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Move to row_win etc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_HALFROW_SSE2
 __declspec(naked) __declspec(align(16))
@@ -188,7 +189,7 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 
 // Blends 32x2 pixels to 16x1
 // source in scale.cc
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
@@ -393,7 +394,7 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
 // M420 format description:
 // M420 is row biplanar 420: 2 rows of Y and 1 row of UV.
 // Chroma is half width / half height. (420)
-// src_stride_m420 is row planar.  Normally this will be the width in pixels.
+// src_stride_m420 is row planar. Normally this will be the width in pixels.
 //   The UV plane is half width, but 2 values, so src_stride_m420 applies to
 //   this as well as the two Y planes.
 static int X420ToI420(const uint8* src_y,
@@ -592,10 +593,10 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
 //   This policy assumes that the caller handles the last row of an odd height
 //   image using C.
 // READSAFE_PAGE - enable read ahead within same page.
-//   A page is 4096 bytes.  When reading ahead, if the last pixel is near the
+//   A page is 4096 bytes. When reading ahead, if the last pixel is near the
 //   end the page, and a read spans the page into the next page, a memory
 //   exception can occur if that page has not been allocated, or is a guard
-//   page.  This setting ensures the overread is within the same page.
+//   page. This setting ensures the overread is within the same page.
 // READSAFE_ALWAYS - enables read ahead on systems without memory exceptions
 //   or where buffers are padded by 64 bytes.
 
@@ -790,7 +791,7 @@ static inline uint32 READWORD(const uint8* p) {
 }
 #endif
 
-// Must be multiple of 6 pixels.  Will over convert to handle remainder.
+// Must be multiple of 6 pixels. Will over convert to handle remainder.
 // https://developer.apple.com/quicktime/icefloe/dispatch019.html#v210
 static void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
   for (int x = 0; x < width; x += 6) {
@@ -820,7 +821,7 @@ static void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
 }
 
 // Convert V210 to I420.
-// V210 is 10 bit version of UYVY.  16 bytes to store 6 pixels.
+// V210 is 10 bit version of UYVY. 16 bytes to store 6 pixels.
 // With is multiple of 48.
 LIBYUV_API
 int V210ToI420(const uint8* src_v210, int src_stride_v210,
@@ -1611,7 +1612,7 @@ static void JpegI400ToI420(void* opaque,
 }
 
 // MJPG (Motion JPeg) to I420
-// TODO(fbarchard): review w and h requirement.  dw and dh may be enough.
+// TODO(fbarchard): review w and h requirement. dw and dh may be enough.
 LIBYUV_API
 int MJPGToI420(const uint8* sample,
                size_t sample_size,
@@ -1689,7 +1690,7 @@ int MJPGToI420(const uint8* sample,
       ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToI420, &bufs, dw, dh);
     } else {
       // TODO(fbarchard): Implement conversion for any other colorspace/sample
-      // factors that occur in practice.  411 is supported by libjpeg
+      // factors that occur in practice. 411 is supported by libjpeg
       // ERROR: Unable to convert MJPEG frame because format is not supported
       mjpeg_decoder.UnloadFrame();
       return 1;
@@ -1734,7 +1735,7 @@ int ConvertToI420(const uint8* sample,
   }
   int r = 0;
 
-  // One pass rotation is available for some formats.  For the rest, convert
+  // One pass rotation is available for some formats. For the rest, convert
   // to I420 (with optional vertical flipping) into a temporary I420 buffer,
   // and then rotate the I420 to the final destination buffer.
   // For in-place conversion, if destination y is same as source sample,

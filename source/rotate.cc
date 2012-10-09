@@ -814,7 +814,7 @@ void RotatePlane90(const uint8* src, int src_stride,
                    uint8* dst, int dst_stride,
                    int width, int height) {
   // Rotate by 90 is a transpose with the source read
-  // from bottom to top.  So set the source pointer to the end
+  // from bottom to top. So set the source pointer to the end
   // of the buffer and flip the sign of the source stride.
   src += src_stride * (height - 1);
   src_stride = -src_stride;
@@ -826,7 +826,7 @@ void RotatePlane270(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
   // Rotate by 270 is a transpose with the destination written
-  // from bottom to top.  So set the destination pointer to the end
+  // from bottom to top. So set the destination pointer to the end
   // of the buffer and flip the sign of the destination stride.
   dst += dst_stride * (width - 1);
   dst_stride = -dst_stride;
@@ -880,7 +880,7 @@ void RotatePlane180(const uint8* src, int src_stride,
   if (width > kMaxStride) {
     return;
   }
-  // Swap first and last row and mirror the content.  Uses a temporary row.
+  // Swap first and last row and mirror the content. Uses a temporary row.
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   const uint8* src_bot = src + src_stride * (height - 1);
   uint8* dst_bot = dst + dst_stride * (height - 1);

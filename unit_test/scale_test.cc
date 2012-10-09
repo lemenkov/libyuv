@@ -118,8 +118,8 @@ static int TestFilter(int src_width, int src_height,
   printf("filter %d - %8d us C - %8d us OPT\n",
          f, static_cast<int>(c_time*1e6), static_cast<int>(opt_time*1e6));
 
-  // C version may be a little off from the optimized.  Order of
-  //  operations may introduce rounding somewhere.  So do a difference
+  // C version may be a little off from the optimized. Order of
+  //  operations may introduce rounding somewhere. So do a difference
   //  of the buffers and look to see that the max difference isn't
   //  over 2.
   int max_diff = 0;

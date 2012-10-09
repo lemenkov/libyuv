@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 // Note: to do this with Neon vld4.8 would load ARGB values into 4 registers
-// and vst would select which 2 components to write.  The low level would need
+// and vst would select which 2 components to write. The low level would need
 // to be ARGBToBG, ARGBToGB, ARGBToRG, ARGBToGR
 
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)

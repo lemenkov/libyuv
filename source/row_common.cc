@@ -330,7 +330,7 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width) {
     int sb = (b * 17 + g * 68 + r * 35) >> 7;
     int sg = (b * 22 + g * 88 + r * 45) >> 7;
     int sr = (b * 24 + g * 98 + r * 50) >> 7;
-    // b does not over flow.  a is preserved from original.
+    // b does not over flow. a is preserved from original.
     if (sg > 255) {
       sg = 255;
     }
@@ -344,7 +344,7 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width) {
   }
 }
 
-// Apply color matrix to a row of image.  Matrix is signed.
+// Apply color matrix to a row of image. Matrix is signed.
 void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width) {
   for (int x = 0; x < width; ++x) {
     int b = dst_argb[0];
@@ -459,6 +459,14 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
                                         (255u << ashift);
 }
 
+static __inline void YuvPixel2(uint8 y, uint8 u, uint8 v,
+                               uint8* b, uint8* g, uint8* r) {
+  int32 y1 = (static_cast<int32>(y) - 16) * YG;
+  *b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
+  *g = Clip(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
+  *r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
+}
+
 void I444ToARGBRow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
@@ -489,6 +497,48 @@ void I422ToARGBRow_C(const uint8* y_buf,
   }
   if (width & 1) {
     YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
+  }
+}
+
+void I422ToRGB24Row_C(const uint8* y_buf,
+                      const uint8* u_buf,
+                      const uint8* v_buf,
+                      uint8* rgb_buf,
+                      int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel2(y_buf[1], u_buf[0], v_buf[0],
+              rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    rgb_buf += 6;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+  }
+}
+
+void I422ToRAWRow_C(const uint8* y_buf,
+                    const uint8* u_buf,
+                    const uint8* v_buf,
+                    uint8* rgb_buf,
+                    int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0],
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    YuvPixel2(y_buf[1], u_buf[0], v_buf[0],
+              rgb_buf + 5, rgb_buf + 4, rgb_buf + 3);
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    rgb_buf += 6;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
   }
 }
 
@@ -669,6 +719,28 @@ void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
 
 void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
+}
+
+void SetRow8_C(uint8* dst, uint32 v8, int count) {
+#ifdef _MSC_VER
+  // VC will generate rep stosb.
+  for (int x = 0; x < count; ++x) {
+    dst[x] = v8;
+  }
+#else
+  memset(dst, v8, count);
+#endif
+}
+
+void SetRows32_C(uint8* dst, uint32 v32, int width,
+                 int dst_stride, int height) {
+  for (int y = 0; y < height; ++y) {
+    uint32* d = reinterpret_cast<uint32*>(dst);
+    for (int x = 0; x < width; ++x) {
+      d[x] = v32;
+    }
+    dst += dst_stride;
+  }
 }
 
 // Filter 2 rows of YUY2 UV's (422) into U and V (420).
@@ -950,6 +1022,11 @@ Y2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_Unaligned_SSSE3, NV21ToARGBRow_C, 0)
 YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C, 1)
 YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C, 1)
 #endif
+#ifdef HAS_I422TORGB24ROW_SSSE3
+YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_Unaligned_SSSE3,                 \
+     I422ToRGB24Row_C, 1)
+YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_Unaligned_SSSE3, I422ToRAWRow_C, 1)
+#endif
 #ifdef HAS_I422TORGBAROW_SSSE3
 YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_Unaligned_SSSE3, I422ToRGBARow_C, 1)
 #endif
@@ -958,6 +1035,10 @@ YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1)
 YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1)
 YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1)
 YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1)
+Y2NY(NV12ToARGBRow_Any_NEON, NV12ToARGBRow_NEON, NV12ToARGBRow_C, 0)
+Y2NY(NV21ToARGBRow_Any_NEON, NV21ToARGBRow_NEON, NV21ToARGBRow_C, 0)
+YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, I422ToRGB24Row_C, 1)
+YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, I422ToRAWRow_C, 1)
 #endif
 #undef YANY
 

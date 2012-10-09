@@ -29,7 +29,7 @@
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
+  asm volatile (  // NOLINT
     "mov %%ebx, %%edi                          \n"
     "cpuid                                     \n"
     "xchg %%edi, %%ebx                         \n"
@@ -38,7 +38,7 @@ static __inline void __cpuid(int cpu_info[4], int info_type) {
 }
 #elif defined(__i386__) || defined(__x86_64__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
+  asm volatile (  // NOLINT
     "cpuid                                     \n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type));
@@ -50,7 +50,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Low level cpuid for X86.  Returns zeros on other CPUs.
+// Low level cpuid for X86. Returns zeros on other CPUs.
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
 LIBYUV_API
@@ -85,7 +85,7 @@ static uint32 XGetBV(unsigned int xcr) {
 #define HAS_XGETBV
 static uint32 XGetBV(unsigned int xcr) {
   uint32 xcr_feature_mask;
-  asm volatile (
+  asm volatile (  // NOLINT
     ".byte 0x0f, 0x01, 0xd0\n"
     : "=a"(xcr_feature_mask)
     : "c"(xcr)
@@ -124,6 +124,18 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 LIBYUV_API
 int cpu_info_ = 0;
 
+// Test environment variable for disabling CPU features. Any non-zero value
+// to disable. Zero ignored to make it easy to set the variable on/off.
+static bool TestEnv(const char* name) {
+  const char* var = getenv(name);
+  if (var) {
+    if (var[0] != '0') {
+      return true;
+    }
+  }
+  return false;
+}
+
 LIBYUV_API
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
@@ -144,34 +156,33 @@ int InitCpuFlags(void) {
     }
   }
 #endif
-
   // environment variable overrides for testing.
-  if (getenv("LIBYUV_DISABLE_X86")) {
+  if (TestEnv("LIBYUV_DISABLE_X86")) {
     cpu_info_ &= ~kCpuHasX86;
   }
-  if (getenv("LIBYUV_DISABLE_SSE2")) {
+  if (TestEnv("LIBYUV_DISABLE_SSE2")) {
     cpu_info_ &= ~kCpuHasSSE2;
   }
-  if (getenv("LIBYUV_DISABLE_SSSE3")) {
+  if (TestEnv("LIBYUV_DISABLE_SSSE3")) {
     cpu_info_ &= ~kCpuHasSSSE3;
   }
-  if (getenv("LIBYUV_DISABLE_SSE41")) {
+  if (TestEnv("LIBYUV_DISABLE_SSE41")) {
     cpu_info_ &= ~kCpuHasSSE41;
   }
-  if (getenv("LIBYUV_DISABLE_SSE42")) {
+  if (TestEnv("LIBYUV_DISABLE_SSE42")) {
     cpu_info_ &= ~kCpuHasSSE42;
   }
-  if (getenv("LIBYUV_DISABLE_AVX")) {
+  if (TestEnv("LIBYUV_DISABLE_AVX")) {
     cpu_info_ &= ~kCpuHasAVX;
   }
-  if (getenv("LIBYUV_DISABLE_AVX2")) {
+  if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info_ &= ~kCpuHasAVX2;
   }
-  if (getenv("LIBYUV_DISABLE_ASM")) {
+  if (TestEnv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = kCpuInitialized;
   }
 #elif defined(__arm__)
-#if defined(__linux__) && defined(__ARM_NEON__)
+#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
   // linux arm parse text file for neon detect.
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
 #elif defined(__ARM_NEON__)
@@ -181,10 +192,10 @@ int InitCpuFlags(void) {
   cpu_info_ = kCpuHasNEON;
 #endif
   cpu_info_ |= kCpuInitialized | kCpuHasARM;
-  if (getenv("LIBYUV_DISABLE_NEON")) {
+  if (TestEnv("LIBYUV_DISABLE_NEON")) {
     cpu_info_ &= ~kCpuHasNEON;
   }
-  if (getenv("LIBYUV_DISABLE_ASM")) {
+  if (TestEnv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = kCpuInitialized;
   }
 #endif  // __arm__

@@ -22,8 +22,10 @@ LOCAL_SRC_FILES := \
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
     LOCAL_CFLAGS += -DLIBYUV_NEON
     LOCAL_SRC_FILES += \
+        source/compare_neon.cc \
         source/rotate_neon.cc.neon \
-        source/row_neon.cc.neon
+        source/row_neon.cc.neon \
+        source/scale_neon.cc
 endif
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include

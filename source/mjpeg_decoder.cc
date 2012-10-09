@@ -10,6 +10,7 @@
 
 #include "libyuv/mjpeg_decoder.h"
 
+#ifdef HAVE_JPEG
 // Must be included before jpeglib
 #include <assert.h>
 #ifndef __CLR_VER
@@ -80,7 +81,7 @@ MJpegDecoder::~MJpegDecoder() {
 }
 
 // Helper function to validate the jpeg looks ok.
-// TODO(fbarchard): Improve performance.  Scan backward for EOI?
+// TODO(fbarchard): Improve performance. Scan backward for EOI?
 bool ValidateJpeg(const uint8* sample, size_t sample_size) {
   if (sample_size < 64) {
     // ERROR: Invalid jpeg size: sample_size
@@ -105,7 +106,7 @@ bool ValidateJpeg(const uint8* sample, size_t sample_size) {
     }
   }
   if (!total_eoi) {
-    // ERROR: Invalid jpeg end code not found.  Size sample_size
+    // ERROR: Invalid jpeg end code not found. Size sample_size
     return false;
   }
   return true;
@@ -578,3 +579,5 @@ JpegSubsamplingType MJpegDecoder::JpegSubsamplingTypeHelper(
 }
 
 }  // namespace libyuv
+#endif  // HAVE_JPEG
+

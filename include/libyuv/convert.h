@@ -73,7 +73,7 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert NV12 to I420.  Also used for NV21.
+// Convert NV12 to I420. Also used for NV21.
 LIBYUV_API
 int NV12ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
@@ -229,7 +229,7 @@ int MJPGToI420(const uint8* sample, size_t sample_size,
 //    Must be less than or equal to src_width/src_height
 //    Cropping parameters are pre-rotation.
 // "rotation" can be 0, 90, 180 or 270.
-// "format" is a fourcc.  ie 'I420', 'YUY2'
+// "format" is a fourcc. ie 'I420', 'YUY2'
 // Returns 0 for successful; -1 for invalid parameter. Non-zero for failure.
 LIBYUV_API
 int ConvertToI420(const uint8* src_frame, size_t src_size,

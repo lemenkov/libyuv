@@ -50,7 +50,7 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Copy to I400.  Source can be I420, I422, I444, I400, NV12 or NV21.
+// Copy to I400. Source can be I420, I422, I444, I400, NV12 or NV21.
 LIBYUV_API
 int I400Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_y, int dst_stride_y,
