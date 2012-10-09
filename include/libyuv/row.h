@@ -100,6 +100,8 @@ extern "C" {
 #define HAS_RGBATOARGBROW_SSSE3
 #define HAS_RGBATOUVROW_SSSE3
 #define HAS_RGBATOYROW_SSSE3
+#define HAS_I422TORGB24ROW_SSSE3
+#define HAS_I422TORAWROW_SSSE3
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -436,6 +438,19 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
                          uint8* rgba_buf,
                          int width);
 
+// RGB24/RAW are unaligned.
+void I422ToRGB24Row_SSSE3(const uint8* y_buf,
+                          const uint8* u_buf,
+                          const uint8* v_buf,
+                          uint8* rgb_buf,
+                          int width);
+
+void I422ToRAWRow_SSSE3(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
+
 void I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* u_buf,
                                    const uint8* v_buf,
@@ -527,6 +542,19 @@ void I422ToRGBARow_Any_SSSE3(const uint8* y_buf,
                              const uint8* v_buf,
                              uint8* rgba_buf,
                              int width);
+
+// RGB24/RAW are unaligned.
+void I422ToRGB24Row_Any_SSSE3(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* rgb_buf,
+                              int width);
+
+void I422ToRAWRow_Any_SSSE3(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
 
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* argb_buf,

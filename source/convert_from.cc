@@ -928,10 +928,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToRGB24Row = I422ToRGB24Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToRGB24Row = I422ToRGB24Row_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_rgb24, 16) && IS_ALIGNED(dst_stride_rgb24, 16)) {
-        I422ToRGB24Row = I422ToRGB24Row_SSSE3;
-      }
+      I422ToRGB24Row = I422ToRGB24Row_SSSE3;
     }
   }
 #endif
@@ -982,10 +979,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToRAWRow = I422ToRAWRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToRAWRow = I422ToRAWRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_raw, 16) && IS_ALIGNED(dst_stride_raw, 16)) {
-        I422ToRAWRow = I422ToRAWRow_SSSE3;
-      }
+      I422ToRAWRow = I422ToRAWRow_SSSE3;
     }
   }
 #endif

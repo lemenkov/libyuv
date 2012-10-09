@@ -122,6 +122,16 @@ static const uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
+// Shuffle table for converting ARGBToRGB24 for I420ToRGB24.  First 8 + next 4
+static const uvec8 kShuffleMaskARGBToRGB24_0 = {
+  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
+};
+
+// Shuffle table for converting ARGB to RAW.
+static const uvec8 kShuffleMaskARGBToRAW_0 = {
+  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
+};
+
 __declspec(naked) __declspec(align(16))
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
@@ -1645,6 +1655,100 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
     lea        edx,  [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked) __declspec(align(16))
+void I422ToRGB24Row_SSSE3(const uint8* y_buf,
+                          const uint8* u_buf,
+                          const uint8* v_buf,
+                          uint8* rgb24_buf,
+                          int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb24
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pxor       xmm4, xmm4
+    movdqa     xmm5, kShuffleMaskARGBToRGB24_0
+    movdqa     xmm6, kShuffleMaskARGBToRGB24
+
+    align      16
+ convertloop:
+    READYUV422
+    YUVTORGB
+
+    // Step 3: Weave into RRGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm2           // RR
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
+    pshufb     xmm0, xmm5           // Pack into first 8 and last 4 bytes.
+    pshufb     xmm1, xmm6           // Pack into first 12 bytes.
+    palignr    xmm1, xmm0, 12       // last 4 bytes of xmm0 + 12 from xmm1
+    movq       qword ptr [edx], xmm0  // First 8 bytes
+    movdqu     [edx + 8], xmm1      // Last 16 bytes. = 24 bytes, 8 RGB pixels.
+    lea        edx,  [edx + 24]
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked) __declspec(align(16))
+void I422ToRAWRow_SSSE3(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* raw_buf,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // raw
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pxor       xmm4, xmm4
+    movdqa     xmm5, kShuffleMaskARGBToRAW_0
+    movdqa     xmm6, kShuffleMaskARGBToRAW
+
+    align      16
+ convertloop:
+    READYUV422
+    YUVTORGB
+
+    // Step 3: Weave into RRGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm2           // RR
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
+    pshufb     xmm0, xmm5           // Pack into first 8 and last 4 bytes.
+    pshufb     xmm1, xmm6           // Pack into first 12 bytes.
+    palignr    xmm1, xmm0, 12       // last 4 bytes of xmm0 + 12 from xmm1
+    movq       qword ptr [edx], xmm0  // First 8 bytes
+    movdqu     [edx + 8], xmm1      // Last 16 bytes. = 24 bytes, 8 RGB pixels.
+    lea        edx,  [edx + 24]
     sub        ecx, 8
     jg         convertloop
 
