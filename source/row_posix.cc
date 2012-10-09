@@ -1816,6 +1816,43 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
   );
 }
 
+void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
+                                const uint8* u_buf,
+                                const uint8* v_buf,
+                                uint8* rgba_buf,
+                                int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUVTORGB
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "punpcklbw %%xmm2,%%xmm1                   \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "movdqa    %%xmm5,%%xmm0                   \n"
+    "punpcklwd %%xmm1,%%xmm5                   \n"
+    "punpckhwd %%xmm1,%%xmm0                   \n"
+    "movdqa    %%xmm5,(%[argb_buf])            \n"
+    "movdqa    %%xmm0,0x10(%[argb_buf])        \n"
+    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [argb_buf]"+r"(rgba_buf),  // %[argb_buf]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
 void OMITFP I422ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
                                           const uint8* u_buf,
                                           const uint8* v_buf,
@@ -1888,6 +1925,44 @@ void OMITFP I422ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
 #endif
   );
 }
+
+void OMITFP I422ToRGBARow_Unaligned_SSSE3(const uint8* y_buf,
+                                          const uint8* u_buf,
+                                          const uint8* v_buf,
+                                          uint8* rgba_buf,
+                                          int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUVTORGB
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "punpcklbw %%xmm2,%%xmm1                   \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "movdqa    %%xmm5,%%xmm0                   \n"
+    "punpcklwd %%xmm1,%%xmm5                   \n"
+    "punpckhwd %%xmm1,%%xmm0                   \n"
+    "movdqa    %%xmm5,(%[argb_buf])            \n"
+    "movdqa    %%xmm0,0x10(%[argb_buf])        \n"
+    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [argb_buf]"+r"(rgba_buf),  // %[argb_buf]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
 #endif  // HAS_I422TOARGBROW_SSSE3
 
 #ifdef HAS_YTOARGBROW_SSE2
@@ -3654,6 +3729,28 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 
+void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix) {
+  asm volatile (
+    "sub        %0,%1                            \n"
+    ".p2align  4                                 \n"
+  "1:                                            \n"
+    "movdqa     (%0),%%xmm0                      \n"
+    "pavgb      (%0,%3),%%xmm0                   \n"
+    "sub        $0x10,%2                         \n"
+    "movdqa     %%xmm0,(%0,%1)                   \n"
+    "lea        0x10(%0),%0                      \n"
+    "jg         1b                               \n"
+  : "+r"(src_uv),  // %0
+    "+r"(dst_uv),  // %1
+    "+r"(pix)      // %2
+  : "r"(static_cast<intptr_t>(src_uv_stride))  // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+      , "xmm0"
+#endif
+  );
+}
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

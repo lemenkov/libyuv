@@ -62,66 +62,6 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Move to row_win etc.
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_HALFROW_SSE2
-__declspec(naked) __declspec(align(16))
-static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
-                         uint8* dst_uv, int pix) {
-  __asm {
-    push       edi
-    mov        eax, [esp + 4 + 4]    // src_uv
-    mov        edx, [esp + 4 + 8]    // src_uv_stride
-    mov        edi, [esp + 4 + 12]   // dst_v
-    mov        ecx, [esp + 4 + 16]   // pix
-    sub        edi, eax
-
-    align      16
-  convertloop:
-    movdqa     xmm0, [eax]
-    pavgb      xmm0, [eax + edx]
-    sub        ecx, 16
-    movdqa     [eax + edi], xmm0
-    lea        eax,  [eax + 16]
-    jg         convertloop
-    pop        edi
-    ret
-  }
-}
-
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-#define HAS_HALFROW_SSE2
-static void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
-                         uint8* dst_uv, int pix) {
-  asm volatile (
-  "sub        %0,%1                            \n"
-  ".p2align  4                                 \n"
-"1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "pavgb      (%0,%3),%%xmm0                   \n"
-  "sub        $0x10,%2                         \n"
-  "movdqa     %%xmm0,(%0,%1)                   \n"
-  "lea        0x10(%0),%0                      \n"
-  "jg         1b                               \n"
-  : "+r"(src_uv),  // %0
-    "+r"(dst_uv),  // %1
-    "+r"(pix)      // %2
-  : "r"(static_cast<intptr_t>(src_uv_stride))  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0"
-#endif
-);
-}
-#endif
-
-static void HalfRow_C(const uint8* src_uv, int src_uv_stride,
-                      uint8* dst_uv, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
-  }
-}
-
 LIBYUV_API
 int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -149,13 +89,16 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   void (*HalfRow)(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) = HalfRow_C;
 #if defined(HAS_HALFROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(halfwidth, 16) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 16) &&
       IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
       IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
       IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
     HalfRow = HalfRow_SSE2;
+  }
+#elif defined(HAS_HALFROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
+    HalfRow = HalfRow_NEON;
   }
 #endif
 
@@ -296,12 +239,12 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
   }
 
   // Copy Y plane

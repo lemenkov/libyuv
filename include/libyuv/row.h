@@ -53,11 +53,13 @@ extern "C" {
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
+#define HAS_HALFROW_SSE2
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
+#define HAS_I422TORGBAROW_SSSE3
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROWUV_SSSE3
@@ -96,7 +98,6 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_I422TORGBAROW_SSSE3
 #define HAS_RGBATOARGBROW_SSSE3
 #define HAS_RGBATOUVROW_SSSE3
 #define HAS_RGBATOYROW_SSSE3
@@ -116,6 +117,7 @@ extern "C" {
 // The following are available on Neon platforms
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_COPYROW_NEON
+#define HAS_HALFROW_NEON
 #define HAS_I422TOABGRROW_NEON
 #define HAS_I422TOARGBROW_NEON
 #define HAS_I422TOBGRAROW_NEON
@@ -749,6 +751,14 @@ void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
 void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                               ptrdiff_t src_stride, int dst_width,
                               int source_y_fraction);
+
+void HalfRow_C(const uint8* src_uv, int src_uv_stride,
+               uint8* dst_uv, int pix);
+void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix);
+void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix);
+
 
 #ifdef __cplusplus
 }  // extern "C"

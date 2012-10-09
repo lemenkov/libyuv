@@ -4193,6 +4193,30 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
+__declspec(naked) __declspec(align(16))
+void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // src_uv_stride
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    sub        edi, eax
+
+    align      16
+  convertloop:
+    movdqa     xmm0, [eax]
+    pavgb      xmm0, [eax + edx]
+    sub        ecx, 16
+    movdqa     [eax + edi], xmm0
+    lea        eax,  [eax + 16]
+    jg         convertloop
+    pop        edi
+    ret
+  }
+}
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus

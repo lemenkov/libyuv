@@ -108,19 +108,25 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   align_buffer_16(src_a, kMaxWidth)
   align_buffer_16(src_b, kMaxWidth)
 
+  MaskCpuFlags(kCpuInitialized);
+
+  memcpy(src_a, "test0123test4567", 16);
+  memcpy(src_b, "tick0123tock4567", 16);
+  uint64 h1 = ComputeSumSquareError(src_a, src_b, 16);
+  EXPECT_EQ(790u, h1);
+
   for (int i = 0; i < kMaxWidth; ++i) {
     src_a[i] = i;
     src_b[i] = i;
   }
 
-  MaskCpuFlags(kCpuInitialized);
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    ComputeSumSquareError(src_a, src_b, kMaxWidth);
+  int count = benchmark_iterations_ * 1280 * 720 / kMaxWidth;
+  for (int i = 0; i < count; ++i) {
+    h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
 
   MaskCpuFlags(-1);
-
-  EXPECT_EQ(0, 0);
+  EXPECT_EQ(h1, 0);
 
   free_aligned_buffer_16(src_a)
   free_aligned_buffer_16(src_b)
@@ -131,16 +137,22 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
   align_buffer_16(src_a, kMaxWidth)
   align_buffer_16(src_b, kMaxWidth)
 
+  memcpy(src_a, "test0123test4567", 16);
+  memcpy(src_b, "tick0123tock4567", 16);
+  uint64 h1 = ComputeSumSquareError(src_a, src_b, 16);
+  EXPECT_EQ(790u, h1);
+
   for (int i = 0; i < kMaxWidth; ++i) {
     src_a[i] = i;
     src_b[i] = i;
   }
 
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    ComputeSumSquareError(src_a, src_b, kMaxWidth);
+  int count = benchmark_iterations_ * 1280 * 720 / kMaxWidth;
+  for (int i = 0; i < count; ++i) {
+    h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
 
-  EXPECT_EQ(0, 0);
+  EXPECT_EQ(h1, 0);
 
   free_aligned_buffer_16(src_a)
   free_aligned_buffer_16(src_b)

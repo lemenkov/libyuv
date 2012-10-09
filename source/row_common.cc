@@ -1240,6 +1240,13 @@ void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
   } while (dst_ptr < end);
 }
 
+void HalfRow_C(const uint8* src_uv, int src_uv_stride,
+               uint8* dst_uv, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

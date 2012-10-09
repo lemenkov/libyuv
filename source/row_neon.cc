@@ -821,6 +821,27 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
 }
 #endif  // HAS_UYVYTOYROW_NEON
 
+void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix) {
+  asm volatile (
+    // change the stride to row 2 pointer
+    "add        %1, %0                         \n"
+    "1:                                        \n"
+    "vld1.u8    {q0}, [%0]!                    \n"  // load row 1 16 pixels.
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "vld1.u8    {q1}, [%1]!                    \n"  // load row 2 16 pixels.
+    "vrhadd.u8  q0, q1                         \n"  // average row 1 and 2
+    "vst1.u8    {q0}, [%2]!                    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_uv),         // %0
+      "+r"(src_uv_stride),  // %1
+      "+r"(dst_uv),         // %2
+      "+r"(pix)             // %3
+    :
+    : "memory", "cc", "q0", "q1"  // Clobber List
+   );
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
