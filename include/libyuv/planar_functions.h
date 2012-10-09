@@ -27,8 +27,11 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value);
 
-// Alias.
-#define I400ToI400 CopyPlane
+// Copy I400.  Supports inverting.
+LIBYUV_API
+int I400ToI400(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
 
 // Copy a plane of data (I420 to I400).
 LIBYUV_API

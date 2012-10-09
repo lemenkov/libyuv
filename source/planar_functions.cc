@@ -55,6 +55,24 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
   }
 }
 
+// Copy I400.
+LIBYUV_API
+int I400ToI400(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height) {
+  if (!src_y || !dst_y || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  return 0;
+}
+
 // Convert I420 to I400.
 LIBYUV_API
 int I420ToI400(const uint8* src_y, int src_stride_y,
