@@ -647,29 +647,18 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
 
-  void (*I422ToUYVYRow)(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* dst_frame, int width) =
-      I422ToUYVYRow_C;
-#if defined(HAS_I422TOUYVYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16)) {
-    I422ToUYVYRow = I422ToUYVYRow_SSE2;
-  }
-#endif
-
   for (int y = 0; y < height - 1; y += 2) {
-    I422ToUYVYRow(src_y, src_u, src_v, row, width);
+    I422ToUYVYRow_C(src_y, src_u, src_v, row, width);
     UYVYToV210Row_C(row, dst_frame, width);
-    I422ToUYVYRow(src_y + src_stride_y, src_u, src_v, row, width);
+    I422ToUYVYRow_C(src_y + src_stride_y, src_u, src_v, row, width);
     UYVYToV210Row_C(row, dst_frame + dst_stride_frame, width);
-
     src_y += src_stride_y * 2;
     src_u += src_stride_u;
     src_v += src_stride_v;
     dst_frame += dst_stride_frame * 2;
   }
   if (height & 1) {
-    I422ToUYVYRow(src_y, src_u, src_v, row, width);
+    I422ToUYVYRow_C(src_y, src_u, src_v, row, width);
     UYVYToV210Row_C(row, dst_frame, width);
   }
   return 0;
