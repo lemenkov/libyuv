@@ -62,7 +62,7 @@ TEST_F(libyuvTest, BenchmakDjb2_C) {
   }
   uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
   uint32 h1;
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
   for (int i = 0; i < benchmark_iterations_; ++i) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
@@ -108,7 +108,7 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   align_buffer_16(src_a, kMaxWidth)
   align_buffer_16(src_b, kMaxWidth)
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
 
   memcpy(src_a, "test0123test4567", 16);
   memcpy(src_b, "tick0123tock4567", 16);
@@ -189,7 +189,7 @@ TEST_F(libyuvTest, SumSquareError) {
     src_b[i] = (random() & 0xff);
   }
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
   uint64 c_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
   MaskCpuFlags(-1);
@@ -210,7 +210,7 @@ TEST_F(libyuvTest, BenchmarkPsnr_C) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
 
   double c_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -313,7 +313,7 @@ TEST_F(libyuvTest, Psnr) {
     }
   }
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
   double c_err, opt_err;
 
   c_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
@@ -341,7 +341,7 @@ TEST_F(libyuvTest, BenchmarkSsim_C) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
 
   double c_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -440,7 +440,7 @@ TEST_F(libyuvTest, Ssim) {
     }
   }
 
-  MaskCpuFlags(kCpuInitialized);
+  MaskCpuFlags(0);                                                             \
   double c_err, opt_err;
 
   c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,

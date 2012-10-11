@@ -107,7 +107,6 @@ int ArmCpuCaps(const char* cpuinfo_name) {
     char buf[512];
     while (fgets(buf, 511, fin)) {
       if (memcmp(buf, "Features", 8) == 0) {
-        flags |= kCpuInitialized;
         char* p = strstr(buf, " neon");
         if (p && (p[5] == ' ' || p[5] == '\n')) {
           flags |= kCpuHasNEON;
@@ -121,8 +120,9 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 }
 
 // CPU detect function for SIMD instruction sets.
+// TODO(fbarchard): Use constant if/when valgrind says cpu_info is initialized.
 LIBYUV_API
-int cpu_info_ = 0;
+int cpu_info_ = 1;  // 1 means cpu info is not initialized yet.
 
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.
@@ -146,7 +146,7 @@ int InitCpuFlags(void) {
               ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
               (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
-              kCpuInitialized | kCpuHasX86;
+              kCpuHasX86;
 #ifdef HAS_XGETBV
   if (cpu_info_ & kCpuHasAVX) {
     __cpuid(cpu_info, 7);
@@ -179,7 +179,7 @@ int InitCpuFlags(void) {
     cpu_info_ &= ~kCpuHasAVX2;
   }
   if (TestEnv("LIBYUV_DISABLE_ASM")) {
-    cpu_info_ = kCpuInitialized;
+    cpu_info_ = 0;
   }
 #elif defined(__arm__)
 #if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
@@ -191,12 +191,12 @@ int InitCpuFlags(void) {
   // to disable Neon on devices that do not have it.
   cpu_info_ = kCpuHasNEON;
 #endif
-  cpu_info_ |= kCpuInitialized | kCpuHasARM;
+  cpu_info_ |= kCpuHasARM;
   if (TestEnv("LIBYUV_DISABLE_NEON")) {
     cpu_info_ &= ~kCpuHasNEON;
   }
   if (TestEnv("LIBYUV_DISABLE_ASM")) {
-    cpu_info_ = kCpuInitialized;
+    cpu_info_ = 0;
   }
 #endif  // __arm__
   return cpu_info_;
@@ -204,8 +204,7 @@ int InitCpuFlags(void) {
 
 LIBYUV_API
 void MaskCpuFlags(int enable_flags) {
-  InitCpuFlags();
-  cpu_info_ = (cpu_info_ & enable_flags) | kCpuInitialized;
+  cpu_info_ = InitCpuFlags() & enable_flags;
 }
 
 #ifdef __cplusplus

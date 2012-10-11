@@ -117,7 +117,9 @@ extern "C" {
 
 // The following are available on Neon platforms
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#define HAS_ABGRTOARGBROW_NEON
 #define HAS_ARGBTOBAYERROW_NEON
+#define HAS_BGRATOARGBROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_HALFROW_NEON
 #define HAS_I422TOABGRROW_NEON
@@ -128,6 +130,9 @@ extern "C" {
 #define HAS_I422TORGBAROW_NEON
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORROWUV_NEON
+#define HAS_RAWTOARGBROW_NEON
+#define HAS_RGB24TOARGBROW_NEON
+#define HAS_RGBATOARGBROW_NEON
 #define HAS_SETROW_NEON
 #define HAS_SPLITUV_NEON
 #define HAS_UYVYTOUV422ROW_NEON
@@ -138,16 +143,11 @@ extern "C" {
 #define HAS_YUY2TOYROW_NEON
 
 // TODO(fbarchard): Hook these up to calling functions.
-#define HAS_ABGRTOARGBROW_NEON
 #define HAS_ARGBTORAWROW_NEON
 #define HAS_ARGBTORGB24ROW_NEON
 #define HAS_ARGBTORGBAROW_NEON
-#define HAS_BGRATOARGBROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV21TOARGBROW_NEON
-#define HAS_RAWTOARGBROW_NEON
-#define HAS_RGB24TOARGBROW_NEON
-#define HAS_RGBATOARGBROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)

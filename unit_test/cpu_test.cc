@@ -19,7 +19,7 @@
 namespace libyuv {
 
 TEST_F(libyuvTest, TestCpuHas) {
-  int cpu_flags = TestCpuFlag(~kCpuInitialized);
+  int cpu_flags = TestCpuFlag(-1);
   printf("Cpu Flags %x\n", cpu_flags);
   int has_arm = TestCpuFlag(kCpuHasARM);
   printf("Has ARM %x\n", has_arm);
@@ -85,9 +85,9 @@ TEST_F(libyuvTest, TestCpuId) {
 TEST_F(libyuvTest, TestLinuxNeon) {
   int testdata = ArmCpuCaps("unit_test/testdata/arm_v7.txt");
   if (testdata) {
-    EXPECT_EQ(kCpuInitialized,
+    EXPECT_EQ(0,
               ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
-    EXPECT_EQ((kCpuInitialized | kCpuHasNEON),
+    EXPECT_EQ(kCpuHasNEON,
               ArmCpuCaps("unit_test/testdata/tegra3.txt"));
   } else {
     printf("WARNING: unable to load \"unit_test/testdata/arm_v7.txt\"\n");

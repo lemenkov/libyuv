@@ -208,8 +208,7 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                      uint8* rgb_buf,
                      int width) = YToARGBRow_C;
 #if defined(HAS_YTOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     YToARGBRow = YToARGBRow_SSE2;
   }
@@ -241,8 +240,7 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix) =
       I400ToARGBRow_C;
 #if defined(HAS_I400TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(src_y, 8) && IS_ALIGNED(src_stride_y, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     I400ToARGBRow = I400ToARGBRow_SSE2;
@@ -275,11 +273,14 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
   void (*BGRAToARGBRow)(const uint8* src_bgra, uint8* dst_argb, int pix) =
       BGRAToARGBRow_C;
 #if defined(HAS_BGRATOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_bgra, 16) && IS_ALIGNED(src_stride_bgra, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     BGRAToARGBRow = BGRAToARGBRow_SSSE3;
+  }
+#elif defined(HAS_BGRATOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    BGRAToARGBRow = BGRAToARGBRow_NEON;
   }
 #endif
 
@@ -309,11 +310,14 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
   void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix) =
       ABGRToARGBRow_C;
 #if defined(HAS_ABGRTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ABGRToARGBRow = ABGRToARGBRow_SSSE3;
+  }
+#elif defined(HAS_ABGRTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ABGRToARGBRow = ABGRToARGBRow_NEON;
   }
 #endif
 
@@ -343,11 +347,14 @@ int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
   void (*RGBAToARGBRow)(const uint8* src_rgba, uint8* dst_argb, int pix) =
       RGBAToARGBRow_C;
 #if defined(HAS_RGBATOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_rgba, 16) && IS_ALIGNED(src_stride_rgba, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     RGBAToARGBRow = RGBAToARGBRow_SSSE3;
+  }
+#elif defined(HAS_RGBATOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    RGBAToARGBRow = RGBAToARGBRow_NEON;
   }
 #endif
 
@@ -359,44 +366,11 @@ int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
   return 0;
 }
 
-// Convert RAW to ARGB.
-LIBYUV_API
-int RAWToARGB(const uint8* src_raw, int src_stride_raw,
-              uint8* dst_argb, int dst_stride_argb,
-              int width, int height) {
-  if (!src_raw || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_raw = src_raw + (height - 1) * src_stride_raw;
-    src_stride_raw = -src_stride_raw;
-  }
-  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix) =
-      RAWToARGBRow_C;
-#if defined(HAS_RAWTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    RAWToARGBRow = RAWToARGBRow_SSSE3;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    RAWToARGBRow(src_raw, dst_argb, width);
-    src_raw += src_stride_raw;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
-}
-
 // Convert RGB24 to ARGB.
 LIBYUV_API
 int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
-                uint8* dst_argb, int dst_stride_argb,
-                int width, int height) {
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   if (!src_rgb24 || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -410,16 +384,55 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
   void (*RGB24ToARGBRow)(const uint8* src_rgb24, uint8* dst_argb, int pix) =
       RGB24ToARGBRow_C;
 #if defined(HAS_RGB24TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
+  }
+#elif defined(HAS_RGB24TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    RGB24ToARGBRow = RGB24ToARGBRow_NEON;
   }
 #endif
 
   for (int y = 0; y < height; ++y) {
     RGB24ToARGBRow(src_rgb24, dst_argb, width);
     src_rgb24 += src_stride_rgb24;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert RAW to ARGB.
+LIBYUV_API
+int RAWToARGB(const uint8* src_raw, int src_stride_raw,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  if (!src_raw || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
+  }
+  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix) =
+      RAWToARGBRow_C;
+#if defined(HAS_RAWTOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    RAWToARGBRow = RAWToARGBRow_SSSE3;
+  }
+#elif defined(HAS_RAWTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    RAWToARGBRow = RAWToARGBRow_NEON;
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    RAWToARGBRow(src_raw, dst_argb, width);
+    src_raw += src_stride_raw;
     dst_argb += dst_stride_argb;
   }
   return 0;

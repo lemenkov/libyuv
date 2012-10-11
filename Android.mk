@@ -9,6 +9,7 @@ LOCAL_SRC_FILES := \
     source/compare.cc \
     source/convert.cc \
     source/convert_from.cc \
+    source/convert_from_argb.cc \
     source/cpu_id.cc \
     source/format_conversion.cc \
     source/planar_functions.cc \

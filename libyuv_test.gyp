@@ -27,6 +27,7 @@
 
         # sources
         'unit_test/compare_test.cc',
+        'unit_test/convert_test.cc',
         'unit_test/cpu_test.cc',
         'unit_test/planar_test.cc',
         'unit_test/rotate_argb_test.cc',

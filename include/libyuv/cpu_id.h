@@ -18,8 +18,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Internal flag to indicate cpuid is initialized.
-static const int kCpuInitialized = 0x1;
+// Internal flag to indicate cpuid requires initialization.
+static const int kCpuInit = 0x1;
 
 // These flags are only valid on ARM processors.
 static const int kCpuHasARM = 0x2;
@@ -46,9 +46,9 @@ int ArmCpuCaps(const char* cpuinfo_name);
 // Detect CPU has SSE2 etc.
 // Test_flag parameter should be one of kCpuHas constants above.
 // returns non-zero if instruction set is detected
-LIBYUV_API extern int cpu_info_;
 static __inline int TestCpuFlag(int test_flag) {
-  return (cpu_info_ ? cpu_info_ : InitCpuFlags()) & test_flag;
+  LIBYUV_API extern int cpu_info_;
+  return (cpu_info_ == 1 ? InitCpuFlags() : cpu_info_) & test_flag;
 }
 
 // For testing, allow CPU flags to be disabled.
