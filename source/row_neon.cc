@@ -826,7 +826,7 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
   asm volatile (
     // change the stride to row 2 pointer
     "add        %1, %0                         \n"
-    "1:                                        \n"
+  "1:                                          \n"
     "vld1.u8    {q0}, [%0]!                    \n"  // load row 1 16 pixels.
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vld1.u8    {q1}, [%1]!                    \n"  // load row 2 16 pixels.
@@ -843,21 +843,23 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
 }
 
 // Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
-// TODO(fbarchard): Neon port.
 void ARGBToBayerRow_NEON(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix) {
-  int index0 = selector & 0xff;
-  int index1 = (selector >> 8) & 0xff;
-  // Copy a row of Bayer.
-  for (int x = 0; x < pix - 1; x += 2) {
-    dst_bayer[0] = src_argb[index0];
-    dst_bayer[1] = src_argb[index1];
-    src_argb += 8;
-    dst_bayer += 2;
-  }
-  if (pix & 1) {
-    dst_bayer[0] = src_argb[index0];
-  }
+  asm volatile (
+    "vmov.u32   d2[0], %2                      \n"  // selector
+  "1:                                          \n"
+    "vld1.u8    {q0}, [%0]!                    \n"  // load row 4 pixels.
+    "subs       %3, %3, #4                     \n"  // 4 processed per loop
+    "vtbl.8     d3, {d0, d1}, d2               \n"  // look up 4 pixels
+    "vst1.u32   {d3[0]}, [%1]!                 \n"  // store 4.
+    "bgt        1b                             \n"
+    : "+r"(src_argb),         // %0
+      "+r"(dst_bayer),        // %1
+      "+r"(selector),         // %2
+      "+r"(pix)               // %3
+    :
+    : "memory", "cc", "q0", "q1"  // Clobber List
+   );
 }
 
 #endif  // __ARM_NEON__
