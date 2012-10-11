@@ -143,15 +143,20 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   align_buffer_16(src_v, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);            \
   align_buffer_16(dst_argb_c, kStrideB * kHeight);                             \
   align_buffer_16(dst_argb_opt, kStrideB * kHeight);                           \
+  memset(dst_argb_c, 0, kStrideB * kHeight);                                   \
+  memset(dst_argb_opt, 0, kStrideB * kHeight);                                 \
   srandom(time(NULL));                                                         \
-  for (int i = 0; i < kHeight; ++i)                                            \
-    for (int j = 0; j < kWidth; ++j)                                           \
+  for (int i = 0; i < kHeight; ++i) {                                          \
+    for (int j = 0; j < kWidth; ++j) {                                         \
       src_y[(i * kWidth) + j] = (random() & 0xff);                             \
-  for (int i = 0; i < kHeight / SUBSAMP_Y; ++i)                                \
+    }                                                                          \
+  }                                                                            \
+  for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       src_u[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
       src_v[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
     }                                                                          \
+  }                                                                            \
   MaskCpuFlags(kCpuInitialized);                                               \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                         src_u, kWidth / SUBSAMP_X,                             \
@@ -208,9 +213,9 @@ TESTPLANARTOB(I422, 2, 1, ABGR, 4, 4)
 TESTPLANARTOB(I422, 2, 1, RGBA, 4, 4)
 TESTPLANARTOB(I411, 4, 1, ARGB, 4, 4)
 TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4)
+TESTPLANARTOB(I420, 2, 2, V210, 16 / 6, 128)
 TESTPLANARTOB(I420, 2, 2, YUY2, 2, 4)
 TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4)
-TESTPLANARTOB(I420, 2, 2, V210, 16 / 6, 128)
 TESTPLANARTOB(I420, 2, 2, I400, 1, 1)
 TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1, 1)
 TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1, 1)
@@ -372,11 +377,11 @@ TESTATOPLANAR(ARGB4444, 2, I420, 2, 2)
 TESTATOPLANAR(ARGB, 4, I422, 2, 1)
 // TESTATOPLANAR(ARGB, 4, I444, 1, 1)
 // TODO(fbarchard): Implement and test 411 and 444
+TESTATOPLANAR(V210, 16 / 6, I420, 2, 2)
 TESTATOPLANAR(YUY2, 2, I420, 2, 2)
 TESTATOPLANAR(UYVY, 2, I420, 2, 2)
 TESTATOPLANAR(YUY2, 2, I422, 2, 1)
 TESTATOPLANAR(UYVY, 2, I422, 2, 1)
-TESTATOPLANAR(V210, 16 / 6, I420, 2, 2)
 TESTATOPLANAR(I400, 1, I420, 2, 2)
 TESTATOPLANAR(BayerBGGR, 1, I420, 2, 2)
 TESTATOPLANAR(BayerRGGB, 1, I420, 2, 2)

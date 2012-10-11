@@ -765,7 +765,7 @@ static void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
 
 // Convert V210 to I420.
 // V210 is 10 bit version of UYVY. 16 bytes to store 6 pixels.
-// With is multiple of 48.
+// Width is multiple of 48 pixels = 128 bytes.
 LIBYUV_API
 int V210ToI420(const uint8* src_v210, int src_stride_v210,
                uint8* dst_y, int dst_stride_y,

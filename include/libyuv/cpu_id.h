@@ -46,8 +46,8 @@ int ArmCpuCaps(const char* cpuinfo_name);
 // Detect CPU has SSE2 etc.
 // Test_flag parameter should be one of kCpuHas constants above.
 // returns non-zero if instruction set is detected
+LIBYUV_API extern int cpu_info_;
 static __inline int TestCpuFlag(int test_flag) {
-  LIBYUV_API extern int cpu_info_;
   return (cpu_info_ ? cpu_info_ : InitCpuFlags()) & test_flag;
 }
 
