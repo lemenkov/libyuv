@@ -18,7 +18,6 @@ extern "C" {
 // This module is for Visual C x86.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
-// TODO(fbarchard): I420ToRGB24, I420ToRAW
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constants for ARGB.
@@ -122,7 +121,7 @@ static const uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
-// Shuffle table for converting ARGBToRGB24 for I420ToRGB24.  First 8 + next 4
+// Shuffle table for converting ARGBToRGB24 for I422ToRGB24.  First 8 + next 4
 static const uvec8 kShuffleMaskARGBToRGB24_0 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
 };

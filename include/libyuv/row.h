@@ -36,6 +36,7 @@ extern "C" {
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Conversions.
 #define HAS_ABGRTOARGBROW_SSSE3
+#define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
@@ -60,6 +61,8 @@ extern "C" {
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
+#define HAS_I422TORAWROW_SSSE3
+#define HAS_I422TORGB24ROW_SSSE3
 #define HAS_I422TORGBAROW_SSSE3
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_MIRRORROW_SSSE3
@@ -69,6 +72,9 @@ extern "C" {
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
 #define HAS_RGB565TOARGBROW_SSE2
+#define HAS_RGBATOARGBROW_SSSE3
+#define HAS_RGBATOUVROW_SSSE3
+#define HAS_RGBATOYROW_SSSE3
 #define HAS_SETROW_X86
 #define HAS_SPLITUV_SSE2
 #define HAS_UYVYTOUV422ROW_SSE2
@@ -97,13 +103,7 @@ extern "C" {
 
 // The following are Windows only.  TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_RGBATOARGBROW_SSSE3
-#define HAS_RGBATOUVROW_SSSE3
-#define HAS_RGBATOYROW_SSSE3
-#define HAS_I422TORGB24ROW_SSSE3
-#define HAS_I422TORAWROW_SSSE3
 #endif
 
 // The following are disabled when SSSE3 is available:

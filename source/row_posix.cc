@@ -69,6 +69,19 @@ CONST vec8 kABGRToV = {
   112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
 };
 
+// Constants for RGBA.
+CONST vec8 kRGBAToY = {
+  0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33
+};
+
+CONST vec8 kRGBAToU = {
+  0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38
+};
+
+CONST vec8 kRGBAToV = {
+  0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112
+};
+
 CONST uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
@@ -118,7 +131,7 @@ CONST uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
-// Shuffle table for converting ARGBToRGB24 for I420ToRGB24.  First 8 + next 4
+// Shuffle table for converting ARGBToRGB24 for I422ToRGB24.  First 8 + next 4
 CONST uvec8 kShuffleMaskARGBToRGB24_0 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
 };
@@ -1155,6 +1168,80 @@ void ABGRToYRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
   );
 }
 
+void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_rgba),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kRGBAToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void RGBAToYRow_Unaligned_SSSE3(const uint8* src_rgba, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %4,%%xmm5                       \n"
+    "movdqa    %3,%%xmm4                       \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_rgba),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kRGBAToY),   // %3
+    "m"(kAddY16)     // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
 void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
@@ -1274,6 +1361,132 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
   : "r"(static_cast<intptr_t>(src_stride_abgr))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+
+void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
+                       uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kRGBAToU),         // %0
+    "m"(kRGBAToV),         // %1
+    "m"(kAddUV128)         // %2
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm6                 \n"
+    "pavgb     (%0,%4,1),%%xmm0                \n"
+    "pavgb     0x10(%0,%4,1),%%xmm1            \n"
+    "pavgb     0x20(%0,%4,1),%%xmm2            \n"
+    "pavgb     0x30(%0,%4,1),%%xmm6            \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_rgba0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_rgba))
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
+#endif
+  );
+}
+
+void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
+                                 uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kRGBAToU),         // %0
+    "m"(kRGBAToV),         // %1
+    "m"(kAddUV128)         // %2
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
+    "movdqu    (%0,%4,1),%%xmm7                \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqu    0x10(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm1                   \n"
+    "movdqu    0x20(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqu    0x30(%0,%4,1),%%xmm7            \n"
+    "pavgb     %%xmm7,%%xmm6                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm7                   \n"
+    "shufps    $0x88,%%xmm6,%%xmm2             \n"
+    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
+    "pavgb     %%xmm7,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm6                   \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm2,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm1                   \n"
+    "psraw     $0x8,%%xmm0                     \n"
+    "psraw     $0x8,%%xmm1                     \n"
+    "packsswb  %%xmm1,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movlps    %%xmm0,(%1)                     \n"
+    "movhps    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x8(%1),%1                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_rgba0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"(static_cast<intptr_t>(src_stride_rgba))
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
@@ -1449,16 +1662,16 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
 // fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
 #ifdef __APPLE__
   asm volatile (
-    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm5    \n"
-    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm6  \n"
-  :: [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24),
-    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0));
+    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
+    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
+  :: [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
+    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24));
 #endif
 
   asm volatile (
 #ifndef __APPLE__
-    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm5    \n"
-    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm6  \n"
+    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
+    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
 #endif
     "sub       %[u_buf],%[v_buf]               \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1486,8 +1699,8 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
 #ifndef __APPLE__
-    , [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24),
-    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0)
+    , [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
+    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
 #endif
   : "memory", "cc"
 #if defined(__SSE2__)
@@ -1501,18 +1714,19 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
                                const uint8* v_buf,
                                uint8* raw_buf,
                                int width) {
+// fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
 #ifdef __APPLE__
   asm volatile (
-    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm5    \n"
-    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm6  \n"
-  :: [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW),
-    [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0));
+    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
+    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
+  :: [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
+    [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW));
 #endif
 
   asm volatile (
 #ifndef __APPLE__
-    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm5    \n"
-    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm6  \n"
+    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
+    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
 #endif
     "sub       %[u_buf],%[v_buf]               \n"
     "pxor      %%xmm4,%%xmm4                   \n"
@@ -1540,12 +1754,12 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
 #ifndef __APPLE__
-    , [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW),
-    [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0)
+    , [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
+    [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
 #endif
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
 #endif
   );
 }
