@@ -133,6 +133,8 @@ TESTPLANARTOP(I420, 2, 2, I422, 2, 1)
 TESTPLANARTOP(I420, 2, 2, I444, 1, 1)
 TESTPLANARTOP(I420, 2, 2, I411, 4, 1)
 
+// TODO(fbarchard): Enable C code for comparison: MaskCpuFlags(0);                                                             \
+
 #define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                        W1280, N, NEG)                                          \
 TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
@@ -159,13 +161,11 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
       src_v[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
     }                                                                          \
   }                                                                            \
-  MaskCpuFlags(0);                                                             \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                         src_u, kWidth / SUBSAMP_X,                             \
                         src_v, kWidth / SUBSAMP_X,                             \
                         dst_argb_c, kStrideB,                                  \
                         kWidth, NEG kHeight);                                  \
-  MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_u, kWidth / SUBSAMP_X,                           \
