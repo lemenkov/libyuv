@@ -131,17 +131,18 @@ TESTPLANARTOP(I420, 2, 2, I422, 2, 1)
 TESTPLANARTOP(I420, 2, 2, I444, 1, 1)
 TESTPLANARTOP(I420, 2, 2, I411, 4, 1)
 
-#define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,         \
+#define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                        W1280, N, NEG)                                          \
 TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   const int kWidth = W1280;                                                    \
   const int kHeight = 720;                                                     \
-  const int kStride = (kWidth * 8 * BPP_B + 7) / 8;                            \
+  const int kStrideB = ((kWidth * 8 * BPP_B + 7) / 8 + ALIGN - 1) /            \
+      ALIGN * ALIGN;                                                           \
   align_buffer_16(src_y, kWidth * kHeight);                                    \
   align_buffer_16(src_u, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);            \
   align_buffer_16(src_v, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);            \
-  align_buffer_16(dst_argb_c, kStride * kHeight);                              \
-  align_buffer_16(dst_argb_opt, kStride * kHeight);                            \
+  align_buffer_16(dst_argb_c, kStrideB * kHeight);                             \
+  align_buffer_16(dst_argb_opt, kStrideB * kHeight);                           \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
@@ -155,22 +156,22 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                         src_u, kWidth / SUBSAMP_X,                             \
                         src_v, kWidth / SUBSAMP_X,                             \
-                        dst_argb_c, kStride,                                   \
+                        dst_argb_c, kStrideB,                                  \
                         kWidth, NEG kHeight);                                  \
   MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_u, kWidth / SUBSAMP_X,                           \
                           src_v, kWidth / SUBSAMP_X,                           \
-                          dst_argb_opt, kStride,                               \
+                          dst_argb_opt, kStrideB,                              \
                           kWidth, NEG kHeight);                                \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
     for (int j = 0; j < kWidth * BPP_B; ++j) {                                 \
       int abs_diff =                                                           \
-          abs(static_cast<int>(dst_argb_c[i * kWidth * BPP_B + j]) -           \
-              static_cast<int>(dst_argb_opt[i * kWidth * BPP_B + j]));         \
+          abs(static_cast<int>(dst_argb_c[i * kStrideB + j]) -                 \
+              static_cast<int>(dst_argb_opt[i * kStrideB + j]));               \
       if (abs_diff > max_diff) {                                               \
         max_diff = abs_diff;                                                   \
       }                                                                        \
@@ -184,37 +185,37 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
 
-#define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B)          \
-    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+#define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN)   \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    1280, _Opt, +)                                              \
-    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    1280, _Invert, -)                                           \
-    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    1276, _Any, +)
 
-TESTPLANARTOB(I420, 2, 2, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, BGRA, 4)
-TESTPLANARTOB(I420, 2, 2, ABGR, 4)
-TESTPLANARTOB(I420, 2, 2, RGBA, 4)
-TESTPLANARTOB(I420, 2, 2, RAW, 3)
-TESTPLANARTOB(I420, 2, 2, RGB24, 3)
-TESTPLANARTOB(I420, 2, 2, RGB565, 2)
-TESTPLANARTOB(I420, 2, 2, ARGB1555, 2)
-TESTPLANARTOB(I420, 2, 2, ARGB4444, 2)
-TESTPLANARTOB(I422, 2, 1, ARGB, 4)
-TESTPLANARTOB(I422, 2, 1, BGRA, 4)
-TESTPLANARTOB(I422, 2, 1, ABGR, 4)
-TESTPLANARTOB(I422, 2, 1, RGBA, 4)
-TESTPLANARTOB(I411, 4, 1, ARGB, 4)
-TESTPLANARTOB(I444, 1, 1, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, YUY2, 2)
-TESTPLANARTOB(I420, 2, 2, UYVY, 2)
-TESTPLANARTOB(I420, 2, 2, V210, 16 / 6)
-TESTPLANARTOB(I420, 2, 2, I400, 1)
-TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1)
-TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1)
-TESTPLANARTOB(I420, 2, 2, BayerGBRG, 1)
-TESTPLANARTOB(I420, 2, 2, BayerGRBG, 1)
+TESTPLANARTOB(I420, 2, 2, ARGB, 4, 4)
+TESTPLANARTOB(I420, 2, 2, BGRA, 4, 4)
+TESTPLANARTOB(I420, 2, 2, ABGR, 4, 4)
+TESTPLANARTOB(I420, 2, 2, RGBA, 4, 4)
+TESTPLANARTOB(I420, 2, 2, RAW, 3, 3)
+TESTPLANARTOB(I420, 2, 2, RGB24, 3, 3)
+TESTPLANARTOB(I420, 2, 2, RGB565, 2, 2)
+TESTPLANARTOB(I420, 2, 2, ARGB1555, 2, 2)
+TESTPLANARTOB(I420, 2, 2, ARGB4444, 2, 2)
+TESTPLANARTOB(I422, 2, 1, ARGB, 4, 4)
+TESTPLANARTOB(I422, 2, 1, BGRA, 4, 4)
+TESTPLANARTOB(I422, 2, 1, ABGR, 4, 4)
+TESTPLANARTOB(I422, 2, 1, RGBA, 4, 4)
+TESTPLANARTOB(I411, 4, 1, ARGB, 4, 4)
+TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4)
+TESTPLANARTOB(I420, 2, 2, YUY2, 2, 4)
+TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4)
+TESTPLANARTOB(I420, 2, 2, V210, 16 / 6, 128)
+TESTPLANARTOB(I420, 2, 2, I400, 1, 1)
+TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1, 1)
+TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1, 1)
+TESTPLANARTOB(I420, 2, 2, BayerGBRG, 1, 1)
+TESTPLANARTOB(I420, 2, 2, BayerGRBG, 1, 1)
 
 #define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,       \
                          W1280, N, NEG)                                        \
