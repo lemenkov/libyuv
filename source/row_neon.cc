@@ -842,6 +842,24 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
    );
 }
 
+// Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
+// TODO(fbarchard): Neon port.
+void ARGBToBayerRow_NEON(const uint8* src_argb,
+                         uint8* dst_bayer, uint32 selector, int pix) {
+  int index0 = selector & 0xff;
+  int index1 = (selector >> 8) & 0xff;
+  // Copy a row of Bayer.
+  for (int x = 0; x < pix - 1; x += 2) {
+    dst_bayer[0] = src_argb[index0];
+    dst_bayer[1] = src_argb[index1];
+    src_argb += 8;
+    dst_bayer += 2;
+  }
+  if (pix & 1) {
+    dst_bayer[0] = src_argb[index0];
+  }
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

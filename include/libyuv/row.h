@@ -42,6 +42,7 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_SSE2
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
+#define HAS_ARGBTOBAYERROW_SSSE3
 #define HAS_ARGBTORAWROW_SSSE3
 #define HAS_ARGBTORGB24ROW_SSSE3
 #define HAS_ARGBTORGB565ROW_SSE2
@@ -94,7 +95,7 @@ extern "C" {
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #endif
 
-// The following are Windows only:
+// The following are Windows only.  TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ABGRTOARGBROW_SSSE3
 #define HAS_ARGBCOLORTABLEROW_X86
@@ -116,6 +117,7 @@ extern "C" {
 
 // The following are available on Neon platforms
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#define HAS_ARGBTOBAYERROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_HALFROW_NEON
 #define HAS_I422TOABGRROW_NEON
@@ -759,6 +761,12 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
 void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix);
 
+void ARGBToBayerRow_C(const uint8* src_argb,
+                      uint8* dst_bayer, uint32 selector, int pix);
+void ARGBToBayerRow_SSSE3(const uint8* src_argb,
+                          uint8* dst_bayer, uint32 selector, int pix);
+void ARGBToBayerRow_NEON(const uint8* src_argb,
+                         uint8* dst_bayer, uint32 selector, int pix);
 
 #ifdef __cplusplus
 }  // extern "C"

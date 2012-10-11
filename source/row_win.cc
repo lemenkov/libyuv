@@ -4217,6 +4217,29 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   }
 }
 
+__declspec(naked) __declspec(align(16))
+void ARGBToBayerRow_SSSE3(const uint8* src_argb,
+                          uint8* dst_bayer, uint32 selector, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_argb
+    mov        edx, [esp + 8]    // dst_bayer
+    movd       xmm5, [esp + 12]  // selector
+    mov        ecx, [esp + 16]   // pix
+    pshufd     xmm5, xmm5, 0
+
+    align      16
+  wloop:
+    movdqa     xmm0, [eax]
+    lea        eax, [eax + 16]
+    pshufb     xmm0, xmm5
+    sub        ecx, 4
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jg         wloop
+    ret
+  }
+}
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus

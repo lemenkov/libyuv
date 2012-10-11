@@ -118,6 +118,16 @@ CONST uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
+// Shuffle table for converting ARGBToRGB24 for I420ToRGB24.  First 8 + next 4
+CONST uvec8 kShuffleMaskARGBToRGB24_0 = {
+  0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
+};
+
+// Shuffle table for converting ARGB to RAW.
+CONST uvec8 kShuffleMaskARGBToRAW_0 = {
+  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
+};
+
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1424,6 +1434,115 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     [argb_buf]"+r"(argb_buf),  // %[argb_buf]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
+void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
+                                 const uint8* u_buf,
+                                 const uint8* v_buf,
+                                 uint8* rgb24_buf,
+                                 int width) {
+// fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
+#ifdef __APPLE__
+  asm volatile (
+    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm5    \n"
+    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm6  \n"
+  :: [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24),
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0));
+#endif
+
+  asm volatile (
+#ifndef __APPLE__
+    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm5    \n"
+    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm6  \n"
+#endif
+    "sub       %[u_buf],%[v_buf]               \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUVTORGB
+    "punpcklbw %%xmm1,%%xmm0                   \n"
+    "punpcklbw %%xmm2,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm2,%%xmm0                   \n"
+    "punpckhwd %%xmm2,%%xmm1                   \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "pshufb    %%xmm6,%%xmm1                   \n"
+    "palignr   $0xc,%%xmm0,%%xmm1              \n"
+    "movq      %%xmm0,(%[rgb24_buf])           \n"
+    "movdqu    %%xmm1,0x8(%[rgb24_buf])        \n"
+    "lea       0x18(%[rgb24_buf]),%[rgb24_buf] \n"
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [rgb24_buf]"+r"(rgb24_buf),  // %[rgb24_buf]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
+#ifndef __APPLE__
+    , [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24),
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0)
+#endif
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+
+void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* raw_buf,
+                               int width) {
+#ifdef __APPLE__
+  asm volatile (
+    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm5    \n"
+    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm6  \n"
+  :: [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW),
+    [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0));
+#endif
+
+  asm volatile (
+#ifndef __APPLE__
+    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm5    \n"
+    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm6  \n"
+#endif
+    "sub       %[u_buf],%[v_buf]               \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    READYUV422
+    YUVTORGB
+    "punpcklbw %%xmm1,%%xmm0                   \n"
+    "punpcklbw %%xmm2,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm2,%%xmm0                   \n"
+    "punpckhwd %%xmm2,%%xmm1                   \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "pshufb    %%xmm6,%%xmm1                   \n"
+    "palignr   $0xc,%%xmm0,%%xmm1              \n"
+    "movq      %%xmm0,(%[raw_buf])             \n"
+    "movdqu    %%xmm1,0x8(%[raw_buf])          \n"
+    "lea       0x18(%[raw_buf]),%[raw_buf]     \n"
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [raw_buf]"+r"(raw_buf),  // %[raw_buf]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
+#ifndef __APPLE__
+    , [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW),
+    [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0)
+#endif
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -3748,6 +3867,31 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   : "memory", "cc"
 #if defined(__SSE2__)
       , "xmm0"
+#endif
+  );
+}
+
+void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
+                          uint32 selector, int pix) {
+  asm volatile (
+    "movd   %3,%%xmm5                          \n"
+    "pshufd $0x0,%%xmm5,%%xmm5                 \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa (%0),%%xmm0                        \n"
+    "lea    0x10(%0),%0                        \n"
+    "pshufb %%xmm5,%%xmm0                      \n"
+    "sub    $0x4,%2                            \n"
+    "movd   %%xmm0,(%1)                        \n"
+    "lea    0x4(%1),%1                         \n"
+    "jg     1b                                 \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_bayer), // %1
+    "+r"(pix)        // %2
+  : "g"(selector)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
 #endif
   );
 }
