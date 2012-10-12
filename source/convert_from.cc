@@ -222,208 +222,6 @@ int I400Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// YUY2 - Macro-pixel = 2 image pixels
-// Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
-
-// UYVY - Macro-pixel = 2 image pixels
-// U0Y0V0Y1
-
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-#define HAS_I422TOYUY2ROW_SSE2
-__declspec(naked) __declspec(align(16))
-static void I422ToYUY2Row_SSE2(const uint8* src_y,
-                               const uint8* src_u,
-                               const uint8* src_v,
-                               uint8* dst_frame, int width) {
-  __asm {
-    push       esi
-    push       edi
-    mov        eax, [esp + 8 + 4]    // src_y
-    mov        esi, [esp + 8 + 8]    // src_u
-    mov        edx, [esp + 8 + 12]   // src_v
-    mov        edi, [esp + 8 + 16]   // dst_frame
-    mov        ecx, [esp + 8 + 20]   // width
-    sub        edx, esi
-
-    align      16
-  convertloop:
-    movq       xmm2, qword ptr [esi] // U
-    movq       xmm3, qword ptr [esi + edx] // V
-    lea        esi, [esi + 8]
-    punpcklbw  xmm2, xmm3 // UV
-    movdqa     xmm0, [eax] // Y
-    lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm2 // YUYV
-    punpckhbw  xmm1, xmm2
-    movdqa     [edi], xmm0
-    movdqa     [edi + 16], xmm1
-    lea        edi, [edi + 32]
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-#define HAS_I422TOUYVYROW_SSE2
-__declspec(naked) __declspec(align(16))
-static void I422ToUYVYRow_SSE2(const uint8* src_y,
-                               const uint8* src_u,
-                               const uint8* src_v,
-                               uint8* dst_frame, int width) {
-  __asm {
-    push       esi
-    push       edi
-    mov        eax, [esp + 8 + 4]    // src_y
-    mov        esi, [esp + 8 + 8]    // src_u
-    mov        edx, [esp + 8 + 12]   // src_v
-    mov        edi, [esp + 8 + 16]   // dst_frame
-    mov        ecx, [esp + 8 + 20]   // width
-    sub        edx, esi
-
-    align      16
-  convertloop:
-    movq       xmm2, qword ptr [esi] // U
-    movq       xmm3, qword ptr [esi + edx] // V
-    lea        esi, [esi + 8]
-    punpcklbw  xmm2, xmm3 // UV
-    movdqa     xmm0, [eax] // Y
-    movdqa     xmm1, xmm2
-    lea        eax, [eax + 16]
-    punpcklbw  xmm1, xmm0 // UYVY
-    punpckhbw  xmm2, xmm0
-    movdqa     [edi], xmm1
-    movdqa     [edi + 16], xmm2
-    lea        edi, [edi + 32]
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-#define HAS_I422TOYUY2ROW_SSE2
-static void I422ToYUY2Row_SSE2(const uint8* src_y,
-                               const uint8* src_u,
-                               const uint8* src_v,
-                               uint8* dst_frame, int width) {
- asm volatile (
-    "sub        %1,%2                            \n"
-    ".p2align  4                                 \n"
-  "1:                                            \n"
-    "movq      (%1),%%xmm2                       \n"
-    "movq      (%1,%2,1),%%xmm3                  \n"
-    "lea       0x8(%1),%1                        \n"
-    "punpcklbw %%xmm3,%%xmm2                     \n"
-    "movdqa    (%0),%%xmm0                       \n"
-    "lea       0x10(%0),%0                       \n"
-    "movdqa    %%xmm0,%%xmm1                     \n"
-    "punpcklbw %%xmm2,%%xmm0                     \n"
-    "punpckhbw %%xmm2,%%xmm1                     \n"
-    "movdqa    %%xmm0,(%3)                       \n"
-    "movdqa    %%xmm1,0x10(%3)                   \n"
-    "lea       0x20(%3),%3                       \n"
-    "sub       $0x10,%4                          \n"
-    "jg         1b                               \n"
-    : "+r"(src_y),  // %0
-      "+r"(src_u),  // %1
-      "+r"(src_v),  // %2
-      "+r"(dst_frame),  // %3
-      "+rm"(width)  // %4
-    :
-    : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3"
-#endif
-  );
-}
-
-#define HAS_I422TOUYVYROW_SSE2
-static void I422ToUYVYRow_SSE2(const uint8* src_y,
-                               const uint8* src_u,
-                               const uint8* src_v,
-                               uint8* dst_frame, int width) {
- asm volatile (
-    "sub        %1,%2                            \n"
-    ".p2align  4                                 \n"
-  "1:                                            \n"
-    "movq      (%1),%%xmm2                       \n"
-    "movq      (%1,%2,1),%%xmm3                  \n"
-    "lea       0x8(%1),%1                        \n"
-    "punpcklbw %%xmm3,%%xmm2                     \n"
-    "movdqa    (%0),%%xmm0                       \n"
-    "movdqa    %%xmm2,%%xmm1                     \n"
-    "lea       0x10(%0),%0                       \n"
-    "punpcklbw %%xmm0,%%xmm1                     \n"
-    "punpckhbw %%xmm0,%%xmm2                     \n"
-    "movdqa    %%xmm1,(%3)                       \n"
-    "movdqa    %%xmm2,0x10(%3)                   \n"
-    "lea       0x20(%3),%3                       \n"
-    "sub       $0x10,%4                          \n"
-    "jg         1b                               \n"
-    : "+r"(src_y),  // %0
-      "+r"(src_u),  // %1
-      "+r"(src_v),  // %2
-      "+r"(dst_frame),  // %3
-      "+rm"(width)  // %4
-    :
-    : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3"
-#endif
-  );
-}
-#endif
-
-static void I422ToYUY2Row_C(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_frame, int width) {
-    for (int x = 0; x < width - 1; x += 2) {
-      dst_frame[0] = src_y[0];
-      dst_frame[1] = src_u[0];
-      dst_frame[2] = src_y[1];
-      dst_frame[3] = src_v[0];
-      dst_frame += 4;
-      src_y += 2;
-      src_u += 1;
-      src_v += 1;
-    }
-    if (width & 1) {
-      dst_frame[0] = src_y[0];
-      dst_frame[1] = src_u[0];
-      dst_frame[2] = src_y[0];  // duplicate last y
-      dst_frame[3] = src_v[0];
-    }
-}
-
-static void I422ToUYVYRow_C(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_frame, int width) {
-    for (int x = 0; x < width - 1; x += 2) {
-      dst_frame[0] = src_u[0];
-      dst_frame[1] = src_y[0];
-      dst_frame[2] = src_v[0];
-      dst_frame[3] = src_y[1];
-      dst_frame += 4;
-      src_y += 2;
-      src_u += 1;
-      src_v += 1;
-    }
-    if (width & 1) {
-      dst_frame[0] = src_u[0];
-      dst_frame[1] = src_y[0];
-      dst_frame[2] = src_v[0];
-      dst_frame[3] = src_y[0];  // duplicate last y
-    }
-}
-
 // Visual C x86 or GCC little endian.
 #if defined(__x86_64__) || defined(_M_X64) || \
   defined(__i386__) || defined(_M_IX86) || \
@@ -463,7 +261,6 @@ static void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width) {
   }
 }
 
-// TODO(fbarchard): Deprecate, move or expand 422 support?
 LIBYUV_API
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -489,6 +286,10 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
       IS_ALIGNED(dst_frame, 16) && IS_ALIGNED(dst_stride_frame, 16)) {
     I422ToYUY2Row = I422ToYUY2Row_SSE2;
+  }
+#elif defined(HAS_I422TOYUY2ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    I422ToYUY2Row = I422ToYUY2Row_NEON;
   }
 #endif
 
@@ -527,6 +328,10 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
       IS_ALIGNED(dst_frame, 16) && IS_ALIGNED(dst_stride_frame, 16)) {
     I422ToYUY2Row = I422ToYUY2Row_SSE2;
+  }
+#elif defined(HAS_I422TOYUY2ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    I422ToYUY2Row = I422ToYUY2Row_NEON;
   }
 #endif
 
@@ -572,6 +377,10 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(dst_frame, 16) && IS_ALIGNED(dst_stride_frame, 16)) {
     I422ToUYVYRow = I422ToUYVYRow_SSE2;
   }
+#elif defined(HAS_I422TOUYVYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    I422ToUYVYRow = I422ToUYVYRow_NEON;
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
@@ -609,6 +418,10 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
       IS_ALIGNED(dst_frame, 16) && IS_ALIGNED(dst_stride_frame, 16)) {
     I422ToUYVYRow = I422ToUYVYRow_SSE2;
+  }
+#elif defined(HAS_I422TOUYVYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    I422ToUYVYRow = I422ToUYVYRow_NEON;
   }
 #endif
 

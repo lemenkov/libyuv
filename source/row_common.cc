@@ -1279,6 +1279,50 @@ void ARGBToBayerRow_C(const uint8* src_argb,
   }
 }
 
+void I422ToYUY2Row_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_frame, int width) {
+    for (int x = 0; x < width - 1; x += 2) {
+      dst_frame[0] = src_y[0];
+      dst_frame[1] = src_u[0];
+      dst_frame[2] = src_y[1];
+      dst_frame[3] = src_v[0];
+      dst_frame += 4;
+      src_y += 2;
+      src_u += 1;
+      src_v += 1;
+    }
+    if (width & 1) {
+      dst_frame[0] = src_y[0];
+      dst_frame[1] = src_u[0];
+      dst_frame[2] = src_y[0];  // duplicate last y
+      dst_frame[3] = src_v[0];
+    }
+}
+
+void I422ToUYVYRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_frame, int width) {
+    for (int x = 0; x < width - 1; x += 2) {
+      dst_frame[0] = src_u[0];
+      dst_frame[1] = src_y[0];
+      dst_frame[2] = src_v[0];
+      dst_frame[3] = src_y[1];
+      dst_frame += 4;
+      src_y += 2;
+      src_u += 1;
+      src_v += 1;
+    }
+    if (width & 1) {
+      dst_frame[0] = src_u[0];
+      dst_frame[1] = src_y[0];
+      dst_frame[2] = src_v[0];
+      dst_frame[3] = src_y[0];  // duplicate last y
+    }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

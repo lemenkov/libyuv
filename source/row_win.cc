@@ -4239,6 +4239,87 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb,
   }
 }
 
+// YUY2 - Macro-pixel = 2 image pixels
+// Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....
+
+// UYVY - Macro-pixel = 2 image pixels
+// U0Y0V0Y1
+
+__declspec(naked) __declspec(align(16))
+void I422ToYUY2Row_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_y
+    mov        esi, [esp + 8 + 8]    // src_u
+    mov        edx, [esp + 8 + 12]   // src_v
+    mov        edi, [esp + 8 + 16]   // dst_frame
+    mov        ecx, [esp + 8 + 20]   // width
+    sub        edx, esi
+
+    align      16
+  convertloop:
+    movq       xmm2, qword ptr [esi] // U
+    movq       xmm3, qword ptr [esi + edx] // V
+    lea        esi, [esi + 8]
+    punpcklbw  xmm2, xmm3 // UV
+    movdqa     xmm0, [eax] // Y
+    lea        eax, [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm2 // YUYV
+    punpckhbw  xmm1, xmm2
+    movdqa     [edi], xmm0
+    movdqa     [edi + 16], xmm1
+    lea        edi, [edi + 32]
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void I422ToUYVYRow_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]    // src_y
+    mov        esi, [esp + 8 + 8]    // src_u
+    mov        edx, [esp + 8 + 12]   // src_v
+    mov        edi, [esp + 8 + 16]   // dst_frame
+    mov        ecx, [esp + 8 + 20]   // width
+    sub        edx, esi
+
+    align      16
+  convertloop:
+    movq       xmm2, qword ptr [esi] // U
+    movq       xmm3, qword ptr [esi + edx] // V
+    lea        esi, [esi + 8]
+    punpcklbw  xmm2, xmm3 // UV
+    movdqa     xmm0, [eax] // Y
+    movdqa     xmm1, xmm2
+    lea        eax, [eax + 16]
+    punpcklbw  xmm1, xmm0 // UYVY
+    punpckhbw  xmm2, xmm0
+    movdqa     [edi], xmm1
+    movdqa     [edi + 16], xmm2
+    lea        edi, [edi + 32]
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
 #endif  // _M_IX86
 
 #ifdef __cplusplus

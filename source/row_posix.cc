@@ -4109,6 +4109,77 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
 #endif
   );
 }
+
+void I422ToYUY2Row_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width) {
+ asm volatile (
+    "sub        %1,%2                            \n"
+    ".p2align  4                                 \n"
+  "1:                                            \n"
+    "movq      (%1),%%xmm2                       \n"
+    "movq      (%1,%2,1),%%xmm3                  \n"
+    "lea       0x8(%1),%1                        \n"
+    "punpcklbw %%xmm3,%%xmm2                     \n"
+    "movdqa    (%0),%%xmm0                       \n"
+    "lea       0x10(%0),%0                       \n"
+    "movdqa    %%xmm0,%%xmm1                     \n"
+    "punpcklbw %%xmm2,%%xmm0                     \n"
+    "punpckhbw %%xmm2,%%xmm1                     \n"
+    "movdqa    %%xmm0,(%3)                       \n"
+    "movdqa    %%xmm1,0x10(%3)                   \n"
+    "lea       0x20(%3),%3                       \n"
+    "sub       $0x10,%4                          \n"
+    "jg         1b                               \n"
+    : "+r"(src_y),  // %0
+      "+r"(src_u),  // %1
+      "+r"(src_v),  // %2
+      "+r"(dst_frame),  // %3
+      "+rm"(width)  // %4
+    :
+    : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+  );
+}
+
+void I422ToUYVYRow_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width) {
+ asm volatile (
+    "sub        %1,%2                            \n"
+    ".p2align  4                                 \n"
+  "1:                                            \n"
+    "movq      (%1),%%xmm2                       \n"
+    "movq      (%1,%2,1),%%xmm3                  \n"
+    "lea       0x8(%1),%1                        \n"
+    "punpcklbw %%xmm3,%%xmm2                     \n"
+    "movdqa    (%0),%%xmm0                       \n"
+    "movdqa    %%xmm2,%%xmm1                     \n"
+    "lea       0x10(%0),%0                       \n"
+    "punpcklbw %%xmm0,%%xmm1                     \n"
+    "punpckhbw %%xmm0,%%xmm2                     \n"
+    "movdqa    %%xmm1,(%3)                       \n"
+    "movdqa    %%xmm2,0x10(%3)                   \n"
+    "lea       0x20(%3),%3                       \n"
+    "sub       $0x10,%4                          \n"
+    "jg         1b                               \n"
+    : "+r"(src_y),  // %0
+      "+r"(src_u),  // %1
+      "+r"(src_v),  // %2
+      "+r"(dst_frame),  // %3
+      "+rm"(width)  // %4
+    :
+    : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+  );
+}
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

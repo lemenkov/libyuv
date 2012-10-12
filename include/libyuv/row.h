@@ -84,6 +84,8 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
+#define HAS_I422TOYUY2ROW_SSE2
+#define HAS_I422TOUYVYROW_SSE2
 
 // Effects
 #define HAS_ARGBAFFINEROW_SSE2
@@ -119,6 +121,9 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_ABGRTOARGBROW_NEON
 #define HAS_ARGBTOBAYERROW_NEON
+#define HAS_ARGBTORAWROW_NEON
+#define HAS_ARGBTORGB24ROW_NEON
+#define HAS_ARGBTORGBAROW_NEON
 #define HAS_BGRATOARGBROW_NEON
 #define HAS_COPYROW_NEON
 #define HAS_HALFROW_NEON
@@ -130,6 +135,8 @@ extern "C" {
 #define HAS_I422TORGBAROW_NEON
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORROWUV_NEON
+#define HAS_NV12TOARGBROW_NEON
+#define HAS_NV21TOARGBROW_NEON
 #define HAS_RAWTOARGBROW_NEON
 #define HAS_RGB24TOARGBROW_NEON
 #define HAS_RGBATOARGBROW_NEON
@@ -141,13 +148,9 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
+#define HAS_I422TOYUY2ROW_NEON
+#define HAS_I422TOUYVYROW_NEON
 
-// TODO(fbarchard): Hook these up to calling functions.
-#define HAS_ARGBTORAWROW_NEON
-#define HAS_ARGBTORGB24ROW_NEON
-#define HAS_ARGBTORGBAROW_NEON
-#define HAS_NV12TOARGBROW_NEON
-#define HAS_NV21TOARGBROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
@@ -767,6 +770,31 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb,
                           uint8* dst_bayer, uint32 selector, int pix);
 void ARGBToBayerRow_NEON(const uint8* src_argb,
                          uint8* dst_bayer, uint32 selector, int pix);
+
+void I422ToYUY2Row_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_frame, int width);
+void I422ToUYVYRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_frame, int width);
+void I422ToYUY2Row_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width);
+void I422ToUYVYRow_SSE2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width);
+void I422ToYUY2Row_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width);
+void I422ToUYVYRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_frame, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
