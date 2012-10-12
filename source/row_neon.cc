@@ -580,9 +580,9 @@ void ABGRToARGBRow_NEON(const uint8* src_abgr, uint8* dst_argb, int pix) {
 #ifdef HAS_RGBATOARGBROW_NEON
 void RGBAToARGBRow_NEON(const uint8* src_rgba, uint8* dst_argb, int pix) {
   asm volatile (
-    ".p2align  2                               \n"
+    ".p2align  2                                \n"
   "1:                                           \n"
-    "vld1.8     {d0, d1, d2, d3}, [%0]!         \n"  // load 8 pixels of RGBA.
+    "vld4.8     {d0, d1, d2, d3}, [%0]!         \n"  // load 8 pixels of RGBA.
     "subs       %2, %2, #8                      \n"  // 8 processed per loop.
     "vmov.u8    d4, d0                          \n"  // move A after RGB
     "vst4.8     {d1, d2, d3, d4}, [%1]!         \n"  // store 8 pixels of ARGB.
