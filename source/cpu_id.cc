@@ -139,7 +139,7 @@ static bool TestEnv(const char* name) {
 LIBYUV_API
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
-  int cpu_info[4];
+  int cpu_info[4] = { 0, 0, 0, 0 };
   __cpuid(cpu_info, 1);
   cpu_info_ = ((cpu_info[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
               ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
