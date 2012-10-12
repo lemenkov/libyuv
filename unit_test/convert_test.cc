@@ -48,11 +48,12 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
       src_y[(i * kWidth) + j] = (random() & 0xff);                             \
-  for (int i = 0; i < kHeight / SRC_SUBSAMP_Y; ++i)                            \
+  for (int i = 0; i < kHeight / SRC_SUBSAMP_Y; ++i) {                          \
     for (int j = 0; j < kWidth / SRC_SUBSAMP_X; ++j) {                         \
       src_u[(i * kWidth / SRC_SUBSAMP_X) + j] = (random() & 0xff);             \
       src_v[(i * kWidth / SRC_SUBSAMP_X) + j] = (random() & 0xff);             \
     }                                                                          \
+  }                                                                            \
   MaskCpuFlags(0);                                                             \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                                \
                                  src_u, kWidth / SRC_SUBSAMP_X,                \
@@ -133,8 +134,6 @@ TESTPLANARTOP(I420, 2, 2, I422, 2, 1)
 TESTPLANARTOP(I420, 2, 2, I444, 1, 1)
 TESTPLANARTOP(I420, 2, 2, I411, 4, 1)
 
-// TODO(fbarchard): Enable C code for comparison: MaskCpuFlags(0);                                                             \
-
 #define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                        W1280, N, NEG)                                          \
 TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
@@ -161,11 +160,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
       src_v[(i * kWidth / SUBSAMP_X) + j] = (random() & 0xff);                 \
     }                                                                          \
   }                                                                            \
+  MaskCpuFlags(0);                                                             \
   FMT_PLANAR##To##FMT_B(src_y, kWidth,                                         \
                         src_u, kWidth / SUBSAMP_X,                             \
                         src_v, kWidth / SUBSAMP_X,                             \
                         dst_argb_c, kStrideB,                                  \
                         kWidth, NEG kHeight);                                  \
+  MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y, kWidth,                                       \
                           src_u, kWidth / SUBSAMP_X,                           \
@@ -175,7 +176,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
-    for (int j = 0; j < kWidth * BPP_B; ++j) {                                 \
+    for (int j = 0; j < (kWidth * 8 * BPP_B + 7) / 8; ++j) {                   \
       int abs_diff =                                                           \
           abs(static_cast<int>(dst_argb_c[i * kStrideB + j]) -                 \
               static_cast<int>(dst_argb_opt[i * kStrideB + j]));               \
