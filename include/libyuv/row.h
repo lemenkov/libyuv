@@ -150,7 +150,7 @@ extern "C" {
 #define HAS_YUY2TOYROW_NEON
 #define HAS_I422TOYUY2ROW_NEON
 #define HAS_I422TOUYVYROW_NEON
-
+#define HAS_ARGBTOARGB4444ROW_NEON
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
@@ -328,6 +328,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -583,6 +584,7 @@ void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB24Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB4444Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);

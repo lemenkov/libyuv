@@ -49,15 +49,15 @@ extern "C" {
     "vsub.s16   q0, q0, q15                    \n"/*  offset y               */\
     "vmul.s16   q0, q0, q14                    \n"                             \
     "vadd.s16   d18, d19                       \n"                             \
-    "vqadd.s16  d20, d0, d16                   \n"                             \
+    "vqadd.s16  d20, d0, d16                   \n" /* B */                     \
     "vqadd.s16  d21, d1, d16                   \n"                             \
-    "vqadd.s16  d22, d0, d17                   \n"                             \
+    "vqadd.s16  d22, d0, d17                   \n" /* R */                     \
     "vqadd.s16  d23, d1, d17                   \n"                             \
-    "vqadd.s16  d16, d0, d18                   \n"                             \
+    "vqadd.s16  d16, d0, d18                   \n" /* G */                     \
     "vqadd.s16  d17, d1, d18                   \n"                             \
-    "vqrshrun.s16 d0, q10, #6                  \n"                             \
-    "vqrshrun.s16 d1, q11, #6                  \n"                             \
-    "vqrshrun.s16 d2, q8, #6                   \n"                             \
+    "vqrshrun.s16 d0, q10, #6                  \n" /* B */                     \
+    "vqrshrun.s16 d1, q11, #6                  \n" /* G */                     \
+    "vqrshrun.s16 d2, q8, #6                   \n" /* R */                     \
     "vmovl.u8   q10, d0                        \n"/*  set up for reinterleave*/\
     "vmovl.u8   q11, d1                        \n"                             \
     "vmovl.u8   q8, d2                         \n"                             \
@@ -908,6 +908,31 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
   );
 }
 
+#ifdef HAS_ARGBTOARGB4444ROW_NEON
+void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444, int pix) {
+  asm volatile (
+    "vmov.u8    d4, #0x0f                      \n"  // bits to clear with vbic.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vshr.u8    d0, d0, #4                     \n"  // B
+    "vbic.32    d1, d1, d4                     \n"  // G
+    "vshr.u8    d2, d2, #4                     \n"  // R
+    "vbic.32    d3, d3, d4                     \n"  // A
+    "vorr       d0, d0, d1                     \n"  // BG
+    "vorr       d1, d2, d3                     \n"  // RA
+    "vzip.u8    d0, d1                         \n"  // BGRA weaved together.
+    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels ARGB4444.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb4444),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "d0", "d1", "d2", "d3", "d4"  // Clobber List
+  );
+}
+#endif  // HAS_ARGBTOARGB4444ROW_NEON
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

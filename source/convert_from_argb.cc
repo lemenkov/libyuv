@@ -311,6 +311,13 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
       ARGBToARGB4444Row = ARGBToARGB4444Row_SSE2;
     }
   }
+#elif defined(HAS_ARGBTOARGB4444ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToARGB4444Row = ARGBToARGB4444Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_NEON;
+    }
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
