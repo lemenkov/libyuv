@@ -45,9 +45,7 @@ extern "C" {
 #define HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 #define HAS_MIRRORROW_UV_NEON
-void MirrorRowUV_NEON(const uint8* src,
-                        uint8* dst_a, uint8* dst_b,
-                        int width);
+void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width);
 #define HAS_TRANSPOSE_WX8_NEON
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width);

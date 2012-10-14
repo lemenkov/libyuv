@@ -62,6 +62,9 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+// Alias
+#define I420ToI420Mirror I420Mirror
+
 // I420 mirror.
 LIBYUV_API
 int I420Mirror(const uint8* src_y, int src_stride_y,
@@ -71,6 +74,8 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
+// Alias
+#define ARGBToARGBMirror ARGBMirror
 
 // ARGB mirror.
 LIBYUV_API
