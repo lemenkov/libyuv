@@ -271,7 +271,8 @@ void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);
 
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
-void SplitUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                        int pix);
 void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);

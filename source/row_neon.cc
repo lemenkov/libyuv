@@ -909,7 +909,8 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
 }
 
 #ifdef HAS_ARGBTOARGB4444ROW_NEON
-void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444, int pix) {
+void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
+                            int pix) {
   asm volatile (
     "vmov.u8    d4, #0x0f                      \n"  // bits to clear with vbic.
     ".p2align  2                               \n"

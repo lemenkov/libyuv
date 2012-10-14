@@ -380,7 +380,7 @@ static int X420ToI420(const uint8* src_y,
     SplitUV = SplitUV_SSE2;
   }
 #elif defined(HAS_SPLITUV_MIPS_DSPR2)
-if (TestCpuFlag(kCpuHasMIPS) && TestCpuFlag(kCpuHasMIPS_DSPR2)){
+if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
     SplitUV = SplitUV_MIPS_DSPR2;
   }
 #endif

@@ -101,41 +101,38 @@ static const int kXCR_XFEATURE_ENABLED_MASK = 0;
 // For Arm, but public to allow testing on any CPU
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name) {
-  int flags = 0;
-  FILE* fin = fopen(cpuinfo_name, "r");
-  if (fin) {
+  FILE* f = fopen(cpuinfo_name, "r");
+  if (f) {
     char buf[512];
-    while (fgets(buf, 511, fin)) {
+    while (fgets(buf, 511, f)) {
       if (memcmp(buf, "Features", 8) == 0) {
         char* p = strstr(buf, " neon");
         if (p && (p[5] == ' ' || p[5] == '\n')) {
-          flags |= kCpuHasNEON;
-          break;
+          fclose(f);
+          return kCpuHasNEON;
         }
       }
     }
-    fclose(fin);
+    fclose(f);
   }
-  return flags;
+  return 0;
 }
 
-static int MipsCpuCaps(const char *search_string) {
-  int flags = 0;
-  const char *file_name = "/proc/cpuinfo";
+static int MipsCpuCaps(const char* search_string) {
+  const char* file_name = "/proc/cpuinfo";
   char cpuinfo_line[256];
-  FILE *f = NULL;
-
-  if ((f = fopen (file_name, "r")) != NULL) {
-    while (fgets (cpuinfo_line, sizeof (cpuinfo_line), f) != NULL) {
-      if (strstr (cpuinfo_line, search_string) != NULL) {
-        flags |= kCpuHasMIPS_DSP;
-        fclose (f);
-        return flags;
+  FILE* f = NULL;
+  if ((f = fopen(file_name, "r")) != NULL) {
+    while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f) != NULL) {
+      if (strstr(cpuinfo_line, search_string) != NULL) {
+        fclose(f);
+        return kCpuHasMIPS_DSP;
       }
     }
+    fclose(f);
   }
   /* Did not find string in the proc file, or not Linux ELF. */
-  return flags;
+  return 0;
 }
 
 // CPU detect function for SIMD instruction sets.
@@ -197,9 +194,9 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info_ &= ~kCpuHasAVX2;
   }
-#elif defined (__mips__) && defined(__linux__)
+#elif defined(__mips__) && defined(__linux__)
   // linux mips parse text file for dsp detect.
-  cpu_info_ = MipsCpuCaps("dsp"); // set kCpuHasMIPS_DSP
+  cpu_info_ = MipsCpuCaps("dsp");  // set kCpuHasMIPS_DSP.
 #if defined(__mips_dspr2)
   cpu_info_ |= kCpuHasMIPS_DSPR2;
 #endif
@@ -214,7 +211,6 @@ int InitCpuFlags(void) {
   if (getenv("LIBYUV_DISABLE_MIPS_DSPR2")) {
     cpu_info_ &= ~kCpuHasMIPS_DSPR2;
   }
-
 #elif defined(__arm__)
 #if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
   // linux arm parse text file for neon detect.
