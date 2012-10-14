@@ -13,6 +13,7 @@
 
 #include "libyuv/rotate.h"
 #include "../unit_test/unit_test.h"
+#include "libyuv/cpu_id.h"
 
 namespace libyuv {
 
@@ -761,30 +762,30 @@ TEST_F(libyuvTest, I420Rotate90) {
   int y_st_90 = yh + b * 2;
   int uv_st_90 = uvh + b * 2;
 
-  I420Rotate(orig_y+y_off_0, y_st_0,
-             orig_u+uv_off_0, uv_st_0,
-             orig_v+uv_off_0, uv_st_0,
-             ro90_y+y_off_90, y_st_90,
-             ro90_u+uv_off_90, uv_st_90,
-             ro90_v+uv_off_90, uv_st_90,
+  I420Rotate(orig_y + y_off_0, y_st_0,
+             orig_u + uv_off_0, uv_st_0,
+             orig_v + uv_off_0, uv_st_0,
+             ro90_y + y_off_90, y_st_90,
+             ro90_u + uv_off_90, uv_st_90,
+             ro90_v + uv_off_90, uv_st_90,
              yw, yh,
              kRotateClockwise);
 
-  I420Rotate(ro90_y+y_off_90, y_st_90,
-             ro90_u+uv_off_90, uv_st_90,
-             ro90_v+uv_off_90, uv_st_90,
-             ro270_y+y_off_90, y_st_90,
-             ro270_u+uv_off_90, uv_st_90,
-             ro270_v+uv_off_90, uv_st_90,
+  I420Rotate(ro90_y + y_off_90, y_st_90,
+             ro90_u + uv_off_90, uv_st_90,
+             ro90_v + uv_off_90, uv_st_90,
+             ro270_y + y_off_90, y_st_90,
+             ro270_u + uv_off_90, uv_st_90,
+             ro270_v + uv_off_90, uv_st_90,
              yh, yw,
              kRotate180);
 
-  I420Rotate(ro270_y+y_off_90, y_st_90,
-             ro270_u+uv_off_90, uv_st_90,
-             ro270_v+uv_off_90, uv_st_90,
-             ro0_y+y_off_0, y_st_0,
-             ro0_u+uv_off_0, uv_st_0,
-             ro0_v+uv_off_0, uv_st_0,
+  I420Rotate(ro270_y + y_off_90, y_st_90,
+             ro270_u + uv_off_90, uv_st_90,
+             ro270_v + uv_off_90, uv_st_90,
+             ro0_y + y_off_0, y_st_0,
+             ro0_u + uv_off_0, uv_st_0,
+             ro0_v + uv_off_0, uv_st_0,
              yh, yw,
              kRotateClockwise);
 
@@ -884,30 +885,30 @@ TEST_F(libyuvTest, I420Rotate270) {
   int y_st_90 = yh + b * 2;
   int uv_st_90 = uvh + b * 2;
 
-  I420Rotate(orig_y+y_off_0, y_st_0,
-             orig_u+uv_off_0, uv_st_0,
-             orig_v+uv_off_0, uv_st_0,
-             ro270_y+y_off_90, y_st_90,
-             ro270_u+uv_off_90, uv_st_90,
-             ro270_v+uv_off_90, uv_st_90,
+  I420Rotate(orig_y + y_off_0, y_st_0,
+             orig_u + uv_off_0, uv_st_0,
+             orig_v + uv_off_0, uv_st_0,
+             ro270_y + y_off_90, y_st_90,
+             ro270_u + uv_off_90, uv_st_90,
+             ro270_v + uv_off_90, uv_st_90,
              yw, yh,
              kRotateCounterClockwise);
 
-  I420Rotate(ro270_y+y_off_90, y_st_90,
-             ro270_u+uv_off_90, uv_st_90,
-             ro270_v+uv_off_90, uv_st_90,
-             ro90_y+y_off_90, y_st_90,
-             ro90_u+uv_off_90, uv_st_90,
-             ro90_v+uv_off_90, uv_st_90,
+  I420Rotate(ro270_y + y_off_90, y_st_90,
+             ro270_u + uv_off_90, uv_st_90,
+             ro270_v + uv_off_90, uv_st_90,
+             ro90_y + y_off_90, y_st_90,
+             ro90_u + uv_off_90, uv_st_90,
+             ro90_v + uv_off_90, uv_st_90,
              yh, yw,
              kRotate180);
 
-  I420Rotate(ro90_y+y_off_90, y_st_90,
-             ro90_u+uv_off_90, uv_st_90,
-             ro90_v+uv_off_90, uv_st_90,
-             ro0_y+y_off_0, y_st_0,
-             ro0_u+uv_off_0, uv_st_0,
-             ro0_v+uv_off_0, uv_st_0,
+  I420Rotate(ro90_y + y_off_90, y_st_90,
+             ro90_u + uv_off_90, uv_st_90,
+             ro90_v + uv_off_90, uv_st_90,
+             ro0_y + y_off_0, y_st_0,
+             ro0_u + uv_off_0, uv_st_0,
+             ro0_v + uv_off_0, uv_st_0,
              yh, yw,
              kRotateCounterClockwise);
 
@@ -954,12 +955,12 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
-  int o_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
   srandom(time(NULL));
 
   align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, o_uv_plane_size)
+  align_buffer_16(orig_uv, nv_uv_plane_size)
   align_buffer_16(ro0_y, y_plane_size)
   align_buffer_16(ro0_u, uv_plane_size)
   align_buffer_16(ro0_v, uv_plane_size)
@@ -1000,20 +1001,20 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
   int y_st_90 = yh + b * 2;
   int uv_st_90 = uvh + b * 2;
 
-  NV12ToI420Rotate(orig_y+y_off_0, y_st_0,
-                   orig_uv+y_off_0, y_st_0,
-                   ro90_y+y_off_90, y_st_90,
-                   ro90_u+uv_off_90, uv_st_90,
-                   ro90_v+uv_off_90, uv_st_90,
+  NV12ToI420Rotate(orig_y + y_off_0, y_st_0,
+                   orig_uv + y_off_0, y_st_0,
+                   ro90_y + y_off_90, y_st_90,
+                   ro90_u + uv_off_90, uv_st_90,
+                   ro90_v + uv_off_90, uv_st_90,
                    yw, yh,
                    kRotateClockwise);
 
-  I420Rotate(ro90_y+y_off_90, y_st_90,
-             ro90_u+uv_off_90, uv_st_90,
-             ro90_v+uv_off_90, uv_st_90,
-             ro0_y+y_off_0, y_st_0,
-             ro0_u+uv_off_0, uv_st_0,
-             ro0_v+uv_off_0, uv_st_0,
+  I420Rotate(ro90_y + y_off_90, y_st_90,
+             ro90_u + uv_off_90, uv_st_90,
+             ro90_v + uv_off_90, uv_st_90,
+             ro0_y + y_off_0, y_st_0,
+             ro0_u + uv_off_0, uv_st_0,
+             ro0_v + uv_off_0, uv_st_0,
              yh, yw,
              kRotateCounterClockwise);
 
@@ -1062,12 +1063,12 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
-  int o_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
   srandom(time(NULL));
 
   align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, o_uv_plane_size)
+  align_buffer_16(orig_uv, nv_uv_plane_size)
   align_buffer_16(ro0_y, y_plane_size)
   align_buffer_16(ro0_u, uv_plane_size)
   align_buffer_16(ro0_v, uv_plane_size)
@@ -1075,7 +1076,7 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
   align_buffer_16(ro270_u, uv_plane_size)
   align_buffer_16(ro270_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
-  memset(orig_uv, 0, o_uv_plane_size);
+  memset(orig_uv, 0, nv_uv_plane_size);
   memset(ro0_y, 0, y_plane_size);
   memset(ro0_u, 0, uv_plane_size);
   memset(ro0_v, 0, uv_plane_size);
@@ -1108,20 +1109,20 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
   int y_st_270 = yh + b * 2;
   int uv_st_270 = uvh + b * 2;
 
-  NV12ToI420Rotate(orig_y+y_off_0, y_st_0,
-                   orig_uv+y_off_0, y_st_0,
-                   ro270_y+y_off_270, y_st_270,
-                   ro270_u+uv_off_270, uv_st_270,
-                   ro270_v+uv_off_270, uv_st_270,
+  NV12ToI420Rotate(orig_y + y_off_0, y_st_0,
+                   orig_uv + y_off_0, y_st_0,
+                   ro270_y + y_off_270, y_st_270,
+                   ro270_u + uv_off_270, uv_st_270,
+                   ro270_v + uv_off_270, uv_st_270,
                    yw, yh,
                    kRotateCounterClockwise);
 
-  I420Rotate(ro270_y+y_off_270, y_st_270,
-             ro270_u+uv_off_270, uv_st_270,
-             ro270_v+uv_off_270, uv_st_270,
-             ro0_y+y_off_0, y_st_0,
-             ro0_u+uv_off_0, uv_st_0,
-             ro0_v+uv_off_0, uv_st_0,
+  I420Rotate(ro270_y + y_off_270, y_st_270,
+             ro270_u + uv_off_270, uv_st_270,
+             ro270_v + uv_off_270, uv_st_270,
+             ro0_y + y_off_0, y_st_0,
+             ro0_u + uv_off_0, uv_st_0,
+             ro0_v + uv_off_0, uv_st_0,
              yh, yw,
              kRotateClockwise);
 
@@ -1170,12 +1171,12 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
-  int o_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
   srandom(time(NULL));
 
   align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, o_uv_plane_size)
+  align_buffer_16(orig_uv, nv_uv_plane_size)
   align_buffer_16(ro0_y, y_plane_size)
   align_buffer_16(ro0_u, uv_plane_size)
   align_buffer_16(ro0_v, uv_plane_size)
@@ -1183,7 +1184,7 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
   align_buffer_16(ro180_u, uv_plane_size)
   align_buffer_16(ro180_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
-  memset(orig_uv, 0, o_uv_plane_size);
+  memset(orig_uv, 0, nv_uv_plane_size);
   memset(ro0_y, 0, y_plane_size);
   memset(ro0_u, 0, uv_plane_size);
   memset(ro0_v, 0, uv_plane_size);
@@ -1208,24 +1209,24 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
 
   int y_off = b * (yw + b * 2) + b;
   int uv_off = b * (uvw + b * 2) + b;
-
+  // TODO(fbarchard): rename to y_stride.
   int y_st = yw + b * 2;
   int uv_st = uvw + b * 2;
 
-  NV12ToI420Rotate(orig_y+y_off, y_st,
-                   orig_uv+y_off, y_st,
-                   ro180_y+y_off, y_st,
-                   ro180_u+uv_off, uv_st,
-                   ro180_v+uv_off, uv_st,
+  NV12ToI420Rotate(orig_y + y_off, y_st,
+                   orig_uv + y_off, y_st,
+                   ro180_y + y_off, y_st,
+                   ro180_u + uv_off, uv_st,
+                   ro180_v + uv_off, uv_st,
                    yw, yh,
                    kRotate180);
 
-  I420Rotate(ro180_y+y_off, y_st,
-             ro180_u+uv_off, uv_st,
-             ro180_v+uv_off, uv_st,
-             ro0_y+y_off, y_st,
-             ro0_u+uv_off, uv_st,
-             ro0_v+uv_off, uv_st,
+  I420Rotate(ro180_y + y_off, y_st,
+             ro180_u + uv_off, uv_st,
+             ro180_v + uv_off, uv_st,
+             ro0_y + y_off, y_st,
+             ro0_u + uv_off, uv_st,
+             ro0_v + uv_off, uv_st,
              yw, yh,
              kRotate180);
 
@@ -1274,12 +1275,12 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
-  int o_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
   srandom(time(NULL));
 
   align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, o_uv_plane_size)
+  align_buffer_16(orig_uv, nv_uv_plane_size)
   align_buffer_16(roa_y, y_plane_size)
   align_buffer_16(roa_u, uv_plane_size)
   align_buffer_16(roa_v, uv_plane_size)
@@ -1290,7 +1291,7 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
   align_buffer_16(roc_u, uv_plane_size)
   align_buffer_16(roc_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
-  memset(orig_uv, 0, o_uv_plane_size);
+  memset(orig_uv, 0, nv_uv_plane_size);
   memset(roa_y, 0, y_plane_size);
   memset(roa_u, 0, uv_plane_size);
   memset(roa_v, 0, uv_plane_size);
@@ -1326,29 +1327,29 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
   int y_st_90 = yh + b * 2;
   int uv_st_90 = uvh + b * 2;
 
-  NV12ToI420Rotate(orig_y+y_off_0, y_st_0,
-                   orig_uv+y_off_0, y_st_0,
-                   roa_y+y_off_90, y_st_90,
-                   roa_u+uv_off_90, uv_st_90,
-                   roa_v+uv_off_90, uv_st_90,
+  NV12ToI420Rotate(orig_y + y_off_0, y_st_0,
+                   orig_uv + y_off_0, y_st_0,
+                   roa_y + y_off_90, y_st_90,
+                   roa_u + uv_off_90, uv_st_90,
+                   roa_v + uv_off_90, uv_st_90,
                    yw, -yh,
                    kRotateClockwise);
 
-  I420Rotate(roa_y+y_off_90, y_st_90,
-             roa_u+uv_off_90, uv_st_90,
-             roa_v+uv_off_90, uv_st_90,
-             rob_y+y_off_0, y_st_0,
-             rob_u+uv_off_0, uv_st_0,
-             rob_v+uv_off_0, uv_st_0,
+  I420Rotate(roa_y + y_off_90, y_st_90,
+             roa_u + uv_off_90, uv_st_90,
+             roa_v + uv_off_90, uv_st_90,
+             rob_y + y_off_0, y_st_0,
+             rob_u + uv_off_0, uv_st_0,
+             rob_v + uv_off_0, uv_st_0,
              yh, -yw,
              kRotateCounterClockwise);
 
-  I420Rotate(rob_y+y_off_0, y_st_0,
-             rob_u+uv_off_0, uv_st_0,
-             rob_v+uv_off_0, uv_st_0,
-             roc_y+y_off_0, y_st_0,
-             roc_u+uv_off_0, uv_st_0,
-             roc_v+uv_off_0, uv_st_0,
+  I420Rotate(rob_y + y_off_0, y_st_0,
+             rob_u + uv_off_0, uv_st_0,
+             rob_v + uv_off_0, uv_st_0,
+             roc_y + y_off_0, y_st_0,
+             roc_u + uv_off_0, uv_st_0,
+             roc_v + uv_off_0, uv_st_0,
              yw, yh,
              kRotate180);
 
@@ -1431,12 +1432,12 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
-  int o_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
   srandom(time(NULL));
 
   align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, o_uv_plane_size)
+  align_buffer_16(orig_uv, nv_uv_plane_size)
   align_buffer_16(roa_y, y_plane_size)
   align_buffer_16(roa_u, uv_plane_size)
   align_buffer_16(roa_v, uv_plane_size)
@@ -1444,7 +1445,7 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   align_buffer_16(rob_u, uv_plane_size)
   align_buffer_16(rob_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
-  memset(orig_uv, 0, o_uv_plane_size);
+  memset(orig_uv, 0, nv_uv_plane_size);
   memset(roa_y, 0, y_plane_size);
   memset(roa_u, 0, uv_plane_size);
   memset(roa_v, 0, uv_plane_size);
@@ -1473,20 +1474,20 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   int y_st = yw + b * 2;
   int uv_st = uvw + b * 2;
 
-  NV12ToI420Rotate(orig_y+y_off, y_st,
-                   orig_uv+y_off, y_st,
-                   roa_y+y_off, y_st,
-                   roa_u+uv_off, uv_st,
-                   roa_v+uv_off, uv_st,
+  NV12ToI420Rotate(orig_y + y_off, y_st,
+                   orig_uv + y_off, y_st,
+                   roa_y + y_off, y_st,
+                   roa_u + uv_off, uv_st,
+                   roa_v + uv_off, uv_st,
                    yw, -yh,
                    kRotate180);
 
-  I420Rotate(roa_y+y_off, y_st,
-             roa_u+uv_off, uv_st,
-             roa_v+uv_off, uv_st,
-             rob_y+y_off, y_st,
-             rob_u+uv_off, uv_st,
-             rob_v+uv_off, uv_st,
+  I420Rotate(roa_y + y_off, y_st,
+             roa_u + uv_off, uv_st,
+             roa_v + uv_off, uv_st,
+             rob_y + y_off, y_st,
+             rob_u + uv_off, uv_st,
+             rob_v + uv_off, uv_st,
              yw, -yh,
              kRotate180);
 
@@ -1546,4 +1547,97 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   EXPECT_EQ(0, y_err + uv_err);
 }
 
+TEST_F(libyuvTest, NV12ToI420SplitUV) {
+  int err = 0;
+  int yw = 1024;
+  int yh = 768;
+
+  int b = 128;
+  int uvw = (yw + 1) >> 1;
+  int uvh = (yh + 1) >> 1;
+  int i, j;
+
+  int y_plane_size = (yw + b * 2) * (yh + b * 2);
+  int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
+  int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
+
+  align_buffer_16(src_y, y_plane_size)
+  align_buffer_16(src_uv, nv_uv_plane_size)
+  align_buffer_16(dst_y_c, y_plane_size)
+  align_buffer_16(dst_u_c, uv_plane_size)
+  align_buffer_16(dst_v_c, uv_plane_size)
+  align_buffer_16(dst_y_opt, y_plane_size)
+  align_buffer_16(dst_u_opt, uv_plane_size)
+  align_buffer_16(dst_v_opt, uv_plane_size)
+
+  memset(src_y, 0, y_plane_size);
+  memset(src_uv, 0, nv_uv_plane_size);
+  memset(dst_y_c, 0, y_plane_size);
+  memset(dst_u_c, 0, uv_plane_size);
+  memset(dst_v_c, 0, uv_plane_size);
+  memset(dst_y_opt, 0, y_plane_size);
+  memset(dst_u_opt, 0, uv_plane_size);
+  memset(dst_v_opt, 0, uv_plane_size);
+
+  // fill image buffers with random data
+  for (i = b; i < (yh + b); ++i) {
+    for (j = b; j < (yw + b); ++j) {
+      src_y[i * (yw + b * 2) + j] = j;
+    }
+  }
+
+  for (i = b; i < (uvh + b); ++i) {
+    for (j = b; j < (uvw * 2 + b); j += 2) {
+      uint8 num = j & 0x7f;
+      src_uv[i * (uvw * 2 + b * 2) + j] = num;
+      src_uv[i * (uvw * 2 + b * 2) + j + 1] = num;
+    }
+  }
+
+  // TODO(fbarchard): Add b to pointers and use stride.
+  MaskCpuFlags(0);  // Disable all CPU optimization.
+  double c_time = get_time();
+  NV12ToI420Rotate(src_y, yw,
+                   src_uv, uvw * 2,
+                   dst_y_c, yw,
+                   dst_u_c, uvw,
+                   dst_v_c, uvw,
+                   yw, yh,
+                   kRotate0);
+  c_time = (get_time() - c_time);
+
+  MaskCpuFlags(-1);  // Enable all CPU optimization.
+  double opt_time = get_time();
+  NV12ToI420Rotate(src_y, yw,
+                   src_uv, uvw * 2,
+                   dst_y_opt, yw,
+                   dst_u_opt, uvw,
+                   dst_v_opt, uvw,
+                   yw, yh,
+                   kRotate0);
+  opt_time = (get_time() - opt_time);
+
+  // Report performance of C vs OPT.
+  printf("SplitUV %8d us C - %8d us OPT\n",
+         static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
+
+  for (i = 0; i < uv_plane_size; ++i) {
+    if ((dst_u_c[i] != dst_u_opt[i]) || (dst_v_c[i] != dst_v_opt[i])) {
+      printf("%d. dst_u_c = 0x%x, dst_u_opt = 0x%x dst_v_c = 0x%x, "
+             "dst_v_opt = 0x%x\n", i,
+             dst_u_c[i], dst_u_opt[i], dst_v_c[i], dst_v_opt[i]);
+      ++err;
+    }
+  }
+  free_aligned_buffer_16(src_y)
+  free_aligned_buffer_16(src_uv)
+  free_aligned_buffer_16(dst_y_c)
+  free_aligned_buffer_16(dst_u_c)
+  free_aligned_buffer_16(dst_v_c)
+  free_aligned_buffer_16(dst_y_opt)
+  free_aligned_buffer_16(dst_u_opt)
+  free_aligned_buffer_16(dst_v_opt)
+
+  EXPECT_EQ(0, err);
+}
 }  // namespace libyuv
