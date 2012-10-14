@@ -119,6 +119,25 @@ int ArmCpuCaps(const char* cpuinfo_name) {
   return flags;
 }
 
+static int MipsCpuCaps(const char *search_string) {
+  int flags = 0;
+  const char *file_name = "/proc/cpuinfo";
+  char cpuinfo_line[256];
+  FILE *f = NULL;
+
+  if ((f = fopen (file_name, "r")) != NULL) {
+    while (fgets (cpuinfo_line, sizeof (cpuinfo_line), f) != NULL) {
+      if (strstr (cpuinfo_line, search_string) != NULL) {
+        flags |= kCpuHasMIPS_DSP;
+        fclose (f);
+        return flags;
+      }
+    }
+  }
+  /* Did not find string in the proc file, or not Linux ELF. */
+  return flags;
+}
+
 // CPU detect function for SIMD instruction sets.
 // TODO(fbarchard): Use constant if/when valgrind says cpu_info is initialized.
 LIBYUV_API
@@ -178,9 +197,24 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info_ &= ~kCpuHasAVX2;
   }
-  if (TestEnv("LIBYUV_DISABLE_ASM")) {
-    cpu_info_ = 0;
+#elif defined (__mips__) && defined(__linux__)
+  // linux mips parse text file for dsp detect.
+  cpu_info_ = MipsCpuCaps("dsp"); // set kCpuHasMIPS_DSP
+#if defined(__mips_dspr2)
+  cpu_info_ |= kCpuHasMIPS_DSPR2;
+#endif
+  cpu_info_ |= kCpuHasMIPS;
+
+  if (getenv("LIBYUV_DISABLE_MIPS")) {
+    cpu_info_ &= ~kCpuHasMIPS;
   }
+  if (getenv("LIBYUV_DISABLE_MIPS_DSP")) {
+    cpu_info_ &= ~kCpuHasMIPS_DSP;
+  }
+  if (getenv("LIBYUV_DISABLE_MIPS_DSPR2")) {
+    cpu_info_ &= ~kCpuHasMIPS_DSPR2;
+  }
+
 #elif defined(__arm__)
 #if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
   // linux arm parse text file for neon detect.
@@ -195,10 +229,10 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_NEON")) {
     cpu_info_ &= ~kCpuHasNEON;
   }
+#endif  // __arm__
   if (TestEnv("LIBYUV_DISABLE_ASM")) {
     cpu_info_ = 0;
   }
-#endif  // __arm__
   return cpu_info_;
 }
 

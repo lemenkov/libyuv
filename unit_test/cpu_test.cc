@@ -39,6 +39,12 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has AVX %x\n", has_avx);
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   printf("Has AVX2 %x\n", has_avx2);
+  int has_mips = TestCpuFlag(kCpuHasMIPS);
+  printf("Has MIPS %x\n", has_mips);
+  int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);
+  printf("Has MIPS DSP %x\n", has_mips_dsp);
+  int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
+  printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
 }
 
 #if defined(__i386__) || defined(__x86_64__) || \

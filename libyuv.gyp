@@ -79,6 +79,7 @@
         'source/rotate_neon.cc',
         'source/row_common.cc',
         'source/row_neon.cc',
+        'source/row_mips.cc',
         'source/row_posix.cc',
         'source/row_win.cc',
         'source/scale.cc',

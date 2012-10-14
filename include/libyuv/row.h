@@ -153,6 +153,13 @@ extern "C" {
 #define HAS_ARGBTOARGB4444ROW_NEON
 #endif
 
+// The following are available on Mips platforms
+#if !defined(YUV_DISABLE_ASM) && defined(__mips__)
+#if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#define HAS_SPLITUV_MIPS_DSPR2
+#endif
+#endif
+
 #if defined(_MSC_VER) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 typedef __declspec(align(16)) int8 vec8[16];
@@ -264,6 +271,7 @@ void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);
 
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
