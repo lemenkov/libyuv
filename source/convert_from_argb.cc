@@ -245,6 +245,13 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
       ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
     }
   }
+#elif defined(HAS_ARGBTORGB565ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToRGB565Row = ARGBToRGB565Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565Row = ARGBToRGB565Row_NEON;
+    }
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
@@ -276,6 +283,13 @@ int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
     ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB1555Row = ARGBToARGB1555Row_SSE2;
+    }
+  }
+#elif defined(HAS_ARGBTOARGB1555ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToARGB1555Row = ARGBToARGB1555Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_NEON;
     }
   }
 #endif

@@ -908,6 +908,67 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
   );
 }
 
+#ifdef HAS_ARGBTORGB565ROW_NEON
+void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb565, int pix) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vshr.u8    d0, d0, #3                     \n"  // B
+    "vshr.u8    d1, d1, #2                     \n"  // G
+    "vshr.u8    d2, d2, #3                     \n"  // R
+    "vmovl.u8   q8, d0                         \n"  // B
+    "vmovl.u8   q9, d1                         \n"  // G
+    "vmovl.u8   q10, d2                        \n"  // R
+    "vshl.u16   q9, q9, #5                     \n"  // G
+    "vshl.u16   q10, q10, #11                  \n"  // R
+    "vorr       q0, q8, q9                     \n"  // BG
+    "vorr       q0, q0, q10                    \n"  // BGR
+    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels RGB565.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_rgb565),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "q8", "q9", "q10"
+  );
+}
+#endif  // HAS_ARGBTORGB565ROW_NEON
+
+#ifdef HAS_ARGBTOARGB1555ROW_NEON
+void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_argb1555,
+                            int pix) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vshr.u8    d0, d0, #3                     \n"  // B
+    "vshr.u8    d1, d1, #3                     \n"  // G
+    "vshr.u8    d2, d2, #3                     \n"  // R
+    "vshr.u8    d3, d3, #7                     \n"  // A
+    "vmovl.u8   q8, d0                         \n"  // B
+    "vmovl.u8   q9, d1                         \n"  // G
+    "vmovl.u8   q10, d2                        \n"  // R
+    "vmovl.u8   q11, d3                        \n"  // A
+    "vshl.u16   q9, q9, #5                     \n"  // G
+    "vshl.u16   q10, q10, #10                  \n"  // R
+    "vshl.u16   q11, q11, #15                  \n"  // A
+    "vorr       q0, q8, q9                     \n"  // BG
+    "vorr       q1, q10, q11                   \n"  // RA
+    "vorr       q0, q0, q1                     \n"  // BGRA
+    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels ARGB1555.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb1555),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "d0", "d1", "d2", "d3", "q8", "q9", "q10", "q11"
+  );
+}
+#endif  // HAS_ARGBTOARGB1555ROW_NEON
+
 #ifdef HAS_ARGBTOARGB4444ROW_NEON
 void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
                             int pix) {

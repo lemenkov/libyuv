@@ -150,6 +150,8 @@ extern "C" {
 #define HAS_YUY2TOYROW_NEON
 #define HAS_I422TOYUY2ROW_NEON
 #define HAS_I422TOUYVYROW_NEON
+#define HAS_ARGBTORGB565ROW_NEON
+#define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
 #endif
 
@@ -308,8 +310,8 @@ void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
 void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix);
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
-void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
+void ARGB1555ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb, uint8* dst_argb, int pix);
 
 void BGRAToARGBRow_NEON(const uint8* src_bgra, uint8* dst_argb, int pix);
@@ -337,6 +339,8 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -593,6 +597,8 @@ void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB24Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToRGB565Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
+void ARGBToARGB1555Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
