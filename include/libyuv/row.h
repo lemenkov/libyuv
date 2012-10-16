@@ -153,6 +153,7 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_NEON
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
+#define HAS_ARGBTOYROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -258,6 +259,8 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
 void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
+
+void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix);
 
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
@@ -613,6 +616,8 @@ void ABGRToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 void RGBAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
+void ARGBToYRow_Any_NEON(const uint8* src_argb, uint8* dst_y, int pix);
+
 void I422ToARGBRow_Any_NEON(const uint8* y_buf,
                             const uint8* u_buf,
                             const uint8* v_buf,

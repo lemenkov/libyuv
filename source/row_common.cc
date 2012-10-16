@@ -1083,27 +1083,30 @@ RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
 #undef RGBANY
 
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.
-#define YANY(NAMEANY, ARGBTOY_SIMD, BPP)                                       \
+#define YANY(NAMEANY, ARGBTOY_SIMD, BPP, NUM)                                  \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
-      ARGBTOY_SIMD(src_argb, dst_y, width - 16);                               \
-      ARGBTOY_SIMD(src_argb + (width - 16) * BPP, dst_y + (width - 16), 16);   \
+      ARGBTOY_SIMD(src_argb, dst_y, width - NUM);                              \
+      ARGBTOY_SIMD(src_argb + (width - NUM) * BPP, dst_y + (width - NUM), NUM);\
     }
 
 #ifdef HAS_ARGBTOYROW_SSSE3
-YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4)
-YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4)
-YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4)
+YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4, 16)
+YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4, 16)
+YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4, 16)
 #endif
 #ifdef HAS_RGBATOYROW_SSSE3
-YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4)
+YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4, 16)
+#endif
+#ifdef HAS_ARGBTOYROW_NEON
+YANY(ARGBToYRow_Any_NEON, ARGBToYRow_NEON, 4, 8)
 #endif
 #ifdef HAS_YUY2TOYROW_SSE2
-YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2)
-YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2)
+YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2, 16)
+YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2, 16)
 #endif
 #ifdef HAS_YUY2TOYROW_NEON
-YANY(YUY2ToYRow_Any_NEON, YUY2ToYRow_NEON, 2)
-YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, 2)
+YANY(YUY2ToYRow_Any_NEON, YUY2ToYRow_NEON, 2, 16)
+YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, 2, 16)
 #endif
 #undef YANY
 

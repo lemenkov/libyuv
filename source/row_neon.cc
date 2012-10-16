@@ -995,6 +995,34 @@ void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
   );
 }
 #endif  // HAS_ARGBTOARGB4444ROW_NEON
+
+#ifdef HAS_ARGBTOYROW_NEON
+void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+    "vmov.u8    d4, #13                        \n"  // B * 0.1016 coefficient
+    "vmov.u8    d5, #65                        \n"  // G * 0.5078 coefficient
+    "vmov.u8    d6, #33                        \n"  // R * 0.2578 coefficient
+    "vmov.u8    d7, #16                        \n"  // Add 16 constant
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q8, d0, d4                     \n"  // B
+    "vmlal.u8   q8, d1, d5                     \n"  // G
+    "vmlal.u8   q8, d2, d6                     \n"  // R
+    "vqrshrun.s16 d0, q8, #7                   \n"  // 16 bit to 8 bit Y
+    "vqadd.u8   d0, d7                         \n"
+    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  );
+}
+#endif  // HAS_ARGBTOYROW_NEON
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

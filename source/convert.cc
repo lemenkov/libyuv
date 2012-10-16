@@ -909,6 +909,15 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
       }
     }
   }
+#elif defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      ARGBToYRow = ARGBToYRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_NEON;
+    }
+  }
 #endif
 
   for (int y = 0; y < height - 1; y += 2) {
