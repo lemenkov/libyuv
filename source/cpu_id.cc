@@ -118,6 +118,7 @@ int ArmCpuCaps(const char* cpuinfo_name) {
   return 0;
 }
 
+#if defined(__mips__) && defined(__linux__)
 static int MipsCpuCaps(const char* search_string) {
   const char* file_name = "/proc/cpuinfo";
   char cpuinfo_line[256];
@@ -134,6 +135,7 @@ static int MipsCpuCaps(const char* search_string) {
   /* Did not find string in the proc file, or not Linux ELF. */
   return 0;
 }
+#endif
 
 // CPU detect function for SIMD instruction sets.
 // TODO(fbarchard): Use constant if/when valgrind says cpu_info is initialized.

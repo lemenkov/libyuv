@@ -1640,4 +1640,5 @@ TEST_F(libyuvTest, NV12ToI420SplitUV) {
 
   EXPECT_EQ(0, err);
 }
+
 }  // namespace libyuv
