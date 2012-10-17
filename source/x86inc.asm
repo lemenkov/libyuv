@@ -34,7 +34,9 @@
 ; as this feature might be useful for others as well.  Send patches or ideas
 ; to x264-devel@videolan.org .
 
-%define program_name x264
+; Local changes for libyuv:
+; remove %define program_name and references in labels
+; rename cpus to uppercase
 
 %define WIN64  0
 %define UNIX64 0
@@ -505,7 +507,7 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %endmacro
 %macro cglobal_internal 1-2+
     %ifndef cglobaled_%1
-        %xdefine %1 mangle(program_name %+ _ %+ %1)
+        %xdefine %1 mangle(%1)
         %xdefine %1.skip_prologue %1 %+ .skip_prologue
         CAT_XDEFINE cglobaled_, %1, 1
     %endif
@@ -525,7 +527,7 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %endmacro
 
 %macro cextern 1
-    %xdefine %1 mangle(program_name %+ _ %+ %1)
+    %xdefine %1 mangle(%1)
     CAT_XDEFINE cglobaled_, %1, 1
     extern %1
 %endmacro
@@ -538,7 +540,7 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %endmacro
 
 %macro const 2+
-    %xdefine %1 mangle(program_name %+ _ %+ %1)
+    %xdefine %1 mangle(%1)
     global %1
     %1: %2
 %endmacro
@@ -551,22 +553,22 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 
 ; cpuflags
 
-%assign cpuflags_mmx      (1<<0)
-%assign cpuflags_mmx2     (1<<1) | cpuflags_mmx
-%assign cpuflags_3dnow    (1<<2) | cpuflags_mmx
+%assign cpuflags_MMX      (1<<0)
+%assign cpuflags_MMX2     (1<<1) | cpuflags_MMX
+%assign cpuflags_3dnow    (1<<2) | cpuflags_MMX
 %assign cpuflags_3dnow2   (1<<3) | cpuflags_3dnow
-%assign cpuflags_sse      (1<<4) | cpuflags_mmx2
-%assign cpuflags_sse2     (1<<5) | cpuflags_sse
-%assign cpuflags_sse2slow (1<<6) | cpuflags_sse2
-%assign cpuflags_sse3     (1<<7) | cpuflags_sse2
-%assign cpuflags_ssse3    (1<<8) | cpuflags_sse3
-%assign cpuflags_sse4     (1<<9) | cpuflags_ssse3
-%assign cpuflags_sse42    (1<<10)| cpuflags_sse4
-%assign cpuflags_avx      (1<<11)| cpuflags_sse42
-%assign cpuflags_xop      (1<<12)| cpuflags_avx
-%assign cpuflags_fma4     (1<<13)| cpuflags_avx
-%assign cpuflags_avx2     (1<<14)| cpuflags_avx
-%assign cpuflags_fma3     (1<<15)| cpuflags_avx
+%assign cpuflags_SSE      (1<<4) | cpuflags_MMX2
+%assign cpuflags_SSE2     (1<<5) | cpuflags_SSE
+%assign cpuflags_SSE2slow (1<<6) | cpuflags_SSE2
+%assign cpuflags_SSE3     (1<<7) | cpuflags_SSE2
+%assign cpuflags_SSSE3    (1<<8) | cpuflags_SSE3
+%assign cpuflags_SSE4     (1<<9) | cpuflags_SSSE3
+%assign cpuflags_SSE42    (1<<10)| cpuflags_SSE4
+%assign cpuflags_AVX      (1<<11)| cpuflags_SSE42
+%assign cpuflags_xop      (1<<12)| cpuflags_AVX
+%assign cpuflags_fma4     (1<<13)| cpuflags_AVX
+%assign cpuflags_AVX2     (1<<14)| cpuflags_AVX
+%assign cpuflags_fma3     (1<<15)| cpuflags_AVX
 
 %assign cpuflags_cache32  (1<<16)
 %assign cpuflags_cache64  (1<<17)
@@ -594,17 +596,17 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
             %assign cpuflags cpuflags | cpuflags_%2
         %endif
         %xdefine SUFFIX _ %+ cpuname
-        %if cpuflag(avx)
-            %assign avx_enabled 1
+        %if cpuflag(AVX)
+            %assign AVX_enabled 1
         %endif
-        %if mmsize == 16 && notcpuflag(sse2)
+        %if mmsize == 16 && notcpuflag(SSE2)
             %define mova movaps
             %define movu movups
             %define movnta movntps
         %endif
         %if cpuflag(aligned)
             %define movu mova
-        %elifidn %1, sse3
+        %elifidn %1, SSE3
             %define movu lddqu
         %endif
     %else
@@ -614,7 +616,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
     %endif
 %endmacro
 
-; merge mmx and sse*
+; merge MMX and SSE*
 
 %macro CAT_XDEFINE 3
     %xdefine %1%2 %3
@@ -625,7 +627,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %endmacro
 
 %macro INIT_MMX 0-1+
-    %assign avx_enabled 0
+    %assign AVX_enabled 0
     %define RESET_MM_PERMUTATION INIT_MMX %1
     %define mmsize 8
     %define num_mmregs 8
@@ -648,7 +650,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %endmacro
 
 %macro INIT_XMM 0-1+
-    %assign avx_enabled 0
+    %assign AVX_enabled 0
     %define RESET_MM_PERMUTATION INIT_XMM %1
     %define mmsize 16
     %define num_mmregs 8
@@ -669,7 +671,7 @@ SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %endmacro
 
 %macro INIT_YMM 0-1+
-    %assign avx_enabled 1
+    %assign AVX_enabled 1
     %define RESET_MM_PERMUTATION INIT_YMM %1
     %define mmsize 32
     %define num_mmregs 8
@@ -832,7 +834,7 @@ INIT_XMM
     %xdefine %%dst %2
     %rep %0-2
         %ifidn %%dst, %3
-            %error non-avx emulation of ``%%opcode'' is not supported
+            %error non-AVX emulation of ``%%opcode'' is not supported
         %endif
         %rotate 1
     %endrep
@@ -868,7 +870,7 @@ INIT_XMM
 
         %if %4>=3+%3
             %ifnidn %5, %6
-                %if avx_enabled && %%sizeofreg==16
+                %if AVX_enabled && %%sizeofreg==16
                     v%1 %5, %6, %7
                 %else
                     CHECK_AVX_INSTR_EMU {%1 %5, %6, %7}, %5, %7
@@ -891,7 +893,7 @@ INIT_XMM
 ; So, if the op is symmetric and the wrong one is memory, swap them.
 %macro RUN_AVX_INSTR1 8
     %assign %%swap 0
-    %if avx_enabled
+    %if AVX_enabled
         %ifnid %6
             %assign %%swap 1
         %endif
