@@ -205,6 +205,11 @@ int MJPGToI420(const uint8* sample, size_t sample_size,
                uint8* dst_v, int dst_stride_v,
                int src_width, int src_height,
                int dst_width, int dst_height);
+
+// Query size of MJPG in pixels.
+LIBYUV_API
+int MJPGSize(const uint8* sample, size_t sample_size,
+             int* width, int* height);
 #endif
 
 // Note Bayer formats (BGGR) To I420 are in format_conversion.h

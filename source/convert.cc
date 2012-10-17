@@ -1567,6 +1567,21 @@ static void JpegI400ToI420(void* opaque,
   dest->h -= rows;
 }
 
+// Query size of MJPG in pixels.
+LIBYUV_API
+int MJPGSize(const uint8* sample, size_t sample_size,
+             int* width, int* height) {
+  // TODO(fbarchard): Port to C
+  MJpegDecoder mjpeg_decoder;
+  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  if (ret) {
+    *width = mjpeg_decoder.GetWidth();
+    *height = mjpeg_decoder.GetHeight();
+  }
+  mjpeg_decoder.UnloadFrame();
+  return ret ? 0 : -1;  // -1 for runtime failure.
+}
+
 // MJPG (Motion JPeg) to I420
 // TODO(fbarchard): review w and h requirement. dw and dh may be enough.
 LIBYUV_API
