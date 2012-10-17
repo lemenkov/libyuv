@@ -342,6 +342,26 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
+    "vld2.u8    {q0, q1}, [%0:128]!            \n"  // load 16 pairs of UV
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "vst1.u8    {q0}, [%1:128]!                \n"  // store U
+    "vst1.u8    {q1}, [%2:128]!                \n"  // Store V
+    "bgt        1b                             \n"
+    : "+r"(src_uv),  // %0
+      "+r"(dst_u),   // %1
+      "+r"(dst_v),   // %2
+      "+r"(width)    // %3  // Output registers
+    :                       // Input registers
+    : "memory", "cc", "q0", "q1"  // Clobber List
+  );
+}
+// Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
+// Alignment requirement: Multiple of 16 pixels, pointers unaligned.
+void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
     "vld2.u8    {q0, q1}, [%0]!                \n"  // load 16 pairs of UV
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vst1.u8    {q0}, [%1]!                    \n"  // store U

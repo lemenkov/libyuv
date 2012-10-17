@@ -367,21 +367,64 @@ static int X420ToI420(const uint8* src_y,
   int halfwidth = (width + 1) >> 1;
   void (*SplitUV)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) =
       SplitUV_C;
+#if defined(HAS_SPLITUV_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    if (halfwidth >= 16) {
+      SplitUV = SplitUV_Any_SSE2;
+      if (IS_ALIGNED(halfwidth, 16)) {
+        SplitUV = SplitUV_Unaligned_SSE2;
+        if (IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16) &&
+            IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
+            IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+          SplitUV = SplitUV_SSE2;
+        }
+      }
+    }
+  }
+#endif
+#if defined(HAS_SPLITUV_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    if (halfwidth >= 32) {
+      SplitUV = SplitUV_Any_AVX2;
+      if (IS_ALIGNED(halfwidth, 32)) {
+        SplitUV = SplitUV_Unaligned_AVX2;
+        if (IS_ALIGNED(src_uv, 32) && IS_ALIGNED(src_stride_uv, 32) &&
+            IS_ALIGNED(dst_u, 32) && IS_ALIGNED(dst_stride_u, 32) &&
+            IS_ALIGNED(dst_v, 32) && IS_ALIGNED(dst_stride_v, 32)) {
+          SplitUV = SplitUV_AVX2;
+        }
+      }
+    }
+  }
+#endif
 #if defined(HAS_SPLITUV_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
-    SplitUV = SplitUV_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (halfwidth >= 16) {
+      SplitUV = SplitUV_Any_NEON;
+      if (IS_ALIGNED(halfwidth, 16)) {
+        SplitUV = SplitUV_Unaligned_NEON;
+        if (IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16) &&
+            IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
+            IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+          SplitUV = SplitUV_NEON;
+        }
+      }
+    }
   }
-#elif defined(HAS_SPLITUV_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(halfwidth, 16) &&
-      IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    SplitUV = SplitUV_SSE2;
-  }
-#elif defined(HAS_SPLITUV_MIPS_DSPR2)
-if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
-    SplitUV = SplitUV_MIPS_DSPR2;
+#endif
+#if defined(HAS_SPLITUV_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
+    if (halfwidth >= 16) {
+      SplitUV = SplitUV_Any_MIPS_DSPR2;
+      if (IS_ALIGNED(halfwidth, 16)) {
+        SplitUV = SplitUV_Unaligned_MIPS_DSPR2;
+        if (IS_ALIGNED(src_uv, 4) && IS_ALIGNED(src_stride_uv, 4) &&
+            IS_ALIGNED(dst_u, 4) && IS_ALIGNED(dst_stride_u, 4) &&
+            IS_ALIGNED(dst_v, 4) && IS_ALIGNED(dst_stride_v, 4)) {
+          SplitUV = SplitUV_MIPS_DSPR2;
+        }
+      }
+    }
   }
 #endif
 

@@ -2581,6 +2581,43 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     ret
   }
 }
+
+__declspec(naked) __declspec(align(16))
+void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // dst_u
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+    sub        edi, edx
+
+    align      16
+  convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+    movdqa     xmm2, xmm0
+    movdqa     xmm3, xmm1
+    pand       xmm0, xmm5   // even bytes
+    pand       xmm1, xmm5
+    packuswb   xmm0, xmm1
+    psrlw      xmm2, 8      // odd bytes
+    psrlw      xmm3, 8
+    packuswb   xmm2, xmm3
+    movdqu     [edx], xmm0
+    movdqu     [edx + edi], xmm2
+    lea        edx, [edx + 16]
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
 #endif  // HAS_SPLITUV_SSE2
 
 #ifdef HAS_COPYROW_SSE2

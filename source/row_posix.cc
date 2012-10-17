@@ -2480,7 +2480,7 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "pcmpeqb    %%xmm5,%%xmm5                    \n"
     "psrlw      $0x8,%%xmm5                      \n"
     "sub        %1,%2                            \n"
-    ".p2align  4                               \n"
+    ".p2align   4                                \n"
   "1:                                            \n"
     "movdqa     (%0),%%xmm0                      \n"
     "movdqa     0x10(%0),%%xmm1                  \n"
@@ -2495,6 +2495,42 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "packuswb   %%xmm3,%%xmm2                    \n"
     "movdqa     %%xmm0,(%1)                      \n"
     "movdqa     %%xmm2,(%1,%2)                   \n"
+    "lea        0x10(%1),%1                      \n"
+    "sub        $0x10,%3                         \n"
+    "jg         1b                               \n"
+  : "+r"(src_uv),     // %0
+    "+r"(dst_u),      // %1
+    "+r"(dst_v),      // %2
+    "+r"(pix)         // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+
+void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix) {
+  asm volatile (
+    "pcmpeqb    %%xmm5,%%xmm5                    \n"
+    "psrlw      $0x8,%%xmm5                      \n"
+    "sub        %1,%2                            \n"
+    ".p2align   4                                \n"
+  "1:                                            \n"
+    "movdqu     (%0),%%xmm0                      \n"
+    "movdqu     0x10(%0),%%xmm1                  \n"
+    "lea        0x20(%0),%0                      \n"
+    "movdqa     %%xmm0,%%xmm2                    \n"
+    "movdqa     %%xmm1,%%xmm3                    \n"
+    "pand       %%xmm5,%%xmm0                    \n"
+    "pand       %%xmm5,%%xmm1                    \n"
+    "packuswb   %%xmm1,%%xmm0                    \n"
+    "psrlw      $0x8,%%xmm2                      \n"
+    "psrlw      $0x8,%%xmm3                      \n"
+    "packuswb   %%xmm3,%%xmm2                    \n"
+    "movdqu     %%xmm0,(%1)                      \n"
+    "movdqu     %%xmm2,(%1,%2)                   \n"
     "lea        0x10(%1),%1                      \n"
     "sub        $0x10,%3                         \n"
     "jg         1b                               \n"

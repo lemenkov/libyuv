@@ -103,9 +103,23 @@ extern "C" {
 #define HAS_CUMULATIVESUMTOAVERAGE_SSE2
 #endif
 
-// The following are Windows only.  TODO(fbarchard): Port to gcc.
+// The following are Windows only.
+// TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
+#endif
+
+// The following are Yasm x86 only.
+// TODO(fbarchard): Port AVX2 to inline.
+#if !defined(YUV_DISABLE_ASM) && defined(HAVE_YASM)
+    (defined(_M_IX86) || defined(_M_X64) || \
+    defined(__x86_64__) || defined(__i386__))
+#define HAS_SPLITUV_AVX2
+#define HAS_SPLITUV_MMX
+#define HAS_YUY2TOYROW_AVX2
+#define HAS_UYVYTOYROW_AVX2
+#define HAS_YUY2TOYROW_MMX
+#define HAS_UYVYTOYROW_MMX
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -274,11 +288,25 @@ void MirrorRowUV_C(const uint8* src, uint8* dst_u, uint8* dst_v, int width);
 void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);
 
+void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                         int pix);
-void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix);
+void SplitUV_Unaligned_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix);
+void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix);
+void SplitUV_Unaligned_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u,
+                                  uint8* dst_v, int pix);
+void SplitUV_Any_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_Any_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_Any_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
+void SplitUV_Any_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int pix);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_X86(const uint8* src, uint8* dst, int count);
