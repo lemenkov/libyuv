@@ -299,22 +299,33 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
                     uint8* dst_argb, int pix);
   void (*BayerRow1)(const uint8* src_bayer, int src_stride_bayer,
                     uint8* dst_argb, int pix);
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
-      ARGBToYRow_C;
+
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
 #if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = ARGBToYRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    if (width > 16) {
+      ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
+      ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
+      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+        ARGBToYRow = ARGBToYRow_SSSE3;
+      }
+    }
   }
-#endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    ARGBToUVRow = ARGBToUVRow_SSSE3;
+#elif defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      ARGBToYRow = ARGBToYRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_NEON;
+    }
   }
 #endif
 
@@ -339,6 +350,7 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
       return -1;  // Bad FourCC
   }
 
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
   for (int y = 0; y < height - 1; y += 2) {
     BayerRow0(src_bayer, src_stride_bayer, row, width);
     BayerRow1(src_bayer + src_stride_bayer, -src_stride_bayer,

@@ -37,11 +37,26 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
 #if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
-      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    ARGBToYRow = ARGBToYRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    if (width > 16) {
+      ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    }
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+          IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+        ARGBToYRow = ARGBToYRow_SSSE3;
+      }
+    }
+  }
+#elif defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      ARGBToYRow = ARGBToYRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_NEON;
+    }
   }
 #endif
 
@@ -69,10 +84,10 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
-      ARGBToYRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     if (width > 16) {
@@ -88,6 +103,15 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
           ARGBToYRow = ARGBToYRow_SSSE3;
         }
       }
+    }
+  }
+#elif defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    if (width > 8) {
+      ARGBToYRow = ARGBToYRow_Any_NEON;
+    }
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_NEON;
     }
   }
 #endif
