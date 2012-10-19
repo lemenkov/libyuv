@@ -108,8 +108,7 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
   align_buffer_16(src_a, kMaxWidth)
   align_buffer_16(src_b, kMaxWidth)
 
-  MaskCpuFlags(0);                                                             \
-
+  MaskCpuFlags(0);
   memcpy(src_a, "test0123test4567", 16);
   memcpy(src_b, "tick0123tock4567", 16);
   uint64 h1 = ComputeSumSquareError(src_a, src_b, 16);
@@ -189,7 +188,7 @@ TEST_F(libyuvTest, SumSquareError) {
     src_b[i] = (random() & 0xff);
   }
 
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
   uint64 c_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
   MaskCpuFlags(-1);
@@ -210,7 +209,7 @@ TEST_F(libyuvTest, BenchmarkPsnr_C) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
 
   double c_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
