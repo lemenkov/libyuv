@@ -244,109 +244,15 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
   return seed;
 }
 
+uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count);
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SUMSQUAREERROR_NEON
-
 uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count);
-
-#elif !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
+#elif !defined(YUV_DISABLE_ASM) && (defined(_M_IX86) || \
+    defined(__x86_64__) || defined(__i386__))
 #define HAS_SUMSQUAREERROR_SSE2
-__declspec(naked) __declspec(align(16))
-static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
-                                  int count) {
-  __asm {
-    mov        eax, [esp + 4]    // src_a
-    mov        edx, [esp + 8]    // src_b
-    mov        ecx, [esp + 12]   // count
-    pxor       xmm0, xmm0
-    pxor       xmm5, xmm5
-    sub        edx, eax
-
-    align      16
-  wloop:
-    movdqa     xmm1, [eax]
-    movdqa     xmm2, [eax + edx]
-    lea        eax,  [eax + 16]
-    sub        ecx, 16
-    movdqa     xmm3, xmm1  // abs trick
-    psubusb    xmm1, xmm2
-    psubusb    xmm2, xmm3
-    por        xmm1, xmm2
-    movdqa     xmm2, xmm1
-    punpcklbw  xmm1, xmm5
-    punpckhbw  xmm2, xmm5
-    pmaddwd    xmm1, xmm1
-    pmaddwd    xmm2, xmm2
-    paddd      xmm0, xmm1
-    paddd      xmm0, xmm2
-    jg         wloop
-
-    pshufd     xmm1, xmm0, 0EEh
-    paddd      xmm0, xmm1
-    pshufd     xmm1, xmm0, 01h
-    paddd      xmm0, xmm1
-    movd       eax, xmm0
-    ret
-  }
-}
-
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-#define HAS_SUMSQUAREERROR_SSE2
-static uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b,
-                                  int count) {
-  uint32 sse;
-  asm volatile (
-    "pxor      %%xmm0,%%xmm0                   \n"
-    "pxor      %%xmm5,%%xmm5                   \n"
-    "sub       %0,%1                           \n"
-    ".p2align  4                               \n"
-    "1:                                        \n"
-    "movdqa    (%0),%%xmm1                     \n"
-    "movdqa    (%0,%1,1),%%xmm2                \n"
-    "lea       0x10(%0),%0                     \n"
-    "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm1,%%xmm3                   \n"
-    "psubusb   %%xmm2,%%xmm1                   \n"
-    "psubusb   %%xmm3,%%xmm2                   \n"
-    "por       %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm1,%%xmm2                   \n"
-    "punpcklbw %%xmm5,%%xmm1                   \n"
-    "punpckhbw %%xmm5,%%xmm2                   \n"
-    "pmaddwd   %%xmm1,%%xmm1                   \n"
-    "pmaddwd   %%xmm2,%%xmm2                   \n"
-    "paddd     %%xmm1,%%xmm0                   \n"
-    "paddd     %%xmm2,%%xmm0                   \n"
-    "jg        1b                              \n"
-
-    "pshufd    $0xee,%%xmm0,%%xmm1             \n"
-    "paddd     %%xmm1,%%xmm0                   \n"
-    "pshufd    $0x1,%%xmm0,%%xmm1              \n"
-    "paddd     %%xmm1,%%xmm0                   \n"
-    "movd      %%xmm0,%3                       \n"
-
-  : "+r"(src_a),      // %0
-    "+r"(src_b),      // %1
-    "+r"(count),      // %2
-    "=g"(sse)         // %3
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm5"
+uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count);
 #endif
-  );
-  return sse;
-}
-#endif
-
-static uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b,
-                               int count) {
-  uint32 sse = 0u;
-  for (int i = 0; i < count; ++i) {
-    int diff = src_a[i] - src_b[i];
-    sse += static_cast<uint32>(diff * diff);
-  }
-  return sse;
-}
 
 LIBYUV_API
 uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
