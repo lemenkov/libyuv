@@ -55,9 +55,9 @@ extern "C" {
     "vqadd.s16  d23, d1, d17                   \n"                             \
     "vqadd.s16  d16, d0, d18                   \n" /* G */                     \
     "vqadd.s16  d17, d1, d18                   \n"                             \
-    "vqrshrun.s16 d0, q10, #6                  \n" /* B */                     \
-    "vqrshrun.s16 d1, q11, #6                  \n" /* G */                     \
-    "vqrshrun.s16 d2, q8, #6                   \n" /* R */                     \
+    "vqshrun.s16 d0, q10, #6                   \n" /* B */                     \
+    "vqshrun.s16 d1, q11, #6                   \n" /* G */                     \
+    "vqshrun.s16 d2, q8, #6                    \n" /* R */                     \
     "vmovl.u8   q10, d0                        \n"/*  set up for reinterleave*/\
     "vmovl.u8   q11, d1                        \n"                             \
     "vmovl.u8   q8, d2                         \n"                             \
