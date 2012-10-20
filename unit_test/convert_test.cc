@@ -83,7 +83,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -94,7 +94,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -105,7 +105,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   free_aligned_buffer_16(dst_y_c)                                              \
   free_aligned_buffer_16(dst_u_c)                                              \
   free_aligned_buffer_16(dst_v_c)                                              \
@@ -186,7 +186,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -197,7 +197,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   for (int i = 0; i < kHeight / SUBSAMP_Y; ++i) {                              \
     for (int j = 0; j < kWidth / SUBSAMP_X; ++j) {                             \
       int abs_diff =                                                           \
@@ -208,7 +208,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, 1);                                                      \
   free_aligned_buffer_16(dst_y_c)                                              \
   free_aligned_buffer_16(dst_u_c)                                              \
   free_aligned_buffer_16(dst_v_c)                                              \
@@ -329,11 +329,11 @@ TESTPLANARTOB(I422, 2, 1, RGBA, 4, 4, 2)
 TESTPLANARTOB(I411, 4, 1, ARGB, 4, 4, 2)
 TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4, 2)
 // TODO(fbarchard): Fix TESTPLANARTOB(I420, 2, 2, V210, 16 / 6, 128)
-TESTPLANARTOB(I420, 2, 2, YUY2, 2, 4, 2)
-TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4, 2)
-TESTPLANARTOB(I422, 2, 1, YUY2, 2, 4, 2)
-TESTPLANARTOB(I422, 2, 1, UYVY, 2, 4, 2)
-TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 2)
+TESTPLANARTOB(I420, 2, 2, YUY2, 2, 4, 1)
+TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4, 1)
+TESTPLANARTOB(I422, 2, 1, YUY2, 2, 4, 0)
+TESTPLANARTOB(I422, 2, 1, UYVY, 2, 4, 0)
+TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 0)
 TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1, 1, 2)
 TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1, 1, 2)
 TESTPLANARTOB(I420, 2, 2, BayerGBRG, 1, 1, 2)
@@ -520,7 +520,7 @@ TESTATOPLANAR(BayerRGGB, 1, I420, 2, 2)
 TESTATOPLANAR(BayerGBRG, 1, I420, 2, 2)
 TESTATOPLANAR(BayerGRBG, 1, I420, 2, 2)
 
-#define TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, W1280, N, NEG)         \
+#define TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, W1280, DIFF, N, NEG)   \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
   const int kWidth = W1280;                                                    \
   const int kHeight = 720;                                                     \
@@ -550,50 +550,50 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
       max_diff = abs_diff;                                                     \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 2);                                                      \
+  EXPECT_LE(max_diff, DIFF);                                                   \
   free_aligned_buffer_16(src_argb)                                             \
   free_aligned_buffer_16(dst_argb_c)                                           \
   free_aligned_buffer_16(dst_argb_opt)                                         \
 }
-#define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B)                         \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, _Opt, +)             \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, _Invert, -)          \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, _Any, +)
+#define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, DIFF)                   \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, DIFF, _Opt, +)       \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, DIFF, _Invert, -)    \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, 1280, DIFF, _Any, +)
 
-TESTATOB(ARGB, 4, 4, ARGB, 4)
-TESTATOB(ARGB, 4, 4, BGRA, 4)
-TESTATOB(ARGB, 4, 4, ABGR, 4)
-TESTATOB(ARGB, 4, 4, RGBA, 4)
-TESTATOB(ARGB, 4, 4, RAW, 3)
-TESTATOB(ARGB, 4, 4, RGB24, 3)
-TESTATOB(ARGB, 4, 4, RGB565, 2)
-TESTATOB(ARGB, 4, 4, ARGB1555, 2)
-TESTATOB(ARGB, 4, 4, ARGB4444, 2)
-TESTATOB(ARGB, 4, 4, BayerBGGR, 1)
-TESTATOB(ARGB, 4, 4, BayerRGGB, 1)
-TESTATOB(ARGB, 4, 4, BayerGBRG, 1)
-TESTATOB(ARGB, 4, 4, BayerGRBG, 1)
-TESTATOB(ARGB, 4, 4, I400, 1)
-TESTATOB(BGRA, 4, 4, ARGB, 4)
-TESTATOB(ABGR, 4, 4, ARGB, 4)
-TESTATOB(RGBA, 4, 4, ARGB, 4)
-TESTATOB(RAW, 3, 3, ARGB, 4)
-TESTATOB(RGB24, 3, 3, ARGB, 4)
-TESTATOB(RGB565, 2, 2, ARGB, 4)
-TESTATOB(ARGB1555, 2, 2, ARGB, 4)
-TESTATOB(ARGB4444, 2, 2, ARGB, 4)
-TESTATOB(YUY2, 2, 2, ARGB, 4)
-TESTATOB(UYVY, 2, 2, ARGB, 4)
-TESTATOB(M420, 3 / 2, 1, ARGB, 4)
-TESTATOB(BayerBGGR, 1, 1, ARGB, 4)
-TESTATOB(BayerRGGB, 1, 1, ARGB, 4)
-TESTATOB(BayerGBRG, 1, 1, ARGB, 4)
-TESTATOB(BayerGRBG, 1, 1, ARGB, 4)
-TESTATOB(I400, 1, 1, ARGB, 4)
-TESTATOB(I400, 1, 1, I400, 1)
-TESTATOB(ARGB, 4, 4, ARGBMirror, 4)
+TESTATOB(ARGB, 4, 4, ARGB, 4, 0)
+TESTATOB(ARGB, 4, 4, BGRA, 4, 0)
+TESTATOB(ARGB, 4, 4, ABGR, 4, 0)
+TESTATOB(ARGB, 4, 4, RGBA, 4, 0)
+TESTATOB(ARGB, 4, 4, RAW, 3, 0)
+TESTATOB(ARGB, 4, 4, RGB24, 3, 0)
+TESTATOB(ARGB, 4, 4, RGB565, 2, 0)
+TESTATOB(ARGB, 4, 4, ARGB1555, 2, 0)
+TESTATOB(ARGB, 4, 4, ARGB4444, 2, 0)
+TESTATOB(ARGB, 4, 4, BayerBGGR, 1, 0)
+TESTATOB(ARGB, 4, 4, BayerRGGB, 1, 0)
+TESTATOB(ARGB, 4, 4, BayerGBRG, 1, 0)
+TESTATOB(ARGB, 4, 4, BayerGRBG, 1, 0)
+TESTATOB(ARGB, 4, 4, I400, 1, 2)
+TESTATOB(BGRA, 4, 4, ARGB, 4, 0)
+TESTATOB(ABGR, 4, 4, ARGB, 4, 0)
+TESTATOB(RGBA, 4, 4, ARGB, 4, 0)
+TESTATOB(RAW, 3, 3, ARGB, 4, 0)
+TESTATOB(RGB24, 3, 3, ARGB, 4, 0)
+TESTATOB(RGB565, 2, 2, ARGB, 4, 0)
+TESTATOB(ARGB1555, 2, 2, ARGB, 4, 0)
+TESTATOB(ARGB4444, 2, 2, ARGB, 4, 0)
+TESTATOB(YUY2, 2, 2, ARGB, 4, 0)
+TESTATOB(UYVY, 2, 2, ARGB, 4, 0)
+TESTATOB(M420, 3 / 2, 1, ARGB, 4, 0)
+TESTATOB(BayerBGGR, 1, 1, ARGB, 4, 0)
+TESTATOB(BayerRGGB, 1, 1, ARGB, 4, 0)
+TESTATOB(BayerGBRG, 1, 1, ARGB, 4, 0)
+TESTATOB(BayerGRBG, 1, 1, ARGB, 4, 0)
+TESTATOB(I400, 1, 1, ARGB, 4, 0)
+TESTATOB(I400, 1, 1, I400, 1, 0)
+TESTATOB(ARGB, 4, 4, ARGBMirror, 4, 0)
 
-#define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, STRIDE_B)         \
+#define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, STRIDE_B, DIFF)   \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
   srandom(time(NULL));                                                         \
   for (int times = 0; times < benchmark_iterations_; ++times) {                \
@@ -624,39 +624,39 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
         max_diff = abs_diff;                                                   \
       }                                                                        \
     }                                                                          \
-    EXPECT_LE(max_diff, 2);                                                    \
+    EXPECT_LE(max_diff, DIFF);                                                 \
     free_aligned_buffer_page_end(src_argb)                                     \
     free_aligned_buffer_page_end(dst_argb_c)                                   \
     free_aligned_buffer_page_end(dst_argb_opt)                                 \
   }                                                                            \
 }
 
-TESTATOBRANDOM(ARGB, 4, 4, ARGB, 4, 4)
-TESTATOBRANDOM(ARGB, 4, 4, BGRA, 4, 4)
-TESTATOBRANDOM(ARGB, 4, 4, ABGR, 4, 4)
-TESTATOBRANDOM(ARGB, 4, 4, RGBA, 4, 4)
-TESTATOBRANDOM(ARGB, 4, 4, RAW, 3, 3)
-TESTATOBRANDOM(ARGB, 4, 4, RGB24, 3, 3)
-TESTATOBRANDOM(ARGB, 4, 4, RGB565, 2, 2)
-TESTATOBRANDOM(ARGB, 4, 4, ARGB1555, 2, 2)
-TESTATOBRANDOM(ARGB, 4, 4, ARGB4444, 2, 2)
-TESTATOBRANDOM(ARGB, 4, 4, I400, 1, 1)
-// TODO(fbarchard): Implement YUY2
-// TESTATOBRANDOM(ARGB, 4, 4, YUY2, 4, 2)
-// TESTATOBRANDOM(ARGB, 4, 4, UYVY, 4, 2)
-TESTATOBRANDOM(BGRA, 4, 4, ARGB, 4, 4)
-TESTATOBRANDOM(ABGR, 4, 4, ARGB, 4, 4)
-TESTATOBRANDOM(RGBA, 4, 4, ARGB, 4, 4)
-TESTATOBRANDOM(RAW, 3, 3, ARGB, 4, 4)
-TESTATOBRANDOM(RGB24, 3, 3, ARGB, 4, 4)
-TESTATOBRANDOM(RGB565, 2, 2, ARGB, 4, 4)
-TESTATOBRANDOM(ARGB1555, 2, 2, ARGB, 4, 4)
-TESTATOBRANDOM(ARGB4444, 2, 2, ARGB, 4, 4)
-TESTATOBRANDOM(I400, 1, 1, ARGB, 4, 4)
-TESTATOBRANDOM(YUY2, 4, 2, ARGB, 4, 4)
-TESTATOBRANDOM(UYVY, 4, 2, ARGB, 4, 4)
-TESTATOBRANDOM(I400, 1, 1, I400, 1, 1)
-TESTATOBRANDOM(ARGB, 4, 4, ARGBMirror, 4, 4)
+TESTATOBRANDOM(ARGB, 4, 4, ARGB, 4, 4, 0)
+TESTATOBRANDOM(ARGB, 4, 4, BGRA, 4, 4, 0)
+TESTATOBRANDOM(ARGB, 4, 4, ABGR, 4, 4, 0)
+TESTATOBRANDOM(ARGB, 4, 4, RGBA, 4, 4, 0)
+TESTATOBRANDOM(ARGB, 4, 4, RAW, 3, 3, 0)
+TESTATOBRANDOM(ARGB, 4, 4, RGB24, 3, 3, 0)
+TESTATOBRANDOM(ARGB, 4, 4, RGB565, 2, 2, 0)
+TESTATOBRANDOM(ARGB, 4, 4, ARGB1555, 2, 2, 0)
+TESTATOBRANDOM(ARGB, 4, 4, ARGB4444, 2, 2, 0)
+TESTATOBRANDOM(ARGB, 4, 4, I400, 1, 1, 2)
+// TODO(fbarchard, 0): Implement YUY2
+// TESTATOBRANDOM(ARGB, 4, 4, YUY2, 4, 2, 0)
+// TESTATOBRANDOM(ARGB, 4, 4, UYVY, 4, 2, 0)
+TESTATOBRANDOM(BGRA, 4, 4, ARGB, 4, 4, 0)
+TESTATOBRANDOM(ABGR, 4, 4, ARGB, 4, 4, 0)
+TESTATOBRANDOM(RGBA, 4, 4, ARGB, 4, 4, 0)
+TESTATOBRANDOM(RAW, 3, 3, ARGB, 4, 4, 0)
+TESTATOBRANDOM(RGB24, 3, 3, ARGB, 4, 4, 0)
+TESTATOBRANDOM(RGB565, 2, 2, ARGB, 4, 4, 0)
+TESTATOBRANDOM(ARGB1555, 2, 2, ARGB, 4, 4, 0)
+TESTATOBRANDOM(ARGB4444, 2, 2, ARGB, 4, 4, 0)
+TESTATOBRANDOM(I400, 1, 1, ARGB, 4, 4, 0)
+TESTATOBRANDOM(YUY2, 4, 2, ARGB, 4, 4, 0)
+TESTATOBRANDOM(UYVY, 4, 2, ARGB, 4, 4, 0)
+TESTATOBRANDOM(I400, 1, 1, I400, 1, 1, 0)
+TESTATOBRANDOM(ARGB, 4, 4, ARGBMirror, 4, 4, 0)
 
 TEST_F(libyuvTest, Test565) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);

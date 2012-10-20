@@ -85,8 +85,9 @@ static int ARGBTestRotate(int src_width, int src_height,
     for (j = b * 4; j < (dst_width + b) * 4; ++j) {
       int abs_diff = abs(dst_argb_c[(i * dst_stride_argb) + j] -
                          dst_argb_opt[(i * dst_stride_argb) + j]);
-      if (abs_diff > max_diff)
+      if (abs_diff > max_diff) {
         max_diff = abs_diff;
+      }
     }
   }
 

@@ -290,8 +290,9 @@ TEST_F(libyuvTest, Psnr) {
   EXPECT_GT(err, 48.0);
   EXPECT_LT(err, 49.0);
 
-  for (int i = 0; i < kSrcPlaneSize; ++i)
+  for (int i = 0; i < kSrcPlaneSize; ++i) {
     src_a[i] = i;
+  }
 
   err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
                       src_b + kSrcStride * b + b, kSrcStride,
@@ -421,8 +422,9 @@ TEST_F(libyuvTest, Ssim) {
   EXPECT_GT(err, 0.8);
   EXPECT_LT(err, 0.9);
 
-  for (int i = 0; i < kSrcPlaneSize; ++i)
+  for (int i = 0; i < kSrcPlaneSize; ++i) {
     src_a[i] = i;
+  }
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
                       src_b + kSrcStride * b + b, kSrcStride,
