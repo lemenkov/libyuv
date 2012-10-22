@@ -717,6 +717,21 @@ void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   }
 }
 
+void MergeUV_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+               int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    dst_uv[0] = src_u[x];
+    dst_uv[1] = src_v[x];
+    dst_uv[2] = src_u[x + 1];
+    dst_uv[3] = src_v[x + 1];
+    dst_uv += 4;
+  }
+  if (width & 1) {
+    dst_uv[0] = src_u[width - 1];
+    dst_uv[1] = src_v[width - 1];
+  }
+}
+
 void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }

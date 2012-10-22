@@ -302,7 +302,7 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
                        int width, int height) {
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_NEON;
   }
 #elif defined(HAS_COPYROW_X86)
@@ -460,6 +460,22 @@ int NV12ToI420(const uint8* src_y, int src_stride_y,
                     width, height);
 }
 
+// Convert NV21 to I420.  Same as NV12 but u and v pointers swapped.
+LIBYUV_API
+int NV21ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_vu, int src_stride_vu,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  return X420ToI420(src_y, src_stride_y, src_stride_y,
+                    src_vu, src_stride_vu,
+                    dst_y, dst_stride_y,
+                    dst_v, dst_stride_v,
+                    dst_u, dst_stride_u,
+                    width, height);
+}
+
 // Convert M420 to I420.
 LIBYUV_API
 int M420ToI420(const uint8* src_m420, int src_stride_m420,
@@ -503,7 +519,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   // CopyRow for rows of just Y in Q420 copied to Y plane of I420.
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_NEON;
   }
 #endif

@@ -50,7 +50,7 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
   int halfwidth = (width + 1) >> 1;
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 64)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 32)) {
     CopyRow = CopyRow_NEON;
   }
 #elif defined(HAS_COPYROW_X86)
@@ -475,6 +475,62 @@ int I420ToV210(const uint8* src_y, int src_stride_y,
     UYVYToV210Row_C(row, dst_frame, width);
   }
   return 0;
+}
+
+LIBYUV_API
+int I420ToNV12(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_uv, int dst_stride_uv,
+               int width, int height) {
+  if (!src_y || !src_u || !src_v || !dst_y || !dst_uv ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    int halfheight = (height + 1) >> 1;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_uv = dst_uv + (halfheight - 1) * dst_stride_uv;
+    dst_stride_y = -dst_stride_y;
+    dst_stride_uv = -dst_stride_uv;
+  }
+
+  int halfwidth = (width + 1) >> 1;
+  void (*MergeUV)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width) = MergeUV_C;
+#if defined(HAS_SPLITUV_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
+    MergeUV = MergeUV_NEON;
+  }
+#endif
+  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  int halfheight = (height + 1) >> 1;
+  for (int y = 0; y < halfheight; ++y) {
+    // Copy a row of UV.
+    MergeUV_C(src_u, src_v, dst_uv, halfwidth);
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_uv += dst_stride_uv;
+  }
+  return 0;
+}
+
+LIBYUV_API
+int I420ToNV21(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_vu, int dst_stride_vu,
+               int width, int height) {
+  return I420ToNV12(src_y, src_stride_y,
+                    src_v, src_stride_v,
+                    src_u, src_stride_u,
+                    dst_y, src_stride_y,
+                    dst_vu, dst_stride_vu,
+                    width, height);
 }
 
 // Convert I420 to ARGB.

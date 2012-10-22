@@ -31,13 +31,15 @@
 namespace libyuv {
 
 #define TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,           \
-                       FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG)        \
+                       FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF)   \
 TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   const int kWidth = W1280;                                                    \
   const int kHeight = 720;                                                     \
-  align_buffer_16(src_y, kWidth * kHeight);                                    \
-  align_buffer_16(src_u, kWidth / SRC_SUBSAMP_X * kHeight / SRC_SUBSAMP_Y);    \
-  align_buffer_16(src_v, kWidth / SRC_SUBSAMP_X * kHeight / SRC_SUBSAMP_Y);    \
+  align_buffer_16(src_y, kWidth * kHeight + OFF);                              \
+  align_buffer_16(src_u,                                                       \
+                  kWidth / SRC_SUBSAMP_X * kHeight / SRC_SUBSAMP_Y + OFF);     \
+  align_buffer_16(src_v,                                                       \
+                  kWidth / SRC_SUBSAMP_X * kHeight / SRC_SUBSAMP_Y + OFF);     \
   align_buffer_16(dst_y_c, kWidth * kHeight);                                  \
   align_buffer_16(dst_u_c, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);          \
   align_buffer_16(dst_v_c, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);          \
@@ -47,26 +49,26 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[(i * kWidth) + j] = (random() & 0xff);                             \
+      src_y[(i * kWidth) + j + OFF] = (random() & 0xff);                       \
   for (int i = 0; i < kHeight / SRC_SUBSAMP_Y; ++i) {                          \
     for (int j = 0; j < kWidth / SRC_SUBSAMP_X; ++j) {                         \
-      src_u[(i * kWidth / SRC_SUBSAMP_X) + j] = (random() & 0xff);             \
-      src_v[(i * kWidth / SRC_SUBSAMP_X) + j] = (random() & 0xff);             \
+      src_u[(i * kWidth / SRC_SUBSAMP_X) + j + OFF] = (random() & 0xff);       \
+      src_v[(i * kWidth / SRC_SUBSAMP_X) + j + OFF] = (random() & 0xff);       \
     }                                                                          \
   }                                                                            \
   MaskCpuFlags(0);                                                             \
-  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                                \
-                                 src_u, kWidth / SRC_SUBSAMP_X,                \
-                                 src_v, kWidth / SRC_SUBSAMP_X,                \
+  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
+                                 src_u + OFF, kWidth / SRC_SUBSAMP_X,          \
+                                 src_v + OFF, kWidth / SRC_SUBSAMP_X,          \
                                  dst_y_c, kWidth,                              \
                                  dst_u_c, kWidth / SUBSAMP_X,                  \
                                  dst_v_c, kWidth / SUBSAMP_X,                  \
                                  kWidth, NEG kHeight);                         \
   MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
-    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                              \
-                                   src_u, kWidth / SRC_SUBSAMP_X,              \
-                                   src_v, kWidth / SRC_SUBSAMP_X,              \
+    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
+                                   src_u + OFF, kWidth / SRC_SUBSAMP_X,        \
+                                   src_v + OFF, kWidth / SRC_SUBSAMP_X,        \
                                    dst_y_opt, kWidth,                          \
                                    dst_u_opt, kWidth / SUBSAMP_X,              \
                                    dst_v_opt, kWidth / SUBSAMP_X,              \
@@ -120,11 +122,13 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
 #define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,            \
                       FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                        \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
-                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Opt, +)            \
+                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Opt, +, 0)         \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
-                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Invert, -)         \
+                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Unaligned, +, 1)   \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
-                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1276, _Any, +)
+                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Invert, -, 0)      \
+    TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
+                   FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1276, _Any, +, 0)
 
 TESTPLANARTOP(I420, 2, 2, I420, 2, 2)
 TESTPLANARTOP(I422, 2, 1, I420, 2, 2)
@@ -137,13 +141,13 @@ TESTPLANARTOP(I420, 2, 2, I420Mirror, 2, 2)
 
 
 #define TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,         \
-                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG)      \
+                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF) \
 TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   const int kWidth = W1280;                                                    \
   const int kHeight = 720;                                                     \
-  align_buffer_16(src_y, kWidth * kHeight);                                    \
+  align_buffer_16(src_y, kWidth * kHeight + OFF);                              \
   align_buffer_16(src_uv, 2 * kWidth / SRC_SUBSAMP_X *                         \
-                  kHeight / SRC_SUBSAMP_Y);                                    \
+                  kHeight / SRC_SUBSAMP_Y + OFF);                              \
   align_buffer_16(dst_y_c, kWidth * kHeight);                                  \
   align_buffer_16(dst_u_c, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);          \
   align_buffer_16(dst_v_c, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);          \
@@ -153,23 +157,23 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[(i * kWidth) + j] = (random() & 0xff);                             \
+      src_y[(i * kWidth) + j + OFF] = (random() & 0xff);                       \
   for (int i = 0; i < kHeight / SRC_SUBSAMP_Y; ++i) {                          \
     for (int j = 0; j < 2 * kWidth / SRC_SUBSAMP_X; ++j) {                     \
-      src_uv[(i * 2 * kWidth / SRC_SUBSAMP_X) + j] = (random() & 0xff);        \
+      src_uv[(i * 2 * kWidth / SRC_SUBSAMP_X) + j + OFF] = (random() & 0xff);  \
     }                                                                          \
   }                                                                            \
   MaskCpuFlags(0);                                                             \
-  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                                \
-                                 src_uv, 2 * kWidth / SRC_SUBSAMP_X,           \
+  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                          \
+                                 src_uv + OFF, 2 * kWidth / SRC_SUBSAMP_X,     \
                                  dst_y_c, kWidth,                              \
                                  dst_u_c, kWidth / SUBSAMP_X,                  \
                                  dst_v_c, kWidth / SUBSAMP_X,                  \
                                  kWidth, NEG kHeight);                         \
   MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
-    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                              \
-                                   src_uv, 2 * kWidth / SRC_SUBSAMP_X,         \
+    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                        \
+                                   src_uv + OFF, 2 * kWidth / SRC_SUBSAMP_X,   \
                                    dst_y_opt, kWidth,                          \
                                    dst_u_opt, kWidth / SUBSAMP_X,              \
                                    dst_v_opt, kWidth / SUBSAMP_X,              \
@@ -222,14 +226,16 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
 #define TESTBIPLANARTOP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,          \
                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                      \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
-                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Opt, +)          \
+                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Opt, +, 0)       \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
-                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Invert, -)       \
+                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Unaligned, +, 1) \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
-                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1276, _Any, +)
+                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1280, _Invert, -, 0)    \
+    TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
+                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, 1276, _Any, +, 0)
 
 TESTBIPLANARTOP(NV12, 2, 2, I420, 2, 2)
-
+TESTBIPLANARTOP(NV21, 2, 2, I420, 2, 2)
 
 #define TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                        W1280, DIFF, N, NEG)                                    \

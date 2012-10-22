@@ -168,6 +168,7 @@ extern "C" {
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
 #define HAS_ARGBTOYROW_NEON
+#define HAS_MERGEUV_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -307,6 +308,11 @@ void SplitUV_Any_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_Any_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);
 void SplitUV_Any_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                             int pix);
+
+void MergeUV_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+               int width);
+void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_X86(const uint8* src, uint8* dst, int count);

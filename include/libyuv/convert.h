@@ -73,10 +73,19 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert NV12 to I420. Also used for NV21.
+// Convert NV12 to I420.
 LIBYUV_API
 int NV12ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_uv, int src_stride_uv,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert NV21 to I420.
+LIBYUV_API
+int NV21ToI420(const uint8* src_y, int src_stride_y,
+               const uint8* src_vu, int src_stride_vu,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,

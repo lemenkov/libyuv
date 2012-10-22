@@ -859,7 +859,7 @@ void RotatePlane180(const uint8* src, int src_stride,
 #endif
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 64)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_NEON;
   }
 #endif

@@ -345,7 +345,7 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
     "vld2.u8    {q0, q1}, [%0:128]!            \n"  // load 16 pairs of UV
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vst1.u8    {q0}, [%1:128]!                \n"  // store U
-    "vst1.u8    {q1}, [%2:128]!                \n"  // Store V
+    "vst1.u8    {q1}, [%2:128]!                \n"  // store V
     "bgt        1b                             \n"
     : "+r"(src_uv),  // %0
       "+r"(dst_u),   // %1
@@ -355,6 +355,7 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
     : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
+
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: Multiple of 16 pixels, pointers unaligned.
 void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
@@ -365,7 +366,7 @@ void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "vld2.u8    {q0, q1}, [%0]!                \n"  // load 16 pairs of UV
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vst1.u8    {q0}, [%1]!                    \n"  // store U
-    "vst1.u8    {q1}, [%2]!                    \n"  // Store V
+    "vst1.u8    {q1}, [%2]!                    \n"  // store V
     "bgt        1b                             \n"
     : "+r"(src_uv),  // %0
       "+r"(dst_u),   // %1
@@ -377,21 +378,43 @@ void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_SPLITUV_NEON
 
+#ifdef HAS_MERGEUV_NEON
+// Reads 16 U's and V's and writes out 16 pairs of UV.
+void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.u8    {q0}, [%1]!                    \n"  // load U
+    "vld1.u8    {q1}, [%2]!                    \n"  // load V
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "vst2.u8    {q0, q1}, [%0]!                \n"  // store 16 pairs of UV
+    "bgt        1b                             \n"
+    :
+      "+r"(src_u),   // %0
+      "+r"(src_v),   // %1
+      "+r"(dst_uv),  // %2
+      "+r"(width)    // %3  // Output registers
+    :                       // Input registers
+    : "memory", "cc", "q0", "q1"  // Clobber List
+  );
+}
+#endif  // HAS_MERGEUV_NEON
 #ifdef HAS_COPYROW_NEON
-// Copy multiple of 64
+// Copy multiple of 32.  vld4.u8 allow unaligned and is fastest on a15.
 void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vldm       %0!, {q0, q1, q2, q3}          \n"  // load 64
-    "subs       %2, %2, #64                    \n"  // 64 processed per loop
-    "vstm       %1!, {q0, q1, q2, q3}          \n"  // store 64
+    "vld4.u8    {d0, d1, d2, d3}, [%0]!        \n"  // load 32
+    "subs       %2, %2, #32                    \n"  // 32 processed per loop
+    "vst4.u8    {d0, d1, d2, d3}, [%1]!        \n"  // store 32
     "bgt        1b                             \n"
     : "+r"(src),   // %0
       "+r"(dst),   // %1
       "+r"(count)  // %2  // Output registers
     :                     // Input registers
-    : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+    : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_COPYROW_NEON
@@ -403,7 +426,7 @@ void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
     "1:                                        \n"
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
-    "vst1.u32  {q0}, [%0]!                     \n"  // store
+    "vst1.u8   {q0}, [%0]!                     \n"  // store
     "bgt       1b                              \n"
     : "+r"(dst),   // %0
       "+r"(count)  // %1
