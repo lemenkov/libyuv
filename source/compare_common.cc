@@ -24,6 +24,16 @@ uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count) {
   return sse;
 }
 
+// hash seed of 5381 recommended.
+// Internal C version of HashDjb2 with int sized count for efficiency.
+uint32 HashDjb2_C(const uint8* src, int count, uint32 seed) {
+  uint32 hash = seed;
+  for (int i = 0; i < count; ++i) {
+    hash += (hash << 5) + src[i];
+  }
+  return hash;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

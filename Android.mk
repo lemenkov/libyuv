@@ -6,26 +6,35 @@ include $(CLEAR_VARS)
 LOCAL_CPP_EXTENSION := .cc
 
 LOCAL_SRC_FILES := \
-    source/compare.cc \
-    source/convert.cc \
-    source/convert_from.cc \
-    source/convert_from_argb.cc \
-    source/cpu_id.cc \
-    source/format_conversion.cc \
-    source/planar_functions.cc \
-    source/rotate.cc \
-    source/row_common.cc \
-    source/row_posix.cc \
-    source/scale.cc \
-    source/scale_argb.cc \
-    source/video_common.cc
+    source/compare.cc           \ 
+    source/compare_common.cc    \ 
+    source/compare_posix.cc     \ 
+    source/convert.cc           \ 
+    source/convert_argb.cc      \ 
+    source/convert_from.cc      \ 
+    source/convert_from_argb.cc \ 
+    source/cpu_id.cc            \ 
+    source/format_conversion.cc \ 
+    source/planar_functions.cc  \ 
+    source/rotate.cc            \ 
+    source/rotate_argb.cc       \ 
+    source/row_common.cc        \ 
+    source/row_mips.cc          \ 
+    source/row_posix.cc         \ 
+    source/scale.cc             \ 
+    source/scale_argb.cc        \ 
+    source/scale_mips.cc        \ 
+    source/video_common.cc      \ 
+
+# TODO(fbarchard): Enable mjpeg encoder.
+#   source/mjpeg_decoder.cc     
 
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
     LOCAL_CFLAGS += -DLIBYUV_NEON
     LOCAL_SRC_FILES += \
         source/compare_neon.cc.neon \
-        source/rotate_neon.cc.neon \
-        source/row_neon.cc.neon \
+        source/rotate_neon.cc.neon  \
+        source/row_neon.cc.neon     \
         source/scale_neon.cc.neon
 endif
 

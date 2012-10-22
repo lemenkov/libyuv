@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/basic_types.h"
+#include "libyuv/row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -51,6 +52,91 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     pshufd     xmm1, xmm0, 01h
     paddd      xmm0, xmm1
     movd       eax, xmm0
+    ret
+  }
+}
+
+#define HAS_HASHDJB2_SSE41
+static const uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
+static const uvec32 kHashMul0 = {
+  0x0c3525e1,  // 33 ^ 15
+  0xa3476dc1,  // 33 ^ 14
+  0x3b4039a1,  // 33 ^ 13
+  0x4f5f0981,  // 33 ^ 12
+};
+static const uvec32 kHashMul1 = {
+  0x30f35d61,  // 33 ^ 11
+  0x855cb541,  // 33 ^ 10
+  0x040a9121,  // 33 ^ 9
+  0x747c7101,  // 33 ^ 8
+};
+static const uvec32 kHashMul2 = {
+  0xec41d4e1,  // 33 ^ 7
+  0x4cfa3cc1,  // 33 ^ 6
+  0x025528a1,  // 33 ^ 5
+  0x00121881,  // 33 ^ 4
+};
+static const uvec32 kHashMul3 = {
+  0x00008c61,  // 33 ^ 3
+  0x00000441,  // 33 ^ 2
+  0x00000021,  // 33 ^ 1
+  0x00000001,  // 33 ^ 0
+};
+
+// 27: 66 0F 38 40 C6     pmulld      xmm0,xmm6
+// 44: 66 0F 38 40 DD     pmulld      xmm3,xmm5
+// 59: 66 0F 38 40 E5     pmulld      xmm4,xmm5
+// 72: 66 0F 38 40 D5     pmulld      xmm2,xmm5
+// 83: 66 0F 38 40 CD     pmulld      xmm1,xmm5
+#define pmulld(reg) _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 \
+    _asm _emit 0x40 _asm _emit reg
+
+__declspec(naked) __declspec(align(16))
+uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
+  __asm {
+    mov        eax, [esp + 4]    // src
+    mov        ecx, [esp + 8]    // count
+    movd       xmm0, [esp + 12]  // seed
+
+    pxor       xmm7, xmm7        // constant 0 for unpck
+    movdqa     xmm6, kHash16x33
+
+    align      16
+  wloop:
+    movdqu     xmm1, [eax]       // src[0-15]
+    lea        eax, [eax + 16]
+    pmulld(0xc6)                 // pmulld      xmm0,xmm6  hash *= 33 ^ 16
+    movdqa     xmm5, kHashMul0
+    movdqa     xmm2, xmm1
+    punpcklbw  xmm2, xmm7        // src[0-7]
+    movdqa     xmm3, xmm2
+    punpcklwd  xmm3, xmm7        // src[0-3]
+    pmulld(0xdd)                 // pmulld     xmm3, xmm5
+    movdqa     xmm5, kHashMul1
+    movdqa     xmm4, xmm2
+    punpckhwd  xmm4, xmm7        // src[4-7]
+    pmulld(0xe5)                 // pmulld     xmm4, xmm5
+    movdqa     xmm5, kHashMul2
+    punpckhbw  xmm1, xmm7        // src[8-15]
+    movdqa     xmm2, xmm1
+    punpcklwd  xmm2, xmm7        // src[8-11]
+    pmulld(0xd5)                 // pmulld     xmm2, xmm5
+    movdqa     xmm5, kHashMul3
+    punpckhwd  xmm1, xmm7        // src[12-15]
+    pmulld(0xcd)                 // pmulld     xmm1, xmm5
+    paddd      xmm3, xmm4        // add 16 results
+    paddd      xmm1, xmm2
+    sub        ecx, 16
+    paddd      xmm1, xmm3
+
+    pshufd     xmm2, xmm1, 14    // upper 2 dwords
+    paddd      xmm1, xmm2
+    pshufd     xmm2, xmm1, 1
+    paddd      xmm1, xmm2
+    paddd      xmm0, xmm1
+    jg         wloop
+
+    movd       eax, xmm0        // return hash
     ret
   }
 }
