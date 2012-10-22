@@ -12,7 +12,7 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "152335",
+  "chromium_revision": "163202",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -23,6 +23,10 @@ deps = {
 
   "build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
+
+  # Needed by common.gypi.
+  "google_apis/build":
+    Var("chromium_trunk") + "/src/google_apis/build@" + Var("chromium_revision"),
 
   "testing":
     Var("chromium_trunk") + "/src/testing@" + Var("chromium_revision"),

@@ -38,10 +38,10 @@ int main(int argc, char** argv) {
   int amt1 = 0;
   int amt2 = 0;
   do {
-    amt1 = fread(buf1, 1, kBlockSize, fin1);
+    amt1 = static_cast<int>(fread(buf1, 1, kBlockSize, fin1));
     if (amt1 > 0) hash1 = libyuv::HashDjb2(buf1, amt1, hash1);
     if (fin2) {
-      amt2 = fread(buf2, 1, kBlockSize, fin2);
+      amt2 = static_cast<int>(fread(buf2, 1, kBlockSize, fin2));
       if (amt2 > 0) hash2 = libyuv::HashDjb2(buf2, amt2, hash2);
       int amt_min = (amt1 < amt2) ? amt1 : amt2;
       size_min += amt_min;
