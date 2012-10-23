@@ -843,6 +843,14 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_frame, int width);
+void I422ToYUY2Row_Any_SSE2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_frame, int width);
+void I422ToUYVYRow_Any_SSE2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_frame, int width);
 void I422ToYUY2Row_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -851,6 +859,14 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_frame, int width);
+void I422ToYUY2Row_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_frame, int width);
+void I422ToUYVYRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_frame, int width);
 
 #ifdef __cplusplus
 }  // extern "C"

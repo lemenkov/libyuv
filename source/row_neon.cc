@@ -974,7 +974,7 @@ void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb565, int pix) {
     "+r"(dst_rgb565),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "q8", "q9", "q10"
+  : "memory", "cc", "d0", "d1", "d2", "d3", "q8", "q9", "q10"
   );
 }
 #endif  // HAS_ARGBTORGB565ROW_NEON

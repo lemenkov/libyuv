@@ -1000,22 +1000,53 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
-#define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP)              \
+#define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
     void NAMEANY(const uint8* y_buf,                                           \
                  const uint8* u_buf,                                           \
                  const uint8* v_buf,                                           \
                  uint8* rgb_buf,                                               \
                  int width) {                                                  \
-      int n = width & ~7;                                                      \
+      int n = width & ~MASK;                                                   \
       I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                         \
       I420TORGB_C(y_buf + n,                                                   \
                   u_buf + (n >> UV_SHIFT),                                     \
                   v_buf + (n >> UV_SHIFT),                                     \
-                  rgb_buf + n * BPP, width & 7);                               \
+                  rgb_buf + n * BPP, width & MASK);                            \
     }
 
+#ifdef HAS_I422TOARGBROW_SSSE3
+YANY(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_Unaligned_SSSE3, I444ToARGBRow_C,
+     0, 4, 7)
+YANY(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_Unaligned_SSSE3, I422ToARGBRow_C,
+     1, 4, 7)
+YANY(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_Unaligned_SSSE3, I411ToARGBRow_C,
+     2, 4, 7)
+YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C,
+     1, 4, 7)
+YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C,
+     1, 4, 7)
+YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_Unaligned_SSSE3, I422ToRGBARow_C,
+     1, 4, 7)
+// I422ToRGB24Row_SSSE3 is unaligned.
+YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, I422ToRGB24Row_C, 1, 3, 7)
+YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, I422ToRAWRow_C, 1, 3, 7)
+YANY(I422ToYUY2Row_Any_SSE2, I422ToYUY2Row_SSE2, I422ToYUY2Row_C, 1, 2, 15)
+YANY(I422ToUYVYRow_Any_SSE2, I422ToUYVYRow_SSE2, I422ToUYVYRow_C, 1, 2, 15)
+#endif  // HAS_I422TOARGBROW_SSSE3
+#ifdef HAS_I422TOARGBROW_NEON
+YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1, 4, 7)
+YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1, 4, 7)
+YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1, 4, 7)
+YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1, 4, 7)
+YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, I422ToRGB24Row_C, 1, 3, 7)
+YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, I422ToRAWRow_C, 1, 3, 7)
+YANY(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, I422ToYUY2Row_C, 1, 2, 15)
+YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, I422ToUYVYRow_C, 1, 2, 15)
+#endif  // HAS_I422TOARGBROW_NEON
+#undef YANY
+
 // Wrappers to handle odd width
-#define Y2NY(NAMEANY, NV12TORGB_SIMD, NV12TORGB_C, UV_SHIFT, BPP)              \
+#define NV2NY(NAMEANY, NV12TORGB_SIMD, NV12TORGB_C, UV_SHIFT, BPP)             \
     void NAMEANY(const uint8* y_buf,                                           \
                  const uint8* uv_buf,                                          \
                  uint8* rgb_buf,                                               \
@@ -1028,37 +1059,16 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
     }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
-YANY(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_Unaligned_SSSE3, I444ToARGBRow_C,
+NV2NY(NV12ToARGBRow_Any_SSSE3, NV12ToARGBRow_Unaligned_SSSE3, NV12ToARGBRow_C,
      0, 4)
-YANY(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_Unaligned_SSSE3, I422ToARGBRow_C,
-     1, 4)
-YANY(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_Unaligned_SSSE3, I411ToARGBRow_C,
-     2, 4)
-Y2NY(NV12ToARGBRow_Any_SSSE3, NV12ToARGBRow_Unaligned_SSSE3, NV12ToARGBRow_C,
+NV2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_Unaligned_SSSE3, NV21ToARGBRow_C,
      0, 4)
-Y2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_Unaligned_SSSE3, NV21ToARGBRow_C,
-     0, 4)
-YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_Unaligned_SSSE3, I422ToBGRARow_C,
-     1, 4)
-YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C,
-     1, 4)
-YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_Unaligned_SSSE3, I422ToRGBARow_C,
-     1, 4)
-// I422ToRGB24Row_SSSE3 is unaligned.
-YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, I422ToRGB24Row_C, 1, 3)
-YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, I422ToRAWRow_C, 1, 3)
 #endif  // HAS_I422TOARGBROW_SSSE3
 #ifdef HAS_I422TOARGBROW_NEON
-YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1, 4)
-YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1, 4)
-YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1, 4)
-YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1, 4)
-Y2NY(NV12ToARGBRow_Any_NEON, NV12ToARGBRow_NEON, NV12ToARGBRow_C, 0, 4)
-Y2NY(NV21ToARGBRow_Any_NEON, NV21ToARGBRow_NEON, NV21ToARGBRow_C, 0, 4)
-YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, I422ToRGB24Row_C, 1, 3)
-YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, I422ToRAWRow_C, 1, 3)
+NV2NY(NV12ToARGBRow_Any_NEON, NV12ToARGBRow_NEON, NV12ToARGBRow_C, 0, 4)
+NV2NY(NV21ToARGBRow_Any_NEON, NV21ToARGBRow_NEON, NV21ToARGBRow_C, 0, 4)
 #endif  // HAS_I422TOARGBROW_NEON
-#undef YANY
+#undef NVANY
 
 // RGB to RGB does multiple of 16 pixels with SIMD and remainder with C.
 // SSSE3 RGB24 is multiple of 16 pixels, aligned source and destination.
