@@ -98,10 +98,10 @@ static int ARGBTestRotate(int src_width, int src_height,
 }
 
 TEST_F(libyuvTest, ARGBRotate0) {
-  const int src_width = 1280;
-  const int src_height = 720;
-  const int dst_width = 1280;
-  const int dst_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
+  const int dst_width = benchmark_width_;
+  const int dst_height = benchmark_height_;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate0,
@@ -110,10 +110,10 @@ TEST_F(libyuvTest, ARGBRotate0) {
 }
 
 TEST_F(libyuvTest, ARGBRotate90) {
-  const int src_width = 1280;
-  const int src_height = 720;
-  const int dst_width = 720;
-  const int dst_height = 1280;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
+  const int dst_width = benchmark_height_;
+  const int dst_height = benchmark_width_;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate90,
@@ -122,10 +122,10 @@ TEST_F(libyuvTest, ARGBRotate90) {
 }
 
 TEST_F(libyuvTest, ARGBRotate180) {
-  const int src_width = 1280;
-  const int src_height = 720;
-  const int dst_width = 1280;
-  const int dst_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
+  const int dst_width = benchmark_width_;
+  const int dst_height = benchmark_height_;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate180,
@@ -134,10 +134,10 @@ TEST_F(libyuvTest, ARGBRotate180) {
 }
 
 TEST_F(libyuvTest, ARGBRotate270) {
-  const int src_width = 1280;
-  const int src_height = 720;
-  const int dst_width = 720;
-  const int dst_height = 1280;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
+  const int dst_width = benchmark_height_;
+  const int dst_height = benchmark_width_;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate270,
@@ -146,10 +146,10 @@ TEST_F(libyuvTest, ARGBRotate270) {
 }
 
 TEST_F(libyuvTest, ARGBRotate0_Odd) {
-  const int src_width = 1277;
-  const int src_height = 719;
-  const int dst_width = 1277;
-  const int dst_height = 719;
+  const int src_width = benchmark_width_ - 3;
+  const int src_height = benchmark_height_ - 1;
+  const int dst_width = benchmark_width_ - 3;
+  const int dst_height = benchmark_height_ - 1;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate0,
@@ -158,10 +158,10 @@ TEST_F(libyuvTest, ARGBRotate0_Odd) {
 }
 
 TEST_F(libyuvTest, ARGBRotate90_Odd) {
-  const int src_width = 1277;
-  const int src_height = 719;
-  const int dst_width = 719;
-  const int dst_height = 1277;
+  const int src_width = benchmark_width_ - 3;
+  const int src_height = benchmark_height_ - 1;
+  const int dst_width = benchmark_height_ - 1;
+  const int dst_height = benchmark_width_ - 3;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate90,
@@ -170,10 +170,10 @@ TEST_F(libyuvTest, ARGBRotate90_Odd) {
 }
 
 TEST_F(libyuvTest, ARGBRotate180_Odd) {
-  const int src_width = 1277;
-  const int src_height = 719;
-  const int dst_width = 1277;
-  const int dst_height = 719;
+  const int src_width = benchmark_width_ - 3;
+  const int src_height = benchmark_height_ - 1;
+  const int dst_width = benchmark_width_ - 3;
+  const int dst_height = benchmark_height_ - 1;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate180,
@@ -182,10 +182,10 @@ TEST_F(libyuvTest, ARGBRotate180_Odd) {
 }
 
 TEST_F(libyuvTest, ARGBRotate270_Odd) {
-  const int src_width = 1277;
-  const int src_height = 719;
-  const int dst_width = 719;
-  const int dst_height = 1277;
+  const int src_width = benchmark_width_ - 3;
+  const int src_height = benchmark_height_ - 1;
+  const int dst_width = benchmark_height_ - 1;
+  const int dst_height = benchmark_width_ - 3;
 
   int err = ARGBTestRotate(src_width, src_height,
                            dst_width, dst_height, kRotate270,

@@ -54,7 +54,7 @@ TEST_F(libyuvTest, TestDjb2) {
 }
 
 TEST_F(libyuvTest, BenchmakDjb2_C) {
-  const int kMaxTest = 1280 * 720;
+  const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_16(src_a, kMaxTest)
 
   for (int i = 0; i < kMaxTest; ++i) {
@@ -62,7 +62,7 @@ TEST_F(libyuvTest, BenchmakDjb2_C) {
   }
   uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
   uint32 h1;
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
   for (int i = 0; i < benchmark_iterations_; ++i) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
@@ -72,7 +72,7 @@ TEST_F(libyuvTest, BenchmakDjb2_C) {
 }
 
 TEST_F(libyuvTest, BenchmakDjb2_OPT) {
-  const int kMaxTest = 1280 * 720;
+  const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_16(src_a, kMaxTest)
 
   for (int i = 0; i < kMaxTest; ++i) {
@@ -88,7 +88,7 @@ TEST_F(libyuvTest, BenchmakDjb2_OPT) {
 }
 
 TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
-  const int kMaxTest = 1280 * 720;
+  const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_16(src_a, kMaxTest + 1)
 
   for (int i = 0; i < kMaxTest; ++i) {
@@ -119,7 +119,8 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
     src_b[i] = i;
   }
 
-  int count = benchmark_iterations_ * 1280 * 720 / kMaxWidth;
+  int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / kMaxWidth;
   for (int i = 0; i < count; ++i) {
     h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
@@ -146,7 +147,8 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
     src_b[i] = i;
   }
 
-  int count = benchmark_iterations_ * 1280 * 720 / kMaxWidth;
+  int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / kMaxWidth;
   for (int i = 0; i < count; ++i) {
     h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
@@ -255,8 +257,8 @@ TEST_F(libyuvTest, BenchmarkPsnr_OPT) {
 }
 
 TEST_F(libyuvTest, Psnr) {
-  const int kSrcWidth = 1280;
-  const int kSrcHeight = 720;
+  const int kSrcWidth = benchmark_width_;
+  const int kSrcHeight = benchmark_height_;
   const int b = 128;
   const int kSrcPlaneSize = (kSrcWidth + b * 2) * (kSrcHeight + b * 2);
   const int kSrcStride = 2 * b + kSrcWidth;
@@ -313,7 +315,7 @@ TEST_F(libyuvTest, Psnr) {
     }
   }
 
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
   double c_err, opt_err;
 
   c_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
@@ -341,7 +343,7 @@ TEST_F(libyuvTest, BenchmarkSsim_C) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
 
   double c_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -387,8 +389,8 @@ TEST_F(libyuvTest, BenchmarkSsim_OPT) {
 }
 
 TEST_F(libyuvTest, Ssim) {
-  const int kSrcWidth = 1280;
-  const int kSrcHeight = 720;
+  const int kSrcWidth = benchmark_width_;
+  const int kSrcHeight = benchmark_height_;
   const int b = 128;
   const int kSrcPlaneSize = (kSrcWidth + b * 2) * (kSrcHeight + b * 2);
   const int kSrcStride = 2 * b + kSrcWidth;
@@ -441,7 +443,7 @@ TEST_F(libyuvTest, Ssim) {
     }
   }
 
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(0);
   double c_err, opt_err;
 
   c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,

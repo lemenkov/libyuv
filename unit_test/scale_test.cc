@@ -163,8 +163,8 @@ static int TestFilter(int src_width, int src_height,
 }
 
 TEST_F(libyuvTest, ScaleDownBy2) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 2;
   const int dst_height = src_height / 2;
 
@@ -178,8 +178,8 @@ TEST_F(libyuvTest, ScaleDownBy2) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy4) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 4;
   const int dst_height = src_height / 4;
 
@@ -193,8 +193,8 @@ TEST_F(libyuvTest, ScaleDownBy4) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy5) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 5;
   const int dst_height = src_height / 5;
 
@@ -208,8 +208,8 @@ TEST_F(libyuvTest, ScaleDownBy5) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy8) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 8;
   const int dst_height = src_height / 8;
 
@@ -223,8 +223,8 @@ TEST_F(libyuvTest, ScaleDownBy8) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy16) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 16;
   const int dst_height = src_height / 16;
 
@@ -238,8 +238,8 @@ TEST_F(libyuvTest, ScaleDownBy16) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy34) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width * 3 / 4;
   const int dst_height = src_height * 3 / 4;
 
@@ -253,8 +253,8 @@ TEST_F(libyuvTest, ScaleDownBy34) {
 }
 
 TEST_F(libyuvTest, ScaleDownBy38) {
-  int src_width = 1280;
-  int src_height = 720;
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = src_width * 3 / 8;
   int dst_height = src_height * 3 / 8;
 
@@ -267,9 +267,9 @@ TEST_F(libyuvTest, ScaleDownBy38) {
   }
 }
 
-TEST_F(libyuvTest, ScaleTo1366) {
-  int src_width = 1280;
-  int src_height = 720;
+TEST_F(libyuvTest, ScaleTo1366x768) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = 1366;
   int dst_height = 768;
 
@@ -282,87 +282,11 @@ TEST_F(libyuvTest, ScaleTo1366) {
   }
 }
 
-TEST_F(libyuvTest, ScaleTo4074) {
-  int src_width = 2880 * 2;
-  int src_height = 1800;
-  int dst_width = 4074;
-  int dst_height = 1272;
-
-  for (int f = 0; f < 3; ++f) {
-    int max_diff = TestFilter(src_width, src_height,
-                              dst_width, dst_height,
-                              static_cast<FilterMode>(f), 1,
-                              benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-TEST_F(libyuvTest, ScaleTo853) {
-  int src_width = 1280;
-  int src_height = 720;
+TEST_F(libyuvTest, ScaleTo853x480) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = 853;
   int dst_height = 480;
-
-  for (int f = 0; f < 3; ++f) {
-    int max_diff = TestFilter(src_width, src_height,
-                              dst_width, dst_height,
-                              static_cast<FilterMode>(f), 1,
-                              benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-TEST_F(libyuvTest, ScaleTo853Wrong) {
-  int src_width = 1280;
-  int src_height = 720;
-  int dst_width = 853;
-  int dst_height = 480;
-
-  for (int f = 0; f < 3; ++f) {
-    int max_diff = TestFilter(src_width, src_height,
-                              dst_width, dst_height,
-                              static_cast<FilterMode>(f), 0,
-                              benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-// A one off test for a screen cast resolution scale.
-TEST_F(libyuvTest, ScaleTo684) {
-  int src_width = 686;
-  int src_height = 557;
-  int dst_width = 684;
-  int dst_height = 552;
-
-  for (int f = 0; f < 3; ++f) {
-    int max_diff = TestFilter(src_width, src_height,
-                              dst_width, dst_height,
-                              static_cast<FilterMode>(f), 1,
-                              benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-TEST_F(libyuvTest, ScaleTo342) {
-  int src_width = 686;
-  int src_height = 557;
-  int dst_width = 342;
-  int dst_height = 276;
-
-  for (int f = 0; f < 3; ++f) {
-    int max_diff = TestFilter(src_width, src_height,
-                              dst_width, dst_height,
-                              static_cast<FilterMode>(f), 1,
-                              benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-TEST_F(libyuvTest, ScaleToHalf342) {
-  int src_width = 684;
-  int src_height = 552;
-  int dst_width = 342;
-  int dst_height = 276;
 
   for (int f = 0; f < 3; ++f) {
     int max_diff = TestFilter(src_width, src_height,

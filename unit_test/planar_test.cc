@@ -80,7 +80,9 @@ TEST_F(libyuvTest, TestAttenuate) {
   }
   ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 256, 1);
   ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 256, 1);
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
   }
   for (int i = 0; i < 256; ++i) {
@@ -179,8 +181,9 @@ TEST_F(libyuvTest, TestARGBGray) {
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBGray(&orig_pixels[0][0], 0, 0, 0, 256, 1);
   }
 }
@@ -235,7 +238,9 @@ TEST_F(libyuvTest, TestARGBGrayTo) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 256, 1);
   }
 }
@@ -289,7 +294,9 @@ TEST_F(libyuvTest, TestARGBSepia) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBSepia(&orig_pixels[0][0], 0, 0, 0, 256, 1);
   }
 }
@@ -350,7 +357,9 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 256, 1);
   }
 }
@@ -409,7 +418,9 @@ TEST_F(libyuvTest, TestARGBColorTable) {
     orig_pixels[i][3] = i;
   }
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
   }
 }
@@ -432,7 +443,9 @@ TEST_F(libyuvTest, TestARGBQuantize) {
     EXPECT_EQ(i / 3 / 8 * 8 + 8 / 2, orig_pixels[i][2]);
     EXPECT_EQ(i, orig_pixels[i][3]);
   }
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBQuantize(&orig_pixels[0][0], 0,
                  (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 256, 1);
   }
@@ -456,7 +469,9 @@ TEST_F(libyuvTest, TestARGBMirror) {
     EXPECT_EQ(i / 3, dst_pixels[255 - i][2]);
     EXPECT_EQ(i / 4, dst_pixels[255 - i][3]);
   }
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
   }
 }
@@ -505,7 +520,9 @@ TEST_F(libyuvTest, TestShade) {
   EXPECT_EQ(20u, shade_pixels[0][2]);
   EXPECT_EQ(40u, shade_pixels[0][3]);
 
-  for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,
               0x80808080);
   }
@@ -584,7 +601,9 @@ TEST_F(libyuvTest, TestInterpolate) {
   EXPECT_EQ(16u, interpolate_pixels[0][2]);
   EXPECT_EQ(32u, interpolate_pixels[0][3]);
 
-  for (int i = 0; i < benchmark_iterations_ * (1280 * 720 / 256); ++i) {
+  const int count = benchmark_iterations_ *
+      benchmark_width_ * benchmark_height_ / 256;
+  for (int i = 0; i < count; ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                     &interpolate_pixels[0][0], 0, 256, 1, 128);
   }
@@ -620,13 +639,17 @@ TEST_F(libyuvTest, TestAffine) {
 #if defined(HAS_ARGBAFFINEROW_SSE2)
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
-    for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+    const int count = benchmark_iterations_ *
+        benchmark_width_ * benchmark_height_ / 256;
+    for (int i = 0; i < count; ++i) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                          uv_step, 256);
     }
   } else {
 #endif
-    for (int i = 0; i < benchmark_iterations_ * 1280 * 720 / 256; ++i) {
+    const int count = benchmark_iterations_ *
+        benchmark_width_ * benchmark_height_ / 256;
+    for (int i = 0; i < count; ++i) {
       ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
                       uv_step, 256);
     }

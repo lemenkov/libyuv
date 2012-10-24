@@ -700,8 +700,8 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
 TEST_F(libyuvTest, I420Rotate90) {
   int err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -823,8 +823,8 @@ TEST_F(libyuvTest, I420Rotate90) {
 TEST_F(libyuvTest, I420Rotate270) {
   int err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -946,8 +946,8 @@ TEST_F(libyuvTest, I420Rotate270) {
 TEST_F(libyuvTest, NV12ToI420Rotate90) {
   int err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -1053,8 +1053,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
 TEST_F(libyuvTest, NV12ToI420Rotate270) {
   int err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -1161,8 +1161,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
 TEST_F(libyuvTest, NV12ToI420Rotate180) {
   int err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -1266,8 +1266,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
 TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
   int y_err = 0, uv_err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -1423,8 +1423,8 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
 TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   int y_err = 0, uv_err = 0;
 
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
   int b = 128;
   int uvw = (yw + 1) >> 1;
   int uvh = (yh + 1) >> 1;
@@ -1549,8 +1549,8 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
 
 TEST_F(libyuvTest, NV12ToI420SplitUV) {
   int err = 0;
-  int yw = 1024;
-  int yh = 768;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
 
   int b = 128;
   int uvw = (yw + 1) >> 1;

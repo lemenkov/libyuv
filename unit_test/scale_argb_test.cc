@@ -102,8 +102,8 @@ static int ARGBTestFilter(int src_width, int src_height,
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy2) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 2;
   const int dst_height = src_height / 2;
 
@@ -117,8 +117,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy2) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy4) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 4;
   const int dst_height = src_height / 4;
 
@@ -132,8 +132,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy4) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy5) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 5;
   const int dst_height = src_height / 5;
 
@@ -147,8 +147,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy5) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy8) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 8;
   const int dst_height = src_height / 8;
 
@@ -162,8 +162,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy8) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy16) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width / 16;
   const int dst_height = src_height / 16;
 
@@ -177,8 +177,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy16) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy34) {
-  const int src_width = 1280;
-  const int src_height = 720;
+  const int src_width = benchmark_width_;
+  const int src_height = benchmark_height_;
   const int dst_width = src_width * 3 / 4;
   const int dst_height = src_height * 3 / 4;
 
@@ -192,8 +192,8 @@ TEST_F(libyuvTest, ARGBScaleDownBy34) {
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy38) {
-  int src_width = 1280;
-  int src_height = 720;
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = src_width * 3 / 8;
   int dst_height = src_height * 3 / 8;
 
@@ -206,9 +206,9 @@ TEST_F(libyuvTest, ARGBScaleDownBy38) {
   }
 }
 
-TEST_F(libyuvTest, ARGBScaleTo1366) {
-  int src_width = 1280;
-  int src_height = 720;
+TEST_F(libyuvTest, ARGBScaleTo1366x768) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = 1366;
   int dst_height = 768;
 
@@ -221,25 +221,9 @@ TEST_F(libyuvTest, ARGBScaleTo1366) {
   }
 }
 
-TEST_F(libyuvTest, ARGBScaleTo4074) {
-  int src_width = 2880 * 2;
-  int src_height = 1800;
-  int dst_width = 4074;
-  int dst_height = 1272;
-
-  for (int f = 0; f < 2; ++f) {
-    int max_diff = ARGBTestFilter(src_width, src_height,
-                                  dst_width, dst_height,
-                                  static_cast<FilterMode>(f),
-                                  benchmark_iterations_);
-    EXPECT_LE(max_diff, 1);
-  }
-}
-
-
-TEST_F(libyuvTest, ARGBScaleTo853) {
-  int src_width = 1280;
-  int src_height = 720;
+TEST_F(libyuvTest, ARGBScaleTo853x480) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
   int dst_width = 853;
   int dst_height = 480;
 
