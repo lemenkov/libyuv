@@ -29,46 +29,43 @@ void PrintArray(uint8 *array, int w, int h) {
 TEST_F(libyuvTest, Transpose) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
+  ow = ih;
+  oh = iw;
 
-  for (iw = 8; iw < rotate_max_w_ && !err; ++iw) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
-      ow = ih;
-      oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_1, ow * oh)
+  align_buffer_16(output_2, iw * ih)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_1, ow * oh)
-      align_buffer_16(output_2, iw * ih)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  TransposePlane(input,    iw, output_1, ow, iw, ih);
+  TransposePlane(output_1, ow, output_2, oh, ow, oh);
 
-      TransposePlane(input,    iw, output_1, ow, iw, ih);
-      TransposePlane(output_1, ow, output_2, oh, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_2[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("transpose 1\n");
-        PrintArray(output_1, ow, oh);
-
-        printf("transpose 2\n");
-        PrintArray(output_2, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_1)
-      free_aligned_buffer_16(output_2)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_2[i]) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("transpose 1\n");
+    PrintArray(output_1, ow, oh);
+
+    printf("transpose 2\n");
+    PrintArray(output_2, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_1)
+  free_aligned_buffer_16(output_2)
 
   EXPECT_EQ(0, err);
 }
@@ -76,59 +73,56 @@ TEST_F(libyuvTest, Transpose) {
 TEST_F(libyuvTest, TransposeUV) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = ih;
+  oh = iw >> 1;
 
-      ow = ih;
-      oh = iw >> 1;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_a1, ow * oh)
+  align_buffer_16(output_b1, ow * oh)
+  align_buffer_16(output_a2, iw * ih)
+  align_buffer_16(output_b2, iw * ih)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_a1, ow * oh)
-      align_buffer_16(output_b1, ow * oh)
-      align_buffer_16(output_a2, iw * ih)
-      align_buffer_16(output_b2, iw * ih)
+  for (i = 0; i < iw * ih; i += 2) {
+    input[i] = i >> 1;
+    input[i + 1] = -(i >> 1);
+  }
 
-      for (i = 0; i < iw * ih; i += 2) {
-        input[i] = i >> 1;
-        input[i + 1] = -(i >> 1);
-      }
+  TransposeUV(input, iw, output_a1, ow, output_b1, ow, iw >> 1, ih);
 
-      TransposeUV(input, iw, output_a1, ow, output_b1, ow, iw >> 1, ih);
+  TransposePlane(output_a1, ow, output_a2, oh, ow, oh);
+  TransposePlane(output_b1, ow, output_b2, oh, ow, oh);
 
-      TransposePlane(output_a1, ow, output_a2, oh, ow, oh);
-      TransposePlane(output_b1, ow, output_b2, oh, ow, oh);
-
-      for (i = 0; i < iw * ih; i += 2) {
-        if (input[i] != output_a2[i >> 1]) {
-          err++;
-        }
-        if (input[i + 1] != output_b2[i >> 1]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("transpose 1\n");
-        PrintArray(output_a1, ow, oh);
-        PrintArray(output_b1, ow, oh);
-
-        printf("transpose 2\n");
-        PrintArray(output_a2, oh, ow);
-        PrintArray(output_b2, oh, ow);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_a1)
-      free_aligned_buffer_16(output_b1)
-      free_aligned_buffer_16(output_a2)
-      free_aligned_buffer_16(output_b2)
+  for (i = 0; i < iw * ih; i += 2) {
+    if (input[i] != output_a2[i >> 1]) {
+      err++;
+    }
+    if (input[i + 1] != output_b2[i >> 1]) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("transpose 1\n");
+    PrintArray(output_a1, ow, oh);
+    PrintArray(output_b1, ow, oh);
+
+    printf("transpose 2\n");
+    PrintArray(output_a2, oh, ow);
+    PrintArray(output_b2, oh, ow);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_a1)
+  free_aligned_buffer_16(output_b1)
+  free_aligned_buffer_16(output_a2)
+  free_aligned_buffer_16(output_b2)
 
   EXPECT_EQ(0, err);
 }
@@ -136,59 +130,56 @@ TEST_F(libyuvTest, TransposeUV) {
 TEST_F(libyuvTest, RotatePlane90) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 8; iw < rotate_max_w_ && !err; ++iw) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = ih;
+  oh = iw;
 
-      ow = ih;
-      oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_90, ow * oh)
+  align_buffer_16(output_180, iw * ih)
+  align_buffer_16(output_270, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_90, ow * oh)
-      align_buffer_16(output_180, iw * ih)
-      align_buffer_16(output_270, ow * oh)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  RotatePlane90(input,      iw, output_90,  ow, iw, ih);
+  RotatePlane90(output_90,  ow, output_180, oh, ow, oh);
+  RotatePlane90(output_180, oh, output_270, ow, oh, ow);
+  RotatePlane90(output_270, ow, output_0,   iw, ow, oh);
 
-      RotatePlane90(input,      iw, output_90,  ow, iw, ih);
-      RotatePlane90(output_90,  ow, output_180, oh, ow, oh);
-      RotatePlane90(output_180, oh, output_270, ow, oh, ow);
-      RotatePlane90(output_270, ow, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 90\n");
-        PrintArray(output_90, ow, oh);
-
-        printf("output 180\n");
-        PrintArray(output_180, iw, ih);
-
-        printf("output 270\n");
-        PrintArray(output_270, ow, oh);
-
-        printf("output 0\n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_90)
-      free_aligned_buffer_16(output_180)
-      free_aligned_buffer_16(output_270)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 90\n");
+    PrintArray(output_90, ow, oh);
+
+    printf("output 180\n");
+    PrintArray(output_180, iw, ih);
+
+    printf("output 270\n");
+    PrintArray(output_270, ow, oh);
+
+    printf("output 0\n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_90)
+  free_aligned_buffer_16(output_180)
+  free_aligned_buffer_16(output_270)
 
   EXPECT_EQ(0, err);
 }
@@ -196,76 +187,73 @@ TEST_F(libyuvTest, RotatePlane90) {
 TEST_F(libyuvTest, RotateUV90) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = ih;
+  oh = iw >> 1;
 
-      ow = ih;
-      oh = iw >> 1;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0_u, ow * oh)
+  align_buffer_16(output_0_v, ow * oh)
+  align_buffer_16(output_90_u, ow * oh)
+  align_buffer_16(output_90_v, ow * oh)
+  align_buffer_16(output_180_u, ow * oh)
+  align_buffer_16(output_180_v, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0_u, ow * oh)
-      align_buffer_16(output_0_v, ow * oh)
-      align_buffer_16(output_90_u, ow * oh)
-      align_buffer_16(output_90_v, ow * oh)
-      align_buffer_16(output_180_u, ow * oh)
-      align_buffer_16(output_180_v, ow * oh)
+  for (i = 0; i < iw * ih; i += 2) {
+    input[i] = i >> 1;
+    input[i + 1] = -(i >> 1);
+  }
 
-      for (i = 0; i < iw * ih; i += 2) {
-        input[i] = i >> 1;
-        input[i + 1] = -(i >> 1);
-      }
+  RotateUV90(input, iw, output_90_u, ow, output_90_v, ow, iw >> 1, ih);
 
-      RotateUV90(input, iw, output_90_u, ow, output_90_v, ow, iw >> 1, ih);
+  RotatePlane90(output_90_u, ow, output_180_u, oh, ow, oh);
+  RotatePlane90(output_90_v, ow, output_180_v, oh, ow, oh);
 
-      RotatePlane90(output_90_u, ow, output_180_u, oh, ow, oh);
-      RotatePlane90(output_90_v, ow, output_180_v, oh, ow, oh);
+  RotatePlane180(output_180_u, ow, output_0_u, ow, ow, oh);
+  RotatePlane180(output_180_v, ow, output_0_v, ow, ow, oh);
 
-      RotatePlane180(output_180_u, ow, output_0_u, ow, ow, oh);
-      RotatePlane180(output_180_v, ow, output_0_v, ow, ow, oh);
-
-      for (i = 0; i < (ow * oh); ++i) {
-        if (output_0_u[i] != (uint8)i) {
-          err++;
-        }
-        if (output_0_v[i] != (uint8)(-i)) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 90_u\n");
-        PrintArray(output_90_u, ow, oh);
-
-        printf("output 90_v\n");
-        PrintArray(output_90_v, ow, oh);
-
-        printf("output 180_u\n");
-        PrintArray(output_180_u, oh, ow);
-
-        printf("output 180_v\n");
-        PrintArray(output_180_v, oh, ow);
-
-        printf("output 0_u\n");
-        PrintArray(output_0_u, oh, ow);
-
-        printf("output 0_v\n");
-        PrintArray(output_0_v, oh, ow);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0_u)
-      free_aligned_buffer_16(output_0_v)
-      free_aligned_buffer_16(output_90_u)
-      free_aligned_buffer_16(output_90_v)
-      free_aligned_buffer_16(output_180_u)
-      free_aligned_buffer_16(output_180_v)
+  for (i = 0; i < (ow * oh); ++i) {
+    if (output_0_u[i] != (uint8)i) {
+      err++;
+    }
+    if (output_0_v[i] != (uint8)(-i)) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 90_u\n");
+    PrintArray(output_90_u, ow, oh);
+
+    printf("output 90_v\n");
+    PrintArray(output_90_v, ow, oh);
+
+    printf("output 180_u\n");
+    PrintArray(output_180_u, oh, ow);
+
+    printf("output 180_v\n");
+    PrintArray(output_180_v, oh, ow);
+
+    printf("output 0_u\n");
+    PrintArray(output_0_u, oh, ow);
+
+    printf("output 0_v\n");
+    PrintArray(output_0_v, oh, ow);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0_u)
+  free_aligned_buffer_16(output_0_v)
+  free_aligned_buffer_16(output_90_u)
+  free_aligned_buffer_16(output_90_v)
+  free_aligned_buffer_16(output_180_u)
+  free_aligned_buffer_16(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -273,76 +261,73 @@ TEST_F(libyuvTest, RotateUV90) {
 TEST_F(libyuvTest, RotateUV180) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = iw >> 1;
+  oh = ih;
 
-      ow = iw >> 1;
-      oh = ih;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0_u, ow * oh)
+  align_buffer_16(output_0_v, ow * oh)
+  align_buffer_16(output_90_u, ow * oh)
+  align_buffer_16(output_90_v, ow * oh)
+  align_buffer_16(output_180_u, ow * oh)
+  align_buffer_16(output_180_v, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0_u, ow * oh)
-      align_buffer_16(output_0_v, ow * oh)
-      align_buffer_16(output_90_u, ow * oh)
-      align_buffer_16(output_90_v, ow * oh)
-      align_buffer_16(output_180_u, ow * oh)
-      align_buffer_16(output_180_v, ow * oh)
+  for (i = 0; i < iw * ih; i += 2) {
+    input[i] = i >> 1;
+    input[i + 1] = -(i >> 1);
+  }
 
-      for (i = 0; i < iw * ih; i += 2) {
-        input[i] = i >> 1;
-        input[i + 1] = -(i >> 1);
-      }
+  RotateUV180(input, iw, output_180_u, ow, output_180_v, ow, iw >> 1, ih);
 
-      RotateUV180(input, iw, output_180_u, ow, output_180_v, ow, iw >> 1, ih);
+  RotatePlane90(output_180_u, ow, output_90_u, oh, ow, oh);
+  RotatePlane90(output_180_v, ow, output_90_v, oh, ow, oh);
 
-      RotatePlane90(output_180_u, ow, output_90_u, oh, ow, oh);
-      RotatePlane90(output_180_v, ow, output_90_v, oh, ow, oh);
+  RotatePlane90(output_90_u, oh, output_0_u, ow, oh, ow);
+  RotatePlane90(output_90_v, oh, output_0_v, ow, oh, ow);
 
-      RotatePlane90(output_90_u, oh, output_0_u, ow, oh, ow);
-      RotatePlane90(output_90_v, oh, output_0_v, ow, oh, ow);
-
-      for (i = 0; i < (ow * oh); ++i) {
-        if (output_0_u[i] != (uint8)i) {
-          err++;
-        }
-        if (output_0_v[i] != (uint8)(-i)) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 180_u\n");
-        PrintArray(output_180_u, oh, ow);
-
-        printf("output 180_v\n");
-        PrintArray(output_180_v, oh, ow);
-
-        printf("output 90_u\n");
-        PrintArray(output_90_u, oh, ow);
-
-        printf("output 90_v\n");
-        PrintArray(output_90_v, oh, ow);
-
-        printf("output 0_u\n");
-        PrintArray(output_0_u, ow, oh);
-
-        printf("output 0_v\n");
-        PrintArray(output_0_v, ow, oh);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0_u)
-      free_aligned_buffer_16(output_0_v)
-      free_aligned_buffer_16(output_90_u)
-      free_aligned_buffer_16(output_90_v)
-      free_aligned_buffer_16(output_180_u)
-      free_aligned_buffer_16(output_180_v)
+  for (i = 0; i < (ow * oh); ++i) {
+    if (output_0_u[i] != (uint8)i) {
+      err++;
+    }
+    if (output_0_v[i] != (uint8)(-i)) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 180_u\n");
+    PrintArray(output_180_u, oh, ow);
+
+    printf("output 180_v\n");
+    PrintArray(output_180_v, oh, ow);
+
+    printf("output 90_u\n");
+    PrintArray(output_90_u, oh, ow);
+
+    printf("output 90_v\n");
+    PrintArray(output_90_v, oh, ow);
+
+    printf("output 0_u\n");
+    PrintArray(output_0_u, ow, oh);
+
+    printf("output 0_v\n");
+    PrintArray(output_0_v, ow, oh);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0_u)
+  free_aligned_buffer_16(output_0_v)
+  free_aligned_buffer_16(output_90_u)
+  free_aligned_buffer_16(output_90_v)
+  free_aligned_buffer_16(output_180_u)
+  free_aligned_buffer_16(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -350,77 +335,74 @@ TEST_F(libyuvTest, RotateUV180) {
 TEST_F(libyuvTest, RotateUV270) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 2) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = ih;
+  oh = iw >> 1;
 
-      ow = ih;
-      oh = iw >> 1;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0_u, ow * oh)
+  align_buffer_16(output_0_v, ow * oh)
+  align_buffer_16(output_270_u, ow * oh)
+  align_buffer_16(output_270_v, ow * oh)
+  align_buffer_16(output_180_u, ow * oh)
+  align_buffer_16(output_180_v, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0_u, ow * oh)
-      align_buffer_16(output_0_v, ow * oh)
-      align_buffer_16(output_270_u, ow * oh)
-      align_buffer_16(output_270_v, ow * oh)
-      align_buffer_16(output_180_u, ow * oh)
-      align_buffer_16(output_180_v, ow * oh)
+  for (i = 0; i < iw * ih; i += 2) {
+    input[i] = i >> 1;
+    input[i + 1] = -(i >> 1);
+  }
 
-      for (i = 0; i < iw * ih; i += 2) {
-        input[i] = i >> 1;
-        input[i + 1] = -(i >> 1);
-      }
+  RotateUV270(input, iw, output_270_u, ow, output_270_v, ow,
+                   iw >> 1, ih);
 
-      RotateUV270(input, iw, output_270_u, ow, output_270_v, ow,
-                       iw >> 1, ih);
+  RotatePlane270(output_270_u, ow, output_180_u, oh, ow, oh);
+  RotatePlane270(output_270_v, ow, output_180_v, oh, ow, oh);
 
-      RotatePlane270(output_270_u, ow, output_180_u, oh, ow, oh);
-      RotatePlane270(output_270_v, ow, output_180_v, oh, ow, oh);
+  RotatePlane180(output_180_u, ow, output_0_u, ow, ow, oh);
+  RotatePlane180(output_180_v, ow, output_0_v, ow, ow, oh);
 
-      RotatePlane180(output_180_u, ow, output_0_u, ow, ow, oh);
-      RotatePlane180(output_180_v, ow, output_0_v, ow, ow, oh);
-
-      for (i = 0; i < (ow * oh); ++i) {
-        if (output_0_u[i] != (uint8)i) {
-          err++;
-        }
-        if (output_0_v[i] != (uint8)(-i)) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 270_u\n");
-        PrintArray(output_270_u, ow, oh);
-
-        printf("output 270_v\n");
-        PrintArray(output_270_v, ow, oh);
-
-        printf("output 180_u\n");
-        PrintArray(output_180_u, oh, ow);
-
-        printf("output 180_v\n");
-        PrintArray(output_180_v, oh, ow);
-
-        printf("output 0_u\n");
-        PrintArray(output_0_u, oh, ow);
-
-        printf("output 0_v\n");
-        PrintArray(output_0_v, oh, ow);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0_u)
-      free_aligned_buffer_16(output_0_v)
-      free_aligned_buffer_16(output_270_u)
-      free_aligned_buffer_16(output_270_v)
-      free_aligned_buffer_16(output_180_u)
-      free_aligned_buffer_16(output_180_v)
+  for (i = 0; i < (ow * oh); ++i) {
+    if (output_0_u[i] != (uint8)i) {
+      err++;
+    }
+    if (output_0_v[i] != (uint8)(-i)) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 270_u\n");
+    PrintArray(output_270_u, ow, oh);
+
+    printf("output 270_v\n");
+    PrintArray(output_270_v, ow, oh);
+
+    printf("output 180_u\n");
+    PrintArray(output_180_u, oh, ow);
+
+    printf("output 180_v\n");
+    PrintArray(output_180_v, oh, ow);
+
+    printf("output 0_u\n");
+    PrintArray(output_0_u, oh, ow);
+
+    printf("output 0_v\n");
+    PrintArray(output_0_v, oh, ow);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0_u)
+  free_aligned_buffer_16(output_0_v)
+  free_aligned_buffer_16(output_270_u)
+  free_aligned_buffer_16(output_270_v)
+  free_aligned_buffer_16(output_180_u)
+  free_aligned_buffer_16(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -428,46 +410,44 @@ TEST_F(libyuvTest, RotateUV270) {
 TEST_F(libyuvTest, RotatePlane180) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 8; iw < rotate_max_w_ && !err; ++iw)
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = iw;
+  oh = ih;
 
-      ow = iw;
-      oh = ih;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_180, iw * ih)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_180, iw * ih)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  RotatePlane180(input,      iw, output_180, ow, iw, ih);
+  RotatePlane180(output_180, ow, output_0,   iw, ow, oh);
 
-      RotatePlane180(input,      iw, output_180, ow, iw, ih);
-      RotatePlane180(output_180, ow, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 180\n");
-        PrintArray(output_180, iw, ih);
-
-        printf("output 0\n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_180)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
+  }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 180\n");
+    PrintArray(output_180, iw, ih);
+
+    printf("output 0\n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_180)
 
   EXPECT_EQ(0, err);
 }
@@ -475,58 +455,55 @@ TEST_F(libyuvTest, RotatePlane180) {
 TEST_F(libyuvTest, RotatePlane270) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 8; iw < rotate_max_w_ && !err; ++iw) {
-    for (ih = 8; ih < rotate_max_h_ && !err; ++ih) {
-      int i;
+  ow = ih;
+  oh = iw;
 
-      ow = ih;
-      oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_90, ow * oh)
+  align_buffer_16(output_180, iw * ih)
+  align_buffer_16(output_270, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_90, ow * oh)
-      align_buffer_16(output_180, iw * ih)
-      align_buffer_16(output_270, ow * oh)
+  for (i = 0; i < iw * ih; ++i)
+    input[i] = i;
 
-      for (i = 0; i < iw * ih; ++i)
-        input[i] = i;
+  RotatePlane270(input,      iw, output_270, ow, iw, ih);
+  RotatePlane270(output_270, ow, output_180, oh, ow, oh);
+  RotatePlane270(output_180, oh, output_90,  ow, oh, ow);
+  RotatePlane270(output_90,  ow, output_0,   iw, ow, oh);
 
-      RotatePlane270(input,      iw, output_270, ow, iw, ih);
-      RotatePlane270(output_270, ow, output_180, oh, ow, oh);
-      RotatePlane270(output_180, oh, output_90,  ow, oh, ow);
-      RotatePlane270(output_90,  ow, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("input %dx%d \n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output 270\n");
-        PrintArray(output_270, ow, oh);
-
-        printf("output 180\n");
-        PrintArray(output_180, iw, ih);
-
-        printf("output 90\n");
-        PrintArray(output_90, ow, oh);
-
-        printf("output 0\n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_90)
-      free_aligned_buffer_16(output_180)
-      free_aligned_buffer_16(output_270)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("input %dx%d \n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output 270\n");
+    PrintArray(output_270, ow, oh);
+
+    printf("output 180\n");
+    PrintArray(output_180, iw, ih);
+
+    printf("output 90\n");
+    PrintArray(output_90, ow, oh);
+
+    printf("output 0\n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_90)
+  free_aligned_buffer_16(output_180)
+  free_aligned_buffer_16(output_270)
 
   EXPECT_EQ(0, err);
 }
@@ -534,46 +511,44 @@ TEST_F(libyuvTest, RotatePlane270) {
 TEST_F(libyuvTest, RotatePlane90and270) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4)
-    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
-      int i;
+  ow = ih;
+  oh = iw;
 
-      ow = ih;
-      oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_90, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_90, ow * oh)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  RotatePlane90(input,      iw, output_90,  ow, iw, ih);
+  RotatePlane270(output_90, ow, output_0,   iw, ow, oh);
 
-      RotatePlane90(input,      iw, output_90,  ow, iw, ih);
-      RotatePlane270(output_90, ow, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("intput %dx%d\n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output \n");
-        PrintArray(output_90, ow, oh);
-
-        printf("output \n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_90)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
+  }
+
+  if (err) {
+    printf("intput %dx%d\n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output \n");
+    PrintArray(output_90, ow, oh);
+
+    printf("output \n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_90)
 
   EXPECT_EQ(0, err);
 }
@@ -581,58 +556,56 @@ TEST_F(libyuvTest, RotatePlane90and270) {
 TEST_F(libyuvTest, RotatePlane90Pitch) {
   int iw, ih;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4)
-    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
-      int i;
+  int ow = ih;
+  int oh = iw;
 
-      int ow = ih;
-      int oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_90, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_90, ow * oh)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  RotatePlane90(input, iw,
+                output_90 + (ow >> 1), ow,
+                iw >> 1, ih >> 1);
+  RotatePlane90(input + (iw >> 1), iw,
+                output_90 + (ow >> 1) + ow * (oh >> 1), ow,
+                iw >> 1, ih >> 1);
+  RotatePlane90(input + iw * (ih >> 1), iw,
+                output_90, ow,
+                iw >> 1, ih >> 1);
+  RotatePlane90(input + (iw >> 1) + iw * (ih >> 1), iw,
+                output_90 + ow * (oh >> 1), ow,
+                iw >> 1, ih >> 1);
 
-      RotatePlane90(input, iw,
-                    output_90 + (ow >> 1), ow,
-                    iw >> 1, ih >> 1);
-      RotatePlane90(input + (iw >> 1), iw,
-                    output_90 + (ow >> 1) + ow * (oh >> 1), ow,
-                    iw >> 1, ih >> 1);
-      RotatePlane90(input + iw * (ih >> 1), iw,
-                    output_90, ow,
-                    iw >> 1, ih >> 1);
-      RotatePlane90(input + (iw >> 1) + iw * (ih >> 1), iw,
-                    output_90 + ow * (oh >> 1), ow,
-                    iw >> 1, ih >> 1);
+  RotatePlane270(output_90, ih, output_0,   iw, ow, oh);
 
-      RotatePlane270(output_90, ih, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("intput %dx%d\n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output \n");
-        PrintArray(output_90, ow, oh);
-
-        printf("output \n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_90)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
+  }
+
+  if (err) {
+    printf("intput %dx%d\n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output \n");
+    PrintArray(output_90, ow, oh);
+
+    printf("output \n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_90)
 
   EXPECT_EQ(0, err);
 }
@@ -640,59 +613,56 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
 TEST_F(libyuvTest, RotatePlane270Pitch) {
   int iw, ih, ow, oh;
   int err = 0;
+  iw = benchmark_width_;
+  ih = benchmark_height_;
+  int i;
 
-  for (iw = 16; iw < rotate_max_w_ && !err; iw += 4) {
-    for (ih = 16; ih < rotate_max_h_ && !err; ih += 4) {
-      int i;
+  ow = ih;
+  oh = iw;
 
-      ow = ih;
-      oh = iw;
+  align_buffer_16(input, iw * ih)
+  align_buffer_16(output_0, iw * ih)
+  align_buffer_16(output_270, ow * oh)
 
-      align_buffer_16(input, iw * ih)
-      align_buffer_16(output_0, iw * ih)
-      align_buffer_16(output_270, ow * oh)
+  for (i = 0; i < iw * ih; ++i) {
+    input[i] = i;
+  }
 
-      for (i = 0; i < iw * ih; ++i) {
-        input[i] = i;
-      }
+  RotatePlane270(input, iw,
+                 output_270 + ow * (oh >> 1), ow,
+                 iw >> 1, ih >> 1);
+  RotatePlane270(input + (iw >> 1), iw,
+                 output_270, ow,
+                 iw >> 1, ih >> 1);
+  RotatePlane270(input + iw * (ih >> 1), iw,
+                 output_270 + (ow >> 1) + ow * (oh >> 1), ow,
+                 iw >> 1, ih >> 1);
+  RotatePlane270(input + (iw >> 1) + iw * (ih >> 1), iw,
+                 output_270 + (ow >> 1), ow,
+                 iw >> 1, ih >> 1);
 
-      RotatePlane270(input, iw,
-                     output_270 + ow * (oh >> 1), ow,
-                     iw >> 1, ih >> 1);
-      RotatePlane270(input + (iw >> 1), iw,
-                     output_270, ow,
-                     iw >> 1, ih >> 1);
-      RotatePlane270(input + iw * (ih >> 1), iw,
-                     output_270 + (ow >> 1) + ow * (oh >> 1), ow,
-                     iw >> 1, ih >> 1);
-      RotatePlane270(input + (iw >> 1) + iw * (ih >> 1), iw,
-                     output_270 + (ow >> 1), ow,
-                     iw >> 1, ih >> 1);
+  RotatePlane90(output_270, ih, output_0,   iw, ow, oh);
 
-      RotatePlane90(output_270, ih, output_0,   iw, ow, oh);
-
-      for (i = 0; i < iw * ih; ++i) {
-        if (input[i] != output_0[i]) {
-          err++;
-        }
-      }
-
-      if (err) {
-        printf("intput %dx%d\n", iw, ih);
-        PrintArray(input, iw, ih);
-
-        printf("output \n");
-        PrintArray(output_270, ow, oh);
-
-        printf("output \n");
-        PrintArray(output_0, iw, ih);
-      }
-
-      free_aligned_buffer_16(input)
-      free_aligned_buffer_16(output_0)
-      free_aligned_buffer_16(output_270)
+  for (i = 0; i < iw * ih; ++i) {
+    if (input[i] != output_0[i]) {
+      err++;
     }
   }
+
+  if (err) {
+    printf("intput %dx%d\n", iw, ih);
+    PrintArray(input, iw, ih);
+
+    printf("output \n");
+    PrintArray(output_270, ow, oh);
+
+    printf("output \n");
+    PrintArray(output_0, iw, ih);
+  }
+
+  free_aligned_buffer_16(input)
+  free_aligned_buffer_16(output_0)
+  free_aligned_buffer_16(output_270)
 
   EXPECT_EQ(0, err);
 }

@@ -19,11 +19,17 @@
 #define BENCHMARK_ITERATIONS 1
 
 libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
-    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(1280),
-    benchmark_height_(720) {
+    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
+    benchmark_height_(72) {
     const char* repeat = getenv("LIBYUV_REPEAT");
     if (repeat) {
       benchmark_iterations_ = atoi(repeat);  // NOLINT
+      // For quicker unittests, default is 128 x 72.  But when benchmarking,
+      // default to 720p.  Allow size to specify.
+      if (benchmark_iterations_ > 1) {
+        benchmark_width_ = 1280;
+        benchmark_height_ = 720;
+      }
     }
     const char* width = getenv("LIBYUV_WIDTH");
     if (width) {
