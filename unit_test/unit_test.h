@@ -66,9 +66,9 @@ class libyuvTest : public ::testing::Test {
   const int rotate_max_w_;
   const int rotate_max_h_;
 
-  int benchmark_iterations_;
-  const int benchmark_width_;
-  const int benchmark_height_;
+  int benchmark_iterations_;  // Default 1. Use 1000 for benchmarking.
+  int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
+  int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
 };
 
 #endif  // UNIT_TEST_UNIT_TEST_H_

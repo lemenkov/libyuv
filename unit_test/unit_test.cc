@@ -25,6 +25,14 @@ libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     if (repeat) {
       benchmark_iterations_ = atoi(repeat);  // NOLINT
     }
+    const char* width = getenv("LIBYUV_WIDTH");
+    if (width) {
+      benchmark_width_ = atoi(width);  // NOLINT
+    }
+    const char* height = getenv("LIBYUV_HEIGHT");
+    if (height) {
+      benchmark_height_ = atoi(height);  // NOLINT
+    }
 }
 
 int main(int argc, char** argv) {
