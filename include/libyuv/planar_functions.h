@@ -74,6 +74,17 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
+
+// Alias
+#define I400ToI400Mirror I400Mirror
+
+// I400 mirror.  A single plane is mirrored horizontally.
+// Pass negative height to achieve 180 degree rotation.
+LIBYUV_API
+int I400Mirror(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
+
 // Alias
 #define ARGBToARGBMirror ARGBMirror
 
