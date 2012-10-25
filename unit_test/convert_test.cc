@@ -123,7 +123,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                       FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                        \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                           \
-                   benchmark_width_, _Opt, +, 0)                               \
+                   benchmark_height_ - 4, _Any, +, 0)                          \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                           \
                    benchmark_width_, _Unaligned, +, 1)                         \
@@ -132,7 +132,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                    benchmark_width_, _Invert, -, 0)                            \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                           \
-                   benchmark_height_ - 4, _Any, +, 0)
+                   benchmark_width_, _Opt, +, 0)
 
 TESTPLANARTOP(I420, 2, 2, I420, 2, 2)
 TESTPLANARTOP(I422, 2, 1, I420, 2, 2)
@@ -220,7 +220,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                       \
     TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_width_, _Opt, +, 0)                              \
+                    benchmark_height_ - 4, _Any, +, 0)                         \
     TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
                     benchmark_width_, _Unaligned, +, 1)                        \
@@ -229,7 +229,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                     benchmark_width_, _Invert, -, 0)                           \
     TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_height_ - 4, _Any, +, 0)
+                    benchmark_width_, _Opt, +, 0)
 
 TESTPLANARTOBP(I420, 2, 2, NV12, 2, 2)
 TESTPLANARTOBP(I420, 2, 2, NV21, 2, 2)
@@ -258,7 +258,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
     }                                                                          \
   }                                                                            \
   MaskCpuFlags(0);                                                             \
-  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                                \
+  SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_uv + OFF, 2 * kWidth / SRC_SUBSAMP_X,     \
                                  dst_y_c, kWidth,                              \
                                  dst_u_c, kWidth / SUBSAMP_X,                  \
@@ -266,7 +266,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                                  kWidth, NEG kHeight);                         \
   MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
-    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y, kWidth,                              \
+    SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
                                    src_uv + OFF, 2 * kWidth / SRC_SUBSAMP_X,   \
                                    dst_y_opt, kWidth,                          \
                                    dst_u_opt, kWidth / SUBSAMP_X,              \
@@ -321,7 +321,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                      \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_width_, _Opt, +, 0)                             \
+                     benchmark_height_ - 4, _Any, +, 0)                        \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
                      benchmark_width_, _Unaligned, +, 1)                       \
@@ -330,7 +330,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                      benchmark_width_, _Invert, -, 0)                          \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_height_ - 4, _Any, +, 0)
+                     benchmark_width_, _Opt, +, 0)
 
 TESTBIPLANARTOP(NV12, 2, 2, I420, 2, 2)
 TESTBIPLANARTOP(NV21, 2, 2, I420, 2, 2)
@@ -411,13 +411,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 #define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,   \
                       DIFF)                                                    \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   benchmark_width_, DIFF, _Opt, +, 0)                         \
+                   benchmark_height_ - 4, DIFF, _Any, +, 0)                    \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    benchmark_width_, DIFF, _Unaligned, +, 1)                   \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    benchmark_width_, DIFF, _Invert, -, 0)                      \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   benchmark_height_ - 4, DIFF, _Any, +, 0)
+                   benchmark_width_, DIFF, _Opt, +, 0)                         \
 
 TESTPLANARTOB(I420, 2, 2, ARGB, 4, 4, 2)
 TESTPLANARTOB(I420, 2, 2, BGRA, 4, 4, 2)
@@ -508,13 +508,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 
 #define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, DIFF)  \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
-                     benchmark_width_, DIFF, _Opt, +, 0)                       \
+                     benchmark_height_ - 4, DIFF, _Any, +, 0)                  \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
                      benchmark_width_, DIFF, _Unaligned, +, 1)                 \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
                      benchmark_width_, DIFF, _Invert, -, 0)                    \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
-                     benchmark_height_ - 4, DIFF, _Any, +, 0)
+                     benchmark_width_, DIFF, _Opt, +, 0)
 
 TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4, 2)
 TESTBIPLANARTOB(NV21, 2, 2, ARGB, 4, 2)
@@ -597,13 +597,13 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
 
 #define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
-                   benchmark_width_, _Opt, +, 0)                               \
+                   benchmark_height_ - 4, _Any, +, 0)                          \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
                    benchmark_width_, _Unaligned, +, 1)                         \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
                    benchmark_width_, _Invert, -, 0)                            \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
-                   benchmark_height_ - 4, _Any, +, 0)
+                   benchmark_width_, _Opt, +, 0)
 
 TESTATOPLANAR(ARGB, 4, I420, 2, 2)
 TESTATOPLANAR(BGRA, 4, I420, 2, 2)
@@ -667,13 +667,13 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
 }
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, DIFF)                   \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, benchmark_width_, DIFF,    \
-              _Opt, +, 0)                                                      \
+              _Any, +, 0)                                                      \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, benchmark_width_, DIFF,    \
               _Unaligned, +, 1)                                                \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, benchmark_width_, DIFF,    \
               _Invert, -, 0)                                                   \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A, FMT_B, BPP_B, benchmark_width_, DIFF,    \
-              _Any, +, 0)
+              _Opt, +, 0)
 
 TESTATOB(ARGB, 4, 4, ARGB, 4, 0)
 TESTATOB(ARGB, 4, 4, BGRA, 4, 0)
