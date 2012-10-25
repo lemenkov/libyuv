@@ -39,6 +39,8 @@ libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     if (height) {
       benchmark_height_ = atoi(height);  // NOLINT
     }
+    benchmark_pixels_div256_ = (benchmark_iterations_ * benchmark_width_ *
+        benchmark_height_ + 255) / 256;
 }
 
 int main(int argc, char** argv) {
