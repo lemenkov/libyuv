@@ -530,7 +530,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
     // Copy a row of UV.
-    MergeUV_C(src_u, src_v, dst_uv, halfwidth);
+    MergeUV(src_u, src_v, dst_uv, halfwidth);
     src_u += src_stride_u;
     src_v += src_stride_v;
     dst_uv += dst_stride_uv;

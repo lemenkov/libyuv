@@ -1957,7 +1957,7 @@ void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
                                 const unsigned char* src_ptr,
                                 ptrdiff_t src_stride,
                                 int dst_width, int source_y_fraction);
-#endif // if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 
 // CPU agnostic row functions
 static void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
@@ -2326,7 +2326,7 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
       ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
     }
   }
-#elif defined (HAS_SCALEROWDOWN2_MIPS_DSPR2)
+#elif defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {

@@ -385,10 +385,10 @@ void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld1.u8    {q0}, [%1]!                    \n"  // load U
-    "vld1.u8    {q1}, [%2]!                    \n"  // load V
+    "vld1.u8    {q0}, [%0]!                    \n"  // load U
+    "vld1.u8    {q1}, [%1]!                    \n"  // load V
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    "vst2.u8    {q0, q1}, [%0]!                \n"  // store 16 pairs of UV
+    "vst2.u8    {q0, q1}, [%2]!                \n"  // store 16 pairs of UV
     "bgt        1b                             \n"
     :
       "+r"(src_u),   // %0

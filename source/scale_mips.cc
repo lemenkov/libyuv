@@ -76,7 +76,6 @@ void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 
 void ScaleRowDown2Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst, int dst_width) {
-
   const uint8* t = src_ptr + src_stride;
 
   __asm__ __volatile__ (
@@ -178,7 +177,6 @@ void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
                                 const unsigned char* src_ptr,
                                 ptrdiff_t src_stride,
                                 int dst_width, int source_y_fraction) {
-
     int y0_fraction = 256 - source_y_fraction;
     const unsigned char* src_ptr1 = src_ptr + src_stride;
 
@@ -233,8 +231,7 @@ void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
     "t6", "t7", "t8", "t9"
   );
 }
-
-#endif // if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 
 #ifdef __cplusplus
 }  // extern "C"

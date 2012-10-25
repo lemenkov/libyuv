@@ -19,7 +19,6 @@ extern "C" {
 #ifdef HAS_SPLITUV_MIPS_DSPR2
 void SplitUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                         int width) {
-
   __asm__ __volatile__ (
     ".set push                                     \n"
     ".set noreorder                                \n"

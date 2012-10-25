@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef UNIT_TEST_UNIT_TEST_H_
+#ifndef UNIT_TEST_UNIT_TEST_H_  // NOLINT
 #define UNIT_TEST_UNIT_TEST_H_
 
 #include <gtest/gtest.h>
@@ -72,4 +72,4 @@ class libyuvTest : public ::testing::Test {
   int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
 };
 
-#endif  // UNIT_TEST_UNIT_TEST_H_
+#endif  // UNIT_TEST_UNIT_TEST_H_  NOLINT
