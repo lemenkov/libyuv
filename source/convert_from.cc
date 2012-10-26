@@ -521,7 +521,14 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   int halfwidth = (width + 1) >> 1;
   void (*MergeUV)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                   int width) = MergeUV_C;
-#if defined(HAS_SPLITUV_NEON)
+#if defined(HAS_MERGEUV_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 16) &&
+      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
+      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
+      IS_ALIGNED(dst_uv, 16) && IS_ALIGNED(dst_stride_uv, 16)) {
+    MergeUV = MergeUV_SSE2;
+  }
+#elif defined(HAS_MERGEUV_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
     MergeUV = MergeUV_NEON;
   }
@@ -529,7 +536,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
-    // Copy a row of UV.
+    // Merge a row of U and V into a row of UV.
     MergeUV(src_u, src_v, dst_uv, halfwidth);
     src_u += src_stride_u;
     src_v += src_stride_v;

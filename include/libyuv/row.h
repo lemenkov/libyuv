@@ -86,6 +86,7 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_I422TOYUY2ROW_SSE2
 #define HAS_I422TOUYVYROW_SSE2
+#define HAS_MERGEUV_SSE2
 
 // Effects
 #define HAS_ARGBAFFINEROW_SSE2
@@ -120,6 +121,7 @@ extern "C" {
 #define HAS_UYVYTOYROW_AVX2
 #define HAS_YUY2TOYROW_MMX
 #define HAS_UYVYTOYROW_MMX
+#define HAS_MERGEUV_SSE2
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -311,6 +313,8 @@ void SplitUV_Any_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 
 void MergeUV_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                int width);
+void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width);
 void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                   int width);
 

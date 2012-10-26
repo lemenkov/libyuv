@@ -1,12 +1,12 @@
-; 
+;
 ; Copyright 2012 The LibYuv Project Authors. All rights reserved.
-; 
+;
 ; Use of this source code is governed by a BSD-style license
 ; that can be found in the LICENSE file in the root of the source
 ; tree. An additional intellectual property rights grant can be found
 ; in the file PATENTS.  All contributing project authors may
 ; be found in the AUTHORS file in the root of the source tree.
-; 
+;
 
 %ifdef __YASM_VERSION_ID__
 %if __YASM_VERSION_ID__ < 01020000h
@@ -16,6 +16,8 @@
 %include "x86inc.asm"
 
 SECTION .text
+
+; cglobal numeric constants are parameters, gpr regs, mm regs
 
 ; void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
 
@@ -63,8 +65,7 @@ YUY2TOYROW YUY2,u,_Unaligned
 YUY2TOYROW UYVY,a,
 YUY2TOYROW UYVY,u,_Unaligned
 
-; void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, 
-;                             int pix) {
+; void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 
 %macro SPLITUV 1-2
 cglobal SplitUV%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
@@ -102,4 +103,37 @@ SPLITUV u,_Unaligned
 INIT_YMM AVX2
 SPLITUV a,
 SPLITUV u,_Unaligned
+
+; void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+;                   int width);
+
+%macro MergeUV 1-2
+cglobal MergeUV%2, 4, 4, 3, src_u, src_v, dst_uv, pix
+    sub        src_vq, src_uq
+
+    ALIGN      16
+.convertloop:
+    mov%1      m0, [src_uq]
+    mov%1      m1, [src_vq]
+    lea        src_uq, [src_uq + mmsize]
+    mova       m2, m0
+    punpcklbw  m0, m0, m1       // first 8 UV pairs
+    punpckhbw  m2, m2, m1       // next 8 UV pairs
+    mov%1      [dst_uvq], m0
+    mov%1      [dst_uvq + mmsize], m2
+    lea        dst_uvq, [dst_uvq + mmsize * 2]
+    sub        pixd, mmsize
+    jg         .convertloop
+    REP_RET
+%endmacro
+
+INIT_MMX MMX
+MERGEUV a,
+MERGEUV u,_Unaligned
+INIT_XMM SSE2
+MERGEUV a,
+MERGEUV u,_Unaligned
+INIT_YMM AVX2
+MERGEUV a,
+MERGEUV u,_Unaligned
 

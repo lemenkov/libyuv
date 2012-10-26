@@ -2620,6 +2620,38 @@ void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_SPLITUV_SSE2
 
+#ifdef HAS_MERGEUV_SSE2
+__declspec(naked) __declspec(align(16))
+void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_u
+    mov        edx, [esp + 4 + 8]    // src_v
+    mov        edi, [esp + 4 + 12]   // dst_uv
+    mov        ecx, [esp + 4 + 16]   // width
+    sub        edx, eax
+
+    align      16
+  convertloop:
+    movdqa     xmm0, [eax]      // read 16 U's
+    movdqa     xmm1, [eax + edx]  // and 16 V's
+    lea        eax,  [eax + 16]
+    movdqa     xmm2, xmm0
+    punpcklbw  xmm0, xmm1       // first 8 UV pairs
+    punpckhbw  xmm2, xmm1       // next 8 UV pairs
+    movdqa     [edi], xmm0
+    movdqa     [edi + 16], xmm2
+    lea        edi, [edi + 32]
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
+#endif  //  HAS_MERGEUV_SSE2
+
 #ifdef HAS_COPYROW_SSE2
 // CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time.
 __declspec(naked) __declspec(align(16))
