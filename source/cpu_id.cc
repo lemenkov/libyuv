@@ -174,7 +174,7 @@ int InitCpuFlags(void) {
     }
   }
 #endif
-  // environment variable overrides for testing.
+  // Environment variable overrides for testing.
   if (TestEnv("LIBYUV_DISABLE_X86")) {
     cpu_info_ &= ~kCpuHasX86;
   }
@@ -197,7 +197,7 @@ int InitCpuFlags(void) {
     cpu_info_ &= ~kCpuHasAVX2;
   }
 #elif defined(__mips__) && defined(__linux__)
-  // linux mips parse text file for dsp detect.
+  // Linux mips parse text file for dsp detect.
   cpu_info_ = MipsCpuCaps("dsp");  // set kCpuHasMIPS_DSP.
 #if defined(__mips_dspr2)
   cpu_info_ |= kCpuHasMIPS_DSPR2;
@@ -215,7 +215,7 @@ int InitCpuFlags(void) {
   }
 #elif defined(__arm__)
 #if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
-  // linux arm parse text file for neon detect.
+  // Linux arm parse text file for neon detect.
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
 #elif defined(__ARM_NEON__)
   // gcc -mfpu=neon defines __ARM_NEON__

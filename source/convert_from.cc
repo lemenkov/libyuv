@@ -599,6 +599,14 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
       I422ToARGBRow = I422ToARGBRow_NEON;
     }
   }
+#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
@@ -651,6 +659,14 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToBGRARow = I422ToBGRARow_NEON;
     }
+  }
+#elif defined(HAS_I422TOBGRAROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_bgra, 4) && IS_ALIGNED(dst_stride_bgra, 4)) {
+    I422ToBGRARow = I422ToBGRARow_MIPS_DSPR2;
   }
 #endif
 
@@ -909,6 +925,13 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
       I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
   }
+#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
+  }
 #endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
@@ -975,6 +998,14 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
       I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
   }
+#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
+  }
 #endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
@@ -1040,6 +1071,14 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
+  }
+#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
   }
 #endif
 

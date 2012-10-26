@@ -630,4 +630,70 @@ TEST_F(libyuvTest, TestAffine) {
 #endif
 }
 
+TEST_F(libyuvTest, TestCopyPlane) {
+  int err = 0;
+  int yw = benchmark_width_;
+  int yh = benchmark_height_;
+  int b = 12;
+  int i, j;
+
+  int y_plane_size = (yw + b * 2) * (yh + b * 2);
+  srandom(time(NULL));
+  align_buffer_16(orig_y, y_plane_size)
+  align_buffer_16(dst_c, y_plane_size)
+  align_buffer_16(dst_opt, y_plane_size);
+
+  memset(orig_y, 0, y_plane_size);
+  memset(dst_c, 0, y_plane_size);
+  memset(dst_opt, 0, y_plane_size);
+
+  // Fill image buffers with random data.
+  for (i = b; i < (yh + b); ++i) {
+    for (j = b; j < (yw + b); ++j) {
+      orig_y[i * (yw + b * 2) + j] = random() & 0xff;
+    }
+  }
+
+  // Fill destination buffers with random data.
+  for (i = 0; i < y_plane_size; ++i) {
+    uint8 random_number = random() & 0x7f;
+    dst_c[i] = random_number;
+    dst_opt[i] = dst_c[i];
+  }
+
+  int y_off = b * (yw + b * 2) + b;
+
+  int y_st = yw + b * 2;
+  int stride = 8;
+
+  // Disable all optimizations.
+  MaskCpuFlags(0);
+  double c_time = get_time();
+  for (j = 0; j < benchmark_iterations_; j++) {
+    CopyPlane(orig_y + y_off, y_st, dst_c + y_off, stride, yw, yh);
+  }
+  c_time = (get_time() - c_time) / benchmark_iterations_;
+
+  // Enable optimizations.
+  MaskCpuFlags(-1);
+  double opt_time = get_time();
+  for (j = 0; j < benchmark_iterations_; j++) {
+    CopyPlane(orig_y + y_off, y_st, dst_opt + y_off, stride, yw, yh);
+  }
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  printf(" %8d us C - %8d us OPT\n",
+         static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
+
+  for (i = 0; i < y_plane_size; ++i) {
+    if (dst_c[i] != dst_opt[i])
+      ++err;
+  }
+
+  free_aligned_buffer_16(orig_y)
+  free_aligned_buffer_16(dst_c)
+  free_aligned_buffer_16(dst_opt)
+
+  EXPECT_EQ(0, err);
+}
+
 }  // namespace libyuv

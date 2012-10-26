@@ -56,6 +56,23 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          int width);
 #endif  // defined(__ARM_NEON__)
 
+#if !defined(YUV_DISABLE_ASM) && defined(__mips__)
+#if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#define HAS_TRANSPOSE_WX8_MIPS_DSPR2
+void TransposeWx8_MIPS_DSPR2(const uint8* src, int src_stride,
+                             uint8* dst, int dst_stride, int width);
+
+void TransposeWx8_FAST_MIPS_DSPR2(const uint8* src, int src_stride,
+                                  uint8* dst, int dst_stride, int width);
+#define HAS_TRANSPOSE_UVWx8_MIPS_DSPR2
+void TransposeUVWx8_MIPS_DSPR2(const uint8* src, int src_stride,
+                               uint8* dst_a, int dst_stride_a,
+                               uint8* dst_b, int dst_stride_b,
+                               int width);
+#endif
+#endif
+
+
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_TRANSPOSE_WX8_SSSE3
 __declspec(naked) __declspec(align(16))
@@ -794,6 +811,16 @@ void TransposePlane(const uint8* src, int src_stride,
     TransposeWx8 = TransposeWx8_FAST_SSSE3;
   }
 #endif
+#if defined(HAS_TRANSPOSE_WX8_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
+    if (IS_ALIGNED(width, 4) &&
+        IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
+      TransposeWx8 = TransposeWx8_FAST_MIPS_DSPR2;
+    } else {
+      TransposeWx8 = TransposeWx8_MIPS_DSPR2;
+    }
+  }
+#endif
 
   // Work across the source in 8x8 tiles
   int i = height;
@@ -855,6 +882,13 @@ void RotatePlane180(const uint8* src, int src_stride,
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     MirrorRow = MirrorRow_SSSE3;
+  }
+#endif
+#if defined(HAS_MIRRORROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+      IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst, 4) && IS_ALIGNED(dst_stride, 4)) {
+    MirrorRow = MirrorRow_MIPS_DSPR2;
   }
 #endif
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
@@ -952,6 +986,11 @@ void TransposeUV(const uint8* src, int src_stride,
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     TransposeUVWx8 = TransposeUVWx8_SSE2;
   }
+#elif defined(HAS_TRANSPOSE_UVWx8_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 2) &&
+      IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
+    TransposeUVWx8 = TransposeUVWx8_MIPS_DSPR2;
+  }
 #endif
 
   // Work through the source in 8x8 tiles.
@@ -1020,6 +1059,11 @@ void RotateUV180(const uint8* src, int src_stride,
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     MirrorRowUV = MirrorRowUV_SSSE3;
+  }
+#elif defined(HAS_MIRRORROWUV_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+      IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
+    MirrorRowUV = MirrorRowUV_MIPS_DSPR2;
   }
 #endif
 

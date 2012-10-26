@@ -75,11 +75,12 @@
         'source/convert_from_argb.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
-        'source/memcpy_mips.S',
+        'source/memcpy_mips.S',  # TODO(fbarchard): Move into row_mips.cc
         'source/mjpeg_decoder.cc',
         'source/planar_functions.cc',
         'source/rotate.cc',
         'source/rotate_argb.cc',
+        'source/rotate_mips.cc',
         'source/rotate_neon.cc',
         'source/row_common.cc',
         'source/row_mips.cc',

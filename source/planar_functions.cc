@@ -46,6 +46,11 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
     CopyRow = CopyRow_SSE2;
   }
 #endif
+#if defined(HAS_COPYROW_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_MIPS;
+  }
+#endif
 
   // Copy plane
   for (int y = 0; y < height; ++y) {
@@ -423,6 +428,14 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
         I422ToBGRARow = I422ToBGRARow_SSSE3;
       }
     }
+  }
+#elif defined(HAS_I422TOBGRAROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_bgra, 4) && IS_ALIGNED(dst_stride_bgra, 4)) {
+    I422ToBGRARow = I422ToBGRARow_MIPS_DSPR2;
   }
 #endif
 

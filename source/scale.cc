@@ -1957,6 +1957,26 @@ void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
                                 const unsigned char* src_ptr,
                                 ptrdiff_t src_stride,
                                 int dst_width, int source_y_fraction);
+#define HAS_SCALEROWDOWN4_MIPS_DSPR2
+void ScaleRowDown4_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                              uint8* dst, int dst_width);
+void ScaleRowDown4Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                 uint8* dst, int dst_width);
+#define HAS_SCALEROWDOWN34_MIPS_DSPR2
+void ScaleRowDown34_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                               uint8* dst, int dst_width);
+void ScaleRowDown34_0_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                     uint8* d, int dst_width);
+void ScaleRowDown34_1_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                     uint8* d, int dst_width);
+#define HAS_SCALEROWDOWN38_MIPS_DSPR2
+void ScaleRowDown38_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                               uint8* dst, int dst_width);
+void ScaleRowDown38_2_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                     uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_3_Int_MIPS_DSPR2(const uint8* src_ptr,
+                                     ptrdiff_t src_stride,
+                                     uint8* dst_ptr, int dst_width);
 #endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 
 // CPU agnostic row functions
@@ -2331,7 +2351,7 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
     ScaleRowDown2 = filtering ?
-                    ScaleRowDown2Int_MIPS_DSPR2 : ScaleRowDown2_MIPS_DSPR2;
+        ScaleRowDown2Int_MIPS_DSPR2 : ScaleRowDown2_MIPS_DSPR2;
   }
 #endif
 
@@ -2367,6 +2387,13 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
       IS_ALIGNED(dst_width, 8) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
+  }
+#elif defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+      IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
+    ScaleRowDown4 = filtering ?
+        ScaleRowDown4Int_MIPS_DSPR2 : ScaleRowDown4_MIPS_DSPR2;
   }
 #endif
 
@@ -2461,6 +2488,19 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN34_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && (dst_width % 24 == 0) &&
+      IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
+    if (!filtering) {
+      ScaleRowDown34_0 = ScaleRowDown34_MIPS_DSPR2;
+      ScaleRowDown34_1 = ScaleRowDown34_MIPS_DSPR2;
+    } else {
+      ScaleRowDown34_0 = ScaleRowDown34_0_Int_MIPS_DSPR2;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Int_MIPS_DSPR2;
+    }
+  }
+#endif
 
   for (int y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
@@ -2539,6 +2579,18 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
     } else {
       ScaleRowDown38_3 = ScaleRowDown38_3_Int_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_2_Int_SSSE3;
+    }
+  }
+#elif defined(HAS_SCALEROWDOWN38_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && (dst_width % 12 == 0) &&
+      IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_MIPS_DSPR2;
+      ScaleRowDown38_2 = ScaleRowDown38_MIPS_DSPR2;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Int_MIPS_DSPR2;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Int_MIPS_DSPR2;
     }
   }
 #endif
