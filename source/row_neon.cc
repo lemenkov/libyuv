@@ -380,8 +380,30 @@ void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 
 #ifdef HAS_MERGEUV_NEON
 // Reads 16 U's and V's and writes out 16 pairs of UV.
+// Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
 void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                   int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.u8    {q0}, [%0:128]!                \n"  // load U
+    "vld1.u8    {q1}, [%1:128]!                \n"  // load V
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
+    "vst2.u8    {q0, q1}, [%2:128]!            \n"  // store 16 pairs of UV
+    "bgt        1b                             \n"
+    :
+      "+r"(src_u),   // %0
+      "+r"(src_v),   // %1
+      "+r"(dst_uv),  // %2
+      "+r"(width)    // %3  // Output registers
+    :                       // Input registers
+    : "memory", "cc", "q0", "q1"  // Clobber List
+  );
+}
+
+// Reads 16 U's and V's and writes out 16 pairs of UV.
+void MergeUV_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
+                            uint8* dst_uv, int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"

@@ -121,7 +121,8 @@ extern "C" {
 #define HAS_UYVYTOYROW_AVX2
 #define HAS_YUY2TOYROW_MMX
 #define HAS_UYVYTOYROW_MMX
-#define HAS_MERGEUV_SSE2
+#define HAS_MERGEUV_AVX2
+#define HAS_MERGEUV_MMX
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -324,8 +325,22 @@ void MergeUV_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                int width);
 void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                   int width);
+void MergeUV_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width);
 void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                   int width);
+void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
+                            uint8* dst_uv, int width);
+void MergeUV_Unaligned_AVX2(const uint8* src_u, const uint8* src_v,
+                            uint8* dst_uv, int width);
+void MergeUV_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
+                            uint8* dst_uv, int width);
+void MergeUV_Any_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                      int width);
+void MergeUV_Any_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                      int width);
+void MergeUV_Any_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                      int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_X86(const uint8* src, uint8* dst, int count);
@@ -719,6 +734,24 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
                               int width);
+
+void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
+
+void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
+
+void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
 
 void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
 void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,

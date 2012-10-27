@@ -1190,31 +1190,52 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
 #endif
 #undef UV422ANY
 
-#define SPLITUVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                \
+#define SPLITUVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
       ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                   \
-      ANYTOUV_C(src_uv  + n * BPP,                                             \
+      ANYTOUV_C(src_uv + n * 2,                                                \
                 dst_u + n,                                                     \
                 dst_v + n,                                                     \
                 width & MASK);                                                 \
     }
 
 #ifdef HAS_SPLITUV_SSE2
-SPLITUVANY(SplitUV_Any_SSE2, SplitUV_Unaligned_SSE2, SplitUV_C, 2, 15)
+SPLITUVANY(SplitUV_Any_SSE2, SplitUV_Unaligned_SSE2, SplitUV_C, 15)
 #endif
 #ifdef HAS_SPLITUV_AVX2
-SPLITUVANY(SplitUV_Any_AVX2, SplitUV_Unaligned_AVX2, SplitUV_C, 2, 31)
+SPLITUVANY(SplitUV_Any_AVX2, SplitUV_Unaligned_AVX2, SplitUV_C, 31)
 #endif
 #ifdef HAS_SPLITUV_NEON
-SPLITUVANY(SplitUV_Any_NEON, SplitUV_Unaligned_NEON, SplitUV_C, 2, 15)
+SPLITUVANY(SplitUV_Any_NEON, SplitUV_Unaligned_NEON, SplitUV_C, 15)
 #endif
 #ifdef HAS_SPLITUV_MIPS_DSPR2
-SPLITUVANY(SplitUV_Any_MIPS_DSPR2, SplitUV_Unaligned_MIPS_DSPR2, SplitUV_C,
-           2, 15)
+SPLITUVANY(SplitUV_Any_MIPS_DSPR2, SplitUV_Unaligned_MIPS_DSPR2, SplitUV_C, 15)
 #endif
 #undef SPLITUVANY
+
+#define MERGEUVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
+    void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
+                 uint8* dst_uv, int width) {                                   \
+      int n = width & ~MASK;                                                   \
+      ANYTOUV_SIMD(src_u, src_v, dst_uv, n);                                   \
+      ANYTOUV_C(src_u + n,                                                     \
+                src_v + n,                                                     \
+                dst_uv + n * 2,                                                \
+                width & MASK);                                                 \
+    }
+
+#ifdef HAS_MERGEUV_SSE2
+MERGEUVANY(MergeUV_Any_SSE2, MergeUV_Unaligned_SSE2, MergeUV_C, 15)
+#endif
+#ifdef HAS_MERGEUV_AVX2
+MERGEUVANY(MergeUV_Any_AVX2, MergeUV_Unaligned_AVX2, MergeUV_C, 31)
+#endif
+#ifdef HAS_MERGEUV_NEON
+MERGEUVANY(MergeUV_Any_NEON, MergeUV_Unaligned_NEON, MergeUV_C, 15)
+#endif
+#undef MERGEUVANY
 
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
                                const int32* previous_cumsum, int width) {

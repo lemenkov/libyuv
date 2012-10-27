@@ -2576,6 +2576,35 @@ void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 #endif
   );
 }
+
+void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
+                            uint8* dst_uv, int width) {
+  asm volatile (
+    "sub       %0,%1                             \n"
+    ".p2align   4                                \n"
+  "1:                                            \n"
+    "movdqu    (%0),%%xmm0                       \n"
+    "movdqu    (%0,%1,1),%%xmm1                  \n"
+    "lea       0x10(%0),%0                       \n"
+    "movdqa    %%xmm0,%%xmm2                     \n"
+    "punpcklbw %%xmm1,%%xmm0                     \n"
+    "punpckhbw %%xmm1,%%xmm2                     \n"
+    "movdqu    %%xmm0,(%2)                       \n"
+    "movdqu    %%xmm2,0x10(%2)                   \n"
+    "lea       0x20(%2),%2                       \n"
+    "sub       $0x10,%3                          \n"
+    "jg        1b                                \n"
+  : "+r"(src_u),     // %0
+    "+r"(src_v),     // %1
+    "+r"(dst_uv),    // %2
+    "+r"(width)      // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2"
+#endif
+  );
+}
 #endif  // HAS_MERGEUV_SSE2
 
 #ifdef HAS_COPYROW_SSE2
