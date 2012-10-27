@@ -123,7 +123,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                       FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                        \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                           \
-                   benchmark_height_ - 4, _Any, +, 0)                          \
+                   benchmark_width_ - 4, _Any, +, 0)                          \
     TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,               \
                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                           \
                    benchmark_width_, _Unaligned, +, 1)                         \
@@ -220,7 +220,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                       \
     TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_height_ - 4, _Any, +, 0)                         \
+                    benchmark_width_ - 4, _Any, +, 0)                         \
     TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
                     benchmark_width_, _Unaligned, +, 1)                        \
@@ -321,7 +321,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                      \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_height_ - 4, _Any, +, 0)                        \
+                     benchmark_width_ - 4, _Any, +, 0)                        \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
                      benchmark_width_, _Unaligned, +, 1)                       \
@@ -411,7 +411,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 #define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,   \
                       DIFF)                                                    \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   benchmark_height_ - 4, DIFF, _Any, +, 0)                    \
+                   benchmark_width_ - 4, DIFF, _Any, +, 0)                    \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
                    benchmark_width_, DIFF, _Unaligned, +, 1)                   \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
@@ -508,7 +508,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 
 #define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, DIFF)  \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
-                     benchmark_height_ - 4, DIFF, _Any, +, 0)                  \
+                     benchmark_width_ - 4, DIFF, _Any, +, 0)                  \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
                      benchmark_width_, DIFF, _Unaligned, +, 1)                 \
     TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,           \
@@ -597,7 +597,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
 
 #define TESTATOPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)          \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
-                   benchmark_height_ - 4, _Any, +, 0)                          \
+                   benchmark_width_ - 4, _Any, +, 0)                          \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
                    benchmark_width_, _Unaligned, +, 1)                         \
     TESTATOPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,             \
