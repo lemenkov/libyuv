@@ -24,10 +24,8 @@ extern "C" {
 // TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
 #ifdef __APPLE__
 #define CONST
-#define NOINLINE __attribute__ ((noinline))
 #else
 #define CONST static const
-#define NOINLINE
 #endif
 
 #ifdef HAS_ARGBTOYROW_SSSE3
@@ -575,7 +573,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int pix) {
   );
 }
 
-void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) NOINLINE  {
+void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm3,%%xmm3                   \n"
     "psrld     $0x1b,%%xmm3                    \n"
@@ -1770,7 +1768,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* argb_buf,
-                                int width) NOINLINE {
+                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -4276,26 +4274,6 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
     , "xmm0", "xmm1", "xmm2", "xmm3"
 #endif
   );
-}
-
-void I422ToRGB565Row_SSSE3(const uint8* y_buf,
-                           const uint8* u_buf,
-                           const uint8* v_buf,
-                           uint8* rgb_buf,
-                           int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
-  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
-}
-
-void I422ToRGB565Row_Unaligned_SSSE3(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
-  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
 }
 
 #endif  // defined(__x86_64__) || defined(__i386__)
