@@ -921,65 +921,45 @@ LIBYUV_API
 int I420ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_u, int src_stride_u,
                  const uint8* src_v, int src_stride_v,
-                 uint8* dst_rgb, int dst_stride_rgb,
+                 uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_rgb ||
+  if (!src_y || !src_u || !src_v || !dst_rgb565 ||
       width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    dst_rgb = dst_rgb + (height - 1) * dst_stride_rgb;
-    dst_stride_rgb = -dst_stride_rgb;
+    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
+    dst_stride_rgb565 = -dst_stride_rgb565;
   }
-  void (*I422ToARGBRow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        int width) = I422ToARGBRow_C;
-#if defined(HAS_I422TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    I422ToARGBRow = I422ToARGBRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      I422ToARGBRow = I422ToARGBRow_NEON;
-    }
-  }
-#elif defined(HAS_I422TOARGBROW_SSSE3)
+  void (*I422ToRGB565Row)(const uint8* y_buf,
+                          const uint8* u_buf,
+                          const uint8* v_buf,
+                          uint8* rgb_buf,
+                          int width) = I422ToRGB565Row_C;
+#if defined(HAS_I422TORGB565ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
-    I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
+    I422ToRGB565Row = I422ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_SSSE3;
+      I422ToRGB565Row = I422ToRGB565Row_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_rgb565, 16) && IS_ALIGNED(dst_stride_rgb565, 16)) {
+        I422ToRGB565Row = I422ToRGB565Row_SSSE3;
+      }
     }
   }
-#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
-      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
-      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2)) {
-    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
-  }
-#endif
-
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  void (*ARGBToRGB565Row)(const uint8* src_rgb, uint8* dst_rgb, int pix) =
-      ARGBToRGB565Row_C;
-#if defined(HAS_ARGBTORGB565ROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    if (width * 2 <= kMaxStride) {
-      ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
-    }
-    if (IS_ALIGNED(width, 4)) {
-      ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
+#elif defined(HAS_I422TORGB565ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    I422ToRGB565Row = I422ToRGB565Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToRGB565Row = I422ToRGB565Row_NEON;
     }
   }
 #endif
 
   for (int y = 0; y < height; ++y) {
-    I422ToARGBRow(src_y, src_u, src_v, row, width);
-    ARGBToRGB565Row(row, dst_rgb, width);
-    dst_rgb += dst_stride_rgb;
+    I422ToRGB565Row(src_y, src_u, src_v, dst_rgb565, width);
+    dst_rgb565 += dst_stride_rgb565;
     src_y += src_stride_y;
     if (y & 1) {
       src_u += src_stride_u;

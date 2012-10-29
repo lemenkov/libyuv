@@ -538,7 +538,43 @@ void I422ToRAWRow_C(const uint8* y_buf,
   }
   if (width & 1) {
     YuvPixel2(y_buf[0], u_buf[0], v_buf[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+  }
+}
+
+void I422ToRGB565Row_C(const uint8* y_buf,
+                      const uint8* u_buf,
+                      const uint8* v_buf,
+                      uint8* dst_rgb565,
+                      int width) {
+  uint8 b0;
+  uint8 g0;
+  uint8 r0;
+  uint8 b1;
+  uint8 g1;
+  uint8 r1;
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    YuvPixel2(y_buf[1], u_buf[0], v_buf[0], &b1, &g1, &r1);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    b1 = b1 >> 3;
+    g1 = g1 >> 2;
+    r1 = r1 >> 3;
+    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+        (b1 << 16) | (g1 << 21) | (r1 << 27);
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    dst_rgb565 += 4;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
@@ -1027,6 +1063,8 @@ YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_Unaligned_SSSE3, I422ToABGRRow_C,
      1, 4, 7)
 YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_Unaligned_SSSE3, I422ToRGBARow_C,
      1, 4, 7)
+YANY(I422ToRGB565Row_Any_SSSE3, I422ToRGB565Row_Unaligned_SSSE3,
+     I422ToRGB565Row_C, 1, 2, 7)
 // I422ToRGB24Row_SSSE3 is unaligned.
 YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, I422ToRGB24Row_C, 1, 3, 7)
 YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, I422ToRAWRow_C, 1, 3, 7)
@@ -1040,6 +1078,7 @@ YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1, 4, 7)
 YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1, 4, 7)
 YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, I422ToRGB24Row_C, 1, 3, 7)
 YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, I422ToRAWRow_C, 1, 3, 7)
+YANY(I422ToRGB565Row_Any_NEON, I422ToRGB565Row_NEON, I422ToRGB565Row_C, 1, 2, 7)
 YANY(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, I422ToYUY2Row_C, 1, 2, 15)
 YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, I422ToUYVYRow_C, 1, 2, 15)
 #endif  // HAS_I422TOARGBROW_NEON

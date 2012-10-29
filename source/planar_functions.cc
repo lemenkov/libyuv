@@ -574,12 +574,18 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                         uint8* rgb_buf,
                         int width) = NV12ToARGBRow_C;
 #if defined(HAS_NV12TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
-    NV12ToARGBRow = NV12ToARGBRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    NV12ToARGBRow = NV12ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToARGBRow = NV12ToARGBRow_SSSE3;
+    }
   }
 #elif defined(HAS_NV12TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    NV12ToARGBRow = NV12ToARGBRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToARGBRow = NV12ToARGBRow_NEON;
+    }
   }
 #endif
   if (width * 4 > kMaxStride) {
@@ -629,12 +635,18 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                         uint8* rgb_buf,
                         int width) = NV21ToARGBRow_C;
 #if defined(HAS_NV21TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
-    NV21ToARGBRow = NV21ToARGBRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    NV21ToARGBRow = NV21ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      NV21ToARGBRow = NV21ToARGBRow_SSSE3;
+    }
   }
 #elif defined(HAS_NV21TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    NV21ToARGBRow = NV21ToARGBRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    NV21ToARGBRow = NV21ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV21ToARGBRow = NV21ToARGBRow_NEON;
+    }
   }
 #endif
   if (width * 4 > kMaxStride) {

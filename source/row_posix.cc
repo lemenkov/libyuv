@@ -4276,6 +4276,26 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
   );
 }
 
+void I422ToRGB565Row_SSSE3(const uint8* y_buf,
+                           const uint8* u_buf,
+                           const uint8* v_buf,
+                           uint8* rgb_buf,
+                           int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
+  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
+}
+
+void I422ToRGB565Row_Unaligned_SSSE3(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     uint8* rgb_buf,
+                                     int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
+  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
+}
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

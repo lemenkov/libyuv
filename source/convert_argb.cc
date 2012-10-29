@@ -575,8 +575,7 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
       }
     }
   }
-#endif
-#if defined(HAS_NV12TOARGBROW_NEON)
+#elif defined(HAS_NV12TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {

@@ -581,7 +581,7 @@ __asm {
     por       xmm0, xmm1    // BGR
     packssdw  xmm0, xmm0
     lea       eax, [eax + 16]
-    movq      qword ptr [edx], xmm0  // store 4 pixels of ARGB1555
+    movq      qword ptr [edx], xmm0  // store 4 pixels of RGB565
     lea       edx, [edx + 8]
     sub       ecx, 4
     jg        convertloop
@@ -1760,6 +1760,79 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
 // 8 pixels, dest aligned 16.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
+void I422ToRGB565Row_SSSE3(const uint8* y_buf,
+                           const uint8* u_buf,
+                           const uint8* v_buf,
+                           uint8* rgb565_buf,
+                           int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb565
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pxor       xmm4, xmm4
+    pcmpeqb    xmm5, xmm5       // generate mask 0x0000001f
+    psrld      xmm5, 27
+    pcmpeqb    xmm6, xmm6       // generate mask 0x000007e0
+    psrld      xmm6, 26
+    pslld      xmm6, 5
+    pcmpeqb    xmm7, xmm7       // generate mask 0xfffff800
+    pslld      xmm7, 11
+
+    align      16
+ convertloop:
+    READYUV422
+    YUVTORGB
+
+    // Step 3: Weave into RRGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm2           // RR
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
+
+    // Step 3b: RRGB -> RGB565
+    movdqa     xmm3, xmm0    // B  first 4 pixels of argb
+    movdqa     xmm2, xmm0    // G
+    pslld      xmm0, 8       // R
+    psrld      xmm3, 3       // B
+    psrld      xmm2, 5       // G
+    psrad      xmm0, 16      // R
+    pand       xmm3, xmm5    // B
+    pand       xmm2, xmm6    // G
+    pand       xmm0, xmm7    // R
+    por        xmm3, xmm2    // BG
+    por        xmm0, xmm3    // BGR
+    movdqa     xmm3, xmm1    // B  next 4 pixels of argb
+    movdqa     xmm2, xmm1    // G
+    pslld      xmm1, 8       // R
+    psrld      xmm3, 3       // B
+    psrld      xmm2, 5       // G
+    psrad      xmm1, 16      // R
+    pand       xmm3, xmm5    // B
+    pand       xmm2, xmm6    // G
+    pand       xmm1, xmm7    // R
+    por        xmm3, xmm2    // BG
+    por        xmm1, xmm3    // BGR
+    packssdw   xmm0, xmm1
+    sub        ecx, 8
+    movdqa     [edx], xmm0   // store 8 pixels of RGB565
+    lea        edx, [edx + 16]
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked) __declspec(align(16))
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -2050,6 +2123,78 @@ void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
   }
 }
 
+// 8 pixels, dest aligned 16.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked) __declspec(align(16))
+void I422ToRGB565Row_Unaligned_SSSE3(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     uint8* rgb565_buf,
+                                     int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // rgb565
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pxor       xmm4, xmm4
+    pcmpeqb    xmm5, xmm5       // generate mask 0x0000001f
+    psrld      xmm5, 27
+    pcmpeqb    xmm6, xmm6       // generate mask 0x000007e0
+    psrld      xmm6, 26
+    pslld      xmm6, 5
+    pcmpeqb    xmm7, xmm7       // generate mask 0xfffff800
+    pslld      xmm7, 11
+
+    align      16
+ convertloop:
+    READYUV422
+    YUVTORGB
+
+    // Step 3: Weave into RRGB
+    punpcklbw  xmm0, xmm1           // BG
+    punpcklbw  xmm2, xmm2           // RR
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
+    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
+
+    // Step 3b: RRGB -> RGB565
+    movdqa     xmm3, xmm0    // B  first 4 pixels of argb
+    movdqa     xmm2, xmm0    // G
+    pslld      xmm0, 8       // R
+    psrld      xmm3, 3       // B
+    psrld      xmm2, 5       // G
+    psrad      xmm0, 16      // R
+    pand       xmm3, xmm5    // B
+    pand       xmm2, xmm6    // G
+    pand       xmm0, xmm7    // R
+    por        xmm3, xmm2    // BG
+    por        xmm0, xmm3    // BGR
+    movdqa     xmm3, xmm1    // B  next 4 pixels of argb
+    movdqa     xmm2, xmm1    // G
+    pslld      xmm1, 8       // R
+    psrld      xmm3, 3       // B
+    psrld      xmm2, 5       // G
+    psrad      xmm1, 16      // R
+    pand       xmm3, xmm5    // B
+    pand       xmm2, xmm6    // G
+    pand       xmm1, xmm7    // R
+    por        xmm3, xmm2    // BG
+    por        xmm1, xmm3    // BGR
+    packssdw   xmm0, xmm1
+    sub        ecx, 8
+    movdqu     [edx], xmm0   // store 8 pixels of RGB565
+    lea        edx, [edx + 16]
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
 
 // 8 pixels, dest aligned 16.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
@@ -4419,6 +4564,7 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
     ret
   }
 }
+
 #endif  // _M_IX86
 
 #ifdef __cplusplus
