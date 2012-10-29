@@ -19,7 +19,7 @@ SECTION .text
 
 ; cglobal numeric constants are parameters, gpr regs, mm regs
 
-; void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix);
+; void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix)
 
 %macro YUY2TOYROW 2-3
 cglobal %1ToYRow%3, 3, 3, 3, src_yuy2, dst_y, pix
@@ -65,7 +65,7 @@ YUY2TOYROW YUY2,u,_Unaligned
 YUY2TOYROW UYVY,a,
 YUY2TOYROW UYVY,u,_Unaligned
 
-; void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+; void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix)
 
 %macro SPLITUV 1-2
 cglobal SplitUV%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
