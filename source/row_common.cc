@@ -542,6 +542,80 @@ void I422ToRAWRow_C(const uint8* y_buf,
   }
 }
 
+void I422ToARGB4444Row_C(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* dst_argb4444,
+                         int width) {
+  uint8 b0;
+  uint8 g0;
+  uint8 r0;
+  uint8 b1;
+  uint8 g1;
+  uint8 r1;
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    YuvPixel2(y_buf[1], u_buf[0], v_buf[0], &b1, &g1, &r1);
+    b0 = b0 >> 4;
+    g0 = g0 >> 4;
+    r0 = r0 >> 4;
+    b1 = b1 >> 4;
+    g1 = g1 >> 4;
+    r1 = r1 >> 4;
+    *reinterpret_cast<uint32*>(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
+        (b1 << 16) | (g1 << 20) | (r1 << 24) | 0xf000f000;
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    dst_argb4444 += 4;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    b0 = b0 >> 4;
+    g0 = g0 >> 4;
+    r0 = r0 >> 4;
+    *reinterpret_cast<uint16*>(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
+        0xf000;
+  }
+}
+
+void I422ToARGB1555Row_C(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* dst_argb1555,
+                         int width) {
+  uint8 b0;
+  uint8 g0;
+  uint8 r0;
+  uint8 b1;
+  uint8 g1;
+  uint8 r1;
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    YuvPixel2(y_buf[1], u_buf[0], v_buf[0], &b1, &g1, &r1);
+    b0 = b0 >> 3;
+    g0 = g0 >> 3;
+    r0 = r0 >> 3;
+    b1 = b1 >> 3;
+    g1 = g1 >> 3;
+    r1 = r1 >> 3;
+    *reinterpret_cast<uint32*>(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
+        (b1 << 16) | (g1 << 21) | (r1 << 26) | 0x80008000;
+    y_buf += 2;
+    u_buf += 1;
+    v_buf += 1;
+    dst_argb1555 += 4;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], u_buf[0], v_buf[0], &b0, &g0, &r0);
+    b0 = b0 >> 3;
+    g0 = g0 >> 3;
+    r0 = r0 >> 3;
+    *reinterpret_cast<uint16*>(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
+        0x8000;
+  }
+}
+
 void I422ToRGB565Row_C(const uint8* y_buf,
                       const uint8* u_buf,
                       const uint8* v_buf,
@@ -1201,7 +1275,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
       dst_frame[3] = src_y[0];  // duplicate last y
     }
 }
-
+#if !defined(YUV_DISABLE_ASM)
 #if defined(__x86_64__) || defined(__i386__)
 void I422ToRGB565Row_SSSE3(const uint8* y_buf,
                            const uint8* u_buf,
@@ -1212,18 +1286,51 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
   I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
   ARGBToRGB565Row_SSE2(row, rgb_buf, width);
 }
-
-void I422ToRGB565Row_Unaligned_SSSE3(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     uint8* rgb_buf,
-                                     int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
-  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
-}
 #endif  // defined(__x86_64__) || defined(__i386__)
 
+#if defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+void I422ToARGB1555Row_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
+  ARGBToARGB1555Row_SSE2(row, rgb_buf, width);
+}
+
+void I422ToARGB4444Row_SSSE3(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
+  ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
+}
+#endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+#if defined(__ARM_NEON__)
+void I422ToARGB1555Row_NEON(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_NEON(y_buf, u_buf, v_buf, row, width);
+  ARGBToARGB1555Row_NEON(row, rgb_buf, width);
+}
+
+void I422ToARGB4444Row_NEON(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             uint8* rgb_buf,
+                             int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  I422ToARGBRow_NEON(y_buf, u_buf, v_buf, row, width);
+  ARGBToARGB4444Row_NEON(row, rgb_buf, width);
+}
+#endif  // defined(__ARM_NEON__)
+#endif  // !defined(YUV_DISABLE_ASM)
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
