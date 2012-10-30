@@ -1275,7 +1275,10 @@ void I422ToUYVYRow_C(const uint8* src_y,
       dst_frame[3] = src_y[0];  // duplicate last y
     }
 }
+
 #if !defined(YUV_DISABLE_ASM)
+// row_win.cc has asm version, but GCC uses 2 step wrapper.  5% slower.
+// TODO(fbarchard): Handle width > kMaxStride here instead of calling code.
 #if defined(__x86_64__) || defined(__i386__)
 void I422ToRGB565Row_SSSE3(const uint8* y_buf,
                            const uint8* u_buf,
@@ -1309,28 +1312,8 @@ void I422ToARGB4444Row_SSSE3(const uint8* y_buf,
   ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
 }
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-#if defined(__ARM_NEON__)
-void I422ToARGB1555Row_NEON(const uint8* y_buf,
-                             const uint8* u_buf,
-                             const uint8* v_buf,
-                             uint8* rgb_buf,
-                             int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  I422ToARGBRow_NEON(y_buf, u_buf, v_buf, row, width);
-  ARGBToARGB1555Row_NEON(row, rgb_buf, width);
-}
-
-void I422ToARGB4444Row_NEON(const uint8* y_buf,
-                             const uint8* u_buf,
-                             const uint8* v_buf,
-                             uint8* rgb_buf,
-                             int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-  I422ToARGBRow_NEON(y_buf, u_buf, v_buf, row, width);
-  ARGBToARGB4444Row_NEON(row, rgb_buf, width);
-}
-#endif  // defined(__ARM_NEON__)
 #endif  // !defined(YUV_DISABLE_ASM)
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
