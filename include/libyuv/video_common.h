@@ -38,44 +38,54 @@ extern "C" {
 //   http://msdn.microsoft.com/library/windows/desktop/dd206750.aspx#nv12
 //   http://people.xiph.org/~xiphmont/containers/nut/nut4cc.txt
 
+// FourCC codes grouped according to implementation efficiency.
+// Primary formats should convert in 1 efficient step.
+// Secondary formats are converted in 2 steps.
+// Auxilliary formats call primary converters.
 enum FourCC {
-  // Canonical fourcc codes used in our code.
+  // 9 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
   FOURCC_I422 = FOURCC('I', '4', '2', '2'),
   FOURCC_I444 = FOURCC('I', '4', '4', '4'),
   FOURCC_I411 = FOURCC('I', '4', '1', '1'),
   FOURCC_I400 = FOURCC('I', '4', '0', '0'),
-  FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
-  FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
-  FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
-  FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
+  FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
+  FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
+
+  // 3 Secondary YUV formats: 2 row biplanar, 1 packed.
   FOURCC_M420 = FOURCC('M', '4', '2', '0'),
   FOURCC_Q420 = FOURCC('Q', '4', '2', '0'),
   FOURCC_V210 = FOURCC('V', '2', '1', '0'),
-  FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
+
+  // 9 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp.
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
+  FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
+  FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
   FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565.
   FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555.
   FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444.
-  FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
-  FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
-  FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
-  FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
-  FOURCC_H264 = FOURCC('H', '2', '6', '4'),
-  // Next four are Bayer RGB formats. The four characters define the order of
-  // the colours in each 2x2 pixel grid, going left-to-right and top-to-bottom.
+
+  // 4 Secondary RGB formats: 4 Bayer Patterns.
   FOURCC_RGGB = FOURCC('R', 'G', 'G', 'B'),
   FOURCC_BGGR = FOURCC('B', 'G', 'G', 'R'),
   FOURCC_GRBG = FOURCC('G', 'R', 'B', 'G'),
   FOURCC_GBRG = FOURCC('G', 'B', 'R', 'G'),
 
-  // Aliases for canonical fourcc codes, replaced with their canonical
-  // equivalents by CanonicalFourCC().
+  // 1 Primary Compressed YUV format.
+  FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
+
+  // 3 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
+  FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
+  FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
+  FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
+  FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
+
+  // 12 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
   FOURCC_YU16 = FOURCC('Y', 'U', '1', '6'),  // Alias for I422.
   FOURCC_YU24 = FOURCC('Y', 'U', '2', '4'),  // Alias for I444.
@@ -89,6 +99,9 @@ enum FourCC {
   FOURCC_RGB3 = FOURCC('R', 'G', 'B', '3'),  // Alias for RAW.
   FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG.
 
+  // 1 Auxiliary compressed YUV format set aside for capturer.
+  FOURCC_H264 = FOURCC('H', '2', '6', '4'),
+
   // Match any fourcc.
   FOURCC_ANY  = 0xFFFFFFFF,
 };
@@ -100,37 +113,32 @@ enum FourCCBpp {
   FOURCC_BPP_I444 = 24,
   FOURCC_BPP_I411 = 12,
   FOURCC_BPP_I400 = 8,
-  FOURCC_BPP_YU12 = 12,
-  FOURCC_BPP_YV12 = 12,
-  FOURCC_BPP_YV16 = 16,
-  FOURCC_BPP_YV24 = 24,
+  FOURCC_BPP_NV21 = 12,
+  FOURCC_BPP_NV12 = 12,
   FOURCC_BPP_YUY2 = 16,
   FOURCC_BPP_UYVY = 16,
   FOURCC_BPP_M420 = 12,
   FOURCC_BPP_Q420 = 12,
   FOURCC_BPP_V210 = 22,  // 128 / 6 actually.
-  FOURCC_BPP_24BG = 24,
   FOURCC_BPP_ARGB = 32,
   FOURCC_BPP_BGRA = 32,
   FOURCC_BPP_ABGR = 32,
   FOURCC_BPP_RGBA = 32,
+  FOURCC_BPP_24BG = 24,
+  FOURCC_BPP_RAW  = 24,
   FOURCC_BPP_RGBP = 16,
   FOURCC_BPP_RGBO = 16,
   FOURCC_BPP_R444 = 16,
-  FOURCC_BPP_RAW  = 24,
-  FOURCC_BPP_NV21 = 12,
-  FOURCC_BPP_NV12 = 12,
-  FOURCC_BPP_MJPG = 0,  // 0 means unknown.
-  FOURCC_BPP_H264 = 0,
-  // Next four are Bayer RGB formats. The four characters define the order of
-  // the colours in each 2x2 pixel grid, going left-to-right and top-to-bottom.
   FOURCC_BPP_RGGB = 8,
   FOURCC_BPP_BGGR = 8,
   FOURCC_BPP_GRBG = 8,
   FOURCC_BPP_GBRG = 8,
-
-  // Aliases for canonical fourcc codes, replaced with their canonical
-  // equivalents by CanonicalFourCC().
+  FOURCC_BPP_YV12 = 12,
+  FOURCC_BPP_YV16 = 16,
+  FOURCC_BPP_YV24 = 24,
+  FOURCC_BPP_YU12 = 12,
+  FOURCC_BPP_MJPG = 0,  // 0 means unknown.
+  FOURCC_BPP_H264 = 0,
   FOURCC_BPP_IYUV = 12,
   FOURCC_BPP_YU16 = 16,
   FOURCC_BPP_YU24 = 24,
@@ -147,6 +155,7 @@ enum FourCCBpp {
   // Match any fourcc.
   FOURCC_BPP_ANY  = 0,  // 0 means unknown.
 };
+
 
 // Converts fourcc aliases into canonical ones.
 LIBYUV_API uint32 CanonicalFourCC(uint32 fourcc);
