@@ -18,6 +18,7 @@ LOCAL_SRC_FILES := \
     source/planar_functions.cc  \
     source/rotate.cc            \
     source/rotate_argb.cc       \
+    source/row_any.cc           \
     source/row_common.cc        \
     source/row_mips.cc          \
     source/row_posix.cc         \

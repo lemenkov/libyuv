@@ -82,6 +82,7 @@
         'source/rotate_argb.cc',
         'source/rotate_mips.cc',
         'source/rotate_neon.cc',
+        'source/row_any.cc',
         'source/row_common.cc',
         'source/row_mips.cc',
         'source/row_neon.cc',
