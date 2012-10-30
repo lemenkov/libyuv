@@ -675,6 +675,13 @@ int M420ToARGB(const uint8* src_m420, int src_stride_m420,
       }
     }
   }
+#elif defined(HAS_NV12TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToARGBRow = NV12ToARGBRow_NEON;
+    }
+  }
 #endif
 
   for (int y = 0; y < height - 1; y += 2) {
