@@ -473,6 +473,68 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
 }
 #endif  // HAS_NV21TOARGBROW_NEON
 
+#ifdef HAS_NV12TORGB565ROW_NEON
+void NV12ToRGB565Row_NEON(const uint8* src_y,
+                        const uint8* src_uv,
+                        uint8* dst_rgb565,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%4]                    \n"
+    "vld1.u8    {d25}, [%5]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READNV12
+    YUV422TORGB
+    "subs       %3, %3, #8                     \n"
+    ARGBTORGB565
+    "vst1.8     {q0}, [%2]!                    \n"  // store 8 pixels RGB565.
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_uv),    // %1
+      "+r"(dst_rgb565),  // %2
+      "+r"(width)      // %3
+    : "r"(&kUVToRB),   // %4
+      "r"(&kUVToG)     // %5
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_NV12TORGB565ROW_NEON
+
+#ifdef HAS_NV21TORGB565ROW_NEON
+void NV21ToRGB565Row_NEON(const uint8* src_y,
+                        const uint8* src_uv,
+                        uint8* dst_rgb565,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%4]                    \n"
+    "vld1.u8    {d25}, [%5]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READNV21
+    YUV422TORGB
+    "subs       %3, %3, #8                     \n"
+    ARGBTORGB565
+    "vst1.8     {q0}, [%2]!                    \n"  // store 8 pixels RGB565.
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_uv),    // %1
+      "+r"(dst_rgb565),  // %2
+      "+r"(width)      // %3
+    : "r"(&kUVToRB),   // %4
+      "r"(&kUVToG)     // %5
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_NV21TORGB565ROW_NEON
+
 #ifdef HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.

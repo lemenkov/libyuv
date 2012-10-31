@@ -710,6 +710,74 @@ void NV21ToARGBRow_C(const uint8* y_buf,
   }
 }
 
+void NV12ToRGB565Row_C(const uint8* y_buf,
+                       const uint8* uv_buf,
+                       uint8* dst_rgb565,
+                       int width) {
+  uint8 b0;
+  uint8 g0;
+  uint8 r0;
+  uint8 b1;
+  uint8 g1;
+  uint8 r1;
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], uv_buf[0], uv_buf[1], &b0, &g0, &r0);
+    YuvPixel2(y_buf[1], uv_buf[0], uv_buf[1], &b1, &g1, &r1);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    b1 = b1 >> 3;
+    g1 = g1 >> 2;
+    r1 = r1 >> 3;
+    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+        (b1 << 16) | (g1 << 21) | (r1 << 27);
+    y_buf += 2;
+    uv_buf += 2;
+    dst_rgb565 += 4;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], uv_buf[0], uv_buf[1], &b0, &g0, &r0);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
+  }
+}
+
+void NV21ToRGB565Row_C(const uint8* y_buf,
+                       const uint8* vu_buf,
+                       uint8* dst_rgb565,
+                       int width) {
+  uint8 b0;
+  uint8 g0;
+  uint8 r0;
+  uint8 b1;
+  uint8 g1;
+  uint8 r1;
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel2(y_buf[0], vu_buf[1], vu_buf[0], &b0, &g0, &r0);
+    YuvPixel2(y_buf[1], vu_buf[1], vu_buf[0], &b1, &g1, &r1);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    b1 = b1 >> 3;
+    g1 = g1 >> 2;
+    r1 = r1 >> 3;
+    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+        (b1 << 16) | (g1 << 21) | (r1 << 27);
+    y_buf += 2;
+    vu_buf += 2;
+    dst_rgb565 += 4;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel2(y_buf[0], vu_buf[1], vu_buf[0], &b0, &g0, &r0);
+    b0 = b0 >> 3;
+    g0 = g0 >> 2;
+    r0 = r0 >> 3;
+    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
+  }
+}
+
 void I422ToBGRARow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
@@ -1311,6 +1379,24 @@ void I422ToARGB4444Row_SSSE3(const uint8* y_buf,
   I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
   ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
 }
+void NV12ToRGB565Row_SSSE3(const uint8* src_y,
+                           const uint8* src_uv,
+                           uint8* dst_rgb565,
+                           int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  NV12ToARGBRow_SSSE3(src_y, src_uv, row, width);
+  ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
+}
+
+void NV21ToRGB565Row_SSSE3(const uint8* src_y,
+                           const uint8* src_vu,
+                           uint8* dst_rgb565,
+                           int width) {
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  NV21ToARGBRow_SSSE3(src_y, src_vu, row, width);
+  ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
+}
+
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(YUV_DISABLE_ASM)
 
