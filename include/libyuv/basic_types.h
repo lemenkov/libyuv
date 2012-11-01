@@ -30,7 +30,7 @@ typedef __int64 int64;
 #endif
 #define INT64_F "I64"
 #else  // COMPILER_MSVC
-#ifdef __LP64__
+#if defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
 typedef unsigned long uint64;  // NOLINT
 typedef long int64;  // NOLINT
 #ifndef INT64_C
@@ -40,7 +40,7 @@ typedef long int64;  // NOLINT
 #define UINT64_C(x) x ## UL
 #endif
 #define INT64_F "l"
-#else  // __LP64__
+#else  // defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
 typedef unsigned long long uint64;  // NOLINT
 typedef long long int64;  // NOLINT
 #ifndef INT64_C

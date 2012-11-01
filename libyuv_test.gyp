@@ -26,6 +26,7 @@
         'unit_test/unit_test.h',
 
         # sources
+        'unit_test/basictypes_test.cc',
         'unit_test/compare_test.cc',
         'unit_test/convert_test.cc',
         'unit_test/cpu_test.cc',
