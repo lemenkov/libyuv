@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdlib.h>
-#include <string.h>
-
 #include "../unit_test/unit_test.h"
 #include "libyuv/basic_types.h"
 
@@ -27,14 +24,22 @@ TEST_F(libyuvTest, Endian) {
 }
 
 TEST_F(libyuvTest, SizeOfTypes) {
-  EXPECT_EQ(1u, sizeof(int8));  // NOLINT Using sizeof(type)
-  EXPECT_EQ(1u, sizeof(uint8));  // NOLINT
-  EXPECT_EQ(2u, sizeof(int16));  // NOLINT
-  EXPECT_EQ(2u, sizeof(uint16));  // NOLINT
-  EXPECT_EQ(4u, sizeof(int32));  // NOLINT
-  EXPECT_EQ(4u, sizeof(uint32));  // NOLINT
-  EXPECT_EQ(8u, sizeof(int64));  // NOLINT
-  EXPECT_EQ(8u, sizeof(uint64));  // NOLINT
+  int8 i8;
+  uint8 u8;
+  int16 i16;
+  uint16 u16;
+  int32 i32;
+  uint32 u32;
+  int64 i64;
+  uint64 u64;
+  EXPECT_EQ(1u, sizeof(i8));
+  EXPECT_EQ(1u, sizeof(u8));
+  EXPECT_EQ(2u, sizeof(i16));
+  EXPECT_EQ(2u, sizeof(u16));
+  EXPECT_EQ(4u, sizeof(i32));
+  EXPECT_EQ(4u, sizeof(u32));
+  EXPECT_EQ(8u, sizeof(i64));
+  EXPECT_EQ(8u, sizeof(u64));
 }
 
 TEST_F(libyuvTest, SizeOfConstants) {
