@@ -24,14 +24,14 @@ TEST_F(libyuvTest, Endian) {
 }
 
 TEST_F(libyuvTest, SizeOfTypes) {
-  int8 i8;
-  uint8 u8;
-  int16 i16;
-  uint16 u16;
-  int32 i32;
-  uint32 u32;
-  int64 i64;
-  uint64 u64;
+  int8 i8 = -1;
+  uint8 u8 = 1u;
+  int16 i16 = -1;
+  uint16 u16 = 1u;
+  int32 i32 = -1;
+  uint32 u32 = 1u;
+  int64 i64 = -1;
+  uint64 u64 = 1u;
   EXPECT_EQ(1u, sizeof(i8));
   EXPECT_EQ(1u, sizeof(u8));
   EXPECT_EQ(2u, sizeof(i16));
@@ -40,6 +40,14 @@ TEST_F(libyuvTest, SizeOfTypes) {
   EXPECT_EQ(4u, sizeof(u32));
   EXPECT_EQ(8u, sizeof(i64));
   EXPECT_EQ(8u, sizeof(u64));
+  EXPECT_GT(0, i8);
+  EXPECT_LT(0u, u8);
+  EXPECT_GT(0, i16);
+  EXPECT_LT(0u, u16);
+  EXPECT_GT(0, i32);
+  EXPECT_LT(0u, u32);
+  EXPECT_GT(0, i64);
+  EXPECT_LT(0u, u64);
 }
 
 TEST_F(libyuvTest, SizeOfConstants) {
