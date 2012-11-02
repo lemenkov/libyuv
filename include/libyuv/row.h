@@ -184,6 +184,8 @@ extern "C" {
 #define HAS_ARGBTOYROW_NEON
 #define HAS_MERGEUV_NEON
 #define HAS_YTOARGBROW_NEON
+#define HAS_I444TOARGBROW_NEON
+#define HAS_I411TOARGBROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -231,7 +233,17 @@ typedef uint32 uvec32[4];
 #define OMITFP __attribute__((optimize("omit-frame-pointer")))
 #endif
 
+void I444ToARGBRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
 void I422ToARGBRow_NEON(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width);
+void I411ToARGBRow_NEON(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
@@ -757,7 +769,17 @@ void RGBAToUVRow_Any_SSSE3(const uint8* src_argb0, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 void ARGBToYRow_Any_NEON(const uint8* src_argb, uint8* dst_y, int pix);
 
+void I444ToARGBRow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
 void I422ToARGBRow_Any_NEON(const uint8* y_buf,
+                            const uint8* u_buf,
+                            const uint8* v_buf,
+                            uint8* rgb_buf,
+                            int width);
+void I411ToARGBRow_Any_NEON(const uint8* y_buf,
                             const uint8* u_buf,
                             const uint8* v_buf,
                             uint8* rgb_buf,

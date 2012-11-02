@@ -24,6 +24,22 @@ extern "C" {
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
     "vld1.u32   {d2[1]}, [%2]!                 \n"
 
+// Read 8 Y, 2 U and 2 V from 422
+#define READYUV411                                                             \
+    "vld1.u8    {d0}, [%0]!                    \n"                             \
+    "vld1.u16   {d2[0]}, [%1]!                 \n"                             \
+    "vld1.u16   {d2[1]}, [%2]!                 \n"                             \
+    "vmov.u8    d3, d2                         \n"                             \
+    "vzip.u8    d2, d3                         \n"
+
+// Read 8 Y, 8 U and 8 V from 444
+#define READYUV444                                                             \
+    "vld1.u8    {d0}, [%0]!                    \n"                             \
+    "vld1.u8    {d2}, [%1]!                    \n"                             \
+    "vld1.u8    {d3}, [%2]!                    \n"                             \
+    "vpaddl.u8  q1, q1                         \n"                             \
+    "vrshrn.u16 d2, q1, #1                     \n"
+
 // Read 8 Y, and set 4 U and 4 V to 128
 #define READYUV400                                                             \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
@@ -79,6 +95,39 @@ static const vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
                              0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 
+#ifdef HAS_I444TOARGBROW_NEON
+void I444ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%5]                    \n"
+    "vld1.u8    {d25}, [%6]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUV444
+    YUV422TORGB
+    "subs       %4, %4, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_u),     // %1
+      "+r"(src_v),     // %2
+      "+r"(dst_argb),  // %3
+      "+r"(width)      // %4
+    : "r"(&kUVToRB),   // %5
+      "r"(&kUVToG)     // %6
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_I444TOARGBROW_NEON
+
 #ifdef HAS_I422TOARGBROW_NEON
 void I422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
@@ -111,6 +160,39 @@ void I422ToARGBRow_NEON(const uint8* src_y,
   );
 }
 #endif  // HAS_I422TOARGBROW_NEON
+
+#ifdef HAS_I411TOARGBROW_NEON
+void I411ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%5]                    \n"
+    "vld1.u8    {d25}, [%6]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUV411
+    YUV422TORGB
+    "subs       %4, %4, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_u),     // %1
+      "+r"(src_v),     // %2
+      "+r"(dst_argb),  // %3
+      "+r"(width)      // %4
+    : "r"(&kUVToRB),   // %5
+      "r"(&kUVToG)     // %6
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_I411TOARGBROW_NEON
 
 #ifdef HAS_I422TOBGRAROW_NEON
 void I422ToBGRARow_NEON(const uint8* src_y,

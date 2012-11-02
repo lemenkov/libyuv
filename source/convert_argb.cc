@@ -80,6 +80,13 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
       }
     }
   }
+#elif defined(HAS_I444TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    I444ToARGBRow = I444ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I444ToARGBRow = I444ToARGBRow_NEON;
+    }
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
@@ -183,6 +190,13 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
       if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
         I411ToARGBRow = I411ToARGBRow_SSSE3;
       }
+    }
+  }
+#elif defined(HAS_I411TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    I411ToARGBRow = I411ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I411ToARGBRow = I411ToARGBRow_NEON;
     }
   }
 #endif

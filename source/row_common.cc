@@ -467,6 +467,29 @@ static __inline void YuvPixel2(uint8 y, uint8 u, uint8 v,
   *r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
 }
 
+#if defined(__ARM_NEON__)
+// C mimic assembly.
+// TODO(fbarchard): Remove subsampling from Neon.
+void I444ToARGBRow_C(const uint8* y_buf,
+                     const uint8* u_buf,
+                     const uint8* v_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    uint8 u = (u_buf[0] + u_buf[1] + 1) >> 1;
+    uint8 v = (v_buf[0] + v_buf[1] + 1) >> 1;
+    YuvPixel(y_buf[0], u, v, rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(y_buf[1], u, v, rgb_buf + 4, 24, 16, 8, 0);
+    y_buf += 2;
+    u_buf += 2;
+    v_buf += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(y_buf[0], u_buf[0], v_buf[0], rgb_buf + 0, 24, 16, 8, 0);
+  }
+}
+#else
 void I444ToARGBRow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
@@ -480,7 +503,7 @@ void I444ToARGBRow_C(const uint8* y_buf,
     rgb_buf += 4;  // Advance 1 pixel.
   }
 }
-
+#endif
 // Also used for 420
 void I422ToARGBRow_C(const uint8* y_buf,
                      const uint8* u_buf,
