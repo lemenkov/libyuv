@@ -2334,12 +2334,13 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
   asm volatile (
+    "pxor      %%xmm5,%%xmm5                   \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
-    "mov       $0x10001000,%%eax               \n"
+    "mov       $0x00100010,%%eax               \n"
     "movd      %%eax,%%xmm3                    \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-    "mov       $0x012a012a,%%eax               \n"
+    "mov       $0x004a004a,%%eax               \n"
     "movd      %%eax,%%xmm2                    \n"
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
     ".p2align  4                               \n"
@@ -2347,9 +2348,10 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
     "movq      (%0),%%xmm0                     \n"
     "lea       0x8(%0),%0                      \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
     "psubusw   %%xmm3,%%xmm0                   \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "pmullw    %%xmm2,%%xmm0                   \n"
+    "psrlw     $6, %%xmm0                      \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
 
     // Step 2: Weave into ARGB

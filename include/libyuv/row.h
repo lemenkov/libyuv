@@ -183,6 +183,7 @@ extern "C" {
 #define HAS_ARGBTOARGB4444ROW_NEON
 #define HAS_ARGBTOYROW_NEON
 #define HAS_MERGEUV_NEON
+#define HAS_YTOARGBROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -716,6 +717,9 @@ void I422ToRAWRow_Any_SSSE3(const uint8* y_buf,
                             uint8* rgb_buf,
                             int width);
 void YToARGBRow_SSE2(const uint8* y_buf,
+                     uint8* argb_buf,
+                     int width);
+void YToARGBRow_NEON(const uint8* y_buf,
                      uint8* argb_buf,
                      int width);
 

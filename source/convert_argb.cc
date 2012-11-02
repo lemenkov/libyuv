@@ -220,6 +220,10 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     YToARGBRow = YToARGBRow_SSE2;
   }
+#elif defined(HAS_YTOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    YToARGBRow = YToARGBRow_NEON;
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {

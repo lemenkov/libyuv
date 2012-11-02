@@ -2483,12 +2483,13 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
   __asm {
+    pxor       xmm5, xmm5
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
-    mov        eax,0x10001000
+    mov        eax,0x00100010
     movd       xmm3,eax
     pshufd     xmm3,xmm3,0
-    mov        eax,0x012a012a
+    mov        eax,0x004a004a       // 74
     movd       xmm2,eax
     pshufd     xmm2,xmm2,0
     mov        eax, [esp + 4]       // Y
@@ -2500,9 +2501,10 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
     movq       xmm0, qword ptr [eax]
     lea        eax, [eax + 8]
-    punpcklbw  xmm0, xmm0           // Y.Y
+    punpcklbw  xmm0, xmm5           // 0.Y
     psubusw    xmm0, xmm3
-    pmulhuw    xmm0, xmm2
+    pmullw     xmm0, xmm2
+    psrlw      xmm0, 6
     packuswb   xmm0, xmm0           // G
 
     // Step 2: Weave into ARGB
