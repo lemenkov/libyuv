@@ -24,6 +24,11 @@ extern "C" {
     "vld1.u32   {d2[0]}, [%1]!                 \n"                             \
     "vld1.u32   {d2[1]}, [%2]!                 \n"
 
+// Read 8 Y, and set 4 U and 4 V to 128
+#define READYUV400                                                             \
+    "vld1.u8    {d0}, [%0]!                    \n"                             \
+    "vmov.u8    d2, #128                       \n"
+
 // Read 8 Y and 4 UV from NV12
 #define READNV12                                                               \
     "vld1.u8    {d0}, [%0]!                    \n"                             \
@@ -410,6 +415,58 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
   );
 }
 #endif  // HAS_I422TOARGB4444ROW_NEON
+
+#ifdef HAS_YTOARGBROW_NEON
+void YToARGBRow_NEON(const uint8* src_y,
+                     uint8* dst_argb,
+                     int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%3]                    \n"
+    "vld1.u8    {d25}, [%4]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUV400
+    YUV422TORGB
+    "subs       %2, %2, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(dst_argb),  // %1
+      "+r"(width)      // %2
+    : "r"(&kUVToRB),   // %3
+      "r"(&kUVToG)     // %4
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_YTOARGBROW_NEON
+
+#ifdef HAS_I400TOARGBROW_NEON
+void I400ToARGBRow_NEON(const uint8* src_y,
+                        uint8* dst_argb,
+                        int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+    "vmov.u8    d23, #255                      \n"
+  "1:                                          \n"
+    "vld1.u8    {d20}, [%0]!                   \n"
+    "vmov       d21, d20                       \n"
+    "vmov       d22, d20                       \n"
+    "subs       %2, %2, #8                     \n"
+    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(dst_argb),  // %1
+      "+r"(width)      // %2
+    :
+    : "cc", "memory", "d20", "d21", "d22", "d23"
+  );
+}
+#endif  // HAS_I400TOARGBROW_NEON
 
 #ifdef HAS_NV12TOARGBROW_NEON
 void NV12ToARGBRow_NEON(const uint8* src_y,

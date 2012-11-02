@@ -248,13 +248,23 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix) =
       I400ToARGBRow_C;
 #if defined(HAS_I400TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8) &&
-      IS_ALIGNED(src_y, 8) && IS_ALIGNED(src_stride_y, 8) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    I400ToARGBRow = I400ToARGBRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8) {
+    I400ToARGBRow = I400ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      I400ToARGBRow = I400ToARGBRow_Unaligned_SSE2;
+      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        I400ToARGBRow = I400ToARGBRow_SSE2;
+      }
+    }
+  }
+#elif defined(HAS_I400TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    I400ToARGBRow = I400ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I400ToARGBRow = I400ToARGBRow_NEON;
+    }
   }
 #endif
-
   for (int y = 0; y < height; ++y) {
     I400ToARGBRow(src_y, dst_argb, width);
     src_y += src_stride_y;

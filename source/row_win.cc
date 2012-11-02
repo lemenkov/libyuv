@@ -131,6 +131,7 @@ static const uvec8 kShuffleMaskARGBToRAW_0 = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
 };
 
+// Duplicates gray value 3 times and fills in alpha opaque.
 __declspec(naked) __declspec(align(16))
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
@@ -152,6 +153,35 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     por        xmm1, xmm5
     movdqa     [edx], xmm0
     movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void I400ToARGBRow_Unaligned_SSE2(const uint8* src_y, uint8* dst_argb,
+                                  int pix) {
+  __asm {
+    mov        eax, [esp + 4]        // src_y
+    mov        edx, [esp + 8]        // dst_argb
+    mov        ecx, [esp + 12]       // pix
+    pcmpeqb    xmm5, xmm5            // generate mask 0xff000000
+    pslld      xmm5, 24
+
+    align      16
+  convertloop:
+    movq       xmm0, qword ptr [eax]
+    lea        eax,  [eax + 8]
+    punpcklbw  xmm0, xmm0
+    movdqa     xmm1, xmm0
+    punpcklwd  xmm0, xmm0
+    punpckhwd  xmm1, xmm1
+    por        xmm0, xmm5
+    por        xmm1, xmm5
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop

@@ -116,6 +116,7 @@ NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
 // SSSE3 RGB24 is multiple of 16 pixels, aligned source and destination.
 // SSE2 RGB565 is multiple of 4 pixels, ARGB must be aligned to 16 bytes.
 // NEON RGB24 is multiple of 8 pixels, unaligned source and destination.
+// I400 To ARGB does multiple of 8 pixels with SIMD and remainder with C.
 #define RGBANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, MASK, SBPP, BPP)          \
     void NAMEANY(const uint8* argb_buf,                                        \
                  uint8* rgb_buf,                                               \
@@ -136,6 +137,8 @@ RGBANY(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, ARGBToARGB1555Row_C,
        3, 4, 2)
 RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
        3, 4, 2)
+RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_Unaligned_SSE2, I400ToARGBRow_C,
+       7, 1, 4)
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
 RGBANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 7, 4, 3)
@@ -146,6 +149,8 @@ RGBANY(ARGBToARGB1555Row_Any_NEON, ARGBToARGB1555Row_NEON, ARGBToARGB1555Row_C,
        7, 4, 2)
 RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
        7, 4, 2)
+RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C,
+       7, 1, 4)
 #endif
 #undef RGBANY
 

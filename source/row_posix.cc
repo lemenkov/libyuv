@@ -171,6 +171,37 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   );
 }
 
+void I400ToARGBRow_Unaligned_SSE2(const uint8* src_y, uint8* dst_argb,
+                                  int pix) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pslld     $0x18,%%xmm5                    \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%0),%%xmm0                     \n"
+    "lea       0x8(%0),%0                      \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklwd %%xmm0,%%xmm0                   \n"
+    "punpckhwd %%xmm1,%%xmm1                   \n"
+    "por       %%xmm5,%%xmm0                   \n"
+    "por       %%xmm5,%%xmm1                   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "sub       $0x8,%2                         \n"
+    "jg        1b                              \n"
+  : "+r"(src_y),     // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm5                       \n"
