@@ -801,6 +801,34 @@ void NV21ToRGB565Row_C(const uint8* y_buf,
   }
 }
 
+void YUY2ToARGBRow_C(const uint8* yuy2_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel(yuy2_buf[0], yuy2_buf[1], yuy2_buf[3], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(yuy2_buf[2], yuy2_buf[1], yuy2_buf[3], rgb_buf + 4, 24, 16, 8, 0);
+    yuy2_buf += 4;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(yuy2_buf[0], yuy2_buf[1], yuy2_buf[3], rgb_buf + 0, 24, 16, 8, 0);
+  }
+}
+
+void UYVYToARGBRow_C(const uint8* uyvy_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel(uyvy_buf[1], uyvy_buf[0], uyvy_buf[2], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(uyvy_buf[3], uyvy_buf[0], uyvy_buf[2], rgb_buf + 4, 24, 16, 8, 0);
+    uyvy_buf += 4;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(uyvy_buf[1], uyvy_buf[0], uyvy_buf[2], rgb_buf + 0, 24, 16, 8, 0);
+  }
+}
+
 void I422ToBGRARow_C(const uint8* y_buf,
                      const uint8* u_buf,
                      const uint8* v_buf,
@@ -1402,6 +1430,7 @@ void I422ToARGB4444Row_SSSE3(const uint8* y_buf,
   I422ToARGBRow_SSSE3(y_buf, u_buf, v_buf, row, width);
   ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
 }
+
 void NV12ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_uv,
                            uint8* dst_rgb565,
@@ -1418,6 +1447,50 @@ void NV21ToRGB565Row_SSSE3(const uint8* src_y,
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   NV21ToARGBRow_SSSE3(src_y, src_vu, row, width);
   ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
+}
+
+void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
+                         uint8* dst_argb,
+                         int width) {
+  SIMD_ALIGNED(uint8 rowy[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowu[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowv[kMaxStride]);
+  YUY2ToUV422Row_SSE2(src_yuy2, rowu, rowv, width);
+  YUY2ToYRow_SSE2(src_yuy2, rowy, width);
+  I422ToARGBRow_SSSE3(rowy, rowu, rowv, dst_argb, width);
+}
+
+void YUY2ToARGBRow_Unaligned_SSSE3(const uint8* src_yuy2,
+                                   uint8* dst_argb,
+                                   int width) {
+  SIMD_ALIGNED(uint8 rowy[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowu[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowv[kMaxStride]);
+  YUY2ToUV422Row_Unaligned_SSE2(src_yuy2, rowu, rowv, width);
+  YUY2ToYRow_Unaligned_SSE2(src_yuy2, rowy, width);
+  I422ToARGBRow_Unaligned_SSSE3(rowy, rowu, rowv, dst_argb, width);
+}
+
+void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
+                         uint8* dst_argb,
+                         int width) {
+  SIMD_ALIGNED(uint8 rowy[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowu[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowv[kMaxStride]);
+  UYVYToUV422Row_SSE2(src_uyvy, rowu, rowv, width);
+  UYVYToYRow_SSE2(src_uyvy, rowy, width);
+  I422ToARGBRow_SSSE3(rowy, rowu, rowv, dst_argb, width);
+}
+
+void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
+                                   uint8* dst_argb,
+                                   int width) {
+  SIMD_ALIGNED(uint8 rowy[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowu[kMaxStride]);
+  SIMD_ALIGNED(uint8 rowv[kMaxStride]);
+  UYVYToUV422Row_Unaligned_SSE2(src_uyvy, rowu, rowv, width);
+  UYVYToYRow_Unaligned_SSE2(src_uyvy, rowy, width);
+  I422ToARGBRow_Unaligned_SSSE3(rowy, rowu, rowv, dst_argb, width);
 }
 
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)

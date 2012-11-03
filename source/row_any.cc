@@ -114,6 +114,7 @@ NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
 #endif  // HAS_NV12TORGB565ROW_NEON
 #undef NVANY
 
+// YUY2 to RGB does 8 at a time.
 // RGB to RGB does multiple of 16 pixels with SIMD and remainder with C.
 // SSSE3 RGB24 is multiple of 16 pixels, aligned source and destination.
 // SSE2 RGB565 is multiple of 4 pixels, ARGB must be aligned to 16 bytes.
@@ -141,6 +142,10 @@ RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
        3, 4, 2)
 RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_Unaligned_SSE2, I400ToARGBRow_C,
        7, 1, 4)
+RGBANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_Unaligned_SSSE3, YUY2ToARGBRow_C,
+       7, 2, 4)
+RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_Unaligned_SSSE3, UYVYToARGBRow_C,
+       7, 2, 4)
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
 RGBANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 7, 4, 3)
@@ -153,10 +158,15 @@ RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
        7, 4, 2)
 RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C,
        7, 1, 4)
+RGBANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C,
+       7, 2, 4)
+RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C,
+       7, 2, 4)
 #endif
 #undef RGBANY
 
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.
+// TODO(fbarchard): Use last 16 method for all unsubsampled conversions.
 #define YANY(NAMEANY, ARGBTOY_SIMD, BPP, NUM)                                  \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       ARGBTOY_SIMD(src_argb, dst_y, width - NUM);                              \

@@ -51,7 +51,7 @@ extern "C" {
     "vld1.u8    {d2}, [%1]!                    \n"                             \
     "vmov.u8    d3, d2                         \n"/* split odd/even uv apart */\
     "vuzp.u8    d2, d3                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"                             \
+    "vtrn.u32   d2, d3                         \n"
 
 // Read 8 Y and 4 VU from NV21
 #define READNV21                                                               \
@@ -59,7 +59,22 @@ extern "C" {
     "vld1.u8    {d2}, [%1]!                    \n"                             \
     "vmov.u8    d3, d2                         \n"/* split odd/even uv apart */\
     "vuzp.u8    d3, d2                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"                             \
+    "vtrn.u32   d2, d3                         \n"
+
+// Read 8 YUY2
+#define READYUY2                                                               \
+    "vld2.u8    {d0, d2}, [%0]!                \n"                             \
+    "vmov.u8    d3, d2                         \n"                             \
+    "vuzp.u8    d2, d3                         \n"                             \
+    "vtrn.u32   d2, d3                         \n"
+
+// Read 8 UYVY
+#define READUYVY                                                               \
+    "vld2.u8    {d2, d3}, [%0]!                \n"                             \
+    "vmov.u8    d0, d3                         \n"                             \
+    "vmov.u8    d3, d2                         \n"                             \
+    "vuzp.u8    d2, d3                         \n"                             \
+    "vtrn.u32   d2, d3                         \n"
 
 #define YUV422TORGB                                                            \
     "veor.u8    d2, d26                        \n"/*subtract 128 from u and v*/\
@@ -673,6 +688,64 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
   );
 }
 #endif  // HAS_NV21TORGB565ROW_NEON
+
+#ifdef HAS_YUY2TOARGBROW_NEON
+void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
+                        uint8* dst_argb,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%3]                    \n"
+    "vld1.u8    {d25}, [%4]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READYUY2
+    YUV422TORGB
+    "subs       %2, %2, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_yuy2),  // %0
+      "+r"(dst_argb),  // %1
+      "+r"(width)      // %2
+    : "r"(&kUVToRB),   // %3
+      "r"(&kUVToG)     // %4
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_YUY2TOARGBROW_NEON
+
+#ifdef HAS_UYVYTOARGBROW_NEON
+void UYVYToARGBRow_NEON(const uint8* src_uyvy,
+                        uint8* dst_argb,
+                        int width) {
+  asm volatile (
+    "vld1.u8    {d24}, [%3]                    \n"
+    "vld1.u8    {d25}, [%4]                    \n"
+    "vmov.u8    d26, #128                      \n"
+    "vmov.u16   q14, #74                       \n"
+    "vmov.u16   q15, #16                       \n"
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    READUYVY
+    YUV422TORGB
+    "subs       %2, %2, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_uyvy),  // %0
+      "+r"(dst_argb),  // %1
+      "+r"(width)      // %2
+    : "r"(&kUVToRB),   // %3
+      "r"(&kUVToG)     // %4
+    : "cc", "memory", "q0", "q1", "q2", "q3",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_UYVYTOARGBROW_NEON
 
 #ifdef HAS_SPLITUV_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
