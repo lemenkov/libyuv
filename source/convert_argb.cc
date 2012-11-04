@@ -747,7 +747,8 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
     YUY2ToARGBRow = YUY2ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       YUY2ToARGBRow = YUY2ToARGBRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
         YUY2ToARGBRow = YUY2ToARGBRow_SSSE3;
       }
     }
@@ -790,7 +791,8 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
     UYVYToARGBRow = UYVYToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       UYVYToARGBRow = UYVYToARGBRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
         UYVYToARGBRow = UYVYToARGBRow_SSSE3;
       }
     }
