@@ -617,7 +617,7 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
   void (*NV21ToRGB565Row)(const uint8* y_buf,
-                          const uint8* vu_buf,
+                          const uint8* src_vu,
                           uint8* rgb_buf,
                           int width) = NV21ToRGB565Row_C;
 #if defined(HAS_NV21TORGB565ROW_SSSE3)

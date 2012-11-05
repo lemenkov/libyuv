@@ -225,8 +225,8 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_MIRRORROW_MIPS_DSPR2
 
-#ifdef HAS_MIRRORROWUV_MIPS_DSPR2
-void MirrorRowUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+#ifdef HAS_MirrorUVRow_MIPS_DSPR2
+void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                             int width) {
   int x = 0;
   int y = 0;
@@ -315,7 +315,7 @@ void MirrorRowUV_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
         "t5", "t7", "t8", "t9"
   );
 }
-#endif  // HAS_MIRRORROWUV_MIPS_DSPR2
+#endif  // HAS_MirrorUVRow_MIPS_DSPR2
 
 
 

@@ -18,14 +18,26 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Alias.
-#define ARGBToARGB ARGBCopy
-
 // Copy ARGB to ARGB.
+#define ARGBToARGB ARGBCopy
 LIBYUV_API
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
+
+// Convert ARGB To BGRA. (alias)
+#define ARGBToBGRA BGRAToARGB
+LIBYUV_API
+int BGRAToARGB(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
+// Convert ARGB To ABGR. (alias)
+#define ARGBToABGR ABGRToARGB
+LIBYUV_API
+int ABGRToARGB(const uint8* src_frame, int src_stride_frame,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
 
 // Convert ARGB To RGBA.
 LIBYUV_API
@@ -63,34 +75,75 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb4444, int dst_stride_argb4444,
                    int width, int height);
 
+// Convert ARGB To I444.
+LIBYUV_API
+int ARGBToI444(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert ARGB To I422.
+LIBYUV_API
+int ARGBToI422(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert ARGB To I420. (also in convert.h)
+LIBYUV_API
+int ARGBToI420(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
+// Convert ARGB To I411.
+LIBYUV_API
+int ARGBToI411(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height);
+
 // Convert ARGB to I400.
 LIBYUV_API
 int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// ARGB little endian (bgra in memory) to I422.
+// Convert ARGB To NV12.
 LIBYUV_API
-int ARGBToI422(const uint8* src_frame, int src_stride_frame,
+int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
+               uint8* dst_uv, int dst_stride_uv,
                int width, int height);
 
-// Aliases.
-#define ARGBToBGRA BGRAToARGB
-#define ARGBToABGR ABGRToARGB
-
-// BGRA little endian (argb in memory) to ARGB.
+// Convert ARGB To NV21.
 LIBYUV_API
-int BGRAToARGB(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_argb, int dst_stride_argb,
+int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_vu, int dst_stride_vu,
                int width, int height);
 
-// ABGR little endian (rgba in memory) to ARGB.
+// Convert ARGB To NV21.
 LIBYUV_API
-int ABGRToARGB(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_argb, int dst_stride_argb,
+int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_vu, int dst_stride_vu,
+               int width, int height);
+
+// Convert ARGB To YUY2.
+LIBYUV_API
+int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_yuy2, int dst_stride_yuy2,
+               int width, int height);
+
+// Convert ARGB To UYVY.
+LIBYUV_API
+int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_uyvy, int dst_stride_uyvy,
                int width, int height);
 
 #ifdef __cplusplus

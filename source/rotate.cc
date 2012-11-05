@@ -45,7 +45,7 @@ extern "C" {
 #define HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 #define HAS_MIRRORROW_UV_NEON
-void MirrorRowUV_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width);
+void MirrorUVRow_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width);
 #define HAS_TRANSPOSE_WX8_NEON
 void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width);
@@ -1049,21 +1049,21 @@ void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height) {
   void (*MirrorRowUV)(const uint8* src, uint8* dst_u, uint8* dst_v, int width) =
-      MirrorRowUV_C;
+      MirrorUVRow_C;
 #if defined(HAS_MIRRORROW_UV_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    MirrorRowUV = MirrorRowUV_NEON;
+    MirrorRowUV = MirrorUVRow_NEON;
   }
 #elif defined(HAS_MIRRORROW_UV_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
-    MirrorRowUV = MirrorRowUV_SSSE3;
+    MirrorRowUV = MirrorUVRow_SSSE3;
   }
-#elif defined(HAS_MIRRORROWUV_MIPS_DSPR2)
+#elif defined(HAS_MirrorUVRow_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
-    MirrorRowUV = MirrorRowUV_MIPS_DSPR2;
+    MirrorRowUV = MirrorUVRow_MIPS_DSPR2;
   }
 #endif
 

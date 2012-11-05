@@ -405,8 +405,8 @@ int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
 // Convert RGB24 to ARGB.
 LIBYUV_API
 int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
+                uint8* dst_argb, int dst_stride_argb,
+                int width, int height) {
   if (!src_rgb24 || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -417,16 +417,22 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
     src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;
     src_stride_rgb24 = -src_stride_rgb24;
   }
-  void (*RGB24ToARGBRow)(const uint8* src_rgb24, uint8* dst_argb, int pix) =
+  void (*RGB24ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       RGB24ToARGBRow_C;
 #if defined(HAS_RGB24TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
+    RGB24ToARGBRow = RGB24ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
+    }
   }
 #elif defined(HAS_RGB24TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    RGB24ToARGBRow = RGB24ToARGBRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    RGB24ToARGBRow = RGB24ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RGB24ToARGBRow = RGB24ToARGBRow_NEON;
+    }
   }
 #endif
 
@@ -441,8 +447,8 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
 // Convert RAW to ARGB.
 LIBYUV_API
 int RAWToARGB(const uint8* src_raw, int src_stride_raw,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height) {
   if (!src_raw || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -453,16 +459,22 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
     src_raw = src_raw + (height - 1) * src_stride_raw;
     src_stride_raw = -src_stride_raw;
   }
-  void (*RAWToARGBRow)(const uint8* src_raw, uint8* dst_argb, int pix) =
+  void (*RAWToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       RAWToARGBRow_C;
 #if defined(HAS_RAWTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    RAWToARGBRow = RAWToARGBRow_SSSE3;
+    RAWToARGBRow = RAWToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RAWToARGBRow = RAWToARGBRow_SSSE3;
+    }
   }
 #elif defined(HAS_RAWTOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    RAWToARGBRow = RAWToARGBRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    RAWToARGBRow = RAWToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RAWToARGBRow = RAWToARGBRow_NEON;
+    }
   }
 #endif
 
@@ -492,10 +504,19 @@ int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
   void (*RGB565ToARGBRow)(const uint8* src_rgb565, uint8* dst_argb, int pix) =
       RGB565ToARGBRow_C;
 #if defined(HAS_RGB565TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
+    RGB565ToARGBRow = RGB565ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
+    }
+  }
+#elif defined(HAS_RGB565TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    RGB565ToARGBRow = RGB565ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RGB565ToARGBRow = RGB565ToARGBRow_NEON;
+    }
   }
 #endif
 

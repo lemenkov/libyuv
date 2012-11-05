@@ -66,8 +66,8 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
 
 // Legacy API.  Deprecated.
 LIBYUV_API
-int ScaleOffset(const uint8* src, int src_width, int src_height,
-                uint8* dst, int dst_width, int dst_height, int dst_yoffset,
+int ScaleOffset(const uint8* src_i420, int src_width, int src_height,
+                uint8* dst_i420, int dst_width, int dst_height, int dst_yoffset,
                 bool interpolate);
 
 // For testing, allow disabling of specialized scalers.
