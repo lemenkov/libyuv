@@ -1781,15 +1781,15 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm0,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm0,(%[dst_argb])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -1832,15 +1832,15 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     "pshufb    %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm6,%%xmm1                   \n"
     "palignr   $0xc,%%xmm0,%%xmm1              \n"
-    "movq      %%xmm0,(%[rgb24_buf])           \n"
-    "movdqu    %%xmm1,0x8(%[rgb24_buf])        \n"
-    "lea       0x18(%[rgb24_buf]),%[rgb24_buf] \n"
+    "movq      %%xmm0,(%[dst_rgb24])           \n"
+    "movdqu    %%xmm1,0x8(%[dst_rgb24])        \n"
+    "lea       0x18(%[dst_rgb24]),%[dst_rgb24] \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [rgb24_buf]"+r"(rgb24_buf),  // %[rgb24_buf]
+    [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
 #ifndef __APPLE__
@@ -1887,15 +1887,15 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     "pshufb    %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm6,%%xmm1                   \n"
     "palignr   $0xc,%%xmm0,%%xmm1              \n"
-    "movq      %%xmm0,(%[raw_buf])             \n"
-    "movdqu    %%xmm1,0x8(%[raw_buf])          \n"
-    "lea       0x18(%[raw_buf]),%[raw_buf]     \n"
+    "movq      %%xmm0,(%[dst_raw])             \n"
+    "movdqu    %%xmm1,0x8(%[dst_raw])          \n"
+    "lea       0x18(%[dst_raw]),%[dst_raw]     \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [raw_buf]"+r"(raw_buf),  // %[raw_buf]
+    [dst_raw]"+r"(dst_raw),  // %[dst_raw]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
 #ifndef __APPLE__
@@ -1927,15 +1927,15 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm0,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm0,(%[dst_argb])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -1963,15 +1963,15 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm0,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm0,(%[dst_argb])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -1997,14 +1997,14 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm0,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm0,(%[dst_argb])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2015,7 +2015,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
-                                const uint8* src_vu,
+                                const uint8* uv_buf,
                                 uint8* dst_argb,
                                 int width) {
   asm volatile (
@@ -2030,14 +2030,14 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqa    %%xmm0,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm0,(%[dst_argb])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
-    [uv_buf]"+r"(vu_buf),    // %[uv_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [uv_buf]"+r"(uv_buf),    // %[uv_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2065,15 +2065,15 @@ void OMITFP I444ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm0,(%[dst_argb])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2101,15 +2101,15 @@ void OMITFP I422ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm0,(%[dst_argb])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2137,15 +2137,15 @@ void OMITFP I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm0,(%[dst_argb])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2171,14 +2171,14 @@ void OMITFP NV12ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm0,(%[dst_argb])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2189,7 +2189,7 @@ void OMITFP NV12ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 }
 
 void OMITFP NV21ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
-                                          const uint8* src_vu,
+                                          const uint8* uv_buf,
                                           uint8* dst_argb,
                                           int width) {
   asm volatile (
@@ -2204,14 +2204,14 @@ void OMITFP NV21ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm2,%%xmm0                   \n"
     "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm0,(%[dst_argb])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_argb])        \n"
+    "lea       0x20(%[dst_argb]),%[dst_argb]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
-    [uv_buf]"+r"(vu_buf),    // %[uv_buf]
-    [argb_buf]"+r"(argb_buf),  // %[argb_buf]
+    [uv_buf]"+r"(uv_buf),    // %[uv_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2240,15 +2240,15 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm5,%%xmm0                   \n"
     "punpcklwd %%xmm1,%%xmm5                   \n"
     "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm5,(%[argb_buf])            \n"
-    "movdqa    %%xmm0,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm5,(%[dst_bgra])            \n"
+    "movdqa    %%xmm0,0x10(%[dst_bgra])        \n"
+    "lea       0x20(%[dst_bgra]),%[dst_bgra]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(bgra_buf),  // %[argb_buf]
+    [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2276,15 +2276,15 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm2,%%xmm1                   \n"
     "punpcklwd %%xmm0,%%xmm2                   \n"
     "punpckhwd %%xmm0,%%xmm1                   \n"
-    "movdqa    %%xmm2,(%[argb_buf])            \n"
-    "movdqa    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm2,(%[dst_abgr])            \n"
+    "movdqa    %%xmm1,0x10(%[dst_abgr])        \n"
+    "lea       0x20(%[dst_abgr]),%[dst_abgr]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(abgr_buf),  // %[argb_buf]
+    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2313,15 +2313,15 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm5,%%xmm0                   \n"
     "punpcklwd %%xmm1,%%xmm5                   \n"
     "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm5,(%[argb_buf])            \n"
-    "movdqa    %%xmm0,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm5,(%[dst_rgba])            \n"
+    "movdqa    %%xmm0,0x10(%[dst_rgba])        \n"
+    "lea       0x20(%[dst_rgba]),%[dst_rgba]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(rgba_buf),  // %[argb_buf]
+    [dst_rgba]"+r"(dst_rgba),  // %[dst_rgba]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2350,15 +2350,15 @@ void OMITFP I422ToBGRARow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm5,%%xmm0                   \n"
     "punpcklwd %%xmm1,%%xmm5                   \n"
     "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm5,(%[argb_buf])            \n"
-    "movdqu    %%xmm0,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm5,(%[dst_bgra])            \n"
+    "movdqu    %%xmm0,0x10(%[dst_bgra])        \n"
+    "lea       0x20(%[dst_bgra]),%[dst_bgra]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(bgra_buf),  // %[argb_buf]
+    [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2386,15 +2386,15 @@ void OMITFP I422ToABGRRow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm2,%%xmm1                   \n"
     "punpcklwd %%xmm0,%%xmm2                   \n"
     "punpckhwd %%xmm0,%%xmm1                   \n"
-    "movdqu    %%xmm2,(%[argb_buf])            \n"
-    "movdqu    %%xmm1,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqu    %%xmm2,(%[dst_abgr])            \n"
+    "movdqu    %%xmm1,0x10(%[dst_abgr])        \n"
+    "lea       0x20(%[dst_abgr]),%[dst_abgr]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(abgr_buf),  // %[argb_buf]
+    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2423,15 +2423,15 @@ void OMITFP I422ToRGBARow_Unaligned_SSSE3(const uint8* y_buf,
     "movdqa    %%xmm5,%%xmm0                   \n"
     "punpcklwd %%xmm1,%%xmm5                   \n"
     "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm5,(%[argb_buf])            \n"
-    "movdqa    %%xmm0,0x10(%[argb_buf])        \n"
-    "lea       0x20(%[argb_buf]),%[argb_buf]   \n"
+    "movdqa    %%xmm5,(%[dst_rgba])            \n"
+    "movdqa    %%xmm0,0x10(%[dst_rgba])        \n"
+    "lea       0x20(%[dst_rgba]),%[dst_rgba]   \n"
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [argb_buf]"+r"(rgba_buf),  // %[argb_buf]
+    [dst_rgba]"+r"(dst_rgba),  // %[dst_rgba]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
   : "memory", "cc"
@@ -2445,7 +2445,7 @@ void OMITFP I422ToRGBARow_Unaligned_SSSE3(const uint8* y_buf,
 
 #ifdef HAS_YTOARGBROW_SSE2
 void YToARGBRow_SSE2(const uint8* y_buf,
-                     uint8* rgb_buf,
+                     uint8* dst_argb,
                      int width) {
   asm volatile (
     "pxor      %%xmm5,%%xmm5                   \n"
@@ -2481,9 +2481,9 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
-  : "+r"(y_buf),    // %0
-    "+r"(rgb_buf),  // %1
-    "+rm"(width)    // %2
+  : "+r"(y_buf),     // %0
+    "+r"(dst_argb),  // %1
+    "+rm"(width)     // %2
   :
   : "memory", "cc", "eax"
 #if defined(__SSE2__)
@@ -4138,7 +4138,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
-                        uint8* dst_argb, const float* uv_dudv, int width) {
+                        uint8* dst_argb, const float* src_dudv, int width) {
   intptr_t src_argb_stride_temp = src_argb_stride;
   intptr_t temp = 0;
   asm volatile (
@@ -4228,7 +4228,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
   : "+r"(src_argb),  // %0
     "+r"(src_argb_stride_temp),  // %1
     "+r"(dst_argb),  // %2
-    "+r"(uv_dudv),   // %3
+    "+r"(src_dudv),   // %3
     "+rm"(width),    // %4
     "+r"(temp)   // %5
   :
