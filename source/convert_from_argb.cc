@@ -120,6 +120,9 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUV422Row = ARGBToUV422Row_NEON;
+      }
     }
   }
 #endif

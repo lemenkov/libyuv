@@ -255,14 +255,14 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
 }
 
 static __inline int RGBToY(uint8 r, uint8 g, uint8 b) {
-  return (( 66 * r + 129 * g +  25 * b + 128) >> 8) + 16;
+  return (66 * r + 129 * g +  25 * b + 0x1080) >> 8;
 }
 
 static __inline int RGBToU(uint8 r, uint8 g, uint8 b) {
-  return ((-38 * r -  74 * g + 112 * b + 128) >> 8) + 128;
+  return (112 * b - 74 * g - 38 * r + 0x8080) >> 8;
 }
 static __inline int RGBToV(uint8 r, uint8 g, uint8 b) {
-  return ((112 * r -  94 * g -  18 * b + 128) >> 8) + 128;
+  return (112 * r - 94 * g - 18 * b + 0x8080) >> 8;
 }
 
 #define MAKEROWY(NAME, R, G, B, BPP) \
