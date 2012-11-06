@@ -1572,6 +1572,46 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 #endif  // HAS_ARGBTOYROW_NEON
 
+#ifdef HAS_ARGBTOYROW_NEON
+void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
+                         int pix) {
+  asm volatile (
+    "vmov.u8    d24, #112 / 2                  \n"  // UB / VR  coefficient
+    "vmov.u8    d25, #74 / 2                   \n"  // UG -coefficient
+    "vmov.u8    d26, #38 / 2                   \n"  // UR -coefficient
+    "vmov.u8    d27, #18 / 2                   \n"  // VB -coefficient
+    "vmov.u8    d28, #94 / 2                   \n"  // VG -coefficient
+    "vmov.u16   q15, #0x8080 / 2               \n"  // 128
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q2, d0, d24                    \n"  // B
+    "vmlsl.u8   q2, d1, d25                    \n"  // G
+    "vmlsl.u8   q2, d2, d26                    \n"  // R
+    "vadd.u16   q2, q2, q15                    \n"  // +128 -> unsigned
+
+    "vmull.u8   q3, d2, d24                    \n"  // R
+    "vmlsl.u8   q3, d1, d28                    \n"  // G
+    "vmlsl.u8   q3, d0, d27                    \n"  // B
+    "vadd.u16   q3, q3, q15                    \n"  // +128 -> unsigned
+
+    "vqshrn.u16  d0, q2, #7                    \n"  // 16 bit to 8 bit U
+    "vqshrn.u16  d1, q3, #7                    \n"  // 16 bit to 8 bit V
+
+    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels U.
+    "vst1.8     {d1}, [%2]!                    \n"  // store 8 pixels U.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_u),     // %1
+    "+r"(dst_v),     // %2
+    "+r"(pix)        // %3
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q4"
+  );
+}
+#endif  // HAS_ARGBTOYROW_NEON
+
 #ifdef HAS_RGB565TOYROW_NEON
 void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix) {
   asm volatile (

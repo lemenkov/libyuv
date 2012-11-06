@@ -38,6 +38,8 @@ int ARGBToI444(const uint8* src_argb, int src_stride_argb,
   }
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
+  void (*ARGBToUV444Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
+                         int pix) = ARGBToUV444Row_C;
 #if defined(HAS_ARGBTOYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
@@ -54,12 +56,13 @@ int ARGBToI444(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+      ARGBToUV444Row = ARGBToUV444Row_NEON;
     }
   }
 #endif
 
   for (int y = 0; y < height; ++y) {
-    ARGBToUV444Row_C(src_argb, dst_u, dst_v, width);
+    ARGBToUV444Row(src_argb, dst_u, dst_v, width);
     ARGBToYRow(src_argb, dst_y, width);
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
