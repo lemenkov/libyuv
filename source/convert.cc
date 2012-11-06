@@ -1453,12 +1453,13 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
   return 0;
 }
 
+// Convert ARGB1555 to I420.
 LIBYUV_API
 int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
-                 uint8* dst_y, int dst_stride_y,
-                 uint8* dst_u, int dst_stride_u,
-                 uint8* dst_v, int dst_stride_v,
-                 int width, int height) {
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
   if (!src_argb1555 || !dst_y || !dst_u || !dst_v ||
       width <= 0 || height == 0 ||
       width * 4 > kMaxStride) {
@@ -1471,43 +1472,71 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
     src_stride_argb1555 = -src_stride_argb1555;
   }
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  void (*ARGB1555ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
-
-  ARGB1555ToARGBRow = ARGB1555ToARGBRow_C;
+  void (*ARGB1555ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
+      ARGB1555ToARGBRow_C;
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      TestReadSafe(src_argb1555, src_stride_argb1555, width, height, 2, 16)) {
-    ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGB1555TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToARGBRow = ARGB1555ToARGBRow_NEON;
+    }
   }
 #endif
 
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width);
-
-  ARGBToYRow = ARGBToYRow_C;
-  ARGBToUVRow = ARGBToUVRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
+                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+#if defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_SSSE3;
+    }
+  }
+#endif
+
+#if defined(HAS_ARGB1555TOYROW_NEON)
+  void (*ARGB1555ToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGB1555ToYRow_C;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB1555ToYRow = ARGB1555ToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToYRow = ARGB1555ToYRow_NEON;
+    }
+  }
+#else
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+    ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
       if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
         ARGBToYRow = ARGBToYRow_SSSE3;
       }
     }
   }
-#endif
+#endif  // HAS_ARGBTOUVROW_SSSE3
+#endif  // HAS_ARGB1555TOYROW_NEON
 
   for (int y = 0; y < height - 1; y += 2) {
     ARGB1555ToARGBRow(src_argb1555, row, width);
-    ARGB1555ToARGBRow(src_argb1555 + src_stride_argb1555,
-                      row + kMaxStride, width);
+    ARGB1555ToARGBRow(src_argb1555 + src_stride_argb1555, row + kMaxStride, width);
     ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+#if defined(HAS_ARGB1555TOYROW_NEON)
+    ARGB1555ToYRow(src_argb1555, dst_y, width);
+    ARGB1555ToYRow(src_argb1555 + src_stride_argb1555, dst_y + dst_stride_y, width);
+#else
     ARGBToYRow(row, dst_y, width);
     ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
+#endif
     src_argb1555 += src_stride_argb1555 * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
@@ -1516,11 +1545,16 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
   if (height & 1) {
     ARGB1555ToARGBRow_C(src_argb1555, row, width);
     ARGBToUVRow(row, 0, dst_u, dst_v, width);
+#if defined(HAS_ARGB1555TOYROW_NEON)
+    ARGB1555ToYRow(src_argb1555, dst_y, width);
+#else
     ARGBToYRow(row, dst_y, width);
+#endif
   }
   return 0;
 }
 
+// Convert ARGB4444 to I420.
 LIBYUV_API
 int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
                    uint8* dst_y, int dst_stride_y,
@@ -1539,43 +1573,71 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     src_stride_argb4444 = -src_stride_argb4444;
   }
   SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  void (*ARGB4444ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix);
-
-  ARGB4444ToARGBRow = ARGB4444ToARGBRow_C;
+  void (*ARGB4444ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
+      ARGB4444ToARGBRow_C;
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      TestReadSafe(src_argb4444, src_stride_argb4444, width, height, 2, 16)) {
-    ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGB4444TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToARGBRow = ARGB4444ToARGBRow_NEON;
+    }
   }
 #endif
 
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix);
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width);
-
-  ARGBToYRow = ARGBToYRow_C;
-  ARGBToUVRow = ARGBToUVRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
+                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+#if defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_SSSE3;
+    }
+  }
+#endif
+
+#if defined(HAS_ARGB4444TOYROW_NEON)
+  void (*ARGB4444ToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGB4444ToYRow_C;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB4444ToYRow = ARGB4444ToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToYRow = ARGB4444ToYRow_NEON;
+    }
+  }
+#else
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
+#if defined(HAS_ARGBTOUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+    ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
       ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
       if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
         ARGBToYRow = ARGBToYRow_SSSE3;
       }
     }
   }
-#endif
+#endif  // HAS_ARGBTOUVROW_SSSE3
+#endif  // HAS_ARGB4444TOYROW_NEON
 
   for (int y = 0; y < height - 1; y += 2) {
     ARGB4444ToARGBRow(src_argb4444, row, width);
-    ARGB4444ToARGBRow(src_argb4444 + src_stride_argb4444,
-                      row + kMaxStride, width);
+    ARGB4444ToARGBRow(src_argb4444 + src_stride_argb4444, row + kMaxStride, width);
     ARGBToUVRow(row, kMaxStride, dst_u, dst_v, width);
+#if defined(HAS_ARGB4444TOYROW_NEON)
+    ARGB4444ToYRow(src_argb4444, dst_y, width);
+    ARGB4444ToYRow(src_argb4444 + src_stride_argb4444, dst_y + dst_stride_y, width);
+#else
     ARGBToYRow(row, dst_y, width);
     ARGBToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
+#endif
     src_argb4444 += src_stride_argb4444 * 2;
     dst_y += dst_stride_y * 2;
     dst_u += dst_stride_u;
@@ -1584,7 +1646,11 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
   if (height & 1) {
     ARGB4444ToARGBRow_C(src_argb4444, row, width);
     ARGBToUVRow(row, 0, dst_u, dst_v, width);
+#if defined(HAS_ARGB4444TOYROW_NEON)
+    ARGB4444ToYRow(src_argb4444, dst_y, width);
+#else
     ARGBToYRow(row, dst_y, width);
+#endif
   }
   return 0;
 }

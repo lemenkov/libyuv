@@ -202,6 +202,8 @@ extern "C" {
 #define HAS_ARGB1555TOARGBROW_NEON
 #define HAS_ARGB4444TOARGBROW_NEON
 #define HAS_RGB565TOYROW_NEON
+#define HAS_ARGB1555TOYROW_NEON
+#define HAS_ARGB4444TOYROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -346,6 +348,8 @@ void RGBAToYRow_NEON(const uint8* src_rgba, uint8* dst_y, int pix);
 void RGB24ToYRow_NEON(const uint8* src_rgb24, uint8* dst_y, int pix);
 void RAWToYRow_NEON(const uint8* src_raw, uint8* dst_y, int pix);
 void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix);
+void ARGB1555ToYRow_NEON(const uint8* src_argb1555, uint8* dst_y, int pix);
+void ARGB4444ToYRow_NEON(const uint8* src_argb4444, uint8* dst_y, int pix);
 void ARGBToYRow_C(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_C(const uint8* src_bgra, uint8* dst_y, int pix);
 void ABGRToYRow_C(const uint8* src_abgr, uint8* dst_y, int pix);
@@ -353,6 +357,8 @@ void RGBAToYRow_C(const uint8* src_rgba, uint8* dst_y, int pix);
 void RGB24ToYRow_C(const uint8* src_rgb24, uint8* dst_y, int pix);
 void RAWToYRow_C(const uint8* src_raw, uint8* dst_y, int pix);
 void RGB565ToYRow_C(const uint8* src_rgb565, uint8* dst_y, int pix);
+void ARGB1555ToYRow_C(const uint8* src_argb1555, uint8* dst_y, int pix);
+void ARGB4444ToYRow_C(const uint8* src_argb4444, uint8* dst_y, int pix);
 void ARGBToYRow_Any_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_Any_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix);
 void ABGRToYRow_Any_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix);
@@ -366,6 +372,8 @@ void RGBAToYRow_Any_NEON(const uint8* src_rgba, uint8* dst_y, int pix);
 void RGB24ToYRow_Any_NEON(const uint8* src_rgb24, uint8* dst_y, int pix);
 void RAWToYRow_Any_NEON(const uint8* src_raw, uint8* dst_y, int pix);
 void RGB565ToYRow_Any_NEON(const uint8* src_rgb565, uint8* dst_y, int pix);
+void ARGB1555ToYRow_Any_NEON(const uint8* src_argb1555, uint8* dst_y, int pix);
+void ARGB4444ToYRow_Any_NEON(const uint8* src_argb4444, uint8* dst_y, int pix);
 
 void ARGBToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);

@@ -1554,7 +1554,7 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
     "vmov.u8    d27, #16                       \n"  // Add 16 constant
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     "vmull.u8   q2, d0, d24                    \n"  // B
     "vmlal.u8   q2, d1, d25                    \n"  // G
@@ -1582,7 +1582,7 @@ void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix) {
     "vmov.u8    d27, #16                       \n"  // Add 16 constant
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld1.8     {q0}, [%0]!                    \n"  // load 8 pixels of RGB565.
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 RGB565 pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     RGB565TOARGB
     "vmull.u8   q2, d0, d24                    \n"  // B
@@ -1601,6 +1601,61 @@ void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix) {
 }
 #endif  // HAS_RGB565TOYROW_NEON
 
+#ifdef HAS_ARGB1555TOYROW_NEON
+void ARGB1555ToYRow_NEON(const uint8* src_argb1555, uint8* dst_y, int pix) {
+  asm volatile (
+    "vmov.u8    d24, #13                       \n"  // B * 0.1016 coefficient
+    "vmov.u8    d25, #65                       \n"  // G * 0.5078 coefficient
+    "vmov.u8    d26, #33                       \n"  // R * 0.2578 coefficient
+    "vmov.u8    d27, #16                       \n"  // Add 16 constant
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB1555 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    ARGB1555TOARGB
+    "vmull.u8   q2, d0, d24                    \n"  // B
+    "vmlal.u8   q2, d1, d25                    \n"  // G
+    "vmlal.u8   q2, d2, d26                    \n"  // R
+    "vqrshrun.s16 d0, q2, #7                   \n"  // 16 bit to 8 bit Y
+    "vqadd.u8   d0, d27                        \n"
+    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+    "bgt        1b                             \n"
+  : "+r"(src_argb1555),  // %0
+    "+r"(dst_y),         // %1
+    "+r"(pix)            // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q12", "q13"
+  );
+}
+#endif  // HAS_ARGB1555TOYROW_NEON
+
+#ifdef HAS_ARGB4444TOYROW_NEON
+void ARGB4444ToYRow_NEON(const uint8* src_argb4444, uint8* dst_y, int pix) {
+  asm volatile (
+    "vmov.u8    d24, #13                       \n"  // B * 0.1016 coefficient
+    "vmov.u8    d25, #65                       \n"  // G * 0.5078 coefficient
+    "vmov.u8    d26, #33                       \n"  // R * 0.2578 coefficient
+    "vmov.u8    d27, #16                       \n"  // Add 16 constant
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB4444 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    ARGB4444TOARGB
+    "vmull.u8   q2, d0, d24                    \n"  // B
+    "vmlal.u8   q2, d1, d25                    \n"  // G
+    "vmlal.u8   q2, d2, d26                    \n"  // R
+    "vqrshrun.s16 d0, q2, #7                   \n"  // 16 bit to 8 bit Y
+    "vqadd.u8   d0, d27                        \n"
+    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+    "bgt        1b                             \n"
+  : "+r"(src_argb4444),  // %0
+    "+r"(dst_y),         // %1
+    "+r"(pix)            // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q12", "q13"
+  );
+}
+#endif  // HAS_ARGB4444TOYROW_NEON
 
 #ifdef HAS_BGRATOYROW_NEON
 void BGRAToYRow_NEON(const uint8* src_bgra, uint8* dst_y, int pix) {
