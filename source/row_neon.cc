@@ -1113,7 +1113,6 @@ void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int pix) {
 #endif  // HAS_RAWTOARGBROW_NEON
 
 #ifdef HAS_RGB565TOARGBROW_NEON
-
 #define RGB565TOARGB                                                           \
     "vmovn.u16  d4, q0                         \n"  /* B xxxBBBBB           */ \
     "vshrn.u16  d5, q0, #5                     \n"  /* G xxGGGGGG           */ \
@@ -1133,7 +1132,7 @@ void RGB565ToARGBRow_NEON(const uint8* src_rgb565, uint8* dst_argb, int pix) {
     "vmov.u8    d7, #7                         \n"  // 5 bit mask
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld1.8     {q0}, [%0]!                    \n"  // load 8 pixels of RGB565.
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 RGB565 pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     RGB565TOARGB
     "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 pixels of ARGB.
@@ -1146,6 +1145,72 @@ void RGB565ToARGBRow_NEON(const uint8* src_rgb565, uint8* dst_argb, int pix) {
   );
 }
 #endif  // HAS_RGB565TOARGBROW_NEON
+
+#ifdef HAS_ARGB1555TOARGBROW_NEON
+#define ARGB1555TOARGB                                                         \
+    "vshrn.u16  d7, q0, #8                     \n"  /* A Arrrrrxx           */ \
+    "vshr.u8    d6, d7, #2                     \n"  /* R xxxRRRRR           */ \
+    "vshrn.u16  d5, q0, #5                     \n"  /* G xxxGGGGG           */ \
+    "vmovn.u16  d4, q0                         \n"  /* B xxxBBBBB           */ \
+    "vshr.u8    d7, d7, #7                     \n"  /* A 0000000A           */ \
+    "vneg.s8    d7, d7                         \n"  /* A AAAAAAAA upper 8   */ \
+    "vshl.u8    d6, d6, #3                     \n"  /* R RRRRR000 upper 5   */ \
+    "vshr.u8    q1, q3, #5                     \n"  /* R,A 00000RRR lower 3 */ \
+    "vshl.u8    q0, q2, #3                     \n"  /* B,G BBBBB000 upper 5 */ \
+    "vshr.u8    q2, q0, #5                     \n"  /* B,G 00000BBB lower 3 */ \
+    "vorr.u8    q1, q1, q3                     \n"  /* R,A                  */ \
+    "vorr.u8    q0, q0, q2                     \n"  /* B,G                  */ \
+
+void ARGB1555ToARGBRow_NEON(const uint8* src_argb1555, uint8* dst_argb,
+                            int pix) {
+  asm volatile (
+    "vmov.u8    d3, #255                       \n"  // Alpha
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB1555 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    ARGB1555TOARGB
+    "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_argb1555),  // %0
+    "+r"(dst_argb),    // %1
+    "+r"(pix)          // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+  );
+}
+#endif  // HAS_ARGB1555TOARGBROW_NEON
+
+#ifdef HAS_ARGB4444TOARGBROW_NEON
+#define ARGB4444TOARGB                                                         \
+    "vuzp.u8    d0, d1                         \n"  /* d0 BG, d1 RA         */ \
+    "vshl.u8    q2, q0, #4                     \n"  /* B,R BBBB0000         */ \
+    "vshr.u8    q1, q0, #4                     \n"  /* G,A 0000GGGG         */ \
+    "vshr.u8    q0, q2, #4                     \n"  /* B,R 0000BBBB         */ \
+    "vorr.u8    q0, q0, q2                     \n"  /* B,R BBBBBBBB         */ \
+    "vshl.u8    q2, q1, #4                     \n"  /* G,A GGGG0000         */ \
+    "vorr.u8    q1, q1, q2                     \n"  /* G,A GGGGGGGG         */ \
+    "vswp.u8    d1, d2                         \n"  /* B,R,G,A -> B,G,R,A   */
+
+void ARGB4444ToARGBRow_NEON(const uint8* src_argb4444, uint8* dst_argb,
+                            int pix) {
+  asm volatile (
+    "vmov.u8    d3, #255                       \n"  // Alpha
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB4444 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    ARGB4444TOARGB
+    "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_argb4444),  // %0
+    "+r"(dst_argb),    // %1
+    "+r"(pix)          // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+  );
+}
+#endif  // HAS_ARGB4444TOARGBROW_NEON
 
 #ifdef HAS_ARGBTORGBAROW_NEON
 void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgba, int pix) {

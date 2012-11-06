@@ -534,7 +534,7 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
                    uint8* dst_argb, int dst_stride_argb,
                    int width, int height) {
   if (!src_argb1555 || !dst_argb ||
-       width <= 0 || height == 0) {
+      width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -543,13 +543,22 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
     src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
     src_stride_argb1555 = -src_stride_argb1555;
   }
-  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb,
-                            int pix) = ARGB1555ToARGBRow_C;
+  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb, int pix) =
+      ARGB1555ToARGBRow_C;
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGB1555TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToARGBRow = ARGB1555ToARGBRow_NEON;
+    }
   }
 #endif
 
@@ -576,13 +585,22 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
     src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
     src_stride_argb4444 = -src_stride_argb4444;
   }
-  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb,
-                            int pix) = ARGB4444ToARGBRow_C;
+  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb, int pix) =
+      ARGB4444ToARGBRow_C;
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGB4444TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToARGBRow = ARGB4444ToARGBRow_NEON;
+    }
   }
 #endif
 
