@@ -782,9 +782,9 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   void (*YUY2ToARGBRow)(const uint8* src_yuy2, uint8* dst_argb, int pix) =
       YUY2ToARGBRow_C;
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {  // posix it 16, win is 8.
     YUY2ToARGBRow = YUY2ToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       YUY2ToARGBRow = YUY2ToARGBRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_yuy2, 16) && IS_ALIGNED(src_stride_yuy2, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -826,9 +826,9 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   void (*UYVYToARGBRow)(const uint8* src_uyvy, uint8* dst_argb, int pix) =
       UYVYToARGBRow_C;
 #if defined(HAS_UYVYTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {  // posix it 16, win is 8.
     UYVYToARGBRow = UYVYToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 16)) {
       UYVYToARGBRow = UYVYToARGBRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_uyvy, 16) && IS_ALIGNED(src_stride_uyvy, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
