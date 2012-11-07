@@ -943,6 +943,9 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #endif
@@ -1204,6 +1207,9 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
     RGB24ToYRow = RGB24ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RGB24ToYRow = RGB24ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #else
@@ -1306,6 +1312,9 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
     RAWToYRow = RAWToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RAWToYRow = RAWToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #else
@@ -1407,6 +1416,9 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
     RGB565ToYRow = RGB565ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RGB565ToYRow = RGB565ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #else
@@ -1508,6 +1520,9 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
     ARGB1555ToYRow = ARGB1555ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB1555ToYRow = ARGB1555ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #else
@@ -1609,6 +1624,9 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     ARGB4444ToYRow = ARGB4444ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB4444ToYRow = ARGB4444ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
     }
   }
 #else

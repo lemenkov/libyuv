@@ -196,6 +196,7 @@ extern "C" {
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUV422ROW_NEON
 #define HAS_ARGBTOUV411ROW_NEON
+#define HAS_ARGBTOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_ABGRTOYROW_NEON
 #define HAS_RGBATOYROW_NEON
@@ -351,6 +352,8 @@ void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix);
 void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix);
+void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int pix);
 void BGRAToYRow_NEON(const uint8* src_bgra, uint8* dst_y, int pix);
 void ABGRToYRow_NEON(const uint8* src_abgr, uint8* dst_y, int pix);
 void RGBAToYRow_NEON(const uint8* src_rgba, uint8* dst_y, int pix);
