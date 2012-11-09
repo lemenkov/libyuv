@@ -1159,6 +1159,19 @@ void RGB565ToARGBRow_NEON(const uint8* src_rgb565, uint8* dst_argb, int pix) {
     "vorr.u8    q1, q1, q3                     \n"  /* R,A                  */ \
     "vorr.u8    q0, q0, q2                     \n"  /* B,G                  */ \
 
+// RGB555TOARGB is same as ARGB1555TOARGB but ignores alpha.
+#define RGB555TOARGB                                                           \
+    "vshrn.u16  d6, q0, #5                     \n"  /* G xxxGGGGG           */ \
+    "vuzp.u8    d0, d1                         \n"  /* d0 xxxBBBBB xRRRRRxx */ \
+    "vshl.u8    d6, d6, #3                     \n"  /* G GGGGG000 upper 5   */ \
+    "vshr.u8    d1, d1, #2                     \n"  /* R 00xRRRRR lower 5   */ \
+    "vshl.u8    q0, q0, #3                     \n"  /* B,R BBBBB000 upper 5 */ \
+    "vshr.u8    q2, q0, #5                     \n"  /* B,R 00000BBB lower 3 */ \
+    "vorr.u8    d0, d0, d4                     \n"  /* B                    */ \
+    "vshr.u8    d4, d6, #5                     \n"  /* G 00000GGG lower 3   */ \
+    "vorr.u8    d2, d1, d5                     \n"  /* R                    */ \
+    "vorr.u8    d1, d4, d6                     \n"  /* G                    */
+
 void ARGB1555ToARGBRow_NEON(const uint8* src_argb1555, uint8* dst_argb,
                             int pix) {
   asm volatile (
@@ -1715,6 +1728,19 @@ void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 
 // 16x2 pixels -> 8x1.  pix is number of argb pixels. e.g. 16.
 #ifdef HAS_ARGBTOUVROW_NEON
+
+#define RGBTOUV \
+    "vmul.s16   q8, q0, q10                    \n"  /* B                    */ \
+    "vmls.s16   q8, q1, q11                    \n"  /* G                    */ \
+    "vmls.s16   q8, q2, q12                    \n"  /* R                    */ \
+    "vadd.u16   q8, q8, q15                    \n"  /* +128 -> unsigned     */ \
+    "vmul.s16   q9, q2, q10                    \n"  /* R                    */ \
+    "vmls.s16   q9, q1, q14                    \n"  /* G                    */ \
+    "vmls.s16   q9, q0, q13                    \n"  /* B                    */ \
+    "vadd.u16   q9, q9, q15                    \n"  /* +128 -> unsigned     */ \
+    "vqshrn.u16  d0, q8, #8                    \n"  /* 16 bit to 8 bit U    */ \
+    "vqshrn.u16  d1, q9, #8                    \n"  /* 16 bit to 8 bit V    */
+
 void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
@@ -1738,16 +1764,7 @@ void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q6                         \n"  // R 16 bytes -> 8 shorts.
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
-    "vmul.s16   q8, q0, q10                    \n"  // B
-    "vmls.s16   q8, q1, q11                    \n"  // G
-    "vmls.s16   q8, q2, q12                    \n"  // R
-    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
-    "vmul.s16   q9, q2, q10                    \n"  // R
-    "vmls.s16   q9, q1, q14                    \n"  // G
-    "vmls.s16   q9, q0, q13                    \n"  // B
-    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
-    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
-    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+    RGBTOUV
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
     "bgt        1b                             \n"
@@ -1762,7 +1779,6 @@ void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
   );
 }
 #endif  // HAS_ARGBTOUVROW_NEON
-
 
 // 16x2 pixels -> 8x1.  pix is number of argb pixels. e.g. 16.
 #ifdef HAS_RGB565TOUVROW_NEON
@@ -1824,7 +1840,131 @@ void RGB565ToUVRow_NEON(const uint8* src_rgb565, int src_stride_rgb565,
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
-#endif  // HAS_ARGBTOUVROW_NEON
+#endif  // HAS_RGB565TOUVROW_NEON
+
+// 16x2 pixels -> 8x1.  pix is number of argb pixels. e.g. 16.
+#ifdef HAS_ARGB1555TOUVROW_NEON
+void ARGB1555ToUVRow_NEON(const uint8* src_argb1555, int src_stride_argb1555,
+                        uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "add        %1, %0, %1                     \n"  // src_stride + src_argb
+    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.u16   q15, #0x8080                   \n"  // 128.5
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB1555 pixels.
+    RGB555TOARGB
+    "vpaddl.u8  d8, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpaddl.u8  d10, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpaddl.u8  d12, d2                        \n"  // R 8 bytes -> 4 shorts.
+    "vld1.8     {q0}, [%0]!                    \n"  // next 8 ARGB1555 pixels.
+    RGB555TOARGB
+    "vpaddl.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpaddl.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpaddl.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "vld1.8     {q0}, [%1]!                    \n"  // load 8 ARGB1555 pixels.
+    RGB555TOARGB
+    "vpadal.u8  d8, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpadal.u8  d10, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpadal.u8  d12, d2                        \n"  // R 8 bytes -> 4 shorts.
+    "vld1.8     {q0}, [%1]!                    \n"  // next 8 ARGB1555 pixels.
+    RGB555TOARGB
+    "vpadal.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
+    "vmul.s16   q8, q4, q10                    \n"  // B
+    "vmls.s16   q8, q5, q11                    \n"  // G
+    "vmls.s16   q8, q6, q12                    \n"  // R
+    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
+    "vmul.s16   q9, q6, q10                    \n"  // R
+    "vmls.s16   q9, q5, q14                    \n"  // G
+    "vmls.s16   q9, q4, q13                    \n"  // B
+    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
+    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
+    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+    "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
+    "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
+    "bgt        1b                             \n"
+  : "+r"(src_argb1555),  // %0
+    "+r"(src_stride_argb1555),  // %1
+    "+r"(dst_u),     // %2
+    "+r"(dst_v),     // %3
+    "+r"(pix)        // %4
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_ARGB1555TOUVROW_NEON
+
+// 16x2 pixels -> 8x1.  pix is number of argb pixels. e.g. 16.
+#ifdef HAS_ARGB4444TOUVROW_NEON
+void ARGB4444ToUVRow_NEON(const uint8* src_argb4444, int src_stride_argb4444,
+                          uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "add        %1, %0, %1                     \n"  // src_stride + src_argb
+    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.u16   q15, #0x8080                   \n"  // 128.5
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 8 ARGB4444 pixels.
+    ARGB4444TOARGB
+    "vpaddl.u8  d8, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpaddl.u8  d10, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpaddl.u8  d12, d2                        \n"  // R 8 bytes -> 4 shorts.
+    "vld1.8     {q0}, [%0]!                    \n"  // next 8 ARGB4444 pixels.
+    ARGB4444TOARGB
+    "vpaddl.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpaddl.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpaddl.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "vld1.8     {q0}, [%1]!                    \n"  // load 8 ARGB4444 pixels.
+    ARGB4444TOARGB
+    "vpadal.u8  d8, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpadal.u8  d10, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpadal.u8  d12, d2                        \n"  // R 8 bytes -> 4 shorts.
+    "vld1.8     {q0}, [%1]!                    \n"  // next 8 ARGB4444 pixels.
+    ARGB4444TOARGB
+    "vpadal.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
+    "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
+    "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
+    "vmul.s16   q8, q4, q10                    \n"  // B
+    "vmls.s16   q8, q5, q11                    \n"  // G
+    "vmls.s16   q8, q6, q12                    \n"  // R
+    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
+    "vmul.s16   q9, q6, q10                    \n"  // R
+    "vmls.s16   q9, q5, q14                    \n"  // G
+    "vmls.s16   q9, q4, q13                    \n"  // B
+    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
+    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
+    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+    "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
+    "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
+    "bgt        1b                             \n"
+  : "+r"(src_argb4444),  // %0
+    "+r"(src_stride_argb4444),  // %1
+    "+r"(dst_u),     // %2
+    "+r"(dst_v),     // %3
+    "+r"(pix)        // %4
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+#endif  // HAS_ARGB4444TOUVROW_NEON
 
 #ifdef HAS_RGB565TOYROW_NEON
 void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix) {

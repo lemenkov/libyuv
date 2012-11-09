@@ -19,6 +19,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// TODO(fbarchard): Consider 'any' functions handling any quantity of pixels.
+// TODO(fbarchard): Consider 'any' functions handling odd alignment.
+
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
     void NAMEANY(const uint8* y_buf,                                           \
@@ -114,12 +117,8 @@ NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
 #endif  // HAS_NV12TORGB565ROW_NEON
 #undef NVANY
 
-// YUY2 to RGB does 8 at a time.
-// RGB to RGB does multiple of 16 pixels with SIMD and remainder with C.
-// SSSE3 RGB24 is multiple of 16 pixels, aligned source and destination.
-// SSE2 RGB565 is multiple of 4 pixels, ARGB must be aligned to 16 bytes.
-// NEON RGB24 is multiple of 8 pixels, unaligned source and destination.
-// I400 To ARGB does multiple of 8 pixels with SIMD and remainder with C.
+// TODO(fbarchard): RGBANY use last 16 method.
+// ARGB to Bayer does multiple of 4 pixels, SSSE3 aligned src, unaligned dst.
 #define RGBANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, MASK, SBPP, BPP)          \
     void NAMEANY(const uint8* src,                                             \
                  uint8* dst,                                                   \
@@ -164,6 +163,26 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C,
        7, 2, 4)
 #endif
 #undef RGBANY
+
+// ARGB to Bayer does multiple of 4 pixels, SSSE3 aligned src, unaligned dst.
+#define BAYERANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, MASK, SBPP, BPP)        \
+    void NAMEANY(const uint8* src,                                             \
+                 uint8* dst, uint32 selector,                                  \
+                 int width) {                                                  \
+      int n = width & ~MASK;                                                   \
+      ARGBTORGB_SIMD(src, dst, selector, n);                                   \
+      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, selector, width & MASK);      \
+    }
+
+#if defined(HAS_ARGBTOBAYERROW_SSSE3)
+BAYERANY(ARGBToBayerRow_Any_SSSE3, ARGBToBayerRow_SSSE3, ARGBToBayerRow_C,
+         3, 4, 1)
+#endif
+#if defined(HAS_ARGBTOBAYERROW_NEON)
+BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
+         3, 4, 1)
+#endif
+#undef BAYERANY
 
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.
 // TODO(fbarchard): Use last 16 method for all unsubsampled conversions.
@@ -230,37 +249,43 @@ UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
 #ifdef HAS_ARGBTOUVROW_NEON
 UVANY(ARGBToUVRow_Any_NEON, ARGBToUVRow_NEON, ARGBToUVRow_C, 4)
 UVANY(RGB565ToUVRow_Any_NEON, RGB565ToUVRow_NEON, RGB565ToUVRow_C, 2)
+UVANY(ARGB1555ToUVRow_Any_NEON, ARGB1555ToUVRow_NEON, ARGB1555ToUVRow_C, 2)
+UVANY(ARGB4444ToUVRow_Any_NEON, ARGB4444ToUVRow_NEON, ARGB4444ToUVRow_C, 2)
 UVANY(YUY2ToUVRow_Any_NEON, YUY2ToUVRow_NEON, YUY2ToUVRow_C, 2)
 UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2)
 #endif
 #undef UVANY
 
-#define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP)                        \
+#define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK, SHIFT)           \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
-      int n = width & ~15;                                                     \
+      int n = width & ~MASK;                                                   \
       ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                   \
       ANYTOUV_C(src_uv  + n * BPP,                                             \
-                dst_u + (n >> 1),                                              \
-                dst_v + (n >> 1),                                              \
-                width & 15);                                                   \
+                dst_u + (n >> SHIFT),                                          \
+                dst_v + (n >> SHIFT),                                          \
+                width & MASK);                                                 \
     }
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 UV422ANY(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_Unaligned_SSSE3,
-         ARGBToUV422Row_C, 4)
-#endif
-#ifdef HAS_YUY2TOUV422ROW_SSE2
+         ARGBToUV422Row_C, 4, 15, 1)
 UV422ANY(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_Unaligned_SSE2,
-         YUY2ToUV422Row_C, 2)
+         YUY2ToUV422Row_C, 2, 15, 1)
 UV422ANY(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_Unaligned_SSE2,
-         UYVYToUV422Row_C, 2)
+         UYVYToUV422Row_C, 2, 15, 1)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
+UV422ANY(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON,
+         ARGBToUV444Row_C, 4, 8, 0)
+UV422ANY(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON,
+         ARGBToUV422Row_C, 4, 15, 1)
+UV422ANY(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON,
+         ARGBToUV411Row_C, 4, 31, 2)
 UV422ANY(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON,
-         YUY2ToUV422Row_C, 2)
+         YUY2ToUV422Row_C, 2, 15, 1)
 UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
-         UYVYToUV422Row_C, 2)
+         UYVYToUV422Row_C, 2, 15, 1)
 #endif
 #undef UV422ANY
 

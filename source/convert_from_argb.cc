@@ -54,6 +54,7 @@ int ARGBToI444(const uint8* src_argb, int src_stride_argb,
 #elif defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
+    ARGBToUV444Row = ARGBToUV444Row_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
       ARGBToUV444Row = ARGBToUV444Row_NEON;
@@ -120,6 +121,9 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+    }
+    if (width >= 16) {
+      ARGBToUV422Row = ARGBToUV422Row_Any_NEON;
       if (IS_ALIGNED(width, 16)) {
         ARGBToUV422Row = ARGBToUV422Row_NEON;
       }
@@ -173,6 +177,9 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+    }
+    if (width >= 32) {
+      ARGBToUV411Row = ARGBToUV411Row_Any_NEON;
       if (IS_ALIGNED(width, 32)) {
         ARGBToUV411Row = ARGBToUV411Row_NEON;
       }

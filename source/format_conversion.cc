@@ -72,13 +72,19 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) = ARGBToBayerRow_C;
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-    ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
-    ARGBToBayerRow = ARGBToBayerRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_NEON;
+    }
   }
 #endif
   const int blue_index = 0;  // Offsets for ARGB format
@@ -398,7 +404,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_Unaligned_SSSE3;
+      I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
   }
 #elif defined(HAS_I422TOARGBROW_NEON)
@@ -408,20 +414,34 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
       I422ToARGBRow = I422ToARGBRow_NEON;
     }
   }
+#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
+  }
 #endif
 
   SIMD_ALIGNED(uint8 row[kMaxStride]);
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) = ARGBToBayerRow_C;
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
-    ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
-    ARGBToBayerRow = ARGBToBayerRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_NEON;
+    }
   }
 #endif
+
   const int blue_index = 0;  // Offsets for ARGB format
   const int green_index = 1;
   const int red_index = 2;
