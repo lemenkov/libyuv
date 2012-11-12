@@ -543,8 +543,8 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
     src_argb1555 = src_argb1555 + (height - 1) * src_stride_argb1555;
     src_stride_argb1555 = -src_stride_argb1555;
   }
-  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb, int pix) =
-      ARGB1555ToARGBRow_C;
+  void (*ARGB1555ToARGBRow)(const uint8* src_argb1555, uint8* dst_argb,
+                            int pix) = ARGB1555ToARGBRow_C;
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -585,8 +585,8 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
     src_argb4444 = src_argb4444 + (height - 1) * src_stride_argb4444;
     src_stride_argb4444 = -src_stride_argb4444;
   }
-  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb, int pix) =
-      ARGB4444ToARGBRow_C;
+  void (*ARGB4444ToARGBRow)(const uint8* src_argb4444, uint8* dst_argb,
+                            int pix) = ARGB4444ToARGBRow_C;
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {

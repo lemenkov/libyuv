@@ -315,8 +315,8 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
         ARGBToYRow = ARGBToYRow_SSSE3;
       }
@@ -327,6 +327,9 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
+    }
+    if (width >= 16) {
+      ARGBToUVRow = ARGBToUVRow_Any_NEON;
       if (IS_ALIGNED(width, 16)) {
         ARGBToUVRow = ARGBToUVRow_NEON;
       }
