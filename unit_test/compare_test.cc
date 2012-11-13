@@ -30,23 +30,6 @@ static uint32 ReferenceHashDjb2(const uint8* src, uint64 count, uint32 seed) {
   return hash;
 }
 
-TEST_F(libyuvTest, BenchmakDjb2_C) {
-  const int kMaxTest = benchmark_width_ * benchmark_height_;
-  align_buffer_16(src_a, kMaxTest)
-  for (int i = 0; i < kMaxTest; ++i) {
-    src_a[i] = i;
-  }
-  uint32 h2 = ReferenceHashDjb2(src_a, kMaxTest, 5381);
-  uint32 h1;
-  MaskCpuFlags(0);
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    h1 = HashDjb2(src_a, kMaxTest, 5381);
-  }
-  MaskCpuFlags(-1);
-  EXPECT_EQ(h1, h2);
-  free_aligned_buffer_16(src_a)
-}
-
 TEST_F(libyuvTest, BenchmakDjb2_OPT) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_16(src_a, kMaxTest)
@@ -76,39 +59,6 @@ TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
   }
   EXPECT_EQ(h1, h2);
   free_aligned_buffer_16(src_a)
-}
-
-TEST_F(libyuvTest, BenchmarkSumSquareError_C) {
-  const int kMaxWidth = 4096 * 3;
-  align_buffer_16(src_a, kMaxWidth)
-  align_buffer_16(src_b, kMaxWidth)
-  memset(src_a, 0, kMaxWidth);
-  memset(src_b, 0, kMaxWidth);
-
-  MaskCpuFlags(0);
-  memcpy(src_a, "test0123test4567", 16);
-  memcpy(src_b, "tick0123tock4567", 16);
-  uint64 h1 = ComputeSumSquareError(src_a, src_b, 16);
-  EXPECT_EQ(790u, h1);
-
-  for (int i = 0; i < kMaxWidth; ++i) {
-    src_a[i] = i;
-    src_b[i] = i;
-  }
-  memset(src_a, 0, kMaxWidth);
-  memset(src_b, 0, kMaxWidth);
-
-  int count = benchmark_iterations_ *
-      (benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth;
-  for (int i = 0; i < count; ++i) {
-    h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
-  }
-
-  MaskCpuFlags(-1);
-  EXPECT_EQ(0, h1);
-
-  free_aligned_buffer_16(src_a)
-  free_aligned_buffer_16(src_b)
 }
 
 TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
@@ -179,33 +129,6 @@ TEST_F(libyuvTest, SumSquareError) {
   uint64 opt_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
   EXPECT_EQ(c_err, opt_err);
-
-  free_aligned_buffer_16(src_a)
-  free_aligned_buffer_16(src_b)
-}
-
-TEST_F(libyuvTest, BenchmarkPsnr_C) {
-  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
-  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
-  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
-    src_a[i] = i;
-    src_b[i] = i;
-  }
-
-  MaskCpuFlags(0);
-
-  double c_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i)
-    CalcFramePsnr(src_a, benchmark_width_,
-                  src_b, benchmark_width_,
-                  benchmark_width_, benchmark_height_);
-
-  c_time = (get_time() - c_time) / benchmark_iterations_;
-  printf("BenchmarkPsnr_C - %8.2f us c\n", c_time * 1e6);
-
-  MaskCpuFlags(-1);
-
-  EXPECT_EQ(0, 0);
 
   free_aligned_buffer_16(src_a)
   free_aligned_buffer_16(src_b)
@@ -308,33 +231,6 @@ TEST_F(libyuvTest, Psnr) {
                           kSrcWidth, kSrcHeight);
 
   EXPECT_EQ(opt_err, c_err);
-
-  free_aligned_buffer_16(src_a)
-  free_aligned_buffer_16(src_b)
-}
-
-TEST_F(libyuvTest, BenchmarkSsim_C) {
-  align_buffer_16(src_a, benchmark_width_ * benchmark_height_)
-  align_buffer_16(src_b, benchmark_width_ * benchmark_height_)
-  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
-    src_a[i] = i;
-    src_b[i] = i;
-  }
-
-  MaskCpuFlags(0);
-
-  double c_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i)
-    CalcFrameSsim(src_a, benchmark_width_,
-                  src_b, benchmark_width_,
-                  benchmark_width_, benchmark_height_);
-
-  c_time = (get_time() - c_time) / benchmark_iterations_;
-  printf("BenchmarkSsim_C - %8.2f us c\n", c_time * 1e6);
-
-  MaskCpuFlags(-1);
-
-  EXPECT_EQ(0, 0);  // Pass if we get this far.
 
   free_aligned_buffer_16(src_a)
   free_aligned_buffer_16(src_b)

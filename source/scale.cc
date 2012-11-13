@@ -2799,7 +2799,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
                         const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  if (!IS_ALIGNED(src_width, 8) || (src_width > kMaxInputWidth)) {
+  if (src_width > kMaxInputWidth) {
     ScalePlaneBilinearSimple(src_width, src_height, dst_width, dst_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
