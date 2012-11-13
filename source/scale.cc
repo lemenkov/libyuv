@@ -1035,24 +1035,26 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
-    sub        edi, esi
     shr        eax, 1
     cmp        eax, 0  // dispatch to specialized filters if applicable.
     je         xloop100
+    sub        edi, esi
     cmp        eax, 32
     je         xloop75
     cmp        eax, 64
     je         xloop50
     cmp        eax, 96
     je         xloop25
-    movd       xmm0, eax  // high fraction 0..127
+
+    movd       xmm0, eax  // high fraction 1..127.
     neg        eax
     add        eax, 128
-    movd       xmm5, eax  // low fraction 128..1
+    movd       xmm5, eax  // low fraction 127..1.
     punpcklbw  xmm5, xmm0
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
+    // General purpose row blend.
     align      16
   xloop:
     movdqa     xmm0, [esi]
@@ -1069,71 +1071,7 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop
-
-    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 100 / 0 - Copy row unchanged.
-    align      16
-  xloop100:
-    movdqa     xmm0, [esi]
-    sub        ecx, 16
-    movdqa     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop100
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 75 / 25.
-    align      16
-  xloop75:
-    movdqa     xmm1, [esi]
-    movdqa     xmm0, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    sub        ecx, 16
-    movdqa     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop75
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 50 / 50.
-    align      16
-  xloop50:
-    movdqa     xmm0, [esi]
-    movdqa     xmm1, [esi + edx]
-    pavgb      xmm0, xmm1
-    sub        ecx, 16
-    movdqa     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop50
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
+    jmp        xloop99
 
     // Blend 25 / 75.
     align      16
@@ -1146,7 +1084,44 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop25
+    jmp        xloop99
 
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqa     xmm0, [esi]
+    movdqa     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqa     xmm1, [esi]
+    movdqa     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    movdqa     xmm0, [esi]
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop100
+
+    // Extrude last pixel.
+  xloop99:
     punpckhbw  xmm0, xmm0
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
@@ -1154,7 +1129,6 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        edi
     pop        esi
     ret
-
   }
 }
 
@@ -1171,29 +1145,31 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
-    sub        edi, esi
     shr        eax, 1
-    cmp        eax, 0
+    cmp        eax, 0  // dispatch to specialized filters if applicable.
     je         xloop100
+    sub        edi, esi
     cmp        eax, 32
     je         xloop75
     cmp        eax, 64
     je         xloop50
     cmp        eax, 96
     je         xloop25
-    movd       xmm0, eax  // high fraction 0..127
+
+    movd       xmm0, eax  // high fraction 1..127.
     neg        eax
     add        eax, 128
-    movd       xmm5, eax  // low fraction 128..1
+    movd       xmm5, eax  // low fraction 127..1.
     punpcklbw  xmm5, xmm0
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
+    // General purpose row blend.
     align      16
   xloop:
     movdqu     xmm0, [esi]
     movdqu     xmm2, [esi + edx]
-    movdqu     xmm1, xmm0
+    movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm2
     punpckhbw  xmm1, xmm2
     pmaddubsw  xmm0, xmm5
@@ -1205,71 +1181,7 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     movdqu     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop
-
-    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqu     [esi + edi], xmm0
-
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 100 / 0 - Copy row unchanged.
-    align      16
-  xloop100:
-    movdqu     xmm0, [esi]
-    sub        ecx, 16
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop100
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqu     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 75 / 25.
-    align      16
-  xloop75:
-    movdqu     xmm1, [esi]
-    movdqu     xmm0, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    sub        ecx, 16
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop75
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqu     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
-    // Blend 50 / 50.
-    align      16
-  xloop50:
-    movdqu     xmm0, [esi]
-    movdqu     xmm1, [esi + edx]
-    pavgb      xmm0, xmm1
-    sub        ecx, 16
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop50
-
-    punpckhbw  xmm0, xmm0
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqu     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
+    jmp        xloop99
 
     // Blend 25 / 75.
     align      16
@@ -1282,7 +1194,44 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     movdqu     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop25
+    jmp        xloop99
 
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqu     xmm1, [esi]
+    movdqu     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    movdqu     xmm0, [esi]
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop100
+
+    // Extrude last pixel.
+  xloop99:
     punpckhbw  xmm0, xmm0
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
@@ -1290,7 +1239,6 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     pop        edi
     pop        esi
     ret
-
   }
 }
 
@@ -2068,9 +2016,13 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
-    "je        2f                              \n"
+    "je        100f                            \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
-    "je        3f                              \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
     "movd      %3,%%xmm0                       \n"
     "neg       %3                              \n"
     "add       $0x80,%3                        \n"
@@ -2078,6 +2030,8 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "punpcklbw %%xmm0,%%xmm5                   \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+
+    // General purpose row blend.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%1),%%xmm0                     \n"
@@ -2094,25 +2048,57 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-    "jmp       4f                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
     ".p2align  4                               \n"
-  "2:                                          \n"
+  "25:                                         \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    ".p2align  4                               \n"
+  "50:                                         \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    ".p2align  4                               \n"
+  "75:                                         \n"
+    "movdqa    (%1),%%xmm1                     \n"
+    "movdqa    (%1,%4,1),%%xmm0                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    ".p2align  4                               \n"
+  "100:                                        \n"
     "movdqa    (%1),%%xmm0                     \n"
     "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
-    "jg        2b                              \n"
-    "jmp       4f                              \n"
-    ".p2align  4                               \n"
-  "3:                                          \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "pavgb     (%1,%4,1),%%xmm0                \n"
-    "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
-    "jg        3b                              \n"
-    ".p2align  4                               \n"
-  "4:                                          \n"
+    "jg        100b                            \n"
+
+    // Extrude last pixel.
+  "99:                                         \n"
     "punpckhbw %%xmm0,%%xmm0                   \n"
     "pshufhw   $0xff,%%xmm0,%%xmm0             \n"
     "punpckhqdq %%xmm0,%%xmm0                  \n"
@@ -2137,9 +2123,13 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
-    "je        2f                              \n"
+    "je        100f                            \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
-    "je        3f                              \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
     "movd      %3,%%xmm0                       \n"
     "neg       %3                              \n"
     "add       $0x80,%3                        \n"
@@ -2147,11 +2137,13 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     "punpcklbw %%xmm0,%%xmm5                   \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+
+    // General purpose row blend.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqu    (%1),%%xmm0                     \n"
     "movdqu    (%1,%4,1),%%xmm2                \n"
-    "movdqu    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm0                   \n"
     "punpckhbw %%xmm2,%%xmm1                   \n"
     "pmaddubsw %%xmm5,%%xmm0                   \n"
@@ -2163,25 +2155,57 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-    "jmp       4f                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
     ".p2align  4                               \n"
-  "2:                                          \n"
+  "25:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    ".p2align  4                               \n"
+  "50:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    ".p2align  4                               \n"
+  "75:                                         \n"
+    "movdqu    (%1),%%xmm1                     \n"
+    "movdqu    (%1,%4,1),%%xmm0                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    ".p2align  4                               \n"
+  "100:                                        \n"
     "movdqu    (%1),%%xmm0                     \n"
     "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
-    "jg        2b                              \n"
-    "jmp       4f                              \n"
-    ".p2align  4                               \n"
-  "3:                                          \n"
-    "movdqu    (%1),%%xmm0                     \n"
-    "pavgb     (%1,%4,1),%%xmm0                \n"
-    "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
-    "jg        3b                              \n"
-    ".p2align  4                               \n"
-  "4:                                          \n"
+    "jg        100b                            \n"
+
+    // Extrude last pixel.
+  "99:                                         \n"
     "punpckhbw %%xmm0,%%xmm0                   \n"
     "pshufhw   $0xff,%%xmm0,%%xmm0             \n"
     "punpckhqdq %%xmm0,%%xmm0                  \n"
