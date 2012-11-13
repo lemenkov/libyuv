@@ -1037,10 +1037,14 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
     shr        eax, 1
-    cmp        eax, 0
-    je         xloop1
+    cmp        eax, 0  // dispatch to specialized filters if applicable.
+    je         xloop100
+    cmp        eax, 32
+    je         xloop75
     cmp        eax, 64
-    je         xloop2
+    je         xloop50
+    cmp        eax, 96
+    je         xloop25
     movd       xmm0, eax  // high fraction 0..127
     neg        eax
     add        eax, 128
@@ -1075,13 +1079,14 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    // Blend 100 / 0 - Copy row unchanged.
     align      16
-  xloop1:
+  xloop100:
     movdqa     xmm0, [esi]
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    jg         xloop1
+    jg         xloop100
 
     punpckhbw  xmm0, xmm0
     pshufhw    xmm0, xmm0, 0xff
@@ -1091,14 +1096,17 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        esi
     ret
 
+    // Blend 75 / 25.
     align      16
-  xloop2:
-    movdqa     xmm0, [esi]
-    pavgb      xmm0, [esi + edx]
+  xloop75:
+    movdqa     xmm1, [esi]
+    movdqa     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    jg         xloop2
+    jg         xloop75
 
     punpckhbw  xmm0, xmm0
     pshufhw    xmm0, xmm0, 0xff
@@ -1107,6 +1115,182 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pop        edi
     pop        esi
     ret
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqa     xmm0, [esi]
+    movdqa     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
+    // Blend 25 / 75.
+    align      16
+  xloop25:
+    movdqa     xmm0, [esi]
+    movdqa     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop25
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqa     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
+                                            const uint8* src_ptr,
+                                            ptrdiff_t src_stride, int dst_width,
+                                            int source_y_fraction) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]   // dst_ptr
+    mov        esi, [esp + 8 + 8]   // src_ptr
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
+    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
+    shr        eax, 1
+    cmp        eax, 0
+    je         xloop100
+    cmp        eax, 32
+    je         xloop75
+    cmp        eax, 64
+    je         xloop50
+    cmp        eax, 96
+    je         xloop25
+    movd       xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    movd       xmm5, eax  // low fraction 128..1
+    punpcklbw  xmm5, xmm0
+    punpcklwd  xmm5, xmm5
+    pshufd     xmm5, xmm5, 0
+
+    align      16
+  xloop:
+    movdqu     xmm0, [esi]
+    movdqu     xmm2, [esi + edx]
+    movdqu     xmm1, xmm0
+    punpcklbw  xmm0, xmm2
+    punpckhbw  xmm1, xmm2
+    pmaddubsw  xmm0, xmm5
+    pmaddubsw  xmm1, xmm5
+    psrlw      xmm0, 7
+    psrlw      xmm1, 7
+    packuswb   xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop
+
+    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqu     [esi + edi], xmm0
+
+    pop        edi
+    pop        esi
+    ret
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    movdqu     xmm0, [esi]
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop100
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqu     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqu     xmm1, [esi]
+    movdqu     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqu     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqu     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
+    // Blend 25 / 75.
+    align      16
+  xloop25:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop25
+
+    punpckhbw  xmm0, xmm0
+    pshufhw    xmm0, xmm0, 0xff
+    punpckhqdq xmm0, xmm0
+    movdqu     [esi + edi], xmm0
+    pop        edi
+    pop        esi
+    ret
+
   }
 }
 
@@ -1944,6 +2128,75 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr,
 #endif
   );
 }
+
+static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
+                                            const uint8* src_ptr,
+                                            ptrdiff_t src_stride, int dst_width,
+                                            int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        2f                              \n"
+    "cmp       $0x40,%3                        \n"
+    "je        3f                              \n"
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm2                \n"
+    "movdqu    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm0                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "pmaddubsw %%xmm5,%%xmm0                   \n"
+    "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        2b                              \n"
+    "jmp       4f                              \n"
+    ".p2align  4                               \n"
+  "3:                                          \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "pavgb     (%1,%4,1),%%xmm0                \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        3b                              \n"
+    ".p2align  4                               \n"
+  "4:                                          \n"
+    "punpckhbw %%xmm0,%%xmm0                   \n"
+    "pshufhw   $0xff,%%xmm0,%%xmm0             \n"
+    "punpckhqdq %%xmm0,%%xmm0                  \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
+    "+r"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm5"
+#endif
+  );
+}
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #if !defined(YUV_DISABLE_ASM) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
@@ -2277,7 +2530,7 @@ static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-// C version 8x2 -> 8x1
+// Blend 2 rows into 1 with filtering. N x 2 to N x 1
 static void ScaleFilterRows_C(uint8* dst_ptr,
                               const uint8* src_ptr, ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) {
@@ -2285,20 +2538,18 @@ static void ScaleFilterRows_C(uint8* dst_ptr,
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
-  uint8* end = dst_ptr + dst_width;
-  do {
+
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
     dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
-    dst_ptr[2] = (src_ptr[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
-    dst_ptr[3] = (src_ptr[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
-    dst_ptr[4] = (src_ptr[4] * y0_fraction + src_ptr1[4] * y1_fraction) >> 8;
-    dst_ptr[5] = (src_ptr[5] * y0_fraction + src_ptr1[5] * y1_fraction) >> 8;
-    dst_ptr[6] = (src_ptr[6] * y0_fraction + src_ptr1[6] * y1_fraction) >> 8;
-    dst_ptr[7] = (src_ptr[7] * y0_fraction + src_ptr1[7] * y1_fraction) >> 8;
-    src_ptr += 8;
-    src_ptr1 += 8;
-    dst_ptr += 8;
-  } while (dst_ptr < end);
+    src_ptr += 2;
+    src_ptr1 += 2;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_ptr += 1;
+  }
   dst_ptr[0] = dst_ptr[-1];
 }
 
@@ -2728,7 +2979,7 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+        IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
       ScaleAddRows = ScaleAddRows_SSE2;
     }
 #endif
@@ -2816,19 +3067,21 @@ void ScalePlaneBilinear(int src_width, int src_height,
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+        IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
     }
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
-    if (TestCpuFlag(kCpuHasSSSE3) &&
-        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
-      ScaleFilterRows = ScaleFilterRows_SSSE3;
+    if (TestCpuFlag(kCpuHasSSSE3)) {
+      ScaleFilterRows = ScaleFilterRows_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
+        ScaleFilterRows = ScaleFilterRows_SSSE3;
+      }
     }
 #endif
 #if defined(HAS_SCALEFILTERROWS_MIPS_DSPR2)
     if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
-        IS_ALIGNED(src_stride, 4) && IS_ALIGNED(src_ptr, 4)) {
+        IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4)) {
       ScaleFilterRows = ScaleFilterRows_MIPS_DSPR2;
     }
 #endif
@@ -2843,6 +3096,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
       int yf = (y >> 8) & 255;
       const uint8* src = src_ptr + yi * src_stride;
       ScaleFilterRows(row, src, src_stride, src_width, yf);
+      row[src_width] = row[src_width - 1];
       ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
       dst_ptr += dst_stride;
       y += dy;
