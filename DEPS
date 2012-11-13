@@ -95,4 +95,13 @@ hooks = [
                "--depth=" + Var("root_dir"), Var("root_dir") + "/libyuv_test.gyp",
                Var("extra_gyp_flag")],
   },
+  {
+    # Update the cygwin mount on Windows.
+    # This is necessary to get the correct mapping between e.g. /bin and the
+    # cygwin path on Windows. Without it we can't run bash scripts in actions.
+    # Ideally this should be solved in "pylib/gyp/msvs_emulation.py".
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/build/win/setup_cygwin_mount.py",
+               "--win-only"],
+  },
 ]
