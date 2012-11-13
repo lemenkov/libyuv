@@ -1035,10 +1035,10 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
     shr        eax, 1
     cmp        eax, 0  // dispatch to specialized filters if applicable.
     je         xloop100
-    sub        edi, esi
     cmp        eax, 32
     je         xloop75
     cmp        eax, 64
@@ -1145,10 +1145,10 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
     shr        eax, 1
     cmp        eax, 0  // dispatch to specialized filters if applicable.
     je         xloop100
-    sub        edi, esi
     cmp        eax, 32
     je         xloop75
     cmp        eax, 64

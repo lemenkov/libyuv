@@ -289,10 +289,10 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
     shr        eax, 1
     cmp        eax, 0  // dispatch to specialized filters if applicable.
     je         xloop100
-    sub        edi, esi
     cmp        eax, 32
     je         xloop75
     cmp        eax, 64
@@ -611,10 +611,10 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                                ptrdiff_t src_stride, int dst_width,
                                int source_y_fraction) {
   asm volatile (
+    "sub       %1,%0                           \n"
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
     "je        100f                            \n"
-    "sub       %1,%0                           \n"
     "cmp       $0x20,%3                        \n"
     "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
