@@ -35,9 +35,9 @@ TEST_F(libyuvTest, Transpose) {
   ow = ih;
   oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_1, ow * oh)
-  align_buffer_16(output_2, iw * ih)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_1, ow * oh)
+  align_buffer_64(output_2, iw * ih)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -63,9 +63,9 @@ TEST_F(libyuvTest, Transpose) {
     PrintArray(output_2, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_1)
-  free_aligned_buffer_16(output_2)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_1)
+  free_aligned_buffer_64(output_2)
 
   EXPECT_EQ(0, err);
 }
@@ -80,11 +80,11 @@ TEST_F(libyuvTest, TransposeUV) {
   ow = ih;
   oh = iw >> 1;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_a1, ow * oh)
-  align_buffer_16(output_b1, ow * oh)
-  align_buffer_16(output_a2, iw * ih)
-  align_buffer_16(output_b2, iw * ih)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_a1, ow * oh)
+  align_buffer_64(output_b1, ow * oh)
+  align_buffer_64(output_a2, iw * ih)
+  align_buffer_64(output_b2, iw * ih)
 
   for (i = 0; i < iw * ih; i += 2) {
     input[i] = i >> 1;
@@ -118,11 +118,11 @@ TEST_F(libyuvTest, TransposeUV) {
     PrintArray(output_b2, oh, ow);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_a1)
-  free_aligned_buffer_16(output_b1)
-  free_aligned_buffer_16(output_a2)
-  free_aligned_buffer_16(output_b2)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_a1)
+  free_aligned_buffer_64(output_b1)
+  free_aligned_buffer_64(output_a2)
+  free_aligned_buffer_64(output_b2)
 
   EXPECT_EQ(0, err);
 }
@@ -137,11 +137,11 @@ TEST_F(libyuvTest, RotatePlane90) {
   ow = ih;
   oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_90, ow * oh)
-  align_buffer_16(output_180, iw * ih)
-  align_buffer_16(output_270, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_90, ow * oh)
+  align_buffer_64(output_180, iw * ih)
+  align_buffer_64(output_270, ow * oh)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -175,11 +175,11 @@ TEST_F(libyuvTest, RotatePlane90) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_90)
-  free_aligned_buffer_16(output_180)
-  free_aligned_buffer_16(output_270)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_90)
+  free_aligned_buffer_64(output_180)
+  free_aligned_buffer_64(output_270)
 
   EXPECT_EQ(0, err);
 }
@@ -194,13 +194,13 @@ TEST_F(libyuvTest, RotateUV90) {
   ow = ih;
   oh = iw >> 1;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0_u, ow * oh)
-  align_buffer_16(output_0_v, ow * oh)
-  align_buffer_16(output_90_u, ow * oh)
-  align_buffer_16(output_90_v, ow * oh)
-  align_buffer_16(output_180_u, ow * oh)
-  align_buffer_16(output_180_v, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0_u, ow * oh)
+  align_buffer_64(output_0_v, ow * oh)
+  align_buffer_64(output_90_u, ow * oh)
+  align_buffer_64(output_90_v, ow * oh)
+  align_buffer_64(output_180_u, ow * oh)
+  align_buffer_64(output_180_v, ow * oh)
 
   for (i = 0; i < iw * ih; i += 2) {
     input[i] = i >> 1;
@@ -247,13 +247,13 @@ TEST_F(libyuvTest, RotateUV90) {
     PrintArray(output_0_v, oh, ow);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0_u)
-  free_aligned_buffer_16(output_0_v)
-  free_aligned_buffer_16(output_90_u)
-  free_aligned_buffer_16(output_90_v)
-  free_aligned_buffer_16(output_180_u)
-  free_aligned_buffer_16(output_180_v)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0_u)
+  free_aligned_buffer_64(output_0_v)
+  free_aligned_buffer_64(output_90_u)
+  free_aligned_buffer_64(output_90_v)
+  free_aligned_buffer_64(output_180_u)
+  free_aligned_buffer_64(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -268,13 +268,13 @@ TEST_F(libyuvTest, RotateUV180) {
   ow = iw >> 1;
   oh = ih;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0_u, ow * oh)
-  align_buffer_16(output_0_v, ow * oh)
-  align_buffer_16(output_90_u, ow * oh)
-  align_buffer_16(output_90_v, ow * oh)
-  align_buffer_16(output_180_u, ow * oh)
-  align_buffer_16(output_180_v, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0_u, ow * oh)
+  align_buffer_64(output_0_v, ow * oh)
+  align_buffer_64(output_90_u, ow * oh)
+  align_buffer_64(output_90_v, ow * oh)
+  align_buffer_64(output_180_u, ow * oh)
+  align_buffer_64(output_180_v, ow * oh)
 
   for (i = 0; i < iw * ih; i += 2) {
     input[i] = i >> 1;
@@ -321,13 +321,13 @@ TEST_F(libyuvTest, RotateUV180) {
     PrintArray(output_0_v, ow, oh);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0_u)
-  free_aligned_buffer_16(output_0_v)
-  free_aligned_buffer_16(output_90_u)
-  free_aligned_buffer_16(output_90_v)
-  free_aligned_buffer_16(output_180_u)
-  free_aligned_buffer_16(output_180_v)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0_u)
+  free_aligned_buffer_64(output_0_v)
+  free_aligned_buffer_64(output_90_u)
+  free_aligned_buffer_64(output_90_v)
+  free_aligned_buffer_64(output_180_u)
+  free_aligned_buffer_64(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -342,13 +342,13 @@ TEST_F(libyuvTest, RotateUV270) {
   ow = ih;
   oh = iw >> 1;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0_u, ow * oh)
-  align_buffer_16(output_0_v, ow * oh)
-  align_buffer_16(output_270_u, ow * oh)
-  align_buffer_16(output_270_v, ow * oh)
-  align_buffer_16(output_180_u, ow * oh)
-  align_buffer_16(output_180_v, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0_u, ow * oh)
+  align_buffer_64(output_0_v, ow * oh)
+  align_buffer_64(output_270_u, ow * oh)
+  align_buffer_64(output_270_v, ow * oh)
+  align_buffer_64(output_180_u, ow * oh)
+  align_buffer_64(output_180_v, ow * oh)
 
   for (i = 0; i < iw * ih; i += 2) {
     input[i] = i >> 1;
@@ -396,13 +396,13 @@ TEST_F(libyuvTest, RotateUV270) {
     PrintArray(output_0_v, oh, ow);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0_u)
-  free_aligned_buffer_16(output_0_v)
-  free_aligned_buffer_16(output_270_u)
-  free_aligned_buffer_16(output_270_v)
-  free_aligned_buffer_16(output_180_u)
-  free_aligned_buffer_16(output_180_v)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0_u)
+  free_aligned_buffer_64(output_0_v)
+  free_aligned_buffer_64(output_270_u)
+  free_aligned_buffer_64(output_270_v)
+  free_aligned_buffer_64(output_180_u)
+  free_aligned_buffer_64(output_180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -417,9 +417,9 @@ TEST_F(libyuvTest, RotatePlane180) {
   ow = iw;
   oh = ih;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_180, iw * ih)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_180, iw * ih)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -445,9 +445,9 @@ TEST_F(libyuvTest, RotatePlane180) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_180)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_180)
 
   EXPECT_EQ(0, err);
 }
@@ -462,11 +462,11 @@ TEST_F(libyuvTest, RotatePlane270) {
   ow = ih;
   oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_90, ow * oh)
-  align_buffer_16(output_180, iw * ih)
-  align_buffer_16(output_270, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_90, ow * oh)
+  align_buffer_64(output_180, iw * ih)
+  align_buffer_64(output_270, ow * oh)
 
   for (i = 0; i < iw * ih; ++i)
     input[i] = i;
@@ -499,11 +499,11 @@ TEST_F(libyuvTest, RotatePlane270) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_90)
-  free_aligned_buffer_16(output_180)
-  free_aligned_buffer_16(output_270)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_90)
+  free_aligned_buffer_64(output_180)
+  free_aligned_buffer_64(output_270)
 
   EXPECT_EQ(0, err);
 }
@@ -518,9 +518,9 @@ TEST_F(libyuvTest, RotatePlane90and270) {
   ow = ih;
   oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_90, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_90, ow * oh)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -546,9 +546,9 @@ TEST_F(libyuvTest, RotatePlane90and270) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_90)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_90)
 
   EXPECT_EQ(0, err);
 }
@@ -563,9 +563,9 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
   int ow = ih;
   int oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_90, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_90, ow * oh)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -603,9 +603,9 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_90)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_90)
 
   EXPECT_EQ(0, err);
 }
@@ -620,9 +620,9 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
   ow = ih;
   oh = iw;
 
-  align_buffer_16(input, iw * ih)
-  align_buffer_16(output_0, iw * ih)
-  align_buffer_16(output_270, ow * oh)
+  align_buffer_64(input, iw * ih)
+  align_buffer_64(output_0, iw * ih)
+  align_buffer_64(output_270, ow * oh)
 
   for (i = 0; i < iw * ih; ++i) {
     input[i] = i;
@@ -660,9 +660,9 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
     PrintArray(output_0, iw, ih);
   }
 
-  free_aligned_buffer_16(input)
-  free_aligned_buffer_16(output_0)
-  free_aligned_buffer_16(output_270)
+  free_aligned_buffer_64(input)
+  free_aligned_buffer_64(output_0)
+  free_aligned_buffer_64(output_270)
 
   EXPECT_EQ(0, err);
 }
@@ -683,18 +683,18 @@ TEST_F(libyuvTest, I420Rotate90) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_u, uv_plane_size)
-  align_buffer_16(orig_v, uv_plane_size)
-  align_buffer_16(ro0_y, y_plane_size)
-  align_buffer_16(ro0_u, uv_plane_size)
-  align_buffer_16(ro0_v, uv_plane_size)
-  align_buffer_16(ro90_y, y_plane_size)
-  align_buffer_16(ro90_u, uv_plane_size)
-  align_buffer_16(ro90_v, uv_plane_size)
-  align_buffer_16(ro270_y, y_plane_size)
-  align_buffer_16(ro270_u, uv_plane_size)
-  align_buffer_16(ro270_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_u, uv_plane_size)
+  align_buffer_64(orig_v, uv_plane_size)
+  align_buffer_64(ro0_y, y_plane_size)
+  align_buffer_64(ro0_u, uv_plane_size)
+  align_buffer_64(ro0_v, uv_plane_size)
+  align_buffer_64(ro90_y, y_plane_size)
+  align_buffer_64(ro90_u, uv_plane_size)
+  align_buffer_64(ro90_v, uv_plane_size)
+  align_buffer_64(ro270_y, y_plane_size)
+  align_buffer_64(ro270_u, uv_plane_size)
+  align_buffer_64(ro270_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_u, 0, uv_plane_size);
   memset(orig_v, 0, uv_plane_size);
@@ -774,18 +774,18 @@ TEST_F(libyuvTest, I420Rotate90) {
     }
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_u)
-  free_aligned_buffer_16(orig_v)
-  free_aligned_buffer_16(ro0_y)
-  free_aligned_buffer_16(ro0_u)
-  free_aligned_buffer_16(ro0_v)
-  free_aligned_buffer_16(ro90_y)
-  free_aligned_buffer_16(ro90_u)
-  free_aligned_buffer_16(ro90_v)
-  free_aligned_buffer_16(ro270_y)
-  free_aligned_buffer_16(ro270_u)
-  free_aligned_buffer_16(ro270_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_u)
+  free_aligned_buffer_64(orig_v)
+  free_aligned_buffer_64(ro0_y)
+  free_aligned_buffer_64(ro0_u)
+  free_aligned_buffer_64(ro0_v)
+  free_aligned_buffer_64(ro90_y)
+  free_aligned_buffer_64(ro90_u)
+  free_aligned_buffer_64(ro90_v)
+  free_aligned_buffer_64(ro270_y)
+  free_aligned_buffer_64(ro270_u)
+  free_aligned_buffer_64(ro270_v)
 
   EXPECT_EQ(0, err);
 }
@@ -806,18 +806,18 @@ TEST_F(libyuvTest, I420Rotate270) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_u, uv_plane_size)
-  align_buffer_16(orig_v, uv_plane_size)
-  align_buffer_16(ro0_y, y_plane_size)
-  align_buffer_16(ro0_u, uv_plane_size)
-  align_buffer_16(ro0_v, uv_plane_size)
-  align_buffer_16(ro90_y, y_plane_size)
-  align_buffer_16(ro90_u, uv_plane_size)
-  align_buffer_16(ro90_v, uv_plane_size)
-  align_buffer_16(ro270_y, y_plane_size)
-  align_buffer_16(ro270_u, uv_plane_size)
-  align_buffer_16(ro270_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_u, uv_plane_size)
+  align_buffer_64(orig_v, uv_plane_size)
+  align_buffer_64(ro0_y, y_plane_size)
+  align_buffer_64(ro0_u, uv_plane_size)
+  align_buffer_64(ro0_v, uv_plane_size)
+  align_buffer_64(ro90_y, y_plane_size)
+  align_buffer_64(ro90_u, uv_plane_size)
+  align_buffer_64(ro90_v, uv_plane_size)
+  align_buffer_64(ro270_y, y_plane_size)
+  align_buffer_64(ro270_u, uv_plane_size)
+  align_buffer_64(ro270_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_u, 0, uv_plane_size);
   memset(orig_v, 0, uv_plane_size);
@@ -897,18 +897,18 @@ TEST_F(libyuvTest, I420Rotate270) {
     }
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_u)
-  free_aligned_buffer_16(orig_v)
-  free_aligned_buffer_16(ro0_y)
-  free_aligned_buffer_16(ro0_u)
-  free_aligned_buffer_16(ro0_v)
-  free_aligned_buffer_16(ro90_y)
-  free_aligned_buffer_16(ro90_u)
-  free_aligned_buffer_16(ro90_v)
-  free_aligned_buffer_16(ro270_y)
-  free_aligned_buffer_16(ro270_u)
-  free_aligned_buffer_16(ro270_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_u)
+  free_aligned_buffer_64(orig_v)
+  free_aligned_buffer_64(ro0_y)
+  free_aligned_buffer_64(ro0_u)
+  free_aligned_buffer_64(ro0_v)
+  free_aligned_buffer_64(ro90_y)
+  free_aligned_buffer_64(ro90_u)
+  free_aligned_buffer_64(ro90_v)
+  free_aligned_buffer_64(ro270_y)
+  free_aligned_buffer_64(ro270_u)
+  free_aligned_buffer_64(ro270_v)
 
   EXPECT_EQ(0, err);
 }
@@ -929,14 +929,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, nv_uv_plane_size)
-  align_buffer_16(ro0_y, y_plane_size)
-  align_buffer_16(ro0_u, uv_plane_size)
-  align_buffer_16(ro0_v, uv_plane_size)
-  align_buffer_16(ro90_y, y_plane_size)
-  align_buffer_16(ro90_u, uv_plane_size)
-  align_buffer_16(ro90_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_uv, nv_uv_plane_size)
+  align_buffer_64(ro0_y, y_plane_size)
+  align_buffer_64(ro0_u, uv_plane_size)
+  align_buffer_64(ro0_v, uv_plane_size)
+  align_buffer_64(ro90_y, y_plane_size)
+  align_buffer_64(ro90_u, uv_plane_size)
+  align_buffer_64(ro90_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_uv, 0, uv_plane_size);
   memset(ro0_y, 0, y_plane_size);
@@ -1008,14 +1008,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
     ++err;
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_uv)
-  free_aligned_buffer_16(ro0_y)
-  free_aligned_buffer_16(ro0_u)
-  free_aligned_buffer_16(ro0_v)
-  free_aligned_buffer_16(ro90_y)
-  free_aligned_buffer_16(ro90_u)
-  free_aligned_buffer_16(ro90_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_uv)
+  free_aligned_buffer_64(ro0_y)
+  free_aligned_buffer_64(ro0_u)
+  free_aligned_buffer_64(ro0_v)
+  free_aligned_buffer_64(ro90_y)
+  free_aligned_buffer_64(ro90_u)
+  free_aligned_buffer_64(ro90_v)
 
   EXPECT_EQ(0, err);
 }
@@ -1037,14 +1037,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, nv_uv_plane_size)
-  align_buffer_16(ro0_y, y_plane_size)
-  align_buffer_16(ro0_u, uv_plane_size)
-  align_buffer_16(ro0_v, uv_plane_size)
-  align_buffer_16(ro270_y, y_plane_size)
-  align_buffer_16(ro270_u, uv_plane_size)
-  align_buffer_16(ro270_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_uv, nv_uv_plane_size)
+  align_buffer_64(ro0_y, y_plane_size)
+  align_buffer_64(ro0_u, uv_plane_size)
+  align_buffer_64(ro0_v, uv_plane_size)
+  align_buffer_64(ro270_y, y_plane_size)
+  align_buffer_64(ro270_u, uv_plane_size)
+  align_buffer_64(ro270_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_uv, 0, nv_uv_plane_size);
   memset(ro0_y, 0, y_plane_size);
@@ -1116,14 +1116,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
     ++err;
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_uv)
-  free_aligned_buffer_16(ro0_y)
-  free_aligned_buffer_16(ro0_u)
-  free_aligned_buffer_16(ro0_v)
-  free_aligned_buffer_16(ro270_y)
-  free_aligned_buffer_16(ro270_u)
-  free_aligned_buffer_16(ro270_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_uv)
+  free_aligned_buffer_64(ro0_y)
+  free_aligned_buffer_64(ro0_u)
+  free_aligned_buffer_64(ro0_v)
+  free_aligned_buffer_64(ro270_y)
+  free_aligned_buffer_64(ro270_u)
+  free_aligned_buffer_64(ro270_v)
 
   EXPECT_EQ(0, err);
 }
@@ -1145,14 +1145,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, nv_uv_plane_size)
-  align_buffer_16(ro0_y, y_plane_size)
-  align_buffer_16(ro0_u, uv_plane_size)
-  align_buffer_16(ro0_v, uv_plane_size)
-  align_buffer_16(ro180_y, y_plane_size)
-  align_buffer_16(ro180_u, uv_plane_size)
-  align_buffer_16(ro180_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_uv, nv_uv_plane_size)
+  align_buffer_64(ro0_y, y_plane_size)
+  align_buffer_64(ro0_u, uv_plane_size)
+  align_buffer_64(ro0_v, uv_plane_size)
+  align_buffer_64(ro180_y, y_plane_size)
+  align_buffer_64(ro180_u, uv_plane_size)
+  align_buffer_64(ro180_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_uv, 0, nv_uv_plane_size);
   memset(ro0_y, 0, y_plane_size);
@@ -1221,14 +1221,14 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
     ++err;
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_uv)
-  free_aligned_buffer_16(ro0_y)
-  free_aligned_buffer_16(ro0_u)
-  free_aligned_buffer_16(ro0_v)
-  free_aligned_buffer_16(ro180_y)
-  free_aligned_buffer_16(ro180_u)
-  free_aligned_buffer_16(ro180_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_uv)
+  free_aligned_buffer_64(ro0_y)
+  free_aligned_buffer_64(ro0_u)
+  free_aligned_buffer_64(ro0_v)
+  free_aligned_buffer_64(ro180_y)
+  free_aligned_buffer_64(ro180_u)
+  free_aligned_buffer_64(ro180_v)
 
   EXPECT_EQ(0, err);
 }
@@ -1249,17 +1249,17 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, nv_uv_plane_size)
-  align_buffer_16(roa_y, y_plane_size)
-  align_buffer_16(roa_u, uv_plane_size)
-  align_buffer_16(roa_v, uv_plane_size)
-  align_buffer_16(rob_y, y_plane_size)
-  align_buffer_16(rob_u, uv_plane_size)
-  align_buffer_16(rob_v, uv_plane_size)
-  align_buffer_16(roc_y, y_plane_size)
-  align_buffer_16(roc_u, uv_plane_size)
-  align_buffer_16(roc_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_uv, nv_uv_plane_size)
+  align_buffer_64(roa_y, y_plane_size)
+  align_buffer_64(roa_u, uv_plane_size)
+  align_buffer_64(roa_v, uv_plane_size)
+  align_buffer_64(rob_y, y_plane_size)
+  align_buffer_64(rob_u, uv_plane_size)
+  align_buffer_64(rob_v, uv_plane_size)
+  align_buffer_64(roc_y, y_plane_size)
+  align_buffer_64(roc_u, uv_plane_size)
+  align_buffer_64(roc_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_uv, 0, nv_uv_plane_size);
   memset(roa_y, 0, y_plane_size);
@@ -1375,17 +1375,17 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
     PrintArray(roc_v, uv_st_0, uv_st_90);
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_uv)
-  free_aligned_buffer_16(roa_y)
-  free_aligned_buffer_16(roa_u)
-  free_aligned_buffer_16(roa_v)
-  free_aligned_buffer_16(rob_y)
-  free_aligned_buffer_16(rob_u)
-  free_aligned_buffer_16(rob_v)
-  free_aligned_buffer_16(roc_y)
-  free_aligned_buffer_16(roc_u)
-  free_aligned_buffer_16(roc_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_uv)
+  free_aligned_buffer_64(roa_y)
+  free_aligned_buffer_64(roa_u)
+  free_aligned_buffer_64(roa_v)
+  free_aligned_buffer_64(rob_y)
+  free_aligned_buffer_64(rob_u)
+  free_aligned_buffer_64(rob_v)
+  free_aligned_buffer_64(roc_y)
+  free_aligned_buffer_64(roc_u)
+  free_aligned_buffer_64(roc_v)
 
   EXPECT_EQ(0, y_err + uv_err);
 }
@@ -1406,14 +1406,14 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
 
   srandom(time(NULL));
 
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(orig_uv, nv_uv_plane_size)
-  align_buffer_16(roa_y, y_plane_size)
-  align_buffer_16(roa_u, uv_plane_size)
-  align_buffer_16(roa_v, uv_plane_size)
-  align_buffer_16(rob_y, y_plane_size)
-  align_buffer_16(rob_u, uv_plane_size)
-  align_buffer_16(rob_v, uv_plane_size)
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(orig_uv, nv_uv_plane_size)
+  align_buffer_64(roa_y, y_plane_size)
+  align_buffer_64(roa_u, uv_plane_size)
+  align_buffer_64(roa_v, uv_plane_size)
+  align_buffer_64(rob_y, y_plane_size)
+  align_buffer_64(rob_u, uv_plane_size)
+  align_buffer_64(rob_v, uv_plane_size)
   memset(orig_y, 0, y_plane_size);
   memset(orig_uv, 0, nv_uv_plane_size);
   memset(roa_y, 0, y_plane_size);
@@ -1505,14 +1505,14 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
     PrintArray(rob_v, uv_st, uvh + b * 2);
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(orig_uv)
-  free_aligned_buffer_16(roa_y)
-  free_aligned_buffer_16(roa_u)
-  free_aligned_buffer_16(roa_v)
-  free_aligned_buffer_16(rob_y)
-  free_aligned_buffer_16(rob_u)
-  free_aligned_buffer_16(rob_v)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(orig_uv)
+  free_aligned_buffer_64(roa_y)
+  free_aligned_buffer_64(roa_u)
+  free_aligned_buffer_64(roa_v)
+  free_aligned_buffer_64(rob_y)
+  free_aligned_buffer_64(rob_u)
+  free_aligned_buffer_64(rob_v)
 
   EXPECT_EQ(0, y_err + uv_err);
 }
@@ -1531,14 +1531,14 @@ TEST_F(libyuvTest, NV12ToI420SplitUV) {
   int uv_plane_size = (uvw + b * 2) * (uvh + b * 2);
   int nv_uv_plane_size = (uvw * 2 + b * 2) * (uvh + b * 2);
 
-  align_buffer_16(src_y, y_plane_size)
-  align_buffer_16(src_uv, nv_uv_plane_size)
-  align_buffer_16(dst_y_c, y_plane_size)
-  align_buffer_16(dst_u_c, uv_plane_size)
-  align_buffer_16(dst_v_c, uv_plane_size)
-  align_buffer_16(dst_y_opt, y_plane_size)
-  align_buffer_16(dst_u_opt, uv_plane_size)
-  align_buffer_16(dst_v_opt, uv_plane_size)
+  align_buffer_64(src_y, y_plane_size)
+  align_buffer_64(src_uv, nv_uv_plane_size)
+  align_buffer_64(dst_y_c, y_plane_size)
+  align_buffer_64(dst_u_c, uv_plane_size)
+  align_buffer_64(dst_v_c, uv_plane_size)
+  align_buffer_64(dst_y_opt, y_plane_size)
+  align_buffer_64(dst_u_opt, uv_plane_size)
+  align_buffer_64(dst_v_opt, uv_plane_size)
 
   memset(src_y, 0, y_plane_size);
   memset(src_uv, 0, nv_uv_plane_size);
@@ -1599,14 +1599,14 @@ TEST_F(libyuvTest, NV12ToI420SplitUV) {
       ++err;
     }
   }
-  free_aligned_buffer_16(src_y)
-  free_aligned_buffer_16(src_uv)
-  free_aligned_buffer_16(dst_y_c)
-  free_aligned_buffer_16(dst_u_c)
-  free_aligned_buffer_16(dst_v_c)
-  free_aligned_buffer_16(dst_y_opt)
-  free_aligned_buffer_16(dst_u_opt)
-  free_aligned_buffer_16(dst_v_opt)
+  free_aligned_buffer_64(src_y)
+  free_aligned_buffer_64(src_uv)
+  free_aligned_buffer_64(dst_y_c)
+  free_aligned_buffer_64(dst_u_c)
+  free_aligned_buffer_64(dst_v_c)
+  free_aligned_buffer_64(dst_y_opt)
+  free_aligned_buffer_64(dst_u_opt)
+  free_aligned_buffer_64(dst_v_opt)
 
   EXPECT_EQ(0, err);
 }

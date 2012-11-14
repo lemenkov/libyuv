@@ -864,21 +864,19 @@ void RotatePlane180(const uint8* src, int src_stride,
                     int width, int height) {
   void (*MirrorRow)(const uint8* src, uint8* dst, int width) = MirrorRow_C;
 #if defined(HAS_MIRRORROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_NEON;
   }
 #endif
 #if defined(HAS_MIRRORROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     MirrorRow = MirrorRow_SSE2;
   }
 #endif
 #if defined(HAS_MIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     MirrorRow = MirrorRow_SSSE3;
@@ -1050,13 +1048,12 @@ void RotateUV180(const uint8* src, int src_stride,
                  int width, int height) {
   void (*MirrorRowUV)(const uint8* src, uint8* dst_u, uint8* dst_v, int width) =
       MirrorUVRow_C;
-#if defined(HAS_MIRRORROW_UV_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
+#if defined(HAS_MIRRORUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     MirrorRowUV = MirrorUVRow_NEON;
   }
 #elif defined(HAS_MIRRORROW_UV_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     MirrorRowUV = MirrorUVRow_SSSE3;
   }

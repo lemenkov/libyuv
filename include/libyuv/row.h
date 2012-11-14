@@ -188,7 +188,7 @@ extern "C" {
 #define HAS_I444TOARGBROW_NEON
 #define HAS_MERGEUV_NEON
 #define HAS_MIRRORROW_NEON
-#define HAS_MirrorUVRow_NEON
+#define HAS_MIRRORUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
 #define HAS_NV21TOARGBROW_NEON
@@ -216,6 +216,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
+#define HAS_ARGBMIRRORROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -434,7 +435,7 @@ void BGRAToUVRow_Any_SSSE3(const uint8* src_bgra, int src_stride_bgra,
 void ABGRToUVRow_Any_SSSE3(const uint8* src_abgr, int src_stride_abgr,
                            uint8* dst_u, uint8* dst_v, int width);
 void RGBAToUVRow_Any_SSSE3(const uint8* src_rgba, int src_stride_rgba,
-                       uint8* dst_u, uint8* dst_v, int width);
+                           uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUV444Row_Any_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                              int pix);
 void ARGBToUV422Row_Any_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
@@ -498,18 +499,19 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width);
-void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                            int width);
 void MirrorRow_C(const uint8* src, uint8* dst, int width);
 
 void MirrorUVRow_SSSE3(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                        int width);
 void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                       int width);
+void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                            int width);
 void MirrorUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                    int width);
 
 void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
+void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);
 
 void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);

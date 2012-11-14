@@ -639,9 +639,9 @@ TEST_F(libyuvTest, TestCopyPlane) {
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
   srandom(time(NULL));
-  align_buffer_16(orig_y, y_plane_size)
-  align_buffer_16(dst_c, y_plane_size)
-  align_buffer_16(dst_opt, y_plane_size);
+  align_buffer_64(orig_y, y_plane_size)
+  align_buffer_64(dst_c, y_plane_size)
+  align_buffer_64(dst_opt, y_plane_size);
 
   memset(orig_y, 0, y_plane_size);
   memset(dst_c, 0, y_plane_size);
@@ -689,9 +689,9 @@ TEST_F(libyuvTest, TestCopyPlane) {
       ++err;
   }
 
-  free_aligned_buffer_16(orig_y)
-  free_aligned_buffer_16(dst_c)
-  free_aligned_buffer_16(dst_opt)
+  free_aligned_buffer_64(orig_y)
+  free_aligned_buffer_64(dst_c)
+  free_aligned_buffer_64(dst_opt)
 
   EXPECT_EQ(0, err);
 }

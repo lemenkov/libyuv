@@ -39,14 +39,13 @@ static void ARGBTranspose(const uint8* src, int src_stride,
   void (*ScaleARGBRowDownEven)(const uint8* src_ptr, int src_stride,
       int src_step, uint8* dst_ptr, int dst_width) = ScaleARGBRowDownEven_C;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(height, 4) &&  // width of dest.
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(height, 4) &&  // Width of dest.
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_SSE2;
   }
 #endif
 
-  int src_pixel_step = src_stride / 4;
+  int src_pixel_step = src_stride >> 2;
   for (int i = 0; i < width; ++i) {  // column of source to row of dest.
     ScaleARGBRowDownEven(src, 0, src_pixel_step, dst, height);
     dst += dst_stride;
@@ -86,6 +85,10 @@ void ARGBRotate180(const uint8* src, int src_stride,
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     ARGBMirrorRow = ARGBMirrorRow_SSSE3;
+  }
+#elif defined(HAS_ARGBMIRRORROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
+    ARGBMirrorRow = ARGBMirrorRow_NEON;
   }
 #endif
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;

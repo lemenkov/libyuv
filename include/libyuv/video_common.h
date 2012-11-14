@@ -156,7 +156,6 @@ enum FourCCBpp {
   FOURCC_BPP_ANY  = 0,  // 0 means unknown.
 };
 
-
 // Converts fourcc aliases into canonical ones.
 LIBYUV_API uint32 CanonicalFourCC(uint32 fourcc);
 

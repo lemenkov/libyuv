@@ -111,13 +111,14 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
 #if defined(HAS_MIRRORROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_SSE2;
+  }
+#endif
 #if defined(HAS_MIRRORROW_SSSE3)
-    if (TestCpuFlag(kCpuHasSSSE3) &&
-        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16)) {
+    if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
+        IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+        IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
       MirrorRow = MirrorRow_SSSE3;
     }
-#endif
-  }
 #endif
 
   // Mirror plane
@@ -329,6 +330,10 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBMirrorRow = ARGBMirrorRow_SSSE3;
+  }
+#elif defined(HAS_ARGBMIRRORROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
+    ARGBMirrorRow = ARGBMirrorRow_NEON;
   }
 #endif
 

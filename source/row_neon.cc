@@ -840,15 +840,15 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld4.u8    {d0, d1, d2, d3}, [%0]!        \n"  // load 32
+    "vld1.u8    {d0, d1, d2, d3}, [%0]!        \n"  // load 32
     "subs       %2, %2, #32                    \n"  // 32 processed per loop
-    "vst4.u8    {d0, d1, d2, d3}, [%1]!        \n"  // store 32
+    "vst1.u8    {d0, d1, d2, d3}, [%1]!        \n"  // store 32
     "bgt        1b                             \n"
-    : "+r"(src),   // %0
-      "+r"(dst),   // %1
-      "+r"(count)  // %2  // Output registers
-    :                     // Input registers
-    : "memory", "cc", "q0", "q1"  // Clobber List
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(count)  // %2  // Output registers
+  :                     // Input registers
+  : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_COPYROW_NEON
@@ -856,16 +856,17 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 #ifdef HAS_SETROW_NEON
 // SetRow8 writes 'count' bytes using a 32 bit value repeated.
 void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
-  asm volatile (  // NOLINT
+  asm volatile (
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
     "1:                                        \n"
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
     "vst1.u8   {q0}, [%0]!                     \n"  // store
     "bgt       1b                              \n"
-    : "+r"(dst),   // %0
-      "+r"(count)  // %1
-    : "r"(v32)     // %2
-    : "q0", "memory", "cc");
+  : "+r"(dst),   // %0
+    "+r"(count)  // %1
+  : "r"(v32)     // %2
+  : "q0", "memory", "cc"
+  );
 }
 
 // TODO(fbarchard): Make fully assembler
@@ -882,138 +883,78 @@ void SetRows32_NEON(uint8* dst, uint32 v32, int width,
 #ifdef HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
-    // compute where to start writing destination
-    "add         %1, %2                        \n"
-    // work on segments that are multiples of 16
-    "lsrs        r3, %2, #4                    \n"
-    // the output is written in two block. 8 bytes followed
-    // by another 8. reading is done sequentially, from left to
-    // right. writing is done from right to left in block sizes
-    // %1, the destination pointer is incremented after writing
-    // the first of the two blocks. need to subtract that 8 off
-    // along with 16 to get the next location.
-    "mov         r3, #-24                      \n"
-    "beq         2f                            \n"
+    // Start at end of source row.
+    "mov        r3, #-16                       \n"
+    "add        %0, %0, %2                     \n"
+    "sub        %0, #16                        \n"
 
-    // back of destination by the size of the register that is
-    // going to be mirrored
-    "sub         %1, #16                       \n"
-    // the loop needs to run on blocks of 16. what will be left
-    // over is either a negative number, the residuals that need
-    // to be done, or 0. If this isn't subtracted off here the
-    // loop will run one extra time.
-    "sub         %2, #16                       \n"
-
-    // mirror the bytes in the 64 bit segments. unable to mirror
-    // the bytes in the entire 128 bits in one go.
-    // because of the inability to mirror the entire 128 bits
-    // mirror the writing out of the two 64 bit segments.
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld1.8      {q0}, [%0]!                   \n"  // src += 16
-    "subs        %2, #16                       \n"
-    "vrev64.8    q0, q0                        \n"
-    "vst1.8      {d1}, [%1]!                   \n"
-    "vst1.8      {d0}, [%1], r3                \n"  // dst -= 16
-    "bge         1b                            \n"
-
-    // add 16 back to the counter. if the result is 0 there is no
-    // residuals so jump past
-    "adds        %2, #16                       \n"
-    "beq         5f                            \n"
-    "add         %1, #16                       \n"
-  "2:                                          \n"
-    "mov         r3, #-3                       \n"
-    "sub         %1, #2                        \n"
-    "subs        %2, #2                        \n"
-    // check for 16*n+1 scenarios where segments_of_2 should not
-    // be run, but there is something left over.
-    "blt         4f                            \n"
-
-// do this in neon registers as per
-// http://blogs.arm.com/software-enablement/196-coding-for-neon-part-2-dealing-with-leftovers/
-  "3:                                          \n"
-    "vld2.8      {d0[0], d1[0]}, [%0]!         \n"  // src += 2
-    "subs        %2, #2                        \n"
-    "vst1.8      {d1[0]}, [%1]!                \n"
-    "vst1.8      {d0[0]}, [%1], r3             \n"  // dst -= 2
-    "bge         3b                            \n"
-
-    "adds        %2, #2                        \n"
-    "beq         5f                            \n"
-  "4:                                          \n"
-    "add         %1, #1                        \n"
-    "vld1.8      {d0[0]}, [%0]                 \n"
-    "vst1.8      {d0[0]}, [%1]                 \n"
-  "5:                                          \n"
-    : "+r"(src),   // %0
-      "+r"(dst),   // %1
-      "+r"(width)  // %2
-    :
-    : "memory", "cc", "r3", "q0"
+    "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
+    "subs       %2, #16                        \n"  // 16 pixels per loop.
+    "vrev64.8   q0, q0                         \n"
+    "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
+    "vst1.8     {d0}, [%1]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc", "r3", "q0"
   );
 }
 #endif  // HAS_MIRRORROW_NEON
 
-#ifdef HAS_MirrorUVRow_NEON
-void MirrorUVRow_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width) {
+#ifdef HAS_MIRRORUVROW_NEON
+void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    // compute where to start writing destination
-    "add         %1, %3                        \n"  // dst_a + width
-    "add         %2, %3                        \n"  // dst_b + width
-    // work on input segments that are multiples of 16, but
-    // width that has been passed is output segments, half
-    // the size of input.
-    "lsrs        r12, %3, #3                   \n"
-    "beq         2f                            \n"
-    // the output is written in to two blocks.
-    "mov         r12, #-8                      \n"
-    // back of destination by the size of the register that is
-    // going to be mirrord
-    "sub         %1, #8                        \n"
-    "sub         %2, #8                        \n"
-    // the loop needs to run on blocks of 8. what will be left
-    // over is either a negative number, the residuals that need
-    // to be done, or 0. if this isn't subtracted off here the
-    // loop will run one extra time.
-    "sub         %3, #8                        \n"
+    // Start at end of source row.
+    "mov        r3, #-16                       \n"
+    "add        %0, %0, %3, lsl #1             \n"
+    "sub        %0, #16                        \n"
 
-    // mirror the bytes in the 64 bit segments
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld2.8      {d0, d1}, [%0]!               \n"  // src += 16
-    "subs        %3, #8                        \n"
-    "vrev64.8    q0, q0                        \n"
-    "vst1.8      {d0}, [%1], r12               \n"  // dst_a -= 8
-    "vst1.8      {d1}, [%2], r12               \n"  // dst_b -= 8
-    "bge         1b                            \n"
-
-    // add 8 back to the counter. if the result is 0 there is no
-    // residuals so return
-    "adds        %3, #8                        \n"
-    "beq         4f                            \n"
-    "add         %1, #8                        \n"
-    "add         %2, #8                        \n"
-  "2:                                          \n"
-    "mov         r12, #-1                      \n"
-    "sub         %1, #1                        \n"
-    "sub         %2, #1                        \n"
-  "3:                                          \n"
-      "vld2.8      {d0[0], d1[0]}, [%0]!       \n"  // src += 2
-      "subs        %3, %3, #1                  \n"
-      "vst1.8      {d0[0]}, [%1], r12          \n"  // dst_a -= 1
-      "vst1.8      {d1[0]}, [%2], r12          \n"  // dst_b -= 1
-      "bgt         3b                          \n"
-  "4:                                          \n"
-    : "+r"(src),    // %0
-      "+r"(dst_a),  // %1
-      "+r"(dst_b),  // %2
-      "+r"(width)   // %3
-    :
-    : "memory", "cc", "r12", "q0"
+    "vld2.8     {d0, d1}, [%0], r3             \n"  // src -= 16
+    "subs       %3, #8                         \n"  // 8 pixels per loop.
+    "vrev64.8   q0, q0                         \n"
+    "vst1.8     {d0}, [%1]!                    \n"  // dst += 8
+    "vst1.8     {d1}, [%2]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src_uv),  // %0
+    "+r"(dst_u),   // %1
+    "+r"(dst_v),   // %2
+    "+r"(width)    // %3
+  :
+  : "memory", "cc", "r3", "q0"
   );
 }
-#endif  // HAS_MirrorUVRow_NEON
+#endif  // HAS_MIRRORUVROW_NEON
+
+#ifdef HAS_ARGBMIRRORROW_NEON
+void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    // Start at end of source row.
+    "mov        r3, #-16                       \n"
+    "add        %0, %0, %2, lsl #2             \n"
+    "sub        %0, #16                        \n"
+
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
+    "subs       %2, #4                         \n"  // 4 pixels per loop.
+    "vrev64.32  q0, q0                         \n"
+    "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
+    "vst1.8     {d0}, [%1]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc", "r3", "q0"
+  );
+}
+#endif  // HAS_ARGBMIRRORROW_NEON
 
 #ifdef HAS_BGRATOARGBROW_NEON
 void BGRAToARGBRow_NEON(const uint8* src_bgra, uint8* dst_argb, int pix) {
@@ -1421,13 +1362,13 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
     "vrhadd.u8  q0, q1                         \n"  // average row 1 and 2
     "vst1.u8    {q0}, [%2]!                    \n"
     "bgt        1b                             \n"
-    : "+r"(src_uv),         // %0
-      "+r"(src_uv_stride),  // %1
-      "+r"(dst_uv),         // %2
-      "+r"(pix)             // %3
-    :
-    : "memory", "cc", "q0", "q1"  // Clobber List
-   );
+  : "+r"(src_uv),         // %0
+    "+r"(src_uv_stride),  // %1
+    "+r"(dst_uv),         // %2
+    "+r"(pix)             // %3
+  :
+  : "memory", "cc", "q0", "q1"  // Clobber List
+  );
 }
 
 // Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
@@ -1441,13 +1382,13 @@ void ARGBToBayerRow_NEON(const uint8* src_argb,
     "vtbl.8     d3, {d0, d1}, d2               \n"  // look up 4 pixels
     "vst1.u32   {d3[0]}, [%1]!                 \n"  // store 4.
     "bgt        1b                             \n"
-    : "+r"(src_argb),         // %0
-      "+r"(dst_bayer),        // %1
-      "+r"(selector),         // %2
-      "+r"(pix)               // %3
-    :
-    : "memory", "cc", "q0", "q1"  // Clobber List
-   );
+  : "+r"(src_argb),         // %0
+    "+r"(dst_bayer),        // %1
+    "+r"(selector),         // %2
+    "+r"(pix)               // %3
+  :
+  : "memory", "cc", "q0", "q1"  // Clobber List
+  );
 }
 
 void I422ToYUY2Row_NEON(const uint8* src_y,
@@ -1463,13 +1404,13 @@ void I422ToYUY2Row_NEON(const uint8* src_y,
     "subs       %4, %4, #16                    \n"  // 16 pixels
     "vst4.u8    {d0, d1, d2, d3}, [%3]!        \n"  // Store 8 YUY2/16 pixels.
     "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_yuy2),  // %3
-      "+r"(width)      // %4
-    :
-    : "cc", "memory", "d0", "d1", "d2", "d3"
+  : "+r"(src_y),     // %0
+    "+r"(src_u),     // %1
+    "+r"(src_v),     // %2
+    "+r"(dst_yuy2),  // %3
+    "+r"(width)      // %4
+  :
+  : "cc", "memory", "d0", "d1", "d2", "d3"
   );
 }
 
@@ -1486,13 +1427,13 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
     "subs       %4, %4, #16                    \n"  // 16 pixels
     "vst4.u8    {d0, d1, d2, d3}, [%3]!        \n"  // Store 8 UYVY/16 pixels.
     "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_uyvy),  // %3
-      "+r"(width)      // %4
-    :
-    : "cc", "memory", "d0", "d1", "d2", "d3"
+  : "+r"(src_y),     // %0
+    "+r"(src_u),     // %1
+    "+r"(src_v),     // %2
+    "+r"(dst_uyvy),  // %3
+    "+r"(width)      // %4
+  :
+  : "cc", "memory", "d0", "d1", "d2", "d3"
   );
 }
 

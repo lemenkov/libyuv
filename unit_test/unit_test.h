@@ -13,14 +13,14 @@
 
 #include <gtest/gtest.h>
 
-#define align_buffer_16(var, size)                                             \
+#define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 15));                   \
+  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));                   \
   var = reinterpret_cast<uint8*>                                               \
-        ((reinterpret_cast<intptr_t>(var##_mem) + 15) & ~15);
+        ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63);
 
-#define free_aligned_buffer_16(var) \
+#define free_aligned_buffer_64(var) \
   free(var##_mem);  \
   var = 0;
 
