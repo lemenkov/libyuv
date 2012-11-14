@@ -3115,6 +3115,9 @@ void ScalePlaneBilinear(int src_width, int src_height,
     int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
     int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
     int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+    if (y > maxy) {
+      y = maxy;
+    }
     for (int j = 0; j < dst_height; ++j) {
       int yi = y >> 16;
       int yf = (y >> 8) & 255;

@@ -30,7 +30,7 @@ static uint32 ReferenceHashDjb2(const uint8* src, uint64 count, uint32 seed) {
   return hash;
 }
 
-TEST_F(libyuvTest, BenchmakDjb2_OPT) {
+TEST_F(libyuvTest, BenchmakDjb2_Opt) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_64(src_a, kMaxTest)
 
@@ -46,7 +46,7 @@ TEST_F(libyuvTest, BenchmakDjb2_OPT) {
   free_aligned_buffer_64(src_a)
 }
 
-TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
+TEST_F(libyuvTest, BenchmakDjb2_Unaligned) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_64(src_a, kMaxTest + 1)
   for (int i = 0; i < kMaxTest; ++i) {
@@ -61,7 +61,7 @@ TEST_F(libyuvTest, BenchmakDjb2_Unaligned_OPT) {
   free_aligned_buffer_64(src_a)
 }
 
-TEST_F(libyuvTest, BenchmarkSumSquareError_OPT) {
+TEST_F(libyuvTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
   align_buffer_64(src_a, kMaxWidth)
   align_buffer_64(src_b, kMaxWidth)
@@ -134,7 +134,7 @@ TEST_F(libyuvTest, SumSquareError) {
   free_aligned_buffer_64(src_b)
 }
 
-TEST_F(libyuvTest, BenchmarkPsnr_OPT) {
+TEST_F(libyuvTest, BenchmarkPsnr_Opt) {
   align_buffer_64(src_a, benchmark_width_ * benchmark_height_)
   align_buffer_64(src_b, benchmark_width_ * benchmark_height_)
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
@@ -151,7 +151,7 @@ TEST_F(libyuvTest, BenchmarkPsnr_OPT) {
                   benchmark_width_, benchmark_height_);
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
-  printf("BenchmarkPsnr_OPT - %8.2f us opt\n", opt_time * 1e6);
+  printf("BenchmarkPsnr_Opt - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);
 
@@ -236,7 +236,7 @@ TEST_F(libyuvTest, Psnr) {
   free_aligned_buffer_64(src_b)
 }
 
-TEST_F(libyuvTest, BenchmarkSsim_OPT) {
+TEST_F(libyuvTest, BenchmarkSsim_Opt) {
   align_buffer_64(src_a, benchmark_width_ * benchmark_height_)
   align_buffer_64(src_b, benchmark_width_ * benchmark_height_)
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
@@ -253,7 +253,7 @@ TEST_F(libyuvTest, BenchmarkSsim_OPT) {
                   benchmark_width_, benchmark_height_);
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
-  printf("BenchmarkSsim_OPT - %8.2f us opt\n", opt_time * 1e6);
+  printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);
 
   EXPECT_EQ(0, 0);  // Pass if we get this far.
 
