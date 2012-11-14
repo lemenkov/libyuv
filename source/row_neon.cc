@@ -906,16 +906,17 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_MIRRORROW_NEON
 
 #ifdef HAS_MIRRORUVROW_NEON
-void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
+void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                      int width) {
   asm volatile (
     // Start at end of source row.
-    "mov        r3, #-16                       \n"
+    "mov        r12, #-16                      \n"
     "add        %0, %0, %3, lsl #1             \n"
     "sub        %0, #16                        \n"
 
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld2.8     {d0, d1}, [%0], r3             \n"  // src -= 16
+    "vld2.8     {d0, d1}, [%0], r12            \n"  // src -= 16
     "subs       %3, #8                         \n"  // 8 pixels per loop.
     "vrev64.8   q0, q0                         \n"
     "vst1.8     {d0}, [%1]!                    \n"  // dst += 8
@@ -926,7 +927,7 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width
     "+r"(dst_v),   // %2
     "+r"(width)    // %3
   :
-  : "memory", "cc", "r3", "q0"
+  : "memory", "cc", "r12", "q0"
   );
 }
 #endif  // HAS_MIRRORUVROW_NEON

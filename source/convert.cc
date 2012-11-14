@@ -579,59 +579,6 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Test if over reading on source is safe.
-// TODO(fbarchard): Find more efficient solution to safely do odd sizes.
-// Macros to control read policy, from slowest to fastest:
-// READSAFE_NEVER - disables read ahead on systems with strict memory reads
-// READSAFE_ODDHEIGHT - last row of odd height done with C.
-//   This policy assumes that the caller handles the last row of an odd height
-//   image using C.
-// READSAFE_PAGE - enable read ahead within same page.
-//   A page is 4096 bytes. When reading ahead, if the last pixel is near the
-//   end the page, and a read spans the page into the next page, a memory
-//   exception can occur if that page has not been allocated, or is a guard
-//   page. This setting ensures the overread is within the same page.
-// READSAFE_ALWAYS - enables read ahead on systems without memory exceptions
-//   or where buffers are padded by 64 bytes.
-
-#if defined(HAS_RGB24TOARGBROW_SSSE3) || \
-    defined(HAS_RGB24TOARGBROW_SSSE3) || \
-    defined(HAS_RAWTOARGBROW_SSSE3) || \
-    defined(HAS_RGB565TOARGBROW_SSE2) || \
-    defined(HAS_ARGB1555TOARGBROW_SSE2) || \
-    defined(HAS_ARGB4444TOARGBROW_SSE2)
-
-#define READSAFE_ODDHEIGHT
-
-static bool TestReadSafe(const uint8* src_yuy2, int src_stride_yuy2,
-                        int width, int height, int bpp, int overread) {
-  if (width > kMaxStride) {
-    return false;
-  }
-#if defined(READSAFE_ALWAYS)
-  return true;
-#elif defined(READSAFE_NEVER)
-  return false;
-#elif defined(READSAFE_ODDHEIGHT)
-  if (!(width & 15) ||
-      (src_stride_yuy2 >= 0 && (height & 1) && width * bpp >= overread)) {
-    return true;
-  }
-  return false;
-#elif defined(READSAFE_PAGE)
-  if (src_stride_yuy2 >= 0) {
-    src_yuy2 += (height - 1) * src_stride_yuy2;
-  }
-  uintptr_t last_adr = (uintptr_t)(src_yuy2) + width * bpp - 1;
-  uintptr_t last_read_adr = last_adr + overread - 1;
-  if (((last_adr ^ last_read_adr) & ~4095) == 0) {
-    return true;
-  }
-  return false;
-#endif
-}
-#endif
-
 // Convert YUY2 to I420.
 LIBYUV_API
 int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,

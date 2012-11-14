@@ -710,7 +710,6 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     , "xmm0", "xmm1", "xmm2", "xmm5"
 #endif
   );
-
 }
 #endif  // defined(__x86_64__) || defined(__i386__)
 

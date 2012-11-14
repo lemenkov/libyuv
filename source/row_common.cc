@@ -517,7 +517,7 @@ void ARGBToUV422Row_C(const uint8* src_argb,
     dst_u += 1;
     dst_v += 1;
   }
-  if ((width & 3) == 1) {
+  if (width & 1) {
     uint8 ab = src_argb[0];
     uint8 ag = src_argb[1];
     uint8 ar = src_argb[2];
