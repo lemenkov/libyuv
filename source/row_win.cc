@@ -2767,9 +2767,9 @@ __asm {
 }
 #endif  // HAS_ARGBMIRRORROW_SSSE3
 
-#ifdef HAS_SPLITUV_SSE2
+#ifdef HAS_SPLITUVROW_SSE2
 __declspec(naked) __declspec(align(16))
-void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   __asm {
     push       edi
     mov        eax, [esp + 4 + 4]    // src_uv
@@ -2805,8 +2805,8 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 }
 
 __declspec(naked) __declspec(align(16))
-void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                            int pix) {
+void SplitUVRow_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                               int pix) {
   __asm {
     push       edi
     mov        eax, [esp + 4 + 4]    // src_uv
@@ -2840,12 +2840,12 @@ void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     ret
   }
 }
-#endif  // HAS_SPLITUV_SSE2
+#endif  // HAS_SPLITUVROW_SSE2
 
-#ifdef HAS_MERGEUV_SSE2
+#ifdef HAS_MERGEUVROW_SSE2
 __declspec(naked) __declspec(align(16))
-void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                  int width) {
+void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                     int width) {
   __asm {
     push       edi
     mov        eax, [esp + 4 + 4]    // src_u
@@ -2874,8 +2874,8 @@ void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 }
 
 __declspec(naked) __declspec(align(16))
-void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
-                            uint8* dst_uv, int width) {
+void MergeUVRow_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
+                               uint8* dst_uv, int width) {
   __asm {
     push       edi
     mov        eax, [esp + 4 + 4]    // src_u
@@ -2902,7 +2902,7 @@ void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
     ret
   }
 }
-#endif  //  HAS_MERGEUV_SSE2
+#endif  //  HAS_MERGEUVROW_SSE2
 
 #ifdef HAS_COPYROW_SSE2
 // CopyRow copys 'count' bytes using a 16 byte load/store, 32 bytes at time.
@@ -2949,7 +2949,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 #ifdef HAS_SETROW_X86
 // SetRow8 writes 'count' bytes using a 32 bit value repeated.
 __declspec(naked) __declspec(align(16))
-void SetRow8_X86(uint8* dst, uint32 v32, int count) {
+void SetRow_X86(uint8* dst, uint32 v32, int count) {
   __asm {
     mov        edx, edi
     mov        edi, [esp + 4]   // dst
@@ -2964,7 +2964,7 @@ void SetRow8_X86(uint8* dst, uint32 v32, int count) {
 
 // SetRow32 writes 'count' words using a 32 bit value repeated.
 __declspec(naked) __declspec(align(16))
-void SetRows32_X86(uint8* dst, uint32 v32, int width,
+void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
                    int dst_stride, int height) {
   __asm {
     push       esi
@@ -4125,7 +4125,7 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 }
 #endif  // HAS_ARGBQUANTIZEROW_SSE2
 
-#ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
+#ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.
 // Consider circular CumulativeSum buffer of radius * 2 + 1 height.
@@ -4139,8 +4139,9 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 // count is number of averaged pixels to produce.
 // Does 4 pixels at a time, requires CumulativeSum pointers to be 16 byte
 // aligned.
-void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
-                                 int width, int area, uint8* dst, int count) {
+void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
+                                    int width, int area, uint8* dst,
+                                    int count) {
   __asm {
     mov        eax, topleft  // eax topleft
     mov        esi, botleft  // esi botleft
@@ -4228,7 +4229,7 @@ void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
   l1b:
   }
 }
-#endif  // HAS_CUMULATIVESUMTOAVERAGE_SSE2
+#endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values
@@ -4315,7 +4316,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
 }
 #endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
 
-#ifdef HAS_ARGBSHADE_SSE2
+#ifdef HAS_ARGBSHADEROW_SSE2
 // Shade 4 pixels at a time by specified value.
 // Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
@@ -4349,7 +4350,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
     ret
   }
 }
-#endif  // HAS_ARGBSHADE_SSE2
+#endif  // HAS_ARGBSHADEROW_SSE2
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // Copy ARGB pixels from source image with slope to a row of destination.

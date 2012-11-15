@@ -747,10 +747,11 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
 }
 #endif  // HAS_UYVYTOARGBROW_NEON
 
-#ifdef HAS_SPLITUV_NEON
+#ifdef HAS_SPLITUVROW_NEON
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
-void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
+void SplitUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                     int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
@@ -770,8 +771,8 @@ void SplitUV_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
 
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
 // Alignment requirement: Multiple of 16 pixels, pointers unaligned.
-void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                            int width) {
+void SplitUVRow_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                               int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
@@ -788,13 +789,13 @@ void SplitUV_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
-#endif  // HAS_SPLITUV_NEON
+#endif  // HAS_SPLITUVROW_NEON
 
-#ifdef HAS_MERGEUV_NEON
+#ifdef HAS_MERGEUVROW_NEON
 // Reads 16 U's and V's and writes out 16 pairs of UV.
 // Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
-void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                  int width) {
+void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                     int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
@@ -814,7 +815,7 @@ void MergeUV_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 }
 
 // Reads 16 U's and V's and writes out 16 pairs of UV.
-void MergeUV_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
+void MergeUVRow_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
                             uint8* dst_uv, int width) {
   asm volatile (
     ".p2align  2                               \n"
@@ -833,7 +834,7 @@ void MergeUV_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
     : "memory", "cc", "q0", "q1"  // Clobber List
   );
 }
-#endif  // HAS_MERGEUV_NEON
+#endif  // HAS_MERGEUVROW_NEON
 #ifdef HAS_COPYROW_NEON
 // Copy multiple of 32.  vld4.u8 allow unaligned and is fastest on a15.
 void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
@@ -855,7 +856,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 
 #ifdef HAS_SETROW_NEON
 // SetRow8 writes 'count' bytes using a 32 bit value repeated.
-void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
+void SetRow_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
     "1:                                        \n"
@@ -871,10 +872,10 @@ void SetRow8_NEON(uint8* dst, uint32 v32, int count) {
 
 // TODO(fbarchard): Make fully assembler
 // SetRow32 writes 'count' words using a 32 bit value repeated.
-void SetRows32_NEON(uint8* dst, uint32 v32, int width,
+void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
                     int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
-    SetRow8_NEON(dst, v32, width << 2);
+    SetRow_NEON(dst, v32, width << 2);
     dst += dst_stride;
   }
 }

@@ -65,10 +65,10 @@ YUY2TOYROW YUY2,u,_Unaligned
 YUY2TOYROW UYVY,a,
 YUY2TOYROW UYVY,u,_Unaligned
 
-; void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix)
+; void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix)
 
-%macro SPLITUV 1-2
-cglobal SplitUV%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
+%macro SplitUVRow 1-2
+cglobal SplitUVRow%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
     pcmpeqb    m4, m4, m4        ; generate mask 0x00ff00ff
     psrlw      m4, m4, 8
     sub        dst_vq, dst_uq
@@ -95,20 +95,20 @@ cglobal SplitUV%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
 %endmacro
 
 INIT_MMX MMX
-SPLITUV a,
-SPLITUV u,_Unaligned
+SplitUVRow a,
+SplitUVRow u,_Unaligned
 INIT_XMM SSE2
-SPLITUV a,
-SPLITUV u,_Unaligned
+SplitUVRow a,
+SplitUVRow u,_Unaligned
 INIT_YMM AVX2
-SPLITUV a,
-SPLITUV u,_Unaligned
+SplitUVRow a,
+SplitUVRow u,_Unaligned
 
-; void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-;                   int width);
+; void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+;                      int width);
 
-%macro MergeUV 1-2
-cglobal MergeUV%2, 4, 4, 3, src_u, src_v, dst_uv, pix
+%macro MergeUVRow_ 1-2
+cglobal MergeUVRow_%2, 4, 4, 3, src_u, src_v, dst_uv, pix
     sub        src_vq, src_uq
 
     ALIGN      16
@@ -128,12 +128,12 @@ cglobal MergeUV%2, 4, 4, 3, src_u, src_v, dst_uv, pix
 %endmacro
 
 INIT_MMX MMX
-MERGEUV a,
-MERGEUV u,_Unaligned
+MergeUVRow_ a,
+MergeUVRow_ u,_Unaligned
 INIT_XMM SSE2
-MERGEUV a,
-MERGEUV u,_Unaligned
+MergeUVRow_ a,
+MergeUVRow_ u,_Unaligned
 INIT_YMM AVX2
-MERGEUV a,
-MERGEUV u,_Unaligned
+MergeUVRow_ a,
+MergeUVRow_ u,_Unaligned
 

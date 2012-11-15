@@ -656,17 +656,17 @@ LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value) {
-  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow8_C;
+  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-    SetRow = SetRow8_NEON;
+    SetRow = SetRow_NEON;
   }
 #endif
 #if defined(HAS_SETROW_X86)
   if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
-    SetRow = SetRow8_X86;
+    SetRow = SetRow_X86;
   }
 #endif
 
@@ -721,17 +721,17 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    SetRows32_NEON(dst, value, width, dst_stride_argb, height);
+    ARGBSetRows_NEON(dst, value, width, dst_stride_argb, height);
     return 0;
   }
 #endif
 #if defined(HAS_SETROW_X86)
   if (TestCpuFlag(kCpuHasX86)) {
-    SetRows32_X86(dst, value, width, dst_stride_argb, height);
+    ARGBSetRows_X86(dst, value, width, dst_stride_argb, height);
     return 0;
   }
 #endif
-  SetRows32_C(dst, value, width, dst_stride_argb, height);
+  ARGBSetRows_C(dst, value, width, dst_stride_argb, height);
   return 0;
 }
 
@@ -985,7 +985,7 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
   }
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
-#if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
+#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
   }
@@ -1015,12 +1015,12 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
   }
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
-  void (*CumulativeSumToAverage)(const int32* topleft, const int32* botleft,
-      int width, int area, uint8* dst, int count) = CumulativeSumToAverage_C;
-#if defined(HAS_CUMULATIVESUMTOAVERAGE_SSE2)
+  void (*CUMULATIVESUMTOAVERAGEROW)(const int32* topleft, const int32* botleft,
+      int width, int area, uint8* dst, int count) = CumulativeSumToAverageRow_C;
+#if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
-    CumulativeSumToAverage = CumulativeSumToAverage_SSE2;
+    CUMULATIVESUMTOAVERAGEROW = CumulativeSumToAverageRow_SSE2;
   }
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this
@@ -1065,7 +1065,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     int boxwidth = radius * 4;
     int x;
     for (x = 0; x < radius + 1; ++x) {
-      CumulativeSumToAverage(cumsum_top_row, cumsum_bot_row,
+      CUMULATIVESUMTOAVERAGEROW(cumsum_top_row, cumsum_bot_row,
                               boxwidth, area, &dst_argb[x * 4], 1);
       area += (bot_y - top_y);
       boxwidth += 4;
@@ -1073,14 +1073,14 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
 
     // Middle unclipped.
     int n = (width - 1) - radius - x + 1;
-    CumulativeSumToAverage(cumsum_top_row, cumsum_bot_row,
+    CUMULATIVESUMTOAVERAGEROW(cumsum_top_row, cumsum_bot_row,
                            boxwidth, area, &dst_argb[x * 4], n);
 
     // Right clipped.
     for (x += n; x <= width - 1; ++x) {
       area -= (bot_y - top_y);
       boxwidth -= 4;
-      CumulativeSumToAverage(cumsum_top_row + (x - radius - 1) * 4,
+      CUMULATIVESUMTOAVERAGEROW(cumsum_top_row + (x - radius - 1) * 4,
                              cumsum_bot_row + (x - radius - 1) * 4,
                              boxwidth, area, &dst_argb[x * 4], 1);
     }
@@ -1104,7 +1104,7 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
   }
   void (*ARGBShadeRow)(const uint8* src_argb, uint8* dst_argb,
                        int width, uint32 value) = ARGBShadeRow_C;
-#if defined(HAS_ARGBSHADE_SSE2)
+#if defined(HAS_ARGBSHADEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {

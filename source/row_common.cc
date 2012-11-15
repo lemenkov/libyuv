@@ -1187,7 +1187,7 @@ void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width) {
   }
 }
 
-void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
+void SplitUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     dst_u[x] = src_uv[0];
     dst_u[x + 1] = src_uv[2];
@@ -1201,8 +1201,8 @@ void SplitUV_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
   }
 }
 
-void MergeUV_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-               int width) {
+void MergeUVRow_C(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width) {
   for (int x = 0; x < width - 1; x += 2) {
     dst_uv[0] = src_u[x];
     dst_uv[1] = src_v[x];
@@ -1220,7 +1220,7 @@ void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }
 
-void SetRow8_C(uint8* dst, uint32 v8, int count) {
+void SetRow_C(uint8* dst, uint32 v8, int count) {
 #ifdef _MSC_VER
   // VC will generate rep stosb.
   for (int x = 0; x < count; ++x) {
@@ -1231,7 +1231,7 @@ void SetRow8_C(uint8* dst, uint32 v8, int count) {
 #endif
 }
 
-void SetRows32_C(uint8* dst, uint32 v32, int width,
+void ARGBSetRows_C(uint8* dst, uint32 v32, int width,
                  int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
     uint32* d = reinterpret_cast<uint32*>(dst);
@@ -1498,8 +1498,8 @@ void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
   }
 }
 
-void CumulativeSumToAverage_C(const int32* tl, const int32* bl,
-                              int w, int area, uint8* dst, int count) {
+void CumulativeSumToAverageRow_C(const int32* tl, const int32* bl,
+                                int w, int area, uint8* dst, int count) {
   float ooa = 1.0f / area;
   for (int i = 0; i < count; ++i) {
     dst[0] = static_cast<uint8>((bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) * ooa);

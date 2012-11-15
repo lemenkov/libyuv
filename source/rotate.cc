@@ -1057,7 +1057,7 @@ void RotateUV180(const uint8* src, int src_stride,
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
     MirrorRowUV = MirrorUVRow_SSSE3;
   }
-#elif defined(HAS_MirrorUVRow_MIPS_DSPR2)
+#elif defined(HAS_MIRRORUVROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
     MirrorRowUV = MirrorUVRow_MIPS_DSPR2;

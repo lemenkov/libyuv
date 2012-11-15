@@ -294,7 +294,7 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
 #endif
 #undef UV422ANY
 
-#define SPLITUVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
+#define SplitUVRowANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
@@ -305,21 +305,21 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
                 width & MASK);                                                 \
     }
 
-#ifdef HAS_SPLITUV_SSE2
-SPLITUVANY(SplitUV_Any_SSE2, SplitUV_Unaligned_SSE2, SplitUV_C, 15)
+#ifdef HAS_SPLITUVROW_SSE2
+SplitUVRowANY(SplitUVRow_Any_SSE2, SplitUVRow_Unaligned_SSE2, SplitUVRow_C, 15)
 #endif
-#ifdef HAS_SPLITUV_AVX2
-SPLITUVANY(SplitUV_Any_AVX2, SplitUV_Unaligned_AVX2, SplitUV_C, 31)
+#ifdef HAS_SPLITUVROW_AVX2
+SplitUVRowANY(SplitUVRow_Any_AVX2, SplitUVRow_Unaligned_AVX2, SplitUVRow_C, 31)
 #endif
-#ifdef HAS_SPLITUV_NEON
-SPLITUVANY(SplitUV_Any_NEON, SplitUV_Unaligned_NEON, SplitUV_C, 15)
+#ifdef HAS_SPLITUVROW_NEON
+SplitUVRowANY(SplitUVRow_Any_NEON, SplitUVRow_Unaligned_NEON, SplitUVRow_C, 15)
 #endif
-#ifdef HAS_SPLITUV_MIPS_DSPR2
-SPLITUVANY(SplitUV_Any_MIPS_DSPR2, SplitUV_Unaligned_MIPS_DSPR2, SplitUV_C, 15)
+#ifdef HAS_SPLITUVROW_MIPS_DSPR2
+SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2, SplitUVRow_C, 15)
 #endif
-#undef SPLITUVANY
+#undef SplitUVRowANY
 
-#define MERGEUVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
+#define MergeUVRow_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
     void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
                  uint8* dst_uv, int width) {                                   \
       int n = width & ~MASK;                                                   \
@@ -330,16 +330,16 @@ SPLITUVANY(SplitUV_Any_MIPS_DSPR2, SplitUV_Unaligned_MIPS_DSPR2, SplitUV_C, 15)
                 width & MASK);                                                 \
     }
 
-#ifdef HAS_MERGEUV_SSE2
-MERGEUVANY(MergeUV_Any_SSE2, MergeUV_Unaligned_SSE2, MergeUV_C, 15)
+#ifdef HAS_MERGEUVROW_SSE2
+MergeUVRow_ANY(MergeUVRow_Any_SSE2, MergeUVRow_Unaligned_SSE2, MergeUVRow_C, 15)
 #endif
-#ifdef HAS_MERGEUV_AVX2
-MERGEUVANY(MergeUV_Any_AVX2, MergeUV_Unaligned_AVX2, MergeUV_C, 31)
+#ifdef HAS_MERGEUVROW_AVX2
+MergeUVRow_ANY(MergeUVRow_Any_AVX2, MergeUVRow_Unaligned_AVX2, MergeUVRow_C, 31)
 #endif
-#ifdef HAS_MERGEUV_NEON
-MERGEUVANY(MergeUV_Any_NEON, MergeUV_Unaligned_NEON, MergeUV_C, 15)
+#ifdef HAS_MERGEUVROW_NEON
+MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_Unaligned_NEON, MergeUVRow_C, 15)
 #endif
-#undef MERGEUVANY
+#undef MergeUVRow_ANY
 
 #ifdef __cplusplus
 }  // extern "C"

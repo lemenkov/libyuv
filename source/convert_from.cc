@@ -519,43 +519,43 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   }
 
   int halfwidth = (width + 1) >> 1;
-  void (*MergeUV)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                  int width) = MergeUV_C;
-#if defined(HAS_MERGEUV_SSE2)
+  void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                  int width) = MergeUVRow_C;
+#if defined(HAS_MERGEUVROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && halfwidth >= 16) {
-    MergeUV = MergeUV_Any_SSE2;
+    MergeUVRow_ = MergeUVRow_Any_SSE2;
     if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUV = MergeUV_Unaligned_SSE2;
+      MergeUVRow_ = MergeUVRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
           IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
           IS_ALIGNED(dst_uv, 16) && IS_ALIGNED(dst_stride_uv, 16)) {
-        MergeUV = MergeUV_SSE2;
+        MergeUVRow_ = MergeUVRow_SSE2;
       }
     }
   }
 #endif
-#if defined(HAS_MERGEUV_AVX2)
+#if defined(HAS_MERGEUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2) && halfwidth >= 32) {
-    MergeUV = MergeUV_Any_AVX2;
+    MergeUVRow_ = MergeUVRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
-      MergeUV = MergeUV_Unaligned_AVX2;
+      MergeUVRow_ = MergeUVRow_Unaligned_AVX2;
       if (IS_ALIGNED(src_u, 32) && IS_ALIGNED(src_stride_u, 32) &&
           IS_ALIGNED(src_v, 32) && IS_ALIGNED(src_stride_v, 32) &&
           IS_ALIGNED(dst_uv, 32) && IS_ALIGNED(dst_stride_uv, 32)) {
-        MergeUV = MergeUV_AVX2;
+        MergeUVRow_ = MergeUVRow_AVX2;
       }
     }
   }
 #endif
-#if defined(HAS_MERGEUV_NEON)
+#if defined(HAS_MERGEUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && halfwidth >= 16) {
-    MergeUV = MergeUV_Any_NEON;
+    MergeUVRow_ = MergeUVRow_Any_NEON;
     if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUV = MergeUV_Unaligned_NEON;
+      MergeUVRow_ = MergeUVRow_Unaligned_NEON;
       if (IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
           IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
           IS_ALIGNED(dst_uv, 16) && IS_ALIGNED(dst_stride_uv, 16)) {
-        MergeUV = MergeUV_NEON;
+        MergeUVRow_ = MergeUVRow_NEON;
       }
     }
   }
@@ -565,7 +565,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
     // Merge a row of U and V into a row of UV.
-    MergeUV(src_u, src_v, dst_uv, halfwidth);
+    MergeUVRow_(src_u, src_v, dst_uv, halfwidth);
     src_u += src_stride_u;
     src_v += src_stride_v;
     dst_uv += dst_stride_uv;

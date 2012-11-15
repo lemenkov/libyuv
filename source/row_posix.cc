@@ -2621,8 +2621,8 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_ARGBMIRRORROW_SSSE3
 
-#ifdef HAS_SPLITUV_SSE2
-void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+#ifdef HAS_SPLITUVROW_SSE2
+void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "pcmpeqb    %%xmm5,%%xmm5                    \n"
     "psrlw      $0x8,%%xmm5                      \n"
@@ -2657,8 +2657,8 @@ void SplitUV_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   );
 }
 
-void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                            int pix) {
+void SplitUVRow_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                               int pix) {
   asm volatile (
     "pcmpeqb    %%xmm5,%%xmm5                    \n"
     "psrlw      $0x8,%%xmm5                      \n"
@@ -2692,11 +2692,11 @@ void SplitUV_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 #endif
   );
 }
-#endif  // HAS_SPLITUV_SSE2
+#endif  // HAS_SPLITUVROW_SSE2
 
-#ifdef HAS_MERGEUV_SSE2
-void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                  int width) {
+#ifdef HAS_MERGEUVROW_SSE2
+void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                     int width) {
   asm volatile (
     "sub       %0,%1                             \n"
     ".p2align   4                                \n"
@@ -2724,8 +2724,8 @@ void MergeUV_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
   );
 }
 
-void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
-                            uint8* dst_uv, int width) {
+void MergeUVRow_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
+                               uint8* dst_uv, int width) {
   asm volatile (
     "sub       %0,%1                             \n"
     ".p2align   4                                \n"
@@ -2752,7 +2752,7 @@ void MergeUV_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
 #endif
   );
 }
-#endif  // HAS_MERGEUV_SSE2
+#endif  // HAS_MERGEUVROW_SSE2
 
 #ifdef HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
@@ -2795,7 +2795,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_COPYROW_X86
 
 #ifdef HAS_SETROW_X86
-void SetRow8_X86(uint8* dst, uint32 v32, int width) {
+void SetRow_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
     "shr       $0x2,%1                         \n"
@@ -2806,7 +2806,7 @@ void SetRow8_X86(uint8* dst, uint32 v32, int width) {
     : "memory", "cc");
 }
 
-void SetRows32_X86(uint8* dst, uint32 v32, int width,
+void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
                    int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
     size_t width_tmp = static_cast<size_t>(width);
@@ -4002,9 +4002,10 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
 }
 #endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
 
-#ifdef HAS_CUMULATIVESUMTOAVERAGE_SSE2
-void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
-                                 int width, int area, uint8* dst, int count) {
+#ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
+void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
+                                    int width, int area, uint8* dst,
+                                    int count) {
   asm volatile (
     "movd      %5,%%xmm4                       \n"
     "cvtdq2ps  %%xmm4,%%xmm4                   \n"
@@ -4089,8 +4090,8 @@ void CumulativeSumToAverage_SSE2(const int32* topleft, const int32* botleft,
 #endif
   );
 }
-#endif  // HAS_CUMULATIVESUMTOAVERAGE_SSE2
-#ifdef HAS_ARGBSHADE_SSE2
+#endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
+#ifdef HAS_ARGBSHADEROW_SSE2
 // Shade 4 pixels at a time by specified value.
 // Aligned to 16 bytes.
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
@@ -4127,7 +4128,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 #endif
   );
 }
-#endif  // HAS_ARGBSHADE_SSE2
+#endif  // HAS_ARGBSHADEROW_SSE2
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // TODO(fbarchard): Find 64 bit way to avoid masking.
