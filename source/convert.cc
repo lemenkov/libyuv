@@ -397,12 +397,7 @@ static int X420ToI420(const uint8* src_y,
   if (TestCpuFlag(kCpuHasNEON) && halfwidth >= 16) {
     SplitUVRow = SplitUVRow_Any_NEON;
     if (IS_ALIGNED(halfwidth, 16)) {
-      SplitUVRow = SplitUVRow_Unaligned_NEON;
-      if (IS_ALIGNED(src_uv, 16) && IS_ALIGNED(src_stride_uv, 16) &&
-          IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-          IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-        SplitUVRow = SplitUVRow_NEON;
-      }
+      SplitUVRow = SplitUVRow_NEON;
     }
   }
 #endif

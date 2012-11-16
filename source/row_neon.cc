@@ -748,31 +748,9 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
 #endif  // HAS_UYVYTOARGBROW_NEON
 
 #ifdef HAS_SPLITUVROW_NEON
-// Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
-// Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
+// Reads 16 pairs of UV and write even values to dst_u and odd to dst_v.
 void SplitUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                      int width) {
-  asm volatile (
-    ".p2align  2                               \n"
-  "1:                                          \n"
-    "vld2.u8    {q0, q1}, [%0:128]!            \n"  // load 16 pairs of UV
-    "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    "vst1.u8    {q0}, [%1:128]!                \n"  // store U
-    "vst1.u8    {q1}, [%2:128]!                \n"  // store V
-    "bgt        1b                             \n"
-    : "+r"(src_uv),  // %0
-      "+r"(dst_u),   // %1
-      "+r"(dst_v),   // %2
-      "+r"(width)    // %3  // Output registers
-    :                       // Input registers
-    : "memory", "cc", "q0", "q1"  // Clobber List
-  );
-}
-
-// Reads 16 pairs of UV and write even values to dst_u and odd to dst_v
-// Alignment requirement: Multiple of 16 pixels, pointers unaligned.
-void SplitUVRow_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                               int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"
@@ -793,30 +771,8 @@ void SplitUVRow_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 
 #ifdef HAS_MERGEUVROW_NEON
 // Reads 16 U's and V's and writes out 16 pairs of UV.
-// Alignment requirement: 16 bytes for pointers, and multiple of 16 pixels.
 void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                      int width) {
-  asm volatile (
-    ".p2align  2                               \n"
-  "1:                                          \n"
-    "vld1.u8    {q0}, [%0:128]!                \n"  // load U
-    "vld1.u8    {q1}, [%1:128]!                \n"  // load V
-    "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    "vst2.u8    {q0, q1}, [%2:128]!            \n"  // store 16 pairs of UV
-    "bgt        1b                             \n"
-    :
-      "+r"(src_u),   // %0
-      "+r"(src_v),   // %1
-      "+r"(dst_uv),  // %2
-      "+r"(width)    // %3  // Output registers
-    :                       // Input registers
-    : "memory", "cc", "q0", "q1"  // Clobber List
-  );
-}
-
-// Reads 16 U's and V's and writes out 16 pairs of UV.
-void MergeUVRow_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
-                            uint8* dst_uv, int width) {
   asm volatile (
     ".p2align  2                               \n"
   "1:                                          \n"

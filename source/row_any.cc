@@ -312,7 +312,7 @@ SplitUVRowANY(SplitUVRow_Any_SSE2, SplitUVRow_Unaligned_SSE2, SplitUVRow_C, 15)
 SplitUVRowANY(SplitUVRow_Any_AVX2, SplitUVRow_Unaligned_AVX2, SplitUVRow_C, 31)
 #endif
 #ifdef HAS_SPLITUVROW_NEON
-SplitUVRowANY(SplitUVRow_Any_NEON, SplitUVRow_Unaligned_NEON, SplitUVRow_C, 15)
+SplitUVRowANY(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 15)
 #endif
 #ifdef HAS_SPLITUVROW_MIPS_DSPR2
 SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2,
@@ -338,7 +338,7 @@ MergeUVRow_ANY(MergeUVRow_Any_SSE2, MergeUVRow_Unaligned_SSE2, MergeUVRow_C, 15)
 MergeUVRow_ANY(MergeUVRow_Any_AVX2, MergeUVRow_Unaligned_AVX2, MergeUVRow_C, 31)
 #endif
 #ifdef HAS_MERGEUVROW_NEON
-MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_Unaligned_NEON, MergeUVRow_C, 15)
+MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #endif
 #undef MergeUVRow_ANY
 

@@ -1017,7 +1017,8 @@ static void ScaleARGBSimple(int src_width, int src_height,
   int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
   int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
   for (int i = 0; i < dst_height; ++i) {
-    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride, dst_width, x, dx);
+    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride, dst_width, x,
+                  dx);
     dst_argb += dst_stride;
     y += dy;
   }

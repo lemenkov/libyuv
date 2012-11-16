@@ -520,7 +520,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
 
   int halfwidth = (width + 1) >> 1;
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-                  int width) = MergeUVRow_C;
+                      int width) = MergeUVRow_C;
 #if defined(HAS_MERGEUVROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && halfwidth >= 16) {
     MergeUVRow_ = MergeUVRow_Any_SSE2;
@@ -551,12 +551,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasNEON) && halfwidth >= 16) {
     MergeUVRow_ = MergeUVRow_Any_NEON;
     if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow_ = MergeUVRow_Unaligned_NEON;
-      if (IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-          IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-          IS_ALIGNED(dst_uv, 16) && IS_ALIGNED(dst_stride_uv, 16)) {
-        MergeUVRow_ = MergeUVRow_NEON;
-      }
+      MergeUVRow_ = MergeUVRow_NEON;
     }
   }
 #endif

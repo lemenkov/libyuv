@@ -524,8 +524,6 @@ void SplitUVRow_Unaligned_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                                int pix);
 void SplitUVRow_Unaligned_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                                int pix);
-void SplitUVRow_Unaligned_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                               int pix);
 void SplitUVRow_Unaligned_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u,
                                      uint8* dst_v, int pix);
 void SplitUVRow_Any_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
@@ -548,8 +546,6 @@ void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 void MergeUVRow_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
                                uint8* dst_uv, int width);
 void MergeUVRow_Unaligned_AVX2(const uint8* src_u, const uint8* src_v,
-                               uint8* dst_uv, int width);
-void MergeUVRow_Unaligned_NEON(const uint8* src_u, const uint8* src_v,
                                uint8* dst_uv, int width);
 void MergeUVRow_Any_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                          int width);
