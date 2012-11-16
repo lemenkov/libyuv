@@ -14,7 +14,11 @@
 #include <stddef.h>  // for NULL, size_t
 
 #if !(defined(_MSC_VER) && (_MSC_VER < 1600))
+#if defined(__ANDROID__)
+#include <sys/types.h>  // for uintptr_t on x86
+#else
 #include <stdint.h>  // for uintptr_t
+#endif
 #endif
 
 #ifndef INT_TYPES_DEFINED
