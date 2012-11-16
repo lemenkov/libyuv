@@ -29,6 +29,13 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
                                int src_stepx,
                                uint8* dst_ptr, int dst_width);
 #endif
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#define HAS_SCALEARGBROWDOWNEVEN_NEON
+void ScaleARGBRowDownEven_NEON(const uint8* src_ptr, int src_stride,
+                               int src_stepx,
+                               uint8* dst_ptr, int dst_width);
+#endif
+
 void ScaleARGBRowDownEven_C(const uint8* src_ptr, int,
                             int src_stepx,
                             uint8* dst_ptr, int dst_width);
@@ -36,6 +43,7 @@ void ScaleARGBRowDownEven_C(const uint8* src_ptr, int,
 static void ARGBTranspose(const uint8* src, int src_stride,
                           uint8* dst, int dst_stride,
                           int width, int height) {
+  int src_pixel_step = src_stride >> 2;
   void (*ScaleARGBRowDownEven)(const uint8* src_ptr, int src_stride,
       int src_step, uint8* dst_ptr, int dst_width) = ScaleARGBRowDownEven_C;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
@@ -43,9 +51,13 @@ static void ARGBTranspose(const uint8* src, int src_stride,
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_SSE2;
   }
+#elif defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(height, 4) &&  // Width of dest.
+      IS_ALIGNED(src, 4)) {
+    ScaleARGBRowDownEven = ScaleARGBRowDownEven_NEON;
+  }
 #endif
 
-  int src_pixel_step = src_stride >> 2;
   for (int i = 0; i < width; ++i) {  // column of source to row of dest.
     ScaleARGBRowDownEven(src, 0, src_pixel_step, dst, height);
     dst += dst_stride;

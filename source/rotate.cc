@@ -41,7 +41,7 @@ extern "C" {
 #endif
 #endif
 
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 #define HAS_MIRRORROW_UV_NEON

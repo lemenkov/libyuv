@@ -50,7 +50,7 @@ void SetUseReferenceImpl(bool use) {
  *
  */
 
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
 // Note - not static due to reuse in convert for 444 to 420.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,

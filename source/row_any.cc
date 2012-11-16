@@ -294,7 +294,7 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
 #endif
 #undef UV422ANY
 
-#define SplitUVRowANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
+#define SplitUVRowANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
@@ -315,11 +315,12 @@ SplitUVRowANY(SplitUVRow_Any_AVX2, SplitUVRow_Unaligned_AVX2, SplitUVRow_C, 31)
 SplitUVRowANY(SplitUVRow_Any_NEON, SplitUVRow_Unaligned_NEON, SplitUVRow_C, 15)
 #endif
 #ifdef HAS_SPLITUVROW_MIPS_DSPR2
-SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2, SplitUVRow_C, 15)
+SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2,
+              SplitUVRow_C, 15)
 #endif
 #undef SplitUVRowANY
 
-#define MergeUVRow_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                     \
+#define MergeUVRow_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                 \
     void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
                  uint8* dst_uv, int width) {                                   \
       int n = width & ~MASK;                                                   \

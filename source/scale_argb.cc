@@ -27,6 +27,17 @@ extern "C" {
 #define SSE2_DISABLED 1
 
 // ARGB scaling uses bilinear or point, but not box filter.
+
+#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#define HAS_SCALEARGBROWDOWNEVEN_NEON
+void ScaleARGBRowDownEven_NEON(const uint8* src_argb, int src_stride,
+                               int src_stepx,
+                               uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, int src_stride,
+                                  int src_stepx,
+                                  uint8* dst_argb, int dst_width);
+#endif
+
 /**
  * SSE2 downscalers with bilinear interpolation.
  */
@@ -35,15 +46,15 @@ extern "C" {
 
 #define HAS_SCALEARGBROWDOWN2_SSE2
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
+static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
                                    ptrdiff_t /* src_stride */,
-                                   uint8* dst_ptr, int dst_width) {
+                                   uint8* dst_argb, int dst_width) {
   __asm {
-    mov        eax, [esp + 4]        // src_ptr
+    mov        eax, [esp + 4]        // src_argb
                                      // src_stride ignored
-    mov        edx, [esp + 12]       // dst_ptr
+    mov        edx, [esp + 12]       // dst_argb
     mov        ecx, [esp + 16]       // dst_width
 
     align      16
@@ -62,16 +73,16 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
 }
 
 // Blends 8x2 rectangle to 4x1.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
+static void ScaleARGBRowDown2Int_SSE2(const uint8* src_argb,
                                       ptrdiff_t src_stride,
-                                      uint8* dst_ptr, int dst_width) {
+                                      uint8* dst_argb, int dst_width) {
   __asm {
     push       esi
-    mov        eax, [esp + 4 + 4]    // src_ptr
+    mov        eax, [esp + 4 + 4]    // src_argb
     mov        esi, [esp + 4 + 8]    // src_stride
-    mov        edx, [esp + 4 + 12]   // dst_ptr
+    mov        edx, [esp + 4 + 12]   // dst_argb
     mov        ecx, [esp + 4 + 16]   // dst_width
 
     align      16
@@ -99,18 +110,18 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
 
 #define HAS_SCALEARGBROWDOWNEVEN_SSE2
 // Reads 4 pixels at a time.
-// Alignment requirement: dst_ptr 16 byte aligned.
+// Alignment requirement: dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_stepx,
-                               uint8* dst_ptr, int dst_width) {
+                               uint8* dst_argb, int dst_width) {
   __asm {
     push       ebx
     push       edi
-    mov        eax, [esp + 8 + 4]    // src_ptr
+    mov        eax, [esp + 8 + 4]    // src_argb
                                      // src_stride ignored
     mov        ebx, [esp + 8 + 12]   // src_stepx
-    mov        edx, [esp + 8 + 16]   // dst_ptr
+    mov        edx, [esp + 8 + 16]   // dst_argb
     mov        ecx, [esp + 8 + 20]   // dst_width
     lea        ebx, [ebx * 4]
     lea        edi, [ebx + ebx * 2]
@@ -137,20 +148,20 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Blends four 2x2 to 4x1.
-// Alignment requirement: dst_ptr 16 byte aligned.
+// Alignment requirement: dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
+static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
                                          ptrdiff_t src_stride,
                                          int src_stepx,
-                                         uint8* dst_ptr, int dst_width) {
+                                         uint8* dst_argb, int dst_width) {
   __asm {
     push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 12 + 4]    // src_ptr
+    mov        eax, [esp + 12 + 4]    // src_argb
     mov        esi, [esp + 12 + 8]    // src_stride
     mov        ebx, [esp + 12 + 12]   // src_stepx
-    mov        edx, [esp + 12 + 16]   // dst_ptr
+    mov        edx, [esp + 12 + 16]   // dst_argb
     mov        ecx, [esp + 12 + 20]   // dst_width
     lea        esi, [eax + esi]      // row1 pointer
     lea        ebx, [ebx * 4]
@@ -190,14 +201,14 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
 #ifndef SSE2_DISABLED
 #define HAS_SCALEARGBFILTERROWS_SSE2_DISABLED
 __declspec(naked) __declspec(align(16))
-void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+void ScaleARGBFilterRows_SSE2(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride, int dst_width,
                               int source_y_fraction) {
   __asm {
     push       esi
     push       edi
-    mov        edi, [esp + 8 + 4]   // dst_ptr
-    mov        esi, [esp + 8 + 8]   // src_ptr
+    mov        edi, [esp + 8 + 4]   // dst_argb
+    mov        esi, [esp + 8 + 8]   // src_argb
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
@@ -278,14 +289,14 @@ void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version.
 #define HAS_SCALEARGBFILTERROWS_SSSE3
 __declspec(naked) __declspec(align(16))
-void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
                                ptrdiff_t src_stride, int dst_width,
                                int source_y_fraction) {
   __asm {
     push       esi
     push       edi
-    mov        edi, [esp + 8 + 4]   // dst_ptr
-    mov        esi, [esp + 8 + 8]   // src_ptr
+    mov        edi, [esp + 8 + 4]   // dst_argb
+    mov        esi, [esp + 8 + 8]   // src_argb
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
@@ -389,9 +400,9 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
 #define HAS_SCALEARGBROWDOWN2_SSE2
-static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
+static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
                                    ptrdiff_t /* src_stride */,
-                                   uint8* dst_ptr, int dst_width) {
+                                   uint8* dst_argb, int dst_width) {
   asm volatile (
     ".p2align  4                               \n"
   "1:                                          \n"
@@ -403,8 +414,8 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-  : "+r"(src_ptr),   // %0
-    "+r"(dst_ptr),   // %1
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
     "+r"(dst_width)  // %2
   :
   : "memory", "cc"
@@ -414,9 +425,9 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_ptr,
   );
 }
 
-static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
+static void ScaleARGBRowDown2Int_SSE2(const uint8* src_argb,
                                       ptrdiff_t src_stride,
-                                      uint8* dst_ptr, int dst_width) {
+                                      uint8* dst_argb, int dst_width) {
   asm volatile (
     ".p2align  4                               \n"
   "1:                                          \n"
@@ -435,8 +446,8 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-  : "+r"(src_ptr),    // %0
-    "+r"(dst_ptr),    // %1
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
   : "memory", "cc"
@@ -448,10 +459,10 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_ptr,
 
 #define HAS_SCALEARGBROWDOWNEVEN_SSE2
 // Reads 4 pixels at a time.
-// Alignment requirement: dst_ptr 16 byte aligned.
-void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+// Alignment requirement: dst_argb 16 byte aligned.
+void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_stepx,
-                               uint8* dst_ptr, int dst_width) {
+                               uint8* dst_argb, int dst_width) {
   intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
   intptr_t src_stepx_x12 = 0;
   asm volatile (
@@ -471,9 +482,9 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "movdqa    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "jg        1b                              \n"
-  : "+r"(src_ptr),       // %0
+  : "+r"(src_argb),       // %0
     "+r"(src_stepx_x4),  // %1
-    "+r"(dst_ptr),       // %2
+    "+r"(dst_argb),       // %2
     "+r"(dst_width),     // %3
     "+r"(src_stepx_x12)  // %4
   :
@@ -485,10 +496,10 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Blends four 2x2 to 4x1.
-// Alignment requirement: dst_ptr 16 byte aligned.
-static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
+// Alignment requirement: dst_argb 16 byte aligned.
+static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
                                          ptrdiff_t src_stride, int src_stepx,
-                                         uint8* dst_ptr, int dst_width) {
+                                         uint8* dst_argb, int dst_width) {
   intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
   intptr_t src_stepx_x12 = 0;
   intptr_t row1 = static_cast<intptr_t>(src_stride);
@@ -518,9 +529,9 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
     "movdqa    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "jg        1b                              \n"
-  : "+r"(src_ptr),        // %0
+  : "+r"(src_argb),        // %0
     "+r"(src_stepx_x4),   // %1
-    "+r"(dst_ptr),        // %2
+    "+r"(dst_argb),        // %2
     "+rm"(dst_width),     // %3
     "+r"(src_stepx_x12),  // %4
     "+r"(row1)            // %5
@@ -535,7 +546,7 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_ptr,
 #ifndef SSE2_DISABLED
 // Bilinear row filtering combines 4x2 -> 4x1. SSE2 version
 #define HAS_SCALEARGBFILTERROWS_SSE2_DISABLED
-void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+void ScaleARGBFilterRows_SSE2(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride, int dst_width,
                               int source_y_fraction) {
   asm volatile (
@@ -592,8 +603,8 @@ void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   "4:                                          \n"
     "shufps    $0xff,%%xmm0,%%xmm0             \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
-  : "+r"(dst_ptr),     // %0
-    "+r"(src_ptr),     // %1
+  : "+r"(dst_argb),     // %0
+    "+r"(src_argb),     // %1
     "+r"(dst_width),   // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
@@ -607,7 +618,7 @@ void ScaleARGBFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 
 // Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
 #define HAS_SCALEARGBFILTERROWS_SSSE3
-void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
                                ptrdiff_t src_stride, int dst_width,
                                int source_y_fraction) {
   asm volatile (
@@ -700,8 +711,8 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   "99:                                         \n"
     "shufps    $0xff,%%xmm0,%%xmm0             \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
-  : "+r"(dst_ptr),    // %0
-    "+r"(src_ptr),    // %1
+  : "+r"(dst_argb),    // %0
+    "+r"(src_argb),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
@@ -713,11 +724,11 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif  // defined(__x86_64__) || defined(__i386__)
 
-static void ScaleARGBRowDown2_C(const uint8* src_ptr,
+static void ScaleARGBRowDown2_C(const uint8* src_argb,
                                 ptrdiff_t /* src_stride */,
-                                uint8* dst_ptr, int dst_width) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_ptr);
-  uint32* dst = reinterpret_cast<uint32*>(dst_ptr);
+                                uint8* dst_argb, int dst_width) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
 
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[0];
@@ -730,27 +741,27 @@ static void ScaleARGBRowDown2_C(const uint8* src_ptr,
   }
 }
 
-static void ScaleARGBRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
-                                   uint8* dst_ptr, int dst_width) {
+static void ScaleARGBRowDown2Int_C(const uint8* src_argb, ptrdiff_t src_stride,
+                                   uint8* dst_argb, int dst_width) {
   for (int x = 0; x < dst_width; ++x) {
-    dst_ptr[0] = (src_ptr[0] + src_ptr[4] +
-                  src_ptr[src_stride] + src_ptr[src_stride + 4] + 2) >> 2;
-    dst_ptr[1] = (src_ptr[1] + src_ptr[5] +
-                  src_ptr[src_stride + 1] + src_ptr[src_stride + 5] + 2) >> 2;
-    dst_ptr[2] = (src_ptr[2] + src_ptr[6] +
-                  src_ptr[src_stride + 2] + src_ptr[src_stride + 6] + 2) >> 2;
-    dst_ptr[3] = (src_ptr[3] + src_ptr[7] +
-                  src_ptr[src_stride + 3] + src_ptr[src_stride + 7] + 2) >> 2;
-    src_ptr += 8;
-    dst_ptr += 4;
+    dst_argb[0] = (src_argb[0] + src_argb[4] +
+                  src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
+    dst_argb[1] = (src_argb[1] + src_argb[5] +
+                  src_argb[src_stride + 1] + src_argb[src_stride + 5] + 2) >> 2;
+    dst_argb[2] = (src_argb[2] + src_argb[6] +
+                  src_argb[src_stride + 2] + src_argb[src_stride + 6] + 2) >> 2;
+    dst_argb[3] = (src_argb[3] + src_argb[7] +
+                  src_argb[src_stride + 3] + src_argb[src_stride + 7] + 2) >> 2;
+    src_argb += 8;
+    dst_argb += 4;
   }
 }
 
-void ScaleARGBRowDownEven_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t /* src_stride */,
                             int src_stepx,
-                            uint8* dst_ptr, int dst_width) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_ptr);
-  uint32* dst = reinterpret_cast<uint32*>(dst_ptr);
+                            uint8* dst_argb, int dst_width) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
 
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[0];
@@ -763,21 +774,21 @@ void ScaleARGBRowDownEven_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   }
 }
 
-static void ScaleARGBRowDownEvenInt_C(const uint8* src_ptr,
+static void ScaleARGBRowDownEvenInt_C(const uint8* src_argb,
                                       ptrdiff_t src_stride,
                                       int src_stepx,
-                                      uint8* dst_ptr, int dst_width) {
+                                      uint8* dst_argb, int dst_width) {
   for (int x = 0; x < dst_width; ++x) {
-    dst_ptr[0] = (src_ptr[0] + src_ptr[4] +
-                  src_ptr[src_stride] + src_ptr[src_stride + 4] + 2) >> 2;
-    dst_ptr[1] = (src_ptr[1] + src_ptr[5] +
-                  src_ptr[src_stride + 1] + src_ptr[src_stride + 5] + 2) >> 2;
-    dst_ptr[2] = (src_ptr[2] + src_ptr[6] +
-                  src_ptr[src_stride + 2] + src_ptr[src_stride + 6] + 2) >> 2;
-    dst_ptr[3] = (src_ptr[3] + src_ptr[7] +
-                  src_ptr[src_stride + 3] + src_ptr[src_stride + 7] + 2) >> 2;
-    src_ptr += src_stepx * 4;
-    dst_ptr += 4;
+    dst_argb[0] = (src_argb[0] + src_argb[4] +
+                  src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
+    dst_argb[1] = (src_argb[1] + src_argb[5] +
+                  src_argb[src_stride + 1] + src_argb[src_stride + 5] + 2) >> 2;
+    dst_argb[2] = (src_argb[2] + src_argb[6] +
+                  src_argb[src_stride + 2] + src_argb[src_stride + 6] + 2) >> 2;
+    dst_argb[3] = (src_argb[3] + src_argb[7] +
+                  src_argb[src_stride + 3] + src_argb[src_stride + 7] + 2) >> 2;
+    src_argb += src_stepx * 4;
+    dst_argb += 4;
   }
 }
 
@@ -793,10 +804,10 @@ static void ScaleARGBRowDownEvenInt_C(const uint8* src_ptr,
     BLENDERC(a, b, f, 24) | BLENDERC(a, b, f, 16) | \
     BLENDERC(a, b, f, 8) | BLENDERC(a, b, f, 0)
 
-static void ScaleARGBFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
+static void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
                                   int dst_width, int x, int dx) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_ptr);
-  uint32* dst = reinterpret_cast<uint32*>(dst_ptr);
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     int xi = x >> 16;
     uint32 a = src[xi];
@@ -821,32 +832,32 @@ static void ScaleARGBFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 static const int kMaxInputWidth = 2560;
 
 // C version 2x2 -> 2x1
-void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr,
+void ScaleARGBFilterRows_C(uint8* dst_argb, const uint8* src_argb,
                            ptrdiff_t src_stride,
                            int dst_width, int source_y_fraction) {
   assert(dst_width > 0);
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
-  const uint8* src_ptr1 = src_ptr + src_stride;
-  uint8* end = dst_ptr + (dst_width << 2);
+  const uint8* src_ptr1 = src_argb + src_stride;
+  uint8* end = dst_argb + (dst_width << 2);
   do {
-    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
-    dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
-    dst_ptr[2] = (src_ptr[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
-    dst_ptr[3] = (src_ptr[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
-    dst_ptr[4] = (src_ptr[4] * y0_fraction + src_ptr1[4] * y1_fraction) >> 8;
-    dst_ptr[5] = (src_ptr[5] * y0_fraction + src_ptr1[5] * y1_fraction) >> 8;
-    dst_ptr[6] = (src_ptr[6] * y0_fraction + src_ptr1[6] * y1_fraction) >> 8;
-    dst_ptr[7] = (src_ptr[7] * y0_fraction + src_ptr1[7] * y1_fraction) >> 8;
-    src_ptr += 8;
+    dst_argb[0] = (src_argb[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_argb[1] = (src_argb[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    dst_argb[2] = (src_argb[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
+    dst_argb[3] = (src_argb[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
+    dst_argb[4] = (src_argb[4] * y0_fraction + src_ptr1[4] * y1_fraction) >> 8;
+    dst_argb[5] = (src_argb[5] * y0_fraction + src_ptr1[5] * y1_fraction) >> 8;
+    dst_argb[6] = (src_argb[6] * y0_fraction + src_ptr1[6] * y1_fraction) >> 8;
+    dst_argb[7] = (src_argb[7] * y0_fraction + src_ptr1[7] * y1_fraction) >> 8;
+    src_argb += 8;
     src_ptr1 += 8;
-    dst_ptr += 8;
-  } while (dst_ptr < end);
+    dst_argb += 8;
+  } while (dst_argb < end);
   // Duplicate the last pixel (4 bytes) for filtering.
-  dst_ptr[0] = dst_ptr[-4];
-  dst_ptr[1] = dst_ptr[-3];
-  dst_ptr[2] = dst_ptr[-2];
-  dst_ptr[3] = dst_ptr[-1];
+  dst_argb[0] = dst_argb[-4];
+  dst_argb[1] = dst_argb[-3];
+  dst_argb[2] = dst_argb[-2];
+  dst_argb[3] = dst_argb[-1];
 }
 
 /**
@@ -859,16 +870,16 @@ void ScaleARGBFilterRows_C(uint8* dst_ptr, const uint8* src_ptr,
 static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
-                           const uint8* src_ptr, uint8* dst_ptr,
+                           const uint8* src_argb, uint8* dst_argb,
                            FilterMode filtering) {
-  void (*ScaleARGBRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
-                            uint8* dst_ptr, int dst_width) =
+  void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
+                            uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(dst_width, 4) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 :
         ScaleARGBRowDown2_SSE2;
   }
@@ -876,9 +887,9 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
 
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
-    ScaleARGBRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
-    src_ptr += (src_stride << 1);
-    dst_ptr += dst_stride;
+    ScaleARGBRowDown2(src_argb, src_stride, dst_argb, dst_width);
+    src_argb += (src_stride << 1);
+    dst_argb += dst_stride;
   }
 }
 
@@ -892,30 +903,35 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
 static void ScaleARGBDownEven(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
-                              const uint8* src_ptr, uint8* dst_ptr,
+                              const uint8* src_argb, uint8* dst_argb,
                               FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
-  void (*ScaleARGBRowDownEven)(const uint8* src_ptr, ptrdiff_t src_stride,
-                               int src_step, uint8* dst_ptr, int dst_width) =
+  void (*ScaleARGBRowDownEven)(const uint8* src_argb, ptrdiff_t src_stride,
+                               int src_step, uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDownEvenInt_C : ScaleARGBRowDownEven_C;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst_width, 4) &&
-      IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenInt_SSE2 :
         ScaleARGBRowDownEven_SSE2;
+  }
+#elif defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 4) &&
+      IS_ALIGNED(src_argb, 4)) {
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenInt_NEON :
+        ScaleARGBRowDownEven_NEON;
   }
 #endif
   int src_step = src_width / dst_width;
   // Adjust to point to center of box.
   int row_step = src_height / dst_height;
   int row_stride = row_step * src_stride;
-  src_ptr += ((row_step >> 1) - 1) * src_stride + ((src_step >> 1) - 1) * 4;
+  src_argb += ((row_step >> 1) - 1) * src_stride + ((src_step >> 1) - 1) * 4;
   for (int y = 0; y < dst_height; ++y) {
-    ScaleARGBRowDownEven(src_ptr, src_stride, src_step, dst_ptr, dst_width);
-    src_ptr += row_stride;
-    dst_ptr += dst_stride;
+    ScaleARGBRowDownEven(src_argb, src_stride, src_step, dst_argb, dst_width);
+    src_argb += row_stride;
+    dst_argb += dst_stride;
   }
 }
 /**
@@ -926,24 +942,24 @@ static void ScaleARGBDownEven(int src_width, int src_height,
 static void ScaleARGBBilinear(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
-                              const uint8* src_ptr, uint8* dst_ptr) {
+                              const uint8* src_argb, uint8* dst_argb) {
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(src_width <= kMaxInputWidth);
   SIMD_ALIGNED(uint8 row[kMaxInputWidth * 4 + 16]);
-  void (*ScaleARGBFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
+  void (*ScaleARGBFilterRows)(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) =
       ScaleARGBFilterRows_C;
 #if defined(HAS_SCALEARGBFILTERROWS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSE2;
   }
 #endif
 #if defined(HAS_SCALEARGBFILTERROWS_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_ptr, 16)) {
+      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
   }
 #endif
@@ -955,10 +971,10 @@ static void ScaleARGBBilinear(int src_width, int src_height,
   for (int j = 0; j < dst_height; ++j) {
     int yi = y >> 16;
     int yf = (y >> 8) & 255;
-    const uint8* src = src_ptr + yi * src_stride;
+    const uint8* src = src_argb + yi * src_stride;
     ScaleARGBFilterRows(row, src, src_stride, src_width, yf);
-    ScaleARGBFilterCols_C(dst_ptr, row, dst_width, x, dx);
-    dst_ptr += dst_stride;
+    ScaleARGBFilterCols_C(dst_argb, row, dst_width, x, dx);
+    dst_argb += dst_stride;
     y += dy;
     if (y > maxy) {
       y = maxy;
@@ -969,10 +985,10 @@ static void ScaleARGBBilinear(int src_width, int src_height,
 // Scales a single row of pixels using point sampling.
 // Code is adapted from libyuv bilinear yuv scaling, but with bilinear
 //     interpolation off, and argb pixels instead of yuv.
-static void ScaleARGBCols(uint8* dst_ptr, const uint8* src_ptr,
+static void ScaleARGBCols(uint8* dst_argb, const uint8* src_argb,
                           int dst_width, int x, int dx) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_ptr);
-  uint32* dst = reinterpret_cast<uint32*>(dst_ptr);
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     dst[0] = src[x >> 16];
     x += dx;
@@ -995,14 +1011,14 @@ static void ScaleARGBCols(uint8* dst_ptr, const uint8* src_ptr,
 static void ScaleARGBSimple(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
-                            const uint8* src_ptr, uint8* dst_ptr) {
+                            const uint8* src_argb, uint8* dst_argb) {
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
   int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
   for (int i = 0; i < dst_height; ++i) {
-    ScaleARGBCols(dst_ptr, src_ptr + (y >> 16) * src_stride, dst_width, x, dx);
-    dst_ptr += dst_stride;
+    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride, dst_width, x, dx);
+    dst_argb += dst_stride;
     y += dy;
   }
 }
@@ -1013,14 +1029,14 @@ static void ScaleARGBSimple(int src_width, int src_height,
 static void ScaleARGBAnySize(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
-                             const uint8* src_ptr, uint8* dst_ptr,
+                             const uint8* src_argb, uint8* dst_argb,
                              FilterMode filtering) {
   if (!filtering || (src_width > kMaxInputWidth)) {
     ScaleARGBSimple(src_width, src_height, dst_width, dst_height,
-                    src_stride, dst_stride, src_ptr, dst_ptr);
+                    src_stride, dst_stride, src_argb, dst_argb);
   } else {
     ScaleARGBBilinear(src_width, src_height, dst_width, dst_height,
-                      src_stride, dst_stride, src_ptr, dst_ptr);
+                      src_stride, dst_stride, src_argb, dst_argb);
   }
 }
 
