@@ -32,14 +32,14 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   "1:                                          \n"
     // load even pixels into q0, odd into q1
     "vld2.u8    {q0,q1}, [%0]!                 \n"
-    "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
+    "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
     "bgt        1b                             \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst),              // %1
-      "+r"(dst_width)         // %2
-    :
-    : "q0", "q1"              // Clobber List
+  : "+r"(src_ptr),          // %0
+    "+r"(dst),              // %1
+    "+r"(dst_width)         // %2
+  :
+  : "q0", "q1"              // Clobber List
   );
 }
 
@@ -51,6 +51,7 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   "1:                                          \n"
     "vld1.u8    {q0,q1}, [%0]!                 \n"  // load row 1 and post inc
     "vld1.u8    {q2,q3}, [%1]!                 \n"  // load row 2 and post inc
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vpaddl.u8  q0, q0                         \n"  // row 1 add adjacent
     "vpaddl.u8  q1, q1                         \n"
     "vpadal.u8  q0, q2                         \n"  // row 2 add adjacent + row1
@@ -58,15 +59,14 @@ void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
     "vrshrn.u16 d1, q1, #2                     \n"
     "vst1.u8    {q0}, [%2]!                    \n"
-    "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "bgt        1b                             \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(src_stride),       // %1
-      "+r"(dst),              // %2
-      "+r"(dst_width)         // %3
-    :
-    : "q0", "q1", "q2", "q3"     // Clobber List
-   );
+  : "+r"(src_ptr),          // %0
+    "+r"(src_stride),       // %1
+    "+r"(dst),              // %2
+    "+r"(dst_width)         // %3
+  :
+  : "q0", "q1", "q2", "q3"     // Clobber List
+  );
 }
 
 void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
@@ -74,16 +74,16 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   asm volatile (
   "1:                                          \n"
     "vld2.u8    {d0, d1}, [%0]!                \n"
+    "subs       %2, #4                         \n"
     "vtrn.u8    d1, d0                         \n"
     "vshrn.u16  d0, q0, #8                     \n"
     "vst1.u32   {d0[1]}, [%1]!                 \n"
-    "subs       %2, #4                         \n"
     "bgt        1b                             \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width)         // %2
-    :
-    : "q0", "q1", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width)         // %2
+  :
+  : "q0", "q1", "memory", "cc"
   );
 }
 
@@ -98,6 +98,7 @@ void ScaleRowDown4Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "vld1.u8    {q1}, [r4]!                    \n"
     "vld1.u8    {q2}, [r5]!                    \n"
     "vld1.u8    {q3}, [%3]!                    \n"
+    "subs       %2, #4                         \n"
     "vpaddl.u8  q0, q0                         \n"
     "vpadal.u8  q0, q1                         \n"
     "vpadal.u8  q0, q2                         \n"
@@ -106,13 +107,12 @@ void ScaleRowDown4Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "vrshrn.u32 d0, q0, #4                     \n"   // divide by 16 w/rounding
     "vmovn.u16  d0, q0                         \n"
     "vst1.u32   {d0[0]}, [%1]!                 \n"
-    "subs       %2, #4                         \n"
     "bgt        1b                             \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width)         // %2
-    : "r"(src_stride)         // %3
-    : "r4", "r5", "q0", "q1", "q2", "q3", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width)         // %2
+  : "r"(src_stride)         // %3
+  : "r4", "r5", "q0", "q1", "q2", "q3", "memory", "cc"
   );
 }
 
@@ -125,15 +125,15 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
   asm volatile (
   "1:                                          \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "subs         %2, #24                      \n"
     "vmov         d2, d3                       \n" // order d0, d1, d2
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
-    "subs         %2, #24                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width)         // %2
-    :
-    : "d0", "d1", "d2", "d3", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width)         // %2
+  :
+  : "d0", "d1", "d2", "d3", "memory", "cc"
   );
 }
 
@@ -146,6 +146,7 @@ void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr,
   "1:                                          \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
     "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n" // src line 1
+    "subs         %2, #24                      \n"
 
     // filter src line 0 with src line 1
     // expand chars to shorts to allow for room
@@ -182,14 +183,13 @@ void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr,
 
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
 
-    "subs         %2, #24                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width),        // %2
-      "+r"(src_stride)        // %3
-    :
-    : "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "d24", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width),        // %2
+    "+r"(src_stride)        // %3
+  :
+  : "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "d24", "memory", "cc"
   );
 }
 
@@ -202,7 +202,7 @@ void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr,
   "1:                                          \n"
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
     "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n" // src line 1
-
+    "subs         %2, #24                      \n"
     // average src line 0 with src line 1
     "vrhadd.u8    q0, q0, q2                   \n"
     "vrhadd.u8    q1, q1, q3                   \n"
@@ -221,15 +221,13 @@ void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr,
     "vqrshrn.u16  d2, q3, #2                   \n"
 
     "vst3.u8      {d0, d1, d2}, [%1]!          \n"
-
-    "subs         %2, #24                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width),        // %2
-      "+r"(src_stride)        // %3
-    :
-    : "r4", "q0", "q1", "q2", "q3", "d24", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width),        // %2
+    "+r"(src_stride)        // %3
+  :
+  : "r4", "q0", "q1", "q2", "q3", "d24", "memory", "cc"
   );
 }
 
@@ -253,17 +251,17 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
     "vld1.u8      {q3}, [%3]                   \n"
   "1:                                          \n"
     "vld1.u8      {d0, d1, d2, d3}, [%0]!      \n"
+    "subs         %2, #12                      \n"
     "vtbl.u8      d4, {d0, d1, d2, d3}, d6     \n"
     "vtbl.u8      d5, {d0, d1, d2, d3}, d7     \n"
     "vst1.u8      {d4}, [%1]!                  \n"
     "vst1.u32     {d5[0]}, [%1]!               \n"
-    "subs         %2, #12                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width)         // %2
-    : "r"(&kShuf38)           // %3
-    : "d0", "d1", "d2", "d3", "d4", "d5", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width)         // %2
+  : "r"(&kShuf38)           // %3
+  : "d0", "d1", "d2", "d3", "d4", "d5", "memory", "cc"
   );
 }
 
@@ -286,6 +284,7 @@ void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n"
     "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n"
     "vld4.u8      {d16, d17, d18, d19}, [r4]!  \n"
+    "subs         %2, #12                      \n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added. 0,1 - 2,3 - 4,5 - 6,7
@@ -363,17 +362,16 @@ void OMITFP ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
 
     "vst1.u8      {d3}, [%1]!                  \n"
     "vst1.u32     {d4[0]}, [%1]!               \n"
-    "subs         %2, #12                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),          // %0
-      "+r"(dst_ptr),          // %1
-      "+r"(dst_width),        // %2
-      "+r"(src_stride)        // %3
-    : "r"(&kMult38_Div6),     // %4
-      "r"(&kShuf38_2),        // %5
-      "r"(&kMult38_Div9)      // %6
-    : "r4", "q0", "q1", "q2", "q3", "q8", "q9",
-      "q13", "q14", "q15", "memory", "cc"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst_ptr),          // %1
+    "+r"(dst_width),        // %2
+    "+r"(src_stride)        // %3
+  : "r"(&kMult38_Div6),     // %4
+    "r"(&kShuf38_2),        // %5
+    "r"(&kMult38_Div9)      // %6
+  : "r4", "q0", "q1", "q2", "q3", "q8", "q9",
+    "q13", "q14", "q15", "memory", "cc"
   );
 }
 
@@ -393,6 +391,7 @@ void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr,
     // d3 = 30 70 31 71 32 72 33 73
     "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n"
     "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n"
+    "subs         %2, #12                      \n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added. 0,1 - 2,3 - 4,5 - 6,7
@@ -459,15 +458,14 @@ void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr,
 
     "vst1.u8      {d3}, [%1]!                  \n"
     "vst1.u32     {d4[0]}, [%1]!               \n"
-    "subs         %2, #12                      \n"
     "bgt          1b                           \n"
-    : "+r"(src_ptr),       // %0
-      "+r"(dst_ptr),       // %1
-      "+r"(dst_width),     // %2
-      "+r"(src_stride)     // %3
-    : "r"(&kMult38_Div6),  // %4
-      "r"(&kShuf38_2)      // %5
-    : "q0", "q1", "q2", "q3", "q13", "q14", "memory", "cc"
+  : "+r"(src_ptr),       // %0
+    "+r"(dst_ptr),       // %1
+    "+r"(dst_width),     // %2
+    "+r"(src_stride)     // %3
+  : "r"(&kMult38_Div6),  // %4
+    "r"(&kShuf38_2)      // %5
+  : "q0", "q1", "q2", "q3", "q13", "q14", "memory", "cc"
   );
 }
 
@@ -545,13 +543,13 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
 
   "99:                                         \n"
     "vst1.u8      {d1[7]}, [%0]                \n"
-    : "+r"(dst_ptr),          // %0
-      "+r"(src_ptr),          // %1
-      "+r"(src_stride),       // %2
-      "+r"(dst_width),        // %3
-      "+r"(source_y_fraction) // %4
-    :
-    : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
+  : "+r"(dst_ptr),          // %0
+    "+r"(src_ptr),          // %1
+    "+r"(src_stride),       // %2
+    "+r"(dst_width),        // %3
+    "+r"(source_y_fraction) // %4
+  :
+  : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
   );
 }
 

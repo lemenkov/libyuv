@@ -36,6 +36,14 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb, int src_stride,
 void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, int src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width);
+
+
+#define HAS_SCALEARGBROWDOWN2_NEON
+void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                            uint8* dst, int dst_width);
+void ScaleARGBRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst, int dst_width);
+
 #endif
 
 /**
@@ -876,12 +884,17 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                             uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst_width, 4) &&
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 :
         ScaleARGBRowDown2_SSE2;
+  }
+#elif defined(HAS_SCALEARGBROWDOWN2_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8) &&
+      IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4)) {
+    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_NEON :
+        ScaleARGBRowDown2_NEON;
   }
 #endif
 
