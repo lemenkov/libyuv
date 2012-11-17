@@ -552,11 +552,9 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
   : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
   );
 }
-
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
 #endif
-

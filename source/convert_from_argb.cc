@@ -873,4 +873,3 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
 }  // extern "C"
 }  // namespace libyuv
 #endif
-

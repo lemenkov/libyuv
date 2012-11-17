@@ -136,11 +136,9 @@ void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   : "memory", "cc", "r12", "q0", "q1", "q2", "q3"
   );
 }
-
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
 #endif
-
