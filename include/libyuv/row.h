@@ -217,6 +217,9 @@ extern "C" {
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
 #define HAS_ARGBMIRRORROW_NEON
+
+// Effects
+#define HAS_ARGBINTERPOLATEROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1241,6 +1244,9 @@ void ARGBInterpolateRow_C(uint8* dst_argb, const uint8* src_argb,
 void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride_argb, int dst_width,
                               int source_y_fraction);
+void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
+                             ptrdiff_t src_stride_argb, int dst_width,
+                             int source_y_fraction);
 
 #ifdef __cplusplus
 }  // extern "C"

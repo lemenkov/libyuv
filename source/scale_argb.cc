@@ -30,20 +30,21 @@ extern "C" {
 
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
+#define HAS_SCALEARGBROWDOWN2_NEON
+#define HAS_SCALEARGBFILTERROWS_NEON
 void ScaleARGBRowDownEven_NEON(const uint8* src_argb, int src_stride,
                                int src_stepx,
                                uint8* dst_argb, int dst_width);
 void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, int src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width);
-
-
-#define HAS_SCALEARGBROWDOWN2_NEON
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width);
 void ScaleARGBRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
-
+void ScaleARGBFilterRows_NEON(uint8* dst_ptr,
+                              const uint8* src_ptr, ptrdiff_t src_stride,
+                              int dst_width, int source_y_fraction);
 #endif
 
 /**
@@ -964,6 +965,7 @@ static void ScaleARGBBilinear(int src_width, int src_height,
                               ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) =
       ScaleARGBFilterRows_C;
+// TODO(fbarchard): Check aligned width.
 #if defined(HAS_SCALEARGBFILTERROWS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
@@ -974,6 +976,11 @@ static void ScaleARGBBilinear(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
+  }
+#endif
+#if defined(HAS_SCALEARGBFILTERROWS_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterRows = ScaleARGBFilterRows_NEON;
   }
 #endif
   int dx = (src_width << 16) / dst_width;

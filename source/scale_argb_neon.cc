@@ -136,6 +136,90 @@ void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   : "memory", "cc", "r12", "q0", "q1", "q2", "q3"
   );
 }
+
+// 4x2 -> 4x1
+void ScaleARGBFilterRows_NEON(uint8* dst_ptr,
+                              const uint8* src_ptr, ptrdiff_t src_stride,
+                              int dst_width, int source_y_fraction) {
+  asm volatile (
+    "cmp          %4, #0                       \n"
+    "beq          100f                         \n"
+    "add          %2, %1                       \n"
+    "cmp          %4, #64                      \n"
+    "beq          75f                          \n"
+    "cmp          %4, #128                     \n"
+    "beq          50f                          \n"
+    "cmp          %4, #192                     \n"
+    "beq          25f                          \n"
+
+    "vdup.8       d5, %4                       \n"
+    "rsb          %4, #256                     \n"
+    "vdup.8       d4, %4                       \n"
+    // General purpose row blend.
+  "1:                                          \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.u8      {q1}, [%2]!                  \n"
+    "subs         %3, #4                       \n"
+    "vmull.u8     q13, d0, d4                  \n"
+    "vmull.u8     q14, d1, d4                  \n"
+    "vmlal.u8     q13, d2, d5                  \n"
+    "vmlal.u8     q14, d3, d5                  \n"
+    "vrshrn.u16   d0, q13, #8                  \n"
+    "vrshrn.u16   d1, q14, #8                  \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bgt          1b                           \n"
+    "b            99f                          \n"
+
+    // Blend 25 / 75.
+  "25:                                         \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.u8      {q1}, [%2]!                  \n"
+    "subs         %3, #4                       \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bgt          25b                          \n"
+    "b            99f                          \n"
+
+    // Blend 50 / 50.
+  "50:                                         \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.u8      {q1}, [%2]!                  \n"
+    "subs         %3, #4                       \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bgt          50b                          \n"
+    "b            99f                          \n"
+
+    // Blend 75 / 25.
+  "75:                                         \n"
+    "vld1.u8      {q1}, [%1]!                  \n"
+    "vld1.u8      {q0}, [%2]!                  \n"
+    "subs         %3, #4                       \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vrhadd.u8    q0, q1                       \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bgt          75b                          \n"
+    "b            99f                          \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+  "100:                                        \n"
+    "vld1.u8      {q0}, [%1]!                  \n"
+    "subs         %3, #4                       \n"
+    "vst1.u8      {q0}, [%0]!                  \n"
+    "bgt          100b                         \n"
+
+  "99:                                         \n"
+    "vst1.u32     {d1[1]}, [%0]                \n"
+  : "+r"(dst_ptr),          // %0
+    "+r"(src_ptr),          // %1
+    "+r"(src_stride),       // %2
+    "+r"(dst_width),        // %3
+    "+r"(source_y_fraction) // %4
+  :
+  : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
+  );
+}
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

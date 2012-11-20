@@ -4241,17 +4241,23 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
-// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
-void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+// Bilinear image filtering.
+// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
+void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride, int dst_width,
                               int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
-    "je        2f                              \n"
+    "je        100f                            \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
-    "je        3f                              \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
+
     "movd      %3,%%xmm0                       \n"
     "neg       %3                              \n"
     "add       $0x80,%3                        \n"
@@ -4259,6 +4265,8 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "punpcklbw %%xmm0,%%xmm5                   \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+
+    // General purpose row blend.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%1),%%xmm0                     \n"
@@ -4275,28 +4283,60 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-    "jmp       4f                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
     ".p2align  4                               \n"
-  "2:                                          \n"
+  "25:                                         \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    ".p2align  4                               \n"
+  "50:                                         \n"
+    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    ".p2align  4                               \n"
+  "75:                                         \n"
+    "movdqa    (%1),%%xmm1                     \n"
+    "movdqa    (%1,%4,1),%%xmm0                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    ".p2align  4                               \n"
+  "100:                                        \n"
     "movdqa    (%1),%%xmm0                     \n"
     "sub       $0x4,%2                         \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
-    "jg        2b                              \n"
-    "jmp       4f                              \n"
-    ".p2align  4                               \n"
-  "3:                                          \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "pavgb     (%1,%4,1),%%xmm0                \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
-    "jg        3b                              \n"
-  "4:                                          \n"
-    ".p2align  4                               \n"
-  : "+r"(dst_ptr),     // %0
-    "+r"(src_ptr),     // %1
-    "+r"(dst_width),   // %2
+    "jg        100b                            \n"
+
+    // Extrude last pixel.
+  "99:                                         \n"
+  : "+r"(dst_argb),    // %0
+    "+r"(src_argb),    // %1
+    "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
   : "memory", "cc"
@@ -4305,6 +4345,7 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 #endif
   );
 }
+
 
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {

@@ -1121,6 +1121,9 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
 }
 
 // Interpolate 2 ARGB images by specified amount (0 to 255).
+// TODO(fbarchard): Check width is multiple of 16.  Do Any version.
+// TODO(fbarchard): Consider selecting a specialized interpolator so
+//     interpolation doesn't need to be checked on each row.
 LIBYUV_API
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
@@ -1136,14 +1139,19 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     dst_stride_argb = -dst_stride_argb;
   }
   void (*ARGBInterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
-                              ptrdiff_t src_stride, int dst_width,
-                              int source_y_fraction) = ARGBInterpolateRow_C;
+                             ptrdiff_t src_stride, int dst_width,
+                             int source_y_fraction) = ARGBInterpolateRow_C;
 #if defined(HAS_ARGBINTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) &&
       IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
       IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBInterpolateRow = ARGBInterpolateRow_SSSE3;
+  }
+#elif defined(HAS_ARGBINTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    ARGBInterpolateRow = ARGBInterpolateRow_NEON;
   }
 #endif
   for (int y = 0; y < height; ++y) {
