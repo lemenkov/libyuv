@@ -764,7 +764,7 @@ void SplitUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
       "+r"(dst_v),   // %2
       "+r"(width)    // %3  // Output registers
     :                       // Input registers
-    : "memory", "cc", "q0", "q1"  // Clobber List
+    : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_SPLITUVROW_NEON
@@ -787,7 +787,7 @@ void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
       "+r"(dst_uv),  // %2
       "+r"(width)    // %3  // Output registers
     :                       // Input registers
-    : "memory", "cc", "q0", "q1"  // Clobber List
+    : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_MERGEUVROW_NEON
@@ -805,7 +805,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
     "+r"(dst),   // %1
     "+r"(count)  // %2  // Output registers
   :                     // Input registers
-  : "memory", "cc", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_COPYROW_NEON
@@ -822,7 +822,7 @@ void SetRow_NEON(uint8* dst, uint32 v32, int count) {
   : "+r"(dst),   // %0
     "+r"(count)  // %1
   : "r"(v32)     // %2
-  : "q0", "memory", "cc"
+  : "cc", "memory", "q0"
   );
 }
 
@@ -857,7 +857,7 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "+r"(dst),   // %1
     "+r"(width)  // %2
   :
-  : "memory", "cc", "r3", "q0"
+  : "cc", "memory", "r3", "q0"
   );
 }
 #endif  // HAS_MIRRORROW_NEON
@@ -884,7 +884,7 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),   // %2
     "+r"(width)    // %3
   :
-  : "memory", "cc", "r12", "q0"
+  : "cc", "memory", "r12", "q0"
   );
 }
 #endif  // HAS_MIRRORUVROW_NEON
@@ -909,7 +909,7 @@ void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "+r"(dst),   // %1
     "+r"(width)  // %2
   :
-  : "memory", "cc", "r3", "q0"
+  : "cc", "memory", "r3", "q0"
   );
 }
 #endif  // HAS_ARGBMIRRORROW_NEON
@@ -929,7 +929,7 @@ void BGRAToARGBRow_NEON(const uint8* src_bgra, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
   );
 }
 #endif  // HAS_BGRATOARGBROW_NEON
@@ -948,7 +948,7 @@ void ABGRToARGBRow_NEON(const uint8* src_abgr, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
   );
 }
 #endif  // HAS_ABGRTOARGBROW_NEON
@@ -967,7 +967,7 @@ void RGBAToARGBRow_NEON(const uint8* src_rgba, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_RGBATOARGBROW_NEON
@@ -986,7 +986,7 @@ void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     "+r"(dst_argb),   // %1
     "+r"(pix)         // %2
   :
-  : "memory", "cc", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_RGB24TOARGBROW_NEON
@@ -1006,7 +1006,7 @@ void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_RAWTOARGBROW_NEON
@@ -1038,7 +1038,7 @@ void RGB565ToARGBRow_NEON(const uint8* src_rgb565, uint8* dst_argb, int pix) {
     "+r"(dst_argb),    // %1
     "+r"(pix)          // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+  : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
   );
 }
 #endif  // HAS_RGB565TOARGBROW_NEON
@@ -1086,7 +1086,7 @@ void ARGB1555ToARGBRow_NEON(const uint8* src_argb1555, uint8* dst_argb,
     "+r"(dst_argb),    // %1
     "+r"(pix)          // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+  : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
   );
 }
 #endif  // HAS_ARGB1555TOARGBROW_NEON
@@ -1117,7 +1117,7 @@ void ARGB4444ToARGBRow_NEON(const uint8* src_argb4444, uint8* dst_argb,
     "+r"(dst_argb),    // %1
     "+r"(pix)          // %2
   :
-  : "memory", "cc", "q0", "q1", "q2"  // Clobber List
+  : "cc", "memory", "q0", "q1", "q2"  // Clobber List
   );
 }
 #endif  // HAS_ARGB4444TOARGBROW_NEON
@@ -1136,7 +1136,7 @@ void ARGBToRGBARow_NEON(const uint8* src_argb, uint8* dst_rgba, int pix) {
     "+r"(dst_rgba),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTORGBAROW_NEON
@@ -1154,7 +1154,7 @@ void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb24, int pix) {
     "+r"(dst_rgb24),  // %1
     "+r"(pix)         // %2
   :
-  : "memory", "cc", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTORGB24ROW_NEON
@@ -1173,7 +1173,7 @@ void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_raw, int pix) {
     "+r"(dst_raw),   // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTORAWROW_NEON
@@ -1191,7 +1191,7 @@ void YUY2ToYRow_NEON(const uint8* src_yuy2, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOYROW_NEON
@@ -1209,7 +1209,7 @@ void UYVYToYRow_NEON(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOYROW_NEON
@@ -1230,7 +1230,7 @@ void YUY2ToUV422Row_NEON(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOYROW_NEON
@@ -1251,7 +1251,7 @@ void UYVYToUV422Row_NEON(const uint8* src_uyvy, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOYROW_NEON
@@ -1277,7 +1277,7 @@ void YUY2ToUVRow_NEON(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_v),        // %3
     "+r"(pix)           // %4
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOYROW_NEON
@@ -1303,7 +1303,7 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_v),        // %3
     "+r"(pix)           // %4
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOYROW_NEON
@@ -1325,7 +1325,7 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
     "+r"(dst_uv),         // %2
     "+r"(pix)             // %3
   :
-  : "memory", "cc", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 
@@ -1345,7 +1345,7 @@ void ARGBToBayerRow_NEON(const uint8* src_argb,
     "+r"(selector),         // %2
     "+r"(pix)               // %3
   :
-  : "memory", "cc", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 
@@ -1409,7 +1409,7 @@ void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb565, int pix) {
     "+r"(dst_rgb565),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
   );
 }
 #endif  // HAS_ARGBTORGB565ROW_NEON
@@ -1429,7 +1429,7 @@ void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_argb1555,
     "+r"(dst_argb1555),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
   );
 }
 #endif  // HAS_ARGBTOARGB1555ROW_NEON
@@ -1450,7 +1450,7 @@ void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
     "+r"(dst_argb4444),  // %1
     "+r"(pix)            // %2
   :
-  : "memory", "cc", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
   );
 }
 #endif  // HAS_ARGBTOARGB4444ROW_NEON
@@ -1477,7 +1477,7 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q12", "q13"
+  : "cc", "memory", "q0", "q1", "q2", "q12", "q13"
   );
 }
 #endif  // HAS_ARGBTOYROW_NEON
@@ -1518,7 +1518,7 @@ void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14", "q15"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14", "q15"
   );
 }
 #endif  // HAS_ARGBTOUV444ROW_NEON
@@ -1565,7 +1565,7 @@ void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3",
+  : "cc", "memory", "q0", "q1", "q2", "q3",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1619,7 +1619,7 @@ void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1673,7 +1673,7 @@ void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1711,7 +1711,7 @@ void BGRAToUVRow_NEON(const uint8* src_bgra, int src_stride_bgra,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1749,7 +1749,7 @@ void ABGRToUVRow_NEON(const uint8* src_abgr, int src_stride_abgr,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1787,7 +1787,7 @@ void RGBAToUVRow_NEON(const uint8* src_rgba, int src_stride_rgba,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1825,7 +1825,7 @@ void RGB24ToUVRow_NEON(const uint8* src_rgb24, int src_stride_rgb24,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1863,7 +1863,7 @@ void RAWToUVRow_NEON(const uint8* src_raw, int src_stride_raw,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1926,7 +1926,7 @@ void RGB565ToUVRow_NEON(const uint8* src_rgb565, int src_stride_rgb565,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -1988,7 +1988,7 @@ void ARGB1555ToUVRow_NEON(const uint8* src_argb1555, int src_stride_argb1555,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -2050,7 +2050,7 @@ void ARGB4444ToUVRow_NEON(const uint8* src_argb4444, int src_stride_argb4444,
     "+r"(dst_v),     // %3
     "+r"(pix)        // %4
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
     "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -2079,7 +2079,7 @@ void RGB565ToYRow_NEON(const uint8* src_rgb565, uint8* dst_y, int pix) {
     "+r"(dst_y),       // %1
     "+r"(pix)          // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q12", "q13"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q12", "q13"
   );
 }
 #endif  // HAS_RGB565TOYROW_NEON
@@ -2107,7 +2107,7 @@ void ARGB1555ToYRow_NEON(const uint8* src_argb1555, uint8* dst_y, int pix) {
     "+r"(dst_y),         // %1
     "+r"(pix)            // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q12", "q13"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q12", "q13"
   );
 }
 #endif  // HAS_ARGB1555TOYROW_NEON
@@ -2135,7 +2135,7 @@ void ARGB4444ToYRow_NEON(const uint8* src_argb4444, uint8* dst_y, int pix) {
     "+r"(dst_y),         // %1
     "+r"(pix)            // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q12", "q13"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q12", "q13"
   );
 }
 #endif  // HAS_ARGB4444TOYROW_NEON
@@ -2162,7 +2162,7 @@ void BGRAToYRow_NEON(const uint8* src_bgra, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
   );
 }
 #endif  // HAS_BGRATOYROW_NEON
@@ -2189,7 +2189,7 @@ void ABGRToYRow_NEON(const uint8* src_abgr, uint8* dst_y, int pix) {
     "+r"(dst_y),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
   );
 }
 #endif  // HAS_ABGRTOYROW_NEON
@@ -2216,7 +2216,7 @@ void RGBAToYRow_NEON(const uint8* src_rgba, uint8* dst_y, int pix) {
     "+r"(dst_y),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
   );
 }
 #endif  // HAS_RGBATOYROW_NEON
@@ -2243,7 +2243,7 @@ void RGB24ToYRow_NEON(const uint8* src_rgb24, uint8* dst_y, int pix) {
     "+r"(dst_y),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
   );
 }
 #endif  // HAS_RGB24TOYROW_NEON
@@ -2270,7 +2270,7 @@ void RAWToYRow_NEON(const uint8* src_raw, uint8* dst_y, int pix) {
     "+r"(dst_y),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
+  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8"
   );
 }
 #endif  // HAS_RAWTOYROW_NEON
@@ -2281,72 +2281,72 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
                              const uint8* src_ptr, ptrdiff_t src_stride,
                              int dst_width, int source_y_fraction) {
   asm volatile (
-    "cmp          %4, #0                       \n"
-    "beq          100f                         \n"
-    "add          %2, %1                       \n"
-    "cmp          %4, #64                      \n"
-    "beq          75f                          \n"
-    "cmp          %4, #128                     \n"
-    "beq          50f                          \n"
-    "cmp          %4, #192                     \n"
-    "beq          25f                          \n"
+    "cmp        %4, #0                         \n"
+    "beq        100f                           \n"
+    "add        %2, %1                         \n"
+    "cmp        %4, #64                        \n"
+    "beq        75f                            \n"
+    "cmp        %4, #128                       \n"
+    "beq        50f                            \n"
+    "cmp        %4, #192                       \n"
+    "beq        25f                            \n"
 
-    "vdup.8       d5, %4                       \n"
-    "rsb          %4, #256                     \n"
-    "vdup.8       d4, %4                       \n"
+    "vdup.8     d5, %4                         \n"
+    "rsb        %4, #256                       \n"
+    "vdup.8     d4, %4                         \n"
     // General purpose row blend.
   "1:                                          \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
-    "subs         %3, #4                       \n"
-    "vmull.u8     q13, d0, d4                  \n"
-    "vmull.u8     q14, d1, d4                  \n"
-    "vmlal.u8     q13, d2, d5                  \n"
-    "vmlal.u8     q14, d3, d5                  \n"
-    "vrshrn.u16   d0, q13, #8                  \n"
-    "vrshrn.u16   d1, q14, #8                  \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
-    "bgt          1b                           \n"
-    "b            99f                          \n"
+    "vld1.u8    {q0}, [%1]!                    \n"
+    "vld1.u8    {q1}, [%2]!                    \n"
+    "subs       %3, #4                         \n"
+    "vmull.u8   q13, d0, d4                    \n"
+    "vmull.u8   q14, d1, d4                    \n"
+    "vmlal.u8   q13, d2, d5                    \n"
+    "vmlal.u8   q14, d3, d5                    \n"
+    "vrshrn.u16 d0, q13, #8                    \n"
+    "vrshrn.u16 d1, q14, #8                    \n"
+    "vst1.u8    {q0}, [%0]!                    \n"
+    "bgt        1b                             \n"
+    "b          99f                            \n"
 
     // Blend 25 / 75.
   "25:                                         \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
-    "subs         %3, #4                       \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
-    "bgt          25b                          \n"
-    "b            99f                          \n"
+    "vld1.u8    {q0}, [%1]!                    \n"
+    "vld1.u8    {q1}, [%2]!                    \n"
+    "subs       %3, #4                         \n"
+    "vrhadd.u8  q0, q1                         \n"
+    "vrhadd.u8  q0, q1                         \n"
+    "vst1.u8    {q0}, [%0]!                    \n"
+    "bgt        25b                            \n"
+    "b          99f                            \n"
 
     // Blend 50 / 50.
   "50:                                         \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
-    "subs         %3, #4                       \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
-    "bgt          50b                          \n"
-    "b            99f                          \n"
+    "vld1.u8    {q0}, [%1]!                    \n"
+    "vld1.u8    {q1}, [%2]!                    \n"
+    "subs       %3, #4                         \n"
+    "vrhadd.u8  q0, q1                         \n"
+    "vst1.u8    {q0}, [%0]!                    \n"
+    "bgt        50b                            \n"
+    "b          99f                            \n"
 
     // Blend 75 / 25.
   "75:                                         \n"
-    "vld1.u8      {q1}, [%1]!                  \n"
-    "vld1.u8      {q0}, [%2]!                  \n"
-    "subs         %3, #4                       \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
-    "bgt          75b                          \n"
-    "b            99f                          \n"
+    "vld1.u8    {q1}, [%1]!                    \n"
+    "vld1.u8    {q0}, [%2]!                    \n"
+    "subs       %3, #4                         \n"
+    "vrhadd.u8  q0, q1                         \n"
+    "vrhadd.u8  q0, q1                         \n"
+    "vst1.u8    {q0}, [%0]!                    \n"
+    "bgt        75b                            \n"
+    "b          99f                            \n"
 
     // Blend 100 / 0 - Copy row unchanged.
   "100:                                        \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "subs         %3, #4                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
-    "bgt          100b                         \n"
+    "vld1.u8    {q0}, [%1]!                    \n"
+    "subs       %3, #4                         \n"
+    "vst1.u8    {q0}, [%0]!                    \n"
+    "bgt        100b                           \n"
 
   "99:                                         \n"
   : "+r"(dst_ptr),          // %0
@@ -2355,9 +2355,77 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
     "+r"(dst_width),        // %3
     "+r"(source_y_fraction) // %4
   :
-  : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
+  : "cc", "memory", "q0", "q1", "d4", "d5", "q13", "q14"
   );
 }
+
+// TODO(fbarchard): Optimize Neon to use 8 bit math.
+// dr * (256 - sa) / 256 + sr = dr - dr * sa / 256 + sr
+void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
+                       uint8* dst_argb, int width) {
+  asm volatile (
+    "vmov.u16   q8, #256                       \n"
+    "subs       %3, #8                         \n"
+    "blt        89f                            \n"
+    // Blend 8 pixels.
+  "8:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB0.
+    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 pixels of ARGB1.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vmovl.u8   q9, d3                         \n"  // alpha
+    "vsub.u16   q9, q8, q9                     \n"  // 256 - alpha
+    "vmovl.u8   q10, d4                        \n"  // dst_blue
+    "vmovl.u8   q11, d5                        \n"  // dst_green
+    "vmovl.u8   q12, d6                        \n"  // dst_red
+    "vmul.u16   q10, q10, q9                   \n"  // b * (256 - a)
+    "vmul.u16   q11, q11, q9                   \n"  // g * (256 - a)
+    "vmul.u16   q12, q12, q9                   \n"  // r * (256 - a)
+    "vqrshrn.u16 d4, q10, #8                   \n"  // b >>= 8
+    "vqrshrn.u16 d5, q11, #8                   \n"  // g >>= 8
+    "vqrshrn.u16 d6, q12, #8                   \n"  // r >>= 8
+    "vqadd.u8   q0, q0, q2                     \n"  // b,g + src_b,src_g
+    "vqadd.u8   d2, d2, d6                     \n"  // r + src_r
+    "vmov.u8    d3, #255                       \n"  // a = 255
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 pixels of ARGB.
+    "bge        8b                             \n"
+
+  "89:                                         \n"
+    "adds       %3, #8-1                       \n"
+    "blt        99f                            \n"
+
+    // Blend 1 pixels.
+  "1:                                          \n"
+    "vld4.8     {d0[0],d1[0],d2[0],d3[0]}, [%0]! \n"  // load 1 pixel ARGB0.
+    "vld4.8     {d4[0],d5[0],d6[0],d7[0]}, [%1]! \n"  // load 1 pixel ARGB1.
+    "subs       %3, %3, #1                     \n"  // 1 processed per loop.
+    "vmovl.u8   q9, d3                         \n"  // alpha
+    "vsub.u16   q9, q8, q9                     \n"  // 256 - alpha
+    "vmovl.u8   q10, d4                        \n"  // dst_blue
+    "vmovl.u8   q11, d5                        \n"  // dst_green
+    "vmovl.u8   q12, d6                        \n"  // dst_red
+    "vmul.u16   q10, q10, q9                   \n"  // b * (256 - a)
+    "vmul.u16   q11, q11, q9                   \n"  // g * (256 - a)
+    "vmul.u16   q12, q12, q9                   \n"  // r * (256 - a)
+    "vqrshrn.u16 d4, q10, #8                   \n"  // b >>= 8
+    "vqrshrn.u16 d5, q11, #8                   \n"  // g >>= 8
+    "vqrshrn.u16 d6, q12, #8                   \n"  // r >>= 8
+    "vqadd.u8   q0, q0, q2                     \n"  // b,g + src_b,src_g
+    "vqadd.u8   d2, d2, d6                     \n"  // r + src_r
+    "vmov.u8    d3, #255                       \n"  // a = 255
+    "vst4.8     {d0[0],d1[0],d2[0],d3[0]}, [%2]! \n"  // store 1 pixel.
+    "bge        1b                             \n"
+
+  "99:                                         \n"
+
+  : "+r"(src_argb0),    // %0
+    "+r"(src_argb1),    // %1
+    "+r"(dst_argb),     // %2
+    "+r"(width)         // %3
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
+  );
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

@@ -364,6 +364,11 @@ ARGBBlendRow GetARGBBlend() {
     ARGBBlendRow = ARGBBlendRow_SSE2;
   }
 #endif
+#if defined(HAS_ARGBBLENDROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBBlendRow = ARGBBlendRow_NEON;
+  }
+#endif
   return ARGBBlendRow;
 }
 

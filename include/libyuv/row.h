@@ -220,6 +220,7 @@ extern "C" {
 
 // Effects
 #define HAS_ARGBINTERPOLATEROW_NEON
+#define HAS_ARGBBLENDROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -939,6 +940,8 @@ void YToARGBRow_NEON(const uint8* src_y,
 void ARGBBlendRow_SSSE3(const uint8* src_argb, const uint8* src_argb1,
                         uint8* dst_argb, int width);
 void ARGBBlendRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width);
+void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
                     uint8* dst_argb, int width);
