@@ -838,13 +838,21 @@ static void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
-static const int kMaxInputWidth = 2560;
-
 // C version 2x2 -> 2x1
 void ScaleARGBFilterRows_C(uint8* dst_argb, const uint8* src_argb,
                            ptrdiff_t src_stride,
                            int dst_width, int source_y_fraction) {
   assert(dst_width > 0);
+  // Specialized case for 100% first row.  Helps avoid reading beyond last row.
+  if (source_y_fraction == 0) {
+    memcpy(dst_argb, src_argb, dst_width * 4);
+    dst_argb += dst_width * 4;
+    dst_argb[0] = dst_argb[-4];
+    dst_argb[1] = dst_argb[-3];
+    dst_argb[2] = dst_argb[-2];
+    dst_argb[3] = dst_argb[-1];
+    return;
+  }
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_argb + src_stride;
@@ -953,6 +961,8 @@ static void ScaleARGBDownEven(int src_width, int src_height,
  * interpolation.
  */
 
+// Maximum width handled by 2 pass Bilinear.
+static const int kMaxInputWidth = 2560;
 static void ScaleARGBBilinear(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
@@ -989,6 +999,9 @@ static void ScaleARGBBilinear(int src_width, int src_height,
   int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
   int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
   for (int j = 0; j < dst_height; ++j) {
+    if (y > maxy) {
+      y = maxy;
+    }
     int yi = y >> 16;
     int yf = (y >> 8) & 255;
     const uint8* src = src_argb + yi * src_stride;
@@ -996,9 +1009,6 @@ static void ScaleARGBBilinear(int src_width, int src_height,
     ScaleARGBFilterCols_C(dst_argb, row, dst_width, x, dx);
     dst_argb += dst_stride;
     y += dy;
-    if (y > maxy) {
-      y = maxy;
-    }
   }
 }
 
