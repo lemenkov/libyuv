@@ -3580,8 +3580,8 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
     // 1 pixel loop until destination pointer is aligned.
   alignloop1:
-//    test       edx, 15          // aligned?
-//    je         alignloop1b
+    test       edx, 15          // aligned?
+    je         alignloop1b
     movd       xmm3, [eax]
     lea        eax, [eax + 4]
     movdqa     xmm0, xmm3       // src argb

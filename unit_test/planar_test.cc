@@ -646,42 +646,44 @@ TESTINTERPOLATE(128)
 TESTINTERPOLATE(192)
 TESTINTERPOLATE(255)
 
-static int TestBlend(int kWidth, int kHeight, int benchmark_iterations,
-                     int NEG, int OFF) {
+static int TestBlend(int width, int height, int benchmark_iterations,
+                     int invert, int off) {
   const int BPP_A = 4;
   const int STRIDE_A = 1;
   const int BPP_B = 4;
   const int STRIDE_B = 1;
-  const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;
-  const int kStrideB = (kWidth * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;
-  align_buffer_64(src_argb_a, kStrideA * kHeight + OFF);
-  align_buffer_64(src_argb_b, kStrideA * kHeight + OFF);
-  align_buffer_64(dst_argb_c, kStrideB * kHeight);
-  align_buffer_64(dst_argb_opt, kStrideB * kHeight);
+  const int kStrideA = (width * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;
+  const int kStrideB = (width * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;
+  align_buffer_64(src_argb_a, kStrideA * height + off);
+  align_buffer_64(src_argb_b, kStrideA * height + off);
+  align_buffer_64(dst_argb_c, kStrideB * height);
+  align_buffer_64(dst_argb_opt, kStrideB * height);
   srandom(time(NULL));
-  for (int i = 0; i < kStrideA * kHeight; ++i) {
-    src_argb_a[i + OFF] = (random() & 0xff);
-    src_argb_b[i + OFF] = (random() & 0xff);
+  for (int i = 0; i < kStrideA * height; ++i) {
+    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_b[i + off] = (random() & 0xff);
   }
-  ARGBAttenuate(src_argb_a, kStrideA, src_argb_a, kStrideA, kWidth, kHeight);
-  ARGBAttenuate(src_argb_b, kStrideA, src_argb_b, kStrideA, kWidth, kHeight);
-  memset(dst_argb_c, 255, kStrideB * kHeight);
-  memset(dst_argb_opt, 255, kStrideB * kHeight);
+  ARGBAttenuate(src_argb_a + off, kStrideA, src_argb_a + off, kStrideA, width,
+                height);
+  ARGBAttenuate(src_argb_b + off, kStrideA, src_argb_b + off, kStrideA, width,
+                height);
+  memset(dst_argb_c, 255, kStrideB * height);
+  memset(dst_argb_opt, 255, kStrideB * height);
 
   MaskCpuFlags(0);
-  ARGBBlend(src_argb_a + OFF, kStrideA,
-            src_argb_b + OFF, kStrideA,
+  ARGBBlend(src_argb_a + off, kStrideA,
+            src_argb_b + off, kStrideA,
             dst_argb_c, kStrideB,
-            kWidth, NEG * kHeight);
+            width, invert * height);
   MaskCpuFlags(-1);
   for (int i = 0; i < benchmark_iterations; ++i) {
-    ARGBBlend(src_argb_a + OFF, kStrideA,
-              src_argb_b + OFF, kStrideA,
+    ARGBBlend(src_argb_a + off, kStrideA,
+              src_argb_b + off, kStrideA,
               dst_argb_opt, kStrideB,
-              kWidth, NEG * kHeight);
+              width, invert * height);
   }
   int max_diff = 0;
-  for (int i = 0; i < kStrideB * kHeight; ++i) {
+  for (int i = 0; i < kStrideB * height; ++i) {
     int abs_diff =
         abs(static_cast<int>(dst_argb_c[i]) -
             static_cast<int>(dst_argb_opt[i]));
@@ -702,12 +704,11 @@ TEST_F(libyuvTest, ARGBBlend_Any) {
   EXPECT_LE(max_diff, 1);
 }
 
-// TODO(fbarchard): Enable unaligned blend test.
-// TEST_F(libyuvTest, ARGBBlend_Unaligned) {
-//   int max_diff = TestBlend(benchmark_width_, benchmark_height_,
-//                            benchmark_iterations_, +1, 1);
-//   EXPECT_LE(max_diff, 1);
-// }
+TEST_F(libyuvTest, ARGBBlend_Unaligned) {
+  int max_diff = TestBlend(benchmark_width_, benchmark_height_,
+                           benchmark_iterations_, +1, 1);
+  EXPECT_LE(max_diff, 1);
+}
 
 TEST_F(libyuvTest, ARGBBlend_Invert) {
   int max_diff = TestBlend(benchmark_width_, benchmark_height_,

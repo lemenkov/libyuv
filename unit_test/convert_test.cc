@@ -786,7 +786,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
                  FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                       \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
               FMT_B, BPP_B, STRIDE_B,                                          \
-              benchmark_width_, DIFF, _Any, +, 0)                              \
+              benchmark_width_ - 4, DIFF, _Any, +, 0)                          \
     TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
               FMT_B, BPP_B, STRIDE_B,                                          \
               benchmark_width_, DIFF, _Unaligned, +, 1)                        \
