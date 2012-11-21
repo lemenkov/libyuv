@@ -2359,12 +2359,10 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
   );
 }
 
-// TODO(fbarchard): Optimize Neon to use 8 bit math.
 // dr * (256 - sa) / 256 + sr = dr - dr * sa / 256 + sr
 void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
                        uint8* dst_argb, int width) {
   asm volatile (
-    "vmov.u16   q8, #256                       \n"
     "subs       %3, #8                         \n"
     "blt        89f                            \n"
     // Blend 8 pixels.
@@ -2372,19 +2370,16 @@ void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB0.
     "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 pixels of ARGB1.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vmovl.u8   q9, d3                         \n"  // alpha
-    "vsub.u16   q9, q8, q9                     \n"  // 256 - alpha
-    "vmovl.u8   q10, d4                        \n"  // dst_blue
-    "vmovl.u8   q11, d5                        \n"  // dst_green
-    "vmovl.u8   q12, d6                        \n"  // dst_red
-    "vmul.u16   q10, q10, q9                   \n"  // b * (256 - a)
-    "vmul.u16   q11, q11, q9                   \n"  // g * (256 - a)
-    "vmul.u16   q12, q12, q9                   \n"  // r * (256 - a)
-    "vqrshrn.u16 d4, q10, #8                   \n"  // b >>= 8
-    "vqrshrn.u16 d5, q11, #8                   \n"  // g >>= 8
-    "vqrshrn.u16 d6, q12, #8                   \n"  // r >>= 8
-    "vqadd.u8   q0, q0, q2                     \n"  // b,g + src_b,src_g
-    "vqadd.u8   d2, d2, d6                     \n"  // r + src_r
+    "vmull.u8   q10, d4, d3                    \n"  // db * a
+    "vmull.u8   q11, d5, d3                    \n"  // dg * a
+    "vmull.u8   q12, d6, d3                    \n"  // dr * a
+    "vqrshrn.u16 d20, q10, #8                  \n"  // db >>= 8
+    "vqrshrn.u16 d21, q11, #8                  \n"  // dg >>= 8
+    "vqrshrn.u16 d22, q12, #8                  \n"  // dr >>= 8
+    "vqsub.u8   q2, q2, q10                    \n"  // dbg - dbg * a / 256
+    "vqsub.u8   d6, d6, d22                    \n"  // dr - dr * a / 256
+    "vqadd.u8   q0, q0, q2                     \n"  // + sbg
+    "vqadd.u8   d2, d2, d6                     \n"  // + sr
     "vmov.u8    d3, #255                       \n"  // a = 255
     "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 pixels of ARGB.
     "bge        8b                             \n"
@@ -2398,19 +2393,16 @@ void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "vld4.8     {d0[0],d1[0],d2[0],d3[0]}, [%0]! \n"  // load 1 pixel ARGB0.
     "vld4.8     {d4[0],d5[0],d6[0],d7[0]}, [%1]! \n"  // load 1 pixel ARGB1.
     "subs       %3, %3, #1                     \n"  // 1 processed per loop.
-    "vmovl.u8   q9, d3                         \n"  // alpha
-    "vsub.u16   q9, q8, q9                     \n"  // 256 - alpha
-    "vmovl.u8   q10, d4                        \n"  // dst_blue
-    "vmovl.u8   q11, d5                        \n"  // dst_green
-    "vmovl.u8   q12, d6                        \n"  // dst_red
-    "vmul.u16   q10, q10, q9                   \n"  // b * (256 - a)
-    "vmul.u16   q11, q11, q9                   \n"  // g * (256 - a)
-    "vmul.u16   q12, q12, q9                   \n"  // r * (256 - a)
-    "vqrshrn.u16 d4, q10, #8                   \n"  // b >>= 8
-    "vqrshrn.u16 d5, q11, #8                   \n"  // g >>= 8
-    "vqrshrn.u16 d6, q12, #8                   \n"  // r >>= 8
-    "vqadd.u8   q0, q0, q2                     \n"  // b,g + src_b,src_g
-    "vqadd.u8   d2, d2, d6                     \n"  // r + src_r
+    "vmull.u8   q10, d4, d3                    \n"  // db * a
+    "vmull.u8   q11, d5, d3                    \n"  // dg * a
+    "vmull.u8   q12, d6, d3                    \n"  // dr * a
+    "vqrshrn.u16 d20, q10, #8                  \n"  // db >>= 8
+    "vqrshrn.u16 d21, q11, #8                  \n"  // dg >>= 8
+    "vqrshrn.u16 d22, q12, #8                  \n"  // dr >>= 8
+    "vqsub.u8   q2, q2, q10                    \n"  // dbg - dbg * a / 256
+    "vqsub.u8   d6, d6, d22                    \n"  // dr - dr * a / 256
+    "vqadd.u8   q0, q0, q2                     \n"  // + sbg
+    "vqadd.u8   d2, d2, d6                     \n"  // + sr
     "vmov.u8    d3, #255                       \n"  // a = 255
     "vst4.8     {d0[0],d1[0],d2[0],d3[0]}, [%2]! \n"  // store 1 pixel.
     "bge        1b                             \n"
@@ -2422,7 +2414,7 @@ void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(dst_argb),     // %2
     "+r"(width)         // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "q12"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q10", "q11", "q12"
   );
 }
 
