@@ -105,7 +105,6 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
  *
  */
 
-
 // Constants for SSSE3 code
 #elif !defined(YUV_DISABLE_ASM) && \
     (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
@@ -225,6 +224,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     ret
   }
 }
+
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
@@ -299,6 +299,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
     ret
   }
 }
+
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
@@ -1241,9 +1242,7 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     ret
   }
 }
-
 #elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
@@ -1313,6 +1312,7 @@ void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 #endif
   );
 }
+
 static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
                                          ptrdiff_t src_stride,
                                          uint8* dst_ptr, int dst_width) {
@@ -2568,7 +2568,6 @@ static void ScaleFilterRows_C(uint8* dst_ptr,
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
-
 
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
