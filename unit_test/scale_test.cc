@@ -88,17 +88,16 @@ static int TestFilter(int src_width, int src_height,
 
   MaskCpuFlags(0);  // Disable all CPU optimization.
   double c_time = get_time();
-  for (i = 0; i < benchmark_iterations; ++i) {
-    I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
-              src_u + (src_stride_uv * b) + b, src_stride_uv,
-              src_v + (src_stride_uv * b) + b, src_stride_uv,
-              src_width, src_height,
-              dst_y_c + (dst_stride_y * b) + b, dst_stride_y,
-              dst_u_c + (dst_stride_uv * b) + b, dst_stride_uv,
-              dst_v_c + (dst_stride_uv * b) + b, dst_stride_uv,
-              dst_width, dst_height, f);
-  }
-  c_time = (get_time() - c_time) / benchmark_iterations;
+  I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
+            src_u + (src_stride_uv * b) + b, src_stride_uv,
+            src_v + (src_stride_uv * b) + b, src_stride_uv,
+            src_width, src_height,
+            dst_y_c + (dst_stride_y * b) + b, dst_stride_y,
+            dst_u_c + (dst_stride_uv * b) + b, dst_stride_uv,
+            dst_v_c + (dst_stride_uv * b) + b, dst_stride_uv,
+            dst_width, dst_height, f);
+
+  c_time = (get_time() - c_time);
 
   MaskCpuFlags(-1);  // Enable all CPU optimization.
   double opt_time = get_time();

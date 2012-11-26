@@ -58,13 +58,12 @@ static int ARGBTestFilter(int src_width, int src_height,
 
   MaskCpuFlags(0);  // Disable all CPU optimization.
   double c_time = get_time();
-  for (i = 0; i < benchmark_iterations; ++i) {
-    ARGBScale(src_argb + (src_stride_argb * b) + b * 4, src_stride_argb,
-              src_width, src_height,
-              dst_argb_c + (dst_stride_argb * b) + b * 4, dst_stride_argb,
-              dst_width, dst_height, f);
-  }
-  c_time = (get_time() - c_time) / benchmark_iterations;
+  ARGBScale(src_argb + (src_stride_argb * b) + b * 4, src_stride_argb,
+            src_width, src_height,
+            dst_argb_c + (dst_stride_argb * b) + b * 4, dst_stride_argb,
+            dst_width, dst_height, f);
+
+  c_time = (get_time() - c_time);
 
   MaskCpuFlags(-1);  // Enable all CPU optimization.
   double opt_time = get_time();

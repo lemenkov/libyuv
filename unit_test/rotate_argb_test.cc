@@ -19,7 +19,7 @@ namespace libyuv {
 
 static int ARGBTestRotate(int src_width, int src_height,
                           int dst_width, int dst_height,
-                          libyuv::RotationMode mode, int runs) {
+                          libyuv::RotationMode mode, int benchmark_iterations) {
   const int b = 128;
   int src_argb_plane_size = (src_width + b * 2) * (src_height + b * 2) * 4;
   int src_stride_argb = (b * 2 + src_width) * 4;
@@ -63,12 +63,12 @@ static int ARGBTestRotate(int src_width, int src_height,
 
   MaskCpuFlags(-1);  // Enable all CPU optimization.
   double opt_time = get_time();
-  for (i = 0; i < runs; ++i) {
+  for (i = 0; i < benchmark_iterations; ++i) {
     ARGBRotate(src_argb + (src_stride_argb * b) + b * 4, src_stride_argb,
                dst_argb_opt + (dst_stride_argb * b) + b * 4, dst_stride_argb,
                src_width, src_height, mode);
   }
-  opt_time = (get_time() - opt_time) / runs;
+  opt_time = (get_time() - opt_time) / benchmark_iterations;
 
   // Report performance of C vs OPT
   printf("filter %d - %8d us C - %8d us OPT\n",

@@ -4346,7 +4346,6 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
-
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {
   asm volatile (
