@@ -1271,4 +1271,3 @@ void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
 #endif
 
 #endif  // INCLUDE_LIBYUV_ROW_H_  NOLINT
-

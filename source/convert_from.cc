@@ -181,12 +181,12 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
 
   // Resample U plane from 1/2 width, 1/2 height to 1/4 width, 1x height
   ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
-             dst_u, dst_stride_u,quarterwidth, height,
+             dst_u, dst_stride_u, quarterwidth, height,
              kFilterNone);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
-             dst_v, dst_stride_v,quarterwidth, height,
+             dst_v, dst_stride_v, quarterwidth, height,
              kFilterNone);
   return 0;
 }
