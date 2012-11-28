@@ -18,6 +18,7 @@
 #endif
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/scale.h"  // For ScalePlane()
 #include "libyuv/video_common.h"
 #include "libyuv/row.h"
 
@@ -215,12 +216,7 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// use Bilinear for upsampling chroma
-void ScalePlaneBilinear(int src_width, int src_height,
-                        int dst_width, int dst_height,
-                        int src_stride, int dst_stride,
-                        const uint8* src_ptr, uint8* dst_ptr);
-
+// TODO(fbarchard): Enable bilinear when fast enough or specialized upsampler.
 // 411 chroma is 1/4 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
 LIBYUV_API
@@ -256,19 +252,15 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
   int halfheight = (height + 1) >> 1;
   int quarterwidth = (width + 3) >> 2;
 
-  // Resample U plane.
-  ScalePlaneBilinear(quarterwidth, height,  // from 1/4 width, 1x height
-                     halfwidth, halfheight,  // to 1/2 width, 1/2 height
-                     src_stride_u,
-                     dst_stride_u,
-                     src_u, dst_u);
+  // Resample U plane from 1/4 width, 1x height to 1/2 width, 1/2 height.
+  ScalePlane(src_u, src_stride_u, quarterwidth, height,
+             dst_u, dst_stride_u, halfwidth, halfheight,
+             kFilterNone);
 
   // Resample V plane.
-  ScalePlaneBilinear(quarterwidth, height,  // from 1/4 width, 1x height
-                     halfwidth, halfheight,  // to 1/2 width, 1/2 height
-                     src_stride_v,
-                     dst_stride_v,
-                     src_v, dst_v);
+  ScalePlane(src_v, src_stride_v, quarterwidth, height,
+             dst_v, dst_stride_v, halfwidth, halfheight,
+             kFilterNone);
   return 0;
 }
 
@@ -1738,7 +1730,6 @@ static void JpegI400ToI420(void* opaque,
 LIBYUV_API
 int MJPGSize(const uint8* sample, size_t sample_size,
              int* width, int* height) {
-  // TODO(fbarchard): Port to C
   MJpegDecoder mjpeg_decoder;
   bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret) {
@@ -1764,7 +1755,7 @@ int MJPGToI420(const uint8* sample,
     return -1;
   }
 
-  // TODO(fbarchard): Port to C
+  // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
   bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret && (mjpeg_decoder.GetWidth() != w ||

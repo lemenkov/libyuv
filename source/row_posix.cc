@@ -3519,7 +3519,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
-#ifdef HAS_ARGBATTENUATE_SSE2
+#ifdef HAS_ARGBATTENUATEROW_SSE2
 // Attenuate 4 pixels at a time.
 // aligned to 16 bytes
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
@@ -3564,7 +3564,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 #endif
   );
 }
-#endif  // HAS_ARGBATTENUATE_SSE2
+#endif  // HAS_ARGBATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
@@ -4132,7 +4132,6 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // TODO(fbarchard): Find 64 bit way to avoid masking.
-// TODO(fbarchard): Investigate why 4 pixels is slower than 2 on Core2.
 // Copy ARGB pixels from source image with slope to a row of destination.
 // Caveat - in 64 bit, movd is used with 64 bit gpr due to Mac gcc producing
 // an error if movq is used. movd  %%xmm0,%1

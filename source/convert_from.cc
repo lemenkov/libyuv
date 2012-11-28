@@ -16,6 +16,7 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/scale.h"  // For ScalePlane()
 #include "libyuv/video_common.h"
 #include "libyuv/row.h"
 
@@ -98,12 +99,7 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// use Bilinear for upsampling chroma
-void ScalePlaneBilinear(int src_width, int src_height,
-                        int dst_width, int dst_height,
-                        int src_stride, int dst_stride,
-                        const uint8* src_ptr, uint8* dst_ptr);
-
+// TODO(fbarchard): Enable bilinear when fast enough or specialized upsampler.
 LIBYUV_API
 int I420ToI444(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -136,19 +132,15 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
 
-  // Upsample U plane.
-  ScalePlaneBilinear(halfwidth, halfheight,
-                     width, height,
-                     src_stride_u,
-                     dst_stride_u,
-                     src_u, dst_u);
+  // Upsample U plane from from 1/2 width, 1/2 height to 1x width, 1x height.
+  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
+             dst_u, dst_stride_u, width, height,
+             kFilterNone);
 
   // Upsample V plane.
-  ScalePlaneBilinear(halfwidth, halfheight,
-                     width, height,
-                     src_stride_v,
-                     dst_stride_v,
-                     src_v, dst_v);
+  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
+             dst_v, dst_stride_v, width, height,
+             kFilterNone);
   return 0;
 }
 
@@ -187,19 +179,15 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
   int halfheight = (height + 1) >> 1;
   int quarterwidth = (width + 3) >> 2;
 
-  // Resample U plane.
-  ScalePlaneBilinear(halfwidth, halfheight,  // from 1/2 width, 1/2 height
-                     quarterwidth, height,  // to 1/4 width, 1x height
-                     src_stride_u,
-                     dst_stride_u,
-                     src_u, dst_u);
+  // Resample U plane from 1/2 width, 1/2 height to 1/4 width, 1x height
+  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
+             dst_u, dst_stride_u,quarterwidth, height,
+             kFilterNone);
 
   // Resample V plane.
-  ScalePlaneBilinear(halfwidth, halfheight,  // from 1/2 width, 1/2 height
-                     quarterwidth, height,  // to 1/4 width, 1x height
-                     src_stride_v,
-                     dst_stride_v,
-                     src_v, dst_v);
+  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
+             dst_v, dst_stride_v,quarterwidth, height,
+             kFilterNone);
   return 0;
 }
 
@@ -360,7 +348,6 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// TODO(fbarchard): Deprecate, move or expand 422 support?
 LIBYUV_API
 int I422ToUYVY(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,

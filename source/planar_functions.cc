@@ -767,18 +767,32 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
   }
   void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
                            int width) = ARGBAttenuateRow_C;
-#if defined(HAS_ARGBATTENUATE_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+#if defined(HAS_ARGBATTENUATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_NEON;
+    }
   }
 #endif
 
@@ -1126,9 +1140,8 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
 }
 
 // Interpolate 2 ARGB images by specified amount (0 to 255).
-// TODO(fbarchard): Check width is multiple of 16.  Do Any version.
-// TODO(fbarchard): Consider selecting a specialized interpolator so
-//     interpolation doesn't need to be checked on each row.
+// TODO(fbarchard): Consider selecting a specialization for interpolation so
+//     row function doesn't need to check interpolation on each row.
 LIBYUV_API
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
@@ -1147,15 +1160,14 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                              ptrdiff_t src_stride, int dst_width,
                              int source_y_fraction) = ARGBInterpolateRow_C;
 #if defined(HAS_ARGBINTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
       IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBInterpolateRow = ARGBInterpolateRow_SSSE3;
   }
 #elif defined(HAS_ARGBINTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
     ARGBInterpolateRow = ARGBInterpolateRow_NEON;
   }
 #endif

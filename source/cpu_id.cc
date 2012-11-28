@@ -138,9 +138,8 @@ static int MipsCpuCaps(const char* search_string) {
 #endif
 
 // CPU detect function for SIMD instruction sets.
-// TODO(fbarchard): Use constant if/when valgrind says cpu_info is initialized.
 LIBYUV_API
-int cpu_info_ = 1;  // 1 means cpu info is not initialized yet.
+int cpu_info_ = kCpuInit;  // cpu_info is not initialized yet.
 
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.

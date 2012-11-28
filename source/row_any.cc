@@ -141,6 +141,8 @@ RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
        3, 4, 2)
 RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_Unaligned_SSE2, I400ToARGBRow_C,
        7, 1, 4)
+RGBANY(YToARGBRow_Any_SSE2, YToARGBRow_SSE2, YToARGBRow_C,
+       7, 1, 4)
 RGBANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_Unaligned_SSSE3, YUY2ToARGBRow_C,
        15, 2, 4)
 RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_Unaligned_SSSE3, UYVYToARGBRow_C,
@@ -156,6 +158,8 @@ RGBANY(ARGBToARGB1555Row_Any_NEON, ARGBToARGB1555Row_NEON, ARGBToARGB1555Row_C,
 RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
        7, 4, 2)
 RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C,
+       7, 1, 4)
+RGBANY(YToARGBRow_Any_NEON, YToARGBRow_NEON, YToARGBRow_C,
        7, 1, 4)
 RGBANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C,
        7, 2, 4)
@@ -225,6 +229,28 @@ YANY(ARGB1555ToARGBRow_Any_NEON, ARGB1555ToARGBRow_NEON, 2, 4, 8)
 YANY(ARGB4444ToARGBRow_Any_NEON, ARGB4444ToARGBRow_NEON, 2, 4, 8)
 #endif
 #undef YANY
+
+// Attenuate is destructive so last16 method can not be used due to overlap.
+#define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
+    void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
+      int n = width & ~MASK;                                                   \
+      ARGBTOY_SIMD(src_argb, dst_y, n);                                        \
+      ARGBTOY_C(src_argb + n * SBPP,                                           \
+                dst_y  + n * BPP, width & MASK);                               \
+    }
+
+#ifdef HAS_ARGBATTENUATEROW_SSSE3
+YANY(ARGBAttenuateRow_Any_SSSE3, ARGBAttenuateRow_SSSE3, ARGBAttenuateRow_C,
+     4, 4, 3)
+#endif
+#ifdef HAS_ARGBATTENUATEROW_SSE2
+YANY(ARGBAttenuateRow_Any_SSE2, ARGBAttenuateRow_SSE2, ARGBAttenuateRow_C,
+     4, 4, 3)
+#endif
+#ifdef HAS_ARGBATTENUATEROW_NEON
+YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
+     4, 4, 7)
+#endif
 
 // RGB/YUV to UV does multiple of 16 with SIMD and remainder with C.
 #define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP)                           \

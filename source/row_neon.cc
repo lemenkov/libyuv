@@ -2418,6 +2418,61 @@ void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 
+// Attenuate 8 pixels at a time.
+void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    // Attenuate 8 pixels.
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q10, d0, d3                    \n"  // b * a
+    "vmull.u8   q11, d1, d3                    \n"  // g * a
+    "vmull.u8   q12, d2, d3                    \n"  // r * a
+    "vqrshrn.u16 d0, q10, #8                   \n"  // b >>= 8
+    "vqrshrn.u16 d1, q11, #8                   \n"  // g >>= 8
+    "vqrshrn.u16 d2, q12, #8                   \n"  // r >>= 8
+    "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
+    "+r"(width)       // %2
+  :
+  : "cc", "memory", "q0", "q1", "q10", "q11", "q12"
+  );
+}
+
+#ifdef ARGBATTENUATEROW_VQRDMULH
+// TODO(fbarchard): Remove this.  Works but is slower and off by 2.
+void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    // Attenuate 8 pixels.
+  "1:                                          \n"
+    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vmovl.u8   q0, d0                         \n"
+    "vmovl.u8   q1, d2                         \n"
+    "vmovl.u8   q2, d4                         \n"
+    "vmovl.u8   q8, d6                         \n"
+    "vshl.u16   q0, q0, #7                     \n"  // b << 7
+    "vshl.u16   q1, q1, #7                     \n"  // g << 7
+    "vshl.u16   q2, q2, #7                     \n"  // r << 7
+    "vqrdmulh.s16 q0, q0, q8                   \n"  // b * a
+    "vqrdmulh.s16 q1, q1, q8                   \n"  // g * a
+    "vqrdmulh.s16 q2, q2, q8                   \n"  // r * a
+    "vmovn.u16  d0, q0                         \n"
+    "vmovn.u16  d2, q1                         \n"
+    "vmovn.u16  d4, q2                         \n"
+    "vst4.8     {d0, d2, d4, d6}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
+    "+r"(width)       // %2
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q8"
+  );
+}
+#endif
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

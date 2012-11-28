@@ -478,8 +478,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   /* Convert to ARGB so 565 is expanded to bytes that can be compared. */      \
   align_buffer_64(dst_argb32_c, kWidth * 4 * kHeight);                         \
   align_buffer_64(dst_argb32_opt, kWidth * 4 * kHeight);                       \
-  memset(dst_argb32_c, 0, kWidth * 4 * kHeight);                               \
-  memset(dst_argb32_opt, 0, kWidth * 4 * kHeight);                             \
+  memset(dst_argb32_c, 1, kWidth * 4 * kHeight);                               \
+  memset(dst_argb32_opt, 2, kWidth * 4 * kHeight);                             \
   FMT_B##ToARGB(dst_argb_c, kStrideB,                                          \
                 dst_argb32_c, kWidth * 4,                                      \
                 kWidth, kHeight);                                              \
@@ -534,6 +534,12 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   align_buffer_64(dst_y_opt, kWidth * kHeight);                                \
   align_buffer_64(dst_u_opt, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);        \
   align_buffer_64(dst_v_opt, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);        \
+  memset(dst_y_c, 1, kWidth * kHeight);                                        \
+  memset(dst_u_c, 0, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);                \
+  memset(dst_v_c, 0, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);                \
+  memset(dst_y_opt, 2, kWidth * kHeight);                                      \
+  memset(dst_u_opt, 0, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);              \
+  memset(dst_v_opt, 0, kWidth / SUBSAMP_X * kHeight / SUBSAMP_Y);              \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kStride; ++j)                                          \
@@ -753,11 +759,11 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
     align_buffer_page_end(src_argb, kStrideA * kHeightA);                      \
     align_buffer_page_end(dst_argb_c, kStrideB * kHeightB);                    \
     align_buffer_page_end(dst_argb_opt, kStrideB * kHeightB);                  \
+    memset(dst_argb_c, 0, kStrideB * kHeightB);                                \
+    memset(dst_argb_opt, 0, kStrideB * kHeightB);                              \
     for (int i = 0; i < kStrideA * kHeightA; ++i) {                            \
       src_argb[i] = (random() & 0xff);                                         \
     }                                                                          \
-    memset(dst_argb_c, 0, kStrideB * kHeightB);                                \
-    memset(dst_argb_opt, 0, kStrideB * kHeightB);                              \
     MaskCpuFlags(0);                                                           \
     FMT_A##To##FMT_B(src_argb, kStrideA,                                       \
                      dst_argb_c, kStrideB,                                     \

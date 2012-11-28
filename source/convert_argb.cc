@@ -230,13 +230,19 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
                      uint8* rgb_buf,
                      int width) = YToARGBRow_C;
 #if defined(HAS_YTOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8) &&
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    YToARGBRow = YToARGBRow_SSE2;
+    YToARGBRow = YToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      YToARGBRow = YToARGBRow_SSE2;
+    }
   }
 #elif defined(HAS_YTOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    YToARGBRow = YToARGBRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    YToARGBRow = YToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      YToARGBRow = YToARGBRow_NEON;
+    }
   }
 #endif
 
@@ -941,7 +947,7 @@ int MJPGToARGB(const uint8* sample,
     return -1;
   }
 
-  // TODO(fbarchard): Port to C
+  // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
   bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret && (mjpeg_decoder.GetWidth() != w ||

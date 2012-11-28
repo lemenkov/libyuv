@@ -113,8 +113,8 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "vtbl.8      d0, {d2, d3}, d6              \n"
     "vtbl.8      d1, {d2, d3}, d7              \n"
 
-    // TODO: rework shuffle above to write
-    //       out with 4 instead of 8 writes
+    // TODO(frkoenig): Rework shuffle above to
+    // write out with 4 instead of 8 writes.
     "vst1.32     {d4[0]}, [r9], %3             \n"
     "vst1.32     {d4[1]}, [r9], %3             \n"
     "vst1.32     {d5[0]}, [r9], %3             \n"
@@ -276,7 +276,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "cmp         %6, #4                        \n"
     "blt         2f                            \n"
 
-    //TODO(frkoenig) : clean this up
+    //TODO(frkoenig): Clean this up
     // 4x8 block
     "mov         r9, %0                        \n"
     "vld1.64     {d0}, [r9], %1                \n"

@@ -3091,18 +3091,18 @@ void ScalePlaneBilinear(int src_width, int src_height,
                             int dst_width, int source_y_fraction) =
         ScaleFilterRows_C;
 #if defined(HAS_SCALEFILTERROWS_NEON)
-    if (TestCpuFlag(kCpuHasNEON)) {
+    if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 16)) {
       ScaleFilterRows = ScaleFilterRows_NEON;
     }
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) &&
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 16) &&
         IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
       ScaleFilterRows = ScaleFilterRows_SSE2;
     }
 #endif
 #if defined(HAS_SCALEFILTERROWS_SSSE3)
-    if (TestCpuFlag(kCpuHasSSSE3)) {
+    if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(src_width, 16)) {
       ScaleFilterRows = ScaleFilterRows_Unaligned_SSSE3;
       if (IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
         ScaleFilterRows = ScaleFilterRows_SSSE3;
@@ -3110,7 +3110,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
     }
 #endif
 #if defined(HAS_SCALEFILTERROWS_MIPS_DSPR2)
-    if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+    if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_width, 4) &&
         IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4)) {
       ScaleFilterRows = ScaleFilterRows_MIPS_DSPR2;
     }
@@ -3129,7 +3129,6 @@ void ScalePlaneBilinear(int src_width, int src_height,
       int yf = (y >> 8) & 255;
       const uint8* src = src_ptr + yi * src_stride;
       ScaleFilterRows(row, src, src_stride, src_width, yf);
-      row[src_width] = row[src_width - 1];
       ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
       dst_ptr += dst_stride;
       y += dy;

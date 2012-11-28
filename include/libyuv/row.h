@@ -139,7 +139,7 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(LIBYUV_SSSE3_ONLY)
-#define HAS_ARGBATTENUATE_SSE2
+#define HAS_ARGBATTENUATEROW_SSE2
 #define HAS_ARGBBLENDROW_SSE2
 #define HAS_MIRRORROW_SSE2
 #endif
@@ -221,6 +221,7 @@ extern "C" {
 // Effects
 #define HAS_ARGBINTERPOLATEROW_NEON
 #define HAS_ARGBBLENDROW_NEON
+#define HAS_ARGBATTENUATEROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -935,6 +936,12 @@ void YToARGBRow_SSE2(const uint8* src_y,
 void YToARGBRow_NEON(const uint8* src_y,
                      uint8* dst_argb,
                      int width);
+void YToARGBRow_Any_SSE2(const uint8* src_y,
+                         uint8* dst_argb,
+                         int width);
+void YToARGBRow_Any_NEON(const uint8* src_y,
+                         uint8* dst_argb,
+                         int width);
 
 // ARGB preattenuated alpha blend.
 void ARGBBlendRow_SSSE3(const uint8* src_argb, const uint8* src_argb1,
@@ -1194,6 +1201,13 @@ void I422ToUYVYRow_Any_NEON(const uint8* src_y,
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBAttenuateRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
+                               int width);
+void ARGBAttenuateRow_Any_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                                int width);
+void ARGBAttenuateRow_Any_NEON(const uint8* src_argb, uint8* dst_argb,
+                               int width);
 
 // Inverse table for unattenuate, shared by C and SSE2.
 extern uint32 fixed_invtbl8[256];

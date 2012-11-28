@@ -856,8 +856,7 @@ void ScaleARGBFilterRows_C(uint8* dst_argb, const uint8* src_argb,
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_argb + src_stride;
-  uint8* end = dst_argb + (dst_width << 2);
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst_argb[0] = (src_argb[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
     dst_argb[1] = (src_argb[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
     dst_argb[2] = (src_argb[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
@@ -869,7 +868,14 @@ void ScaleARGBFilterRows_C(uint8* dst_argb, const uint8* src_argb,
     src_argb += 8;
     src_ptr1 += 8;
     dst_argb += 8;
-  } while (dst_argb < end);
+  }
+  if (dst_width & 1) {
+    dst_argb[0] = (src_argb[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_argb[1] = (src_argb[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    dst_argb[2] = (src_argb[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
+    dst_argb[3] = (src_argb[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
+    dst_argb += 4;
+  }
   // Duplicate the last pixel (4 bytes) for filtering.
   dst_argb[0] = dst_argb[-4];
   dst_argb[1] = dst_argb[-3];
@@ -975,21 +981,20 @@ static void ScaleARGBBilinear(int src_width, int src_height,
                               ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) =
       ScaleARGBFilterRows_C;
-// TODO(fbarchard): Check aligned width.
 #if defined(HAS_SCALEARGBFILTERROWS_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSE2;
   }
 #endif
 #if defined(HAS_SCALEARGBFILTERROWS_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(src_stride, 16) && IS_ALIGNED(src_argb, 16)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(src_width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
   }
 #endif
 #if defined(HAS_SCALEARGBFILTERROWS_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 4)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_NEON;
   }
 #endif

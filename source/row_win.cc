@@ -1675,7 +1675,6 @@ static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
 static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
 static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
-// TODO(fbarchard): NV12/NV21 fetch UV and use directly.
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
 
 // Read 8 UV from 411.
@@ -3701,7 +3700,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
-#ifdef HAS_ARGBATTENUATE_SSE2
+#ifdef HAS_ARGBATTENUATEROW_SSE2
 // Attenuate 4 pixels at a time.
 // Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
@@ -3743,7 +3742,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     ret
   }
 }
-#endif  // HAS_ARGBATTENUATE_SSE2
+#endif  // HAS_ARGBATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.
