@@ -360,6 +360,33 @@ TEST_F(libyuvTest, ARGBScaleTo1366x768_Bilinear) {
   EXPECT_LE(max_diff, 1);
 }
 
+
+TEST_F(libyuvTest, ARGBScaleTo1280x720_None) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
+  int dst_width = 1280;
+  int dst_height = 720;
+
+  int max_diff = ARGBTestFilter(src_width, src_height,
+                                dst_width, dst_height,
+                                kFilterNone,
+                                benchmark_iterations_);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBScaleTo1280x720_Bilinear) {
+  int src_width = benchmark_width_;
+  int src_height = benchmark_height_;
+  int dst_width = 1280;
+  int dst_height = 720;
+
+  int max_diff = ARGBTestFilter(src_width, src_height,
+                                dst_width, dst_height,
+                                kFilterBilinear,
+                                benchmark_iterations_);
+  EXPECT_LE(max_diff, 1);
+}
+
 TEST_F(libyuvTest, ARGBScaleTo853x480_None) {
   int src_width = benchmark_width_;
   int src_height = benchmark_height_;
