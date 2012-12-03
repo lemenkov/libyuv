@@ -856,6 +856,10 @@ int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBGrayRow = ARGBGrayRow_SSSE3;
   }
+#elif defined(HAS_ARGBGRAYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_NEON;
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {
@@ -880,6 +884,10 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBGrayRow = ARGBGrayRow_SSSE3;
+  }
+#elif defined(HAS_ARGBGRAYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_NEON;
   }
 #endif
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;

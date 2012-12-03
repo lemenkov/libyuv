@@ -563,7 +563,7 @@ void ARGBToUV411Row_C(const uint8* src_argb,
 // 0.11 * B + 0.59 * G + 0.30 * R
 // Coefficients rounded to multiple of 2 for consistency with SSSE3 version.
 static __inline int RGBToGray(uint8 r, uint8 g, uint8 b) {
-  return (( 76 * r + 152 * g +  28 * b) >> 8);
+  return (28 * b + 152 * g + 76 * r) >> 8;
 }
 
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width) {

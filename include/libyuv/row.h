@@ -224,6 +224,8 @@ extern "C" {
 #define HAS_ARGBATTENUATEROW_NEON
 #define HAS_ARGBQUANTIZEROW_NEON
 #define HAS_ARGBSHADEROW_NEON
+#define HAS_ARGBGRAYROW_NEON
+#define HAS_ARGBSEPIAROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1218,9 +1220,11 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBGrayRow_NEON(const uint8* src_argb, uint8* dst_argb, int width);
 
 void ARGBSepiaRow_C(uint8* dst_argb, int width);
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
+void ARGBSepiaRow_NEON(uint8* dst_argb, int width);
 
 void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width);
 void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
@@ -1236,6 +1240,13 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 void ARGBQuantizeRow_NEON(uint8* dst_argb, int scale, int interval_size,
                           int interval_offset, int width);
 
+void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
+                    uint32 value);
+void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value);
+void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value);
+
 // Used for blur.
 void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
                                     int width, int area, uint8* dst, int count);
@@ -1247,12 +1258,6 @@ void CumulativeSumToAverageRow_C(const int32* topleft, const int32* botleft,
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
                                const int32* previous_cumsum, int width);
 
-void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
-                    uint32 value);
-void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
-                       uint32 value);
-void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
-                       uint32 value);
 
 LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,

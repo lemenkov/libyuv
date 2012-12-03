@@ -2550,6 +2550,34 @@ void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
   );
 }
 
+// Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
+// Similar to ARGBToY but different constants, no round and stores ARGB.
+// C code is (28 * b + 152 * g + 76 * r) >> 8;
+void ARGBGrayRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "vmov.u8    d24, #14                       \n"  // B * 0.1016 coefficient
+    "vmov.u8    d25, #76                       \n"  // G * 0.5078 coefficient
+    "vmov.u8    d26, #38                       \n"  // R * 0.2578 coefficient
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q2, d0, d24                    \n"  // B
+    "vmlal.u8   q2, d1, d25                    \n"  // G
+    "vmlal.u8   q2, d2, d26                    \n"  // R
+    "vqshrun.s16 d0, q2, #7                    \n"  // 16 bit to 8 bit Y
+    "vmov       d1, d0                         \n"  // G
+    "vmov       d2, d0                         \n"  // R
+    "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(width)      // %2
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q12", "q13"
+  );
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
