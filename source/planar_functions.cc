@@ -984,6 +984,10 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBQuantizeRow = ARGBQuantizeRow_SSE2;
   }
+#elif defined(HAS_ARGBQUANTIZEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ARGBQuantizeRow = ARGBQuantizeRow_NEON;
+  }
 #endif
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   for (int y = 0; y < height; ++y) {

@@ -2473,6 +2473,47 @@ void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif
 
+// Quantize 8 ARGB pixels (32 bytes).
+// dst = (dst * scale >> 16) * interval_size + interval_offset;
+void ARGBQuantizeRow_NEON(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width) {
+  asm volatile (
+    "vdup.u16   q8, %2                         \n"
+    "vshr.u16   q8, q8, #1                     \n"  // scale >>= 1
+    "vdup.u16   q9, %3                         \n"  // interval multiply.
+    "vdup.u16   q10, %4                        \n"  // interval add
+
+    // 8 pixel loop.
+    ".p2align   2                              \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d2, d4, d6}, [%0]         \n"  // load 8 pixels of ARGB.
+    "subs       %1, %1, #8                     \n"  // 8 processed per loop.
+    "vmovl.u8   q0, d0                         \n"  // b (0 .. 255)
+    "vmovl.u8   q1, d2                         \n"
+    "vmovl.u8   q2, d4                         \n"
+    "vqdmulh.s16 q0, q0, q8                    \n"  // b * scale
+    "vqdmulh.s16 q1, q1, q8                    \n"  // g
+    "vqdmulh.s16 q2, q2, q8                    \n"  // r
+    "vmul.u16   q0, q0, q9                     \n"  // b * interval_size
+    "vmul.u16   q1, q1, q9                     \n"  // g
+    "vmul.u16   q2, q2, q9                     \n"  // r
+    "vadd.u16   q0, q0, q10                    \n"  // b + interval_offset
+    "vadd.u16   q1, q1, q10                    \n"  // g
+    "vadd.u16   q2, q2, q10                    \n"  // r
+    "vqmovn.u16 d0, q0                         \n"
+    "vqmovn.u16 d2, q1                         \n"
+    "vqmovn.u16 d4, q2                         \n"
+    "vst4.8     {d0, d2, d4, d6}, [%0]!        \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(dst_argb),       // %0
+    "+r"(width)           // %1
+  : "r"(scale),           // %2
+    "r"(interval_size),   // %3
+    "r"(interval_offset)  // %4
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+  );
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

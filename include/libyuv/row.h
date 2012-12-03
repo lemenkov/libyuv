@@ -222,6 +222,7 @@ extern "C" {
 #define HAS_ARGBINTERPOLATEROW_NEON
 #define HAS_ARGBBLENDROW_NEON
 #define HAS_ARGBATTENUATEROW_NEON
+#define HAS_ARGBQUANTIZEROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1230,6 +1231,8 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width);
 void ARGBQuantizeRow_C(uint8* dst_argb, int scale, int interval_size,
                        int interval_offset, int width);
 void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width);
+void ARGBQuantizeRow_NEON(uint8* dst_argb, int scale, int interval_size,
                           int interval_offset, int width);
 
 // Used for blur.
