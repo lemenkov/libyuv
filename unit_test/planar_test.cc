@@ -539,7 +539,8 @@ TEST_F(libyuvTest, TestShade) {
   orig_pixels[3][1] = 0u;
   orig_pixels[3][2] = 0u;
   orig_pixels[3][3] = 0u;
-  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 4, 1, 0x80ffffff);
+  // Do 8 pixels to allow opt version to be used.
+  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 8, 1, 0x80ffffff);
   EXPECT_EQ(10u, shade_pixels[0][0]);
   EXPECT_EQ(20u, shade_pixels[0][1]);
   EXPECT_EQ(40u, shade_pixels[0][2]);
@@ -557,11 +558,17 @@ TEST_F(libyuvTest, TestShade) {
   EXPECT_EQ(0u, shade_pixels[3][2]);
   EXPECT_EQ(0u, shade_pixels[3][3]);
 
-  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 4, 1, 0x80808080);
+  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 8, 1, 0x80808080);
   EXPECT_EQ(5u, shade_pixels[0][0]);
   EXPECT_EQ(10u, shade_pixels[0][1]);
   EXPECT_EQ(20u, shade_pixels[0][2]);
   EXPECT_EQ(40u, shade_pixels[0][3]);
+
+  ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 8, 1, 0x10204080);
+  EXPECT_EQ(5u, shade_pixels[0][0]);
+  EXPECT_EQ(5u, shade_pixels[0][1]);
+  EXPECT_EQ(5u, shade_pixels[0][2]);
+  EXPECT_EQ(5u, shade_pixels[0][3]);
 
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {
     ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,

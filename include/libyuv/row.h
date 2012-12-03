@@ -223,6 +223,7 @@ extern "C" {
 #define HAS_ARGBBLENDROW_NEON
 #define HAS_ARGBATTENUATEROW_NEON
 #define HAS_ARGBQUANTIZEROW_NEON
+#define HAS_ARGBSHADEROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1249,6 +1250,8 @@ void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
 void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                     uint32 value);
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value);
+void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value);
 
 LIBYUV_API

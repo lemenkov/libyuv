@@ -1133,6 +1133,10 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBShadeRow = ARGBShadeRow_SSE2;
   }
+#elif defined(HAS_ARGBSHADEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ARGBShadeRow = ARGBShadeRow_NEON;
+  }
 #endif
 
   for (int y = 0; y < height; ++y) {

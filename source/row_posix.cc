@@ -3921,6 +3921,45 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 }
 #endif  // HAS_ARGBQUANTIZEROW_SSE2
 
+#ifdef HAS_ARGBSHADEROW_SSE2
+// Shade 4 pixels at a time by specified value.
+// Aligned to 16 bytes.
+void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value) {
+  asm volatile (
+    "movd      %3,%%xmm2                       \n"
+    "sub       %0,%1                           \n"
+    "punpcklbw %%xmm2,%%xmm2                   \n"
+    "punpcklqdq %%xmm2,%%xmm2                  \n"
+
+    // 4 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpckhbw %%xmm1,%%xmm1                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),       // %0
+    "+r"(dst_argb),       // %1
+    "+r"(width)           // %2
+  : "r"(value)            // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2"
+#endif
+  );
+}
+#endif  // HAS_ARGBSHADEROW_SSE2
+
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values
 // above and to the left of the value, inclusive of the value.
@@ -4091,44 +4130,6 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
   );
 }
 #endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
-#ifdef HAS_ARGBSHADEROW_SSE2
-// Shade 4 pixels at a time by specified value.
-// Aligned to 16 bytes.
-void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
-                       uint32 value) {
-  asm volatile (
-    "movd      %3,%%xmm2                       \n"
-    "sub       %0,%1                           \n"
-    "punpcklbw %%xmm2,%%xmm2                   \n"
-    "punpcklqdq %%xmm2,%%xmm2                  \n"
-
-    // 4 pixel loop.
-    ".p2align  2                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
-    "punpckhbw %%xmm1,%%xmm1                   \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),       // %0
-    "+r"(dst_argb),       // %1
-    "+r"(width)           // %2
-  : "r"(value)            // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2"
-#endif
-  );
-}
-#endif  // HAS_ARGBSHADEROW_SSE2
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // TODO(fbarchard): Find 64 bit way to avoid masking.

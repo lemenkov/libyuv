@@ -4124,6 +4124,42 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 }
 #endif  // HAS_ARGBQUANTIZEROW_SSE2
 
+#ifdef HAS_ARGBSHADEROW_SSE2
+// Shade 4 pixels at a time by specified value.
+// Aligned to 16 bytes.
+__declspec(naked) __declspec(align(16))
+void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    movd       xmm2, [esp + 16]  // value
+    sub        edx, eax
+    punpcklbw  xmm2, xmm2
+    punpcklqdq xmm2, xmm2
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm0       // first 2
+    punpckhbw  xmm1, xmm1       // next 2
+    pmulhuw    xmm0, xmm2       // argb * value
+    pmulhuw    xmm1, xmm2       // argb * value
+    psrlw      xmm0, 8
+    psrlw      xmm1, 8
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    ret
+  }
+}
+#endif  // HAS_ARGBSHADEROW_SSE2
+
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.
@@ -4314,42 +4350,6 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
   }
 }
 #endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
-
-#ifdef HAS_ARGBSHADEROW_SSE2
-// Shade 4 pixels at a time by specified value.
-// Aligned to 16 bytes.
-__declspec(naked) __declspec(align(16))
-void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
-                       uint32 value) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    movd       xmm2, [esp + 16]  // value
-    sub        edx, eax
-    punpcklbw  xmm2, xmm2
-    punpcklqdq xmm2, xmm2
-
-    align      16
- convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm0       // first 2
-    punpckhbw  xmm1, xmm1       // next 2
-    pmulhuw    xmm0, xmm2       // argb * value
-    pmulhuw    xmm1, xmm2       // argb * value
-    psrlw      xmm0, 8
-    psrlw      xmm1, 8
-    packuswb   xmm0, xmm1
-    sub        ecx, 4
-    movdqa     [eax + edx], xmm0
-    lea        eax, [eax + 16]
-    jg         convertloop
-
-    ret
-  }
-}
-#endif  // HAS_ARGBSHADEROW_SSE2
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
 // Copy ARGB pixels from source image with slope to a row of destination.

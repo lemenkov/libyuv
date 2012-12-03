@@ -2510,7 +2510,43 @@ void ARGBQuantizeRow_NEON(uint8* dst_argb, int scale, int interval_size,
   : "r"(scale),           // %2
     "r"(interval_size),   // %3
     "r"(interval_offset)  // %4
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10"
+  );
+}
+
+// Shade 8 pixels at a time by specified value.
+// NOTE vqrdmulh.s16 q10, q10, d0[0] must use a scaler register from 0 to 8.
+void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
+                       uint32 value) {
+  asm volatile (
+    "vdup.u32   q0, %3                         \n"  // duplicate scale value.
+    "vtrn.u8    d0, d1                         \n"  // d0 rrbb, d1 aagg
+    "vshr.u16   q0, q0, #1                     \n"  // scale >>= 1
+
+    // 8 pixel loop.
+    ".p2align   2                              \n"
+  "1:                                          \n"
+    "vld4.8     {d20, d22, d24, d26}, [%0]!    \n"  // load 8 pixels of ARGB.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+    "vmovl.u8   q10, d20                       \n"  // b (0 .. 255)
+    "vmovl.u8   q11, d22                       \n"
+    "vmovl.u8   q12, d24                       \n"
+    "vmovl.u8   q13, d26                       \n"
+    "vqrdmulh.s16 q10, q10, d0[0]              \n"  // b * scale
+    "vqrdmulh.s16 q11, q11, d1[0]              \n"  // g
+    "vqrdmulh.s16 q12, q12, d0[1]              \n"  // r
+    "vqrdmulh.s16 q13, q13, d1[0]              \n"  // a
+    "vqmovn.u16 d20, q10                       \n"
+    "vqmovn.u16 d22, q11                       \n"
+    "vqmovn.u16 d24, q12                       \n"
+    "vqmovn.u16 d26, q13                       \n"
+    "vst4.8     {d20, d22, d24, d26}, [%1]!    \n"  // store 8 pixels of ARGB.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),       // %0
+    "+r"(dst_argb),       // %1
+    "+r"(width)           // %2
+  : "r"(value)            // %3
+  : "cc", "memory", "q0", "q10", "q11", "q12", "q13"
   );
 }
 
