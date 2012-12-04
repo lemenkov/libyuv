@@ -2565,7 +2565,7 @@ void ARGBGrayRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
     "vmull.u8   q2, d0, d24                    \n"  // B
     "vmlal.u8   q2, d1, d25                    \n"  // G
     "vmlal.u8   q2, d2, d26                    \n"  // R
-    "vqshrun.s16 d0, q2, #7                    \n"  // 16 bit to 8 bit Y
+    "vqshrun.s16 d0, q2, #7                    \n"  // 16 bit to 8 bit B
     "vmov       d1, d0                         \n"  // G
     "vmov       d2, d0                         \n"  // R
     "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 ARGB pixels.
@@ -2575,6 +2575,47 @@ void ARGBGrayRow_NEON(const uint8* src_argb, uint8* dst_argb, int width) {
     "+r"(width)      // %2
   :
   : "cc", "memory", "q0", "q1", "q2", "q12", "q13"
+  );
+}
+
+// Convert 8 ARGB pixels (32 bytes) to 8 Sepia ARGB pixels.
+//    b = (r * 35 + g * 68 + b * 17) >> 7
+//    g = (r * 45 + g * 88 + b * 22) >> 7
+//    r = (r * 50 + g * 98 + b * 24) >> 7
+void ARGBSepiaRow_NEON(uint8* dst_argb, int width) {
+  asm volatile (
+    "vmov.u8    d20, #17                       \n"  // BB coefficient
+    "vmov.u8    d21, #68                       \n"  // BG coefficient
+    "vmov.u8    d22, #35                       \n"  // BR coefficient
+    "vmov.u8    d24, #22                       \n"  // GB coefficient
+    "vmov.u8    d25, #88                       \n"  // GG coefficient
+    "vmov.u8    d26, #45                       \n"  // GR coefficient
+    "vmov.u8    d28, #24                       \n"  // BB coefficient
+    "vmov.u8    d29, #98                       \n"  // BG coefficient
+    "vmov.u8    d30, #50                       \n"  // BR coefficient
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]         \n"  // load 8 ARGB pixels.
+    "subs       %1, %1, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q2, d0, d20                    \n"  // B to Sepia B
+    "vmlal.u8   q2, d1, d21                    \n"  // G
+    "vmlal.u8   q2, d2, d22                    \n"  // R
+    "vmull.u8   q3, d0, d24                    \n"  // B to Sepia G
+    "vmlal.u8   q3, d1, d25                    \n"  // G
+    "vmlal.u8   q3, d2, d26                    \n"  // R
+    "vmull.u8   q8, d0, d28                    \n"  // B to Sepia R
+    "vmlal.u8   q8, d1, d29                    \n"  // G
+    "vmlal.u8   q8, d2, d30                    \n"  // R
+    "vqshrun.s16 d0, q2, #7                    \n"  // 16 bit to 8 bit B
+    "vqshrun.s16 d1, q3, #7                    \n"  // 16 bit to 8 bit G
+    "vqshrun.s16 d2, q8, #7                    \n"  // 16 bit to 8 bit R
+    "vst4.8     {d0, d1, d2, d3}, [%0]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+  : "+r"(dst_argb),  // %0
+    "+r"(width)      // %1
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3",
+    "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 
