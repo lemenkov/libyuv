@@ -362,6 +362,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
     17, 68, 35, 0,
     22, 88, 45, 0,
     24, 98, 50, 0,
+    0, 0, 0, 0,  // Unused but makes matrix 16 bytes.
   };
 
   // Test blue

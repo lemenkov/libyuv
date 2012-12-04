@@ -226,6 +226,7 @@ extern "C" {
 #define HAS_ARGBSHADEROW_NEON
 #define HAS_ARGBGRAYROW_NEON
 #define HAS_ARGBSEPIAROW_NEON
+#define HAS_ARGBCOLORMATRIXROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1229,6 +1230,8 @@ void ARGBSepiaRow_NEON(uint8* dst_argb, int width);
 void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width);
 void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
                               int width);
+void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
+                             int width);
 
 void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width);
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width);

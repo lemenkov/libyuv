@@ -940,6 +940,10 @@ int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBColorMatrixRow = ARGBColorMatrixRow_SSSE3;
   }
+#elif defined(HAS_ARGBCOLORMATRIXROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    ARGBColorMatrixRow = ARGBColorMatrixRow_NEON;
+  }
 #endif
   uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   for (int y = 0; y < height; ++y) {
