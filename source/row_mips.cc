@@ -324,6 +324,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 // t8 = | 0 | G1 | 0 | g1 |
 // t2 = | 0 | R0 | 0 | r0 |
 // t1 = | 0 | R1 | 0 | r1 |
+#if !defined(YUV_DISABLE_ASM) && defined(__mips__) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define I422ToTransientMipsRGB                                                 \
         "lw                $t0, 0(%[y_buf])       \n"                          \
         "lhu               $t1, 0(%[u_buf])       \n"                          \
@@ -382,7 +383,9 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
         "addu.ph           $t8, $t8, $s5          \n"                          \
         "addu.ph           $t2, $t2, $s5          \n"                          \
         "addu.ph           $t1, $t1, $s5          \n"
+#endif
 
+#ifdef HAS_I422TOARGBROW_MIPS_DSPR2
 void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
@@ -442,7 +445,9 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
         "s4", "s5", "s6"
   );
 }
+#endif // HAS_I422TOARGBROW_MIPS_DSPR2
 
+#ifdef HAS_I422TOABGRROW_MIPS_DSPR2
 void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
@@ -502,7 +507,9 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
         "s4", "s5", "s6"
   );
 }
+#endif // HAS_I422TOABGRROW_MIPS_DSPR2
 
+#ifdef HAS_I422TOBGRAROW_MIPS_DSPR2
 void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
@@ -564,6 +571,7 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
         "s4", "s5", "s6"
   );
 }
+#endif // HAS_I422TOBGRAROW_MIPS_DSPR2
 
 #endif  // __mips__
 
