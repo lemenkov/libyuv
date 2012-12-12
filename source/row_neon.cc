@@ -2372,10 +2372,10 @@ void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
     "vmovl.u8   q11, d22                       \n"
     "vmovl.u8   q12, d24                       \n"
     "vmovl.u8   q13, d26                       \n"
-    "vqdmulh.s16 q10, q10, d0[0]               \n"  // b * scale * 2
-    "vqdmulh.s16 q11, q11, d1[0]               \n"  // g
-    "vqdmulh.s16 q12, q12, d0[1]               \n"  // r
-    "vqdmulh.s16 q13, q13, d1[0]               \n"  // a
+    "vqrdmulh.s16 q10, q10, d0[0]              \n"  // b * scale * 2
+    "vqrdmulh.s16 q11, q11, d1[0]              \n"  // g
+    "vqrdmulh.s16 q12, q12, d0[1]              \n"  // r
+    "vqrdmulh.s16 q13, q13, d1[1]              \n"  // a
     "vqmovn.u16 d20, q10                       \n"
     "vqmovn.u16 d22, q11                       \n"
     "vqmovn.u16 d24, q12                       \n"
