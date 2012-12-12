@@ -2356,12 +2356,13 @@ void ARGBQuantizeRow_NEON(uint8* dst_argb, int scale, int interval_size,
 
 // Shade 8 pixels at a time by specified value.
 // NOTE vqrdmulh.s16 q10, q10, d0[0] must use a scaler register from 0 to 8.
+// Rounding in vqrdmulh does +1 to high if high bit of low s16 is set.
 void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value) {
   asm volatile (
     "vdup.u32   q0, %3                         \n"  // duplicate scale value.
-    "vtrn.u8    d0, d1                         \n"  // d0 rrbb, d1 aagg
-    "vshr.u16   q0, q0, #1                     \n"  // scale / 2
+    "vzip.u8    d0, d1                         \n"  // d0 aarrggbb.
+    "vshr.u16   q0, q0, #1                     \n"  // scale / 2.
 
     // 8 pixel loop.
     ".p2align   2                              \n"
@@ -2373,9 +2374,9 @@ void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
     "vmovl.u8   q12, d24                       \n"
     "vmovl.u8   q13, d26                       \n"
     "vqrdmulh.s16 q10, q10, d0[0]              \n"  // b * scale * 2
-    "vqrdmulh.s16 q11, q11, d1[0]              \n"  // g
-    "vqrdmulh.s16 q12, q12, d0[1]              \n"  // r
-    "vqrdmulh.s16 q13, q13, d1[1]              \n"  // a
+    "vqrdmulh.s16 q11, q11, d0[1]              \n"  // g
+    "vqrdmulh.s16 q12, q12, d0[2]              \n"  // r
+    "vqrdmulh.s16 q13, q13, d0[3]              \n"  // a
     "vqmovn.u16 d20, q10                       \n"
     "vqmovn.u16 d22, q11                       \n"
     "vqmovn.u16 d24, q12                       \n"
