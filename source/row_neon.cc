@@ -782,7 +782,7 @@ void SetRow_NEON(uint8* dst, uint32 v32, int count) {
 // TODO(fbarchard): Make fully assembler
 // SetRow32 writes 'count' words using a 32 bit value repeated.
 void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
-                    int dst_stride, int height) {
+                      int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
     SetRow_NEON(dst, v32, width << 2);
     dst += dst_stride;
@@ -2361,7 +2361,7 @@ void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
   asm volatile (
     "vdup.u32   q0, %3                         \n"  // duplicate scale value.
     "vtrn.u8    d0, d1                         \n"  // d0 rrbb, d1 aagg
-    "vshr.u16   q0, q0, #1                     \n"  // scale >>= 1
+    "vshr.u16   q0, q0, #1                     \n"  // scale / 2
 
     // 8 pixel loop.
     ".p2align   2                              \n"
@@ -2372,10 +2372,10 @@ void ARGBShadeRow_NEON(const uint8* src_argb, uint8* dst_argb, int width,
     "vmovl.u8   q11, d22                       \n"
     "vmovl.u8   q12, d24                       \n"
     "vmovl.u8   q13, d26                       \n"
-    "vqrdmulh.s16 q10, q10, d0[0]              \n"  // b * scale
-    "vqrdmulh.s16 q11, q11, d1[0]              \n"  // g
-    "vqrdmulh.s16 q12, q12, d0[1]              \n"  // r
-    "vqrdmulh.s16 q13, q13, d1[0]              \n"  // a
+    "vqdmulh.s16 q10, q10, d0[0]               \n"  // b * scale * 2
+    "vqdmulh.s16 q11, q11, d1[0]               \n"  // g
+    "vqdmulh.s16 q12, q12, d0[1]               \n"  // r
+    "vqdmulh.s16 q13, q13, d1[0]               \n"  // a
     "vqmovn.u16 d20, q10                       \n"
     "vqmovn.u16 d22, q11                       \n"
     "vqmovn.u16 d24, q12                       \n"
