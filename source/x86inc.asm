@@ -550,6 +550,12 @@ DECLARE_ARG 7, 8, 9, 10, 11, 12, 13, 14
 %ifidn __OUTPUT_FORMAT__,elf
 SECTION .note.GNU-stack noalloc noexec nowrite progbits
 %endif
+%ifidn __OUTPUT_FORMAT__,elf32
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
+%ifidn __OUTPUT_FORMAT__,elf64
+section .note.GNU-stack noalloc noexec nowrite progbits
+%endif
 
 ; cpuflags
 
