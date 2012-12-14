@@ -8,6 +8,11 @@
 #  in the file PATENTS.  All contributing project authors may
 #  be found in the AUTHORS file in the root of the source tree.
 #
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif
+  .text
+
   .globl  memcpy_MIPS;
   .align  2;
   .type   memcpy_MIPS,@function;
