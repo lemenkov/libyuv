@@ -1060,7 +1060,8 @@ int ConvertFromI420(const uint8* y, int y_stride,
                     const uint8* v, int v_stride,
                     uint8* dst_sample, int dst_sample_stride,
                     int width, int height,
-                    uint32 format) {
+                    uint32 fourcc) {
+  uint32 format = CanonicalFourCC(fourcc);
   if (!y || !u|| !v || !dst_sample ||
       width <= 0 || height == 0) {
     return -1;

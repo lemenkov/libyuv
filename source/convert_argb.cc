@@ -1033,7 +1033,8 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
                   int src_width, int src_height,
                   int dst_width, int dst_height,
                   RotationMode rotation,
-                  uint32 format) {
+                  uint32 fourcc) {
+  uint32 format = CanonicalFourCC(fourcc);
   if (dst_argb == NULL || sample == NULL ||
       src_width <= 0 || dst_width <= 0 ||
       src_height == 0 || dst_height == 0) {

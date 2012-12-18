@@ -982,6 +982,8 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
 // e.g. rgb / qvalue * qvalue + qvalue / 2
 // But the low levels implement efficiently with 3 parameters, and could be
 // used for other high level operations.
+// dst_argb[0] = (b * scale >> 16) * interval_size + interval_offset;
+// where scale is 1 / interval_size as a fixed point value.
 // The divide is replaces with a multiply by reciprocal fixed point multiply.
 // Caveat - although SSE2 saturates, the C function does not and should be used
 // with care if doing anything but quantization.
