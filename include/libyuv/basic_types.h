@@ -96,4 +96,30 @@ typedef signed char int8;
 #endif  // __GNUC__
 #endif  // LIBYUV_API
 
+// Visual C x86 or GCC little endian.
+#if defined(__x86_64__) || defined(_M_X64) || \
+  defined(__i386__) || defined(_M_IX86) || \
+  defined(__arm__) || defined(_M_ARM) || \
+  (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#define LIBYUV_LITTLE_ENDIAN
+#endif
+
+#ifdef LIBYUV_LITTLE_ENDIAN
+#define READWORD(p) (*reinterpret_cast<const uint32*>(p))
+#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
+#else
+static inline uint32 READWORD(const uint8* p) {
+  return static_cast<uint32>(p[0]) |
+      (static_cast<uint32>(p[1]) << 8) |
+      (static_cast<uint32>(p[2]) << 16) |
+      (static_cast<uint32>(p[3]) << 24);
+}
+static inline void WRITEWORD(uint8* p, uint32 v) {
+  p[0] = (uint8)(v & 255);
+  p[1] = (uint8)((v >> 8) & 255);
+  p[2] = (uint8)((v >> 16) & 255);
+  p[3] = (uint8)((v >> 24) & 255);
+}
+#endif
+
 #endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_  NOLINT

@@ -182,7 +182,6 @@ void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
-// TODO(fbarchard): support big endian CPU
 void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   for (int x = 0; x < width - 1; x += 2) {
     uint8 b0 = src_argb[0] >> 3;
@@ -191,8 +190,8 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 b1 = src_argb[4] >> 3;
     uint8 g1 = src_argb[5] >> 2;
     uint8 r1 = src_argb[6] >> 3;
-    *reinterpret_cast<uint32*>(dst_rgb) = b0 | (g0 << 5) | (r0 << 11) |
-        (b1 << 16) | (g1 << 21) | (r1 << 27);
+    WRITEWORD(dst_rgb, b0 | (g0 << 5) | (r0 << 11) |
+        (b1 << 16) | (g1 << 21) | (r1 << 27));
     dst_rgb += 4;
     src_argb += 8;
   }

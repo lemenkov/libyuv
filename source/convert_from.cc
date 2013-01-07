@@ -210,25 +210,6 @@ int I400Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Visual C x86 or GCC little endian.
-#if defined(__x86_64__) || defined(_M_X64) || \
-  defined(__i386__) || defined(_M_IX86) || \
-  defined(__arm__) || defined(_M_ARM) || \
-  (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
-#define LIBYUV_LITTLE_ENDIAN
-#endif
-
-#ifdef LIBYUV_LITTLE_ENDIAN
-#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
-#else
-static inline void WRITEWORD(uint8* p, uint32 v) {
-  p[0] = (uint8)(v & 255);
-  p[1] = (uint8)((v >> 8) & 255);
-  p[2] = (uint8)((v >> 16) & 255);
-  p[3] = (uint8)((v >> 24) & 255);
-}
-#endif
-
 #define EIGHTTOTEN(x) (x << 2 | x >> 6)
 static void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width) {
   for (int x = 0; x < width; x += 6) {
