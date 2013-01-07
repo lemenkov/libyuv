@@ -104,22 +104,4 @@ typedef signed char int8;
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 
-#ifdef LIBYUV_LITTLE_ENDIAN
-#define READWORD(p) (*reinterpret_cast<const uint32*>(p))
-#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
-#else
-static inline uint32 READWORD(const uint8* p) {
-  return static_cast<uint32>(p[0]) |
-      (static_cast<uint32>(p[1]) << 8) |
-      (static_cast<uint32>(p[2]) << 16) |
-      (static_cast<uint32>(p[3]) << 24);
-}
-static inline void WRITEWORD(uint8* p, uint32 v) {
-  p[0] = (uint8)(v & 255);
-  p[1] = (uint8)((v >> 8) & 255);
-  p[2] = (uint8)((v >> 16) & 255);
-  p[3] = (uint8)((v >> 24) & 255);
-}
-#endif
-
 #endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_  NOLINT
