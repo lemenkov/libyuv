@@ -162,6 +162,7 @@ int InitCpuFlags(void) {
               ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
+              ((cpu_info[2] & 0x00400000) ? kCpuHasMOVBE : 0) |
               (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
               kCpuHasX86;
 #ifdef HAS_XGETBV
@@ -188,6 +189,9 @@ int InitCpuFlags(void) {
   }
   if (TestEnv("LIBYUV_DISABLE_SSE42")) {
     cpu_info_ &= ~kCpuHasSSE42;
+  }
+  if (TestEnv("LIBYUV_DISABLE_MOVBE")) {
+    cpu_info_ &= ~kCpuHasMOVBE;
   }
   if (TestEnv("LIBYUV_DISABLE_AVX")) {
     cpu_info_ &= ~kCpuHasAVX;

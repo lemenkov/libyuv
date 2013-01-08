@@ -35,6 +35,8 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has SSE4.1 %x\n", has_sse41);
   int has_sse42 = TestCpuFlag(kCpuHasSSE42);
   printf("Has SSE4.2 %x\n", has_sse42);
+  int has_movbe = TestCpuFlag(kCpuHasMOVBE);
+  printf("Has MOVBE %x\n", has_movbe);
   int has_avx = TestCpuFlag(kCpuHasAVX);
   printf("Has AVX %x\n", has_avx);
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
