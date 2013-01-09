@@ -692,35 +692,6 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   return 0;
 }
 
-// Must be multiple of 6 pixels. Will over convert to handle remainder.
-// https://developer.apple.com/quicktime/icefloe/dispatch019.html#v210
-static void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
-  for (int x = 0; x < width; x += 6) {
-    uint32 w = READWORD(src_v210 + 0);
-    dst_uyvy[0] = (w >> 2) & 0xff;
-    dst_uyvy[1] = (w >> 12) & 0xff;
-    dst_uyvy[2] = (w >> 22) & 0xff;
-
-    w = READWORD(src_v210 + 4);
-    dst_uyvy[3] = (w >> 2) & 0xff;
-    dst_uyvy[4] = (w >> 12) & 0xff;
-    dst_uyvy[5] = (w >> 22) & 0xff;
-
-    w = READWORD(src_v210 + 8);
-    dst_uyvy[6] = (w >> 2) & 0xff;
-    dst_uyvy[7] = (w >> 12) & 0xff;
-    dst_uyvy[8] = (w >> 22) & 0xff;
-
-    w = READWORD(src_v210 + 12);
-    dst_uyvy[9] = (w >> 2) & 0xff;
-    dst_uyvy[10] = (w >> 12) & 0xff;
-    dst_uyvy[11] = (w >> 22) & 0xff;
-
-    src_v210 += 16;
-    dst_uyvy += 12;
-  }
-}
-
 // Convert V210 to I420.
 // V210 is 10 bit version of UYVY. 16 bytes to store 6 pixels.
 // Width is multiple of 48 pixels = 128 bytes.

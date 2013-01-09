@@ -210,26 +210,6 @@ int I400Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-#define EIGHTTOTEN(x) (x << 2 | x >> 6)
-static void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width) {
-  for (int x = 0; x < width; x += 6) {
-    WRITEWORD(dst_v210 + 0, (EIGHTTOTEN(src_uyvy[0])) |
-                            (EIGHTTOTEN(src_uyvy[1]) << 10) |
-                            (EIGHTTOTEN(src_uyvy[2]) << 20));
-    WRITEWORD(dst_v210 + 4, (EIGHTTOTEN(src_uyvy[3])) |
-                            (EIGHTTOTEN(src_uyvy[4]) << 10) |
-                            (EIGHTTOTEN(src_uyvy[5]) << 20));
-    WRITEWORD(dst_v210 + 8, (EIGHTTOTEN(src_uyvy[6])) |
-                            (EIGHTTOTEN(src_uyvy[7]) << 10) |
-                            (EIGHTTOTEN(src_uyvy[8]) << 20));
-    WRITEWORD(dst_v210 + 12, (EIGHTTOTEN(src_uyvy[9])) |
-                             (EIGHTTOTEN(src_uyvy[10]) << 10) |
-                             (EIGHTTOTEN(src_uyvy[11]) << 20));
-    src_uyvy += 12;
-    dst_v210 += 16;
-  }
-}
-
 LIBYUV_API
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,

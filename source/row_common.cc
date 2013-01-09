@@ -19,6 +19,45 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#ifdef LIBYUV_LITTLE_ENDIAN
+#define READWORD(p) (*reinterpret_cast<const uint32*>(p))
+#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
+#else
+static inline uint32 READWORD(const uint8* p) {
+  return static_cast<uint32>(p[0]) |
+      (static_cast<uint32>(p[1]) << 8) |
+      (static_cast<uint32>(p[2]) << 16) |
+      (static_cast<uint32>(p[3]) << 24);
+}
+static inline void WRITEWORD(uint8* p, uint32 v) {
+  p[0] = (uint8)(v & 255);
+  p[1] = (uint8)((v >> 8) & 255);
+  p[2] = (uint8)((v >> 16) & 255);
+  p[3] = (uint8)((v >> 24) & 255);
+}
+#endif
+
+#define EIGHTTOTEN(x) (x << 2 | x >> 6)
+void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width) {
+  for (int x = 0; x < width; x += 6) {
+    WRITEWORD(dst_v210 + 0, (EIGHTTOTEN(src_uyvy[0])) |
+                            (EIGHTTOTEN(src_uyvy[1]) << 10) |
+                            (EIGHTTOTEN(src_uyvy[2]) << 20));
+    WRITEWORD(dst_v210 + 4, (EIGHTTOTEN(src_uyvy[3])) |
+                            (EIGHTTOTEN(src_uyvy[4]) << 10) |
+                            (EIGHTTOTEN(src_uyvy[5]) << 20));
+    WRITEWORD(dst_v210 + 8, (EIGHTTOTEN(src_uyvy[6])) |
+                            (EIGHTTOTEN(src_uyvy[7]) << 10) |
+                            (EIGHTTOTEN(src_uyvy[8]) << 20));
+    WRITEWORD(dst_v210 + 12, (EIGHTTOTEN(src_uyvy[9])) |
+                             (EIGHTTOTEN(src_uyvy[10]) << 10) |
+                             (EIGHTTOTEN(src_uyvy[11]) << 20));
+    src_uyvy += 12;
+    dst_v210 += 16;
+  }
+}
+#undef EIGHTTOTEN
+
 void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
     // To support in-place conversion.
@@ -1749,6 +1788,35 @@ void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
 
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(YUV_DISABLE_ASM)
+
+// Must be multiple of 6 pixels. Will over convert to handle remainder.
+// https://developer.apple.com/quicktime/icefloe/dispatch019.html#v210
+void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width) {
+  for (int x = 0; x < width; x += 6) {
+    uint32 w = READWORD(src_v210 + 0);
+    dst_uyvy[0] = (w >> 2) & 0xff;
+    dst_uyvy[1] = (w >> 12) & 0xff;
+    dst_uyvy[2] = (w >> 22) & 0xff;
+
+    w = READWORD(src_v210 + 4);
+    dst_uyvy[3] = (w >> 2) & 0xff;
+    dst_uyvy[4] = (w >> 12) & 0xff;
+    dst_uyvy[5] = (w >> 22) & 0xff;
+
+    w = READWORD(src_v210 + 8);
+    dst_uyvy[6] = (w >> 2) & 0xff;
+    dst_uyvy[7] = (w >> 12) & 0xff;
+    dst_uyvy[8] = (w >> 22) & 0xff;
+
+    w = READWORD(src_v210 + 12);
+    dst_uyvy[9] = (w >> 2) & 0xff;
+    dst_uyvy[10] = (w >> 12) & 0xff;
+    dst_uyvy[11] = (w >> 22) & 0xff;
+
+    src_v210 += 16;
+    dst_uyvy += 12;
+  }
+}
 
 #ifdef __cplusplus
 }  // extern "C"

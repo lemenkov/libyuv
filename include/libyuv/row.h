@@ -22,24 +22,6 @@ extern "C" {
 #define kMaxStride (2880 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
-#ifdef LIBYUV_LITTLE_ENDIAN
-#define READWORD(p) (*reinterpret_cast<const uint32*>(p))
-#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
-#else
-static inline uint32 READWORD(const uint8* p) {
-  return static_cast<uint32>(p[0]) |
-      (static_cast<uint32>(p[1]) << 8) |
-      (static_cast<uint32>(p[2]) << 16) |
-      (static_cast<uint32>(p[3]) << 24);
-}
-static inline void WRITEWORD(uint8* p, uint32 v) {
-  p[0] = (uint8)(v & 255);
-  p[1] = (uint8)((v >> 8) & 255);
-  p[2] = (uint8)((v >> 16) & 255);
-  p[3] = (uint8)((v >> 24) & 255);
-}
-#endif
-
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)
 #define YUV_DISABLE_ASM
@@ -1296,6 +1278,9 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
 void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
                              ptrdiff_t src_stride_argb, int dst_width,
                              int source_y_fraction);
+
+void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width);
+void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
