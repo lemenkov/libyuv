@@ -409,43 +409,6 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
 }
 
 LIBYUV_API
-int I420ToV210(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_v210, int dst_stride_v210,
-               int width, int height) {
-  if (width * 16 / 6 > kMaxStride ||
-      !src_y || !src_u || !src_v || !dst_v210 ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_v210 = dst_v210 + (height - 1) * dst_stride_v210;
-    dst_stride_v210 = -dst_stride_v210;
-  }
-
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
-
-  for (int y = 0; y < height - 1; y += 2) {
-    I422ToUYVYRow_C(src_y, src_u, src_v, row, width);
-    UYVYToV210Row_C(row, dst_v210, width);
-    I422ToUYVYRow_C(src_y + src_stride_y, src_u, src_v, row, width);
-    UYVYToV210Row_C(row, dst_v210 + dst_stride_v210, width);
-    src_y += src_stride_y * 2;
-    src_u += src_stride_u;
-    src_v += src_stride_v;
-    dst_v210 += dst_stride_v210 * 2;
-  }
-  if (height & 1) {
-    I422ToUYVYRow_C(src_y, src_u, src_v, row, width);
-    UYVYToV210Row_C(row, dst_v210, width);
-  }
-  return 0;
-}
-
-LIBYUV_API
 int I420ToNV12(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
@@ -1044,15 +1007,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                      v, v_stride,
                      dst_sample,
                      dst_sample_stride ? dst_sample_stride : width * 2,
-                     width, height);
-      break;
-    case FOURCC_V210:
-      r = I420ToV210(y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_sample,
-                     dst_sample_stride ? dst_sample_stride :
-                         (width + 47) / 48 * 128,
                      width, height);
       break;
     case FOURCC_RGBP:

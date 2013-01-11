@@ -90,13 +90,6 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
                int width, int height);
 
 LIBYUV_API
-int I420ToV210(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_frame, int dst_stride_frame,
-               int width, int height);
-
-LIBYUV_API
 int I420ToARGB(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,

@@ -692,101 +692,6 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   return 0;
 }
 
-// Convert V210 to I420.
-// V210 is 10 bit version of UYVY. 16 bytes to store 6 pixels.
-// Width is multiple of 48 pixels = 128 bytes.
-LIBYUV_API
-int V210ToI420(const uint8* src_v210, int src_stride_v210,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  if (!src_v210 || !dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0 ||
-      width * 2 * 2 > kMaxStride) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_v210 = src_v210 + (height - 1) * src_stride_v210;
-    src_stride_v210 = -src_stride_v210;
-  }
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2]);
-  void (*V210ToUYVYRow)(const uint8* src_v210, uint8* dst_uyvy, int pix);
-  V210ToUYVYRow = V210ToUYVYRow_C;
-
-  void (*UYVYToUVRow)(const uint8* src_uyvy, int src_stride_uyvy,
-                      uint8* dst_u, uint8* dst_v, int pix);
-  void (*UYVYToYRow)(const uint8* src_uyvy,
-                     uint8* dst_y, int pix);
-  UYVYToYRow = UYVYToYRow_C;
-  UYVYToUVRow = UYVYToUVRow_C;
-#if defined(HAS_UYVYTOYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
-    UYVYToUVRow = UYVYToUVRow_SSE2;
-    UYVYToYRow = UYVYToYRow_Unaligned_SSE2;
-    if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-      UYVYToYRow = UYVYToYRow_SSE2;
-    }
-  }
-#elif defined(HAS_UYVYTOYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    UYVYToYRow = UYVYToYRow_Any_NEON;
-    if (width >= 16) {
-      UYVYToUVRow = UYVYToUVRow_Any_NEON;
-    }
-    if (IS_ALIGNED(width, 16)) {
-      UYVYToYRow = UYVYToYRow_NEON;
-      UYVYToUVRow = UYVYToUVRow_NEON;
-    }
-  }
-#endif
-
-#if defined(HAS_UYVYTOYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
-    UYVYToUVRow = UYVYToUVRow_Any_SSE2;
-    UYVYToYRow = UYVYToYRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      UYVYToYRow = UYVYToYRow_Unaligned_SSE2;
-      UYVYToUVRow = UYVYToUVRow_SSE2;
-      if (IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
-        UYVYToYRow = UYVYToYRow_SSE2;
-      }
-    }
-  }
-#elif defined(HAS_UYVYTOYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    UYVYToYRow = UYVYToYRow_Any_NEON;
-    if (width >= 16) {
-      UYVYToUVRow = UYVYToUVRow_Any_NEON;
-    }
-    if (IS_ALIGNED(width, 16)) {
-      UYVYToYRow = UYVYToYRow_NEON;
-      UYVYToUVRow = UYVYToUVRow_NEON;
-    }
-  }
-#endif
-
-  for (int y = 0; y < height - 1; y += 2) {
-    V210ToUYVYRow(src_v210, row, width);
-    V210ToUYVYRow(src_v210 + src_stride_v210, row + kMaxStride, width);
-    UYVYToUVRow(row, kMaxStride, dst_u, dst_v, width);
-    UYVYToYRow(row, dst_y, width);
-    UYVYToYRow(row + kMaxStride, dst_y + dst_stride_y, width);
-    src_v210 += src_stride_v210 * 2;
-    dst_y += dst_stride_y * 2;
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
-  }
-  if (height & 1) {
-    V210ToUYVYRow(src_v210, row, width);
-    UYVYToUVRow(row, 0, dst_u, dst_v, width);
-    UYVYToYRow(row, dst_y, width);
-  }
-  return 0;
-}
-
 // Convert ARGB to I420.
 LIBYUV_API
 int ARGBToI420(const uint8* src_argb, int src_stride_argb,
@@ -1860,17 +1765,6 @@ int ConvertToI420(const uint8* sample,
     case FOURCC_UYVY:
       src = sample + (aligned_src_width * crop_y + crop_x) * 2;
       r = UYVYToI420(src, aligned_src_width * 2,
-                     y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_width, inv_dst_height);
-      break;
-    case FOURCC_V210:
-      // stride is multiple of 48 pixels (128 bytes).
-      // pixels come in groups of 6 = 16 bytes
-      src = sample + (aligned_src_width + 47) / 48 * 128 * crop_y +
-            crop_x / 6 * 16;
-      r = V210ToI420(src, (aligned_src_width + 47) / 48 * 128,
                      y, y_stride,
                      u, u_stride,
                      v, v_stride,

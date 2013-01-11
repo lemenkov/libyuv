@@ -1279,9 +1279,6 @@ void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
                              ptrdiff_t src_stride_argb, int dst_width,
                              int source_y_fraction);
 
-void UYVYToV210Row_C(const uint8* src_uyvy, uint8* dst_v210, int width);
-void V210ToUYVYRow_C(const uint8* src_v210, uint8* dst_uyvy, int width);
-
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

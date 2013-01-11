@@ -122,14 +122,6 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
-// Convert V210 to I420.
-LIBYUV_API
-int V210ToI420(const uint8* src_uyvy, int src_stride_uyvy,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height);
-
 // ARGB little endian (bgra in memory) to I420.
 LIBYUV_API
 int ARGBToI420(const uint8* src_frame, int src_stride_frame,

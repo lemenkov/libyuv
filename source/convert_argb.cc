@@ -1084,15 +1084,6 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
                      dst_argb, argb_stride,
                      dst_width, inv_dst_height);
       break;
-//    case FOURCC_V210:
-      // stride is multiple of 48 pixels (128 bytes).
-      // pixels come in groups of 6 = 16 bytes
-//      src = sample + (aligned_src_width + 47) / 48 * 128 * crop_y +
-//            crop_x / 6 * 16;
-//      r = V210ToARGB(src, (aligned_src_width + 47) / 48 * 128,
-//                     dst_argb, argb_stride,
-//                     dst_width, inv_dst_height);
-//      break;
     case FOURCC_24BG:
       src = sample + (src_width * crop_y + crop_x) * 3;
       r = RGB24ToARGB(src, src_width * 3,
