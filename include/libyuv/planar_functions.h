@@ -295,6 +295,12 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 #define HAS_ARGBAFFINEROW_SSE2
 #endif
 
+// Convert V210 to UYVY.
+LIBYUV_API
+int V210ToUYVY(const uint8* src_v210, int src_stride_v210,
+               uint8* dst_uyvy, int dst_stride_uyvy,
+               int width, int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

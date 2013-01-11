@@ -1207,6 +1207,32 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
   return 0;
 }
 
+// Convert V210 to UYVY.
+LIBYUV_API
+int V210ToUYVY(const uint8* src_v210, int src_stride_v210,
+                 uint8* dst_uyvy, int dst_stride_uyvy,
+                 int width, int height) {
+  if (!src_v210 || !dst_uyvy ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_v210 = src_v210 + (height - 1) * src_stride_v210;
+    src_stride_v210 = -src_stride_v210;
+  }
+  void (*V210ToUYVYRow)(const uint8* src_v210, uint8* dst_uyvy, int pix) =
+      V210ToUYVYRow_C;
+
+  for (int y = 0; y < height; ++y) {
+    V210ToUYVYRow(src_v210, dst_uyvy, width);
+    src_v210 += src_stride_v210;
+    dst_uyvy += dst_stride_uyvy;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
