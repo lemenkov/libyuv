@@ -28,6 +28,11 @@ LIBYUV_API
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
+  if (src_stride_y == width && dst_stride_y == width) {
+    CopyPlane(src_y, 0, dst_y, 0, width * height, 1);
+    return;
+  }
+
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
