@@ -119,6 +119,7 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_ARGBMULTIPLYROW_SSE2
+#define HAS_ARGBTOUV444ROW_SSSE3
 #endif
 
 // The following are Yasm x86 only.
@@ -491,6 +492,13 @@ void ARGB1555ToUVRow_C(const uint8* src_argb1555, int src_stride_argb1555,
                        uint8* dst_u, uint8* dst_v, int width);
 void ARGB4444ToUVRow_C(const uint8* src_argb4444, int src_stride_argb4444,
                        uint8* dst_u, uint8* dst_v, int width);
+
+void ARGBToUV444Row_SSSE3(const uint8* src_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb,
+                                    uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUV444Row_Any_SSSE3(const uint8* src_argb,
+                              uint8* dst_u, uint8* dst_v, int width);
 
 void ARGBToUV422Row_SSSE3(const uint8* src_argb,
                           uint8* dst_u, uint8* dst_v, int width);

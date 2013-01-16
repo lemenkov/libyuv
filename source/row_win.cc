@@ -1102,6 +1102,122 @@ __asm {
 }
 
 __declspec(naked) __declspec(align(16))
+void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
+                          uint8* dst_u, uint8* dst_v, int width) {
+__asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]   // src_argb
+    mov        edx, [esp + 4 + 8]   // dst_u
+    mov        edi, [esp + 4 + 12]  // dst_v
+    mov        ecx, [esp + 4 + 16]  // pix
+    movdqa     xmm7, kARGBToU
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm5, kAddUV128
+    sub        edi, edx             // stride from u to v
+
+    align      16
+ convertloop:
+    /* convert to U and V */
+    movdqa     xmm0, [eax]          // U
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + 32]
+    movdqa     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm7
+    pmaddubsw  xmm1, xmm7
+    pmaddubsw  xmm2, xmm7
+    pmaddubsw  xmm3, xmm7
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 8
+    psrlw      xmm2, 8
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    sub        ecx,  16
+    movdqa     [edx], xmm0
+
+    movdqa     xmm0, [eax]          // V
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + 32]
+    movdqa     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm6
+    pmaddubsw  xmm1, xmm6
+    pmaddubsw  xmm2, xmm6
+    pmaddubsw  xmm3, xmm6
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 8
+    psrlw      xmm2, 8
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    lea        eax,  [eax + 64]
+    movdqa     [edx + edi], xmm0
+    lea        edx,  [edx + 16]
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb0,
+                                    uint8* dst_u, uint8* dst_v, int width) {
+__asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]   // src_argb
+    mov        edx, [esp + 4 + 8]   // dst_u
+    mov        edi, [esp + 4 + 12]  // dst_v
+    mov        ecx, [esp + 4 + 16]  // pix
+    movdqa     xmm7, kARGBToU
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm5, kAddUV128
+    sub        edi, edx             // stride from u to v
+
+    align      16
+ convertloop:
+    /* convert to U and V */
+    movdqu     xmm0, [eax]          // U
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm7
+    pmaddubsw  xmm1, xmm7
+    pmaddubsw  xmm2, xmm7
+    pmaddubsw  xmm3, xmm7
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 8
+    psrlw      xmm2, 8
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    sub        ecx,  16
+    movdqu     [edx], xmm0
+
+    movdqu     xmm0, [eax]          // V
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm6
+    pmaddubsw  xmm1, xmm6
+    pmaddubsw  xmm2, xmm6
+    pmaddubsw  xmm3, xmm6
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 8
+    psrlw      xmm2, 8
+    packuswb   xmm0, xmm2
+    paddb      xmm0, xmm5
+    lea        eax,  [eax + 64]
+    movdqu     [edx + edi], xmm0
+    lea        edx,  [edx + 16]
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
 void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
 __asm {
