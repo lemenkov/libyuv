@@ -287,23 +287,6 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2)
 #endif
 #undef UVANY
 
-#define UV444ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                  \
-    void NAMEANY(const uint8* src_uv,                                          \
-                 uint8* dst_u, uint8* dst_v, int width) {                      \
-      int n = width & ~MASK;                                                   \
-      ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                   \
-      ANYTOUV_C(src_uv  + n * BPP,                                             \
-                dst_u + n,                                                     \
-                dst_v + n,                                                     \
-                width & MASK);                                                 \
-    }
-
-#ifdef HAS_ARGBTOUV444ROW_SSSE3
-UV444ANY(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_Unaligned_SSSE3,
-         ARGBToUV444Row_C, 4, 15)
-#endif
-#undef UV444ANY
-
 #define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK, SHIFT)           \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
@@ -315,6 +298,10 @@ UV444ANY(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_Unaligned_SSSE3,
                 width & MASK);                                                 \
     }
 
+#ifdef HAS_ARGBTOUV444ROW_SSSE3
+UV422ANY(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_Unaligned_SSSE3,
+         ARGBToUV444Row_C, 4, 15, 0)
+#endif
 #ifdef HAS_ARGBTOUVROW_SSSE3
 UV422ANY(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_Unaligned_SSSE3,
          ARGBToUV422Row_C, 4, 15, 1)
