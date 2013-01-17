@@ -1170,6 +1170,47 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// ARGB multiply 2 images together.
+LIBYUV_API
+int ARGBMultiply(const uint8* src_argb, int src_stride_argb,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+
+  void (*ARGBMultiplyRow)(const uint8* src, uint8* dst, int width) =
+      ARGBMultiplyRow_C;
+#if defined(HAS_ARGBMULTIPLYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBMultiplyRow = ARGBMultiplyRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBMultiplyRow = ARGBMultiplyRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGBMULTIPLYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
+    ARGBMultiplyRow = ARGBMultiplyRow_NEON;
+  }
+#endif
+
+  // Multiply plane
+  for (int y = 0; y < height; ++y) {
+    ARGBMultiplyRow(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Interpolate 2 ARGB images by specified amount (0 to 255).
 // TODO(fbarchard): Consider selecting a specialization for interpolation so
 //     row function doesn't need to check interpolation on each row.

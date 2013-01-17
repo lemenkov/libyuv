@@ -372,6 +372,19 @@ MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #endif
 #undef MergeUVRow_ANY
 
+#define MultiplyRow_ANY(NAMEANY, ARGBMULT_SIMD, ARGBMULT_C, MASK)              \
+    void NAMEANY(const uint8* src_argb, uint8* dst_argb, int width) {          \
+      int n = width & ~MASK;                                                   \
+      ARGBMULT_SIMD(src_argb, dst_argb, n);                                    \
+      ARGBMULT_C(src_argb + n * 4,                                             \
+                 dst_argb + n * 4,                                             \
+                 width & MASK);                                                \
+    }
+
+#ifdef HAS_ARGBMULTIPLYROW_SSE2
+MultiplyRow_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2,
+                ARGBMultiplyRow_C, 3)
+#endif
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

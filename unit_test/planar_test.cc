@@ -900,4 +900,74 @@ TEST_F(libyuvTest, TestCopyPlane) {
   EXPECT_EQ(0, err);
 }
 
+static int TestMultiply(int width, int height, int benchmark_iterations,
+                        int invert, int off) {
+  const int kBpp = 4;
+  const int kStride = (width * kBpp + 15) & ~15;
+  align_buffer_64(src_argb_a, kStride * height + off);
+  align_buffer_64(src_argb_b, kStride * height + off);
+  align_buffer_64(dst_argb_c, kStride * height);
+  align_buffer_64(dst_argb_opt, kStride * height);
+  srandom(time(NULL));
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_b[i + off] = (random() & 0xff);
+  }
+  memcpy(dst_argb_c, src_argb_b + off, kStride * height);
+  memcpy(dst_argb_opt, src_argb_b + off, kStride * height);
+
+  MaskCpuFlags(0);
+  ARGBMultiply(src_argb_a + off, kStride,
+               dst_argb_c, kStride,
+               width, invert * height);
+  MaskCpuFlags(-1);
+  ARGBMultiply(src_argb_a + off, kStride,
+               dst_argb_opt, kStride,
+               width, invert * height);
+  int max_diff = 0;
+  for (int i = 0; i < kStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i]) -
+            static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  // Benchmark.
+  for (int i = 0; i < benchmark_iterations - 1; ++i) {
+    ARGBMultiply(src_argb_a + off, kStride,
+                dst_argb_opt, kStride,
+                width, invert * height);
+  }
+  free_aligned_buffer_64(src_argb_a)
+  free_aligned_buffer_64(src_argb_b)
+  free_aligned_buffer_64(dst_argb_c)
+  free_aligned_buffer_64(dst_argb_opt)
+  return max_diff;
+}
+
+TEST_F(libyuvTest, ARGBMultiply_Any) {
+  int max_diff = TestMultiply(benchmark_width_ - 1, benchmark_height_,
+                              benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBMultiply_Unaligned) {
+  int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 1);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBMultiply_Invert) {
+  int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, -1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBMultiply_Opt) {
+  int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
 }  // namespace libyuv

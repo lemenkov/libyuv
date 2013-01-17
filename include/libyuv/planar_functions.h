@@ -265,6 +265,11 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value);
 
+// Multiply ARGB image by ARGB image.
+int ARGBMultiply(const uint8* src_argb, int src_stride_argb,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height);
+
 // Interpolate between two ARGB images using specified amount of interpolation
 // (0 to 255) and store to destination.
 // 'interpolation' is specified as 8 bit fraction where 0 means 100% src_argb0

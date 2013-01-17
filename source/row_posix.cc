@@ -3960,6 +3960,44 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 }
 #endif  // HAS_ARGBSHADEROW_SSE2
 
+#ifdef HAS_ARGBMULTIPLYROW_SSE2
+// Multiple 2 rows of ARGB pixels together, 4 pixels at a time.
+// Aligned to 16 bytes.
+void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "pxor      %%xmm5,%%xmm5                   \n"
+    "sub       %0,%1                           \n"
+
+    // 4 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    (%0,%1),%%xmm2                  \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm2,%%xmm3                   \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpckhbw %%xmm1,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "punpckhbw %%xmm5,%%xmm3                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
+    "pmulhuw   %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
+    "+r"(width)       // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBMULTIPLYROW_SSE2
+
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values
 // above and to the left of the value, inclusive of the value.

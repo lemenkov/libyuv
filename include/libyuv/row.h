@@ -106,6 +106,7 @@ extern "C" {
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBINTERPOLATEROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSSE3
+#define HAS_ARGBMULTIPLYROW_SSE2
 #define HAS_ARGBQUANTIZEROW_SSE2
 #define HAS_ARGBSEPIAROW_SSSE3
 #define HAS_ARGBSHADEROW_SSE2
@@ -118,7 +119,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_ARGBMULTIPLYROW_SSE2
 #define HAS_ARGBTOUV444ROW_SSSE3
 #endif
 
@@ -1287,7 +1287,10 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
 void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
                              ptrdiff_t src_stride_argb, int dst_width,
                              int source_y_fraction);
+void ARGBMultiplyRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
+                              int width);
 
 #ifdef __cplusplus
 }  // extern "C"
