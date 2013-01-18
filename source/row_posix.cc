@@ -3963,10 +3963,12 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 // Multiple 2 rows of ARGB pixels together, 4 pixels at a time.
 // Aligned to 16 bytes.
-void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
   asm volatile (
     "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"
+    "sub       %0,%2                           \n"
 
     // 4 pixel loop.
     ".p2align  4                               \n"
@@ -3982,13 +3984,14 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "pmulhuw   %%xmm2,%%xmm0                   \n"
     "pmulhuw   %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
+    "sub       $0x4,%3                         \n"
+    "movdqa    %%xmm0,(%0,%2,1)                \n"
     "lea       0x10(%0),%0                     \n"
     "jg        1b                              \n"
-  : "+r"(src_argb),   // %0
-    "+r"(dst_argb),   // %1
-    "+r"(width)       // %2
+  : "+r"(src_argb0),   // %0
+    "+r"(src_argb1),   // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
   :
   : "memory", "cc"
 #if defined(__SSE2__)

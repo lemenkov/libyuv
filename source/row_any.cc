@@ -373,10 +373,12 @@ MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #undef MergeUVRow_ANY
 
 #define MultiplyRow_ANY(NAMEANY, ARGBMULT_SIMD, ARGBMULT_C, MASK)              \
-    void NAMEANY(const uint8* src_argb, uint8* dst_argb, int width) {          \
+    void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
+                 uint8* dst_argb, int width) {                                 \
       int n = width & ~MASK;                                                   \
-      ARGBMULT_SIMD(src_argb, dst_argb, n);                                    \
-      ARGBMULT_C(src_argb + n * 4,                                             \
+      ARGBMULT_SIMD(src_argb0, src_argb1, dst_argb, n);                        \
+      ARGBMULT_C(src_argb0 + n * 4,                                            \
+                 src_argb1 + n * 4,                                            \
                  dst_argb + n * 4,                                             \
                  width & MASK);                                                \
     }

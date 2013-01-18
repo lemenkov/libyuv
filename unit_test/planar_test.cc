@@ -913,17 +913,21 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
     src_argb_a[i + off] = (random() & 0xff);
     src_argb_b[i + off] = (random() & 0xff);
   }
-  memcpy(dst_argb_c, src_argb_b + off, kStride * height);
-  memcpy(dst_argb_opt, src_argb_b + off, kStride * height);
+  memset(dst_argb_c, 0, kStride * height);
+  memset(dst_argb_opt, 0, kStride * height);
 
   MaskCpuFlags(0);
   ARGBMultiply(src_argb_a + off, kStride,
+               src_argb_b + off, kStride,
                dst_argb_c, kStride,
                width, invert * height);
   MaskCpuFlags(-1);
-  ARGBMultiply(src_argb_a + off, kStride,
-               dst_argb_opt, kStride,
-               width, invert * height);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBMultiply(src_argb_a + off, kStride,
+                 src_argb_b + off, kStride,
+                 dst_argb_opt, kStride,
+                 width, invert * height);
+  }
   int max_diff = 0;
   for (int i = 0; i < kStride * height; ++i) {
     int abs_diff =
@@ -932,12 +936,6 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
     if (abs_diff > max_diff) {
       max_diff = abs_diff;
     }
-  }
-  // Benchmark.
-  for (int i = 0; i < benchmark_iterations - 1; ++i) {
-    ARGBMultiply(src_argb_a + off, kStride,
-                dst_argb_opt, kStride,
-                width, invert * height);
   }
   free_aligned_buffer_64(src_argb_a)
   free_aligned_buffer_64(src_argb_b)

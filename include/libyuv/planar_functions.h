@@ -209,6 +209,13 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
 
+// Multiply ARGB image by ARGB image.
+LIBYUV_API
+int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
+                 const uint8* src_argb1, int src_stride_argb1,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height);
+
 // Convert I422 to YUY2.
 LIBYUV_API
 int I422ToYUY2(const uint8* src_y, int src_stride_y,
@@ -264,11 +271,6 @@ LIBYUV_API
 int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value);
-
-// Multiply ARGB image by ARGB image.
-int ARGBMultiply(const uint8* src_argb, int src_stride_argb,
-                 uint8* dst_argb, int dst_stride_argb,
-                 int width, int height);
 
 // Interpolate between two ARGB images using specified amount of interpolation
 // (0 to 255) and store to destination.

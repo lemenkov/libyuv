@@ -967,6 +967,15 @@ void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
                     uint8* dst_argb, int width);
 
+// ARGB preattenuated alpha blend.  Same API as Blend, but these require
+// pointer and width alignment for SSE2.
+void ARGBMultiplyRow_C(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width);
+void ARGBMultiplyRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
+
 void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -1270,7 +1279,6 @@ void CumulativeSumToAverageRow_C(const int32* topleft, const int32* botleft,
 void ComputeCumulativeSumRow_C(const uint8* row, int32* cumsum,
                                const int32* previous_cumsum, int width);
 
-
 LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
@@ -1287,10 +1295,6 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
 void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
                              ptrdiff_t src_stride_argb, int dst_width,
                              int source_y_fraction);
-void ARGBMultiplyRow_C(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
-                              int width);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -704,21 +704,23 @@ void ARGBShadeRow_C(const uint8* src_argb, uint8* dst_argb, int width,
 #define REPEAT8(v) (v) | ((v) << 8)
 #define SHADE(f, v) v * f >> 16
 
-void ARGBMultiplyRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
+void ARGBMultiplyRow_C(const uint8* src_argb0, const uint8* src_argb1,
+                       uint8* dst_argb, int width) {
   for (int i = 0; i < width; ++i) {
-    const uint32 b = REPEAT8(src_argb[0]);
-    const uint32 g = REPEAT8(src_argb[1]);
-    const uint32 r = REPEAT8(src_argb[2]);
-    const uint32 a = REPEAT8(src_argb[3]);
-    const uint32 b_scale = dst_argb[0];
-    const uint32 g_scale = dst_argb[1];
-    const uint32 r_scale = dst_argb[2];
-    const uint32 a_scale = dst_argb[3];
+    const uint32 b = REPEAT8(src_argb0[0]);
+    const uint32 g = REPEAT8(src_argb0[1]);
+    const uint32 r = REPEAT8(src_argb0[2]);
+    const uint32 a = REPEAT8(src_argb0[3]);
+    const uint32 b_scale = src_argb1[0];
+    const uint32 g_scale = src_argb1[1];
+    const uint32 r_scale = src_argb1[2];
+    const uint32 a_scale = src_argb1[3];
     dst_argb[0] = SHADE(b, b_scale);
     dst_argb[1] = SHADE(g, g_scale);
     dst_argb[2] = SHADE(r, r_scale);
     dst_argb[3] = SHADE(a, a_scale);
-    src_argb += 4;
+    src_argb0 += 4;
+    src_argb1 += 4;
     dst_argb += 4;
   }
 }

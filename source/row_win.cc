@@ -4280,18 +4280,22 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 // Multiple 2 rows of ARGB pixels together, 4 pixels at a time.
 // Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
-void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
+void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
   __asm {
-    mov        eax, [esp + 4]   // src_argb
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
     pxor       xmm5, xmm5  // constant 0
+    sub        esi, eax
     sub        edx, eax
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
-    movdqa     xmm2, [eax + edx]  // read 4 dest pixels
+    movdqa     xmm0, [eax]      // read 4 pixels from src_argb0
+    movdqa     xmm2, [eax + esi]  // read 4 pixels from src_argb1
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
     punpcklbw  xmm0, xmm0       // first 2
@@ -4306,6 +4310,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     lea        eax, [eax + 16]
     jg         convertloop
 
+    pop        esi
     ret
   }
 }
