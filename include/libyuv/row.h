@@ -99,6 +99,7 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 
 // Effects
+#define HAS_ARGBADDROW_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
 #define HAS_ARGBATTENUATEROW_SSSE3
 #define HAS_ARGBBLENDROW_SSSE3
@@ -967,7 +968,7 @@ void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
                     uint8* dst_argb, int width);
 
-// ARGB preattenuated alpha blend.  Same API as Blend, but these require
+// ARGB multiply images.  Same API as Blend, but these require
 // pointer and width alignment for SSE2.
 void ARGBMultiplyRow_C(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width);
@@ -975,6 +976,14 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);
 void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
                               uint8* dst_argb, int width);
+
+// ARGB add images.
+void ARGBAddRow_C(const uint8* src_argb, const uint8* src_argb1,
+                  uint8* dst_argb, int width);
+void ARGBAddRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                     uint8* dst_argb, int width);
+void ARGBAddRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                         uint8* dst_argb, int width);
 
 void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);

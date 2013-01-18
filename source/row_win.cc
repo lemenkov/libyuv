@@ -4277,7 +4277,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 #endif  // HAS_ARGBSHADEROW_SSE2
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
-// Multiple 2 rows of ARGB pixels together, 4 pixels at a time.
+// Multiply 2 rows of ARGB pixels together, 4 pixels at a time.
 // Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
@@ -4294,7 +4294,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels from src_argb0
+    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
     movdqa     xmm2, [eax + esi]  // read 4 pixels from src_argb1
     movdqa     xmm1, xmm0
     movdqa     xmm3, xmm2
@@ -4302,8 +4302,8 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     punpckhbw  xmm1, xmm1       // next 2
     punpcklbw  xmm2, xmm5       // first 2
     punpckhbw  xmm3, xmm5       // next 2
-    pmulhuw    xmm0, xmm2       // argb * value
-    pmulhuw    xmm1, xmm3       // argb * value
+    pmulhuw    xmm0, xmm2       // src_argb0 * src_argb1 first 2
+    pmulhuw    xmm1, xmm3       // src_argb0 * src_argb1 next 2
     packuswb   xmm0, xmm1
     sub        ecx, 4
     movdqa     [eax + edx], xmm0
@@ -4315,6 +4315,38 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 #endif  // HAS_ARGBMULTIPLYROW_SSE2
+
+#ifdef HAS_ARGBADDROW_SSE2
+// Add 2 rows of ARGB pixels together, 4 pixels at a time.
+// Aligned to 16 bytes.
+__declspec(naked) __declspec(align(16))
+void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    pxor       xmm5, xmm5  // constant 0
+    sub        esi, eax
+    sub        edx, eax
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
+    movdqa     xmm1, [eax + esi]  // read 4 pixels from src_argb1
+    paddusb    xmm0, xmm1         // src_argb0 + src_argb1
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBADDROW_SSE2
 
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.

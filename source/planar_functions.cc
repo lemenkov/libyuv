@@ -448,6 +448,50 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
   return 0;
 }
 
+// Add 2 ARGB images together and store to destination.
+LIBYUV_API
+int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
+            const uint8* src_argb1, int src_stride_argb1,
+            uint8* dst_argb, int dst_stride_argb,
+            int width, int height) {
+  if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+
+  void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
+                     int width) = ARGBAddRow_C;
+#if defined(HAS_ARGBADDROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
+      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
+      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBAddRow = ARGBAddRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAddRow = ARGBAddRow_SSE2;
+    }
+  }
+#elif defined(HAS_ARGBADDROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
+    ARGBAddRow = ARGBAddRow_NEON;
+  }
+#endif
+
+  // Add plane
+  for (int y = 0; y < height; ++y) {
+    ARGBAddRow(src_argb0, src_argb1, dst_argb, width);
+    src_argb0 += src_stride_argb0;
+    src_argb1 += src_stride_argb1;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Convert I422 to BGRA.
 LIBYUV_API
 int I422ToBGRA(const uint8* src_y, int src_stride_y,

@@ -324,7 +324,7 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
 #endif
 #undef UV422ANY
 
-#define SplitUVRowANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
+#define SPLITUVROWANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
@@ -336,21 +336,21 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
     }
 
 #ifdef HAS_SPLITUVROW_SSE2
-SplitUVRowANY(SplitUVRow_Any_SSE2, SplitUVRow_Unaligned_SSE2, SplitUVRow_C, 15)
+SPLITUVROWANY(SplitUVRow_Any_SSE2, SplitUVRow_Unaligned_SSE2, SplitUVRow_C, 15)
 #endif
 #ifdef HAS_SPLITUVROW_AVX2
-SplitUVRowANY(SplitUVRow_Any_AVX2, SplitUVRow_Unaligned_AVX2, SplitUVRow_C, 31)
+SPLITUVROWANY(SplitUVRow_Any_AVX2, SplitUVRow_Unaligned_AVX2, SplitUVRow_C, 31)
 #endif
 #ifdef HAS_SPLITUVROW_NEON
-SplitUVRowANY(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 15)
+SPLITUVROWANY(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 15)
 #endif
 #ifdef HAS_SPLITUVROW_MIPS_DSPR2
-SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2,
+SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2,
               SplitUVRow_C, 15)
 #endif
-#undef SplitUVRowANY
+#undef SPLITUVROWANY
 
-#define MergeUVRow_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                 \
+#define MERGEUVROW_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                 \
     void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
                  uint8* dst_uv, int width) {                                   \
       int n = width & ~MASK;                                                   \
@@ -362,17 +362,17 @@ SplitUVRowANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_Unaligned_MIPS_DSPR2,
     }
 
 #ifdef HAS_MERGEUVROW_SSE2
-MergeUVRow_ANY(MergeUVRow_Any_SSE2, MergeUVRow_Unaligned_SSE2, MergeUVRow_C, 15)
+MERGEUVROW_ANY(MergeUVRow_Any_SSE2, MergeUVRow_Unaligned_SSE2, MergeUVRow_C, 15)
 #endif
 #ifdef HAS_MERGEUVROW_AVX2
-MergeUVRow_ANY(MergeUVRow_Any_AVX2, MergeUVRow_Unaligned_AVX2, MergeUVRow_C, 31)
+MERGEUVROW_ANY(MergeUVRow_Any_AVX2, MergeUVRow_Unaligned_AVX2, MergeUVRow_C, 31)
 #endif
 #ifdef HAS_MERGEUVROW_NEON
-MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
+MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #endif
-#undef MergeUVRow_ANY
+#undef MERGEUVROW_ANY
 
-#define MultiplyRow_ANY(NAMEANY, ARGBMULT_SIMD, ARGBMULT_C, MASK)              \
+#define MATHROW_ANY(NAMEANY, ARGBMULT_SIMD, ARGBMULT_C, MASK)                  \
     void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
                  uint8* dst_argb, int width) {                                 \
       int n = width & ~MASK;                                                   \
@@ -384,9 +384,13 @@ MergeUVRow_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
     }
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
-MultiplyRow_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2,
-                ARGBMultiplyRow_C, 3)
+MATHROW_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2, ARGBMultiplyRow_C, 3)
 #endif
+#ifdef HAS_ARGBADDROW_SSE2
+MATHROW_ANY(ARGBAddRow_Any_SSE2, ARGBAddRow_SSE2, ARGBAddRow_C, 3)
+#endif
+#undef MATHROW_ANY
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
