@@ -976,6 +976,10 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);
 void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
                               uint8* dst_argb, int width);
+void ARGBMultiplyRow_NEON(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBMultiplyRow_Any_NEON(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
 
 // ARGB add images.
 void ARGBAddRow_C(const uint8* src_argb, const uint8* src_argb1,
@@ -983,6 +987,10 @@ void ARGBAddRow_C(const uint8* src_argb, const uint8* src_argb1,
 void ARGBAddRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                      uint8* dst_argb, int width);
 void ARGBAddRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                         uint8* dst_argb, int width);
+void ARGBAddRow_NEON(const uint8* src_argb, const uint8* src_argb1,
+                     uint8* dst_argb, int width);
+void ARGBAddRow_Any_NEON(const uint8* src_argb, const uint8* src_argb1,
                          uint8* dst_argb, int width);
 
 void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);

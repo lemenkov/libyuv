@@ -433,8 +433,11 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
     }
   }
 #elif defined(HAS_ARGBMULTIPLYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
-    ARGBMultiplyRow = ARGBMultiplyRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBMultiplyRow = ARGBMultiplyRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBMultiplyRow = ARGBMultiplyRow_NEON;
+    }
   }
 #endif
 
@@ -477,8 +480,11 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     }
   }
 #elif defined(HAS_ARGBADDROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
-    ARGBAddRow = ARGBAddRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBAddRow = ARGBAddRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAddRow = ARGBAddRow_NEON;
+    }
   }
 #endif
 

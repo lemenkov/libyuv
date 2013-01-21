@@ -372,12 +372,12 @@ MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #endif
 #undef MERGEUVROW_ANY
 
-#define MATHROW_ANY(NAMEANY, ARGBMULT_SIMD, ARGBMULT_C, MASK)                  \
+#define MATHROW_ANY(NAMEANY, ARGBMATH_SIMD, ARGBMATH_C, MASK)                  \
     void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
                  uint8* dst_argb, int width) {                                 \
       int n = width & ~MASK;                                                   \
-      ARGBMULT_SIMD(src_argb0, src_argb1, dst_argb, n);                        \
-      ARGBMULT_C(src_argb0 + n * 4,                                            \
+      ARGBMATH_SIMD(src_argb0, src_argb1, dst_argb, n);                        \
+      ARGBMATH_C(src_argb0 + n * 4,                                            \
                  src_argb1 + n * 4,                                            \
                  dst_argb + n * 4,                                             \
                  width & MASK);                                                \
@@ -389,6 +389,13 @@ MATHROW_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2, ARGBMultiplyRow_C,
 #endif
 #ifdef HAS_ARGBADDROW_SSE2
 MATHROW_ANY(ARGBAddRow_Any_SSE2, ARGBAddRow_SSE2, ARGBAddRow_C, 3)
+#endif
+#ifdef HAS_ARGBMULTIPLYROW_NEON
+MATHROW_ANY(ARGBMultiplyRow_Any_NEON, ARGBMultiplyRow_NEON, ARGBMultiplyRow_C,
+            7)
+#endif
+#ifdef HAS_ARGBADDROW_NEON
+MATHROW_ANY(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, ARGBAddRow_C, 7)
 #endif
 #undef MATHROW_ANY
 

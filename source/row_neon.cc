@@ -2502,6 +2502,60 @@ void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
   );
 }
 
+// Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
+void ARGBMultiplyRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  asm volatile (
+    // 8 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+    "vld4.8     {d1, d3, d5, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vmull.u8   q0, d0, d1                     \n"  // multiply B
+    "vmull.u8   q1, d2, d3                     \n"  // multiply G
+    "vmull.u8   q2, d4, d5                     \n"  // multiply R
+    "vmull.u8   q3, d6, d7                     \n"  // multiply A
+    "vqshrun.u16 d0, q0, #8                    \n"  // 16 bit to 8 bit B
+    "vqshrun.u16 d1, q1, #8                    \n"  // 16 bit to 8 bit G
+    "vqshrun.u16 d2, q2, #8                    \n"  // 16 bit to 8 bit R
+    "vqshrun.u16 d3, q3, #8                    \n"  // 16 bit to 8 bit A
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3"
+  );
+}
+
+// Add 2 rows of ARGB pixels together, 8 pixels at a time.
+void ARGBAddRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    // 8 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vqadd.u8   q0, q0, q2                     \n"  // add B, G
+    "vqadd.u8   q1, q1, q3                     \n"  // add R, A
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "cc", "memory", "q0", "q1"
+  );
+}
+
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus
