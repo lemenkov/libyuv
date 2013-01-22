@@ -2483,7 +2483,7 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
   } while (dst_ptr < dend);
 }
 
-#define HAS_SCALEROWDOWN34_SSE2_DISABLED
+#define HAS_SCALEROWDOWN34_SSE2
 // Filter rows 0 and 1 together, 3 : 1
 static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr,
                                       ptrdiff_t src_stride,

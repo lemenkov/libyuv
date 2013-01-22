@@ -1284,6 +1284,14 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
   void (*ARGBInterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
                              ptrdiff_t src_stride, int dst_width,
                              int source_y_fraction) = ARGBInterpolateRow_C;
+#if defined(HAS_ARGBINTERPOLATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
+      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    ARGBInterpolateRow = ARGBInterpolateRow_SSE2;
+  }
+#endif
 #if defined(HAS_ARGBINTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&

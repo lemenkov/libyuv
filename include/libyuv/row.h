@@ -121,6 +121,7 @@ extern "C" {
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_ARGBTOUV444ROW_SSSE3
+#define HAS_ARGBINTERPOLATEROW_SSE2
 #endif
 
 // The following are Yasm x86 only.
@@ -1306,6 +1307,9 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 void ARGBInterpolateRow_C(uint8* dst_argb, const uint8* src_argb,
                           ptrdiff_t src_stride_argb,
                           int dst_width, int source_y_fraction);
+void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
+                             ptrdiff_t src_stride_argb, int dst_width,
+                             int source_y_fraction);
 void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride_argb, int dst_width,
                               int source_y_fraction);
