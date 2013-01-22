@@ -926,13 +926,14 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-#ifndef SSE2_DISABLED
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version.
 // Normal formula for bilinear interpolation is:
 //   source_y_fraction * row1 + (1 - source_y_fraction) row0
 // SSE2 version using the a single multiply of difference:
 //   source_y_fraction * (row1 - row0) + row0
-#define HAS_SCALEFILTERROWS_SSE2_DISABLED
+// TODO(fbarchard): Specialize same as SSSE3.
+
+#define HAS_SCALEFILTERROWS_SSE2
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                                  ptrdiff_t src_stride, int dst_width,
@@ -948,13 +949,15 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     sub        edi, esi
     cmp        eax, 0
     je         xloop1
-    cmp        eax, 128
+    cmp        eax, 128  // 50%?
     je         xloop2
 
     movd       xmm5, eax            // xmm5 = y fraction
     punpcklbw  xmm5, xmm5
+    psrlw      xmm5, 1
     punpcklwd  xmm5, xmm5
-    pshufd     xmm5, xmm5, 0
+    punpckldq  xmm5, xmm5
+    punpcklqdq xmm5, xmm5
     pxor       xmm4, xmm4
 
     align      16
@@ -969,6 +972,8 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     punpckhbw  xmm1, xmm4
     psubw      xmm2, xmm0  // row1 - row0
     psubw      xmm3, xmm1
+    paddw      xmm2, xmm2  // 9 bits * 15 bits = 8.16
+    paddw      xmm3, xmm3
     pmulhw     xmm2, xmm5  // scale diff
     pmulhw     xmm3, xmm5
     paddw      xmm0, xmm2  // sum rows
@@ -1021,7 +1026,7 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
-#endif  // SSE2_DISABLED
+
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version.
 #define HAS_SCALEFILTERROWS_SSSE3
 __declspec(naked) __declspec(align(16))
@@ -1933,9 +1938,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-#ifndef SSE2_DISABLED
 // Bilinear row filtering combines 16x2 -> 16x1. SSE2 version
-#define HAS_SCALEFILTERROWS_SSE2_DISABLED
+// For more info see comment above ScaleFilterRows_SSE2 for MSVC++
+#define HAS_SCALEFILTERROWS_SSE2
 static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  const uint8* src_ptr, ptrdiff_t src_stride,
                                  int dst_width, int source_y_fraction) {
@@ -1945,10 +1950,13 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "je        2f                              \n"
     "cmp       $0x80,%3                        \n"
     "je        3f                              \n"
+
     "movd      %3,%%xmm5                       \n"
     "punpcklbw %%xmm5,%%xmm5                   \n"
+    "psrlw     $0x1,%%xmm5                     \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "punpckldq %%xmm5,%%xmm5                   \n"
+    "punpcklqdq %%xmm5,%%xmm5                  \n"
     "pxor      %%xmm4,%%xmm4                   \n"
     ".p2align  4                               \n"
   "1:                                          \n"
@@ -1962,6 +1970,8 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "punpckhbw %%xmm4,%%xmm1                   \n"
     "psubw     %%xmm0,%%xmm2                   \n"
     "psubw     %%xmm1,%%xmm3                   \n"
+    "paddw     %%xmm2,%%xmm2                   \n"
+    "paddw     %%xmm3,%%xmm3                   \n"
     "pmulhw    %%xmm5,%%xmm2                   \n"
     "pmulhw    %%xmm5,%%xmm3                   \n"
     "paddw     %%xmm2,%%xmm0                   \n"
@@ -1996,16 +2006,15 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
     "movdqa    %%xmm0,(%1,%0,1)                \n"
   : "+r"(dst_ptr),    // %0
     "+r"(src_ptr),    // %1
-    "+r"(dst_width),  // %2
-    "+r"(source_y_fraction)  // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
+    "+r"(dst_width)   // %2
+  : "r"(source_y_fraction),  // %3
+    "r"(static_cast<intptr_t>(src_stride))  // %4
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
   );
 }
-#endif  // SSE2_DISABLED
 
 // Bilinear row filtering combines 16x2 -> 16x1. SSSE3 version
 #define HAS_SCALEFILTERROWS_SSSE3

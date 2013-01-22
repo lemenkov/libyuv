@@ -716,6 +716,7 @@ TESTINTERPOLATE(64)
 TESTINTERPOLATE(128)
 TESTINTERPOLATE(192)
 TESTINTERPOLATE(255)
+TESTINTERPOLATE(85)
 
 static int TestBlend(int width, int height, int benchmark_iterations,
                      int invert, int off) {
