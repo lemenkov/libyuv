@@ -4642,14 +4642,15 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
     shr        eax, 1
-    cmp        eax, 0  // dispatch to specialized filters if applicable.
-    je         xloop100
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 128.  Blend 100 / 0.
     cmp        eax, 32
-    je         xloop75
+    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
     cmp        eax, 64
-    je         xloop50
+    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
     cmp        eax, 96
-    je         xloop25
+    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
 
     movd       xmm0, eax  // high fraction 0..127
     neg        eax
@@ -4746,14 +4747,15 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
-    cmp        eax, 0  // dispatch to specialized filters if applicable.
-    je         xloop100
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 256.  Blend 100 / 0.
     cmp        eax, 64
-    je         xloop75
+    je         xloop75   // 64 / 256 is 0.25.  Blend 75 / 25.
     cmp        eax, 128
-    je         xloop50
+    je         xloop50   // 128 / 256 is 0.50.  Blend 50 / 50.
     cmp        eax, 192
-    je         xloop25
+    je         xloop25   // 192 / 256 is 0.75.  Blend 25 / 75.
 
     movd       xmm5, eax            // xmm5 = y fraction
     punpcklbw  xmm5, xmm5

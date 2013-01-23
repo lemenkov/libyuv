@@ -947,10 +947,15 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
+    // Dispatch to specialized filters if applicable.
     cmp        eax, 0
-    je         xloop1
-    cmp        eax, 128  // 50%?
-    je         xloop2
+    je         xloop100  // 0 / 256.  Blend 100 / 0.
+    cmp        eax, 64
+    je         xloop75   // 64 / 256 is 0.25.  Blend 75 / 25.
+    cmp        eax, 128
+    je         xloop50   // 128 / 256 is 0.50.  Blend 50 / 50.
+    cmp        eax, 192
+    je         xloop25   // 192 / 256 is 0.75.  Blend 25 / 75.
 
     movd       xmm5, eax            // xmm5 = y fraction
     punpcklbw  xmm5, xmm5
@@ -983,41 +988,58 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop
+    jmp        xloop99
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
+    // Blend 25 / 75.
     align      16
-  xloop1:
+  xloop25:
+    movdqa     xmm0, [esi]
+    movdqa     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop25
+    jmp        xloop99
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqa     xmm0, [esi]
+    movdqa     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqa     xmm1, [esi]
+    movdqa     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 16
+    movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
     movdqa     xmm0, [esi]
     sub        ecx, 16
     movdqa     [esi + edi], xmm0
     lea        esi, [esi + 16]
-    jg         xloop1
+    jg         xloop100
 
-    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
-    pshufhw    xmm0, xmm0, 0xff
-    punpckhqdq xmm0, xmm0
-    movdqa     [esi + edi], xmm0
-    pop        edi
-    pop        esi
-    ret
-
-    align      16
-  xloop2:
-    movdqa     xmm0, [esi]
-    pavgb      xmm0, [esi + edx]
-    sub        ecx, 16
-    movdqa     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    jg         xloop2
-
-    punpckhbw  xmm0, xmm0           // duplicate last pixel for filtering
+    // Extrude last pixel.
+  xloop99:
+    punpckhbw  xmm0, xmm0
     pshufhw    xmm0, xmm0, 0xff
     punpckhqdq xmm0, xmm0
     movdqa     [esi + edi], xmm0
@@ -1043,14 +1065,15 @@ static void ScaleFilterRows_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
     shr        eax, 1
-    cmp        eax, 0  // dispatch to specialized filters if applicable.
-    je         xloop100
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 128.  Blend 100 / 0.
     cmp        eax, 32
-    je         xloop75
+    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
     cmp        eax, 64
-    je         xloop50
+    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
     cmp        eax, 96
-    je         xloop25
+    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
 
     movd       xmm0, eax  // high fraction 1..127.
     neg        eax
