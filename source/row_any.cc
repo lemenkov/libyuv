@@ -390,12 +390,20 @@ MATHROW_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2, ARGBMultiplyRow_C,
 #ifdef HAS_ARGBADDROW_SSE2
 MATHROW_ANY(ARGBAddRow_Any_SSE2, ARGBAddRow_SSE2, ARGBAddRow_C, 3)
 #endif
+#ifdef HAS_ARGBSUBTRACTROW_SSE2
+MATHROW_ANY(ARGBSubtractRow_Any_SSE2, ARGBSubtractRow_SSE2, ARGBSubtractRow_C,
+            3)
+#endif
 #ifdef HAS_ARGBMULTIPLYROW_NEON
 MATHROW_ANY(ARGBMultiplyRow_Any_NEON, ARGBMultiplyRow_NEON, ARGBMultiplyRow_C,
             7)
 #endif
 #ifdef HAS_ARGBADDROW_NEON
 MATHROW_ANY(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, ARGBAddRow_C, 7)
+#endif
+#ifdef HAS_ARGBSUBTRACTROW_NEON
+MATHROW_ANY(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, ARGBSubtractRow_C,
+            7)
 #endif
 #undef MATHROW_ANY
 

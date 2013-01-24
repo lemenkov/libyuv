@@ -751,6 +751,30 @@ void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
+#define SHADE(f, v) (v >= f) ? 0 : (f - v)
+
+void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
+                       uint8* dst_argb, int width) {
+  for (int i = 0; i < width; ++i) {
+    const uint32 b = src_argb0[0];
+    const uint32 g = src_argb0[1];
+    const uint32 r = src_argb0[2];
+    const uint32 a = src_argb0[3];
+    const uint32 b_sub = src_argb1[0];
+    const uint32 g_sub = src_argb1[1];
+    const uint32 r_sub = src_argb1[2];
+    const uint32 a_sub = src_argb1[3];
+    dst_argb[0] = SHADE(b, b_sub);
+    dst_argb[1] = SHADE(g, g_sub);
+    dst_argb[2] = SHADE(r, r_sub);
+    dst_argb[3] = SHADE(a, a_sub);
+    src_argb0 += 4;
+    src_argb1 += 4;
+    dst_argb += 4;
+  }
+}
+#undef SHADE
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

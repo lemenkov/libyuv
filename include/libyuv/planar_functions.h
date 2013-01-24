@@ -209,19 +209,26 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height);
 
-// Multiply ARGB image by ARGB image.
+// Multiply ARGB image by ARGB image. Shifted down by 8. Saturates to 255.
 LIBYUV_API
 int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
                  const uint8* src_argb1, int src_stride_argb1,
                  uint8* dst_argb, int dst_stride_argb,
                  int width, int height);
 
-// Add ARGB image with ARGB image.
+// Add ARGB image with ARGB image. Saturates to 255.
 LIBYUV_API
 int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
             const uint8* src_argb1, int src_stride_argb1,
             uint8* dst_argb, int dst_stride_argb,
             int width, int height);
+
+// Subtract ARGB image (argb1) from ARGB image (argb0). Saturates to 0.
+LIBYUV_API
+int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
+                 const uint8* src_argb1, int src_stride_argb1,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height);
 
 // Convert I422 to YUY2.
 LIBYUV_API

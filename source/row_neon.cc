@@ -2552,7 +2552,31 @@ void ARGBAddRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(dst_argb),   // %2
     "+r"(width)       // %3
   :
-  : "cc", "memory", "q0", "q1"
+  : "cc", "memory", "q0", "q1", "q2", "q3"
+  );
+}
+
+// Subtract 2 rows of ARGB pixels, 8 pixels at a time.
+void ARGBSubtractRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  asm volatile (
+    // 8 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vqsub.u8   q0, q0, q2                     \n"  // subtract B, G
+    "vqsub.u8   q1, q1, q3                     \n"  // subtract R, A
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3"
   );
 }
 

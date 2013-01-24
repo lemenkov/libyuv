@@ -4348,6 +4348,37 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBADDROW_SSE2
 
+#ifdef HAS_ARGBSUBTRACTROW_SSE2
+// Subtract 2 rows of ARGB pixels together, 4 pixels at a time.
+// Aligned to 16 bytes.
+__declspec(naked) __declspec(align(16))
+void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+    sub        edx, eax
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
+    movdqa     xmm1, [eax + esi]  // read 4 pixels from src_argb1
+    psubusb    xmm0, xmm1         // src_argb0 - src_argb1
+    sub        ecx, 4
+    movdqa     [eax + edx], xmm0
+    lea        eax, [eax + 16]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBSUBTRACTROW_SSE2
+
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.

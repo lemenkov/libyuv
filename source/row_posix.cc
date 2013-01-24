@@ -4007,7 +4007,6 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                      uint8* dst_argb, int width) {
   asm volatile (
-    "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"
     "sub       %0,%2                           \n"
 
@@ -4028,11 +4027,43 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
+    , "xmm0", "xmm1"
 #endif
   );
 }
 #endif  // HAS_ARGBADDROW_SSE2
+
+#ifdef HAS_ARGBSUBTRACTROW_SSE2
+// Subtract 2 rows of ARGB pixels, 4 pixels at a time.
+// Aligned to 16 bytes.
+void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "sub       %0,%2                           \n"
+
+    // 4 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    (%0,%1),%%xmm1                  \n"
+    "psubusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqa    %%xmm0,(%0,%2,1)                \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+  );
+}
+#endif  // HAS_ARGBSUBTRACTROW_SSE2
 
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values

@@ -111,6 +111,7 @@ extern "C" {
 #define HAS_ARGBQUANTIZEROW_SSE2
 #define HAS_ARGBSEPIAROW_SSSE3
 #define HAS_ARGBSHADEROW_SSE2
+#define HAS_ARGBSUBTRACTROW_SSE2
 #define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
@@ -969,7 +970,7 @@ void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
                     uint8* dst_argb, int width);
 
-// ARGB multiply images.  Same API as Blend, but these require
+// ARGB multiply images. Same API as Blend, but these require
 // pointer and width alignment for SSE2.
 void ARGBMultiplyRow_C(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width);
@@ -993,6 +994,19 @@ void ARGBAddRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                      uint8* dst_argb, int width);
 void ARGBAddRow_Any_NEON(const uint8* src_argb, const uint8* src_argb1,
                          uint8* dst_argb, int width);
+
+// ARGB subtract images. Same API as Blend, but these require
+// pointer and width alignment for SSE2.
+void ARGBSubtractRow_C(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width);
+void ARGBSubtractRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBSubtractRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
+void ARGBSubtractRow_NEON(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBSubtractRow_Any_NEON(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
 
 void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);

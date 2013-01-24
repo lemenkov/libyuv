@@ -1037,4 +1037,72 @@ TEST_F(libyuvTest, ARGBAdd_Opt) {
   EXPECT_LE(max_diff, 1);
 }
 
+static int TestSubtract(int width, int height, int benchmark_iterations,
+                        int invert, int off) {
+  const int kBpp = 4;
+  const int kStride = (width * kBpp + 15) & ~15;
+  align_buffer_64(src_argb_a, kStride * height + off);
+  align_buffer_64(src_argb_b, kStride * height + off);
+  align_buffer_64(dst_argb_c, kStride * height);
+  align_buffer_64(dst_argb_opt, kStride * height);
+  srandom(time(NULL));
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_b[i + off] = (random() & 0xff);
+  }
+  memset(dst_argb_c, 0, kStride * height);
+  memset(dst_argb_opt, 0, kStride * height);
+
+  MaskCpuFlags(0);
+  ARGBSubtract(src_argb_a + off, kStride,
+               src_argb_b + off, kStride,
+               dst_argb_c, kStride,
+               width, invert * height);
+  MaskCpuFlags(-1);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBSubtract(src_argb_a + off, kStride,
+                 src_argb_b + off, kStride,
+                 dst_argb_opt, kStride,
+                 width, invert * height);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i]) -
+            static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_64(src_argb_a)
+  free_aligned_buffer_64(src_argb_b)
+  free_aligned_buffer_64(dst_argb_c)
+  free_aligned_buffer_64(dst_argb_opt)
+  return max_diff;
+}
+
+TEST_F(libyuvTest, ARGBSubtract_Any) {
+  int max_diff = TestSubtract(benchmark_width_ - 1, benchmark_height_,
+                              benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBSubtract_Unaligned) {
+  int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 1);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBSubtract_Invert) {
+  int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, -1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBSubtract_Opt) {
+  int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 1);
+}
+
 }  // namespace libyuv
