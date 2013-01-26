@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/mjpeg_decoder.h"
+#include "libyuv/planar_functions.h"  // For CopyPlane().
 
 #ifdef HAVE_JPEG
 // Must be included before jpeglib
@@ -254,15 +255,6 @@ bool MJpegDecoder::UnloadFrame() {
   return true;
 }
 
-static void CopyRows(uint8* source, int source_stride,
-                     uint8* dest, int pixels, int numrows) {
-  for (int i = 0; i < numrows; ++i) {
-    memcpy(dest, source, pixels);
-    dest += pixels;
-    source += source_stride;
-  }
-}
-
 // TODO(fbarchard): Allow rectangle to be specified: x, y, width, height.
 bool MJpegDecoder::DecodeToBuffers(
     uint8** planes, int dst_width, int dst_height) {
@@ -313,8 +305,9 @@ bool MJpegDecoder::DecodeToBuffers(
         int scanlines_to_copy = GetComponentScanlinesPerImcuRow(i) -
                                 rows_to_skip;
         int data_to_skip = rows_to_skip * GetComponentStride(i);
-        CopyRows(databuf_[i] + data_to_skip, GetComponentStride(i),
-                 planes[i], GetComponentWidth(i), scanlines_to_copy);
+        CopyPlane(databuf_[i] + data_to_skip, GetComponentStride(i),
+                  planes[i], GetComponentWidth(i),
+                  GetComponentWidth(i), scanlines_to_copy);
         planes[i] += scanlines_to_copy * GetComponentWidth(i);
       }
       lines_left -= (GetImageScanlinesPerImcuRow() - skip);
@@ -330,8 +323,9 @@ bool MJpegDecoder::DecodeToBuffers(
     }
     for (int i = 0; i < num_outbufs_; ++i) {
       int scanlines_to_copy = GetComponentScanlinesPerImcuRow(i);
-      CopyRows(databuf_[i], GetComponentStride(i),
-               planes[i], GetComponentWidth(i), scanlines_to_copy);
+      CopyPlane(databuf_[i], GetComponentStride(i),
+                planes[i], GetComponentWidth(i),
+                GetComponentWidth(i), scanlines_to_copy);
       planes[i] += scanlines_to_copy * GetComponentWidth(i);
     }
   }
@@ -345,8 +339,9 @@ bool MJpegDecoder::DecodeToBuffers(
     for (int i = 0; i < num_outbufs_; ++i) {
       int scanlines_to_copy =
           DivideAndRoundUp(lines_left, GetVertSubSampFactor(i));
-      CopyRows(databuf_[i], GetComponentStride(i),
-               planes[i], GetComponentWidth(i), scanlines_to_copy);
+      CopyPlane(databuf_[i], GetComponentStride(i),
+                planes[i], GetComponentWidth(i),
+                GetComponentWidth(i), scanlines_to_copy);
       planes[i] += scanlines_to_copy * GetComponentWidth(i);
     }
   }
