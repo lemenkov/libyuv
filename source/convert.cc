@@ -310,6 +310,11 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
 #endif
   }
 #endif
+#if defined(HAS_COPYROW_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_MIPS;
+  }
+#endif
 
   // Copy plane
   for (int y = 0; y < height - 1; y += 2) {
@@ -512,6 +517,11 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
       IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
     CopyRow = CopyRow_SSE2;
+  }
+#endif
+#if defined(HAS_COPYROW_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_MIPS;
   }
 #endif
 

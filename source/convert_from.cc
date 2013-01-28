@@ -68,6 +68,11 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
 #endif
   }
 #endif
+#if defined(HAS_COPYROW_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_MIPS;
+  }
+#endif
 
   // Copy Y plane
   if (dst_y) {

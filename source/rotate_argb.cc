@@ -121,6 +121,11 @@ void ARGBRotate180(const uint8* src, int src_stride,
     CopyRow = CopyRow_SSE2;
   }
 #endif
+#if defined(HAS_COPYROW_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_MIPS;
+  }
+#endif
   if (width * 4 > kMaxStride) {
     return;
   }
