@@ -10,16 +10,14 @@
 
 #include "libyuv/convert_argb.h"
 
-#include <string.h>  // for memset()
-
 #include "libyuv/cpu_id.h"
 #include "libyuv/format_conversion.h"
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif
 #include "libyuv/rotate_argb.h"
-#include "libyuv/video_common.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 #ifdef __cplusplus
 namespace libyuv {

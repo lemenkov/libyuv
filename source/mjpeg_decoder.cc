@@ -9,24 +9,18 @@
  */
 
 #include "libyuv/mjpeg_decoder.h"
-#include "libyuv/planar_functions.h"  // For CopyPlane().
 
 #ifdef HAVE_JPEG
-// Must be included before jpeglib
 #include <assert.h>
 #ifndef __CLR_VER
+// Must be included before jpeglib.
 #include <setjmp.h>
 #define HAVE_SETJMP
 #endif
-#include <stdio.h>
-#include <stdlib.h>
-
-extern "C" {
+struct FILE;  // For jpeglib.h.
 #include <jpeglib.h>
-}
 
-#include <climits>
-#include <cstring>
+#include "libyuv/planar_functions.h"  // For CopyPlane().
 
 namespace libyuv {
 
