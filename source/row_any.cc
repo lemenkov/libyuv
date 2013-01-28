@@ -10,8 +10,6 @@
 
 #include "libyuv/row.h"
 
-#include <string.h>  // For memcpy
-
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
