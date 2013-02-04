@@ -925,6 +925,128 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
   );
 }
 
+void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
+                          int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kARGBToU),  // %0
+    "m"(kARGBToV),  // %1
+    "m"(kAddUV128)  // %2
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm6                   \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm3,%%xmm0                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqa    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),        // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6"
+#endif
+  );
+}
+
+void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_u,
+                                    uint8* dst_v, int width) {
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm3                       \n"
+    "movdqa    %2,%%xmm5                       \n"
+  :
+  : "m"(kARGBToU),  // %0
+    "m"(kARGBToV),  // %1
+    "m"(kAddUV128)  // %2
+  );
+  asm volatile (
+    "sub       %1,%2                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm6                   \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
+    "pmaddubsw %%xmm3,%%xmm0                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "pmaddubsw %%xmm3,%%xmm2                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm6,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "paddb     %%xmm5,%%xmm0                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "movdqu    %%xmm0,(%1,%2,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),        // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm6"
+#endif
+  );
+}
+
 void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (

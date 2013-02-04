@@ -23,9 +23,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Bilinear SSE2 is disabled.
-#define SSE2_DISABLED 1
-
 // ARGB scaling uses bilinear or point, but not box filter.
 
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
