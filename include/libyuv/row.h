@@ -106,6 +106,7 @@ extern "C" {
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_ARGBGRAYROW_SSSE3
+#define HAS_ARGBINTERPOLATEROW_SSE2
 #define HAS_ARGBINTERPOLATEROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSSE3
 #define HAS_ARGBMULTIPLYROW_SSE2
@@ -122,7 +123,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_ARGBINTERPOLATEROW_SSE2
 #endif
 
 // The following are Yasm x86 only.
