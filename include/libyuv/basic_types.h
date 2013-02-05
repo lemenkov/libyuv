@@ -19,6 +19,7 @@
 #include <stdint.h>  // for uintptr_t
 #endif
 
+#ifndef GG_LONGLONG
 #ifndef INT_TYPES_DEFINED
 #define INT_TYPES_DEFINED
 #ifdef COMPILER_MSVC
@@ -61,6 +62,7 @@ typedef short int16;  // NOLINT
 typedef unsigned char uint8;
 typedef signed char int8;
 #endif  // INT_TYPES_DEFINED
+#endif  // GG_LONGLONG
 
 // Detect compiler is for x86 or x64.
 #if defined(__x86_64__) || defined(_M_X64) || \

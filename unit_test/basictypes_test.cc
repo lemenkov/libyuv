@@ -16,9 +16,9 @@ namespace libyuv {
 TEST_F(libyuvTest, Endian) {
   uint16 v16 = 0x1234u;
   uint8 first_byte = *reinterpret_cast<uint8*>(&v16);
-#if defined(ARCH_CPU_LITTLE_ENDIAN)
+#if defined(LIBYUV_LITTLE_ENDIAN)
   EXPECT_EQ(0x34u, first_byte);
-#elif defined(ARCH_CPU_BIG_ENDIAN)
+#else
   EXPECT_EQ(0x12u, first_byte);
 #endif
 }
