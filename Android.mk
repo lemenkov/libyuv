@@ -40,6 +40,7 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
 	source/scale_neon.cc.neon
 endif
 
+LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 
 LOCAL_MODULE := libyuv_static
