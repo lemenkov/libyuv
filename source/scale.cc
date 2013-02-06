@@ -3229,7 +3229,7 @@ static void ScalePlaneDown(int src_width, int src_height,
   if (!filtering) {
     ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
                      src_stride, dst_stride, src_ptr, dst_ptr);
-  } else if (filtering == kFilterBilinear || src_height * 2 > dst_height) {
+  } else if (filtering == kFilterBilinear || dst_height * 2 > src_height) {
     // between 1/2x and 1x use bilinear
     ScalePlaneBilinear(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src_ptr, dst_ptr);
