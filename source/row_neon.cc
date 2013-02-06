@@ -2502,6 +2502,8 @@ void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
   );
 }
 
+// TODO(fbarchard): fix vqshrun in ARGBMultiplyRow_NEON and reenable.
+#ifdef HAS_ARGBMULTIPLYROW_NEON
 // Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
 void ARGBMultiplyRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
@@ -2531,6 +2533,7 @@ void ARGBMultiplyRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
   : "cc", "memory", "q0", "q1", "q2", "q3"
   );
 }
+#endif  // HAS_ARGBMULTIPLYROW_NEON
 
 // Add 2 rows of ARGB pixels together, 8 pixels at a time.
 void ARGBAddRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
