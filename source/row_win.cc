@@ -191,7 +191,7 @@ void I400ToARGBRow_Unaligned_SSE2(const uint8* src_y, uint8* dst_argb,
 
 __declspec(naked) __declspec(align(16))
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_bgra
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
@@ -212,7 +212,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_abgr
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
@@ -233,7 +233,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_rgba
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
@@ -254,7 +254,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToRGBARow_SSSE3(const uint8* src_argb, uint8* dst_rgba, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgba
     mov       ecx, [esp + 12]  // pix
@@ -275,7 +275,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_rgb24
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
@@ -315,7 +315,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
                         int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_raw
     mov       edx, [esp + 8]   // dst_argb
     mov       ecx, [esp + 12]  // pix
@@ -362,7 +362,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
                           int pix) {
-__asm {
+  __asm {
     mov       eax, 0x01080108  // generate multiplier to repeat 5 bits
     movd      xmm5, eax
     pshufd    xmm5, xmm5, 0
@@ -413,7 +413,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
                             int pix) {
-__asm {
+  __asm {
     mov       eax, 0x01080108  // generate multiplier to repeat 5 bits
     movd      xmm5, eax
     pshufd    xmm5, xmm5, 0
@@ -467,7 +467,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
-__asm {
+  __asm {
     mov       eax, 0x0f0f0f0f  // generate mask 0x0f0f0f0f
     movd      xmm4, eax
     pshufd    xmm4, xmm4, 0
@@ -505,7 +505,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
@@ -544,7 +544,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
@@ -583,7 +583,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
@@ -622,7 +622,7 @@ __asm {
 // TODO(fbarchard): Improve sign extension/packing.
 __declspec(naked) __declspec(align(16))
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
@@ -664,7 +664,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
@@ -695,7 +695,7 @@ __asm {
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 __declspec(naked) __declspec(align(16))
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -729,7 +729,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -763,7 +763,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -797,7 +797,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void BGRAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -831,7 +831,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -865,7 +865,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void ABGRToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -899,7 +899,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -933,7 +933,7 @@ __asm {
 
 __declspec(naked) __declspec(align(16))
 void RGBAToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-__asm {
+  __asm {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
@@ -968,7 +968,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1034,7 +1034,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1104,7 +1104,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       edi
     mov        eax, [esp + 4 + 4]   // src_argb
     mov        edx, [esp + 4 + 8]   // dst_u
@@ -1162,7 +1162,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb0,
                                     uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       edi
     mov        eax, [esp + 4 + 4]   // src_argb
     mov        edx, [esp + 4 + 8]   // dst_u
@@ -1220,7 +1220,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       edi
     mov        eax, [esp + 4 + 4]   // src_argb
     mov        edx, [esp + 4 + 8]   // dst_u
@@ -1279,7 +1279,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ARGBToUV422Row_Unaligned_SSSE3(const uint8* src_argb0,
                                     uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       edi
     mov        eax, [esp + 4 + 4]   // src_argb
     mov        edx, [esp + 4 + 8]   // dst_u
@@ -1338,7 +1338,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1404,7 +1404,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1474,7 +1474,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1540,7 +1540,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1610,7 +1610,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1676,7 +1676,7 @@ __asm {
 __declspec(naked) __declspec(align(16))
 void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width) {
-__asm {
+  __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   // src_argb
@@ -1794,7 +1794,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
 
 // Read 8 UV from 411.
-#define READYUV444 __asm {                                                     \
+#define READYUV444   __asm {                                                     \
     __asm movq       xmm0, qword ptr [esi] /* U */                /* NOLINT */ \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */          /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
@@ -1802,7 +1802,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 // Read 4 UV from 422, upsample to 8 UV.
-#define READYUV422 __asm {                                                     \
+#define READYUV422   __asm {                                                     \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
     __asm lea        esi,  [esi + 4]                                           \
@@ -1811,7 +1811,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 // Read 2 UV from 411, upsample to 8 UV.
-#define READYUV411 __asm {                                                     \
+#define READYUV411   __asm {                                                     \
     __asm movd       xmm0, [esi]          /* U */                              \
     __asm movd       xmm1, [esi + edi]    /* V */                              \
     __asm lea        esi,  [esi + 2]                                           \
@@ -1821,14 +1821,14 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 // Read 4 UV from NV12, upsample to 8 UV.
-#define READNV12 __asm {                                                       \
+#define READNV12   __asm {                                                       \
     __asm movq       xmm0, qword ptr [esi] /* UV */               /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
   }
 
 // Convert 8 pixels: 8 UV and 8 Y.
-#define YUVTORGB __asm {                                                       \
+#define YUVTORGB   __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
@@ -1856,7 +1856,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
   }
 
 // Convert 8 pixels: 8 VU and 8 Y.
-#define YVUTORGB __asm {                                                       \
+#define YVUTORGB   __asm {                                                       \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
@@ -2767,7 +2767,7 @@ static const uvec8 kShuffleMirror = {
 
 __declspec(naked) __declspec(align(16))
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
@@ -2792,7 +2792,7 @@ __asm {
 // version can not.
 __declspec(naked) __declspec(align(16))
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
@@ -2862,7 +2862,7 @@ static const uvec8 kARGBShuffleMirror = {
 
 __declspec(naked) __declspec(align(16))
 void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
-__asm {
+  __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
