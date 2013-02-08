@@ -797,10 +797,6 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     lea        edx, [edx + 32]
     jg         convertloop
     ret
-vphaddw    ymm0, ymm0, ymm1
-vpermq     ymm0, ymm0, 0xd8
-vpackuswb  ymm0, ymm0, ymm2
-vpermq     ymm0, ymm0, 0xd8
   }
 }
 #endif  //  HAS_ARGBTOYROW_AVX2
@@ -1176,39 +1172,34 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vpavgb      ymm2, ymm2, [eax + esi + 64]
     vpavgb      ymm3, ymm3, [eax + esi + 96]
     lea         eax,  [eax + 128]
-    vmovdqa     ymm4, ymm0  // TODO(fbarchard): Remove.
-    vshufps     ymm0, ymm0, ymm1, 0x88
-    vshufps     ymm4, ymm4, ymm1, 0xdd
+    vshufps     ymm4, ymm0, ymm1, 0x88
+    vshufps     ymm0, ymm0, ymm1, 0xdd
     vpavgb      ymm0, ymm0, ymm4
     vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
-    vmovdqa     ymm4, ymm2  // TODO(fbarchard): Remove.
-    vshufps     ymm2, ymm2, ymm3, 0x88
-    vshufps     ymm4, ymm4, ymm3, 0xdd
+    vshufps     ymm4, ymm2, ymm3, 0x88
+    vshufps     ymm2, ymm2, ymm3, 0xdd
     vpavgb      ymm2, ymm2, ymm4
     vpermq      ymm2, ymm2, 0xd8  // TODO(fbarchard): Remove.
 
     // step 2 - convert to U and V
     // from here down is very similar to Y code except
     // instead of 32 different pixels, its 16 pixels of U and 16 of V
-    vmovdqa     ymm1, ymm0  // TODO(fbarchard): Remove.
-    vmovdqa     ymm3, ymm2  // TODO(fbarchard): Remove.
-    vpmaddubsw  ymm0, ymm0, ymm7  // U
-    vpmaddubsw  ymm2, ymm2, ymm7
-    vpmaddubsw  ymm1, ymm1, ymm6  // V
-    vpmaddubsw  ymm3, ymm3, ymm6
-    vphaddw     ymm0, ymm0, ymm2
-    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
+    vpmaddubsw  ymm1, ymm0, ymm7  // U
+    vpmaddubsw  ymm3, ymm2, ymm7
+    vpmaddubsw  ymm0, ymm0, ymm6  // V
+    vpmaddubsw  ymm2, ymm2, ymm6
     vphaddw     ymm1, ymm1, ymm3
     vpermq      ymm1, ymm1, 0xd8  // TODO(fbarchard): Remove.
-    vpsraw      ymm0, ymm0, 8
+    vphaddw     ymm0, ymm0, ymm2
+    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
     vpsraw      ymm1, ymm1, 8
-    vpacksswb   ymm0, ymm0, ymm1
+    vpsraw      ymm0, ymm0, 8
+    vpacksswb   ymm0, ymm1, ymm0
     vpermq      ymm0, ymm0, 0xd8
     vpaddb      ymm0, ymm0, ymm5            // -> unsigned
 
     // step 3 - store 16 U and 16 V values
     sub         ecx, 32
-    vmovdqa     ymm1, ymm0
     vextractf128     qword ptr [edx], ymm0, 0 // U
     vextractf128     qword ptr [edx + edi], ymm0, 1 // V
     lea        edx, [edx + 16]
@@ -1320,39 +1311,34 @@ void ARGBToUVRow_Unaligned_AVX2(const uint8* src_argb0, int src_stride_argb,
     vpavgb      ymm2, ymm2, [eax + esi + 64]
     vpavgb      ymm3, ymm3, [eax + esi + 96]
     lea         eax,  [eax + 128]
-    vmovdqa     ymm4, ymm0
-    vshufps     ymm0, ymm0, ymm1, 0x88
-    vshufps     ymm4, ymm4, ymm1, 0xdd
+    vshufps     ymm4, ymm0, ymm1, 0x88
+    vshufps     ymm0, ymm0, ymm1, 0xdd
     vpavgb      ymm0, ymm0, ymm4
-    vpermq      ymm0, ymm0, 0xd8
-    vmovdqa     ymm4, ymm2
-    vshufps     ymm2, ymm2, ymm3, 0x88
-    vshufps     ymm4, ymm4, ymm3, 0xdd
+    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
+    vshufps     ymm4, ymm2, ymm3, 0x88
+    vshufps     ymm2, ymm2, ymm3, 0xdd
     vpavgb      ymm2, ymm2, ymm4
-    vpermq      ymm2, ymm2, 0xd8
+    vpermq      ymm2, ymm2, 0xd8  // TODO(fbarchard): Remove.
 
     // step 2 - convert to U and V
     // from here down is very similar to Y code except
     // instead of 32 different pixels, its 16 pixels of U and 16 of V
-    vmovdqa     ymm1, ymm0
-    vmovdqa     ymm3, ymm2
-    vpmaddubsw  ymm0, ymm0, ymm7  // U
-    vpmaddubsw  ymm2, ymm2, ymm7
-    vpmaddubsw  ymm1, ymm1, ymm6  // V
-    vpmaddubsw  ymm3, ymm3, ymm6
-    vphaddw     ymm0, ymm0, ymm2
-    vpermq      ymm0, ymm0, 0xd8
+    vpmaddubsw  ymm1, ymm0, ymm7  // U
+    vpmaddubsw  ymm3, ymm2, ymm7
+    vpmaddubsw  ymm0, ymm0, ymm6  // V
+    vpmaddubsw  ymm2, ymm2, ymm6
     vphaddw     ymm1, ymm1, ymm3
-    vpermq      ymm1, ymm1, 0xd8
-    vpsraw      ymm0, ymm0, 8
+    vpermq      ymm1, ymm1, 0xd8  // TODO(fbarchard): Remove.
+    vphaddw     ymm0, ymm0, ymm2
+    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
     vpsraw      ymm1, ymm1, 8
-    vpacksswb   ymm0, ymm0, ymm1
+    vpsraw      ymm0, ymm0, 8
+    vpacksswb   ymm0, ymm1, ymm0
     vpermq      ymm0, ymm0, 0xd8
     vpaddb      ymm0, ymm0, ymm5            // -> unsigned
 
     // step 3 - store 16 U and 16 V values
     sub         ecx, 32
-    vmovdqa     ymm1, ymm0
     vextractf128     qword ptr [edx], ymm0, 0 // U
     vextractf128     qword ptr [edx + edi], ymm0, 1 // V
     lea        edx, [edx + 16]
