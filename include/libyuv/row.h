@@ -123,6 +123,12 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
+// Visual C 2012 required for AVX2.
+#if _MSC_VER >= 1700
+// TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
+#define HAS_ARGBTOYROW_AVX2
+#define HAS_ARGBTOUVROW_AVX2
+#endif
 #endif
 
 // The following are Yasm x86 only.
@@ -258,6 +264,13 @@ typedef __declspec(align(16)) int16 vec16[8];
 typedef __declspec(align(16)) uint16 uvec16[8];
 typedef __declspec(align(16)) int32 vec32[4];
 typedef __declspec(align(16)) uint32 uvec32[4];
+typedef __declspec(align(32)) int8 lvec8[32];
+typedef __declspec(align(32)) uint8 ulvec8[32];
+typedef __declspec(align(32)) int16 lvec16[16];
+typedef __declspec(align(32)) uint16 ulvec16[16];
+typedef __declspec(align(32)) int32 lvec32[8];
+typedef __declspec(align(32)) uint32 ulvec32[8];
+
 #elif defined(__GNUC__)
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 typedef int8 __attribute__((vector_size(16))) vec8;
@@ -360,6 +373,9 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
                         int width);
 
+void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToYRow_Unaligned_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToYRow_Any_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix);
 void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix);
@@ -430,6 +446,12 @@ void RGB565ToYRow_Any_NEON(const uint8* src_rgb565, uint8* dst_y, int pix);
 void ARGB1555ToYRow_Any_NEON(const uint8* src_argb1555, uint8* dst_y, int pix);
 void ARGB4444ToYRow_Any_NEON(const uint8* src_argb4444, uint8* dst_y, int pix);
 
+void ARGBToUVRow_AVX2(const uint8* src_argb, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVRow_Unaligned_AVX2(const uint8* src_argb, int src_stride_argb,
+                                uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVRow_Any_AVX2(const uint8* src_argb, int src_stride_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_SSSE3(const uint8* src_bgra, int src_stride_bgra,

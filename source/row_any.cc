@@ -195,6 +195,9 @@ BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
                    dst_y + (width - NUM) * BPP, NUM);                          \
     }
 
+#ifdef HAS_ARGBTOYROW_AVX2
+YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_Unaligned_AVX2, 4, 1, 32)
+#endif
 #ifdef HAS_ARGBTOYROW_SSSE3
 YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4, 1, 16)
 YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4, 1, 16)
@@ -251,37 +254,40 @@ YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
 #endif
 
 // RGB/YUV to UV does multiple of 16 with SIMD and remainder with C.
-#define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP)                           \
+#define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                     \
     void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
-      int n = width & ~15;                                                     \
+      int n = width & ~MASK;                                                   \
       ANYTOUV_SIMD(src_argb, src_stride_argb, dst_u, dst_v, n);                \
       ANYTOUV_C(src_argb  + n * BPP, src_stride_argb,                          \
                 dst_u + (n >> 1),                                              \
                 dst_v + (n >> 1),                                              \
-                width & 15);                                                   \
+                width & MASK);                                                 \
     }
 
+#ifdef HAS_ARGBTOYROW_AVX2
+UVANY(ARGBToUVRow_Any_AVX2, ARGBToUVRow_Unaligned_AVX2, ARGBToUVRow_C, 4, 31)
+#endif
 #ifdef HAS_ARGBTOUVROW_SSSE3
-UVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4)
-UVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4)
-UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4)
-UVANY(RGBAToUVRow_Any_SSSE3, RGBAToUVRow_Unaligned_SSSE3, RGBAToUVRow_C, 4)
-UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2)
-UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2)
+UVANY(ARGBToUVRow_Any_SSSE3, ARGBToUVRow_Unaligned_SSSE3, ARGBToUVRow_C, 4, 15)
+UVANY(BGRAToUVRow_Any_SSSE3, BGRAToUVRow_Unaligned_SSSE3, BGRAToUVRow_C, 4, 15)
+UVANY(ABGRToUVRow_Any_SSSE3, ABGRToUVRow_Unaligned_SSSE3, ABGRToUVRow_C, 4, 15)
+UVANY(RGBAToUVRow_Any_SSSE3, RGBAToUVRow_Unaligned_SSSE3, RGBAToUVRow_C, 4, 15)
+UVANY(YUY2ToUVRow_Any_SSE2, YUY2ToUVRow_Unaligned_SSE2, YUY2ToUVRow_C, 2, 15)
+UVANY(UYVYToUVRow_Any_SSE2, UYVYToUVRow_Unaligned_SSE2, UYVYToUVRow_C, 2, 15)
 #endif
 #ifdef HAS_ARGBTOUVROW_NEON
-UVANY(ARGBToUVRow_Any_NEON, ARGBToUVRow_NEON, ARGBToUVRow_C, 4)
-UVANY(BGRAToUVRow_Any_NEON, BGRAToUVRow_NEON, BGRAToUVRow_C, 4)
-UVANY(ABGRToUVRow_Any_NEON, ABGRToUVRow_NEON, ABGRToUVRow_C, 4)
-UVANY(RGBAToUVRow_Any_NEON, RGBAToUVRow_NEON, RGBAToUVRow_C, 4)
-UVANY(RGB24ToUVRow_Any_NEON, RGB24ToUVRow_NEON, RGB24ToUVRow_C, 3)
-UVANY(RAWToUVRow_Any_NEON, RAWToUVRow_NEON, RAWToUVRow_C, 3)
-UVANY(RGB565ToUVRow_Any_NEON, RGB565ToUVRow_NEON, RGB565ToUVRow_C, 2)
-UVANY(ARGB1555ToUVRow_Any_NEON, ARGB1555ToUVRow_NEON, ARGB1555ToUVRow_C, 2)
-UVANY(ARGB4444ToUVRow_Any_NEON, ARGB4444ToUVRow_NEON, ARGB4444ToUVRow_C, 2)
-UVANY(YUY2ToUVRow_Any_NEON, YUY2ToUVRow_NEON, YUY2ToUVRow_C, 2)
-UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2)
+UVANY(ARGBToUVRow_Any_NEON, ARGBToUVRow_NEON, ARGBToUVRow_C, 4, 15)
+UVANY(BGRAToUVRow_Any_NEON, BGRAToUVRow_NEON, BGRAToUVRow_C, 4, 15)
+UVANY(ABGRToUVRow_Any_NEON, ABGRToUVRow_NEON, ABGRToUVRow_C, 4, 15)
+UVANY(RGBAToUVRow_Any_NEON, RGBAToUVRow_NEON, RGBAToUVRow_C, 4, 15)
+UVANY(RGB24ToUVRow_Any_NEON, RGB24ToUVRow_NEON, RGB24ToUVRow_C, 3, 15)
+UVANY(RAWToUVRow_Any_NEON, RAWToUVRow_NEON, RAWToUVRow_C, 3, 15)
+UVANY(RGB565ToUVRow_Any_NEON, RGB565ToUVRow_NEON, RGB565ToUVRow_C, 2, 15)
+UVANY(ARGB1555ToUVRow_Any_NEON, ARGB1555ToUVRow_NEON, ARGB1555ToUVRow_C, 2, 15)
+UVANY(ARGB4444ToUVRow_Any_NEON, ARGB4444ToUVRow_NEON, ARGB4444ToUVRow_C, 2, 15)
+UVANY(YUY2ToUVRow_Any_NEON, YUY2ToUVRow_NEON, YUY2ToUVRow_C, 2, 15)
+UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
 #endif
 #undef UVANY
 
