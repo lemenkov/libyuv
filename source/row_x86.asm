@@ -41,6 +41,9 @@ cglobal %1ToYRow%3, 3, 3, 3, src_yuy2, dst_y, pix
     psrlw      m1, m1, 8
 %endif
     packuswb   m0, m0, m1
+%if cpuflag(AVX2)
+    vpermq     m0, m0, 0xd8 
+%endif
     sub        pixd, mmsize
     mov%2      [dst_yq], m0
     lea        dst_yq, [dst_yq + mmsize]
@@ -83,9 +86,15 @@ cglobal SplitUVRow%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
     pand       m0, m0, m4        ; even bytes
     pand       m1, m1, m4
     packuswb   m0, m0, m1
+%if cpuflag(AVX2)
+    vpermq     m0, m0, 0xd8 
+%endif
     psrlw      m2, m2, 8         ; odd bytes
     psrlw      m3, m3, 8
     packuswb   m2, m2, m3
+%if cpuflag(AVX2)
+    vpermq     m2, m2, 0xd8 
+%endif
     mov%1      [dst_uq], m0
     mov%1      [dst_uq + dst_vq], m2
     lea        dst_uq, [dst_uq + mmsize]
