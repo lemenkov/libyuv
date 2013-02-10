@@ -128,6 +128,7 @@ extern "C" {
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
+#define HAS_SPLITUVROW_AVX2
 #endif
 #endif
 

@@ -81,18 +81,14 @@ cglobal SplitUVRow%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
     mov%1      m0, [src_uvq]
     mov%1      m1, [src_uvq + mmsize]
     lea        src_uvq, [src_uvq + mmsize * 2]
-    mova       m2, m0
-    mova       m3, m1
+    psrlw      m2, m0, 8         ; odd bytes
+    psrlw      m3, m1, 8
     pand       m0, m0, m4        ; even bytes
     pand       m1, m1, m4
     packuswb   m0, m0, m1
-%if cpuflag(AVX2)
-    vpermq     m0, m0, 0xd8 
-%endif
-    psrlw      m2, m2, 8         ; odd bytes
-    psrlw      m3, m3, 8
     packuswb   m2, m2, m3
 %if cpuflag(AVX2)
+    vpermq     m0, m0, 0xd8 
     vpermq     m2, m2, 0xd8 
 %endif
     mov%1      [dst_uq], m0

@@ -3238,6 +3238,81 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
   }
 }
 
+#ifdef HAS_SPLITUVROW_AVX2
+__declspec(naked) __declspec(align(16))
+void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // dst_u
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    vpcmpeqb   ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
+    vpsrlw     ymm5, ymm5, 8
+    sub        edi, edx
+
+    align      16
+  convertloop:
+    vmovdqa    ymm0, [eax]
+    vmovdqa    ymm1, [eax + 32]
+    lea        eax,  [eax + 64]
+    vpsrlw     ymm2, ymm0, 8      // odd bytes
+    vpsrlw     ymm3, ymm1, 8
+    vpand      ymm0, ymm0, ymm5   // even bytes
+    vpand      ymm1, ymm1, ymm5
+    vpackuswb  ymm0, ymm0, ymm1
+    vpackuswb  ymm2, ymm2, ymm3
+    vpermq     ymm0, ymm0, 0xd8
+    vpermq     ymm2, ymm2, 0xd8
+    vmovdqa    [edx], ymm0
+    vmovdqa    [edx + edi], ymm2
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void SplitUVRow_Unaligned_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                               int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // dst_u
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    vpcmpeqb   ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
+    vpsrlw     ymm5, ymm5, 8
+    sub        edi, edx
+
+    align      16
+  convertloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    lea        eax,  [eax + 64]
+    vpsrlw     ymm2, ymm0, 8      // odd bytes
+    vpsrlw     ymm3, ymm1, 8
+    vpand      ymm0, ymm0, ymm5   // even bytes
+    vpand      ymm1, ymm1, ymm5
+    vpackuswb  ymm0, ymm0, ymm1
+    vpackuswb  ymm2, ymm2, ymm3
+    vpermq     ymm0, ymm0, 0xd8
+    vpermq     ymm2, ymm2, 0xd8
+    vmovdqu    [edx], ymm0
+    vmovdqu    [edx + edi], ymm2
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    jg         convertloop
+
+    pop        edi
+    ret
+  }
+}
+#endif  // HAS_SPLITUVROW_AVX2
+
 __declspec(naked) __declspec(align(16))
 void MergeUVRow_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
                                uint8* dst_uv, int width) {
