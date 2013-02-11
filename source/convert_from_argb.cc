@@ -183,7 +183,18 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
       }
     }
   }
-#elif defined(HAS_ARGBTOYROW_NEON)
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
+    clear = true;
+    ARGBToYRow = ARGBToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -206,6 +217,11 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
+#if defined(HAS_ARGBTOYROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 
@@ -277,10 +293,7 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
   if (TestCpuFlag(kCpuHasAVX2) && halfwidth >= 32) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
-      MergeUVRow_ = MergeUVRow_Unaligned_AVX2;
-      if (IS_ALIGNED(dst_uv, 32) && IS_ALIGNED(dst_stride_uv, 32)) {
-        MergeUVRow_ = MergeUVRow_AVX2;
-      }
+      MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
 #endif
@@ -383,10 +396,7 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
   if (TestCpuFlag(kCpuHasAVX2) && halfwidth >= 32) {
     MergeUVRow_ = MergeUVRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
-      MergeUVRow_ = MergeUVRow_Unaligned_AVX2;
-      if (IS_ALIGNED(dst_uv, 32) && IS_ALIGNED(dst_stride_uv, 32)) {
-        MergeUVRow_ = MergeUVRow_AVX2;
-      }
+      MergeUVRow_ = MergeUVRow_AVX2;
     }
   }
 #endif
@@ -624,7 +634,18 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
       }
     }
   }
-#elif defined(HAS_ARGBTOYROW_NEON)
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
+    clear = true;
+    ARGBToYRow = ARGBToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -638,6 +659,11 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
   }
+#if defined(HAS_ARGBTOYROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 

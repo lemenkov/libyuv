@@ -64,9 +64,7 @@ YUY2TOYROW UYVY,a,
 YUY2TOYROW UYVY,u,_Unaligned
 INIT_YMM AVX2
 YUY2TOYROW YUY2,a,
-YUY2TOYROW YUY2,u,_Unaligned
 YUY2TOYROW UYVY,a,
-YUY2TOYROW UYVY,u,_Unaligned
 
 ; void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix)
 
@@ -107,7 +105,6 @@ SplitUVRow a,
 SplitUVRow u,_Unaligned
 INIT_YMM AVX2
 SplitUVRow a,
-SplitUVRow u,_Unaligned
 
 ; void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 ;                      int width);
@@ -121,11 +118,17 @@ cglobal MergeUVRow_%2, 4, 4, 3, src_u, src_v, dst_uv, pix
     mov%1      m0, [src_uq]
     mov%1      m1, [src_vq]
     lea        src_uq, [src_uq + mmsize]
-    mova       m2, m0
-    punpcklbw  m0, m0, m1       // first 8 UV pairs
-    punpckhbw  m2, m2, m1       // next 8 UV pairs
-    mov%1      [dst_uvq], m0
+    punpcklbw  m2, m0, m1       // first 8 UV pairs
+    punpckhbw  m0, m0, m1       // next 8 UV pairs
+%if cpuflag(AVX2)
+    vperm2i128 m1, m2, m0, 0x20  // low 128 of ymm2 and low 128 of ymm0
+    vperm2i128 m2, m2, m0, 0x31  // high 128 of ymm2 and high 128 of ymm0
+    mov%1      [dst_uvq], m1
     mov%1      [dst_uvq + mmsize], m2
+%else
+    mov%1      [dst_uvq], m2
+    mov%1      [dst_uvq + mmsize], m0
+%endif
     lea        dst_uvq, [dst_uvq + mmsize * 2]
     sub        pixd, mmsize
     jg         .convertloop
@@ -140,4 +143,4 @@ MergeUVRow_ a,
 MergeUVRow_ u,_Unaligned
 INIT_YMM AVX2
 MergeUVRow_ a,
-MergeUVRow_ u,_Unaligned
+
