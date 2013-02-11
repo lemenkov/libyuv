@@ -22,6 +22,13 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Copy a plane of data.
+LIBYUV_API
+void CopyPlane(const uint8* src_y, int src_stride_y,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
+
+// Set a plane of data to a 32 bit value.
 LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
@@ -33,11 +40,28 @@ int I400ToI400(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
-// Copy a plane of data (I420 to I400).
+
+// Copy I422 to I422.
+#define I422ToI422 I422Copy
 LIBYUV_API
-void CopyPlane(const uint8* src_y, int src_stride_y,
-               uint8* dst_y, int dst_stride_y,
-               int width, int height);
+int I422Copy(const uint8* src_y, int src_stride_y,
+             const uint8* src_u, int src_stride_u,
+             const uint8* src_v, int src_stride_v,
+             uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int width, int height);
+
+// Copy I444 to I444.
+#define I444ToI444 I444Copy
+LIBYUV_API
+int I444Copy(const uint8* src_y, int src_stride_y,
+             const uint8* src_u, int src_stride_u,
+             const uint8* src_v, int src_stride_v,
+             uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int width, int height);
 
 // Convert YUY2 to I422.
 LIBYUV_API
