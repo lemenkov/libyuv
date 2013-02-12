@@ -3008,8 +3008,10 @@ static void ScalePlaneBox(int src_width, int src_height,
   assert(dst_height > 0);
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
-  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+//  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+//  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int x = 0;
+  int y = 0;
   int maxy = (src_height << 16);
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxInputWidth) ||
       dst_height * 2 > src_height) {

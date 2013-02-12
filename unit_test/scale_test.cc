@@ -304,8 +304,7 @@ TEST_F(libyuvTest, ScaleDownBy8_Bilinear) {
   EXPECT_LE(max_diff, 1);
 }
 
-// TODO(fbarchard): Fix bug.  Re-enable.
-TEST_F(libyuvTest, DISABLED_ScaleDownBy8_Box) {
+TEST_F(libyuvTest, ScaleDownBy8_Box) {
   const int src_width = benchmark_width_;
   const int src_height = benchmark_height_;
   const int dst_width = src_width / 8;
@@ -344,7 +343,7 @@ TEST_F(libyuvTest, ScaleDownBy16_Bilinear) {
   EXPECT_LE(max_diff, 1);
 }
 
-TEST_F(libyuvTest, DISABLED_ScaleDownBy16_Box) {
+TEST_F(libyuvTest, ScaleDownBy16_Box) {
   const int src_width = benchmark_width_;
   const int src_height = benchmark_height_;
   const int dst_width = src_width / 16;
