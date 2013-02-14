@@ -47,9 +47,9 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     paddd      xmm0, xmm2
     jg         wloop
 
-    pshufd     xmm1, xmm0, 0EEh
+    pshufd     xmm1, xmm0, 0xee
     paddd      xmm0, xmm1
-    pshufd     xmm1, xmm0, 01h
+    pshufd     xmm1, xmm0, 0x01
     paddd      xmm0, xmm1
     movd       eax, xmm0
     ret
@@ -67,7 +67,7 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
     mov        edx, [esp + 8]    // src_b
     mov        ecx, [esp + 12]   // count
     vpxor      ymm0, ymm0, ymm0  // sum
-    vpxor      ymm5, ymm5, ymm5  // for unpack.
+    vpxor      ymm5, ymm5, ymm5  // constant 0 for unpck
     sub        edx, eax
 
     align      16
@@ -92,9 +92,8 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
     vpshufd    ymm1, ymm0, 0x01  // 1 + 0 both lanes.
     vpaddd     ymm0, ymm0, ymm1
     vpermq     ymm1, ymm0, 0x02  // high + low lane.
-    vpaddd     ymm4, ymm0, ymm1
-    vzeroupper                   // TODO(fbarchard): Remove.
-    movd       eax, xmm4
+    vpaddd     ymm0, ymm0, ymm1
+    vmovd      eax, xmm0
     ret
   }
 }
@@ -173,14 +172,14 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     sub        ecx, 16
     paddd      xmm1, xmm3
 
-    pshufd     xmm2, xmm1, 14    // upper 2 dwords
+    pshufd     xmm2, xmm1, 0x0e  // upper 2 dwords
     paddd      xmm1, xmm2
-    pshufd     xmm2, xmm1, 1
+    pshufd     xmm2, xmm1, 0x01
     paddd      xmm1, xmm2
     paddd      xmm0, xmm1
     jg         wloop
 
-    movd       eax, xmm0        // return hash
+    movd       eax, xmm0         // return hash
     ret
   }
 }
