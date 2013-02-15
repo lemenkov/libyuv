@@ -1271,9 +1271,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     pmaddubsw  xmm3, xmm7
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm2, 8
-    packuswb   xmm0, xmm2
+    psraw      xmm0, 8
+    psraw      xmm2, 8
+    packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx,  16
     movdqa     [edx], xmm0
@@ -1288,9 +1288,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     pmaddubsw  xmm3, xmm6
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm2, 8
-    packuswb   xmm0, xmm2
+    psraw      xmm0, 8
+    psraw      xmm2, 8
+    packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     lea        eax,  [eax + 64]
     movdqa     [edx + edi], xmm0
@@ -1329,9 +1329,9 @@ void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb0,
     pmaddubsw  xmm3, xmm7
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm2, 8
-    packuswb   xmm0, xmm2
+    psraw      xmm0, 8
+    psraw      xmm2, 8
+    packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx,  16
     movdqu     [edx], xmm0
@@ -1346,9 +1346,9 @@ void ARGBToUV444Row_Unaligned_SSSE3(const uint8* src_argb0,
     pmaddubsw  xmm3, xmm6
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
-    psrlw      xmm0, 8
-    psrlw      xmm2, 8
-    packuswb   xmm0, xmm2
+    psraw      xmm0, 8
+    psraw      xmm2, 8
+    packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     lea        eax,  [eax + 64]
     movdqu     [edx + edi], xmm0
