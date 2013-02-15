@@ -49,9 +49,15 @@ static const lvec8 kARGBToV_AVX = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0
 };
 
-// Unshuffle for vphaddw + vpackuswb vpermd.
+// vpermd for vphaddw + vpackuswb vpermd.
 static const lvec32 kShufARGBToY_AVX = {
   0, 4, 1, 5, 2, 6, 3, 7
+};
+
+// vpshufb for vphaddw + vpackuswb packed to shorts.
+static const lvec8 kShufARGBToUV_AVX = {
+  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
+  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
 };
 
 // Constants for BGRA.
@@ -785,11 +791,11 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     vpmaddubsw ymm2, ymm2, ymm4
     vpmaddubsw ymm3, ymm3, ymm4
     lea        eax, [eax + 128]
-    vphaddw    ymm0, ymm0, ymm1
+    vphaddw    ymm0, ymm0, ymm1  // mutates.
     vphaddw    ymm2, ymm2, ymm3
     vpsrlw     ymm0, ymm0, 7
     vpsrlw     ymm2, ymm2, 7
-    vpackuswb  ymm0, ymm0, ymm2
+    vpackuswb  ymm0, ymm0, ymm2  // mutates.
     vpermd     ymm0, ymm6, ymm0  // For vphaddw + vpackuswb mutation.
     vpaddb     ymm0, ymm0, ymm5
     sub        ecx, 32
@@ -1125,40 +1131,37 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     align      16
  convertloop:
     /* step 1 - subsample 32x2 argb pixels to 16x1 */
-    vmovdqu     ymm0, [eax]
-    vmovdqu     ymm1, [eax + 32]
-    vmovdqu     ymm2, [eax + 64]
-    vmovdqu     ymm3, [eax + 96]
-    vpavgb      ymm0, ymm0, [eax + esi]
-    vpavgb      ymm1, ymm1, [eax + esi + 32]
-    vpavgb      ymm2, ymm2, [eax + esi + 64]
-    vpavgb      ymm3, ymm3, [eax + esi + 96]
-    lea         eax,  [eax + 128]
-    vshufps     ymm4, ymm0, ymm1, 0x88
-    vshufps     ymm0, ymm0, ymm1, 0xdd
-    vpavgb      ymm0, ymm0, ymm4
-    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
-    vshufps     ymm4, ymm2, ymm3, 0x88
-    vshufps     ymm2, ymm2, ymm3, 0xdd
-    vpavgb      ymm2, ymm2, ymm4
-    vpermq      ymm2, ymm2, 0xd8  // TODO(fbarchard): Remove.
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    vmovdqu    ymm2, [eax + 64]
+    vmovdqu    ymm3, [eax + 96]
+    vpavgb     ymm0, ymm0, [eax + esi]
+    vpavgb     ymm1, ymm1, [eax + esi + 32]
+    vpavgb     ymm2, ymm2, [eax + esi + 64]
+    vpavgb     ymm3, ymm3, [eax + esi + 96]
+    lea        eax,  [eax + 128]
+    vshufps    ymm4, ymm0, ymm1, 0x88
+    vshufps    ymm0, ymm0, ymm1, 0xdd
+    vpavgb     ymm0, ymm0, ymm4  // mutated by vshufps
+    vshufps    ymm4, ymm2, ymm3, 0x88
+    vshufps    ymm2, ymm2, ymm3, 0xdd
+    vpavgb     ymm2, ymm2, ymm4  // mutated by vshufps
 
     // step 2 - convert to U and V
     // from here down is very similar to Y code except
     // instead of 32 different pixels, its 16 pixels of U and 16 of V
-    vpmaddubsw  ymm1, ymm0, ymm7  // U
-    vpmaddubsw  ymm3, ymm2, ymm7
-    vpmaddubsw  ymm0, ymm0, ymm6  // V
-    vpmaddubsw  ymm2, ymm2, ymm6
-    vphaddw     ymm1, ymm1, ymm3
-    vpermq      ymm1, ymm1, 0xd8  // TODO(fbarchard): Remove.
-    vphaddw     ymm0, ymm0, ymm2
-    vpermq      ymm0, ymm0, 0xd8  // TODO(fbarchard): Remove.
-    vpsraw      ymm1, ymm1, 8
-    vpsraw      ymm0, ymm0, 8
-    vpacksswb   ymm0, ymm1, ymm0
-    vpermq      ymm0, ymm0, 0xd8
-    vpaddb      ymm0, ymm0, ymm5            // -> unsigned
+    vpmaddubsw ymm1, ymm0, ymm7  // U
+    vpmaddubsw ymm3, ymm2, ymm7
+    vpmaddubsw ymm0, ymm0, ymm6  // V
+    vpmaddubsw ymm2, ymm2, ymm6
+    vphaddw    ymm1, ymm1, ymm3  // mutates
+    vphaddw    ymm0, ymm0, ymm2
+    vpsraw     ymm1, ymm1, 8
+    vpsraw     ymm0, ymm0, 8
+    vpacksswb  ymm0, ymm1, ymm0  // mutates
+    vpermq     ymm0, ymm0, 0xd8  // For vpacksswb
+    vpshufb    ymm0, ymm0, kShufARGBToUV_AVX  // For vshufps + vphaddw
+    vpaddb     ymm0, ymm0, ymm5  // -> unsigned
 
     // step 3 - store 16 U and 16 V values
     sub         ecx, 32
