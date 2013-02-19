@@ -1032,6 +1032,13 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBATTENUATEROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
+    bool clear = true;
+    ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+  }
+#endif
 #if defined(HAS_ARGBATTENUATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBAttenuateRow = ARGBAttenuateRow_Any_NEON;
@@ -1046,6 +1053,13 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBATTENUATEROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
+
   return 0;
 }
 

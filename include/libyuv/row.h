@@ -137,6 +137,9 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_AVX2
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
+
+// Effects
+#define HAS_ARGBATTENUATEROW_AVX2
 #endif
 #endif
 
@@ -1308,6 +1311,7 @@ void I422ToUYVYRow_Any_NEON(const uint8* src_y,
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
                                int width);

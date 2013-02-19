@@ -4364,6 +4364,49 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBATTENUATEROW_SSSE3
 
+#ifdef HAS_ARGBATTENUATEROW_AVX2
+// Shuffle table duplicating alpha.
+static const ulvec8 kShuffleAlpha_AVX2 = {
+  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
+  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u,
+  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
+  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u,
+};
+__declspec(naked) __declspec(align(16))
+void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb0
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    sub        edx, eax
+    vmovdqa    ymm4, kShuffleAlpha_AVX2
+    vpcmpeqb   ymm5, ymm5, ymm5 // generate mask 0xff000000
+    vpslld     ymm5, ymm5, 24
+
+    align      16
+ convertloop:
+    vmovdqu    ymm6, [eax]       // read 8 pixels.
+    vpunpcklbw ymm0, ymm6, ymm6  // low 4 pixels. mutated.
+    vpunpckhbw ymm1, ymm6, ymm6  // high 4 pixels. mutated.
+    vpshufb    ymm2, ymm0, ymm4  // low 4 alphas
+    vpshufb    ymm3, ymm1, ymm4  // high 4 alphas
+    vpmulhuw   ymm0, ymm0, ymm2  // rgb * a
+    vpmulhuw   ymm1, ymm1, ymm3  // rgb * a
+    vpand      ymm6, ymm6, ymm5  // isolate alpha
+    vpsrlw     ymm0, ymm0, 8
+    vpsrlw     ymm1, ymm1, 8
+    vpackuswb  ymm0, ymm0, ymm1  // unmutated.
+    vpor       ymm0, ymm0, ymm6  // copy original alpha
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    ret
+  }
+}
+#endif  // HAS_ARGBATTENUATEROW_AVX2
+
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
 // Aligned to 16 bytes.
