@@ -145,11 +145,9 @@ LIBYUV_API
 uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
                                   const uint8* src_b, int stride_b,
                                   int width, int height) {
-
   if (stride_a == width && stride_b == width) {
     return ComputeSumSquareError(src_a, src_b, width * height);
   }
-
   uint32 (*SumSquareError)(const uint8* src_a, const uint8* src_b, int count) =
       SumSquareError_C;
 #if defined(HAS_SUMSQUAREERROR_NEON)

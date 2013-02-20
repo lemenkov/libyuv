@@ -1085,6 +1085,14 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     ARGBUnattenuateRow = ARGBUnattenuateRow_SSE2;
   }
 #endif
+#if defined(HAS_ARGBUNATTENUATEROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
+    bool clear = true;
+    ARGBUnattenuateRow = ARGBUnattenuateRow_AVX2;
+  }
+#endif
+// TODO(fbarchard): Neon version.
 
   for (int y = 0; y < height; ++y) {
     ARGBUnattenuateRow(src_argb, dst_argb, width);

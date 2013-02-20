@@ -44,10 +44,6 @@ void ScaleARGBFilterRows_NEON(uint8* dst_ptr,
                               int dst_width, int source_y_fraction);
 #endif
 
-/**
- * SSE2 downscalers with bilinear interpolation.
- */
-
 #if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
 
 #define HAS_SCALEARGBROWDOWN2_SSE2
@@ -880,13 +876,10 @@ void ScaleARGBFilterRows_C(uint8* dst_argb, const uint8* src_argb,
   dst_argb[3] = dst_argb[-1];
 }
 
-/**
- * ScaleARGB ARGB, 1/2
- *
- * This is an optimized version for scaling down a ARGB to 1/2 of
- * its original size.
- *
- */
+// ScaleARGB ARGB, 1/2
+// This is an optimized version for scaling down a ARGB to 1/2 of
+// its original size.
+
 static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
@@ -918,13 +911,10 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   }
 }
 
-/**
- * ScaleARGB ARGB Even
- *
- * This is an optimized version for scaling down a ARGB to even
- * multiple of its original size.
- *
- */
+// ScaleARGB ARGB Even
+// This is an optimized version for scaling down a ARGB to even
+// multiple of its original size.
+
 static void ScaleARGBDownEven(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
@@ -959,10 +949,9 @@ static void ScaleARGBDownEven(int src_width, int src_height,
     dst_argb += dst_stride;
   }
 }
-/**
- * ScaleARGB ARGB to/from any dimensions, with bilinear
- * interpolation.
- */
+
+// ScaleARGB ARGB to/from any dimensions, with bilinear
+// interpolation.
 
 // Maximum width handled by 2 pass Bilinear.
 static const int kMaxInputWidth = 2560;
@@ -1033,12 +1022,11 @@ static void ScaleARGBCols(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
-/**
- * ScaleARGB ARGB to/from any dimensions, without interpolation.
- * Fixed point math is used for performance: The upper 16 bits
- * of x and dx is the integer part of the source position and
- * the lower 16 bits are the fixed decimal part.
- */
+
+// ScaleARGB ARGB to/from any dimensions, without interpolation.
+// Fixed point math is used for performance: The upper 16 bits
+// of x and dx is the integer part of the source position and
+// the lower 16 bits are the fixed decimal part.
 
 static void ScaleARGBSimple(int src_width, int src_height,
                             int dst_width, int dst_height,
@@ -1056,9 +1044,8 @@ static void ScaleARGBSimple(int src_width, int src_height,
   }
 }
 
-/**
- * ScaleARGB ARGB to/from any dimensions.
- */
+// ScaleARGB ARGB to/from any dimensions.
+
 static void ScaleARGBAnySize(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,

@@ -4462,6 +4462,53 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 }
 #endif  // HAS_ARGBUNATTENUATEROW_SSE2
 
+#ifdef HAS_ARGBUNATTENUATEROW_AVX2
+// Shuffle table duplicating alpha.
+static const ulvec8 kUnattenShuffleAlpha_AVX2 = {
+  0u, 1u, 0u, 1u, 0u, 1u, 128u, 128u,
+  8u, 9u, 8u, 9u, 8u, 9u, 128u, 128u,
+  0u, 1u, 0u, 1u, 0u, 1u, 128u, 128u,
+  8u, 9u, 8u, 9u, 8u, 9u, 128u, 128u,
+};
+__declspec(naked) __declspec(align(16))
+void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
+                             int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb0
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    sub        edx, eax
+    vmovdqa    ymm4, kUnattenShuffleAlpha_AVX2
+    vpcmpeqb   ymm5, ymm5, ymm5  // generate mask 0xff000000
+    vpslld     ymm5, ymm5, 24
+
+    align      16
+ convertloop:
+    vmovdqu    ymm6, [eax]       // read 8 pixels.
+    vpcmpeqb   ymm7, ymm7, ymm7  // generate mask 0xffffffff for gather.
+    vpsrld     ymm2, ymm6, 24    // alpha in low 8 bits.
+    vpunpcklbw ymm0, ymm6, ymm6  // low 4 pixels. mutated.
+    vpunpckhbw ymm1, ymm6, ymm6  // high 4 pixels. mutated.
+    vpgatherdd ymm3, [ymm2 * 4 + fixed_invtbl8], ymm7  // ymm7 cleared.
+    vpunpcklwd ymm2, ymm3, ymm7  // low 4 inverted alphas. mutated.
+    vpunpckhwd ymm3, ymm3, ymm7  // high 4 inverted alphas. mutated.
+    vpshufb    ymm2, ymm2, ymm4  // replicate low 4 alphas
+    vpshufb    ymm3, ymm3, ymm4  // replicate high 4 alphas
+    vpmulhuw   ymm0, ymm0, ymm2  // rgb * ia
+    vpmulhuw   ymm1, ymm1, ymm3  // rgb * ia
+    vpand      ymm6, ymm6, ymm5  // isolate alpha
+    vpackuswb  ymm0, ymm0, ymm1  // unmutated.
+    vpor       ymm0, ymm0, ymm6  // copy original alpha
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    ret
+  }
+}
+#endif  // HAS_ARGBATTENUATEROW_AVX2
+
 #ifdef HAS_ARGBGRAYROW_SSSE3
 // Constant for ARGB color to gray scale: 0.11 * B + 0.59 * G + 0.30 * R
 static const vec8 kARGBToGray = {

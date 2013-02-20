@@ -140,6 +140,7 @@ extern "C" {
 
 // Effects
 #define HAS_ARGBATTENUATEROW_AVX2
+#define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 #endif
 
@@ -1324,6 +1325,7 @@ void ARGBAttenuateRow_Any_NEON(const uint8* src_argb, uint8* dst_argb,
 extern uint32 fixed_invtbl8[256];
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
 
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);

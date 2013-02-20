@@ -42,13 +42,7 @@ void SetUseReferenceImpl(bool use) {
 }
 
 // ScaleRowDown2Int also used by planar functions
-
-/**
- * NEON downscalers with interpolation.
- *
- * Provided by Fritz Koenig
- *
- */
+// NEON downscalers with interpolation.
 
 #if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
@@ -98,13 +92,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
                           const uint8* src_ptr, ptrdiff_t src_stride,
                           int dst_width, int source_y_fraction);
 
-/**
- * SSE2 downscalers with interpolation.
- *
- * Provided by Frank Barchard (fbarchard@google.com)
- *
- */
-
+// SSE2 downscalers with interpolation.
 // Constants for SSSE3 code
 #elif !defined(YUV_DISABLE_ASM) && \
     (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
@@ -2630,13 +2618,10 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-/**
- * Scale plane, 1/2
- *
- * This is an optimized version for scaling down a plane to 1/2 of
- * its original size.
- *
- */
+// Scale plane, 1/2
+// This is an optimized version for scaling down a plane to 1/2 of
+// its original size.
+
 static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
@@ -2676,12 +2661,10 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
   }
 }
 
-/**
- * Scale plane, 1/4
- *
- * This is an optimized version for scaling down a plane to 1/4 of
- * its original size.
- */
+// Scale plane, 1/4
+// This is an optimized version for scaling down a plane to 1/4 of
+// its original size.
+
 static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
@@ -2717,13 +2700,10 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
   }
 }
 
-/**
- * Scale plane, 1/8
- *
- * This is an optimized version for scaling down a plane to 1/8
- * of its original size.
- *
- */
+// Scale plane, 1/8
+// This is an optimized version for scaling down a plane to 1/8
+// of its original size.
+
 static void ScalePlaneDown8(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
@@ -2748,12 +2728,8 @@ static void ScalePlaneDown8(int /* src_width */, int /* src_height */,
   }
 }
 
-/**
- * Scale plane down, 3/4
- *
- * Provided by Frank Barchard (fbarchard@google.com)
- *
- */
+// Scale plane down, 3/4
+
 static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
@@ -2839,23 +2815,22 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
   }
 }
 
-/**
- * Scale plane, 3/8
- *
- * This is an optimized version for scaling down a plane to 3/8
- * of its original size.
- *
- * Uses box filter arranges like this
- * aaabbbcc -> abc
- * aaabbbcc    def
- * aaabbbcc    ghi
- * dddeeeff
- * dddeeeff
- * dddeeeff
- * ggghhhii
- * ggghhhii
- * Boxes are 3x3, 2x3, 3x2 and 2x2
- */
+
+// Scale plane, 3/8
+// This is an optimized version for scaling down a plane to 3/8
+// of its original size.
+//
+// Uses box filter arranges like this
+// aaabbbcc -> abc
+// aaabbbcc    def
+// aaabbbcc    ghi
+// dddeeeff
+// dddeeeff
+// dddeeeff
+// ggghhhii
+// ggghhhii
+// Boxes are 3x3, 2x3, 3x2 and 2x2
+
 static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
@@ -2991,15 +2966,14 @@ static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
   }
 }
 
-/**
- * Scale plane down to any dimensions, with interpolation.
- * (boxfilter).
- *
- * Same method as SimpleScale, which is fixed point, outputting
- * one pixel of destination using fixed point (16.16) to step
- * through source, sampling a box of pixel with simple
- * averaging.
- */
+// Scale plane down to any dimensions, with interpolation.
+// (boxfilter).
+//
+// Same method as SimpleScale, which is fixed point, outputting
+// one pixel of destination using fixed point (16.16) to step
+// through source, sampling a box of pixel with simple
+// averaging.
+
 static void ScalePlaneBox(int src_width, int src_height,
                           int dst_width, int dst_height,
                           int src_stride, int dst_stride,
@@ -3008,8 +2982,6 @@ static void ScalePlaneBox(int src_width, int src_height,
   assert(dst_height > 0);
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
-//  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-//  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
   int x = 0;
   int y = 0;
   int maxy = (src_height << 16);
@@ -3063,9 +3035,8 @@ static void ScalePlaneBox(int src_width, int src_height,
   }
 }
 
-/**
- * Scale plane to/from any dimensions, with interpolation.
- */
+// Scale plane to/from any dimensions, with interpolation.
+
 static void ScalePlaneBilinearSimple(int src_width, int src_height,
                                      int dst_width, int dst_height,
                                      int src_stride, int dst_stride,
@@ -3104,10 +3075,9 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
   }
 }
 
-/**
- * Scale plane to/from any dimensions, with bilinear
- * interpolation.
- */
+
+// Scale plane to/from any dimensions, with bilinear interpolation.
+
 void ScalePlaneBilinear(int src_width, int src_height,
                         int dst_width, int dst_height,
                         int src_stride, int dst_stride,
@@ -3170,12 +3140,11 @@ void ScalePlaneBilinear(int src_width, int src_height,
   }
 }
 
-/**
- * Scale plane to/from any dimensions, without interpolation.
- * Fixed point math is used for performance: The upper 16 bits
- * of x and dx is the integer part of the source position and
- * the lower 16 bits are the fixed decimal part.
- */
+// Scale plane to/from any dimensions, without interpolation.
+// Fixed point math is used for performance: The upper 16 bits
+// of x and dx is the integer part of the source position and
+// the lower 16 bits are the fixed decimal part.
+
 static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
@@ -3197,9 +3166,8 @@ static void ScalePlaneSimple(int src_width, int src_height,
   }
 }
 
-/**
- * Scale plane to/from any dimensions.
- */
+// Scale plane to/from any dimensions.
+
 static void ScalePlaneAnySize(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
@@ -3215,14 +3183,12 @@ static void ScalePlaneAnySize(int src_width, int src_height,
   }
 }
 
-/**
- * Scale plane down, any size
- *
- * This is an optimized version for scaling down a plane to any size.
- * The current implementation is ~10 times faster compared to the
- * reference implementation for e.g. XGA->LowResPAL
- *
- */
+// Scale plane down, any size
+//
+// This is an optimized version for scaling down a plane to any size.
+// The current implementation is ~10 times faster compared to the
+// reference implementation for e.g. XGA->LowResPAL
+
 static void ScalePlaneDown(int src_width, int src_height,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,

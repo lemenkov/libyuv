@@ -167,6 +167,72 @@ TEST_F(libyuvTest, ARGBAttenuate_Opt) {
   EXPECT_LE(max_diff, 2);
 }
 
+static int TestUnattenuateI(int width, int height, int benchmark_iterations,
+                            int invert, int off) {
+  const int kBpp = 4;
+  const int kStride = (width * kBpp + 15) & ~15;
+  align_buffer_64(src_argb, kStride * height + off);
+  align_buffer_64(dst_argb_c, kStride * height);
+  align_buffer_64(dst_argb_opt, kStride * height);
+  srandom(time(NULL));
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb[i + off] = (random() & 0xff);
+  }
+  ARGBAttenuate(src_argb + off, kStride,
+                src_argb + off, kStride,
+                width, height);
+  memset(dst_argb_c, 0, kStride * height);
+  memset(dst_argb_opt, 0, kStride * height);
+
+  MaskCpuFlags(0);
+  ARGBUnattenuate(src_argb + off, kStride,
+                  dst_argb_c, kStride,
+                  width, invert * height);
+  MaskCpuFlags(-1);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBUnattenuate(src_argb + off, kStride,
+                    dst_argb_opt, kStride,
+                    width, invert * height);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i]) -
+            static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_64(src_argb)
+  free_aligned_buffer_64(dst_argb_c)
+  free_aligned_buffer_64(dst_argb_opt)
+  return max_diff;
+}
+
+TEST_F(libyuvTest, ARGBUnattenuate_Any) {
+  int max_diff = TestUnattenuateI(benchmark_width_ - 1, benchmark_height_,
+                                  benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 2);
+}
+
+TEST_F(libyuvTest, ARGBUnattenuate_Unaligned) {
+  int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, +1, 1);
+  EXPECT_LE(max_diff, 2);
+}
+
+TEST_F(libyuvTest, ARGBUnattenuate_Invert) {
+  int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, -1, 0);
+  EXPECT_LE(max_diff, 2);
+}
+
+TEST_F(libyuvTest, ARGBUnattenuate_Opt) {
+  int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, +1, 0);
+  EXPECT_LE(max_diff, 2);
+}
+
 TEST_F(libyuvTest, TestARGBComputeCumulativeSum) {
   SIMD_ALIGNED(uint8 orig_pixels[16][16][4]);
   SIMD_ALIGNED(int32 added_pixels[16][16][4]);

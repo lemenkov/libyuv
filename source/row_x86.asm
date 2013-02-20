@@ -42,7 +42,7 @@ cglobal %1ToYRow%3, 3, 3, 3, src_yuy2, dst_y, pix
 %endif
     packuswb   m0, m0, m1
 %if cpuflag(AVX2)
-    vpermq     m0, m0, 0xd8 
+    vpermq     m0, m0, 0xd8
 %endif
     sub        pixd, mmsize
     mov%2      [dst_yq], m0
@@ -86,8 +86,8 @@ cglobal SplitUVRow%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
     packuswb   m0, m0, m1
     packuswb   m2, m2, m3
 %if cpuflag(AVX2)
-    vpermq     m0, m0, 0xd8 
-    vpermq     m2, m2, 0xd8 
+    vpermq     m0, m0, 0xd8
+    vpermq     m2, m2, 0xd8
 %endif
     mov%1      [dst_uq], m0
     mov%1      [dst_uq + dst_vq], m2
