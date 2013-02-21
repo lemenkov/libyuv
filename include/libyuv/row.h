@@ -1318,6 +1318,8 @@ void ARGBAttenuateRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
                                int width);
 void ARGBAttenuateRow_Any_SSSE3(const uint8* src_argb, uint8* dst_argb,
                                 int width);
+void ARGBAttenuateRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,
+                               int width);
 void ARGBAttenuateRow_Any_NEON(const uint8* src_argb, uint8* dst_argb,
                                int width);
 
@@ -1326,6 +1328,10 @@ extern uint32 fixed_invtbl8[256];
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBUnattenuateRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
+                                 int width);
+void ARGBUnattenuateRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,
+                                 int width);
 
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);

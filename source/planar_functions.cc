@@ -1034,9 +1034,12 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
 #endif
 #if defined(HAS_ARGBATTENUATEROW_AVX2)
   bool clear = false;
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
-    bool clear = true;
-    ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    clear = true;
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_NEON)
@@ -1077,19 +1080,25 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
   void (*ARGBUnattenuateRow)(const uint8* src_argb, uint8* dst_argb,
-                             int width) = ARGBUnattenuateRow_C;
+                           int width) = ARGBUnattenuateRow_C;
 #if defined(HAS_ARGBUNATTENUATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ARGBUnattenuateRow = ARGBUnattenuateRow_SSE2;
+    ARGBUnattenuateRow = ARGBUnattenuateRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBUnattenuateRow = ARGBUnattenuateRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_ARGBUNATTENUATEROW_AVX2)
   bool clear = false;
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
-    bool clear = true;
-    ARGBUnattenuateRow = ARGBUnattenuateRow_AVX2;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    clear = true;
+    ARGBUnattenuateRow = ARGBUnattenuateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBUnattenuateRow = ARGBUnattenuateRow_AVX2;
+    }
   }
 #endif
 // TODO(fbarchard): Neon version.
@@ -1099,6 +1108,13 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBUNATTENUATEROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
+
   return 0;
 }
 

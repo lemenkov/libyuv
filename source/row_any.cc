@@ -250,6 +250,18 @@ YANY(ARGBAttenuateRow_Any_SSSE3, ARGBAttenuateRow_SSSE3, ARGBAttenuateRow_C,
 YANY(ARGBAttenuateRow_Any_SSE2, ARGBAttenuateRow_SSE2, ARGBAttenuateRow_C,
      4, 4, 3)
 #endif
+#ifdef HAS_ARGBUNATTENUATEROW_SSE2
+YANY(ARGBUnattenuateRow_Any_SSE2, ARGBUnattenuateRow_SSE2, ARGBUnattenuateRow_C,
+     4, 4, 3)
+#endif
+#ifdef HAS_ARGBATTENUATEROW_AVX2
+YANY(ARGBAttenuateRow_Any_AVX2, ARGBAttenuateRow_AVX2, ARGBAttenuateRow_C,
+     4, 4, 7)
+#endif
+#ifdef HAS_ARGBUNATTENUATEROW_AVX2
+YANY(ARGBUnattenuateRow_Any_AVX2, ARGBUnattenuateRow_AVX2, ARGBUnattenuateRow_C,
+     4, 4, 7)
+#endif
 #ifdef HAS_ARGBATTENUATEROW_NEON
 YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
      4, 4, 7)

@@ -59,9 +59,9 @@ TEST_F(libyuvTest, TestAttenuate) {
   EXPECT_EQ(255u, unatten_pixels[0][1]);
   EXPECT_EQ(254u, unatten_pixels[0][2]);
   EXPECT_EQ(128u, unatten_pixels[0][3]);
-  EXPECT_EQ(16u, unatten_pixels[1][0]);
-  EXPECT_EQ(64u, unatten_pixels[1][1]);
-  EXPECT_EQ(192u, unatten_pixels[1][2]);
+  EXPECT_EQ(0u, unatten_pixels[1][0]);
+  EXPECT_EQ(0u, unatten_pixels[1][1]);
+  EXPECT_EQ(0u, unatten_pixels[1][2]);
   EXPECT_EQ(0u, unatten_pixels[1][3]);
   EXPECT_EQ(16u, unatten_pixels[2][0]);
   EXPECT_EQ(64u, unatten_pixels[2][1]);
