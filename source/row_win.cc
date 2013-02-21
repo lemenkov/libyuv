@@ -4431,8 +4431,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     punpcklbw  xmm0, xmm0       // first 2
     movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
     movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
-    pshuflw    xmm2, xmm2,0C0h  // first 4 inv_alpha words
-    pshuflw    xmm3, xmm3,0C0h  // next 4 inv_alpha words
+    pshuflw    xmm2, xmm2,040h  // first 4 inv_alpha words.  1, a, a, a
+    pshuflw    xmm3, xmm3,040h  // next 4 inv_alpha words
     movlhps    xmm2, xmm3
     pmulhuw    xmm0, xmm2       // rgb * a
 
@@ -4442,15 +4442,12 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     punpckhbw  xmm1, xmm1       // next 2
     movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
     movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
-    pshuflw    xmm2, xmm2,0C0h  // first 4 inv_alpha words
-    pshuflw    xmm3, xmm3,0C0h  // next 4 inv_alpha words
+    pshuflw    xmm2, xmm2,040h  // first 4 inv_alpha words
+    pshuflw    xmm3, xmm3,040h  // next 4 inv_alpha words
     movlhps    xmm2, xmm3
     pmulhuw    xmm1, xmm2       // rgb * a
 
-    movdqa     xmm2, [eax]      // alphas
-    pand       xmm2, xmm4
     packuswb   xmm0, xmm1
-    por        xmm0, xmm2
     sub        ecx, 4
     movdqa     [eax + edx], xmm0
     lea        eax, [eax + 16]
@@ -4465,10 +4462,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #ifdef HAS_ARGBUNATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
 static const ulvec8 kUnattenShuffleAlpha_AVX2 = {
-  0u, 1u, 0u, 1u, 0u, 1u, 128u, 128u,
-  8u, 9u, 8u, 9u, 8u, 9u, 128u, 128u,
-  0u, 1u, 0u, 1u, 0u, 1u, 128u, 128u,
-  8u, 9u, 8u, 9u, 8u, 9u, 128u, 128u,
+  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
+  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
 };
 __declspec(naked) __declspec(align(16))
 void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
@@ -4479,26 +4474,22 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
     vmovdqa    ymm4, kUnattenShuffleAlpha_AVX2
-    vpcmpeqb   ymm5, ymm5, ymm5  // generate mask 0xff000000
-    vpslld     ymm5, ymm5, 24
 
     align      16
  convertloop:
     vmovdqu    ymm6, [eax]       // read 8 pixels.
-    vpcmpeqb   ymm7, ymm7, ymm7  // generate mask 0xffffffff for gather.
+    vpcmpeqb   ymm5, ymm5, ymm5  // generate mask 0xffffffff for gather.
     vpsrld     ymm2, ymm6, 24    // alpha in low 8 bits.
     vpunpcklbw ymm0, ymm6, ymm6  // low 4 pixels. mutated.
     vpunpckhbw ymm1, ymm6, ymm6  // high 4 pixels. mutated.
-    vpgatherdd ymm3, [ymm2 * 4 + fixed_invtbl8], ymm7  // ymm7 cleared.
-    vpunpcklwd ymm2, ymm3, ymm7  // low 4 inverted alphas. mutated.
-    vpunpckhwd ymm3, ymm3, ymm7  // high 4 inverted alphas. mutated.
-    vpshufb    ymm2, ymm2, ymm4  // replicate low 4 alphas
+    vpgatherdd ymm3, [ymm2 * 4 + fixed_invtbl8], ymm5  // ymm5 cleared.  1, a
+    vpunpcklwd ymm2, ymm3, ymm3  // low 4 inverted alphas. mutated. 1, 1, a, a
+    vpunpckhwd ymm3, ymm3, ymm3  // high 4 inverted alphas. mutated.
+    vpshufb    ymm2, ymm2, ymm4  // replicate low 4 alphas. 1, a, a, a
     vpshufb    ymm3, ymm3, ymm4  // replicate high 4 alphas
     vpmulhuw   ymm0, ymm0, ymm2  // rgb * ia
     vpmulhuw   ymm1, ymm1, ymm3  // rgb * ia
-    vpand      ymm6, ymm6, ymm5  // isolate alpha
     vpackuswb  ymm0, ymm0, ymm1  // unmutated.
-    vpor       ymm0, ymm0, ymm6  // copy original alpha
     sub        ecx, 8
     vmovdqu    [eax + edx], ymm0
     lea        eax, [eax + 32]
