@@ -1127,6 +1127,31 @@ int ConvertFromI420(const uint8* y, int y_stride,
                    dst_sample_stride ? dst_sample_stride : width,
                    width, height);
       break;
+    case FOURCC_NV12: {
+      uint8* dst_uv = dst_sample + width * height;
+      r = I420ToNV12(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width,
+                     dst_uv,
+                     dst_sample_stride ? dst_sample_stride : width,
+                     width, height);
+      break;
+    }
+    case FOURCC_NV21: {
+      uint8* dst_vu = dst_sample + width * height;
+      r = I420ToNV21(y, y_stride,
+                     u, u_stride,
+                     v, v_stride,
+                     dst_sample,
+                     dst_sample_stride ? dst_sample_stride : width,
+                     dst_vu,
+                     dst_sample_stride ? dst_sample_stride : width,
+                     width, height);
+      break;
+    }
+    // TODO(fbarchard): Add M420 and Q420.
     // Triplanar formats
     // TODO(fbarchard): halfstride instead of halfwidth
     case FOURCC_I420:

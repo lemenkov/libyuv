@@ -1866,6 +1866,30 @@ int ConvertToI420(const uint8* sample,
                      v, v_stride,
                      dst_width, inv_dst_height);
       break;
+    case FOURCC_RGBP:
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      r = RGB565ToI420(src, src_width * 2,
+                       y, y_stride,
+                       u, u_stride,
+                       v, v_stride,
+                       dst_width, inv_dst_height);
+      break;
+    case FOURCC_RGBO:
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      r = ARGB1555ToI420(src, src_width * 2,
+                         y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_width, inv_dst_height);
+      break;
+    case FOURCC_R444:
+      src = sample + (src_width * crop_y + crop_x) * 2;
+      r = ARGB4444ToI420(src, src_width * 2,
+                         y, y_stride,
+                         u, u_stride,
+                         v, v_stride,
+                         dst_width, inv_dst_height);
+      break;
     case FOURCC_24BG:
       src = sample + (src_width * crop_y + crop_x) * 3;
       r = RGB24ToI420(src, src_width * 3,
@@ -1914,30 +1938,6 @@ int ConvertToI420(const uint8* sample,
                      v, v_stride,
                      dst_width, inv_dst_height);
       break;
-    case FOURCC_RGBP:
-      src = sample + (src_width * crop_y + crop_x) * 2;
-      r = RGB565ToI420(src, src_width * 2,
-                       y, y_stride,
-                       u, u_stride,
-                       v, v_stride,
-                       dst_width, inv_dst_height);
-      break;
-    case FOURCC_RGBO:
-      src = sample + (src_width * crop_y + crop_x) * 2;
-      r = ARGB1555ToI420(src, src_width * 2,
-                         y, y_stride,
-                         u, u_stride,
-                         v, v_stride,
-                         dst_width, inv_dst_height);
-      break;
-    case FOURCC_R444:
-      src = sample + (src_width * crop_y + crop_x) * 2;
-      r = ARGB4444ToI420(src, src_width * 2,
-                         y, y_stride,
-                         u, u_stride,
-                         v, v_stride,
-                         dst_width, inv_dst_height);
-      break;
     // TODO(fbarchard): Support cropping Bayer by odd numbers
     // by adjusting fourcc.
     case FOURCC_BGGR:
@@ -1948,7 +1948,6 @@ int ConvertToI420(const uint8* sample,
                           v, v_stride,
                           dst_width, inv_dst_height);
       break;
-
     case FOURCC_GBRG:
       src = sample + (src_width * crop_y + crop_x);
       r = BayerGBRGToI420(src, src_width,
@@ -1957,7 +1956,6 @@ int ConvertToI420(const uint8* sample,
                           v, v_stride,
                           dst_width, inv_dst_height);
       break;
-
     case FOURCC_GRBG:
       src = sample + (src_width * crop_y + crop_x);
       r = BayerGRBGToI420(src, src_width,
@@ -1966,7 +1964,6 @@ int ConvertToI420(const uint8* sample,
                           v, v_stride,
                           dst_width, inv_dst_height);
       break;
-
     case FOURCC_RGGB:
       src = sample + (src_width * crop_y + crop_x);
       r = BayerRGGBToI420(src, src_width,
@@ -1975,7 +1972,6 @@ int ConvertToI420(const uint8* sample,
                           v, v_stride,
                           dst_width, inv_dst_height);
       break;
-
     case FOURCC_I400:
       src = sample + src_width * crop_y + crop_x;
       r = I400ToI420(src, src_width,
@@ -1984,7 +1980,6 @@ int ConvertToI420(const uint8* sample,
                      v, v_stride,
                      dst_width, inv_dst_height);
       break;
-
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
