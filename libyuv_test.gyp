@@ -19,6 +19,9 @@
       ],
       'defines': [
         'LIBYUV_SVNREVISION="<!(svnversion -n)"',
+        # 'LIBYUV_DISABLE_X86',
+        # 'LIBYUV_DISABLE_NEON',
+        # 'LIBYUV_DISABLE_MIPS',
         # 'LIBYUV_USING_SHARED_LIBRARY',
       ],
       'sources': [

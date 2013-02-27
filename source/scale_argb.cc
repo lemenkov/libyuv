@@ -25,7 +25,8 @@ extern "C" {
 
 // ARGB scaling uses bilinear or point, but not box filter.
 
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 #define HAS_SCALEARGBROWDOWN2_NEON
 #define HAS_SCALEARGBFILTERROWS_NEON
@@ -44,8 +45,7 @@ void ScaleARGBFilterRows_NEON(uint8* dst_ptr,
                               int dst_width, int source_y_fraction);
 #endif
 
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_SCALEARGBROWDOWN2_SSE2
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
@@ -396,8 +396,7 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
-
+#elif !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt

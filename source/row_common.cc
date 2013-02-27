@@ -832,7 +832,8 @@ static __inline void YuvPixel2(uint8 y, uint8 u, uint8 v,
   *r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
 }
 
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 // C mimic assembly.
 // TODO(fbarchard): Remove subsampling from Neon.
 void I444ToARGBRow_C(const uint8* src_y,
@@ -1734,7 +1735,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
     }
 }
 
-#if !defined(YUV_DISABLE_ASM)
+#if !defined(LIBYUV_DISABLE_X86)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.  5% slower.
 // TODO(fbarchard): Handle width > kMaxStride here instead of calling code.
 #if defined(__x86_64__) || defined(__i386__)
@@ -1833,7 +1834,7 @@ void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
 }
 
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-#endif  // !defined(YUV_DISABLE_ASM)
+#endif  // !defined(LIBYUV_DISABLE_X86)
 
 #ifdef __cplusplus
 }  // extern "C"

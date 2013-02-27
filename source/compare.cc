@@ -30,7 +30,7 @@ extern "C" {
 uint32 HashDjb2_C(const uint8* src, int count, uint32 seed);
 
 // This module is for Visual C x86
-#if !defined(YUV_DISABLE_ASM) && (defined(_M_IX86) || \
+#if !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || \
     (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__))))
 #define HAS_HASHDJB2_SSE41
 
@@ -68,17 +68,18 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 }
 
 uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count);
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SUMSQUAREERROR_NEON
 uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count);
 #endif
-#if !defined(YUV_DISABLE_ASM) && (defined(_M_IX86) || \
+#if !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || \
     defined(__x86_64__) || defined(__i386__))
 #define HAS_SUMSQUAREERROR_SSE2
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count);
 #endif
 // Visual C 2012 required for AVX2.
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86) && _MSC_VER >= 1700
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && _MSC_VER >= 1700
 #define HAS_SUMSQUAREERROR_AVX2
 uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count);
 #endif

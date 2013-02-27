@@ -372,7 +372,8 @@ void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
 #endif  // HAS_COPYROW_MIPS
 
 // MIPS DSPR2 functions
-#if !defined(YUV_DISABLE_ASM) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips_dsp) && \
+    (__mips_dsp_rev >= 2)
 void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                            int width) {
   __asm__ __volatile__ (

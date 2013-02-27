@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 // This module is for GCC x86 and x64
-#if !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
 // GCC 4.2 on OSX has link error when passing static or const to inline.
 // TODO(fbarchard): Use static const when gcc 4.2 support is dropped.

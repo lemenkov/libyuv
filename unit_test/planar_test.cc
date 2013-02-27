@@ -859,9 +859,6 @@ TEST_F(libyuvTest, ARGBBlend_Opt) {
 TEST_F(libyuvTest, TestAffine) {
   SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
   SIMD_ALIGNED(uint8 interpolate_pixels_C[256][4]);
-#if defined(HAS_ARGBAFFINEROW_SSE2)
-  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
-#endif
 
   for (int i = 0; i < 256; ++i) {
     for (int j = 0; j < 4; ++j) {
@@ -878,25 +875,17 @@ TEST_F(libyuvTest, TestAffine) {
   EXPECT_EQ(191u, interpolate_pixels_C[255][3]);
 
 #if defined(HAS_ARGBAFFINEROW_SSE2)
+  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
   ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                      uv_step, 256);
   EXPECT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 256 * 4));
-#endif
 
-#if defined(HAS_ARGBAFFINEROW_SSE2)
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
     for (int i = 0; i < benchmark_pixels_div256_; ++i) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                          uv_step, 256);
     }
-  } else {
-#endif
-    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-      ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
-                      uv_step, 256);
-    }
-#if defined(HAS_ARGBAFFINEROW_SSE2)
   }
 #endif
 }
@@ -1172,3 +1161,4 @@ TEST_F(libyuvTest, ARGBSubtract_Opt) {
 }
 
 }  // namespace libyuv
+

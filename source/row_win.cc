@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 // This module is for Visual C x86.
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 

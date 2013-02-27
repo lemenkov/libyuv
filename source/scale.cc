@@ -44,7 +44,8 @@ void SetUseReferenceImpl(bool use) {
 // ScaleRowDown2Int also used by planar functions
 // NEON downscalers with interpolation.
 
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
 // Note - not static due to reuse in convert for 444 to 420.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
@@ -94,9 +95,8 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
 
 // SSE2 downscalers with interpolation.
 // Constants for SSSE3 code
-#elif !defined(YUV_DISABLE_ASM) && \
+#elif !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
-
 // GCC 4.2 on OSX has link error when passing static or const to inline.
 // TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
 #ifdef __APPLE__
@@ -180,8 +180,7 @@ CONST uvec16 kScaleAb2 =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 #endif
 
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
-
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_SCALEROWDOWN2_SSE2
 // Reads 32 pixels, throws half away and writes 16 pixels.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
@@ -1258,7 +1257,7 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
     ret
   }
 }
-#elif !defined(YUV_DISABLE_ASM) && (defined(__x86_64__) || defined(__i386__))
+#elif !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
@@ -2243,7 +2242,8 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
 }
 #endif  // defined(__x86_64__) || defined(__i386__)
 
-#if !defined(YUV_DISABLE_ASM) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#if !defined(LIBYUV_DISABLE_MIPS) && \
+    defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_SCALEROWDOWN2_MIPS_DSPR2
 void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                               uint8* dst, int dst_width);

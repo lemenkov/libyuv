@@ -133,11 +133,12 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 
 // Blends 32x2 pixels to 16x1
 // source in scale.cc
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
 void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
-#elif !defined(YUV_DISABLE_ASM) && \
+#elif !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 
 void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,

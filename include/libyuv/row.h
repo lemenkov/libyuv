@@ -24,7 +24,7 @@ extern "C" {
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)
-#define YUV_DISABLE_ASM
+#define LIBYUV_DISABLE_X86
 #endif
 // True if compiling for SSSE3 as a requirement.
 #if defined(__SSSE3__) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 3))
@@ -32,7 +32,7 @@ extern "C" {
 #endif
 
 // The following are available on all x86 platforms:
-#if !defined(YUV_DISABLE_ASM) && \
+#if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Conversions.
 #define HAS_ABGRTOARGBROW_SSSE3
@@ -121,7 +121,7 @@ extern "C" {
 
 // The following are Windows only.
 // TODO(fbarchard): Port to gcc.
-#if !defined(YUV_DISABLE_ASM) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_COPYROW_AVX2
 // Visual C 2012 required for AVX2.
@@ -146,7 +146,7 @@ extern "C" {
 
 // The following are Yasm x86 only.
 // TODO(fbarchard): Port AVX2 to inline.
-#if !defined(YUV_DISABLE_ASM) && defined(HAVE_YASM)
+#if !defined(LIBYUV_DISABLE_X86) && defined(HAVE_YASM)
     (defined(_M_IX86) || defined(_M_X64) || \
     defined(__x86_64__) || defined(__i386__))
 #define HAS_SPLITUVROW_AVX2
@@ -160,7 +160,7 @@ extern "C" {
 #endif
 
 // The following are disabled when SSSE3 is available:
-#if !defined(YUV_DISABLE_ASM) && \
+#if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(LIBYUV_SSSE3_ONLY)
 #define HAS_ARGBATTENUATEROW_SSE2
@@ -169,7 +169,7 @@ extern "C" {
 #endif
 
 // The following are available on Neon platforms
-#if !defined(YUV_DISABLE_ASM) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_ABGRTOARGBROW_NEON
 #define HAS_ABGRTOUVROW_NEON
 #define HAS_ABGRTOYROW_NEON
@@ -257,7 +257,7 @@ extern "C" {
 #endif
 
 // The following are available on Mips platforms
-#if !defined(YUV_DISABLE_ASM) && defined(__mips__)
+#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__)
 #define HAS_COPYROW_MIPS
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_SPLITUVROW_MIPS_DSPR2

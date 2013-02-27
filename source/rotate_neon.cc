@@ -17,8 +17,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(YUV_DISABLE_ASM) && defined(__ARM_NEON__)
-
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
 static const uvec8 kVTbl4x4Transpose =
   { 0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
 

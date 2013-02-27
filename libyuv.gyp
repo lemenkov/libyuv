@@ -30,6 +30,9 @@
       ],
       'defines': [
         'HAVE_JPEG',
+        # 'LIBYUV_DISABLE_X86',
+        # 'LIBYUV_DISABLE_NEON',
+        # 'LIBYUV_DISABLE_MIPS',
         # 'LIBYUV_BUILDING_SHARED_LIBRARY',
       ],
       'include_dirs': [

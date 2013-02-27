@@ -324,7 +324,7 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)
-#define YUV_DISABLE_ASM
+#define LIBYUV_DISABLE_X86
 #endif
 // Row functions for copying a pixels from a source with a slope to a row
 // of destination. Useful for scaling, rotation, mirror, texture mapping.
@@ -332,13 +332,13 @@ LIBYUV_API
 void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
                      uint8* dst_argb, const float* uv_dudv, int width);
 // The following are available on all x86 platforms:
-#if !defined(YUV_DISABLE_ASM) && \
+#if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 #define HAS_ARGBAFFINEROW_SSE2
-#endif
+#endif  // LIBYUV_DISABLE_X86
 
 #ifdef __cplusplus
 }  // extern "C"
