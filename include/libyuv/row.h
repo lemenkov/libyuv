@@ -169,7 +169,8 @@ extern "C" {
 #endif
 
 // The following are available on Neon platforms
-#if !defined(LIBYUV_DISABLE_NEON) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_ABGRTOARGBROW_NEON
 #define HAS_ABGRTOUVROW_NEON
 #define HAS_ABGRTOYROW_NEON
