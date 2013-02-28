@@ -1161,4 +1161,3 @@ TEST_F(libyuvTest, ARGBSubtract_Opt) {
 }
 
 }  // namespace libyuv
-

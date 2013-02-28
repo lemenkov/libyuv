@@ -30,9 +30,11 @@
       ],
       'defines': [
         'HAVE_JPEG',
+	# Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
         # 'LIBYUV_DISABLE_NEON',
         # 'LIBYUV_DISABLE_MIPS',
+	# Enable the following macro to build libyuv as a shared library (dll).
         # 'LIBYUV_BUILDING_SHARED_LIBRARY',
       ],
       'include_dirs': [
