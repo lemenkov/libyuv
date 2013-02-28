@@ -1952,7 +1952,6 @@ static void ScaleFilterRows_SSE2(uint8* dst_ptr,
                                  const uint8* src_ptr, ptrdiff_t src_stride,
                                  int dst_width, int source_y_fraction) {
   asm volatile (
-  asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
