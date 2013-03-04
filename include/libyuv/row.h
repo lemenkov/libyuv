@@ -141,6 +141,9 @@ extern "C" {
 // Effects
 #define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
+#define HAS_ARGBMULTIPLYROW_AVX2
+#define HAS_ARGBADDROW_AVX2
+#define HAS_ARGBSUBTRACTROW_AVX2
 #endif
 #endif
 
@@ -1011,6 +1014,10 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);
 void ARGBMultiplyRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
                               uint8* dst_argb, int width);
+void ARGBMultiplyRow_AVX2(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBMultiplyRow_Any_AVX2(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
 void ARGBMultiplyRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);
 void ARGBMultiplyRow_Any_NEON(const uint8* src_argb, const uint8* src_argb1,
@@ -1022,6 +1029,10 @@ void ARGBAddRow_C(const uint8* src_argb, const uint8* src_argb1,
 void ARGBAddRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                      uint8* dst_argb, int width);
 void ARGBAddRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                         uint8* dst_argb, int width);
+void ARGBAddRow_AVX2(const uint8* src_argb, const uint8* src_argb1,
+                     uint8* dst_argb, int width);
+void ARGBAddRow_Any_AVX2(const uint8* src_argb, const uint8* src_argb1,
                          uint8* dst_argb, int width);
 void ARGBAddRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                      uint8* dst_argb, int width);
@@ -1035,6 +1046,10 @@ void ARGBSubtractRow_C(const uint8* src_argb, const uint8* src_argb1,
 void ARGBSubtractRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);
 void ARGBSubtractRow_Any_SSE2(const uint8* src_argb, const uint8* src_argb1,
+                              uint8* dst_argb, int width);
+void ARGBSubtractRow_AVX2(const uint8* src_argb, const uint8* src_argb1,
+                          uint8* dst_argb, int width);
+void ARGBSubtractRow_Any_AVX2(const uint8* src_argb, const uint8* src_argb1,
                               uint8* dst_argb, int width);
 void ARGBSubtractRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                           uint8* dst_argb, int width);

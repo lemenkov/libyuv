@@ -4915,6 +4915,102 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBSUBTRACTROW_SSE2
 
+#ifdef HAS_ARGBMULTIPLYROW_AVX2
+// Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
+__declspec(naked) __declspec(align(16))
+void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    vpxor      ymm5, ymm5, ymm5  // constant 0
+    sub        esi, eax
+    sub        edx, eax
+
+    align      16
+ convertloop:
+    vmovdqu    ymm1, [eax]        // read 8 pixels from src_argb0
+    vmovdqu    ymm3, [eax + esi]  // read 8 pixels from src_argb1
+    vpunpcklbw ymm0, ymm1, ymm1   // low 4
+    vpunpckhbw ymm1, ymm1, ymm1   // high 4
+    vpunpcklbw ymm2, ymm3, ymm5   // low 4
+    vpunpckhbw ymm3, ymm3, ymm5   // high 4
+    vpmulhuw   ymm0, ymm0, ymm2   // src_argb0 * src_argb1 low 4
+    vpmulhuw   ymm1, ymm1, ymm3   // src_argb0 * src_argb1 high 4
+    vpackuswb  ymm0, ymm0, ymm1
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBMULTIPLYROW_AVX2
+
+#ifdef HAS_ARGBADDROW_AVX2
+// Add 2 rows of ARGB pixels together, 8 pixels at a time.
+__declspec(naked) __declspec(align(16))
+void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    vpxor      ymm5, ymm5, ymm5  // constant 0
+    sub        esi, eax
+    sub        edx, eax
+
+    align      16
+ convertloop:
+    vmovdqu    ymm0, [eax]              // read 8 pixels from src_argb0
+    vpaddusb   ymm0, ymm0, [eax + esi]  // add 8 pixels from src_argb1
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBADDROW_AVX2
+
+#ifdef HAS_ARGBSUBTRACTROW_AVX2
+// Subtract 2 rows of ARGB pixels together, 8 pixels at a time.
+__declspec(naked) __declspec(align(16))
+void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_argb0
+    mov        esi, [esp + 4 + 8]   // src_argb1
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+    sub        edx, eax
+
+    align      16
+ convertloop:
+    vmovdqu    ymm0, [eax]              // read 8 pixels from src_argb0
+    vpsubusb   ymm0, ymm0, [eax + esi]  // src_argb0 - src_argb1
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_ARGBSUBTRACTROW_AVX2
+
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.

@@ -28,6 +28,7 @@ LIBYUV_API
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
+  // Coalesce contiguous rows.
   if (src_stride_y == width && dst_stride_y == width) {
     CopyPlane(src_y, 0, dst_y, 0, width * height, 1);
     return;
@@ -503,7 +504,7 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
   return 0;
 }
 
-// Multiply 2 ARGB images together and store to destination.
+// Multiply 2 ARGB images and store to destination.
 LIBYUV_API
 int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
                  const uint8* src_argb1, int src_stride_argb1,
@@ -518,6 +519,15 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  // Coalesce contiguous rows.
+  if (src_stride_argb0 == width * 4 &&
+      src_stride_argb1 == width * 4 &&
+      dst_stride_argb == width * 4) {
+    return ARGBMultiply(src_argb0, 0,
+                        src_argb1, 0,
+                        dst_argb, 0,
+                        width * height, 1);
+  }
 
   void (*ARGBMultiplyRow)(const uint8* src0, const uint8* src1, uint8* dst,
                           int width) = ARGBMultiplyRow_C;
@@ -531,7 +541,18 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
       ARGBMultiplyRow = ARGBMultiplyRow_SSE2;
     }
   }
-#elif defined(HAS_ARGBMULTIPLYROW_NEON)
+#endif
+#if defined(HAS_ARGBMULTIPLYROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    clear = true;
+    ARGBMultiplyRow = ARGBMultiplyRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBMultiplyRow = ARGBMultiplyRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBMULTIPLYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBMultiplyRow = ARGBMultiplyRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -547,10 +568,16 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBMULTIPLYROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 
-// Add 2 ARGB images together and store to destination.
+// Add 2 ARGB images and store to destination.
 LIBYUV_API
 int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
             const uint8* src_argb1, int src_stride_argb1,
@@ -565,6 +592,15 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  // Coalesce contiguous rows.
+  if (src_stride_argb0 == width * 4 &&
+      src_stride_argb1 == width * 4 &&
+      dst_stride_argb == width * 4) {
+    return ARGBAdd(src_argb0, 0,
+                   src_argb1, 0,
+                   dst_argb, 0,
+                   width * height, 1);
+  }
 
   void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
                      int width) = ARGBAddRow_C;
@@ -578,7 +614,18 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
       ARGBAddRow = ARGBAddRow_SSE2;
     }
   }
-#elif defined(HAS_ARGBADDROW_NEON)
+#endif
+#if defined(HAS_ARGBADDROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    clear = true;
+    ARGBAddRow = ARGBAddRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAddRow = ARGBAddRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBADDROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBAddRow = ARGBAddRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -594,6 +641,12 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBADDROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 
@@ -612,6 +665,15 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
+  // Coalesce contiguous rows.
+  if (src_stride_argb0 == width * 4 &&
+      src_stride_argb1 == width * 4 &&
+      dst_stride_argb == width * 4) {
+    return ARGBSubtract(src_argb0, 0,
+                        src_argb1, 0,
+                        dst_argb, 0,
+                        width * height, 1);
+  }
 
   void (*ARGBSubtractRow)(const uint8* src0, const uint8* src1, uint8* dst,
                           int width) = ARGBSubtractRow_C;
@@ -625,7 +687,18 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
       ARGBSubtractRow = ARGBSubtractRow_SSE2;
     }
   }
-#elif defined(HAS_ARGBSUBTRACTROW_NEON)
+#endif
+#if defined(HAS_ARGBSUBTRACTROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    clear = true;
+    ARGBSubtractRow = ARGBSubtractRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBSubtractRow = ARGBSubtractRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSUBTRACTROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBSubtractRow = ARGBSubtractRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -641,6 +714,12 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBSUBTRACTROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 

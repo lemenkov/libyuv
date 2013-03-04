@@ -751,7 +751,7 @@ void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
-#define SHADE(f, v) (v >= f) ? 0 : (f - v)
+#define SHADE(f, v) ((f - v) > f) ? 0 : (f - v)
 
 void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
                        uint8* dst_argb, int width) {
