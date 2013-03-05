@@ -2905,7 +2905,6 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 #endif  // HAS_YTOARGBROW_SSE2
 
 #ifdef HAS_MIRRORROW_SSSE3
-
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
@@ -2932,6 +2931,36 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   }
 }
 #endif  // HAS_MIRRORROW_SSSE3
+
+#ifdef HAS_MIRRORROW_AVX2
+// Shuffle table for reversing the bytes.
+static const ulvec8 kShuffleMirror_AVX2 = {
+  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u,
+  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
+};
+
+__declspec(naked) __declspec(align(16))
+void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
+  __asm {
+    mov       eax, [esp + 4]   // src
+    mov       edx, [esp + 8]   // dst
+    mov       ecx, [esp + 12]  // width
+    vmovdqa   ymm5, kShuffleMirror_AVX2
+    lea       eax, [eax - 32]
+
+    align      16
+ convertloop:
+    vmovdqu   ymm0, [eax + ecx]
+    vpshufb   ymm0, ymm0, ymm5
+    vpermq    ymm0, ymm0, 0x4e  // swap high and low halfs
+    sub       ecx, 32
+    vmovdqu   [edx], ymm0
+    lea       edx, [edx + 32]
+    jg        convertloop
+    ret
+  }
+}
+#endif  // HAS_MIRRORROW_AVX2
 
 #ifdef HAS_MIRRORROW_SSE2
 // SSE2 version has movdqu so it can be used on unaligned buffers when SSSE3
@@ -3000,7 +3029,6 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 #endif  // HAS_MIRRORROW_UV_SSSE3
 
 #ifdef HAS_ARGBMIRRORROW_SSSE3
-
 // Shuffle table for reversing the bytes.
 static const uvec8 kARGBShuffleMirror = {
   12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u

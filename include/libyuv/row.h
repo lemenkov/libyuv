@@ -75,6 +75,7 @@ extern "C" {
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORUVROW_SSSE3
+#define HAS_MIRRORROW_AVX2
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV12TORGB565ROW_SSSE3
 #define HAS_NV21TOARGBROW_SSSE3
@@ -557,6 +558,7 @@ void ARGBToUV422Row_C(const uint8* src_argb,
 void ARGBToUV411Row_C(const uint8* src_argb,
                       uint8* dst_u, uint8* dst_v, int width);
 
+void MirrorRow_AVX2(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);

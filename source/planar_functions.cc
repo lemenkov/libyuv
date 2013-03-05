@@ -195,6 +195,13 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     MirrorRow = MirrorRow_SSSE3;
   }
 #endif
+#if defined(HAS_MIRRORROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
+    clear = true;
+    MirrorRow = MirrorRow_AVX2;
+  }
+#endif
 
   // Mirror plane
   for (int y = 0; y < height; ++y) {
@@ -202,6 +209,11 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }
+#if defined(HAS_MIRRORROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
 }
 
 // Convert YUY2 to I422.
