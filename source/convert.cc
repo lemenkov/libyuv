@@ -97,7 +97,15 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
     HalfRow = HalfRow_SSE2;
   }
-#elif defined(HAS_HALFROW_NEON)
+#endif
+#if defined(HAS_HALFROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(halfwidth, 32)) {
+    clear = true;
+    HalfRow = HalfRow_AVX2;
+  }
+#endif
+#if defined(HAS_HALFROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
     HalfRow = HalfRow_NEON;
   }
@@ -128,6 +136,11 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   if (height & 1) {
     HalfRow(src_v, 0, dst_v, halfwidth);
   }
+#if defined(HAS_HALFROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 

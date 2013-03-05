@@ -137,6 +137,7 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_AVX2
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
+#define HAS_HALFROW_AVX2
 
 // Effects
 #define HAS_ARGBATTENUATEROW_AVX2
@@ -1268,6 +1269,8 @@ void UYVYToUV422Row_Any_NEON(const uint8* src_uyvy,
 void HalfRow_C(const uint8* src_uv, int src_uv_stride,
                uint8* dst_uv, int pix);
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix);
+void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix);
 void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix);

@@ -5531,6 +5531,32 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   }
 }
 
+#ifdef HAS_HALFROW_AVX2
+__declspec(naked) __declspec(align(16))
+void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
+                  uint8* dst_uv, int pix) {
+  __asm {
+    push       edi
+    mov        eax, [esp + 4 + 4]    // src_uv
+    mov        edx, [esp + 4 + 8]    // src_uv_stride
+    mov        edi, [esp + 4 + 12]   // dst_v
+    mov        ecx, [esp + 4 + 16]   // pix
+    sub        edi, eax
+
+    align      16
+  convertloop:
+    vmovdqu    ymm0, [eax]
+    vpavgb     ymm0, ymm0, [eax + edx]
+    sub        ecx, 32
+    vmovdqu    [eax + edi], ymm0
+    lea        eax,  [eax + 32]
+    jg         convertloop
+    pop        edi
+    ret
+  }
+}
+#endif  // HAS_HALFROW_AVX2
+
 __declspec(naked) __declspec(align(16))
 void ARGBToBayerRow_SSSE3(const uint8* src_argb,
                           uint8* dst_bayer, uint32 selector, int pix) {
