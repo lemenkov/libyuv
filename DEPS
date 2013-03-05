@@ -12,7 +12,8 @@ vars = {
   # If you do not know, use the full path while defining your new deps entry.
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
-  "chromium_revision": "181357",
+  # chrome://version/ for revision of canary Chrome.
+  "chromium_revision": "185863",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
