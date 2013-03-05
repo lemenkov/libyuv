@@ -1569,21 +1569,19 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
     uint32 g = src_argb[1];
     uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
-    if (a) {
-      const uint32 ia = fixed_invtbl8[a] & 0xffff;  // 8.16 fixed point
-      b = (b * ia) >> 8;
-      g = (g * ia) >> 8;
-      r = (r * ia) >> 8;
-      // Clamping should not be necessary but is free in assembly.
-      if (b > 255) {
-        b = 255;
-      }
-      if (g > 255) {
-        g = 255;
-      }
-      if (r > 255) {
-        r = 255;
-      }
+    const uint32 ia = fixed_invtbl8[a] & 0xffff;  // 8.16 fixed point
+    b = (b * ia) >> 8;
+    g = (g * ia) >> 8;
+    r = (r * ia) >> 8;
+    // Clamping should not be necessary but is free in assembly.
+    if (b > 255) {
+      b = 255;
+    }
+    if (g > 255) {
+      g = 255;
+    }
+    if (r > 255) {
+      r = 255;
     }
     dst_argb[0] = b;
     dst_argb[1] = g;
