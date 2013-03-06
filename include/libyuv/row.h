@@ -139,6 +139,7 @@ extern "C" {
 #define HAS_UYVYTOYROW_AVX2
 #define HAS_HALFROW_AVX2
 #define HAS_MIRRORROW_AVX2
+#define HAS_ARGBMIRRORROW_AVX2
 
 // Effects
 #define HAS_ARGBATTENUATEROW_AVX2
@@ -574,6 +575,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 void MirrorUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                    int width);
 
+void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);

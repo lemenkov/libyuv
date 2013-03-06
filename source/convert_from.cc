@@ -50,22 +50,28 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
   }
   int halfwidth = (width + 1) >> 1;
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
+#if defined(HAS_COPYROW_X86)
+  if (IS_ALIGNED(halfwidth, 4)) {
+    CopyRow = CopyRow_X86;
+  }
+#endif
+#if defined(HAS_COPYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 32) &&
+      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
+      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
+      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
+      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
+    CopyRow = CopyRow_SSE2;
+  }
+#endif
+#if defined(HAS_COPYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    CopyRow = CopyRow_AVX2;
+  }
+#endif
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 32)) {
     CopyRow = CopyRow_NEON;
-  }
-#elif defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(halfwidth, 4)) {
-    CopyRow = CopyRow_X86;
-#if defined(HAS_COPYROW_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 32) &&
-        IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-        IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-        IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-        IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-      CopyRow = CopyRow_SSE2;
-    }
-#endif
   }
 #endif
 #if defined(HAS_COPYROW_MIPS)

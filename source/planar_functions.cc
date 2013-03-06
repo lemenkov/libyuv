@@ -448,7 +448,15 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     ARGBMirrorRow = ARGBMirrorRow_SSSE3;
   }
-#elif defined(HAS_ARGBMIRRORROW_NEON)
+#endif
+#if defined(HAS_ARGBMIRRORROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
+    clear = true;
+    ARGBMirrorRow = ARGBMirrorRow_AVX2;
+  }
+#endif
+#if defined(HAS_ARGBMIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
     ARGBMirrorRow = ARGBMirrorRow_NEON;
   }
@@ -460,6 +468,12 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
+
+#if defined(HAS_ARGBMIRRORROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
   return 0;
 }
 

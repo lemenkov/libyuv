@@ -99,7 +99,15 @@ void ARGBRotate180(const uint8* src, int src_stride,
       IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
     ARGBMirrorRow = ARGBMirrorRow_SSSE3;
   }
-#elif defined(HAS_ARGBMIRRORROW_NEON)
+#endif
+#if defined(HAS_ARGBMIRRORROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
+    clear = true;
+    ARGBMirrorRow = ARGBMirrorRow_AVX2;
+  }
+#endif
+#if defined(HAS_ARGBMIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 4)) {
     ARGBMirrorRow = ARGBMirrorRow_NEON;
   }
@@ -151,6 +159,11 @@ void ARGBRotate180(const uint8* src, int src_stride,
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }
+#if defined(HAS_ARGBMIRRORROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
 }
 
 LIBYUV_API
