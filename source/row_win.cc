@@ -252,6 +252,28 @@ void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
 }
 
 __declspec(naked) __declspec(align(16))
+void ABGRToARGBRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_argb,
+                                   int pix) {
+__asm {
+    mov       eax, [esp + 4]   // src_abgr
+    mov       edx, [esp + 8]   // dst_argb
+    mov       ecx, [esp + 12]  // pix
+    movdqa    xmm5, kShuffleMaskABGRToARGB
+    sub       edx, eax
+
+    align      16
+ convertloop:
+    movdqu    xmm0, [eax]
+    pshufb    xmm0, xmm5
+    sub       ecx, 4
+    movdqu    [eax + edx], xmm0
+    lea       eax, [eax + 16]
+    jg        convertloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
   __asm {
     mov       eax, [esp + 4]   // src_abgr

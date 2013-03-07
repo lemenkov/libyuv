@@ -635,6 +635,8 @@ void ARGBSetRows_C(uint8* dst, uint32 v32, int width, int dst_stride,
 
 void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix);
 void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix);
+void ABGRToARGBRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_argb,
+                                   int pix);
 void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix);
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix);

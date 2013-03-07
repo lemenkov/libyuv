@@ -350,10 +350,14 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
   void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix) =
       ABGRToARGBRow_C;
 #if defined(HAS_ABGRTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    ABGRToARGBRow = ABGRToARGBRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
+    // TODO(fbarchard): Port to posix.
+#if defined(_M_IX86)
+      ABGRToARGBRow = ABGRToARGBRow_Unaligned_SSSE3;
+#endif
+      if (IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16))
+        ABGRToARGBRow = ABGRToARGBRow_SSSE3;
   }
 #elif defined(HAS_ABGRTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
