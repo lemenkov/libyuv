@@ -340,6 +340,13 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 #define HAS_ARGBAFFINEROW_SSE2
 #endif  // LIBYUV_DISABLE_X86
 
+// Shuffle ARGB channel order.  e.g. BGRA to ARGB.
+// shuffler is 16 bytes and must be aligned.
+LIBYUV_API
+int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
+                uint8* dst_argb, int dst_stride_argb,
+                const uint8* shuffler, int width, int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

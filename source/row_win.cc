@@ -132,26 +132,6 @@ static const uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
-// Shuffle table for converting BGRA to ARGB.
-static const uvec8 kShuffleMaskBGRAToARGB = {
-  3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
-};
-
-// Shuffle table for converting ABGR to ARGB.
-static const uvec8 kShuffleMaskABGRToARGB = {
-  2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
-};
-
-// Shuffle table for converting RGBA to ARGB.
-static const uvec8 kShuffleMaskRGBAToARGB = {
-  1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
-};
-
-// Shuffle table for converting ARGB to RGBA.
-static const uvec8 kShuffleMaskARGBToRGBA = {
-  3u, 0u, 1u, 2u, 7u, 4u, 5u, 6u, 11u, 8u, 9u, 10u, 15u, 12u, 13u, 14u
-};
-
 // Shuffle table for converting ARGB to RGB24.
 static const uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -226,112 +206,6 @@ void I400ToARGBRow_Unaligned_SSE2(const uint8* src_y, uint8* dst_argb,
     lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  __asm {
-    mov       eax, [esp + 4]   // src_bgra
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, kShuffleMaskBGRAToARGB
-    sub       edx, eax
-
-    align      16
- convertloop:
-    movdqa    xmm0, [eax]
-    pshufb    xmm0, xmm5
-    sub       ecx, 4
-    movdqa    [eax + edx], xmm0
-    lea       eax, [eax + 16]
-    jg        convertloop
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-void ABGRToARGBRow_Unaligned_SSSE3(const uint8* src_abgr, uint8* dst_argb,
-                                   int pix) {
-__asm {
-    mov       eax, [esp + 4]   // src_abgr
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, kShuffleMaskABGRToARGB
-    sub       edx, eax
-
-    align      16
- convertloop:
-    movdqu    xmm0, [eax]
-    pshufb    xmm0, xmm5
-    sub       ecx, 4
-    movdqu    [eax + edx], xmm0
-    lea       eax, [eax + 16]
-    jg        convertloop
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  __asm {
-    mov       eax, [esp + 4]   // src_abgr
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, kShuffleMaskABGRToARGB
-    sub       edx, eax
-
-    align      16
- convertloop:
-    movdqa    xmm0, [eax]
-    pshufb    xmm0, xmm5
-    sub       ecx, 4
-    movdqa    [eax + edx], xmm0
-    lea       eax, [eax + 16]
-    jg        convertloop
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix) {
-  __asm {
-    mov       eax, [esp + 4]   // src_rgba
-    mov       edx, [esp + 8]   // dst_argb
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, kShuffleMaskRGBAToARGB
-    sub       edx, eax
-
-    align      16
- convertloop:
-    movdqa    xmm0, [eax]
-    pshufb    xmm0, xmm5
-    sub       ecx, 4
-    movdqa    [eax + edx], xmm0
-    lea       eax, [eax + 16]
-    jg        convertloop
-    ret
-  }
-}
-
-__declspec(naked) __declspec(align(16))
-void ARGBToRGBARow_SSSE3(const uint8* src_argb, uint8* dst_rgba, int pix) {
-  __asm {
-    mov       eax, [esp + 4]   // src_argb
-    mov       edx, [esp + 8]   // dst_rgba
-    mov       ecx, [esp + 12]  // pix
-    movdqa    xmm5, kShuffleMaskARGBToRGBA
-    sub       edx, eax
-
-    align      16
- convertloop:
-    movdqa    xmm0, [eax]
-    pshufb    xmm0, xmm5
-    sub       ecx, 4
-    movdqa    [eax + edx], xmm0
-    lea       eax, [eax + 16]
-    jg        convertloop
     ret
   }
 }
@@ -5635,8 +5509,8 @@ void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
 #endif  // HAS_HALFROW_AVX2
 
 __declspec(naked) __declspec(align(16))
-void ARGBToBayerRow_SSSE3(const uint8* src_argb,
-                          uint8* dst_bayer, uint32 selector, int pix) {
+void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
+                          uint32 selector, int pix) {
   __asm {
     mov        eax, [esp + 4]    // src_argb
     mov        edx, [esp + 8]    // dst_bayer
@@ -5656,6 +5530,88 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb,
     ret
   }
 }
+
+// For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
+__declspec(naked) __declspec(align(16))
+void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                          const uint8* shuffler, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_argb
+    mov        edx, [esp + 8]    // dst_bayer
+    mov        ecx, [esp + 12]   // shuffler
+    movdqa     xmm5, [ecx]
+    mov        ecx, [esp + 16]   // pix
+
+    align      16
+  wloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
+    pshufb     xmm0, xmm5
+    pshufb     xmm1, xmm5
+    sub        ecx, 8
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         wloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                                    const uint8* shuffler, int pix) {
+  __asm {
+    mov        eax, [esp + 4]    // src_argb
+    mov        edx, [esp + 8]    // dst_bayer
+    mov        ecx, [esp + 12]   // shuffler
+    movdqa     xmm5, [ecx]
+    mov        ecx, [esp + 16]   // pix
+
+    align      16
+  wloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
+    pshufb     xmm0, xmm5
+    pshufb     xmm1, xmm5
+    sub        ecx, 8
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         wloop
+    ret
+  }
+}
+
+#ifdef HAS_ARGBSHUFFLEROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
+                         const uint8* shuffler, int pix) {
+  __asm {
+    mov        eax, [esp + 4]     // src_argb
+    mov        edx, [esp + 8]     // dst_bayer
+    mov        ecx, [esp + 12]    // shuffler
+    vmovdqa    xmm5, [ecx]
+    vpermq     ymm5, ymm5, 0x44   // same shuffle in high as low.
+    mov        ecx, [esp + 16]    // pix
+
+    align      16
+  wloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    lea        eax, [eax + 64]
+    vpshufb    ymm0, ymm0, ymm5
+    vpshufb    ymm1, ymm1, ymm5
+    sub        ecx, 16
+    vmovdqu    [edx], ymm0
+    vmovdqu    [edx + 32], ymm1
+    lea        edx, [edx + 64]
+    jg         wloop
+    ret
+  }
+}
+#endif
 
 // YUY2 - Macro-pixel = 2 image pixels
 // Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....

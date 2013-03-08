@@ -101,26 +101,6 @@ CONST uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
-// Shuffle table for converting ABGR to ARGB.
-CONST uvec8 kShuffleMaskABGRToARGB = {
-  2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
-};
-
-// Shuffle table for converting BGRA to ARGB.
-CONST uvec8 kShuffleMaskBGRAToARGB = {
-  3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
-};
-
-// Shuffle table for converting RGBA to ARGB.
-CONST uvec8 kShuffleMaskRGBAToARGB = {
-  1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
-};
-
-// Shuffle table for converting ARGB to RGBA.
-CONST uvec8 kShuffleMaskARGBToRGBA = {
-  3u, 0u, 1u, 2u, 7u, 4u, 5u, 6u, 11u, 8u, 9u, 10u, 15u, 12u, 13u, 14u
-};
-
 // Shuffle table for converting ARGB to RGB24.
 CONST uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -198,101 +178,6 @@ void I400ToARGBRow_Unaligned_SSE2(const uint8* src_y, uint8* dst_argb,
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
-  );
-}
-
-void ABGRToARGBRow_SSSE3(const uint8* src_abgr, uint8* dst_argb, int pix) {
-  asm volatile (
-    "movdqa    %3,%%xmm5                       \n"
-    "sub       %0,%1                           \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
-    "jg        1b                              \n"
-
-  : "+r"(src_abgr),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "m"(kShuffleMaskABGRToARGB)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
-  );
-}
-
-void BGRAToARGBRow_SSSE3(const uint8* src_bgra, uint8* dst_argb, int pix) {
-  asm volatile (
-    "movdqa    %3,%%xmm5                       \n"
-    "sub       %0,%1                           \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
-    "jg        1b                              \n"
-  : "+r"(src_bgra),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "m"(kShuffleMaskBGRAToARGB)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
-  );
-}
-
-void RGBAToARGBRow_SSSE3(const uint8* src_rgba, uint8* dst_argb, int pix) {
-  asm volatile (
-    "movdqa    %3,%%xmm5                       \n"
-    "sub       %0,%1                           \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
-    "jg        1b                              \n"
-
-  : "+r"(src_rgba),  // %0
-    "+r"(dst_argb),  // %1
-    "+r"(pix)        // %2
-  : "m"(kShuffleMaskRGBAToARGB)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
-  );
-}
-
-void ARGBToRGBARow_SSSE3(const uint8* src_argb, uint8* dst_rgba, int pix) {
-  asm volatile (
-    "movdqa    %3,%%xmm5                       \n"
-    "sub       %0,%1                           \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
-    "jg        1b                              \n"
-
-  : "+r"(src_argb),  // %0
-    "+r"(dst_rgba),  // %1
-    "+r"(pix)        // %2
-  : "m"(kShuffleMaskARGBToRGBA)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
 #endif
   );
 }
@@ -4684,15 +4569,15 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {
   asm volatile (
-    "sub        %0,%1                            \n"
-    ".p2align  4                                 \n"
-  "1:                                            \n"
-    "movdqa     (%0),%%xmm0                      \n"
-    "pavgb      (%0,%3),%%xmm0                   \n"
-    "sub        $0x10,%2                         \n"
-    "movdqa     %%xmm0,(%0,%1)                   \n"
-    "lea        0x10(%0),%0                      \n"
-    "jg         1b                               \n"
+    "sub       %0,%1                           \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "pavgb     (%0,%3),%%xmm0                  \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%0,%1)                  \n"
+    "lea       0x10(%0),%0                     \n"
+    "jg        1b                              \n"
   : "+r"(src_uv),  // %0
     "+r"(dst_uv),  // %1
     "+r"(pix)      // %2
@@ -4707,17 +4592,17 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
 void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
                           uint32 selector, int pix) {
   asm volatile (
-    "movd   %3,%%xmm5                          \n"
-    "pshufd $0x0,%%xmm5,%%xmm5                 \n"
+    "movd      %3,%%xmm5                       \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa (%0),%%xmm0                        \n"
-    "lea    0x10(%0),%0                        \n"
-    "pshufb %%xmm5,%%xmm0                      \n"
-    "sub    $0x4,%2                            \n"
-    "movd   %%xmm0,(%1)                        \n"
-    "lea    0x4(%1),%1                         \n"
-    "jg     1b                                 \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "lea       0x10(%0),%0                     \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movd      %%xmm0,(%1)                     \n"
+    "lea       0x4(%1),%1                      \n"
+    "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_bayer), // %1
     "+r"(pix)        // %2
@@ -4729,12 +4614,67 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
   );
 }
 
+// For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
+void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                          const uint8* shuffler, int pix) {
+  asm volatile (
+    "movdqa    (%3),%%xmm5                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "sub       $0x8,%2                         \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "movdqa    %%xmm1,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(shuffler)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
+void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                                    const uint8* shuffler, int pix) {
+  asm volatile (
+    "movdqa    (%3),%%xmm5                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "pshufb    %%xmm5,%%xmm0                   \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "sub       $0x8,%2                         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
+    "lea       0x20(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(shuffler)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
 void I422ToYUY2Row_SSE2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_frame, int width) {
  asm volatile (
-    "sub        %1,%2                            \n"
+    "sub       %1,%2                             \n"
     ".p2align  4                                 \n"
   "1:                                            \n"
     "movq      (%1),%%xmm2                       \n"

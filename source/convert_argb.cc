@@ -15,6 +15,7 @@
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif
+#include "libyuv/planar_functions.h"
 #include "libyuv/rotate_argb.h"
 #include "libyuv/row.h"
 #include "libyuv/video_common.h"
@@ -295,41 +296,30 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Shuffle table for converting BGRA to ARGB.
+static const uvec8 kShuffleMaskBGRAToARGB = {
+  3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
+};
+
+// Shuffle table for converting ABGR to ARGB.
+static const uvec8 kShuffleMaskABGRToARGB = {
+  2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
+};
+
+// Shuffle table for converting RGBA to ARGB.
+static const uvec8 kShuffleMaskRGBAToARGB = {
+  1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
+};
+
 // Convert BGRA to ARGB.
 LIBYUV_API
 int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
-  if (!src_bgra || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_bgra = src_bgra + (height - 1) * src_stride_bgra;
-    src_stride_bgra = -src_stride_bgra;
-  }
-  void (*BGRAToARGBRow)(const uint8* src_bgra, uint8* dst_argb, int pix) =
-      BGRAToARGBRow_C;
-#if defined(HAS_BGRATOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_bgra, 16) && IS_ALIGNED(src_stride_bgra, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    BGRAToARGBRow = BGRAToARGBRow_SSSE3;
-  }
-#elif defined(HAS_BGRATOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    BGRAToARGBRow = BGRAToARGBRow_NEON;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    BGRAToARGBRow(src_bgra, dst_argb, width);
-    src_bgra += src_stride_bgra;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
+  return ARGBShuffle(src_bgra, src_stride_bgra,
+                     dst_argb, dst_stride_argb,
+                     reinterpret_cast<const uint8*>(&kShuffleMaskBGRAToARGB),
+                     width, height);
 }
 
 // Convert ABGR to ARGB.
@@ -337,40 +327,10 @@ LIBYUV_API
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
-  if (!src_abgr || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_abgr = src_abgr + (height - 1) * src_stride_abgr;
-    src_stride_abgr = -src_stride_abgr;
-  }
-  void (*ABGRToARGBRow)(const uint8* src_abgr, uint8* dst_argb, int pix) =
-      ABGRToARGBRow_C;
-#if defined(HAS_ABGRTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
-    // TODO(fbarchard): Port to posix.
-#if defined(_M_IX86)
-      ABGRToARGBRow = ABGRToARGBRow_Unaligned_SSSE3;
-#endif
-      if (IS_ALIGNED(src_abgr, 16) && IS_ALIGNED(src_stride_abgr, 16) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16))
-        ABGRToARGBRow = ABGRToARGBRow_SSSE3;
-  }
-#elif defined(HAS_ABGRTOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    ABGRToARGBRow = ABGRToARGBRow_NEON;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    ABGRToARGBRow(src_abgr, dst_argb, width);
-    src_abgr += src_stride_abgr;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
+  return ARGBShuffle(src_abgr, src_stride_abgr,
+                     dst_argb, dst_stride_argb,
+                     reinterpret_cast<const uint8*>(&kShuffleMaskABGRToARGB),
+                     width, height);
 }
 
 // Convert RGBA to ARGB.
@@ -378,36 +338,10 @@ LIBYUV_API
 int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
-  if (!src_rgba || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
-    src_stride_rgba = -src_stride_rgba;
-  }
-  void (*RGBAToARGBRow)(const uint8* src_rgba, uint8* dst_argb, int pix) =
-      RGBAToARGBRow_C;
-#if defined(HAS_RGBATOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_rgba, 16) && IS_ALIGNED(src_stride_rgba, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    RGBAToARGBRow = RGBAToARGBRow_SSSE3;
-  }
-#elif defined(HAS_RGBATOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    RGBAToARGBRow = RGBAToARGBRow_NEON;
-  }
-#endif
-
-  for (int y = 0; y < height; ++y) {
-    RGBAToARGBRow(src_rgba, dst_argb, width);
-    src_rgba += src_stride_rgba;
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
+  return ARGBShuffle(src_rgba, src_stride_rgba,
+                     dst_argb, dst_stride_argb,
+                     reinterpret_cast<const uint8*>(&kShuffleMaskRGBAToARGB),
+                     width, height);
 }
 
 // Convert RGB24 to ARGB.

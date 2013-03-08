@@ -1603,6 +1603,71 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
   return 0;
 }
 
+// Shuffle ARGB channel order.  e.g. BGRA to ARGB.
+LIBYUV_API
+int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
+                uint8* dst_argb, int dst_stride_argb,
+                const uint8* shuffler, int width, int height) {
+  if (!src_bgra || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_bgra = src_bgra + (height - 1) * src_stride_bgra;
+    src_stride_bgra = -src_stride_bgra;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_bgra == width * 4 && dst_stride_argb == width * 4) {
+    return ARGBShuffle(src_bgra, 0, dst_argb, 0, shuffler, width * height, 1);
+  }
+  void (*ARGBShuffleRow)(const uint8* src_bgra, uint8* dst_argb,
+                         const uint8* shuffler, int pix) = ARGBShuffleRow_C;
+#if defined(HAS_ARGBSHUFFLEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+    ARGBShuffleRow = ARGBShuffleRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBShuffleRow = ARGBShuffleRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_bgra, 16) && IS_ALIGNED(src_stride_bgra, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        ARGBShuffleRow = ARGBShuffleRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_AVX2)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+    clear = true;
+    ARGBShuffleRow = ARGBShuffleRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBShuffleRow = ARGBShuffleRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+    ARGBShuffleRow = ARGBShuffleRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBShuffleRow = ARGBShuffleRow_NEON;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBShuffleRow(src_bgra, dst_argb, shuffler, width);
+    src_bgra += src_stride_bgra;
+    dst_argb += dst_stride_argb;
+  }
+#if defined(HAS_ARGBSHUFFLEROW_AVX2)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

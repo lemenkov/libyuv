@@ -30,54 +30,6 @@ static inline void WRITEWORD(uint8* p, uint32 v) {
 }
 #endif
 
-void BGRAToARGBRow_C(const uint8* src_bgra, uint8* dst_argb, int width) {
-  for (int x = 0; x < width; ++x) {
-    // To support in-place conversion.
-    uint8 a = src_bgra[0];
-    uint8 r = src_bgra[1];
-    uint8 g = src_bgra[2];
-    uint8 b = src_bgra[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_bgra += 4;
-  }
-}
-
-void ABGRToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
-  for (int x = 0; x < width; ++x) {
-    // To support in-place conversion.
-    uint8 r = src_abgr[0];
-    uint8 g = src_abgr[1];
-    uint8 b = src_abgr[2];
-    uint8 a = src_abgr[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_abgr += 4;
-  }
-}
-
-void RGBAToARGBRow_C(const uint8* src_abgr, uint8* dst_argb, int width) {
-  for (int x = 0; x < width; ++x) {
-    // To support in-place conversion.
-    uint8 a = src_abgr[0];
-    uint8 b = src_abgr[1];
-    uint8 g = src_abgr[2];
-    uint8 r = src_abgr[3];
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
-    dst_argb[3] = a;
-    dst_argb += 4;
-    src_abgr += 4;
-  }
-}
-
 void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb24[0];
@@ -149,21 +101,6 @@ void ARGB4444ToARGBRow_C(const uint8* src_argb4444, uint8* dst_argb,
     dst_argb[3] = (a << 4) | a;
     dst_argb += 4;
     src_argb4444 += 2;
-  }
-}
-
-void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int width) {
-  for (int x = 0; x < width; ++x) {
-    uint8 b = src_argb[0];
-    uint8 g = src_argb[1];
-    uint8 r = src_argb[2];
-    uint8 a = src_argb[3];
-    dst_rgb[0] = a;
-    dst_rgb[1] = b;
-    dst_rgb[2] = g;
-    dst_rgb[3] = r;
-    dst_rgb += 4;
-    src_argb += 4;
   }
 }
 
@@ -1569,7 +1506,7 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
     uint32 g = src_argb[1];
     uint32 r = src_argb[2];
     const uint32 a = src_argb[3];
-    const uint32 ia = fixed_invtbl8[a] & 0xffff;  // 8.16 fixed point
+    const uint32 ia = fixed_invtbl8[a] & 0xffff;  // 8.8 fixed point
     b = (b * ia) >> 8;
     g = (g * ia) >> 8;
     r = (r * ia) >> 8;
@@ -1686,6 +1623,29 @@ void ARGBToBayerRow_C(const uint8* src_argb,
   }
   if (pix & 1) {
     dst_bayer[0] = src_argb[index0];
+  }
+}
+
+// Use first 4 shuffler values to reorder ARGB channels.
+void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,
+                      const uint8* shuffler, int pix) {
+  int index0 = shuffler[0];
+  int index1 = shuffler[1];
+  int index2 = shuffler[2];
+  int index3 = shuffler[3];
+  // Shuffle a row of ARGB.
+  for (int x = 0; x < pix; ++x) {
+    // To support in-place conversion.
+    uint8 b = src_argb[index0];
+    uint8 g = src_argb[index1];
+    uint8 r = src_argb[index2];
+    uint8 a = src_argb[index3];
+    dst_argb[0] = b;
+    dst_argb[1] = g;
+    dst_argb[2] = r;
+    dst_argb[3] = a;
+    src_argb += 4;
+    dst_argb += 4;
   }
 }
 

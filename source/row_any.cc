@@ -266,6 +266,7 @@ YANY(ARGBUnattenuateRow_Any_AVX2, ARGBUnattenuateRow_AVX2, ARGBUnattenuateRow_C,
 YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
      4, 4, 7)
 #endif
+#undef YANY
 
 // RGB/YUV to UV does multiple of 16 with SIMD and remainder with C.
 #define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                     \
@@ -443,6 +444,30 @@ MATHROW_ANY(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, ARGBSubtractRow_C,
             7)
 #endif
 #undef MATHROW_ANY
+
+// Shuffle may want to work in place, so last16 method can not be used.
+#define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
+    void NAMEANY(const uint8* src_argb, uint8* dst_argb,                       \
+                 const uint8* shuffler, int width) {                           \
+      int n = width & ~MASK;                                                   \
+      ARGBTOY_SIMD(src_argb, dst_argb, shuffler, n);                           \
+      ARGBTOY_C(src_argb + n * SBPP,                                           \
+                dst_argb  + n * BPP, shuffler, width & MASK);                  \
+    }
+
+#ifdef HAS_ARGBSHUFFLEROW_SSSE3
+YANY(ARGBShuffleRow_Any_SSSE3, ARGBShuffleRow_Unaligned_SSSE3,
+     ARGBShuffleRow_C, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBSHUFFLEROW_AVX2
+YANY(ARGBShuffleRow_Any_AVX2, ARGBShuffleRow_AVX2,
+     ARGBShuffleRow_C, 4, 4, 15)
+#endif
+#ifdef HAS_ARGBSHUFFLEROW_NEON
+YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
+     ARGBShuffleRow_C, 4, 4, 3)
+#endif
+#undef YANY
 
 #ifdef __cplusplus
 }  // extern "C"
