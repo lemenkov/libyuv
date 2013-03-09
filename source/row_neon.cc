@@ -1183,11 +1183,11 @@ void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
     "vtbl.8     d3, {d0, d1}, d2               \n"  // look up 4 pixels
     "vst1.u32   {d3[0]}, [%1]!                 \n"  // store 4.
     "bgt        1b                             \n"
-  : "+r"(src_argb),         // %0
-    "+r"(dst_bayer),        // %1
-    "+r"(pix)               // %2
-  : "r"(selector),          // %3
-  : "cc", "memory", "q0", "d2"  // Clobber List
+  : "+r"(src_argb),   // %0
+    "+r"(dst_bayer),  // %1
+    "+r"(pix)         // %2
+  : "r"(selector)     // %3
+  : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
 
