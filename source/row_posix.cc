@@ -3636,8 +3636,6 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
   uintptr_t alpha = 0;
   asm volatile (
     "sub       %0,%1                           \n"
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
 
     // 4 pixel loop.
     ".p2align  4                               \n"

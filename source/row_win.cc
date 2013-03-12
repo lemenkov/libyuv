@@ -4371,8 +4371,6 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8 + 8]   // dst_argb
     mov        ecx, [esp + 8 + 12]  // width
     sub        edx, eax
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
 
     align      16
  convertloop:
@@ -4416,6 +4414,9 @@ static const ulvec8 kUnattenShuffleAlpha_AVX2 = {
   0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
   0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
 };
+// TODO(fbarchard): Enable USE_GATHER for future hardware if faster.
+// USE_GATHER is not on by default, due to being a slow instruction.
+#ifdef USE_GATHER
 __declspec(naked) __declspec(align(16))
 void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
                              int width) {
@@ -4449,6 +4450,70 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     ret
   }
 }
+#else  // USE_GATHER
+__declspec(naked) __declspec(align(16))
+void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
+                             int width) {
+  __asm {
+
+    mov        eax, [esp + 4]   // src_argb0
+    mov        edx, [esp + 8]   // dst_argb
+    mov        ecx, [esp + 12]  // width
+    sub        edx, eax
+    vmovdqa    ymm5, kUnattenShuffleAlpha_AVX2
+
+    push       esi
+    push       edi
+
+    align      16
+ convertloop:
+    // replace VPGATHER
+    movzx      esi, byte ptr [eax + 3]  // alpha0
+    movzx      edi, byte ptr [eax + 7]  // alpha1
+    vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a0]
+    vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a1]
+    movzx      esi, byte ptr [eax + 11]  // alpha2
+    movzx      edi, byte ptr [eax + 15]  // alpha3
+    vpunpckldq xmm6, xmm0, xmm1                        // [1,a1,1,a0]
+    vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a2]
+    vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a3]
+    movzx      esi, byte ptr [eax + 19]  // alpha4
+    movzx      edi, byte ptr [eax + 23]  // alpha5
+    vpunpckldq xmm7, xmm2, xmm3                        // [1,a3,1,a2]
+    vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a4]
+    vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a5]
+    movzx      esi, byte ptr [eax + 27]  // alpha6
+    movzx      edi, byte ptr [eax + 31]  // alpha7
+    vpunpckldq xmm0, xmm0, xmm1                        // [1,a5,1,a4]
+    vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a6]
+    vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a7]
+    vpunpckldq xmm2, xmm2, xmm3                        // [1,a7,1,a6]
+    vpunpcklqdq xmm3, xmm6, xmm7                       // [1,a3,1,a2,1,a1,1,a0]
+    vpunpcklqdq xmm0, xmm0, xmm2                       // [1,a7,1,a6,1,a5,1,a4]
+    vinserti128 ymm3, ymm3, xmm0, 1 // [1,a7,1,a6,1,a5,1,a4,1,a3,1,a2,1,a1,1,a0]
+    // end of VPGATHER
+
+    vmovdqu    ymm6, [eax]       // read 8 pixels.
+    vpunpcklbw ymm0, ymm6, ymm6  // low 4 pixels. mutated.
+    vpunpckhbw ymm1, ymm6, ymm6  // high 4 pixels. mutated.
+    vpunpcklwd ymm2, ymm3, ymm3  // low 4 inverted alphas. mutated. 1, 1, a, a
+    vpunpckhwd ymm3, ymm3, ymm3  // high 4 inverted alphas. mutated.
+    vpshufb    ymm2, ymm2, ymm5  // replicate low 4 alphas. 1, a, a, a
+    vpshufb    ymm3, ymm3, ymm5  // replicate high 4 alphas
+    vpmulhuw   ymm0, ymm0, ymm2  // rgb * ia
+    vpmulhuw   ymm1, ymm1, ymm3  // rgb * ia
+    vpackuswb  ymm0, ymm0, ymm1  // unmutated.
+    sub        ecx, 8
+    vmovdqu    [eax + edx], ymm0
+    lea        eax, [eax + 32]
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#endif  // USE_GATHER
 #endif  // HAS_ARGBATTENUATEROW_AVX2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
