@@ -18,7 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO(fbarchard): Remove kMaxStride
+// TODO(fbarchard): Remove kMaxStride.
 #define kMaxStride (2880 * 4)
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
@@ -39,6 +39,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
+#define HAS_ARGBSHUFFLEROW_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
 #define HAS_ARGBTOBAYERROW_SSSE3
@@ -93,7 +94,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
-#define HAS_ARGBSHUFFLEROW_SSSE3
 
 // Effects
 #define HAS_ARGBADDROW_SSE2
@@ -123,27 +123,27 @@ extern "C" {
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
-#define HAS_ARGBTOYROW_AVX2
+#define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
-#define HAS_SPLITUVROW_AVX2
+#define HAS_ARGBTOYROW_AVX2
+#define HAS_HALFROW_AVX2
 #define HAS_MERGEUVROW_AVX2
-#define HAS_YUY2TOUV422ROW_AVX2
-#define HAS_YUY2TOUVROW_AVX2
-#define HAS_YUY2TOYROW_AVX2
+#define HAS_MIRRORROW_AVX2
+#define HAS_SPLITUVROW_AVX2
 #define HAS_UYVYTOUV422ROW_AVX2
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
-#define HAS_HALFROW_AVX2
-#define HAS_MIRRORROW_AVX2
-#define HAS_ARGBMIRRORROW_AVX2
-#define HAS_ARGBSHUFFLEROW_AVX2
+#define HAS_YUY2TOUV422ROW_AVX2
+#define HAS_YUY2TOUVROW_AVX2
+#define HAS_YUY2TOYROW_AVX2
 
 // Effects
-#define HAS_ARGBATTENUATEROW_AVX2
-#define HAS_ARGBUNATTENUATEROW_AVX2
-#define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBADDROW_AVX2
+#define HAS_ARGBATTENUATEROW_AVX2
+#define HAS_ARGBMIRRORROW_AVX2
+#define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
+#define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 #endif
 
@@ -152,14 +152,14 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAVE_YASM)
     (defined(_M_IX86) || defined(_M_X64) || \
     defined(__x86_64__) || defined(__i386__))
-#define HAS_SPLITUVROW_AVX2
-#define HAS_SPLITUVROW_MMX
-#define HAS_YUY2TOYROW_AVX2
-#define HAS_UYVYTOYROW_AVX2
-#define HAS_YUY2TOYROW_MMX
-#define HAS_UYVYTOYROW_MMX
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MERGEUVROW_MMX
+#define HAS_SPLITUVROW_AVX2
+#define HAS_SPLITUVROW_MMX
+#define HAS_UYVYTOYROW_AVX2
+#define HAS_UYVYTOYROW_MMX
+#define HAS_YUY2TOYROW_AVX2
+#define HAS_YUY2TOYROW_MMX
 #endif
 
 // The following are disabled when SSSE3 is available:
@@ -182,6 +182,7 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_NEON
 #define HAS_ARGB4444TOUVROW_NEON
 #define HAS_ARGB4444TOYROW_NEON
+#define HAS_ARGBMIRRORROW_NEON
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
 #define HAS_ARGBTOBAYERROW_NEON
@@ -240,7 +241,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
-#define HAS_ARGBMIRRORROW_NEON
 
 // Effects
 #define HAS_ARGBADDROW_NEON
@@ -260,46 +260,46 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__)
 #define HAS_COPYROW_MIPS
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
-#define HAS_SPLITUVROW_MIPS_DSPR2
-#define HAS_MIRRORROW_MIPS_DSPR2
-#define HAS_MIRRORUVROW_MIPS_DSPR2
+#define HAS_I422TOABGRROW_MIPS_DSPR2
 #define HAS_I422TOARGBROW_MIPS_DSPR2
 #define HAS_I422TOBGRAROW_MIPS_DSPR2
-#define HAS_I422TOABGRROW_MIPS_DSPR2
+#define HAS_MIRRORROW_MIPS_DSPR2
+#define HAS_MIRRORUVROW_MIPS_DSPR2
+#define HAS_SPLITUVROW_MIPS_DSPR2
 #endif
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
-typedef __declspec(align(16)) int8 vec8[16];
-typedef __declspec(align(16)) uint8 uvec8[16];
 typedef __declspec(align(16)) int16 vec16[8];
-typedef __declspec(align(16)) uint16 uvec16[8];
 typedef __declspec(align(16)) int32 vec32[4];
+typedef __declspec(align(16)) int8 vec8[16];
+typedef __declspec(align(16)) uint16 uvec16[8];
 typedef __declspec(align(16)) uint32 uvec32[4];
-typedef __declspec(align(32)) int8 lvec8[32];
-typedef __declspec(align(32)) uint8 ulvec8[32];
+typedef __declspec(align(16)) uint8 uvec8[16];
 typedef __declspec(align(32)) int16 lvec16[16];
-typedef __declspec(align(32)) uint16 ulvec16[16];
 typedef __declspec(align(32)) int32 lvec32[8];
+typedef __declspec(align(32)) int8 lvec8[32];
+typedef __declspec(align(32)) uint16 ulvec16[16];
 typedef __declspec(align(32)) uint32 ulvec32[8];
+typedef __declspec(align(32)) uint8 ulvec8[32];
 
 #elif defined(__GNUC__)
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-typedef int8 __attribute__((vector_size(16))) vec8;
-typedef uint8 __attribute__((vector_size(16))) uvec8;
 typedef int16 __attribute__((vector_size(16))) vec16;
-typedef uint16 __attribute__((vector_size(16))) uvec16;
 typedef int32 __attribute__((vector_size(16))) vec32;
+typedef int8 __attribute__((vector_size(16))) vec8;
+typedef uint16 __attribute__((vector_size(16))) uvec16;
 typedef uint32 __attribute__((vector_size(16))) uvec32;
+typedef uint8 __attribute__((vector_size(16))) uvec8;
 #else
 #define SIMD_ALIGNED(var) var
-typedef int8 vec8[16];
-typedef uint8 uvec8[16];
 typedef int16 vec16[8];
-typedef uint16 uvec16[8];
 typedef int32 vec32[4];
+typedef int8 vec8[16];
+typedef uint16 uvec16[8];
 typedef uint32 uvec32[4];
+typedef uint8 uvec8[16];
 #endif
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
