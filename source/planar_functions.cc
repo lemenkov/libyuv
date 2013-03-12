@@ -29,8 +29,11 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
   // Coalesce contiguous rows.
-  if (src_stride_y == width && dst_stride_y == width) {
-    CopyPlane(src_y, 0, dst_y, 0, width * height, 1);
+  if (src_stride_y == width &&
+      dst_stride_y == width) {
+    CopyPlane(src_y, 0,
+              dst_y, 0,
+              width * height, 1);
     return;
   }
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
@@ -228,12 +231,14 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
     src_stride_yuy2 = -src_stride_yuy2;
   }
   // Coalesce contiguous rows.
-  if (IS_ALIGNED(width, 2) &&
-      src_stride_yuy2 == width * 2 &&
+  if (src_stride_yuy2 == width * 2 &&
       dst_stride_y == width &&
-      dst_stride_u == (width + 1) / 2 &&
-      dst_stride_v == (width + 1) / 2) {
-    return YUY2ToI422(src_yuy2, 0, dst_y, 0, dst_u, 0, dst_v, 0,
+      dst_stride_u * 2 == width &&
+      dst_stride_v * 2 == width) {
+    return YUY2ToI422(src_yuy2, 0,
+                      dst_y, 0,
+                      dst_u, 0,
+                      dst_v, 0,
                       width * height, 1);
   }
   void (*YUY2ToUV422Row)(const uint8* src_yuy2,
@@ -314,12 +319,14 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
     src_stride_uyvy = -src_stride_uyvy;
   }
   // Coalesce contiguous rows.
-  if (IS_ALIGNED(width, 2) &&
-      src_stride_uyvy == width * 2 &&
+  if (src_stride_uyvy == width * 2 &&
       dst_stride_y == width &&
-      dst_stride_u == (width + 1) / 2 &&
-      dst_stride_v == (width + 1) / 2) {
-    return UYVYToI422(src_uyvy, 0, dst_y, 0, dst_u, 0, dst_v, 0,
+      dst_stride_u * 2 == width &&
+      dst_stride_v * 2 == width) {
+    return UYVYToI422(src_uyvy, 0,
+                      dst_y, 0,
+                      dst_u, 0,
+                      dst_v, 0,
                       width * height, 1);
   }
   void (*UYVYToUV422Row)(const uint8* src_uyvy,
@@ -793,10 +800,9 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
     dst_stride_bgra = -dst_stride_bgra;
   }
   // Coalesce contiguous rows.
-  if (IS_ALIGNED(width, 2) &&
-      src_stride_y == width &&
-      src_stride_u == (width + 1) / 2 &&
-      src_stride_v == (width + 1) / 2 &&
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
       dst_stride_bgra == width * 4) {
     return I422ToBGRA(src_y, 0,
                       src_u, 0,
@@ -865,10 +871,9 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
     dst_stride_abgr = -dst_stride_abgr;
   }
   // Coalesce contiguous rows.
-  if (IS_ALIGNED(width, 2) &&
-      src_stride_y == width &&
-      src_stride_u == (width + 1) / 2 &&
-      src_stride_v == (width + 1) / 2 &&
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
       dst_stride_abgr == width * 4) {
     return I422ToABGR(src_y, 0,
                       src_u, 0,
@@ -929,10 +934,9 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
     dst_stride_rgba = -dst_stride_rgba;
   }
   // Coalesce contiguous rows.
-  if (IS_ALIGNED(width, 2) &&
-      src_stride_y == width &&
-      src_stride_u == (width + 1) / 2 &&
-      src_stride_v == (width + 1) / 2 &&
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
       dst_stride_rgba == width * 4) {
     return I422ToRGBA(src_y, 0,
                       src_u, 0,
@@ -1074,7 +1078,9 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               uint32 value) {
   // Coalesce contiguous rows.
   if (dst_stride_y == width) {
-    SetPlane(dst_y, 0, width * height, 1, value);
+    SetPlane(dst_y, 0,
+             width * height, 1,
+             value);
     return;
   }
   void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
