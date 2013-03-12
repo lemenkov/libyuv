@@ -146,7 +146,7 @@ RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_Unaligned_SSSE3, UYVYToARGBRow_C,
 // These require alignment on ARGB, so C is used for remainder.
 RGBANY(RGB24ToARGBRow_Any_SSSE3, RGB24ToARGBRow_SSSE3, RGB24ToARGBRow_C,
        15, 3, 4)
-RGBANY(RAWToARGBRow_Any_SSSE3,RAWToARGBRow_SSSE3, RAWToARGBRow_C,
+RGBANY(RAWToARGBRow_Any_SSSE3, RAWToARGBRow_SSSE3, RAWToARGBRow_C,
        15, 3, 4)
 RGBANY(RGB565ToARGBRow_Any_SSE2, RGB565ToARGBRow_SSE2, RGB565ToARGBRow_C,
        7, 2, 4)
@@ -196,32 +196,25 @@ BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
 #undef BAYERANY
 
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.
-// TODO(fbarchard): Use last 16 method for all unsubsampled conversions.
-#define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_SIMDU, SBPP, BPP, NUM)             \
+#define YANY(NAMEANY, ARGBTOY_SIMD, SBPP, BPP, NUM)                            \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       ARGBTOY_SIMD(src_argb, dst_y, width - NUM);                              \
-      ARGBTOY_SIMDU(src_argb + (width - NUM) * SBPP,                           \
+      ARGBTOY_SIMD(src_argb + (width - NUM) * SBPP,                            \
                    dst_y + (width - NUM) * BPP, NUM);                          \
     }
 
 #ifdef HAS_ARGBTOYROW_AVX2
-YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, ARGBToYRow_AVX2, 4, 1, 32)
-YANY(YUY2ToYRow_Any_AVX2, YUY2ToYRow_AVX2, YUY2ToYRow_AVX2, 2, 1, 32)
-YANY(UYVYToYRow_Any_AVX2, UYVYToYRow_AVX2, UYVYToYRow_AVX2, 2, 1, 32)
+YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, 4, 1, 32)
+YANY(YUY2ToYRow_Any_AVX2, YUY2ToYRow_AVX2, 2, 1, 32)
+YANY(UYVYToYRow_Any_AVX2, UYVYToYRow_AVX2, 2, 1, 32)
 #endif
 #ifdef HAS_ARGBTOYROW_SSSE3
-YANY(ARGBToYRow_Any_SSSE3,
-     ARGBToYRow_Unaligned_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4, 1, 16)
-YANY(BGRAToYRow_Any_SSSE3,
-     BGRAToYRow_Unaligned_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4, 1, 16)
-YANY(ABGRToYRow_Any_SSSE3,
-     ABGRToYRow_Unaligned_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4, 1, 16)
-YANY(RGBAToYRow_Any_SSSE3,
-     RGBAToYRow_Unaligned_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4, 1, 16)
-YANY(YUY2ToYRow_Any_SSE2,
-     YUY2ToYRow_Unaligned_SSE2, YUY2ToYRow_Unaligned_SSE2, 2, 1, 16)
-YANY(UYVYToYRow_Any_SSE2,
-     UYVYToYRow_Unaligned_SSE2, UYVYToYRow_Unaligned_SSE2, 2, 1, 16)
+YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_Unaligned_SSSE3, 4, 1, 16)
+YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_Unaligned_SSSE3, 4, 1, 16)
+YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_Unaligned_SSSE3, 4, 1, 16)
+YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_Unaligned_SSSE3, 4, 1, 16)
+YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_Unaligned_SSE2, 2, 1, 16)
+YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_Unaligned_SSE2, 2, 1, 16)
 #endif
 #ifdef HAS_ARGBTOYROW_NEON
 YANY(ARGBToYRow_Any_NEON, ARGBToYRow_NEON, 4, 1, 8)
