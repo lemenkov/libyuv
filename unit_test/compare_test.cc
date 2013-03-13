@@ -305,7 +305,7 @@ TEST_F(libyuvTest, Ssim) {
                       kSrcWidth, kSrcHeight);
 
   EXPECT_GT(err, 0.0);
-  EXPECT_LT(err, 0.009);
+  EXPECT_LT(err, 0.01);
 
   srandom(time(NULL));
   for (int i = b; i < (kSrcHeight + b); ++i) {

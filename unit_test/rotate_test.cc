@@ -78,25 +78,25 @@ TEST_F(libyuvTest, TransposeUV) {
   int i;
 
   ow = ih;
-  oh = iw >> 1;
+  oh = iw;
 
-  align_buffer_64(input, iw * ih)
+  align_buffer_64(input, 2 * iw * ih)
   align_buffer_64(output_a1, ow * oh)
   align_buffer_64(output_b1, ow * oh)
   align_buffer_64(output_a2, iw * ih)
   align_buffer_64(output_b2, iw * ih)
 
-  for (i = 0; i < iw * ih; i += 2) {
+  for (i = 0; i < 2 * iw * ih; i += 2) {
     input[i] = i >> 1;
     input[i + 1] = -(i >> 1);
   }
 
-  TransposeUV(input, iw, output_a1, ow, output_b1, ow, iw >> 1, ih);
+  TransposeUV(input, iw * 2, output_a1, ow, output_b1, ow, iw, ih);
 
   TransposePlane(output_a1, ow, output_a2, oh, ow, oh);
   TransposePlane(output_b1, ow, output_b2, oh, ow, oh);
 
-  for (i = 0; i < iw * ih; i += 2) {
+  for (i = 0; i < 2 * iw * ih; i += 2) {
     if (input[i] != output_a2[i >> 1]) {
       err++;
     }
@@ -192,7 +192,7 @@ TEST_F(libyuvTest, RotateUV90) {
   int i;
 
   ow = ih;
-  oh = iw >> 1;
+  oh = (iw + 1) / 2;
 
   align_buffer_64(input, iw * ih)
   align_buffer_64(output_0_u, ow * oh)
@@ -207,7 +207,7 @@ TEST_F(libyuvTest, RotateUV90) {
     input[i + 1] = -(i >> 1);
   }
 
-  RotateUV90(input, iw, output_90_u, ow, output_90_v, ow, iw >> 1, ih);
+  RotateUV90(input, iw, output_90_u, ow, output_90_v, ow, (iw + 1) / 2, ih);
 
   RotatePlane90(output_90_u, ow, output_180_u, oh, ow, oh);
   RotatePlane90(output_90_v, ow, output_180_v, oh, ow, oh);
@@ -265,7 +265,7 @@ TEST_F(libyuvTest, RotateUV180) {
   ih = benchmark_height_;
   int i;
 
-  ow = iw >> 1;
+  ow = (iw + 1) / 2;
   oh = ih;
 
   align_buffer_64(input, iw * ih)
@@ -281,7 +281,7 @@ TEST_F(libyuvTest, RotateUV180) {
     input[i + 1] = -(i >> 1);
   }
 
-  RotateUV180(input, iw, output_180_u, ow, output_180_v, ow, iw >> 1, ih);
+  RotateUV180(input, iw, output_180_u, ow, output_180_v, ow, (iw + 1) / 2, ih);
 
   RotatePlane90(output_180_u, ow, output_90_u, oh, ow, oh);
   RotatePlane90(output_180_v, ow, output_90_v, oh, ow, oh);
@@ -340,7 +340,7 @@ TEST_F(libyuvTest, RotateUV270) {
   int i;
 
   ow = ih;
-  oh = iw >> 1;
+  oh = (iw + 1) / 2;
 
   align_buffer_64(input, iw * ih)
   align_buffer_64(output_0_u, ow * oh)
@@ -356,7 +356,7 @@ TEST_F(libyuvTest, RotateUV270) {
   }
 
   RotateUV270(input, iw, output_270_u, ow, output_270_v, ow,
-                   iw >> 1, ih);
+                   (iw + 1) / 2, ih);
 
   RotatePlane270(output_270_u, ow, output_180_u, oh, ow, oh);
   RotatePlane270(output_270_v, ow, output_180_v, oh, ow, oh);
@@ -572,17 +572,17 @@ TEST_F(libyuvTest, RotatePlane90Pitch) {
   }
 
   RotatePlane90(input, iw,
-                output_90 + (ow >> 1), ow,
-                iw >> 1, ih >> 1);
-  RotatePlane90(input + (iw >> 1), iw,
-                output_90 + (ow >> 1) + ow * (oh >> 1), ow,
-                iw >> 1, ih >> 1);
-  RotatePlane90(input + iw * (ih >> 1), iw,
+                output_90 + (ow + 1) / 2, ow,
+                (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane90(input + ((iw + 1) / 2), iw,
+                output_90 + (ow + 1) / 2 + ow * ((oh + 1) / 2), ow,
+                (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane90(input + iw * ((ih + 1) / 2), iw,
                 output_90, ow,
-                iw >> 1, ih >> 1);
-  RotatePlane90(input + (iw >> 1) + iw * (ih >> 1), iw,
-                output_90 + ow * (oh >> 1), ow,
-                iw >> 1, ih >> 1);
+                (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane90(input + ((iw + 1) / 2) + iw * ((ih + 1) / 2), iw,
+                output_90 + ow * ((oh + 1) / 2), ow,
+                (iw + 1) / 2, (ih + 1) / 2);
 
   RotatePlane270(output_90, ih, output_0,   iw, ow, oh);
 
@@ -629,17 +629,17 @@ TEST_F(libyuvTest, RotatePlane270Pitch) {
   }
 
   RotatePlane270(input, iw,
-                 output_270 + ow * (oh >> 1), ow,
-                 iw >> 1, ih >> 1);
-  RotatePlane270(input + (iw >> 1), iw,
+                 output_270 + ow * ((oh + 1) / 2), ow,
+                 (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane270(input + ((iw + 1) / 2), iw,
                  output_270, ow,
-                 iw >> 1, ih >> 1);
-  RotatePlane270(input + iw * (ih >> 1), iw,
-                 output_270 + (ow >> 1) + ow * (oh >> 1), ow,
-                 iw >> 1, ih >> 1);
-  RotatePlane270(input + (iw >> 1) + iw * (ih >> 1), iw,
-                 output_270 + (ow >> 1), ow,
-                 iw >> 1, ih >> 1);
+                 (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane270(input + iw * ((ih + 1) / 2), iw,
+                 output_270 + (ow + 1) / 2 + ow * ((oh + 1) / 2), ow,
+                 (iw + 1) / 2, (ih + 1) / 2);
+  RotatePlane270(input + ((iw + 1) / 2) + iw * ((ih + 1) / 2), iw,
+                 output_270 + (ow + 1) / 2, ow,
+                 (iw + 1) / 2, (ih + 1) / 2);
 
   RotatePlane90(output_270, ih, output_0,   iw, ow, oh);
 
@@ -673,8 +673,8 @@ TEST_F(libyuvTest, I420Rotate90) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
 
   int i, j;
 
@@ -796,8 +796,8 @@ TEST_F(libyuvTest, I420Rotate270) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
 
   int i, j;
 
@@ -919,8 +919,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate90) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
   int i, j;
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
@@ -1026,8 +1026,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate270) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
 
   int i, j;
 
@@ -1134,8 +1134,8 @@ TEST_F(libyuvTest, NV12ToI420Rotate180) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
 
   int i, j;
 
@@ -1239,8 +1239,8 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight90) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
   int i, j;
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
@@ -1396,8 +1396,8 @@ TEST_F(libyuvTest, NV12ToI420RotateNegHeight180) {
   int yw = benchmark_width_;
   int yh = benchmark_height_;
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
   int i, j;
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
@@ -1523,8 +1523,8 @@ TEST_F(libyuvTest, NV12ToI420SplitUV) {
   int yh = benchmark_height_;
 
   int b = 128;
-  int uvw = (yw + 1) >> 1;
-  int uvh = (yh + 1) >> 1;
+  int uvw = (yw + 1) / 2;
+  int uvh = (yh + 1) / 2;
   int i, j;
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
