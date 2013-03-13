@@ -357,7 +357,7 @@ TEST_F(libyuvTest, ARGBScaleTo1366x768_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 
@@ -384,7 +384,7 @@ TEST_F(libyuvTest, ARGBScaleTo1280x720_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBScaleTo853x480_None) {

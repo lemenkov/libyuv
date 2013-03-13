@@ -457,7 +457,7 @@ TEST_F(libyuvTest, ScaleTo1366x768_Bilinear) {
                             dst_width, dst_height,
                             kFilterBilinear,
                             benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ScaleTo1366x768_Box) {
@@ -470,7 +470,7 @@ TEST_F(libyuvTest, ScaleTo1366x768_Box) {
                             dst_width, dst_height,
                             kFilterBox,
                             benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ScaleTo1280x720_None) {
@@ -496,7 +496,7 @@ TEST_F(libyuvTest, ScaleTo1280x720_Bilinear) {
                             dst_width, dst_height,
                             kFilterBilinear,
                             benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ScaleTo1280x720_Box) {
@@ -509,7 +509,7 @@ TEST_F(libyuvTest, ScaleTo1280x720_Box) {
                             dst_width, dst_height,
                             kFilterBox,
                             benchmark_iterations_);
-  EXPECT_LE(max_diff, 1);
+  EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ScaleTo853x480_None) {
