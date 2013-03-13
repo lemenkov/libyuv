@@ -237,6 +237,17 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
     dst_yuy2 = dst_yuy2 + (height - 1) * dst_stride_yuy2;
     dst_stride_yuy2 = -dst_stride_yuy2;
   }
+  // Coalesce contiguous rows.
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
+      dst_stride_yuy2 == width * 2) {
+    return I422ToYUY2(src_y, 0,
+                      src_u, 0,
+                      src_v, 0,
+                      dst_yuy2, 0,
+                      width * height, 1);
+  }
   void (*I422ToYUY2Row)(const uint8* src_y, const uint8* src_u,
                         const uint8* src_v, uint8* dst_yuy2, int width) =
       I422ToYUY2Row_C;
@@ -335,6 +346,17 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
     height = -height;
     dst_uyvy = dst_uyvy + (height - 1) * dst_stride_uyvy;
     dst_stride_uyvy = -dst_stride_uyvy;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
+      dst_stride_uyvy == width * 2) {
+    return I422ToUYVY(src_y, 0,
+                      src_u, 0,
+                      src_v, 0,
+                      dst_uyvy, 0,
+                      width * height, 1);
   }
   void (*I422ToUYVYRow)(const uint8* src_y, const uint8* src_u,
                         const uint8* src_v, uint8* dst_uyvy, int width) =
@@ -439,8 +461,19 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
     dst_stride_y = -dst_stride_y;
     dst_stride_uv = -dst_stride_uv;
   }
-
+  // Coalesce contiguous rows.
   int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
+      dst_stride_y == width &&
+      dst_stride_uv == width) {
+    width = width * height;
+    height = 1;
+    halfwidth = halfwidth * halfheight;
+    halfheight = 1;
+  }
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
 #if defined(HAS_MERGEUVROW_SSE2)
@@ -476,7 +509,6 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
 #endif
 
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
     // Merge a row of U and V into a row of UV.
     MergeUVRow_(src_u, src_v, dst_uv, halfwidth);

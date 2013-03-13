@@ -271,8 +271,6 @@ YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
 #endif
 #undef YANY
 
-
-
 // RGB/YUV to UV does multiple of 16 with SIMD and remainder with C.
 #define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                     \
     void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
