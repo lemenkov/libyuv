@@ -381,8 +381,21 @@ static int X420ToI420(const uint8* src_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
-
+  // Coalesce contiguous rows.
   int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (src_stride_y0 == width &&
+      src_stride_y1 == width &&
+      dst_stride_y == width) {
+    width = width * height;
+    height = 1;
+  }
+  if (src_stride_uv == width &&
+      dst_stride_u * 2 == width &&
+      dst_stride_v * 2 == width) {
+    halfwidth = halfwidth * halfheight;
+    halfheight = 1;
+  }
   void (*SplitUVRow)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) =
       SplitUVRow_C;
 #if defined(HAS_SPLITUVROW_SSE2)
@@ -437,7 +450,6 @@ static int X420ToI420(const uint8* src_y,
     }
   }
 
-  int halfheight = (height + 1) >> 1;
   for (int y = 0; y < halfheight; ++y) {
     // Copy a row of UV.
     SplitUVRow(src_uv, dst_u, dst_v, halfwidth);

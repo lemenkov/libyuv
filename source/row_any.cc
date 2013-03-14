@@ -19,7 +19,6 @@ extern "C" {
 
 // TODO(fbarchard): Consider 'any' functions handling any quantity of pixels.
 // TODO(fbarchard): Consider 'any' functions handling odd alignment.
-
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
     void NAMEANY(const uint8* y_buf,                                           \
