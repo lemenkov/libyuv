@@ -712,6 +712,53 @@ void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
+// Sobel functions which mimics SSSE3.
+void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
+                 uint8* dst_sobelx, int width) {
+  for (int i = 0; i < width; ++i) {
+    int a = src_y0[i];
+    int b = src_y1[i];
+    int c = src_y2[i];
+    int a_sub = src_y0[i + 2];
+    int b_sub = src_y1[i + 2];
+    int c_sub = src_y2[i + 2];
+    int a_diff = a - a_sub;
+    int b_diff = b - b_sub;
+    int c_diff = c - c_sub;
+    int sobel = a_diff + b_diff * 2 + c_diff;
+    if (sobel < 0) {
+      sobel = -sobel;
+    }
+    if (sobel > 255) {
+      sobel = 255;
+    }
+    dst_sobelx[i] = static_cast<uint8>(sobel);
+  }
+}
+
+void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
+                 uint8* dst_sobely, int width) {
+  for (int i = 0; i < width; ++i) {
+    int a = src_y0[i + 0];
+    int b = src_y0[i + 1];
+    int c = src_y0[i + 2];
+    int a_sub = src_y1[i + 0];
+    int b_sub = src_y1[i + 1];
+    int c_sub = src_y1[i + 2];
+    int a_diff = a - a_sub;
+    int b_diff = b - b_sub;
+    int c_diff = c - c_sub;
+    int sobel = a_diff + b_diff * 2 + c_diff;
+    if (sobel < 0) {
+      sobel = -sobel;
+    }
+    if (sobel > 255) {
+      sobel = 255;
+    }
+    dst_sobely[i] = static_cast<uint8>(sobel);
+  }
+}
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

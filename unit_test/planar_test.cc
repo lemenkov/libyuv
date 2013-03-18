@@ -20,6 +20,7 @@
 #include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/row.h"  // For Sobel
 #include "../unit_test/unit_test.h"
 
 #if defined(_MSC_VER)
@@ -886,6 +887,77 @@ TEST_F(libyuvTest, TestAffine) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
                          uv_step, 256);
     }
+  }
+#endif
+}
+
+TEST_F(libyuvTest, TestSobelX) {
+  SIMD_ALIGNED(uint8 orig_pixels_0[256 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[256 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_2[256 + 2]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[256]);
+
+  for (int i = 0; i < 256 + 2; ++i) {
+    orig_pixels_0[i] = i;
+    orig_pixels_1[i] = i * 2;
+    orig_pixels_2[i] = i * 3;
+  }
+
+  SobelXRow_C(orig_pixels_0, orig_pixels_1, orig_pixels_2,
+              sobel_pixels_c, 256);
+
+  EXPECT_EQ(16u, sobel_pixels_c[0]);
+  EXPECT_EQ(16u, sobel_pixels_c[100]);
+  EXPECT_EQ(255u, sobel_pixels_c[255]);
+#if defined(HAS_SOBELXROW_SSSE3)
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[256]);
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  if (has_ssse3) {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelXRow_SSSE3(orig_pixels_0, orig_pixels_1, orig_pixels_2,
+                      sobel_pixels_opt, 256);
+    }
+  } else {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelXRow_C(orig_pixels_0, orig_pixels_1, orig_pixels_2,
+                  sobel_pixels_opt, 256);
+    }
+  }
+  for (int i = 0; i < 256; ++i) {
+    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+  }
+#endif
+}
+
+TEST_F(libyuvTest, TestSobelY) {
+  SIMD_ALIGNED(uint8 orig_pixels_0[256 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[256 + 2]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[256]);
+
+  for (int i = 0; i < 256 + 2; ++i) {
+    orig_pixels_0[i] = i;
+    orig_pixels_1[i] = i * 2;
+  }
+
+  SobelYRow_C(orig_pixels_0, orig_pixels_1, sobel_pixels_c, 256);
+
+  EXPECT_EQ(4u, sobel_pixels_c[0]);
+  EXPECT_EQ(255u, sobel_pixels_c[100]);
+  EXPECT_EQ(0u, sobel_pixels_c[255]);
+#if defined(HAS_SOBELYROW_SSSE3)
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[256]);
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  if (has_ssse3) {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelYRow_SSSE3(orig_pixels_0, orig_pixels_1, sobel_pixels_opt, 256);
+    }
+  } else {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelYRow_C(orig_pixels_0, orig_pixels_1, sobel_pixels_opt, 256);
+    }
+  }
+  for (int i = 0; i < 256; ++i) {
+    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
   }
 #endif
 }

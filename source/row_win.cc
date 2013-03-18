@@ -5027,6 +5027,112 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBSUBTRACTROW_AVX2
 
+#ifdef HAS_SOBELXROW_SSSE3
+// SobelX as a matrix is
+// -1  0  1
+// -2  0  2
+// -1  0  1
+__declspec(naked) __declspec(align(16))
+void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     const uint8* src_y2, uint8* dst_sobelx, int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // src_y0
+    mov        esi, [esp + 8 + 8]   // src_y1
+    mov        edi, [esp + 8 + 12]  // src_y2
+    mov        edx, [esp + 8 + 16]  // dst_sobelx
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        esi, eax
+    sub        edi, eax
+    sub        edx, eax
+    pxor       xmm5, xmm5  // constant 0
+
+    align      16
+ convertloop:
+    movq       xmm0, qword ptr [eax]            // read 8 pixels from src_y0[0]
+    movq       xmm1, qword ptr [eax + 2]        // read 8 pixels from src_y0[2]
+    punpcklbw  xmm0, xmm5
+    punpcklbw  xmm1, xmm5
+    psubw      xmm0, xmm1
+    movq       xmm1, qword ptr [eax + esi]      // read 8 pixels from src_y1[0]
+    movq       xmm2, qword ptr [eax + esi + 2]  // read 8 pixels from src_y1[2]
+    punpcklbw  xmm1, xmm5
+    punpcklbw  xmm2, xmm5
+    psubw      xmm1, xmm2
+    movq       xmm2, qword ptr [eax + edi]      // read 8 pixels from src_y2[0]
+    movq       xmm3, qword ptr [eax + edi + 2]  // read 8 pixels from src_y2[2]
+    punpcklbw  xmm2, xmm5
+    punpcklbw  xmm3, xmm5
+    psubw      xmm2, xmm3
+    paddw      xmm0, xmm2
+    paddw      xmm0, xmm1
+    paddw      xmm0, xmm1
+    pabsw      xmm0, xmm0   // SSSE3.  Could use SSE2 psubusw twice instead.
+    packuswb   xmm0, xmm0
+    sub        ecx, 8
+    movq       qword ptr [eax + edx], xmm0
+    lea        eax, [eax + 8]
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_SOBELXROW_SSSE3
+
+#ifdef HAS_SOBELYROW_SSSE3
+// SobelY as a matrix is
+// -1 -2 -1
+//  0  0  0
+//  1  2  1
+__declspec(naked) __declspec(align(16))
+void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     uint8* dst_sobely, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_y0
+    mov        esi, [esp + 4 + 8]   // src_y1
+    mov        edx, [esp + 4 + 12]  // dst_sobely
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+    sub        edx, eax
+    pxor       xmm5, xmm5  // constant 0
+
+    align      16
+ convertloop:
+    movq       xmm0, qword ptr [eax]            // read 8 pixels from src_y0[0]
+    movq       xmm1, qword ptr [eax + esi]      // read 8 pixels from src_y1[0]
+    punpcklbw  xmm0, xmm5
+    punpcklbw  xmm1, xmm5
+    psubw      xmm0, xmm1
+    movq       xmm1, qword ptr [eax + 1]        // read 8 pixels from src_y0[1]
+    movq       xmm2, qword ptr [eax + esi + 1]  // read 8 pixels from src_y1[1]
+    punpcklbw  xmm1, xmm5
+    punpcklbw  xmm2, xmm5
+    psubw      xmm1, xmm2
+    movq       xmm2, qword ptr [eax + 2]        // read 8 pixels from src_y0[2]
+    movq       xmm3, qword ptr [eax + esi + 2]  // read 8 pixels from src_y1[2]
+    punpcklbw  xmm2, xmm5
+    punpcklbw  xmm3, xmm5
+    psubw      xmm2, xmm3
+    paddw      xmm0, xmm2
+    paddw      xmm0, xmm1
+    paddw      xmm0, xmm1
+    pabsw      xmm0, xmm0   // SSSE3.  Could use SSE2 psubusw twice instead.
+    packuswb   xmm0, xmm0
+    sub        ecx, 8
+    movq       qword ptr [eax + edx], xmm0
+    lea        eax, [eax + 8]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_SOBELYROW_SSSE3
+
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.

@@ -120,6 +120,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_COPYROW_AVX2
+#define HAS_SOBELXROW_SSSE3
+#define HAS_SOBELYROW_SSSE3
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
@@ -1418,6 +1420,16 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
 void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
                              ptrdiff_t src_stride_argb, int dst_width,
                              int source_y_fraction);
+
+// Sobel images.
+void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
+                 uint8* dst_sobelx, int width);
+void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     const uint8* src_y2, uint8* dst_sobelx, int width);
+void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
+                 uint8* dst_sobely, int width);
+void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     uint8* dst_sobely, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
