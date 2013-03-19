@@ -71,7 +71,6 @@
         }],
       ], # conditions
     },
-
   ], # targets
 }
 

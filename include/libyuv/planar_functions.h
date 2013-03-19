@@ -347,6 +347,12 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
                 uint8* dst_argb, int dst_stride_argb,
                 const uint8* shuffler, int width, int height);
 
+// Sobel ARGB effect.
+LIBYUV_API
+int ARGBSobel(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
