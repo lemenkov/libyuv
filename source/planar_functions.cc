@@ -1975,6 +1975,127 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+
+// SobelXY ARGB effect.
+// Similar to Sobel, but also stores Sobel X in R and Sobel Y in B.  G = Sobel.
+// TODO(fbarchard): Enable AVX2.  Mixing SSSE3 and AVX2 requires zeroupper.
+LIBYUV_API
+int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
+                uint8* dst_argb, int dst_stride_argb,
+                int width, int height) {
+  if (!src_argb  || !dst_argb ||
+      width <= 0 || height == 0 || width > kMaxStride) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb  = src_argb  + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYRow_C;
+#if defined(HAS_ARGBTOYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+    ARGBToYRow = ARGBToYRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
+      // Assumed row buffer aligned.
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+        ARGBToYRow = ARGBToYRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
+  bool clear = false;
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
+    clear = true;
+    ARGBToYRow = ARGBToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYRow = ARGBToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToYRow = ARGBToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_NEON;
+    }
+  }
+#endif
+  void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width) = SobelYRow_C;
+#if defined(HAS_SOBELYROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    SobelYRow = SobelYRow_SSSE3;
+  }
+#endif
+  void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobely, int width) =
+      SobelXRow_C;
+#if defined(HAS_SOBELXROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    SobelXRow = SobelXRow_SSSE3;
+  }
+#endif
+
+  void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
+                    uint8* dst_argb, int width) = SobelXYRow_C;
+#if defined(HAS_SOBELXYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    SobelXYRow = SobelXYRow_SSE2;
+  }
+#endif
+
+  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
+  SIMD_ALIGNED(uint8 row_y[(kMaxStride + kEdge) * 3 + kEdge]);
+  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride]);
+  SIMD_ALIGNED(uint8 row_sobely[kMaxStride]);
+
+  // Convert first row.
+  uint8* row_y0 = row_y + kEdge;
+  uint8* row_y1 = row_y0 + kMaxStride;
+  uint8* row_y2 = row_y1 + kMaxStride;
+  ARGBToYRow(src_argb, row_y0, width);
+  row_y0[-1] = row_y0[0];
+  row_y0[width] = row_y0[width - 1];
+  ARGBToYRow(src_argb, row_y1, width);
+  row_y1[-1] = row_y1[0];
+  row_y1[width] = row_y1[width - 1];
+  int awidth = (width + 3) >> 2;
+
+  for (int y = 0; y < height; ++y) {
+    // Convert next row of ARGB to Y.
+    if (y < (height - 1)) {
+      src_argb += src_stride_argb;
+    }
+    ARGBToYRow(src_argb, row_y2, width);
+    row_y2[-1] = row_y2[0];
+    row_y2[width] = row_y2[width - 1];
+
+    SobelXRow(row_y0 - 1, row_y1 - 1, row_y2 - 1, row_sobelx, width);
+    SobelYRow(row_y0 - 1, row_y2 - 1, row_sobely, width);
+    SobelXYRow(row_sobelx, row_sobely, dst_argb, width);
+
+    // Cycle thru circular queue of 3 row_y buffers.
+    uint8* row_yt = row_y0;
+    row_y0 = row_y1;
+    row_y1 = row_y2;
+    row_y2 = row_yt;
+
+    dst_argb += dst_stride_argb;
+  }
+#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
+  if (clear) {
+    __asm vzeroupper;
+  }
+#endif
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -759,6 +759,23 @@ void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
   }
 }
 
+void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
+                  uint8* dst_argb, int width) {
+  for (int i = 0; i < width; ++i) {
+    int r = src_sobelx[i];
+    int b = src_sobely[i];
+    int g = r + b;
+    if (g > 255) {
+      g = 255;
+    }
+    dst_argb[0] = static_cast<uint8>(b);
+    dst_argb[1] = static_cast<uint8>(g);
+    dst_argb[2] = static_cast<uint8>(r);
+    dst_argb[3] = static_cast<uint8>(255u);
+    dst_argb += 4;
+  }
+}
+
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   for (int x = 0; x < width; ++x) {

@@ -5133,6 +5133,57 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 }
 #endif  // HAS_SOBELYROW_SSSE3
 
+#ifdef HAS_SOBELXYROW_SSE2
+// Mixes Sobel X, Sobel Y and Sobel into ARGB.
+// A = 255
+// R = Sobel X
+// G = Sobel
+// B = Sobel Y
+__declspec(naked) __declspec(align(16))
+void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_sobelx
+    mov        esi, [esp + 4 + 8]   // src_sobely
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+    pcmpeqb    xmm5, xmm5            // alpha 255
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    lea        eax, [eax + 16]
+    movdqa     xmm2, xmm0
+    paddusb    xmm2, xmm1             // sobel = sobelx + sobely
+    movdqa     xmm3, xmm0             // XA
+    punpcklbw  xmm3, xmm5
+    punpckhbw  xmm0, xmm5
+    movdqa     xmm4, xmm1             // YS
+    punpcklbw  xmm4, xmm2
+    punpckhbw  xmm1, xmm2
+    movdqa     xmm6, xmm4             // YSXA
+    punpcklwd  xmm6, xmm3             // First 4
+    punpckhwd  xmm4, xmm3             // Next 4
+    movdqa     xmm7, xmm1             // YSXA
+    punpcklwd  xmm7, xmm0             // Next 4
+    punpckhwd  xmm1, xmm0             // Last 4
+    sub        ecx, 16
+    movdqa     [edx], xmm6
+    movdqa     [edx + 16], xmm4
+    movdqa     [edx + 32], xmm7
+    movdqa     [edx + 48], xmm1
+    lea        edx, [edx + 64]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif // HAS_SOBELXYROW_SSE2
+
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.
 // Consider calling CumulativeSum one row at time as needed.

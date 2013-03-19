@@ -122,6 +122,7 @@ extern "C" {
 #define HAS_COPYROW_AVX2
 #define HAS_SOBELXROW_SSSE3
 #define HAS_SOBELYROW_SSSE3
+#define HAS_SOBELXYROW_SSE2
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
@@ -1430,6 +1431,10 @@ void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
                  uint8* dst_sobely, int width);
 void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
                      uint8* dst_sobely, int width);
+void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
+                  uint8* dst_argb, int width);
+void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
