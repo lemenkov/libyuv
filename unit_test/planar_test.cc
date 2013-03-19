@@ -962,6 +962,47 @@ TEST_F(libyuvTest, TestSobelY) {
 #endif
 }
 
+TEST_F(libyuvTest, TestSobel) {
+  SIMD_ALIGNED(uint8 orig_sobelx[256]);
+  SIMD_ALIGNED(uint8 orig_sobely[256]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[256 * 4]);
+
+  for (int i = 0; i < 256; ++i) {
+    orig_sobelx[i] = i;
+    orig_sobely[i] = i * 2;
+  }
+
+  SobelRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 256);
+
+  EXPECT_EQ(0u, sobel_pixels_c[0]);
+  EXPECT_EQ(3u, sobel_pixels_c[4]);
+  EXPECT_EQ(3u, sobel_pixels_c[5]);
+  EXPECT_EQ(3u, sobel_pixels_c[6]);
+  EXPECT_EQ(255u, sobel_pixels_c[7]);
+  EXPECT_EQ(6u, sobel_pixels_c[8]);
+  EXPECT_EQ(6u, sobel_pixels_c[9]);
+  EXPECT_EQ(6u, sobel_pixels_c[10]);
+  EXPECT_EQ(255u, sobel_pixels_c[7]);
+  EXPECT_EQ(255u, sobel_pixels_c[100 * 4 + 1]);
+  EXPECT_EQ(255u, sobel_pixels_c[255 * 4 + 1]);
+#if defined(HAS_SOBELROW_SSE2)
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[256 * 4]);
+  int has_sse2 = TestCpuFlag(kCpuHasSSE2);
+  if (has_sse2) {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelRow_SSE2(orig_sobelx, orig_sobely, sobel_pixels_opt, 256);
+    }
+  } else {
+    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+      SobelRow_C(orig_sobelx, orig_sobely, sobel_pixels_opt, 256);
+    }
+  }
+  for (int i = 0; i < 16; ++i) {
+    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+  }
+#endif
+}
+
 TEST_F(libyuvTest, TestSobelXY) {
   SIMD_ALIGNED(uint8 orig_sobelx[256]);
   SIMD_ALIGNED(uint8 orig_sobely[256]);

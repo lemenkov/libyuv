@@ -5133,6 +5133,58 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 }
 #endif  // HAS_SOBELYROW_SSSE3
 
+#ifdef HAS_SOBELROW_SSE2
+// Adds Sobel X and Sobel Y and stores Sobel into ARGB.
+// A = 255
+// R = Sobel
+// G = Sobel
+// B = Sobel
+__declspec(naked) __declspec(align(16))
+void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_sobelx
+    mov        esi, [esp + 4 + 8]   // src_sobely
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+    pcmpeqb    xmm5, xmm5           // alpha 255
+    pslld      xmm5, 24             // 0xff000000
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    lea        eax, [eax + 16]
+    paddusb    xmm0, xmm1             // sobel = sobelx + sobely
+    movdqa     xmm2, xmm0             // GG
+    punpcklbw  xmm2, xmm0             // First 8
+    punpckhbw  xmm0, xmm0             // Next 8
+    movdqa     xmm1, xmm2             // GGGG
+    punpcklwd  xmm1, xmm2             // First 4
+    punpckhwd  xmm2, xmm2             // Next 4
+    por        xmm1, xmm5             // GGGA
+    por        xmm2, xmm5
+    movdqa     xmm3, xmm0             // GGGG
+    punpcklwd  xmm3, xmm0             // Next 4
+    punpckhwd  xmm0, xmm0             // Last 4
+    por        xmm3, xmm5             // GGGA
+    por        xmm0, xmm5
+    sub        ecx, 16
+    movdqa     [edx], xmm1
+    movdqa     [edx + 16], xmm2
+    movdqa     [edx + 32], xmm3
+    movdqa     [edx + 48], xmm0
+    lea        edx, [edx + 64]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_SOBELROW_SSE2
+
 #ifdef HAS_SOBELXYROW_SSE2
 // Mixes Sobel X, Sobel Y and Sobel into ARGB.
 // A = 255
@@ -5182,7 +5234,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     ret
   }
 }
-#endif // HAS_SOBELXYROW_SSE2
+#endif  // HAS_SOBELXYROW_SSE2
 
 #ifdef HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 // Consider float CumulativeSum.

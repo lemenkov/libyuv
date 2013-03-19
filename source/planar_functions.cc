@@ -1870,25 +1870,6 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-  void (*YToARGBRow)(const uint8* y_buf,
-                     uint8* rgb_buf,
-                     int width) = YToARGBRow_C;
-#if defined(HAS_YTOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    YToARGBRow = YToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      YToARGBRow = YToARGBRow_SSE2;
-    }
-  }
-#elif defined(HAS_YTOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    YToARGBRow = YToARGBRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      YToARGBRow = YToARGBRow_NEON;
-    }
-  }
-#endif
 
   void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
                     uint8* dst_sobely, int width) = SobelYRow_C;
@@ -1905,23 +1886,12 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_SSSE3;
   }
 #endif
-
-  void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
-                     int width) = ARGBAddRow_C;
-#if defined(HAS_ARGBADDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBAddRow = ARGBAddRow_SSE2;
-  }
-#endif
-#if defined(HAS_ARGBADDROW_AVX2_DISABLED)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    clear = true;
-    ARGBAddRow = ARGBAddRow_AVX2;
-  }
-#endif
-#if defined(HAS_ARGBADDROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    ARGBAddRow = ARGBAddRow_NEON;
+  void (*SobelRow)(const uint8* src_sobelx, const uint8* src_sobely,
+                   uint8* dst_argb, int width) = SobelRow_C;
+#if defined(HAS_SOBELROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    SobelRow = SobelRow_SSE2;
   }
 #endif
 
@@ -1929,7 +1899,6 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   SIMD_ALIGNED(uint8 row_y[(kMaxStride + kEdge) * 3 + kEdge]);
   SIMD_ALIGNED(uint8 row_sobelx[kMaxStride]);
   SIMD_ALIGNED(uint8 row_sobely[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_sobel[kMaxStride]);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
@@ -1941,7 +1910,6 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   ARGBToYRow(src_argb, row_y1, width);
   row_y1[-1] = row_y1[0];
   row_y1[width] = row_y1[width - 1];
-  int awidth = (width + 3) >> 2;
 
   for (int y = 0; y < height; ++y) {
     // Convert next row of ARGB to Y.
@@ -1954,10 +1922,7 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
 
     SobelXRow(row_y0 - 1, row_y1 - 1, row_y2 - 1, row_sobelx, width);
     SobelYRow(row_y0 - 1, row_y2 - 1, row_sobely, width);
-
-    ARGBAddRow(row_sobelx, row_sobely, row_sobel, awidth);
-
-    YToARGBRow(row_sobel, dst_argb, width);
+    SobelRow(row_sobelx, row_sobely, dst_argb, width);
 
     // Cycle thru circular queue of 3 row_y buffers.
     uint8* row_yt = row_y0;
@@ -1974,7 +1939,6 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
 #endif
   return 0;
 }
-
 
 // SobelXY ARGB effect.
 // Similar to Sobel, but also stores Sobel X in R and Sobel Y in B.  G = Sobel.
@@ -2042,7 +2006,7 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
 #endif
 
   void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
-                    uint8* dst_argb, int width) = SobelXYRow_C;
+                     uint8* dst_argb, int width) = SobelXYRow_C;
 #if defined(HAS_SOBELXYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -2065,7 +2029,6 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
   ARGBToYRow(src_argb, row_y1, width);
   row_y1[-1] = row_y1[0];
   row_y1[width] = row_y1[width - 1];
-  int awidth = (width + 3) >> 2;
 
   for (int y = 0; y < height; ++y) {
     // Convert next row of ARGB to Y.
