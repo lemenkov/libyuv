@@ -71,6 +71,17 @@
         }],
       ], # conditions
     },
+    # TODO(fbarchard): Enable SSE2 and OpenMP for better performance.
+    {
+      'target_name': 'psnr',
+      'type': 'executable',
+      'sources': [
+        # sources
+        'util/psnr_main.cc',
+        'util/psnr.cc',
+        'util/ssim.cc',
+      ],
+    },
   ], # targets
 }
 
