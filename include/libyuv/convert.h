@@ -243,7 +243,7 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
                   int dst_width, int dst_height,
-                  RotationMode rotation,
+                  enum RotationMode rotation,
                   uint32 format);
 
 #ifdef __cplusplus

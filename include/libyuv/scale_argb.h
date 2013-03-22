@@ -24,7 +24,7 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int src_width, int src_height,
               uint8* dst_argb, int dst_stride_argb,
               int dst_width, int dst_height,
-              FilterMode filtering);
+              enum FilterMode filtering);
 
 #ifdef __cplusplus
 }  // extern "C"

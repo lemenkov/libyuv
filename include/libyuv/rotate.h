@@ -39,7 +39,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
-               int src_width, int src_height, RotationMode mode);
+               int src_width, int src_height, enum RotationMode mode);
 
 // Rotate NV12 input and store in I420.
 LIBYUV_API
@@ -48,7 +48,7 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_y, int dst_stride_y,
                      uint8* dst_u, int dst_stride_u,
                      uint8* dst_v, int dst_stride_v,
-                     int src_width, int src_height, RotationMode mode);
+                     int src_width, int src_height, enum RotationMode mode);
 
 // Rotate planes by 90, 180, 270
 LIBYUV_API

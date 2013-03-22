@@ -19,6 +19,10 @@
 #include <intrin.h>  // For __cpuid()
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned int uint32;     // NOLINT
 #ifdef _MSC_VER
 typedef unsigned __int64 uint64;
@@ -43,7 +47,7 @@ double ComputePSNR(double sse, double size) {
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
   volatile uint32 sse;
-  asm volatile (
+  asm volatile (  // NOLINT
     "vmov.u8    q7, #0                         \n"
     "vmov.u8    q9, #0                         \n"
     "vmov.u8    q8, #0                         \n"
@@ -72,8 +76,7 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
       "+r"(count),
       "=r"(sse)
     :
-    : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10"
-  );
+    : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10");
   return sse;
 }
 #elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
@@ -120,7 +123,7 @@ static uint32 SumSquareError_SSE2(const uint8* /*src_a*/,
 static uint32 SumSquareError_SSE2(const uint8* src_a,
                                   const uint8* src_b, int count) {
   uint32 sse;
-  asm volatile (
+  asm volatile (  // NOLINT
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"
@@ -158,7 +161,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm5"
 #endif
-  );
+  );  // NOLINT
   return sse;
 }
 #endif  // LIBYUV_DISABLE_X86 etc
@@ -166,21 +169,19 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
 #if defined(HAS_SUMSQUAREERROR_SSE2)
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
+  asm volatile (  // NOLINT
     "mov %%ebx, %%edi                          \n"
     "cpuid                                     \n"
     "xchg %%edi, %%ebx                         \n"
     : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type)
-  );
+    : "a"(info_type));
 }
 #elif defined(__i386__) || defined(__x86_64__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (
+  asm volatile (  // NOLINT
     "cpuid                                     \n"
     : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type)
-  );
+    : "a"(info_type));
 }
 #endif
 
@@ -240,3 +241,8 @@ double ComputeSumSquareError(const uint8* src_a,
   }
   return static_cast<double>(sse);
 }
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+

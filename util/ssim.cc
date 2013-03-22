@@ -13,6 +13,10 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef unsigned int uint32;     // NOLINT
 typedef unsigned short uint16;   // NOLINT
 
@@ -325,3 +329,8 @@ double CalcSSIM(const uint8 *org, const uint8 *rec,
 double CalcLSSIM(double ssim) {
   return -10.0 * log10(1.0 - ssim);
 }
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+

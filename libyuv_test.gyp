@@ -82,6 +82,17 @@
         'util/ssim.cc',
       ],
     },
+    {
+      'target_name': 'cpuid',
+      'type': 'executable',
+      'sources': [
+        # sources
+        'util/cpuid.c',
+      ],
+      'dependencies': [
+        'libyuv.gyp:libyuv',
+      ],
+    },
   ], # targets
 }
 

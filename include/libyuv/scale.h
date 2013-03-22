@@ -31,7 +31,7 @@ void ScalePlane(const uint8* src, int src_stride,
                 int src_width, int src_height,
                 uint8* dst, int dst_stride,
                 int dst_width, int dst_height,
-                FilterMode filtering);
+                enum FilterMode filtering);
 
 // Scales a YUV 4:2:0 image from the src width and height to the
 // dst width and height.
@@ -52,8 +52,9 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               uint8* dst_u, int dst_stride_u,
               uint8* dst_v, int dst_stride_v,
               int dst_width, int dst_height,
-              FilterMode filtering);
+              enum FilterMode filtering);
 
+#ifdef __cplusplus
 // Legacy API.  Deprecated.
 LIBYUV_API
 int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
@@ -73,6 +74,7 @@ int ScaleOffset(const uint8* src_i420, int src_width, int src_height,
 // For testing, allow disabling of specialized scalers.
 LIBYUV_API
 void SetUseReferenceImpl(bool use);
+#endif  // __cplusplus
 
 #ifdef __cplusplus
 }  // extern "C"

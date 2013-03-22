@@ -11,6 +11,8 @@
 #ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_  // NOLINT
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
+#ifdef __cplusplus
+
 #include "libyuv/basic_types.h"
 
 // NOTE: For a simplified public API use convert.h MJPGToI420().
@@ -185,4 +187,5 @@ class MJpegDecoder {
 
 }  // namespace libyuv
 
+#endif  //  __cplusplus
 #endif  // INCLUDE_LIBYUV_MJPEG_DECODER_H_  NOLINT
