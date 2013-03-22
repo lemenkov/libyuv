@@ -4599,7 +4599,7 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
     "lea       0x20(%0),%0                     \n"
     "pshufb    %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
-    "punpckldq xmm1, xmm0                      \n"
+    "punpckldq %%xmm1,%%xmm0                   \n"
     "sub       $0x8,%2                         \n"
     "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
