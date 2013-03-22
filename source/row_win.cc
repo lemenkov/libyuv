@@ -5795,11 +5795,14 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
     align      16
   wloop:
     movdqa     xmm0, [eax]
-    lea        eax, [eax + 16]
+    movdqa     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
     pshufb     xmm0, xmm5
-    sub        ecx, 4
-    movd       [edx], xmm0
-    lea        edx, [edx + 4]
+    pshufb     xmm1, xmm5
+    punpckldq  xmm0, xmm1
+    sub        ecx, 8
+    movq       qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
     jg         wloop
     ret
   }

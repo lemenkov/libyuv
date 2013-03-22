@@ -1352,25 +1352,25 @@ static int TestSobel(int width, int height, int benchmark_iterations,
 TEST_F(libyuvTest, ARGBSobel_Any) {
   int max_diff = TestSobel(benchmark_width_ - 1, benchmark_height_,
                            benchmark_iterations_, +1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Unaligned) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, +1, 1);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Invert) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, -1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Opt) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, +1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 static int TestSobelXY(int width, int height, int benchmark_iterations,
@@ -1415,25 +1415,25 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
 TEST_F(libyuvTest, ARGBSobelXY_Any) {
   int max_diff = TestSobelXY(benchmark_width_ - 1, benchmark_height_,
                              benchmark_iterations_, +1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Unaligned) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
                              benchmark_iterations_, +1, 1);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Invert) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
                              benchmark_iterations_, -1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Opt) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
                              benchmark_iterations_, +1, 0);
-  EXPECT_LE(max_diff, 14);
+  EXPECT_EQ(0, max_diff);
 }
 
 }  // namespace libyuv

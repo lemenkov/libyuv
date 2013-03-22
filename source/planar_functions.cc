@@ -1823,13 +1823,12 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
 }
 
 // Sobel ARGB effect.
-// TODO(fbarchard): Enable AVX2.  Mixing SSSE3 and AVX2 requires zeroupper.
 LIBYUV_API
 int ARGBSobel(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
   if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > kMaxStride) {
+      width <= 0 || height == 0 || width > (kMaxStride / 4)) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1838,39 +1837,25 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     src_argb  = src_argb  + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
-      ARGBToYRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
-    ARGBToYRow = ARGBToYRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
-      // Assumed row buffer aligned.
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-        ARGBToYRow = ARGBToYRow_SSSE3;
-      }
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
-  bool clear = false;
-  if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
-    ARGBToYRow = ARGBToYRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBToYRow = ARGBToYRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    ARGBToYRow = ARGBToYRow_Any_NEON;
+  // ARGBToBayer used to select G channel from ARGB.
+  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
+                         uint32 selector, int pix) = ARGBToBayerRow_C;
+#if defined(HAS_ARGBTOBAYERROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      ARGBToYRow = ARGBToYRow_NEON;
+      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    }
+  }
+#elif defined(HAS_ARGBTOBAYERROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
 #endif
-
   void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
                     uint8* dst_sobely, int width) = SobelYRow_C;
 #if defined(HAS_SOBELYROW_SSSE3)
@@ -1896,18 +1881,18 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
 #endif
 
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  SIMD_ALIGNED(uint8 row_y[(kMaxStride + kEdge) * 3 + kEdge]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxStride]);
+  SIMD_ALIGNED(uint8 row_y[(kMaxStride / 4 + kEdge) * 3 + kEdge]);
+  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride / 4]);
+  SIMD_ALIGNED(uint8 row_sobely[kMaxStride / 4]);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxStride;
-  uint8* row_y2 = row_y1 + kMaxStride;
-  ARGBToYRow(src_argb, row_y0, width);
+  uint8* row_y1 = row_y0 + kMaxStride / 4;
+  uint8* row_y2 = row_y1 + kMaxStride / 4;
+  ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
   row_y0[width] = row_y0[width - 1];
-  ARGBToYRow(src_argb, row_y1, width);
+  ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
   row_y1[-1] = row_y1[0];
   row_y1[width] = row_y1[width - 1];
 
@@ -1916,7 +1901,7 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     if (y < (height - 1)) {
       src_argb += src_stride_argb;
     }
-    ARGBToYRow(src_argb, row_y2, width);
+    ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
     row_y2[-1] = row_y2[0];
     row_y2[width] = row_y2[width - 1];
 
@@ -1932,23 +1917,17 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
 
     dst_argb += dst_stride_argb;
   }
-#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
 // SobelXY ARGB effect.
 // Similar to Sobel, but also stores Sobel X in R and Sobel Y in B.  G = Sobel.
-// TODO(fbarchard): Enable AVX2.  Mixing SSSE3 and AVX2 requires zeroupper.
 LIBYUV_API
 int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height) {
   if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > kMaxStride) {
+      width <= 0 || height == 0 || width > kMaxStride / 4) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1957,35 +1936,22 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     src_argb  = src_argb  + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
-      ARGBToYRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
-    ARGBToYRow = ARGBToYRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToYRow = ARGBToYRow_Unaligned_SSSE3;
-      // Assumed row buffer aligned.
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-        ARGBToYRow = ARGBToYRow_SSSE3;
-      }
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
-  bool clear = false;
-  if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
-    ARGBToYRow = ARGBToYRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBToYRow = ARGBToYRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    ARGBToYRow = ARGBToYRow_Any_NEON;
+  // ARGBToBayer used to select G channel from ARGB.
+  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
+                         uint32 selector, int pix) = ARGBToBayerRow_C;
+#if defined(HAS_ARGBTOBAYERROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      ARGBToYRow = ARGBToYRow_NEON;
+      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    }
+  }
+#elif defined(HAS_ARGBTOBAYERROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
 #endif
@@ -2015,18 +1981,18 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
 #endif
 
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  SIMD_ALIGNED(uint8 row_y[(kMaxStride + kEdge) * 3 + kEdge]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxStride]);
+  SIMD_ALIGNED(uint8 row_y[(kMaxStride / 4 + kEdge) * 3 + kEdge]);
+  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride / 4]);
+  SIMD_ALIGNED(uint8 row_sobely[kMaxStride / 4]);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxStride;
-  uint8* row_y2 = row_y1 + kMaxStride;
-  ARGBToYRow(src_argb, row_y0, width);
+  uint8* row_y1 = row_y0 + kMaxStride / 4;
+  uint8* row_y2 = row_y1 + kMaxStride / 4;
+  ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
   row_y0[width] = row_y0[width - 1];
-  ARGBToYRow(src_argb, row_y1, width);
+  ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
   row_y1[-1] = row_y1[0];
   row_y1[width] = row_y1[width - 1];
 
@@ -2035,7 +2001,7 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     if (y < (height - 1)) {
       src_argb += src_stride_argb;
     }
-    ARGBToYRow(src_argb, row_y2, width);
+    ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
     row_y2[-1] = row_y2[0];
     row_y2[width] = row_y2[width - 1];
 
@@ -2051,11 +2017,6 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
 
     dst_argb += dst_stride_argb;
   }
-#if defined(HAS_ARGBTOYROW_AVX2_DISABLED)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 

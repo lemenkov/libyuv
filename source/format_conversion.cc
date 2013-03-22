@@ -72,10 +72,10 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) = ARGBToBayerRow_C;
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4 &&
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
     ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
     }
   }
@@ -430,9 +430,9 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) = ARGBToBayerRow_C;
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
     }
   }
