@@ -18,7 +18,9 @@
 //
 // Usage: psnr org_seq rec_seq -s width height [-skip skip_org skip_rec]
 
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include <stddef.h>
 #include <stdio.h>
