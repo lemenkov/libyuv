@@ -813,7 +813,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   void (*YUY2ToARGBRow)(const uint8* src_yuy2, uint8* dst_argb, int pix) =
       YUY2ToARGBRow_C;
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
-  // Posix it 16, Windows is 8.
+  // Posix is 16, Windows is 8.
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16 && width <= kMaxStride) {
     YUY2ToARGBRow = YUY2ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
@@ -866,7 +866,7 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   void (*UYVYToARGBRow)(const uint8* src_uyvy, uint8* dst_argb, int pix) =
       UYVYToARGBRow_C;
 #if defined(HAS_UYVYTOARGBROW_SSSE3)
-  // Posix it 16, Windows is 8.
+  // Posix is 16, Windows is 8.
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16 && width <= kMaxStride) {
     UYVYToARGBRow = UYVYToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
