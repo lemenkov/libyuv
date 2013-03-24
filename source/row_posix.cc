@@ -4067,6 +4067,217 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBSUBTRACTROW_SSE2
 
+#ifdef HAS_SOBELXROW_SSSE3
+// SobelX as a matrix is
+// -1  0  1
+// -2  0  2
+// -1  0  1
+void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     const uint8* src_y2, uint8* dst_sobelx, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "sub       %0,%2                           \n"
+    "sub       %0,%3                           \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
+
+    // 8 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%0),%%xmm0                     \n"
+    "movq      0x2(%0),%%xmm1                  \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpcklbw %%xmm5,%%xmm1                   \n"
+    "psubw     %%xmm1,%%xmm0                   \n"
+    "movq      (%0,%1,1),%%xmm1                \n"
+    "movq      0x2(%0,%1,1),%%xmm2             \n"
+    "punpcklbw %%xmm5,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "psubw     %%xmm2,%%xmm1                   \n"
+    "movq      (%0,%2,1),%%xmm2                \n"
+    "movq      0x2(%0,%2,1),%%xmm3             \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "punpcklbw %%xmm5,%%xmm3                   \n"
+    "psubw     %%xmm3,%%xmm2                   \n"
+    "paddw     %%xmm2,%%xmm0                   \n"
+    "paddw     %%xmm1,%%xmm0                   \n"
+    "paddw     %%xmm1,%%xmm0                   \n"
+    "pabsw     %%xmm0,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "sub       $0x8,%4                         \n"
+    "movq      %%xmm0,(%0,%3,1)                \n"
+    "lea       0x8(%0),%0                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_y0),      // %0
+    "+r"(src_y1),      // %1
+    "+r"(src_y2),      // %2
+    "+r"(dst_sobelx),  // %3
+    "+r"(width)        // %4
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_SOBELXROW_SSSE3
+
+#ifdef HAS_SOBELYROW_SSSE3
+// SobelY as a matrix is
+// -1 -2 -1
+//  0  0  0
+//  1  2  1
+void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
+                     uint8* dst_sobely, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "sub       %0,%2                           \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
+
+    // 8 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%0),%%xmm0                     \n"
+    "movq      (%0,%1,1),%%xmm1                \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpcklbw %%xmm5,%%xmm1                   \n"
+    "psubw     %%xmm1,%%xmm0                   \n"
+    "movq      0x1(%0),%%xmm1                  \n"
+    "movq      0x1(%0,%1,1),%%xmm2             \n"
+    "punpcklbw %%xmm5,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "psubw     %%xmm2,%%xmm1                   \n"
+    "movq      0x2(%0),%%xmm2                  \n"
+    "movq      0x2(%0,%1,1),%%xmm3             \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "punpcklbw %%xmm5,%%xmm3                   \n"
+    "psubw     %%xmm3,%%xmm2                   \n"
+    "paddw     %%xmm2,%%xmm0                   \n"
+    "paddw     %%xmm1,%%xmm0                   \n"
+    "paddw     %%xmm1,%%xmm0                   \n"
+    "pabsw     %%xmm0,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "sub       $0x8,%3                         \n"
+    "movq      %%xmm0,(%0,%2,1)                \n"
+    "lea       0x8(%0),%0                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_y0),      // %0
+    "+r"(src_y1),      // %1
+    "+r"(dst_sobely),  // %2
+    "+r"(width)        // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_SOBELYROW_SSSE3
+
+#ifdef HAS_SOBELROW_SSE2
+// Adds Sobel X and Sobel Y and stores Sobel into ARGB.
+// A = 255
+// R = Sobel
+// G = Sobel
+// B = Sobel
+void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pslld     $0x18,%%xmm5                    \n"
+
+    // 8 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    (%0,%1,1),%%xmm1                \n"
+    "lea       0x10(%0),%0                     \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "movdqa    %%xmm0,%%xmm2                   \n"
+    "punpcklbw %%xmm0,%%xmm2                   \n"
+    "punpckhbw %%xmm0,%%xmm0                   \n"
+    "movdqa    %%xmm2,%%xmm1                   \n"
+    "punpcklwd %%xmm2,%%xmm1                   \n"
+    "punpckhwd %%xmm2,%%xmm2                   \n"
+    "por       %%xmm5,%%xmm1                   \n"
+    "por       %%xmm5,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm3                   \n"
+    "punpcklwd %%xmm0,%%xmm3                   \n"
+    "punpckhwd %%xmm0,%%xmm0                   \n"
+    "por       %%xmm5,%%xmm3                   \n"
+    "por       %%xmm5,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movdqa    %%xmm1,(%2)                     \n"
+    "movdqa    %%xmm2,0x10(%2)                 \n"
+    "movdqa    %%xmm3,0x20(%2)                 \n"
+    "movdqa    %%xmm0,0x30(%2)                 \n"
+    "lea       0x40(%2),%2                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_argb),    // %2
+    "+r"(width)        // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_SOBELROW_SSE2
+
+#ifdef HAS_SOBELXYROW_SSE2
+// Mixes Sobel X, Sobel Y and Sobel into ARGB.
+// A = 255
+// R = Sobel X
+// G = Sobel
+// B = Sobel Y
+void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+
+    // 8 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    (%0,%1,1),%%xmm1                \n"
+    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm2                   \n"
+    "paddusb   %%xmm1,%%xmm2                   \n"
+    "movdqa    %%xmm0,%%xmm3                   \n"
+    "punpcklbw %%xmm5,%%xmm3                   \n"
+    "punpckhbw %%xmm5,%%xmm0                   \n"
+    "movdqa    %%xmm1,%%xmm4                   \n"
+    "punpcklbw %%xmm2,%%xmm4                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "movdqa    %%xmm4,%%xmm6                   \n"
+    "punpcklwd %%xmm3,%%xmm6                   \n"
+    "punpckhwd %%xmm3,%%xmm4                   \n"
+    "movdqa    %%xmm1,%%xmm7                   \n"
+    "punpcklwd %%xmm0,%%xmm7                   \n"
+    "punpckhwd %%xmm0,%%xmm1                   \n"
+    "sub       $0x10,%3                        \n"
+    "movdqa    %%xmm6,(%2)                     \n"
+    "movdqa    %%xmm4,0x10(%2)                 \n"
+    "movdqa    %%xmm7,0x20(%2)                 \n"
+    "movdqa    %%xmm1,0x30(%2)                 \n"
+    "lea       0x40(%2),%2                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_argb),    // %2
+    "+r"(width)        // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif  // HAS_SOBELXYROW_SSE2
+
 #ifdef HAS_COMPUTECUMULATIVESUMROW_SSE2
 // Creates a table of cumulative sums where each value is a sum of all values
 // above and to the left of the value, inclusive of the value.

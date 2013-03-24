@@ -118,6 +118,10 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
+#define HAS_SOBELROW_SSE2
+#define HAS_SOBELXROW_SSSE3
+#define HAS_SOBELXYROW_SSE2
+#define HAS_SOBELYROW_SSSE3
 #endif
 
 // The following are Windows only.
@@ -125,10 +129,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_COPYROW_AVX2
-#define HAS_SOBELXROW_SSSE3
-#define HAS_SOBELYROW_SSSE3
-#define HAS_SOBELROW_SSE2
-#define HAS_SOBELXYROW_SSE2
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.

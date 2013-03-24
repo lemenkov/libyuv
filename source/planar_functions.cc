@@ -1970,7 +1970,6 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_SSSE3;
   }
 #endif
-
   void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) = SobelXYRow_C;
 #if defined(HAS_SOBELXYROW_SSE2)
