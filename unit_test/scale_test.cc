@@ -551,4 +551,30 @@ TEST_F(libyuvTest, ScaleTo853x480_Box) {
   EXPECT_LE(max_diff, 1);
 }
 
+TEST_F(libyuvTest, ScaleFrom640x360_None) {
+  int src_width = 640;
+  int src_height = 360;
+  int dst_width = benchmark_width_;
+  int dst_height = benchmark_height_;
+
+  int max_diff = TestFilter(src_width, src_height,
+                            dst_width, dst_height,
+                            kFilterNone,
+                            benchmark_iterations_);
+  EXPECT_LE(max_diff, 2);
+}
+
+TEST_F(libyuvTest, ScaleFrom640x360_Bilinear) {
+  int src_width = 640;
+  int src_height = 360;
+  int dst_width = benchmark_width_;
+  int dst_height = benchmark_height_;
+
+  int max_diff = TestFilter(src_width, src_height,
+                            dst_width, dst_height,
+                            kFilterBilinear,
+                            benchmark_iterations_);
+  EXPECT_LE(max_diff, 2);
+}
+
 }  // namespace libyuv
