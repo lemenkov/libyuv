@@ -57,7 +57,9 @@ int num_skip_org = 0;
 int num_skip_rec = 0;
 int num_frames = 0;
 int do_yscale = 0;
+#ifdef _OPENMP
 int num_threads = 0;
+#endif
 
 bool ExtractResolutionFromYuvFilename(const char *name,
                                       int* width_ptr,
@@ -115,7 +117,9 @@ void PrintHelp(const char * program) {
   printf(" -swap .................. Swap U and V plane\n");
   printf(" -skip <org> <rec> ...... Number of frame to skip of org and rec\n");
   printf(" -frames <num> .......... Number of frames to compare\n");
+#ifdef _OPENMP
   printf(" -t <num> ............... Number of threads\n");
+#endif
   printf(" -yscale ................ Scale org Y values of 16..240 to 0..255\n");
   printf(" -n ..................... Show file name\n");
   printf(" -v ..................... verbose++\n");
@@ -156,8 +160,10 @@ void ParseOptions(int argc, const char *argv[]) {
       num_skip_rec = atoi(argv[++c]);   // NOLINT
     } else if (!strcmp(argv[c], "-frames") && c + 1 < argc) {
       num_frames = atoi(argv[++c]);     // NOLINT
+#ifdef _OPENMP
     } else if (!strcmp(argv[c], "-t") && c + 1 < argc) {
       num_threads = atoi(argv[++c]);    // NOLINT
+#endif
     } else if (fileindex_org == 0) {
       fileindex_org = c;
     } else if (fileindex_rec == 0) {
