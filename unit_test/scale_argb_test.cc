@@ -413,7 +413,6 @@ TEST_F(libyuvTest, ARGBScaleTo853x480_Bilinear) {
   EXPECT_LE(max_diff, 1);
 }
 
-
 TEST_F(libyuvTest, ARGBScaleFrom640x360_None) {
   int src_width = 640;
   int src_height = 360;
