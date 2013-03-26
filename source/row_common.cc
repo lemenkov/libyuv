@@ -256,6 +256,22 @@ MAKEROWY(RGB24, 2, 1, 0, 3)
 MAKEROWY(RAW, 0, 1, 2, 3)
 #undef MAKEROWY
 
+static __inline int RGBToYJ(uint8 r, uint8 g, uint8 b) {
+  return (66 * r + 129 * g +  25 * b + 0x0080) >> 8;
+}
+
+#define MAKEROWYJ(NAME, R, G, B, BPP) \
+void NAME ## ToYJRow_C(const uint8* src_argb0, uint8* dst_y, int width) {      \
+  for (int x = 0; x < width; ++x) {                                            \
+    dst_y[0] = RGBToYJ(src_argb0[R], src_argb0[G], src_argb0[B]);              \
+    src_argb0 += BPP;                                                          \
+    dst_y += 1;                                                                \
+  }                                                                            \
+}                                                                              \
+
+MAKEROWYJ(ARGB, 2, 1, 0, 4)
+#undef MAKEROWYJ
+
 void RGB565ToYRow_C(const uint8* src_rgb565, uint8* dst_y, int width) {
   for (int x = 0; x < width; ++x) {
     uint8 b = src_rgb565[0] & 0x1f;

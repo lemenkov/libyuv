@@ -976,6 +976,126 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Convert ARGB to J420. (JPeg full range I420).
+LIBYUV_API
+int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_yj, int dst_stride_yj,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  if (!src_argb ||
+      !dst_yj || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
+      ARGBToYJRow_C;
+#if defined(HAS_ARGBTOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+    ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
+    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_Unaligned_SSSE3;
+      ARGBToYJRow = ARGBToYJRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+        ARGBToUVRow = ARGBToUVRow_SSSE3;
+        if (IS_ALIGNED(dst_yj, 16) && IS_ALIGNED(dst_stride_yj, 16)) {
+          ARGBToYJRow = ARGBToYJRow_SSSE3;
+        }
+      }
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYJROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToYJRow = ARGBToYJRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYJRow = ARGBToYJRow_NEON;
+    }
+    if (width >= 16) {
+      ARGBToUVRow = ARGBToUVRow_Any_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_NEON;
+      }
+    }
+  }
+#endif
+
+  for (int y = 0; y < height - 1; y += 2) {
+    ARGBToUVRow(src_argb, src_stride_argb, dst_u, dst_v, width);
+    ARGBToYJRow(src_argb, dst_yj, width);
+    ARGBToYJRow(src_argb + src_stride_argb, dst_yj + dst_stride_yj, width);
+    src_argb += src_stride_argb * 2;
+    dst_yj += dst_stride_yj * 2;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  if (height & 1) {
+    ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
+    ARGBToYJRow(src_argb, dst_yj, width);
+  }
+  return 0;
+}
+
+// Convert ARGB to J400.
+LIBYUV_API
+int ARGBToJ400(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_yj, int dst_stride_yj,
+               int width, int height) {
+  if (!src_argb || !dst_yj || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_argb == width * 4 &&
+      dst_stride_yj == width) {
+    return ARGBToI400(src_argb, 0,
+                      dst_yj, 0,
+                      width * height, 1);
+  }
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
+      ARGBToYJRow_C;
+#if defined(HAS_ARGBTOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYJRow = ARGBToYJRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
+          IS_ALIGNED(dst_yj, 16) && IS_ALIGNED(dst_stride_yj, 16)) {
+        ARGBToYJRow = ARGBToYJRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYJROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    ARGBToYJRow = ARGBToYJRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYJRow = ARGBToYJRow_NEON;
+    }
+  }
+#endif
+
+  for (int y = 0; y < height; ++y) {
+    ARGBToYJRow(src_argb, dst_yj, width);
+    src_argb += src_stride_argb;
+    dst_yj += dst_stride_yj;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

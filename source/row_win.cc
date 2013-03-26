@@ -664,6 +664,39 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   }
 }
 
+// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
+__declspec(naked) __declspec(align(16))
+void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    movdqa     xmm4, kARGBToY
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + 32]
+    movdqa     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    lea        eax, [eax + 64]
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 7
+    psrlw      xmm2, 7
+    packuswb   xmm0, xmm2
+    sub        ecx, 16
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         convertloop
+    ret
+  }
+}
+
 #ifdef HAS_ARGBTOYROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 __declspec(naked) __declspec(align(32))
@@ -729,6 +762,38 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
+    sub        ecx, 16
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         convertloop
+    ret
+  }
+}
+
+__declspec(naked) __declspec(align(16))
+void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    movdqa     xmm4, kARGBToY
+
+    align      16
+ convertloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
+    pmaddubsw  xmm0, xmm4
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    lea        eax, [eax + 64]
+    phaddw     xmm0, xmm1
+    phaddw     xmm2, xmm3
+    psrlw      xmm0, 7
+    psrlw      xmm2, 7
+    packuswb   xmm0, xmm2
     sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]

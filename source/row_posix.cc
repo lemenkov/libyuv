@@ -642,6 +642,40 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   );
 }
 
+void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %3,%%xmm4                       \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "movdqa    0x20(%0),%%xmm2                 \n"
+    "movdqa    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kARGBToY)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
+
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %4,%%xmm5                       \n"
@@ -679,6 +713,39 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   );
 }
 
+void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+    "movdqa    %3,%%xmm4                       \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
+    "pmaddubsw %%xmm4,%%xmm0                   \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm2                   \n"
+    "pmaddubsw %%xmm4,%%xmm3                   \n"
+    "lea       0x40(%0),%0                     \n"
+    "phaddw    %%xmm1,%%xmm0                   \n"
+    "phaddw    %%xmm3,%%xmm2                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm2                     \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "sub       $0x10,%2                        \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kARGBToY)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
 // TODO(fbarchard): pass xmm constants to single block of assembly.
 // fpic on GCC 4.2 for OSX runs out of GPR registers. "m" effectively takes
 // 3 registers - ebx, ebp and eax. "m" can be passed with 3 normal registers,
