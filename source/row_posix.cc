@@ -35,6 +35,11 @@ CONST vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
+// JPeg full range.
+CONST vec8 kARGBToYJ = {
+  15, 74, 38, 0, 15, 74, 38, 0, 15, 74, 38, 0, 15, 74, 38, 0
+};
+
 CONST vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
@@ -84,6 +89,10 @@ CONST vec8 kRGBAToV = {
 
 CONST uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
+};
+
+CONST vec16 kAddYJ64 = {
+  64, 64, 64, 64, 64, 64, 64, 64
 };
 
 CONST uvec8 kAddUV128 = {
@@ -645,6 +654,7 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
+    "movdqa    %4,%%xmm5                       \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -658,6 +668,8 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "lea       0x40(%0),%0                     \n"
     "phaddw    %%xmm1,%%xmm0                   \n"
     "phaddw    %%xmm3,%%xmm2                   \n"
+    "paddw     %%xmm5,%%xmm0                   \n"
+    "paddw     %%xmm5,%%xmm2                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
@@ -668,10 +680,11 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
-  : "m"(kARGBToY)    // %3
+  : "m"(kARGBToYJ),  // %3
+    "m"(kAddYJ64)    // %4
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
   );
 }
@@ -716,6 +729,7 @@ void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
+    "movdqa    %4,%%xmm5                       \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
@@ -729,6 +743,8 @@ void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "lea       0x40(%0),%0                     \n"
     "phaddw    %%xmm1,%%xmm0                   \n"
     "phaddw    %%xmm3,%%xmm2                   \n"
+    "paddw     %%xmm5,%%xmm0                   \n"
+    "paddw     %%xmm5,%%xmm2                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
@@ -739,13 +755,15 @@ void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
-  : "m"(kARGBToY)    // %3
+  : "m"(kARGBToYJ),  // %3
+    "m"(kAddYJ64)    // %4
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
   );
 }
+
 // TODO(fbarchard): pass xmm constants to single block of assembly.
 // fpic on GCC 4.2 for OSX runs out of GPR registers. "m" effectively takes
 // 3 registers - ebx, ebp and eax. "m" can be passed with 3 normal registers,

@@ -1338,9 +1338,9 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
 
 void ARGBToYJRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
-    "vmov.u8    d24, #13                       \n"  // B * 0.1016 coefficient
-    "vmov.u8    d25, #65                       \n"  // G * 0.5078 coefficient
-    "vmov.u8    d26, #33                       \n"  // R * 0.2578 coefficient
+    "vmov.u8    d24, #15                       \n"  // B * 0.1172 coefficient
+    "vmov.u8    d25, #74                       \n"  // G * 0.5855 coefficient
+    "vmov.u8    d26, #38                       \n"  // R * 0.2973 coefficient
     ".p2align  2                               \n"
   "1:                                          \n"
     "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.

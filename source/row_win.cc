@@ -25,6 +25,11 @@ static const vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
+// JPeg full range.
+static const vec8 kARGBToYJ = {
+  15, 74, 38, 0, 15, 74, 38, 0, 15, 74, 38, 0, 15, 74, 38, 0
+};
+
 static const lvec8 kARGBToY_AVX = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0,
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
@@ -101,6 +106,10 @@ static const vec8 kRGBAToV = {
 
 static const uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
+};
+
+static const vec16 kAddYJ64 = {
+  64, 64, 64, 64, 64, 64, 64, 64
 };
 
 static const ulvec8 kAddY16_AVX = {
@@ -671,7 +680,8 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kARGBToY
+    movdqa     xmm4, kARGBToYJ
+    movdqa     xmm5, kAddYJ64
 
     align      16
  convertloop:
@@ -686,6 +696,8 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     lea        eax, [eax + 64]
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
+    paddw      xmm0, xmm5
+    paddw      xmm2, xmm5
     psrlw      xmm0, 7
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
@@ -776,7 +788,8 @@ void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kARGBToY
+    movdqa     xmm4, kARGBToYJ
+    movdqa     xmm5, kAddYJ64
 
     align      16
  convertloop:
@@ -791,6 +804,8 @@ void ARGBToYJRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     lea        eax, [eax + 64]
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
+    paddw      xmm0, xmm5
+    paddw      xmm2, xmm5
     psrlw      xmm0, 7
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2

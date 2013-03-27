@@ -107,6 +107,9 @@ TEST_F(libyuvTest, TestAttenuate) {
 
 static int TestAttenuateI(int width, int height, int benchmark_iterations,
                           int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb, kStride * height + off);
@@ -170,6 +173,9 @@ TEST_F(libyuvTest, ARGBAttenuate_Opt) {
 
 static int TestUnattenuateI(int width, int height, int benchmark_iterations,
                             int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb, kStride * height + off);
@@ -787,6 +793,9 @@ TESTINTERPOLATE(85)
 
 static int TestBlend(int width, int height, int benchmark_iterations,
                      int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
@@ -1101,6 +1110,9 @@ TEST_F(libyuvTest, TestCopyPlane) {
 
 static int TestMultiply(int width, int height, int benchmark_iterations,
                         int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb_a, kStride * height + off);
@@ -1169,6 +1181,9 @@ TEST_F(libyuvTest, ARGBMultiply_Opt) {
 
 static int TestAdd(int width, int height, int benchmark_iterations,
                    int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb_a, kStride * height + off);
@@ -1237,6 +1252,9 @@ TEST_F(libyuvTest, ARGBAdd_Opt) {
 
 static int TestSubtract(int width, int height, int benchmark_iterations,
                         int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb_a, kStride * height + off);
@@ -1305,6 +1323,9 @@ TEST_F(libyuvTest, ARGBSubtract_Opt) {
 
 static int TestSobel(int width, int height, int benchmark_iterations,
                      int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb_a, kStride * height + off);
@@ -1368,6 +1389,9 @@ TEST_F(libyuvTest, ARGBSobel_Opt) {
 
 static int TestSobelXY(int width, int height, int benchmark_iterations,
                      int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
   const int kBpp = 4;
   const int kStride = (width * kBpp + 15) & ~15;
   align_buffer_64(src_argb_a, kStride * height + off);

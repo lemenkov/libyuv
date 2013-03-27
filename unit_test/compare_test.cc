@@ -203,7 +203,9 @@ TEST_F(libyuvTest, Psnr) {
                       kSrcWidth, kSrcHeight);
 
   EXPECT_GT(err, 4.0);
-  EXPECT_LT(err, 5.0);
+  if (kSrcWidth * kSrcHeight >= 256) {
+    EXPECT_LT(err, 5.0);
+  }
 
   srandom(time(NULL));
 

@@ -1061,7 +1061,7 @@ int ARGBToJ400(const uint8* src_argb, int src_stride_argb,
   // Coalesce contiguous rows.
   if (src_stride_argb == width * 4 &&
       dst_stride_yj == width) {
-    return ARGBToI400(src_argb, 0,
+    return ARGBToJ400(src_argb, 0,
                       dst_yj, 0,
                       width * height, 1);
   }
