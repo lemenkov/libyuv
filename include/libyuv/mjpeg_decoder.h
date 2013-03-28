@@ -23,6 +23,8 @@ struct jpeg_source_mgr;
 
 namespace libyuv {
 
+bool ValidateJpeg(const uint8* sample, size_t sample_size);
+
 static const uint32 kUnknownDataSize = 0xFFFFFFFF;
 
 enum JpegSubsamplingType {
