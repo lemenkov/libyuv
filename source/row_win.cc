@@ -696,7 +696,7 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     lea        eax, [eax + 64]
     phaddw     xmm0, xmm1
     phaddw     xmm2, xmm3
-    paddw      xmm0, xmm5
+    paddw      xmm0, xmm5  // Add .5 for rounding.
     paddw      xmm2, xmm5
     psrlw      xmm0, 7
     psrlw      xmm2, 7

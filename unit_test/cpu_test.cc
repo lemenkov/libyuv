@@ -39,6 +39,8 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has AVX %x\n", has_avx);
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   printf("Has AVX2 %x\n", has_avx2);
+  int has_erms = TestCpuFlag(kCpuHasERMS);
+  printf("Has ERMS %x\n", has_erms);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   printf("Has MIPS %x\n", has_mips);
   int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);

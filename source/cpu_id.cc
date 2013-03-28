@@ -26,6 +26,9 @@
 
 #include "libyuv/basic_types.h"  // For CPU_X86
 
+// TODO(fbarchard): Consider cpu functionality for breakpoints, timer and cache.
+// arm - bkpt vs intel int 3
+
 // TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
 #if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
@@ -171,6 +174,9 @@ int InitCpuFlags(void) {
         ((XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06)) {
       cpu_info_ |= kCpuHasAVX2;
     }
+    if (cpu_info[1] & 0x00000200) {
+      cpu_info_ |= kCpuHasERMS;
+    }
   }
 #endif
   // Environment variable overrides for testing.
@@ -194,6 +200,9 @@ int InitCpuFlags(void) {
   }
   if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info_ &= ~kCpuHasAVX2;
+  }
+  if (TestEnv("LIBYUV_DISABLE_ERMS")) {
+    cpu_info_ &= ~kCpuHasERMS;
   }
 #elif defined(__mips__) && defined(__linux__)
   // Linux mips parse text file for dsp detect.

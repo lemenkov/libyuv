@@ -34,6 +34,7 @@ static const int kCpuHasSSE41 = 0x80;
 static const int kCpuHasSSE42 = 0x100;
 static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
+static const int kCpuHasERMS = 0x800;
 
 // These flags are only valid on MIPS processors.
 static const int kCpuHasMIPS = 0x1000;

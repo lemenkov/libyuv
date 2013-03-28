@@ -22,6 +22,7 @@ int main(int argc, const char* argv[]) {
   int has_arm = TestCpuFlag(kCpuHasARM);
   int has_avx = TestCpuFlag(kCpuHasAVX);
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  int has_erms = TestCpuFlag(kCpuHasERMS);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);
   int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
@@ -70,6 +71,7 @@ int main(int argc, const char* argv[]) {
   printf("Has ARM %x\n", has_arm);
   printf("Has AVX %x\n", has_avx);
   printf("Has AVX2 %x\n", has_avx2);
+  printf("Has ERMS %x\n", has_erms);
   printf("Has MIPS %x\n", has_mips);
   printf("Has MIPS DSP %x\n", has_mips_dsp);
   printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
