@@ -994,19 +994,19 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+  void (*ARGBToUVJRow)(const uint8* src_argb0, int src_stride_argb,
+                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVJRow_C;
   void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
       ARGBToYJRow_C;
 #if defined(HAS_ARGBTOYJROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
-    ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
+    ARGBToUVJRow = ARGBToUVJRow_Any_SSSE3;
     ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_Unaligned_SSSE3;
+      ARGBToUVJRow = ARGBToUVJRow_Unaligned_SSSE3;
       ARGBToYJRow = ARGBToYJRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-        ARGBToUVRow = ARGBToUVRow_SSSE3;
+        ARGBToUVJRow = ARGBToUVJRow_SSSE3;
         if (IS_ALIGNED(dst_yj, 16) && IS_ALIGNED(dst_stride_yj, 16)) {
           ARGBToYJRow = ARGBToYJRow_SSSE3;
         }
@@ -1021,16 +1021,16 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
       ARGBToYJRow = ARGBToYJRow_NEON;
     }
     if (width >= 16) {
-      ARGBToUVRow = ARGBToUVRow_Any_NEON;
+      ARGBToUVJRow = ARGBToUVJRow_Any_NEON;
       if (IS_ALIGNED(width, 16)) {
-        ARGBToUVRow = ARGBToUVRow_NEON;
+        ARGBToUVJRow = ARGBToUVJRow_NEON;
       }
     }
   }
 #endif
 
   for (int y = 0; y < height - 1; y += 2) {
-    ARGBToUVRow(src_argb, src_stride_argb, dst_u, dst_v, width);
+    ARGBToUVJRow(src_argb, src_stride_argb, dst_u, dst_v, width);
     ARGBToYJRow(src_argb, dst_yj, width);
     ARGBToYJRow(src_argb + src_stride_argb, dst_yj + dst_stride_yj, width);
     src_argb += src_stride_argb * 2;
@@ -1039,7 +1039,7 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
     dst_v += dst_stride_v;
   }
   if (height & 1) {
-    ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
+    ARGBToUVJRow(src_argb, 0, dst_u, dst_v, width);
     ARGBToYJRow(src_argb, dst_yj, width);
   }
   return 0;

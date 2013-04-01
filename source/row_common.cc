@@ -256,24 +256,43 @@ MAKEROWY(RGB24, 2, 1, 0, 3)
 MAKEROWY(RAW, 0, 1, 2, 3)
 #undef MAKEROWY
 
-// BT.601 mpeg range
+// JPeg uses a variation on BT.601-1 full range
+// y =  0.29900 * r + 0.58700 * g + 0.11400 * b
+// u = -0.16874 * r - 0.33126 * g + 0.50000 * b  + center
+// v =  0.50000 * r - 0.41869 * g - 0.08131 * b  + center
+// BT.601 Mpeg range uses:
 // b 0.1016 * 255 = 25.908 = 25
 // g 0.5078 * 255 = 129.489 = 129
 // r 0.2578 * 255 = 65.739 = 66
-// = 0.8672.  1/.8672 = 1.1531
-// BT.601 full range 8 bit (not used)
-// b 0.1016 * 1.1531 = 0.1172 * 255 = 29.886 = 30
-// g 0.5078 * 1.1531 = 0.5855 * 255 = 149.3025 = 149
-// r 0.2578 * 1.1531 = 0.2973 * 255 = 75.8115 = 76
-// 30 + 149 + 76 = 255
-// BT.601 full range 7 bit
-// b 0.1172 * 127 = 14.8844 = 15
-// g 0.5855 * 127 = 74.35855 = 74
-// r 0.2973 * 127 = 37.7571 = 38
+// JPeg 8 bit Y (not used):
+// b 0.11400 * 256 = 29.184 = 29
+// g 0.58700 * 256 = 150.272 = 150
+// r 0.29900 * 256 = 76.544 = 77
+// JPeg 7 bit Y:
+// b 0.11400 * 128 = 14.592 = 15
+// g 0.58700 * 128 = 75.136 = 75
+// r 0.29900 * 128 = 38.272 = 38
+// JPeg 8 bit U:
+// b  0.50000 * 255 = 127.5 = 127
+// g -0.33126 * 255 = -84.4713 = -84
+// r -0.16874 * 255 = -43.0287 = -43
+// JPeg 8 bit V:
+// b -0.08131 * 255 = -20.73405 = -20
+// g -0.41869 * 255 = -106.76595 = -107
+// r  0.50000 * 255 = 127.5 = 127
 
 static __inline int RGBToYJ(uint8 r, uint8 g, uint8 b) {
-  return (38 * r + 74 * g +  15 * b + 64) >> 7;
+  return (38 * r + 75 * g +  15 * b + 64) >> 7;
 }
+
+static __inline int RGBToUJ(uint8 r, uint8 g, uint8 b) {
+  return (127 * b - 84 * g - 43 * r + 0x8080) >> 8;
+}
+static __inline int RGBToVJ(uint8 r, uint8 g, uint8 b) {
+  return (127 * r - 107 * g - 20 * b + 0x8080) >> 8;
+}
+
+#define AVGB(a, b) (((a) + (b) + 1) >> 1)
 
 #define MAKEROWYJ(NAME, R, G, B, BPP) \
 void NAME ## ToYJRow_C(const uint8* src_argb0, uint8* dst_y, int width) {      \
@@ -283,6 +302,31 @@ void NAME ## ToYJRow_C(const uint8* src_argb0, uint8* dst_y, int width) {      \
     dst_y += 1;                                                                \
   }                                                                            \
 }                                                                              \
+void NAME ## ToUVJRow_C(const uint8* src_rgb0, int src_stride_rgb,             \
+                        uint8* dst_u, uint8* dst_v, int width) {               \
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;                           \
+  for (int x = 0; x < width - 1; x += 2) {                                     \
+    uint8 ab = AVGB(AVGB(src_rgb0[B], src_rgb1[B]),                            \
+                    AVGB(src_rgb0[B + BPP], src_rgb1[B + BPP]));               \
+    uint8 ag = AVGB(AVGB(src_rgb0[G], src_rgb1[G]),                            \
+                    AVGB(src_rgb0[G + BPP], src_rgb1[G + BPP]));               \
+    uint8 ar = AVGB(AVGB(src_rgb0[R], src_rgb1[R]),                            \
+                    AVGB(src_rgb0[R + BPP], src_rgb1[R + BPP]));               \
+    dst_u[0] = RGBToUJ(ar, ag, ab);                                            \
+    dst_v[0] = RGBToVJ(ar, ag, ab);                                            \
+    src_rgb0 += BPP * 2;                                                       \
+    src_rgb1 += BPP * 2;                                                       \
+    dst_u += 1;                                                                \
+    dst_v += 1;                                                                \
+  }                                                                            \
+  if (width & 1) {                                                             \
+    uint8 ab = AVGB(src_rgb0[B], src_rgb1[B]);                                 \
+    uint8 ag = AVGB(src_rgb0[G], src_rgb1[G]);                                 \
+    uint8 ar = AVGB(src_rgb0[R], src_rgb1[R]);                                 \
+    dst_u[0] = RGBToUJ(ar, ag, ab);                                            \
+    dst_v[0] = RGBToVJ(ar, ag, ab);                                            \
+  }                                                                            \
+}
 
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
 #undef MAKEROWYJ
@@ -537,16 +581,9 @@ void ARGBToUV411Row_C(const uint8* src_argb,
   }
 }
 
-// http://en.wikipedia.org/wiki/Grayscale.
-// 0.11 * B + 0.59 * G + 0.30 * R
-// Coefficients rounded to multiple of 2 for consistency with SSSE3 version.
-static __inline int RGBToGray(uint8 r, uint8 g, uint8 b) {
-  return (28 * b + 152 * g + 76 * r) >> 8;
-}
-
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   for (int x = 0; x < width; ++x) {
-    uint8 y = RGBToGray(src_argb[2], src_argb[1], src_argb[0]);
+    uint8 y = RGBToYJ(src_argb[2], src_argb[1], src_argb[0]);
     dst_argb[2] = dst_argb[1] = dst_argb[0] = y;
     dst_argb[3] = src_argb[3];
     dst_argb += 4;

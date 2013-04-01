@@ -689,7 +689,11 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
                    benchmark_width_, DIFF, _Opt, +, 0)
 
 TESTATOPLANAR(ARGB, 4, I420, 2, 2, 4)
+#ifdef __arm__
 TESTATOPLANAR(ARGB, 4, J420, 2, 2, 4)
+#else
+TESTATOPLANAR(ARGB, 4, J420, 2, 2, 0)
+#endif
 TESTATOPLANAR(BGRA, 4, I420, 2, 2, 4)
 TESTATOPLANAR(ABGR, 4, I420, 2, 2, 4)
 TESTATOPLANAR(RGBA, 4, I420, 2, 2, 4)

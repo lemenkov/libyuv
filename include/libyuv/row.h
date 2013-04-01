@@ -54,6 +54,7 @@ extern "C" {
 #define HAS_ARGBTOUV422ROW_SSSE3
 #define HAS_ARGBTOUV444ROW_SSSE3
 #define HAS_ARGBTOUVROW_SSSE3
+#define HAS_ARGBTOUVJROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
 #define HAS_ARGBTOYJROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
@@ -203,6 +204,7 @@ extern "C" {
 #define HAS_ARGBTOUV422ROW_NEON
 #define HAS_ARGBTOUV444ROW_NEON
 #define HAS_ARGBTOUVROW_NEON
+#define HAS_ARGBTOUVJROW_NEON
 #define HAS_ARGBTOYROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #define HAS_BGRATOUVROW_NEON
@@ -423,6 +425,8 @@ void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix);
 void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int pix);
+void ARGBToUVJRow_NEON(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int pix);
 void BGRAToUVRow_NEON(const uint8* src_bgra, int src_stride_bgra,
                       uint8* dst_u, uint8* dst_v, int pix);
 void ABGRToUVRow_NEON(const uint8* src_abgr, int src_stride_abgr,
@@ -481,6 +485,8 @@ void ARGBToUVRow_Any_AVX2(const uint8* src_argb, int src_stride_argb,
                           uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_SSSE3(const uint8* src_argb, int src_stride_argb,
+                        uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_SSSE3(const uint8* src_bgra, int src_stride_bgra,
                        uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_SSSE3(const uint8* src_abgr, int src_stride_abgr,
@@ -489,6 +495,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba, int src_stride_rgba,
                        uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
                                  uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_Unaligned_SSSE3(const uint8* src_argb, int src_stride_argb,
+                                  uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra, int src_stride_bgra,
                                  uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr, int src_stride_abgr,
@@ -497,6 +505,8 @@ void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_rgba, int src_stride_rgba,
                                  uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_Any_SSSE3(const uint8* src_argb, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_Any_SSSE3(const uint8* src_argb, int src_stride_argb,
+                            uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_Any_SSSE3(const uint8* src_bgra, int src_stride_bgra,
                            uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_Any_SSSE3(const uint8* src_abgr, int src_stride_abgr,
@@ -511,6 +521,8 @@ void ARGBToUV411Row_Any_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                              int pix);
 void ARGBToUVRow_Any_NEON(const uint8* src_argb, int src_stride_argb,
                           uint8* dst_u, uint8* dst_v, int pix);
+void ARGBToUVJRow_Any_NEON(const uint8* src_argb, int src_stride_argb,
+                           uint8* dst_u, uint8* dst_v, int pix);
 void BGRAToUVRow_Any_NEON(const uint8* src_bgra, int src_stride_bgra,
                           uint8* dst_u, uint8* dst_v, int pix);
 void ABGRToUVRow_Any_NEON(const uint8* src_abgr, int src_stride_abgr,
@@ -531,6 +543,8 @@ void ARGB4444ToUVRow_Any_NEON(const uint8* src_argb4444,
                               uint8* dst_u, uint8* dst_v, int pix);
 void ARGBToUVRow_C(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_C(const uint8* src_argb, int src_stride_argb,
+                    uint8* dst_u, uint8* dst_v, int width);
 void BGRAToUVRow_C(const uint8* src_bgra, int src_stride_bgra,
                    uint8* dst_u, uint8* dst_v, int width);
 void ABGRToUVRow_C(const uint8* src_abgr, int src_stride_abgr,
