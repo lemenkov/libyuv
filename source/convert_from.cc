@@ -252,9 +252,7 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
                         const uint8* src_v, uint8* dst_yuy2, int width) =
       I422ToYUY2Row_C;
 #if defined(HAS_I422TOYUY2ROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 16 &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(dst_yuy2, 16) && IS_ALIGNED(dst_stride_yuy2, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     I422ToYUY2Row = I422ToYUY2Row_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
       I422ToYUY2Row = I422ToYUY2Row_SSE2;
@@ -299,9 +297,7 @@ int I420ToYUY2(const uint8* src_y, int src_stride_y,
                         const uint8* src_v, uint8* dst_yuy2, int width) =
       I422ToYUY2Row_C;
 #if defined(HAS_I422TOYUY2ROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 16 &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(dst_yuy2, 16) && IS_ALIGNED(dst_stride_yuy2, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     I422ToYUY2Row = I422ToYUY2Row_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
       I422ToYUY2Row = I422ToYUY2Row_SSE2;
@@ -362,9 +358,7 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
                         const uint8* src_v, uint8* dst_uyvy, int width) =
       I422ToUYVYRow_C;
 #if defined(HAS_I422TOUYVYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 16 &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(dst_uyvy, 16) && IS_ALIGNED(dst_stride_uyvy, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     I422ToUYVYRow = I422ToUYVYRow_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
       I422ToUYVYRow = I422ToUYVYRow_SSE2;
@@ -409,9 +403,7 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
                         const uint8* src_v, uint8* dst_uyvy, int width) =
       I422ToUYVYRow_C;
 #if defined(HAS_I422TOUYVYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 16 &&
-      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
-      IS_ALIGNED(dst_uyvy, 16) && IS_ALIGNED(dst_stride_uyvy, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     I422ToUYVYRow = I422ToUYVYRow_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
       I422ToUYVYRow = I422ToUYVYRow_SSE2;

@@ -6144,13 +6144,13 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
     movq       xmm3, qword ptr [esi + edx] // V
     lea        esi, [esi + 8]
     punpcklbw  xmm2, xmm3 // UV
-    movdqa     xmm0, [eax] // Y
+    movdqu     xmm0, [eax] // Y
     lea        eax, [eax + 16]
-    movdqa     xmm1, xmm0
+    movdqu     xmm1, xmm0
     punpcklbw  xmm0, xmm2 // YUYV
     punpckhbw  xmm1, xmm2
-    movdqa     [edi], xmm0
-    movdqa     [edi + 16], xmm1
+    movdqu     [edi], xmm0
+    movdqu     [edi + 16], xmm1
     lea        edi, [edi + 32]
     sub        ecx, 16
     jg         convertloop
@@ -6182,13 +6182,13 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
     movq       xmm3, qword ptr [esi + edx] // V
     lea        esi, [esi + 8]
     punpcklbw  xmm2, xmm3 // UV
-    movdqa     xmm0, [eax] // Y
+    movdqu     xmm0, [eax] // Y
     movdqa     xmm1, xmm2
     lea        eax, [eax + 16]
     punpcklbw  xmm1, xmm0 // UYVY
     punpckhbw  xmm2, xmm0
-    movdqa     [edi], xmm1
-    movdqa     [edi + 16], xmm2
+    movdqu     [edi], xmm1
+    movdqu     [edi + 16], xmm2
     lea        edi, [edi + 32]
     sub        ecx, 16
     jg         convertloop
