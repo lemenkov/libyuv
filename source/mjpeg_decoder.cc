@@ -86,10 +86,14 @@ bool ValidateJpeg(const uint8* sample, size_t sample_size) {
     // ERROR: Invalid jpeg initial start code
     return false;
   }
-  for (int i = static_cast<int>(sample_size) - 1; i > 2; --i) {
-    if (sample[i - 1] == 0xff && sample[i] == 0xd9) {  // End Of Image
-      return true;
+  for (int i = static_cast<int>(sample_size) - 2; i > 1;) {
+    if (sample[i] != 0xd9) {
+      if (sample[i] == 0xff && sample[i + 1] == 0xd9) {  // End Of Image
+        return true;
+      }
+      --i;
     }
+    --i;
   }
   // ERROR: Invalid jpeg end code not found. Size sample_size
   return false;
