@@ -6146,7 +6146,7 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
     punpcklbw  xmm2, xmm3 // UV
     movdqu     xmm0, [eax] // Y
     lea        eax, [eax + 16]
-    movdqu     xmm1, xmm0
+    movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm2 // YUYV
     punpckhbw  xmm1, xmm2
     movdqu     [edi], xmm0
