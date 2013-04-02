@@ -424,11 +424,21 @@ TEST_F(libyuvTest, TestARGBSepia) {
   orig_pixels[2][1] = 0u;
   orig_pixels[2][2] = 255u;
   orig_pixels[2][3] = 255u;
+  // Test black
+  orig_pixels[3][0] = 0u;
+  orig_pixels[3][1] = 0u;
+  orig_pixels[3][2] = 0u;
+  orig_pixels[3][3] = 255u;
+  // Test white
+  orig_pixels[4][0] = 255u;
+  orig_pixels[4][1] = 255u;
+  orig_pixels[4][2] = 255u;
+  orig_pixels[4][3] = 255u;
   // Test color
-  orig_pixels[3][0] = 16u;
-  orig_pixels[3][1] = 64u;
-  orig_pixels[3][2] = 192u;
-  orig_pixels[3][3] = 224u;
+  orig_pixels[5][0] = 16u;
+  orig_pixels[5][1] = 64u;
+  orig_pixels[5][2] = 192u;
+  orig_pixels[5][3] = 224u;
   // Do 16 to test asm version.
   ARGBSepia(&orig_pixels[0][0], 0, 0, 0, 16, 1);
   EXPECT_EQ(33u, orig_pixels[0][0]);
@@ -443,10 +453,18 @@ TEST_F(libyuvTest, TestARGBSepia) {
   EXPECT_EQ(89u, orig_pixels[2][1]);
   EXPECT_EQ(99u, orig_pixels[2][2]);
   EXPECT_EQ(255u, orig_pixels[2][3]);
-  EXPECT_EQ(88u, orig_pixels[3][0]);
-  EXPECT_EQ(114u, orig_pixels[3][1]);
-  EXPECT_EQ(127u, orig_pixels[3][2]);
-  EXPECT_EQ(224u, orig_pixels[3][3]);
+  EXPECT_EQ(0u, orig_pixels[3][0]);
+  EXPECT_EQ(0u, orig_pixels[3][1]);
+  EXPECT_EQ(0u, orig_pixels[3][2]);
+  EXPECT_EQ(255u, orig_pixels[3][3]);
+  EXPECT_EQ(239u, orig_pixels[4][0]);
+  EXPECT_EQ(255u, orig_pixels[4][1]);
+  EXPECT_EQ(255u, orig_pixels[4][2]);
+  EXPECT_EQ(255u, orig_pixels[4][3]);
+  EXPECT_EQ(88u, orig_pixels[5][0]);
+  EXPECT_EQ(114u, orig_pixels[5][1]);
+  EXPECT_EQ(127u, orig_pixels[5][2]);
+  EXPECT_EQ(224u, orig_pixels[5][3]);
 
   for (int i = 0; i < 256; ++i) {
     orig_pixels[i][0] = i;

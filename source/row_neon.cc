@@ -2459,9 +2459,9 @@ void ARGBSepiaRow_NEON(uint8* dst_argb, int width) {
     "vmull.u8   q8, d0, d28                    \n"  // B to Sepia R
     "vmlal.u8   q8, d1, d29                    \n"  // G
     "vmlal.u8   q8, d2, d30                    \n"  // R
-    "vqshrun.s16 d0, q2, #7                    \n"  // 16 bit to 8 bit B
-    "vqshrun.s16 d1, q3, #7                    \n"  // 16 bit to 8 bit G
-    "vqshrun.s16 d2, q8, #7                    \n"  // 16 bit to 8 bit R
+    "vqshrn.u16 d0, q2, #7                     \n"  // 16 bit to 8 bit B
+    "vqshrn.u16 d1, q3, #7                     \n"  // 16 bit to 8 bit G
+    "vqshrn.u16 d2, q8, #7                     \n"  // 16 bit to 8 bit R
     "vst4.8     {d0, d1, d2, d3}, [%0]!        \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
   : "+r"(dst_argb),  // %0
