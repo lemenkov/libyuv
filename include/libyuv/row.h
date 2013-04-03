@@ -137,6 +137,7 @@ extern "C" {
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
+#define HAS_ARGBTOYJROW_AVX2
 #define HAS_HALFROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
@@ -403,6 +404,8 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
 void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToYRow_Any_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
+void ARGBToYJRow_Any_AVX2(const uint8* src_argb, uint8* dst_y, int pix);
 void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix);
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix);
 void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix);

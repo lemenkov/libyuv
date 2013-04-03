@@ -35,6 +35,11 @@ static const lvec8 kARGBToY_AVX = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
+static const lvec8 kARGBToYJ_AVX = {
+  15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0,
+  15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0
+};
+
 static const vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
@@ -118,6 +123,9 @@ static const uvec8 kAddY16 = {
 
 static const vec16 kAddYJ64 = {
   64, 64, 64, 64, 64, 64, 64, 64
+};
+static const lvec16 kAddYJ64_AVX = {
+  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
 };
 
 static const ulvec8 kAddY16_AVX = {
@@ -759,6 +767,48 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   }
 }
 #endif  //  HAS_ARGBTOYROW_AVX2
+
+#ifdef HAS_ARGBTOYROW_AVX2
+// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
+__declspec(naked) __declspec(align(32))
+void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
+  __asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_y */
+    mov        ecx, [esp + 12]  /* pix */
+    vmovdqa    ymm4, kARGBToYJ_AVX
+    vmovdqa    ymm5, kAddYJ64_AVX
+    vmovdqa    ymm6, kShufARGBToY_AVX
+
+    align      16
+ convertloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    vmovdqu    ymm2, [eax + 64]
+    vmovdqu    ymm3, [eax + 96]
+    vpmaddubsw ymm0, ymm0, ymm4
+    vpmaddubsw ymm1, ymm1, ymm4
+    vpmaddubsw ymm2, ymm2, ymm4
+    vpmaddubsw ymm3, ymm3, ymm4
+    lea        eax, [eax + 128]
+    vphaddw    ymm0, ymm0, ymm1  // mutates.
+    vphaddw    ymm2, ymm2, ymm3
+    vpaddw     ymm0, ymm0, ymm5  // Add .5 for rounding.
+    vpaddw     ymm2, ymm2, ymm5
+    vpsrlw     ymm0, ymm0, 7
+    vpsrlw     ymm2, ymm2, 7
+    vpackuswb  ymm0, ymm0, ymm2  // mutates.
+    vpermd     ymm0, ymm6, ymm0  // For vphaddw + vpackuswb mutation.
+    sub        ecx, 32
+    vmovdqu    [edx], ymm0
+    lea        edx, [edx + 32]
+    jg         convertloop
+
+    vzeroupper
+    ret
+  }
+}
+#endif  //  HAS_ARGBTOYJROW_AVX2
 
 __declspec(naked) __declspec(align(16))
 void ARGBToYRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
