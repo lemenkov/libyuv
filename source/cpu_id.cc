@@ -80,7 +80,9 @@ __declspec(naked) __declspec(align(16))
 static uint32 XGetBV(unsigned int xcr) {
   __asm {
     mov        ecx, [esp + 4]    // xcr
+    push       edx
     _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // xgetbv for vs2005.
+    pop        edx
     ret
   }
 }
@@ -165,18 +167,14 @@ int InitCpuFlags(void) {
               ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
-              (((cpu_info[2] & 0x18000000) == 0x18000000) ? kCpuHasAVX : 0) |
               kCpuHasX86;
 #ifdef HAS_XGETBV
-  if (cpu_info_ & kCpuHasAVX) {
+  if ((cpu_info[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
+      (XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06) {  // Save YMM
     __cpuid(cpu_info, 7);
-    if ((cpu_info[1] & 0x00000020) &&
-        ((XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06)) {
-      cpu_info_ |= kCpuHasAVX2;
-    }
-    if (cpu_info[1] & 0x00000200) {
-      cpu_info_ |= kCpuHasERMS;
-    }
+    cpu_info_ |= ((cpu_info[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
+                 ((cpu_info[1] & 0x00000200) ? kCpuHasERMS : 0) |
+                 kCpuHasAVX;
   }
 #endif
   // Environment variable overrides for testing.
