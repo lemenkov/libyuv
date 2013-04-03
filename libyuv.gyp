@@ -13,23 +13,30 @@
   'targets': [
     {
       'target_name': 'libyuv',
+      # Change type to 'shared_library' to build .so or .dll files.
       'type': 'static_library',
-      # 'type': 'shared_library',
       'conditions': [
-         ['use_system_libjpeg==0', {
-          'dependencies': [
-             '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+        # TODO(fbarchard): Use gyp define to enable jpeg.
+        [ 'OS != "ios"', {
+          'defines': [
+            'HAVE_JPEG'
           ],
-        }, {
-          'link_settings': {
-            'libraries': [
-              '-ljpeg',
-            ],
-          },
+          'conditions': [
+            [ 'use_system_libjpeg==0', {
+              'dependencies': [
+                 '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
+              ],
+            }, {
+              'link_settings': {
+                'libraries': [
+                  '-ljpeg',
+                ],
+              },
+            }],
+          ],
         }],
       ],
       'defines': [
-        'HAVE_JPEG',
         # Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
         # 'LIBYUV_DISABLE_NEON',

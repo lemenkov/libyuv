@@ -18,7 +18,6 @@
         'testing/gtest.gyp:gtest_main',
       ],
       'defines': [
-        'HAVE_JPEG',
         'LIBYUV_SVNREVISION="<!(svnversion -n)"',
         # Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
@@ -49,6 +48,11 @@
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',
+          ],
+        }],
+        [ 'OS != "ios"', {
+          'defines': [
+            'HAVE_JPEG',
           ],
         }],
       ], # conditions
