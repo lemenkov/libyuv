@@ -103,9 +103,7 @@ uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
   }
 #endif
 #if defined(HAS_SUMSQUAREERROR_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2)) {
-    clear = true;
     // Note only used for multiples of 32 so count is not checked.
     SumSquareError = SumSquareError_AVX2;
   }
@@ -133,12 +131,6 @@ uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
   if (remainder) {
     sse += SumSquareError_C(src_a, src_b, remainder);
   }
-
-#if defined(HAS_SUMSQUAREERROR_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return sse;
 }
 
@@ -164,9 +156,7 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
   }
 #endif
 #if defined(HAS_SUMSQUAREERROR_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
-    clear = true;
     SumSquareError = SumSquareError_AVX2;
   }
 #endif
@@ -176,12 +166,6 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
     src_a += stride_a;
     src_b += stride_b;
   }
-
-#if defined(HAS_SUMSQUAREERROR_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return sse;
 }
 

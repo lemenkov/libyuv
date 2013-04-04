@@ -99,9 +99,7 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_HALFROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(halfwidth, 32)) {
-    clear = true;
     HalfRow = HalfRow_AVX2;
   }
 #endif
@@ -136,11 +134,6 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   if (height & 1) {
     HalfRow(src_v, 0, dst_v, halfwidth);
   }
-#if defined(HAS_HALFROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -583,9 +576,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_YUY2TOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
     YUY2ToUV422Row = YUY2ToUV422Row_Any_AVX2;
     YUY2ToYRow = YUY2ToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -623,11 +614,6 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     CopyRow(src_y, dst_y, width);
     YUY2ToUV422Row(src_yuy2, dst_u, dst_v, width);
   }
-#if defined(HAS_YUY2TOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -667,9 +653,7 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
   }
 #endif
 #if defined(HAS_YUY2TOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    bool clear = true;
     YUY2ToUVRow = YUY2ToUVRow_Any_AVX2;
     YUY2ToYRow = YUY2ToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -704,12 +688,6 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
     YUY2ToUVRow(src_yuy2, 0, dst_u, dst_v, width);
     YUY2ToYRow(src_yuy2, dst_y, width);
   }
-
-#if defined(HAS_YUY2TOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -749,9 +727,7 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
   }
 #endif
 #if defined(HAS_UYVYTOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    bool clear = true;
     UYVYToUVRow = UYVYToUVRow_Any_AVX2;
     UYVYToYRow = UYVYToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -786,12 +762,6 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
     UYVYToUVRow(src_uyvy, 0, dst_u, dst_v, width);
     UYVYToYRow(src_uyvy, dst_y, width);
   }
-
-#if defined(HAS_UYVYTOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -834,9 +804,7 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBTOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -873,12 +841,6 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
     ARGBToUVRow(src_argb, 0, dst_u, dst_v, width);
     ARGBToYRow(src_argb, dst_y, width);
   }
-
-#if defined(HAS_ARGBTOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 

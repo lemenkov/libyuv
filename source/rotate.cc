@@ -882,9 +882,7 @@ void RotatePlane180(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_MIRRORROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
-    clear = true;
     MirrorRow = MirrorRow_AVX2;
   }
 #endif
@@ -942,11 +940,6 @@ void RotatePlane180(const uint8* src, int src_stride,
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }
-#if defined(HAS_MIRRORROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
 }
 
 static void TransposeUVWx8_C(const uint8* src, int src_stride,

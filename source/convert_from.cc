@@ -483,9 +483,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_MERGEUVROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && halfwidth >= 32) {
-    clear = true;
     MergeUVRow_ = MergeUVRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
       MergeUVRow_ = MergeUVRow_AVX2;
@@ -509,12 +507,6 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
     src_v += src_stride_v;
     dst_uv += dst_stride_uv;
   }
-#if defined(HAS_MERGEUVROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
-
   return 0;
 }
 

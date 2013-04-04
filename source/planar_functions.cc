@@ -197,9 +197,7 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_MIRRORROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
-    clear = true;
     MirrorRow = MirrorRow_AVX2;
   }
 #endif
@@ -210,11 +208,6 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }
-#if defined(HAS_MIRRORROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
 }
 
 // Convert YUY2 to I422.
@@ -264,9 +257,7 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
   }
 #endif
 #if defined(HAS_YUY2TOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    bool clear = true;
     YUY2ToUV422Row = YUY2ToUV422Row_Any_AVX2;
     YUY2ToYRow = YUY2ToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -296,12 +287,6 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
-
-#if defined(HAS_YUY2TOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -352,9 +337,7 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
   }
 #endif
 #if defined(HAS_UYVYTOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    bool clear = true;
     UYVYToUV422Row = UYVYToUV422Row_Any_AVX2;
     UYVYToYRow = UYVYToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
@@ -384,12 +367,6 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
-
-#if defined(HAS_UYVYTOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -473,9 +450,7 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBMIRRORROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
-    clear = true;
     ARGBMirrorRow = ARGBMirrorRow_AVX2;
   }
 #endif
@@ -491,12 +466,6 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBMIRRORROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -601,9 +570,7 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
   }
 #endif
 #if defined(HAS_ARGBMULTIPLYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
-    clear = true;
     ARGBMultiplyRow = ARGBMultiplyRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
       ARGBMultiplyRow = ARGBMultiplyRow_AVX2;
@@ -626,12 +593,6 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBMULTIPLYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -674,9 +635,7 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
   }
 #endif
 #if defined(HAS_ARGBADDROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
-    clear = true;
     ARGBAddRow = ARGBAddRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
       ARGBAddRow = ARGBAddRow_AVX2;
@@ -699,12 +658,6 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBADDROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -747,9 +700,7 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
   }
 #endif
 #if defined(HAS_ARGBSUBTRACTROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
-    clear = true;
     ARGBSubtractRow = ARGBSubtractRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
       ARGBSubtractRow = ARGBSubtractRow_AVX2;
@@ -772,12 +723,6 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBSUBTRACTROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -1223,9 +1168,7 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
-    clear = true;
     ARGBAttenuateRow = ARGBAttenuateRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
       ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
@@ -1246,13 +1189,6 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBATTENUATEROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
-
   return 0;
 }
 
@@ -1289,9 +1225,7 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBUNATTENUATEROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
-    clear = true;
     ARGBUnattenuateRow = ARGBUnattenuateRow_Any_AVX2;
     if (IS_ALIGNED(width, 8)) {
       ARGBUnattenuateRow = ARGBUnattenuateRow_AVX2;
@@ -1305,13 +1239,6 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }
-
-#if defined(HAS_ARGBUNATTENUATEROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
-
   return 0;
 }
 
@@ -1791,9 +1718,7 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
   }
 #endif
 #if defined(HAS_ARGBSHUFFLEROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
-    clear = true;
     ARGBShuffleRow = ARGBShuffleRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       ARGBShuffleRow = ARGBShuffleRow_AVX2;
@@ -1814,11 +1739,6 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
     src_bgra += src_stride_bgra;
     dst_argb += dst_stride_argb;
   }
-#if defined(HAS_ARGBSHUFFLEROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 

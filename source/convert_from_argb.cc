@@ -218,9 +218,7 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBTOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
@@ -250,11 +248,6 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
     dst_u += dst_stride_u;
     dst_v += dst_stride_v;
   }
-#if defined(HAS_ARGBTOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 
@@ -690,9 +683,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBTOYROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
-    clear = true;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       ARGBToYRow = ARGBToYRow_AVX2;
@@ -713,11 +704,6 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
     src_argb += src_stride_argb;
     dst_y += dst_stride_y;
   }
-#if defined(HAS_ARGBTOYROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
   return 0;
 }
 

@@ -101,9 +101,7 @@ void ARGBRotate180(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_ARGBMIRRORROW_AVX2)
-  bool clear = false;
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 8)) {
-    clear = true;
     ARGBMirrorRow = ARGBMirrorRow_AVX2;
   }
 #endif
@@ -159,11 +157,6 @@ void ARGBRotate180(const uint8* src, int src_stride,
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }
-#if defined(HAS_ARGBMIRRORROW_AVX2)
-  if (clear) {
-    __asm vzeroupper;
-  }
-#endif
 }
 
 LIBYUV_API

@@ -763,6 +763,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
     jg         convertloop
+    vzeroupper
     ret
   }
 }
@@ -1277,6 +1278,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -3133,6 +3135,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     vmovdqu   [edx], ymm0
     lea       edx, [edx + 32]
     jg        convertloop
+    vzeroupper
     ret
   }
 }
@@ -3254,6 +3257,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     vmovdqu   [edx], ymm0
     lea       edx, [edx + 32]
     jg        convertloop
+    vzeroupper
     ret
   }
 }
@@ -3367,6 +3371,7 @@ void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     jg         convertloop
 
     pop        edi
+    vzeroupper
     ret
   }
 }
@@ -3462,6 +3467,7 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     jg         convertloop
 
     pop        edi
+    vzeroupper
     ret
   }
 }
@@ -3599,6 +3605,7 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2,
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
     jg         convertloop
+    vzeroupper
     ret
   }
 }
@@ -3643,6 +3650,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -3682,6 +3690,7 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     jg         convertloop
 
     pop        edi
+    vzeroupper
     ret
   }
 }
@@ -3708,6 +3717,7 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy,
     lea        edx, [edx + 32]
     jg         convertloop
     ret
+    vzeroupper
   }
 }
 
@@ -3751,6 +3761,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -3790,6 +3801,7 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     jg         convertloop
 
     pop        edi
+    vzeroupper
     ret
   }
 }
@@ -4633,6 +4645,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     lea        eax, [eax + 32]
     jg         convertloop
 
+    vzeroupper
     ret
   }
 }
@@ -4727,6 +4740,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     lea        eax, [eax + 32]
     jg         convertloop
 
+    vzeroupper
     ret
   }
 }
@@ -4748,22 +4762,22 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     align      16
  convertloop:
     // replace VPGATHER
-    movzx      esi, byte ptr [eax + 3]  // alpha0
-    movzx      edi, byte ptr [eax + 7]  // alpha1
+    movzx      esi, byte ptr [eax + 3]                 // alpha0
+    movzx      edi, byte ptr [eax + 7]                 // alpha1
     vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a0]
     vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a1]
-    movzx      esi, byte ptr [eax + 11]  // alpha2
-    movzx      edi, byte ptr [eax + 15]  // alpha3
+    movzx      esi, byte ptr [eax + 11]                // alpha2
+    movzx      edi, byte ptr [eax + 15]                // alpha3
     vpunpckldq xmm6, xmm0, xmm1                        // [1,a1,1,a0]
     vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a2]
     vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a3]
-    movzx      esi, byte ptr [eax + 19]  // alpha4
-    movzx      edi, byte ptr [eax + 23]  // alpha5
+    movzx      esi, byte ptr [eax + 19]                // alpha4
+    movzx      edi, byte ptr [eax + 23]                // alpha5
     vpunpckldq xmm7, xmm2, xmm3                        // [1,a3,1,a2]
     vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a4]
     vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a5]
-    movzx      esi, byte ptr [eax + 27]  // alpha6
-    movzx      edi, byte ptr [eax + 31]  // alpha7
+    movzx      esi, byte ptr [eax + 27]                // alpha6
+    movzx      edi, byte ptr [eax + 31]                // alpha7
     vpunpckldq xmm0, xmm0, xmm1                        // [1,a5,1,a4]
     vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a6]
     vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a7]
@@ -4790,6 +4804,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -5240,6 +5255,7 @@ void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     jg         convertloop
 
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -5270,6 +5286,7 @@ void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     jg         convertloop
 
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -5299,6 +5316,7 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     jg         convertloop
 
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -6053,7 +6071,9 @@ void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
     vmovdqu    [eax + edi], ymm0
     lea        eax,  [eax + 32]
     jg         convertloop
+
     pop        edi
+    vzeroupper
     ret
   }
 }
@@ -6162,6 +6182,8 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     vmovdqu    [edx + 32], ymm1
     lea        edx, [edx + 64]
     jg         wloop
+
+    vzeroupper
     ret
   }
 }
