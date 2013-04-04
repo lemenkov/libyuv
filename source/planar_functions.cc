@@ -1769,9 +1769,9 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
@@ -1783,6 +1783,11 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     SobelYRow = SobelYRow_SSSE3;
   }
 #endif
+#if defined(HAS_SOBELYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelYRow = SobelYRow_NEON;
+  }
+#endif
   void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
                     const uint8* src_y2, uint8* dst_sobely, int width) =
       SobelXRow_C;
@@ -1791,12 +1796,22 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_SSSE3;
   }
 #endif
+#if defined(HAS_SOBELXROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelXRow = SobelXRow_NEON;
+  }
+#endif
   void (*SobelRow)(const uint8* src_sobelx, const uint8* src_sobely,
                    uint8* dst_argb, int width) = SobelRow_C;
 #if defined(HAS_SOBELROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     SobelRow = SobelRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    SobelRow = SobelRow_NEON;
   }
 #endif
 
@@ -1868,9 +1883,9 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
@@ -1882,6 +1897,11 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     SobelYRow = SobelYRow_SSSE3;
   }
 #endif
+#if defined(HAS_SOBELYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelYRow = SobelYRow_NEON;
+  }
+#endif
   void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
                     const uint8* src_y2, uint8* dst_sobely, int width) =
       SobelXRow_C;
@@ -1890,12 +1910,22 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_SSSE3;
   }
 #endif
+#if defined(HAS_SOBELXROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelXRow = SobelXRow_NEON;
+  }
+#endif
   void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) = SobelXYRow_C;
 #if defined(HAS_SOBELXYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
     SobelXYRow = SobelXYRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELXYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    SobelXYRow = SobelXYRow_NEON;
   }
 #endif
 

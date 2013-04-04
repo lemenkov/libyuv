@@ -197,6 +197,7 @@ extern "C" {
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
 #define HAS_ARGBTOBAYERROW_NEON
+#define HAS_ARGBTOBAYERGGROW_NEON
 #define HAS_ARGBTORAWROW_NEON
 #define HAS_ARGBTORGB24ROW_NEON
 #define HAS_ARGBTORGB565ROW_NEON
@@ -269,6 +270,10 @@ extern "C" {
 #define HAS_ARGBSEPIAROW_NEON
 #define HAS_ARGBSHADEROW_NEON
 #define HAS_ARGBSUBTRACTROW_NEON
+#define HAS_SOBELROW_NEON
+#define HAS_SOBELXYROW_NEON
+#define HAS_SOBELXROW_NEON
+#define HAS_SOBELYROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -1315,16 +1320,18 @@ void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
 void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix);
 
-void ARGBToBayerRow_C(const uint8* src_argb,
-                      uint8* dst_bayer, uint32 selector, int pix);
-void ARGBToBayerRow_SSSE3(const uint8* src_argb,
-                          uint8* dst_bayer, uint32 selector, int pix);
-void ARGBToBayerRow_NEON(const uint8* src_argb,
-                         uint8* dst_bayer, uint32 selector, int pix);
-void ARGBToBayerRow_Any_SSSE3(const uint8* src_argb,
-                              uint8* dst_bayer, uint32 selector, int pix);
-void ARGBToBayerRow_Any_NEON(const uint8* src_argb,
-                             uint8* dst_bayer, uint32 selector, int pix);
+void ARGBToBayerRow_C(const uint8* src_argb, uint8* dst_bayer,
+                      uint32 selector, int pix);
+void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
+                          uint32 selector, int pix);
+void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
+                         uint32 selector, int pix);
+void ARGBToBayerRow_Any_SSSE3(const uint8* src_argb, uint8* dst_bayer,
+                              uint32 selector, int pix);
+void ARGBToBayerRow_Any_NEON(const uint8* src_argb, uint8* dst_bayer,
+                             uint32 selector, int pix);
+void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
+                           uint32 /* selector */, int pix);
 
 void I422ToYUY2Row_C(const uint8* src_y,
                      const uint8* src_u,
@@ -1459,17 +1466,25 @@ void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
                  uint8* dst_sobelx, int width);
 void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
                      const uint8* src_y2, uint8* dst_sobelx, int width);
+void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobelx, int width);
 void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
                  uint8* dst_sobely, int width);
 void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
                      uint8* dst_sobely, int width);
+void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width);
 void SobelRow_C(const uint8* src_sobelx, const uint8* src_sobely,
                 uint8* dst_argb, int width);
 void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
                    uint8* dst_argb, int width);
+void SobelRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                   uint8* dst_argb, int width);
 void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
                   uint8* dst_argb, int width);
 void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width);
+void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
 
 #ifdef __cplusplus

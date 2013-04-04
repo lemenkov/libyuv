@@ -190,7 +190,7 @@ BAYERANY(ARGBToBayerRow_Any_SSSE3, ARGBToBayerRow_SSSE3, ARGBToBayerRow_C,
 #endif
 #if defined(HAS_ARGBTOBAYERROW_NEON)
 BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
-         3, 4, 1)
+         7, 4, 1)
 #endif
 #undef BAYERANY
 

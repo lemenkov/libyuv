@@ -978,6 +978,11 @@ TEST_F(libyuvTest, TestSobelX) {
     SobelXRow = SobelXRow_SSSE3;
   }
 #endif
+#if defined(HAS_SOBELXROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelXRow = SobelXRow_NEON;
+  }
+#endif
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {
     SobelXRow(orig_pixels_0, orig_pixels_1, orig_pixels_2,
               sobel_pixels_opt, 256);
@@ -1008,6 +1013,11 @@ TEST_F(libyuvTest, TestSobelY) {
 #if defined(HAS_SOBELYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     SobelYRow = SobelYRow_SSSE3;
+  }
+#endif
+#if defined(HAS_SOBELYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelYRow = SobelYRow_NEON;
   }
 #endif
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {
@@ -1049,6 +1059,11 @@ TEST_F(libyuvTest, TestSobel) {
     SobelRow = SobelRow_SSE2;
   }
 #endif
+#if defined(HAS_SOBELROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelRow = SobelRow_NEON;
+  }
+#endif
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {
     SobelRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 256);
   }
@@ -1082,6 +1097,11 @@ TEST_F(libyuvTest, TestSobelXY) {
 #if defined(HAS_SOBELXYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     SobelXYRow = SobelXYRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELXYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelXYRow = SobelXYRow_NEON;
   }
 #endif
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {

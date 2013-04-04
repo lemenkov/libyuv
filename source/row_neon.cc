@@ -1176,18 +1176,20 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
 void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) {
   asm volatile (
-    "vmov.u32   d2[0], %3                      \n"  // selector
+    "vmov.u32   d6[0], %3                      \n"  // selector
   "1:                                          \n"
-    "vld1.u8    {q0}, [%0]!                    \n"  // load row 4 pixels.
-    "subs       %2, %2, #4                     \n"  // 4 processed per loop
-    "vtbl.8     d3, {d0, d1}, d2               \n"  // look up 4 pixels
-    "vst1.u32   {d3[0]}, [%1]!                 \n"  // store 4.
+    "vld1.u8    {q0, q1}, [%0]!                \n"  // load row 8 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    "vtbl.8     d4, {d0, d1}, d6               \n"  // look up 4 pixels
+    "vtbl.8     d5, {d2, d3}, d6               \n"  // look up 4 pixels
+    "vtrn.u32   d4, d5                         \n"  // combine 8 pixels
+    "vst1.u8    {d4}, [%1]!                    \n"  // store 8.
     "bgt        1b                             \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_bayer),  // %1
     "+r"(pix)         // %2
   : "r"(selector)     // %3
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
   );
 }
 
@@ -2595,6 +2597,134 @@ void ARGBSubtractRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 
+// Adds Sobel X and Sobel Y and stores Sobel into ARGB.
+// A = 255
+// R = Sobel
+// G = Sobel
+// B = Sobel
+void SobelRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    "vmov.u8    d3, #255                       \n"  // alpha
+    // 8 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {d0}, [%0]!                    \n"  // load 8 sobelx.
+    "vld1.8     {d1}, [%1]!                    \n"  // load 8 sobely.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vqadd.u8   d0, d0, d1                     \n"  // add
+    "vmov.u8    d1, d0                         \n"
+    "vmov.u8    d2, d0                         \n"
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "cc", "memory", "q0", "q1"
+  );
+}
+
+// Mixes Sobel X, Sobel Y and Sobel into ARGB.
+// A = 255
+// R = Sobel X
+// G = Sobel
+// B = Sobel Y
+void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    "vmov.u8    d3, #255                       \n"  // alpha
+    // 8 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {d2}, [%0]!                    \n"  // load 8 sobelx.
+    "vld1.8     {d0}, [%1]!                    \n"  // load 8 sobely.
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "vqadd.u8   d1, d0, d2                     \n"  // add
+    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "bgt        1b                             \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "cc", "memory", "q0", "q1"
+  );
+}
+
+// SobelX as a matrix is
+// -1  0  1
+// -2  0  2
+// -1  0  1
+void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobelx, int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.u8    {d0}, [%0],%5                  \n"  // top
+    "vld1.u8    {d1}, [%0],%6                  \n"
+    "vsubl.u8   q0, d0, d1                     \n"
+    "vld1.u8    {d2}, [%1],%5                  \n"  // center * 2
+    "vld1.u8    {d3}, [%1],%6                  \n"
+    "vsubl.u8   q1, d2, d3                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vld1.u8    {d2}, [%2],%5                  \n"  // bottom
+    "vld1.u8    {d3}, [%2],%6                  \n"
+    "subs       %4, %4, #8                     \n"  // 8 pixels
+    "vsubl.u8   q1, d2, d3                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vabs.s16   q0, q0                         \n"
+    "vqmovn.u16 d0, q0                         \n"
+    "vst1.u8    {d0}, [%3]!                    \n"  // store 8 sobelx
+    "bgt        1b                             \n"
+  : "+r"(src_y0),      // %0
+    "+r"(src_y1),      // %1
+    "+r"(src_y2),      // %2
+    "+r"(dst_sobelx),  // %3
+    "+r"(width)        // %4
+  : "r"(2),            // %5
+    "r"(6)             // %6
+  : "cc", "memory", "q0", "q1"  // Clobber List
+  );
+}
+
+// SobelY as a matrix is
+// -1 -2 -1
+//  0  0  0
+//  1  2  1
+void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width) {
+  asm volatile (
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.u8    {d0}, [%0],%4                  \n"  // left
+    "vld1.u8    {d1}, [%1],%4                  \n"
+    "vsubl.u8   q0, d0, d1                     \n"
+    "vld1.u8    {d2}, [%0],%4                  \n"  // center * 2
+    "vld1.u8    {d3}, [%1],%4                  \n"
+    "vsubl.u8   q1, d2, d3                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vld1.u8    {d2}, [%0],%5                  \n"  // right
+    "vld1.u8    {d3}, [%1],%5                  \n"
+    "subs       %3, %3, #8                     \n"  // 8 pixels
+    "vsubl.u8   q1, d2, d3                     \n"
+    "vadd.s16   q0, q0, q1                     \n"
+    "vabs.s16   q0, q0                         \n"
+    "vqmovn.u16 d0, q0                         \n"
+    "vst1.u8    {d0}, [%2]!                    \n"  // store 8 sobely
+    "bgt        1b                             \n"
+  : "+r"(src_y0),      // %0
+    "+r"(src_y1),      // %1
+    "+r"(dst_sobely),  // %2
+    "+r"(width)        // %3
+  : "r"(1),            // %4
+    "r"(6)             // %5
+  : "cc", "memory", "q0", "q1"  // Clobber List
+  );
+}
 #endif  // __ARM_NEON__
 
 #ifdef __cplusplus

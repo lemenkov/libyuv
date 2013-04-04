@@ -80,9 +80,9 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
     }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
@@ -437,9 +437,9 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
     }
   }
 #elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
     }
   }
