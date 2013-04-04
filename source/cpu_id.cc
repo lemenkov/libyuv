@@ -161,19 +161,20 @@ static bool TestEnv(const char* name) {
 LIBYUV_API
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
-  int cpu_info[4] = { 0, 0, 0, 0 };
-  __cpuid(cpu_info, 1);
-  cpu_info_ = ((cpu_info[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
-              ((cpu_info[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
-              ((cpu_info[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
-              ((cpu_info[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
+  int cpu_info1[4] = { 0, 0, 0, 0 };
+  int cpu_info7[4] = { 0, 0, 0, 0 };
+  __cpuid(cpu_info1, 1);
+  __cpuid(cpu_info7, 7);
+  cpu_info_ = ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
+              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
+              ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
+              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
+              ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
               kCpuHasX86;
 #ifdef HAS_XGETBV
-  if ((cpu_info[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
-      (XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06) {  // Save YMM
-    __cpuid(cpu_info, 7);
-    cpu_info_ |= ((cpu_info[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
-                 ((cpu_info[1] & 0x00000200) ? kCpuHasERMS : 0) |
+  if ((cpu_info1[2] & 0x18000000) == 0x18000000 && // AVX and OSSave
+      (XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06) {  // Saves YMM.
+    cpu_info_ |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                  kCpuHasAVX;
   }
 #endif
