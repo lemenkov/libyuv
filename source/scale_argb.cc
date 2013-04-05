@@ -1019,7 +1019,7 @@ static void ScaleARGBDownEven(int src_width, int src_height,
 // interpolation.
 
 // Maximum width handled by 2 pass Bilinear.
-static const int kMaxInputWidth = 2560;
+static const int kMaxInputWidth = 2880;
 static void ScaleARGBBilinear(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,

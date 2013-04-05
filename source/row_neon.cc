@@ -2487,32 +2487,41 @@ void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
   "1:                                          \n"
     "vld4.8     {d16, d18, d20, d22}, [%0]     \n"  // load 8 ARGB pixels.
     "subs       %1, %1, #8                     \n"  // 8 processed per loop.
-    "vmovl.u8   q2, d16                        \n"  // b (0 .. 255) 16 bit
-    "vmovl.u8   q3, d18                        \n"
-    "vmovl.u8   q8, d20                        \n"
-    "vmovl.u8   q9, d22                        \n"
-    "vmul.s16   q12, q2, d0[0]                 \n"  // B to Matrix B
-    "vmla.s16   q12, q3, d0[1]                 \n"  // G
-    "vmla.s16   q12, q8, d0[2]                 \n"  // R
-    "vmla.s16   q12, q9, d0[3]                 \n"  // A
-    "vmul.s16   q13, q2, d1[0]                 \n"  // B to Matrix G
-    "vmla.s16   q13, q3, d1[1]                 \n"  // G
-    "vmla.s16   q13, q8, d1[2]                 \n"  // R
-    "vmla.s16   q13, q9, d1[3]                 \n"  // A
-    "vmul.s16   q14, q2, d2[0]                 \n"  // B to Matrix R
-    "vmla.s16   q14, q3, d2[1]                 \n"  // G
-    "vmla.s16   q14, q8, d2[2]                 \n"  // R
-    "vmla.s16   q14, q9, d2[3]                 \n"  // A
+    "vmovl.u8   q8, d16                        \n"  // b (0 .. 255) 16 bit
+    "vmovl.u8   q9, d18                        \n"  // g
+    "vmovl.u8   q10, d20                       \n"  // r
+    "vmovl.u8   q15, d22                       \n"  // a
+    "vmul.s16   q12, q8, d0[0]                 \n"  // B = B * Matrix B
+    "vmul.s16   q13, q8, d1[0]                 \n"  // G = B * Matrix G
+    "vmul.s16   q14, q8, d2[0]                 \n"  // R = B * Matrix R
+    "vmul.s16   q4, q9, d0[1]                  \n"  // B += G * Matrix B
+    "vmul.s16   q5, q9, d1[1]                  \n"  // G += G * Matrix G
+    "vmul.s16   q6, q9, d2[1]                  \n"  // R += G * Matrix R
+    "vqadd.s16  q12, q12, q4                   \n"  // Accumulate B
+    "vqadd.s16  q13, q13, q5                   \n"  // Accumulate G
+    "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
+    "vmul.s16   q4, q10, d0[2]                 \n"  // B += R * Matrix B
+    "vmul.s16   q5, q10, d1[2]                 \n"  // G += R * Matrix G
+    "vmul.s16   q6, q10, d2[2]                 \n"  // R += R * Matrix R
+    "vqadd.s16  q12, q12, q4                   \n"  // Accumulate B
+    "vqadd.s16  q13, q13, q5                   \n"  // Accumulate G
+    "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
+    "vmul.s16   q4, q15, d0[3]                 \n"  // B += A * Matrix B
+    "vmul.s16   q5, q15, d1[3]                 \n"  // G += A * Matrix G
+    "vmul.s16   q6, q15, d2[3]                 \n"  // R += A * Matrix R
+    "vqadd.s16  q12, q12, q4                   \n"  // Accumulate B
+    "vqadd.s16  q13, q13, q5                   \n"  // Accumulate G
+    "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
     "vqshrun.s16 d16, q12, #7                  \n"  // 16 bit to 8 bit B
     "vqshrun.s16 d18, q13, #7                  \n"  // 16 bit to 8 bit G
-    "vqshrun.s16 d20, q14, #7                  \n"  // 16 bit to 8 bit R
+    "vqshrun.s16 d20, q14, #7                  \n"  // 16 bit to 8 bit G
     "vst4.8     {d16, d18, d20, d22}, [%0]!    \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
   : "+r"(dst_argb),   // %0
     "+r"(width)       // %1
   : "r"(matrix_argb)  // %2
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9",
-    "q10", "q11", "q12", "q13", "q14"
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q8", "q9",
+    "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 

@@ -2512,7 +2512,7 @@ static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
-static const int kMaxInputWidth = 2560;
+static const int kMaxInputWidth = 2880;
 
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 // Filter row to 3/4

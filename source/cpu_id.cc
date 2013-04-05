@@ -172,7 +172,7 @@ int InitCpuFlags(void) {
               ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
               kCpuHasX86;
 #ifdef HAS_XGETBV
-  if ((cpu_info1[2] & 0x18000000) == 0x18000000 && // AVX and OSSave
+  if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
       (XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06) {  // Saves YMM.
     cpu_info_ |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                  kCpuHasAVX;
