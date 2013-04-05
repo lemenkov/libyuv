@@ -2514,7 +2514,7 @@ void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
     "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
     "vqshrun.s16 d16, q12, #7                  \n"  // 16 bit to 8 bit B
     "vqshrun.s16 d18, q13, #7                  \n"  // 16 bit to 8 bit G
-    "vqshrun.s16 d20, q14, #7                  \n"  // 16 bit to 8 bit G
+    "vqshrun.s16 d20, q14, #7                  \n"  // 16 bit to 8 bit R
     "vst4.8     {d16, d18, d20, d22}, [%0]!    \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
   : "+r"(dst_argb),   // %0
@@ -2655,8 +2655,8 @@ void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
     "bgt        1b                             \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
-    "+r"(dst_argb),   // %2
-    "+r"(width)       // %3
+    "+r"(dst_argb),    // %2
+    "+r"(width)        // %3
   :
   : "cc", "memory", "q0", "q1"
   );
