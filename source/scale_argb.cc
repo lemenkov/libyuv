@@ -421,6 +421,54 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
+// Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
+// TODO(fbarchard): Port to Neon
+// TODO(fbarchard): Port to Posix
+// TODO(fbarchard): Unroll for 2 pixels for better pairing and memory access.
+#define HAS_SCALEARGBFILTERCOLS_SSSE3
+__declspec(naked) __declspec(align(16))
+static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                      int dst_width, int x, int dx) {
+  __asm {
+    push       ebx
+    push       esi
+    push       edi
+    mov        edi, [esp + 12 + 4]   // dst_argb
+    mov        esi, [esp + 12 + 8]   // src_argb
+    mov        ecx, [esp + 12 + 12]  // dst_width
+    mov        edx, [esp + 12 + 16]  // x
+    mov        ebx, [esp + 12 + 20]  // dx
+    pcmpeqb    xmm5, xmm5            // generate 0x007f for inverting fraction.
+    psrlw      xmm5, 9
+
+    align      16
+  xloop:
+    mov        eax, edx             // get x integer offset
+    shr        eax, 16
+    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source pixels
+    pshufd     xmm1, xmm0, 1        // second pixel
+    punpcklbw  xmm0, xmm1           // aarrggbb
+    movd       xmm2, edx            // get x fraction
+    psrlw      xmm2, 9              // 7 bit fraction
+    punpcklbw  xmm2, xmm2
+    punpcklwd  xmm2, xmm2
+    pshufd     xmm2, xmm2, 0
+    pxor       xmm2, xmm5           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm2
+    psrlw      xmm0, 7
+    packuswb   xmm0, xmm0
+    add        edx, ebx             // x += dx
+    sub        ecx, 1
+    movd       [edi], xmm0
+    lea        edi, [edi + 4]
+    jg         xloop
+    pop        edi
+    pop        esi
+    pop        ebx
+    ret
+  }
+}
+
 #elif !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
@@ -1030,6 +1078,10 @@ static void ScaleARGBBilinear(int src_width, int src_height,
                               ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) =
       ScaleARGBFilterRows_C;
+
+  void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
+                              int dst_width, int x, int dx) =
+      ScaleARGBFilterCols_C;
 #if defined(HAS_SCALEARGBFILTERROWS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
@@ -1042,11 +1094,18 @@ static void ScaleARGBBilinear(int src_width, int src_height,
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
   }
 #endif
+#if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+  }
+#endif
 #if defined(HAS_SCALEARGBFILTERROWS_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 4)) {
     ScaleARGBFilterRows = ScaleARGBFilterRows_NEON;
   }
 #endif
+
+
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
@@ -1060,7 +1119,7 @@ static void ScaleARGBBilinear(int src_width, int src_height,
     int yf = (y >> 8) & 255;
     const uint8* src = src_argb + yi * src_stride;
     ScaleARGBFilterRows(row, src, src_stride, src_width, yf);
-    ScaleARGBFilterCols_C(dst_argb, row, dst_width, x, dx);
+    ScaleARGBFilterCols(dst_argb, row, dst_width, x, dx);
     dst_argb += dst_stride;
     y += dy;
   }
