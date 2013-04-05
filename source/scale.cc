@@ -2394,11 +2394,6 @@ static void ScaleRowDown4Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-// 640 output pixels is enough to allow 5120 input pixels with 1/8 scale down.
-// Keeping the total buffer under 4096 bytes avoids a stackcheck, saving 4% cpu.
-static const int kMaxOutputWidth = 640;
-static const int kMaxRow12 = kMaxOutputWidth * 2;
-
 static void ScaleRowDown8_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
@@ -2417,13 +2412,13 @@ static void ScaleRowDown8_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 // uses ScaleRowDown8_C instead.
 static void ScaleRowDown8Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
-  SIMD_ALIGNED(uint8 src_row[kMaxRow12 * 2]);
-  assert(dst_width <= kMaxOutputWidth);
+  SIMD_ALIGNED(uint8 src_row[kMaxStride * 2]);
+  assert(dst_width <= kMaxStride);
   ScaleRowDown4Int_C(src_ptr, src_stride, src_row, dst_width * 2);
   ScaleRowDown4Int_C(src_ptr + src_stride * 4, src_stride,
-                     src_row + kMaxOutputWidth,
+                     src_row + kMaxStride,
                      dst_width * 2);
-  ScaleRowDown2Int_C(src_row, kMaxOutputWidth, dst, dst_width);
+  ScaleRowDown2Int_C(src_row, kMaxStride, dst, dst_width);
 }
 
 static void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
@@ -2512,8 +2507,6 @@ static void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
-static const int kMaxInputWidth = 2880;
-
 #if defined(HAS_SCALEFILTERROWS_SSE2)
 // Filter row to 3/4
 static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
@@ -2536,7 +2529,7 @@ static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 4);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
@@ -2546,7 +2539,7 @@ static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  SIMD_ALIGNED(uint8 row[kMaxInputWidth]);
+  SIMD_ALIGNED(uint8 row[kMaxStride]);
   ScaleFilterRows_SSE2(row, src_ptr, src_stride, dst_width * 4 / 3, 256 / 2);
   ScaleFilterCols34_C(dst_ptr, row, dst_width);
 }
@@ -2747,7 +2740,7 @@ static void ScalePlaneDown8(int /* src_width */, int /* src_height */,
                             FilterMode filtering) {
   void (*ScaleRowDown8)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering && (dst_width <= kMaxOutputWidth) ?
+      filtering && (dst_width <= kMaxStride) ?
       ScaleRowDown8Int_C : ScaleRowDown8_C;
 #if defined(HAS_SCALEROWDOWN8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
@@ -3021,7 +3014,7 @@ static void ScalePlaneBox(int src_width, int src_height,
   int x = 0;
   int y = 0;
   int maxy = (src_height << 16);
-  if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxInputWidth) ||
+  if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxStride) ||
       dst_height * 2 > src_height) {
     uint8* dst = dst_ptr;
     for (int j = 0; j < dst_height; ++j) {
@@ -3038,7 +3031,7 @@ static void ScalePlaneBox(int src_width, int src_height,
       dst += dst_stride;
     }
   } else {
-    SIMD_ALIGNED(uint16 row[kMaxInputWidth]);
+    SIMD_ALIGNED(uint16 row[kMaxStride]);
     void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
                          uint16* dst_ptr, int src_width, int src_height)=
         ScaleAddRows_C;
@@ -3120,12 +3113,12 @@ void ScalePlaneBilinear(int src_width, int src_height,
                         const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  if (src_width > kMaxInputWidth) {
+  if (src_width > kMaxStride) {
     ScalePlaneBilinearSimple(src_width, src_height, dst_width, dst_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
   } else {
-    SIMD_ALIGNED(uint8 row[kMaxInputWidth + 16]);
+    SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
     void (*ScaleFilterRows)(uint8* dst_ptr, const uint8* src_ptr,
                             ptrdiff_t src_stride,
                             int dst_width, int source_y_fraction) =

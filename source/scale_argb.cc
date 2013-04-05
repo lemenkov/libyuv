@@ -1018,16 +1018,14 @@ static void ScaleARGBDownEven(int src_width, int src_height,
 // ScaleARGB ARGB to/from any dimensions, with bilinear
 // interpolation.
 
-// Maximum width handled by 2 pass Bilinear.
-static const int kMaxInputWidth = 2880;
 static void ScaleARGBBilinear(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
                               const uint8* src_argb, uint8* dst_argb) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(src_width <= kMaxInputWidth);
-  SIMD_ALIGNED(uint8 row[kMaxInputWidth * 4 + 16]);
+  assert(src_width * 4 <= kMaxStride);
+  SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
   void (*ScaleARGBFilterRows)(uint8* dst_argb, const uint8* src_argb,
                               ptrdiff_t src_stride,
                               int dst_width, int source_y_fraction) =
@@ -1116,7 +1114,7 @@ static void ScaleARGBAnySize(int src_width, int src_height,
                              int src_stride, int dst_stride,
                              const uint8* src_argb, uint8* dst_argb,
                              FilterMode filtering) {
-  if (!filtering || (src_width > kMaxInputWidth)) {
+  if (!filtering || (src_width * 4 > kMaxStride)) {
     ScaleARGBSimple(src_width, src_height, dst_width, dst_height,
                     src_stride, dst_stride, src_argb, dst_argb);
   } else {
