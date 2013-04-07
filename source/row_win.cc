@@ -3043,12 +3043,12 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     pxor       xmm5, xmm5
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
-    mov        eax,0x00100010
-    movd       xmm3,eax
-    pshufd     xmm3,xmm3,0
-    mov        eax,0x004a004a       // 74
-    movd       xmm2,eax
-    pshufd     xmm2,xmm2,0
+    mov        eax, 0x00100010
+    movd       xmm3, eax
+    pshufd     xmm3, xmm3, 0
+    mov        eax, 0x004a004a       // 74
+    movd       xmm2, eax
+    pshufd     xmm2, xmm2,0
     mov        eax, [esp + 4]       // Y
     mov        edx, [esp + 8]       // rgb
     mov        ecx, [esp + 12]      // width
@@ -4267,8 +4267,8 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pxor       xmm3, xmm4       // ~alpha
     movd       xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
+    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
+    pshuflw    xmm3, xmm3, 0F5h
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -4298,8 +4298,8 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pxor       xmm3, xmm4       // ~alpha
     movdqu     xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
+    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
+    pshuflw    xmm3, xmm3, 0F5h
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -4329,8 +4329,8 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pxor       xmm3, xmm4       // ~alpha
     movd       xmm2, [esi]      // _r_b
     psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-    pshuflw    xmm3, xmm3,0F5h
+    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
+    pshuflw    xmm3, xmm3, 0F5h
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -4363,8 +4363,8 @@ static const uvec8 kShuffleAlpha = {
 };
 // Same as SSE2, but replaces:
 //    psrlw      xmm3, 8          // alpha
-//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-//    pshuflw    xmm3, xmm3,0F5h
+//    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
+//    pshuflw    xmm3, xmm3, 0F5h
 // with..
 //    pshufb     xmm3, kShuffleAlpha // alpha
 // Blend 8 pixels at a time.
@@ -4533,13 +4533,13 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
  convertloop:
     movdqa     xmm0, [eax]      // read 4 pixels
     punpcklbw  xmm0, xmm0       // first 2
-    pshufhw    xmm2, xmm0,0FFh  // 8 alpha words
-    pshuflw    xmm2, xmm2,0FFh
+    pshufhw    xmm2, xmm0, 0FFh // 8 alpha words
+    pshuflw    xmm2, xmm2, 0FFh
     pmulhuw    xmm0, xmm2       // rgb * a
     movdqa     xmm1, [eax]      // read 4 pixels
     punpckhbw  xmm1, xmm1       // next 2 pixels
-    pshufhw    xmm2, xmm1,0FFh  // 8 alpha words
-    pshuflw    xmm2, xmm2,0FFh
+    pshufhw    xmm2, xmm1, 0FFh // 8 alpha words
+    pshuflw    xmm2, xmm2, 0FFh
     pmulhuw    xmm1, xmm2       // rgb * a
     movdqa     xmm2, [eax]      // alphas
     psrlw      xmm0, 8
@@ -4673,8 +4673,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     punpcklbw  xmm0, xmm0       // first 2
     movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
     movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
-    pshuflw    xmm2, xmm2,040h  // first 4 inv_alpha words.  1, a, a, a
-    pshuflw    xmm3, xmm3,040h  // next 4 inv_alpha words
+    pshuflw    xmm2, xmm2, 040h // first 4 inv_alpha words.  1, a, a, a
+    pshuflw    xmm3, xmm3, 040h // next 4 inv_alpha words
     movlhps    xmm2, xmm3
     pmulhuw    xmm0, xmm2       // rgb * a
 
@@ -4684,8 +4684,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     punpckhbw  xmm1, xmm1       // next 2
     movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
     movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
-    pshuflw    xmm2, xmm2,040h  // first 4 inv_alpha words
-    pshuflw    xmm3, xmm3,040h  // next 4 inv_alpha words
+    pshuflw    xmm2, xmm2, 040h // first 4 inv_alpha words
+    pshuflw    xmm3, xmm3, 040h // next 4 inv_alpha words
     movlhps    xmm2, xmm3
     pmulhuw    xmm1, xmm2       // rgb * a
 

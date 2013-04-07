@@ -424,46 +424,86 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
 // Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
 // TODO(fbarchard): Port to Neon
 // TODO(fbarchard): Port to Posix
-// TODO(fbarchard): Unroll for 2 pixels for better pairing and memory access.
+// TODO(fbarchard): Consider lea to get 2nd pixel without incrementing.
+
+// Shuffle table for arranging 2 pixels into pairs for pmaddubsw
+static const uvec8 kShuffleColARGB = {
+  0u, 4u, 1u, 5u, 2u, 6u, 3u, 7u,  // bbggrraa 1st pixel
+  8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  // bbggrraa 2nd pixel
+};
+
+// Shuffle table for duplicating 2 fractions into 8 bytes each
+static const uvec8 kShuffleFractions = {
+  0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u,
+};
+
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
 __declspec(naked) __declspec(align(16))
 static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
                                       int dst_width, int x, int dx) {
   __asm {
     push       ebx
+    push       ebp
     push       esi
     push       edi
-    mov        edi, [esp + 12 + 4]   // dst_argb
-    mov        esi, [esp + 12 + 8]   // src_argb
-    mov        ecx, [esp + 12 + 12]  // dst_width
-    mov        edx, [esp + 12 + 16]  // x
-    mov        ebx, [esp + 12 + 20]  // dx
+    mov        edi, [esp + 16 + 4]   // dst_argb
+    mov        esi, [esp + 16 + 8]   // src_argb
+    mov        ecx, [esp + 16 + 12]  // dst_width
+    mov        edx, [esp + 16 + 16]  // x
+    mov        ebx, [esp + 16 + 20]  // dx
+    movdqa     xmm3, kShuffleFractions
+    movdqa     xmm4, kShuffleColARGB
     pcmpeqb    xmm5, xmm5            // generate 0x007f for inverting fraction.
     psrlw      xmm5, 9
+    sub        ecx, 2
+    jl         xloop29
 
     align      16
-  xloop:
-    mov        eax, edx             // get x integer offset
-    shr        eax, 16
-    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source pixels
-    pshufd     xmm1, xmm0, 1        // second pixel
-    punpcklbw  xmm0, xmm1           // aarrggbb
-    movd       xmm2, edx            // get x fraction
-    psrlw      xmm2, 9              // 7 bit fraction
-    punpcklbw  xmm2, xmm2
-    punpcklwd  xmm2, xmm2
-    pshufd     xmm2, xmm2, 0
-    pxor       xmm2, xmm5           // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm2
+  xloop2:
+    mov        eax, edx             // get x0 integer
+    movd       xmm1, edx            // get x0 fraction
+    lea        ebp, [edx + ebx]     // get x1 integer (x + dx)
+    movd       xmm2, ebp            // get x1 fraction
+    shr        eax, 16              // x0
+    punpcklwd  xmm1, xmm2           // x0x1 fractions
+    lea        edx, [edx + ebx * 2] // x += dx * 2
+    shr        ebp, 16              // x1
+    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
+    movhps     xmm0, qword ptr [esi + ebp * 4]  // 2 source x1 pixels
+    psrlw      xmm1, 9              // 7 bit fractions.
+    pshufb     xmm1, xmm3           // 0000000011111111
+    sub        ecx, 2
+    pshufb     xmm0, xmm4           // arrange pixels into pairs
+    pxor       xmm1, xmm5           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm1           // argb_argb 16 bit, 2 pixels.
     psrlw      xmm0, 7
-    packuswb   xmm0, xmm0
-    add        edx, ebx             // x += dx
-    sub        ecx, 1
+    packuswb   xmm0, xmm0           // argb_argb 8 bits, 2 pixels.
+    movq       qword ptr [edi], xmm0
+    lea        edi, [edi + 8]
+    jge        xloop2
+ xloop29:
+
+    add        ecx, 2 - 1
+    jl         xloop99
+
+    // 1 pixel remainder
+    mov        eax, edx             // get x0 integer
+    movd       xmm1, edx            // get x0 fraction
+    shr        eax, 16              // x0
+    movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
+    psrlw      xmm1, 9              // 7 bit fractions.
+    pshufb     xmm1, xmm3           // 00000000
+    pshufb     xmm0, xmm4           // arrange pixels into pairs
+    pxor       xmm1, xmm5           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm1           // argb 16 bit, 1 pixel.
+    psrlw      xmm0, 7
+    packuswb   xmm0, xmm0           // argb 8 bits, 1 pixel.
     movd       [edi], xmm0
-    lea        edi, [edi + 4]
-    jg         xloop
+ xloop99:
+
     pop        edi
     pop        esi
+    pop        ebp
     pop        ebx
     ret
   }
@@ -1104,8 +1144,6 @@ static void ScaleARGBBilinear(int src_width, int src_height,
     ScaleARGBFilterRows = ScaleARGBFilterRows_NEON;
   }
 #endif
-
-
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
