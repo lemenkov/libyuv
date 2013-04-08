@@ -932,7 +932,7 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
 #define HAS_SCALEARGBCOLS_SSE2
 static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
                                int dst_width, int x, int dx) {
-  intptr_t x0, x1;
+  intptr_t x0 = 0, x1 = 0;
   asm volatile (
     "movd      %5,%%xmm2                       \n"
     "movd      %6,%%xmm3                       \n"
@@ -945,7 +945,6 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     "punpckldq %%xmm3,%%xmm3                   \n"
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%4                  \n"
-    "lea       0x0(%2),%2                      \n"
 
     ".p2align  4                               \n"
   "2:                                          \n"
@@ -1001,7 +1000,7 @@ CONST uvec8 kShuffleFractions = {
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
 static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
                                       int dst_width, int x, int dx) {
-  intptr_t x0, x1;
+  intptr_t x0 = 0, x1 = 0;
   asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm5                       \n"
