@@ -421,10 +421,63 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
+// Column scaling unfiltered. SSSE3 version.
+// TODO(fbarchard): Port to Neon
+
+#define HAS_SCALEARGBCOLS_SSE2
+__declspec(naked) __declspec(align(16))
+static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
+                               int dst_width, int x, int dx) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]    // dst_argb
+    mov        esi, [esp + 8 + 8]    // src_argb
+    mov        ecx, [esp + 8 + 12]   // dst_width
+    movd       xmm2, [esp + 8 + 16]  // x
+    movd       xmm3, [esp + 8 + 20]  // dx
+    pextrw     eax, xmm2, 1         // get x0 integer. preroll
+    sub        ecx, 2
+    jl         xloop29
+
+    movdqa     xmm0, xmm2           // x1 = x0 + dx
+    paddd      xmm0, xmm3
+    punpckldq  xmm2, xmm0           // x0 x1
+    punpckldq  xmm3, xmm3           // dx dx
+    paddd      xmm3, xmm3           // dx * 2, dx * 2
+    pextrw     edx, xmm2, 3         // get x1 integer. preroll
+
+    // 2 Pixel loop.
+    align      16
+  xloop2:
+    paddd      xmm2, xmm3           // x += dx
+    movd       xmm0, qword ptr [esi + eax * 4]  // 1 source x0 pixels
+    movd       xmm1, qword ptr [esi + edx * 4]  // 1 source x1 pixels
+    punpckldq  xmm0, xmm1           // x0 x1
+    pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
+    pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
+    movq       qword ptr [edi], xmm0
+    lea        edi, [edi + 8]
+    sub        ecx, 2               // 2 pixels
+    jge        xloop2
+ xloop29:
+
+    add        ecx, 2 - 1
+    jl         xloop99
+
+    // 1 pixel remainder
+    movd       xmm0, qword ptr [esi + eax * 4]  // 1 source x0 pixels
+    movd       [edi], xmm0
+ xloop99:
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
 // Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
 // TODO(fbarchard): Port to Neon
-// TODO(fbarchard): Port to Posix
-// TODO(fbarchard): Consider lea to get 2nd pixel without incrementing.
 
 // Shuffle table for arranging 2 pixels into pairs for pmaddubsw
 static const uvec8 kShuffleColARGB = {
@@ -434,7 +487,7 @@ static const uvec8 kShuffleColARGB = {
 
 // Shuffle table for duplicating 2 fractions into 8 bytes each
 static const uvec8 kShuffleFractions = {
-  0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 2u, 2u, 2u, 2u, 2u, 2u, 2u, 2u,
+  0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
 };
 
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
@@ -442,44 +495,47 @@ __declspec(naked) __declspec(align(16))
 static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
                                       int dst_width, int x, int dx) {
   __asm {
-    push       ebx
-    push       ebp
     push       esi
     push       edi
-    mov        edi, [esp + 16 + 4]   // dst_argb
-    mov        esi, [esp + 16 + 8]   // src_argb
-    mov        ecx, [esp + 16 + 12]  // dst_width
-    mov        edx, [esp + 16 + 16]  // x
-    mov        ebx, [esp + 16 + 20]  // dx
-    movdqa     xmm3, kShuffleFractions
+    mov        edi, [esp + 8 + 4]    // dst_argb
+    mov        esi, [esp + 8 + 8]    // src_argb
+    mov        ecx, [esp + 8 + 12]   // dst_width
+    movd       xmm2, [esp + 8 + 16]  // x
+    movd       xmm3, [esp + 8 + 20]  // dx
     movdqa     xmm4, kShuffleColARGB
-    pcmpeqb    xmm5, xmm5            // generate 0x007f for inverting fraction.
-    psrlw      xmm5, 9
+    movdqa     xmm5, kShuffleFractions
+    pcmpeqb    xmm6, xmm6           // generate 0x007f for inverting fraction.
+    psrlw      xmm6, 9
+    pextrw     eax, xmm2, 1         // get x0 integer. preroll
     sub        ecx, 2
     jl         xloop29
 
+    movdqa     xmm0, xmm2           // x1 = x0 + dx
+    paddd      xmm0, xmm3
+    punpckldq  xmm2, xmm0           // x0 x1
+    punpckldq  xmm3, xmm3           // dx dx
+    paddd      xmm3, xmm3           // dx * 2, dx * 2
+    pextrw     edx, xmm2, 3         // get x1 integer. preroll
+
+    // 2 Pixel loop.
     align      16
   xloop2:
-    mov        eax, edx             // get x0 integer
-    movd       xmm1, edx            // get x0 fraction
-    lea        ebp, [edx + ebx]     // get x1 integer (x + dx)
-    movd       xmm2, ebp            // get x1 fraction
-    shr        eax, 16              // x0
-    punpcklwd  xmm1, xmm2           // x0x1 fractions
-    lea        edx, [edx + ebx * 2] // x += dx * 2
-    shr        ebp, 16              // x1
+    movdqa     xmm1, xmm2           // x0, x1 fractions.
+    paddd      xmm2, xmm3           // x += dx
     movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
-    movhps     xmm0, qword ptr [esi + ebp * 4]  // 2 source x1 pixels
     psrlw      xmm1, 9              // 7 bit fractions.
-    pshufb     xmm1, xmm3           // 0000000011111111
-    sub        ecx, 2
+    movhps     xmm0, qword ptr [esi + edx * 4]  // 2 source x1 pixels
+    pshufb     xmm1, xmm5           // 0000000011111111
     pshufb     xmm0, xmm4           // arrange pixels into pairs
-    pxor       xmm1, xmm5           // 0..7f and 7f..0
+    pxor       xmm1, xmm6           // 0..7f and 7f..0
     pmaddubsw  xmm0, xmm1           // argb_argb 16 bit, 2 pixels.
-    psrlw      xmm0, 7
+    psrlw      xmm0, 7              // argb 8.7 fixed point to low 8 bits.
+    pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
+    pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
     packuswb   xmm0, xmm0           // argb_argb 8 bits, 2 pixels.
     movq       qword ptr [edi], xmm0
     lea        edi, [edi + 8]
+    sub        ecx, 2               // 2 pixels
     jge        xloop2
  xloop29:
 
@@ -487,15 +543,12 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     jl         xloop99
 
     // 1 pixel remainder
-    mov        eax, edx             // get x0 integer
-    movd       xmm1, edx            // get x0 fraction
-    shr        eax, 16              // x0
+    psrlw      xmm2, 9              // 7 bit fractions.
     movq       xmm0, qword ptr [esi + eax * 4]  // 2 source x0 pixels
-    psrlw      xmm1, 9              // 7 bit fractions.
-    pshufb     xmm1, xmm3           // 00000000
+    pshufb     xmm2, xmm5           // 00000000
     pshufb     xmm0, xmm4           // arrange pixels into pairs
-    pxor       xmm1, xmm5           // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm1           // argb 16 bit, 1 pixel.
+    pxor       xmm2, xmm6           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm2           // argb 16 bit, 1 pixel.
     psrlw      xmm0, 7
     packuswb   xmm0, xmm0           // argb 8 bits, 1 pixel.
     movd       [edi], xmm0
@@ -503,8 +556,6 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 
     pop        edi
     pop        esi
-    pop        ebp
-    pop        ebx
     ret
   }
 }
@@ -877,6 +928,149 @@ void ScaleARGBFilterRows_SSSE3(uint8* dst_argb, const uint8* src_argb,
 #endif
   );
 }
+
+#define HAS_SCALEARGBCOLS_SSE2
+static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
+                               int dst_width, int x, int dx) {
+  intptr_t x0, x1;
+  asm volatile (
+    "movd      %5,%%xmm2                       \n"
+    "movd      %6,%%xmm3                       \n"
+    "pextrw    $0x1,%%xmm2,%3                  \n"
+    "sub       $0x2,%2                         \n"
+    "jl        29f                             \n"
+    "movdqa    %%xmm2,%%xmm0                   \n"
+    "paddd     %%xmm3,%%xmm0                   \n"
+    "punpckldq %%xmm0,%%xmm2                   \n"
+    "punpckldq %%xmm3,%%xmm3                   \n"
+    "paddd     %%xmm3,%%xmm3                   \n"
+    "pextrw    $0x3,%%xmm2,%4                  \n"
+    "lea       0x0(%2),%2                      \n"
+
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "paddd     %%xmm3,%%xmm2                   \n"
+    "movd      (%1,%3,4),%%xmm0                \n"
+    "movd      (%1,%4,4),%%xmm1                \n"
+    "punpckldq %%xmm1,%%xmm0                   \n"
+    "pextrw    $0x1,%%xmm2,%3                  \n"
+    "pextrw    $0x3,%%xmm2,%4                  \n"
+    "movq      %%xmm0,(%0)                     \n"
+    "lea       0x8(%0),%0                      \n"
+    "sub       $0x2,%2                         \n"
+    "jge       2b                              \n"
+
+  "29:                                         \n"
+    "add       $0x1,%2                         \n"
+    "jl        99f                             \n"
+    "movd      (%1,%3,4),%%xmm0                \n"
+    "movd      %%xmm0,(%0)                     \n"
+  "99:                                         \n"
+  : "+r"(dst_argb),    // %0
+    "+r"(src_argb),    // %1
+    "+rm"(dst_width),  // %2
+    "+r"(x0),          // %3
+    "+r"(x1)           // %4
+  : "rm"(x),           // %5
+    "rm"(dx)           // %6
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3"
+#endif
+  );
+}
+
+#ifdef __APPLE__
+#define CONST
+#else
+#define CONST static const
+#endif
+
+// Shuffle table for arranging 2 pixels into pairs for pmaddubsw
+CONST uvec8 kShuffleColARGB = {
+  0u, 4u, 1u, 5u, 2u, 6u, 3u, 7u,  // bbggrraa 1st pixel
+  8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  // bbggrraa 2nd pixel
+};
+
+// Shuffle table for duplicating 2 fractions into 8 bytes each
+CONST uvec8 kShuffleFractions = {
+  0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
+};
+
+// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
+#define HAS_SCALEARGBFILTERCOLS_SSSE3
+static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                      int dst_width, int x, int dx) {
+  intptr_t x0, x1;
+  asm volatile (
+    "movdqa    %0,%%xmm4                       \n"
+    "movdqa    %1,%%xmm5                       \n"
+  :
+  : "m"(kShuffleColARGB),  // %0
+    "m"(kShuffleFractions)  // %1
+  );
+
+  asm volatile (
+    "movd      %5,%%xmm2                       \n"
+    "movd      %6,%%xmm3                       \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrlw     $0x9,%%xmm6                     \n"
+    "pextrw    $0x1,%%xmm2,%3                  \n"
+    "sub       $0x2,%2                         \n"
+    "jl        29f                             \n"
+    "movdqa    %%xmm2,%%xmm0                   \n"
+    "paddd     %%xmm3,%%xmm0                   \n"
+    "punpckldq %%xmm0,%%xmm2                   \n"
+    "punpckldq %%xmm3,%%xmm3                   \n"
+    "paddd     %%xmm3,%%xmm3                   \n"
+    "pextrw    $0x3,%%xmm2,%4                  \n"
+
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    %%xmm2,%%xmm1                   \n"
+    "paddd     %%xmm3,%%xmm2                   \n"
+    "movq      (%1,%3,4),%%xmm0                \n"
+    "psrlw     $0x9,%%xmm1                     \n"
+    "movhps    (%1,%4,4),%%xmm0                \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "pshufb    %%xmm4,%%xmm0                   \n"
+    "pxor      %%xmm6,%%xmm1                   \n"
+    "pmaddubsw %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "pextrw    $0x1,%%xmm2,%3                  \n"
+    "pextrw    $0x3,%%xmm2,%4                  \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movq      %%xmm0,(%0)                     \n"
+    "lea       0x8(%0),%0                      \n"
+    "sub       $0x2,%2                         \n"
+    "jge       2b                              \n"
+
+  "29:                                         \n"
+    "add       $0x1,%2                         \n"
+    "jl        99f                             \n"
+    "psrlw     $0x9,%%xmm2                     \n"
+    "movq      (%1,%3,4),%%xmm0                \n"
+    "pshufb    %%xmm5,%%xmm2                   \n"
+    "pshufb    %%xmm4,%%xmm0                   \n"
+    "pxor      %%xmm6,%%xmm2                   \n"
+    "pmaddubsw %%xmm2,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,(%0)                     \n"
+  "99:                                         \n"
+  : "+r"(dst_argb),    // %0
+    "+r"(src_argb),    // %1
+    "+rm"(dst_width),  // %2
+    "+r"(x0),          // %3
+    "+r"(x1)           // %4
+  : "rm"(x),           // %5
+    "rm"(dx)           // %6
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 static void ScaleARGBRowDown2_C(const uint8* src_argb,
@@ -947,14 +1141,10 @@ static void ScaleARGBRowDownEvenInt_C(const uint8* src_argb,
   }
 }
 
-// (1-f)a + fb can be replaced with a + f(b-a)
-
-#define BLENDER1(a, b, f) (static_cast<int>(a) + \
-    ((f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
-
+// Mimics SSSE3 blender
+#define BLENDER1(a, b, f) ((a) * (0x7f ^ f) + (b) * f) >> 7
 #define BLENDERC(a, b, f, s) static_cast<uint32>( \
     BLENDER1(((a) >> s) & 255, ((b) >> s) & 255, f) << s)
-
 #define BLENDER(a, b, f) \
     BLENDERC(a, b, f, 24) | BLENDERC(a, b, f, 16) | \
     BLENDERC(a, b, f, 8) | BLENDERC(a, b, f, 0)
@@ -965,22 +1155,25 @@ static void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
   uint32* dst = reinterpret_cast<uint32*>(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     int xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
     uint32 a = src[xi];
     uint32 b = src[xi + 1];
-    dst[0] = BLENDER(a, b, x & 0xffff);
+    dst[0] = BLENDER(a, b, xf);
     x += dx;
     xi = x >> 16;
+    xf = (x >> 9) & 0x7f;
     a = src[xi];
     b = src[xi + 1];
-    dst[1] = BLENDER(a, b, x & 0xffff);
+    dst[1] = BLENDER(a, b, xf);
     x += dx;
     dst += 2;
   }
   if (dst_width & 1) {
     int xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
     uint32 a = src[xi];
     uint32 b = src[xi + 1];
-    dst[0] = BLENDER(a, b, x & 0xffff);
+    dst[0] = BLENDER(a, b, xf);
   }
 }
 
@@ -1115,13 +1308,8 @@ static void ScaleARGBBilinear(int src_width, int src_height,
   assert(src_width * 4 <= kMaxStride);
   SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
   void (*ScaleARGBFilterRows)(uint8* dst_argb, const uint8* src_argb,
-                              ptrdiff_t src_stride,
-                              int dst_width, int source_y_fraction) =
+      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       ScaleARGBFilterRows_C;
-
-  void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
-                              int dst_width, int x, int dx) =
-      ScaleARGBFilterCols_C;
 #if defined(HAS_SCALEARGBFILTERROWS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
@@ -1134,6 +1322,8 @@ static void ScaleARGBBilinear(int src_width, int src_height,
     ScaleARGBFilterRows = ScaleARGBFilterRows_SSSE3;
   }
 #endif
+  void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
+      int dst_width, int x, int dx) = ScaleARGBFilterCols_C;
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
@@ -1166,8 +1356,8 @@ static void ScaleARGBBilinear(int src_width, int src_height,
 // Scales a single row of pixels using point sampling.
 // Code is adapted from libyuv bilinear yuv scaling, but with bilinear
 //     interpolation off, and argb pixels instead of yuv.
-static void ScaleARGBCols(uint8* dst_argb, const uint8* src_argb,
-                          int dst_width, int x, int dx) {
+static void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
+                            int dst_width, int x, int dx) {
   const uint32* src = reinterpret_cast<const uint32*>(src_argb);
   uint32* dst = reinterpret_cast<uint32*>(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
@@ -1182,7 +1372,6 @@ static void ScaleARGBCols(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
-
 // ScaleARGB ARGB to/from any dimensions, without interpolation.
 // Fixed point math is used for performance: The upper 16 bits
 // of x and dx is the integer part of the source position and
@@ -1192,13 +1381,20 @@ static void ScaleARGBSimple(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_argb, uint8* dst_argb) {
+  void (*ScaleARGBCols)(uint8* dst_argb, const uint8* src_argb,
+      int dst_width, int x, int dx) = ScaleARGBCols_C;
+#if defined(HAS_SCALEARGBCOLS_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleARGBCols = ScaleARGBCols_SSE2;
+  }
+#endif
   int dx = (src_width << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
   int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
   for (int i = 0; i < dst_height; ++i) {
-    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride, dst_width, x,
-                  dx);
+    ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride,
+                  dst_width, x, dx);
     dst_argb += dst_stride;
     y += dy;
   }

@@ -149,7 +149,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy4_None) {
                                 dst_width, dst_height,
                                 kFilterNone,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);  // This is the only scale factor with error of 2.
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy4_Bilinear) {
@@ -162,7 +162,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy4_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);  // This is the only scale factor with error of 2.
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy4_Box) {
@@ -175,7 +175,7 @@ TEST_F(libyuvTest, ARGBScaleDownBy4_Box) {
                                 dst_width, dst_height,
                                 kFilterBox,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);  // This is the only scale factor with error of 2.
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleDownBy5_None) {
@@ -357,7 +357,7 @@ TEST_F(libyuvTest, ARGBScaleTo1366x768_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
+  EXPECT_LE(max_diff, 1);
 }
 
 
@@ -384,7 +384,7 @@ TEST_F(libyuvTest, ARGBScaleTo1280x720_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleTo853x480_None) {
@@ -410,7 +410,7 @@ TEST_F(libyuvTest, ARGBScaleTo853x480_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 3);
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleFrom640x360_None) {
@@ -423,7 +423,7 @@ TEST_F(libyuvTest, ARGBScaleFrom640x360_None) {
                                 dst_width, dst_height,
                                 kFilterNone,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
+  EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBScaleFrom640x360_Bilinear) {
@@ -436,7 +436,7 @@ TEST_F(libyuvTest, ARGBScaleFrom640x360_Bilinear) {
                                 dst_width, dst_height,
                                 kFilterBilinear,
                                 benchmark_iterations_);
-  EXPECT_LE(max_diff, 3);
+  EXPECT_LE(max_diff, 1);
 }
 
 }  // namespace libyuv
