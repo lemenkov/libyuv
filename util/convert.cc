@@ -25,11 +25,11 @@
 // options
 bool verbose = false;
 int image_width = 0, image_height = 0;
-int fileindex_org = 0;
-int fileindex_rec = 0;
-int num_rec = 0;
-int num_skip_org = 0;
-int num_frames = 0;
+int fileindex_org = 0;  // argv argument contains the original file name.
+int fileindex_rec = 0;  // argv argument contains the reconstructed file name.
+int num_rec = 0;  // Number of reconstructed images.
+int num_skip_org = 0;  // Number of frames to skip in original.
+int num_frames = 0;  // Number of frames to convert.
 
 // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
 bool ExtractResolutionFromFilename(const char* name,
@@ -54,7 +54,7 @@ void PrintHelp(const char * program) {
   printf(" -s <width> <height> .... specify resolution.  "
          "Optional if name contains\n"
          "                          resolution (ie. "
-         "bali.1920x800_24Hz_P420.yuv)\n");
+         "name.1920x800_24Hz_P420.yuv)\n");
   printf(" -skip <src_argb> ....... Number of frame to skip of src_argb\n");
   printf(" -frames <num> .......... Number of frames to convert\n");
   printf(" -v ..................... verbose\n");

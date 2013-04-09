@@ -50,8 +50,8 @@ bool do_ssim = false;
 bool do_mse = false;
 bool do_lssim = false;
 int image_width = 0, image_height = 0;
-int fileindex_org = 0;
-int fileindex_rec = 0;
+int fileindex_org = 0;  // argv argument contains the source file name.
+int fileindex_rec = 0;  // argv argument contains the destination file name.
 int num_rec = 0;
 int num_skip_org = 0;
 int num_skip_rec = 0;
@@ -98,7 +98,7 @@ void PrintHelp(const char * program) {
   printf(" -s <width> <height> .... specify YUV size, mandatory if none of the "
          "sequences have the\n");
   printf("                          resolution embedded in their filename (ie. "
-         "bali.1920x800_24Hz_P420.yuv)\n");
+         "name.1920x800_24Hz_P420.yuv)\n");
   printf(" -psnr .................. compute PSNR (default)\n");
   printf(" -ssim .................. compute SSIM\n");
   printf(" -mse ................... compute MSE\n");

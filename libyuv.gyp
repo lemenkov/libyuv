@@ -85,6 +85,8 @@
         'source/convert_argb.cc',
         'source/convert_from.cc',
         'source/convert_from_argb.cc',
+        'source/convert_jpeg.cc',
+        'source/convert_to_i420.cc',
         'source/cpu_id.cc',
         'source/format_conversion.cc',
         'source/mjpeg_decoder.cc',
