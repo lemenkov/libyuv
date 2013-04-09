@@ -56,39 +56,27 @@ int num_rec = 0;
 int num_skip_org = 0;
 int num_skip_rec = 0;
 int num_frames = 0;
-int do_yscale = 0;
 #ifdef _OPENMP
 int num_threads = 0;
 #endif
 
-bool ExtractResolutionFromYuvFilename(const char *name,
-                                      int* width_ptr,
-                                      int* height_ptr) {
-  // Isolate the .width_heigth. section of the filename by searching for the
-  // one before last dot in the filename.
-  int dot1 = -1, dot2 = -1;
-  int i = 0;
-  while (name[i]) {
-    if ('.' == name[i]) {
-      dot1 = dot2;
-      dot2 = i;
+// Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
+bool ExtractResolutionFromFilename(const char* name,
+                                   int* width_ptr,
+                                   int* height_ptr) {
+  // Isolate the .width_height. section of the filename by searching for a
+  // dot or underscore followed by a digit.
+  for (int i = 0; name[i]; ++i) {
+    if ((name[i] == '.' || name[i] == '_') &&
+        name[i + 1] >= '0' && name[i + 1] <= '9') {
+      int n = sscanf(name + i + 1, "%dx%d", width_ptr, height_ptr);  // NOLINT
+      if (2 == n) {
+        return true;
+      }
     }
-    i++;
   }
-  if (-1 == dot1) {
-    return false;
-  }
-
-  // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
-  int args = sscanf(name + dot1, ".%dx%d", width_ptr, height_ptr);
-
-  // Parse .width_height.yuv
-  if (args != 2) {
-    args = sscanf(name + dot1, ".%d_%d.yuv", width_ptr, height_ptr);
-  }
-  return (2 == args);
+  return false;
 }
-
 
 // Scale Y channel from 16..240 to 0..255.
 // This can be useful when comparing codecs that are inconsistant about Y
@@ -120,7 +108,6 @@ void PrintHelp(const char * program) {
 #ifdef _OPENMP
   printf(" -t <num> ............... Number of threads\n");
 #endif
-  printf(" -yscale ................ Scale org Y values of 16..240 to 0..255\n");
   printf(" -n ..................... Show file name\n");
   printf(" -v ..................... verbose++\n");
   printf(" -q ..................... quiet\n");
@@ -128,7 +115,7 @@ void PrintHelp(const char * program) {
   exit(0);
 }
 
-void ParseOptions(int argc, const char *argv[]) {
+void ParseOptions(int argc, const char* argv[]) {
   if (argc <= 1) PrintHelp(argv[0]);
   for (int c = 1; c < argc; ++c) {
     if (!strcmp(argv[c], "-v")) {
@@ -148,8 +135,6 @@ void ParseOptions(int argc, const char *argv[]) {
       do_lssim = true;
     } else if (!strcmp(argv[c], "-swap")) {
       do_swap_uv = true;
-    } else if (!strcmp(argv[c], "-yscale")) {
-      do_yscale = true;
     } else if (!strcmp(argv[c], "-h") || !strcmp(argv[c], "-help")) {
       PrintHelp(argv[0]);
     } else if (!strcmp(argv[c], "-s") && c + 2 < argc) {
@@ -164,6 +149,8 @@ void ParseOptions(int argc, const char *argv[]) {
     } else if (!strcmp(argv[c], "-t") && c + 1 < argc) {
       num_threads = atoi(argv[++c]);    // NOLINT
 #endif
+    } else if (argv[c][0] == '-') {
+      fprintf(stderr, "Unknown option. %s\n", argv[c]);
     } else if (fileindex_org == 0) {
       fileindex_org = c;
     } else if (fileindex_rec == 0) {
@@ -174,33 +161,33 @@ void ParseOptions(int argc, const char *argv[]) {
     }
   }
   if (fileindex_org == 0 || fileindex_rec == 0) {
-    printf("Missing filenames\n");
+    fprintf(stderr, "Missing filenames\n");
     PrintHelp(argv[0]);
   }
   if (num_skip_org < 0 || num_skip_rec < 0) {
-    printf("Skipped frames incorrect\n");
+    fprintf(stderr, "Skipped frames incorrect\n");
     PrintHelp(argv[0]);
   }
   if (num_frames < 0) {
-    printf("Number of frames incorrect\n");
+    fprintf(stderr, "Number of frames incorrect\n");
     PrintHelp(argv[0]);
   }
   if (image_width <= 0 || image_height <=0) {
     int org_width, org_height;
     int rec_width, rec_height;
-    bool org_res_avail = ExtractResolutionFromYuvFilename(argv[fileindex_org],
-                                                          &org_width,
-                                                          &org_height);
-    bool rec_res_avail = ExtractResolutionFromYuvFilename(argv[fileindex_rec],
-                                                          &rec_width,
-                                                          &rec_height);
+    bool org_res_avail = ExtractResolutionFromFilename(argv[fileindex_org],
+                                                       &org_width,
+                                                       &org_height);
+    bool rec_res_avail = ExtractResolutionFromFilename(argv[fileindex_rec],
+                                                       &rec_width,
+                                                       &rec_height);
     if (org_res_avail) {
       if (rec_res_avail) {
         if ((org_width == rec_width) && (org_height == rec_height)) {
           image_width = org_width;
           image_height = org_height;
         } else {
-          printf("Sequences have different resolutions.\n");
+          fprintf(stderr, "Sequences have different resolutions.\n");
           PrintHelp(argv[0]);
         }
       } else {
@@ -211,7 +198,7 @@ void ParseOptions(int argc, const char *argv[]) {
       image_width = rec_width;
       image_height = rec_height;
     } else {
-      printf("Missing dimensions.\n");
+      fprintf(stderr, "Missing dimensions.\n");
       PrintHelp(argv[0]);
     }
   }
@@ -227,11 +214,6 @@ bool UpdateMetrics(uint8* ch_org, uint8* ch_rec,
   const uint8* const u_rec = ch_rec + y_size;
   const uint8* const v_org = ch_org + y_size + (uv_size - uv_offset);
   const uint8* const v_rec = ch_rec + y_size + uv_size;
-  if (do_yscale) {
-    for (int i = 0; i < image_width*image_height; ++i) {
-      ch_org[i] = ScaleY(ch_org[i]);
-    }
-  }
   if (do_psnr) {
     double y_err = ComputeSumSquareError(ch_org, ch_rec, y_size);
     double u_err = ComputeSumSquareError(u_org, u_rec, uv_size);
@@ -287,7 +269,7 @@ bool UpdateMetrics(uint8* ch_org, uint8* ch_rec,
   return ismin;
 }
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char* argv[]) {
   ParseOptions(argc, argv);
   if (!do_psnr && !do_ssim) {
     do_psnr = true;
@@ -309,12 +291,12 @@ int main(int argc, const char *argv[]) {
   }
 
   // Open all files to compare to
-  FILE** file_rec = new FILE *[num_rec];
+  FILE** file_rec = new FILE* [num_rec];
   memset(file_rec, 0, num_rec * sizeof(FILE*)); // NOLINT
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
-    file_rec[cur_rec] = fopen(argv[fileindex_rec+cur_rec], "rb");
+    file_rec[cur_rec] = fopen(argv[fileindex_rec + cur_rec], "rb");
     if (file_rec[cur_rec] == NULL) {
-      fprintf(stderr, "Cannot open %s\n", argv[fileindex_rec+cur_rec]);
+      fprintf(stderr, "Cannot open %s\n", argv[fileindex_rec + cur_rec]);
       fclose(file_org);
       for (int i = 0; i < cur_rec; ++i) {
         fclose(file_rec[i]);
@@ -450,7 +432,7 @@ int main(int argc, const char *argv[]) {
       }
       if (verbose) {
         if (show_name) {
-          printf("\t%s", argv[fileindex_rec+cur_rec]);
+          printf("\t%s", argv[fileindex_rec + cur_rec]);
         }
         printf("\n");
       }
@@ -493,7 +475,7 @@ int main(int argc, const char *argv[]) {
           global_psnr_all,
           number_of_frames);
       if (show_name) {
-        printf("\t%s", argv[fileindex_rec+cur_rec]);
+        printf("\t%s", argv[fileindex_rec + cur_rec]);
       }
       printf("\n");
     }
@@ -517,7 +499,7 @@ int main(int argc, const char *argv[]) {
              number_of_frames);
       }
       if (show_name) {
-        printf("\t%s", argv[fileindex_rec+cur_rec]);
+        printf("\t%s", argv[fileindex_rec + cur_rec]);
       }
       printf("\n");
     }
@@ -540,7 +522,7 @@ int main(int argc, const char *argv[]) {
             cur_distortion_ssim->min_frame);
       }
       if (show_name) {
-        printf("\t%s", argv[fileindex_rec+cur_rec]);
+        printf("\t%s", argv[fileindex_rec + cur_rec]);
       }
       printf("\n");
     }
@@ -561,7 +543,7 @@ int main(int argc, const char *argv[]) {
           global_mse_all,
           number_of_frames);
       if (show_name) {
-        printf("\t%s", argv[fileindex_rec+cur_rec]);
+        printf("\t%s", argv[fileindex_rec + cur_rec]);
       }
       printf("\n");
     }
