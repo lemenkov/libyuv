@@ -76,6 +76,24 @@
         }],
       ], # conditions
     },
+    {
+      'target_name': 'convert',
+      'type': 'executable',
+      'dependencies': [
+        'libyuv.gyp:libyuv',
+      ],
+      'sources': [
+        # sources
+        'util/convert.cc',
+      ],
+      'conditions': [
+        ['OS=="linux"', {
+          'cflags': [
+            '-fexceptions',
+          ],
+        }],
+      ], # conditions
+    },
     # TODO(fbarchard): Enable SSE2 and OpenMP for better performance.
     {
       'target_name': 'psnr',
