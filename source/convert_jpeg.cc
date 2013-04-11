@@ -220,6 +220,170 @@ int MJPGToI420(const uint8* sample,
   }
   return 0;
 }
+
+#ifdef HAVE_JPEG
+struct ARGBBuffers {
+  uint8* argb;
+  int argb_stride;
+  int w;
+  int h;
+};
+
+static void JpegI420ToARGB(void* opaque,
+                         const uint8* const* data,
+                         const int* strides,
+                         int rows) {
+  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  I420ToARGB(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->argb, dest->argb_stride,
+             dest->w, rows);
+  dest->argb += rows * dest->argb_stride;
+  dest->h -= rows;
+}
+
+static void JpegI422ToARGB(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  I422ToARGB(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->argb, dest->argb_stride,
+             dest->w, rows);
+  dest->argb += rows * dest->argb_stride;
+  dest->h -= rows;
+}
+
+static void JpegI444ToARGB(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  I444ToARGB(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->argb, dest->argb_stride,
+             dest->w, rows);
+  dest->argb += rows * dest->argb_stride;
+  dest->h -= rows;
+}
+
+static void JpegI411ToARGB(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  I411ToARGB(data[0], strides[0],
+             data[1], strides[1],
+             data[2], strides[2],
+             dest->argb, dest->argb_stride,
+             dest->w, rows);
+  dest->argb += rows * dest->argb_stride;
+  dest->h -= rows;
+}
+
+static void JpegI400ToARGB(void* opaque,
+                           const uint8* const* data,
+                           const int* strides,
+                           int rows) {
+  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  I400ToARGB(data[0], strides[0],
+             dest->argb, dest->argb_stride,
+             dest->w, rows);
+  dest->argb += rows * dest->argb_stride;
+  dest->h -= rows;
+}
+
+// MJPG (Motion JPeg) to ARGB
+// TODO(fbarchard): review w and h requirement. dw and dh may be enough.
+LIBYUV_API
+int MJPGToARGB(const uint8* sample,
+               size_t sample_size,
+               uint8* argb, int argb_stride,
+               int w, int h,
+               int dw, int dh) {
+  if (sample_size == kUnknownDataSize) {
+    // ERROR: MJPEG frame size unknown
+    return -1;
+  }
+
+  // TODO(fbarchard): Port MJpeg to C.
+  MJpegDecoder mjpeg_decoder;
+  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  if (ret && (mjpeg_decoder.GetWidth() != w ||
+              mjpeg_decoder.GetHeight() != h)) {
+    // ERROR: MJPEG frame has unexpected dimensions
+    mjpeg_decoder.UnloadFrame();
+    return 1;  // runtime failure
+  }
+  if (ret) {
+    ARGBBuffers bufs = { argb, argb_stride, dw, dh };
+    // YUV420
+    if (mjpeg_decoder.GetColorSpace() ==
+            MJpegDecoder::kColorSpaceYCbCr &&
+        mjpeg_decoder.GetNumComponents() == 3 &&
+        mjpeg_decoder.GetVertSampFactor(0) == 2 &&
+        mjpeg_decoder.GetHorizSampFactor(0) == 2 &&
+        mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+        mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+        mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+        mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI420ToARGB, &bufs, dw, dh);
+    // YUV422
+    } else if (mjpeg_decoder.GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 2 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToARGB, &bufs, dw, dh);
+    // YUV444
+    } else if (mjpeg_decoder.GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToARGB, &bufs, dw, dh);
+    // YUV411
+    } else if (mjpeg_decoder.GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceYCbCr &&
+               mjpeg_decoder.GetNumComponents() == 3 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 4 &&
+               mjpeg_decoder.GetVertSampFactor(1) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
+               mjpeg_decoder.GetVertSampFactor(2) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(2) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI411ToARGB, &bufs, dw, dh);
+    // YUV400
+    } else if (mjpeg_decoder.GetColorSpace() ==
+                   MJpegDecoder::kColorSpaceGrayscale &&
+               mjpeg_decoder.GetNumComponents() == 1 &&
+               mjpeg_decoder.GetVertSampFactor(0) == 1 &&
+               mjpeg_decoder.GetHorizSampFactor(0) == 1) {
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToARGB, &bufs, dw, dh);
+    } else {
+      // TODO(fbarchard): Implement conversion for any other colorspace/sample
+      // factors that occur in practice. 411 is supported by libjpeg
+      // ERROR: Unable to convert MJPEG frame because format is not supported
+      mjpeg_decoder.UnloadFrame();
+      return 1;
+    }
+  }
+  return 0;
+}
+#endif
+
 #endif
 
 #ifdef __cplusplus
