@@ -21,10 +21,12 @@
 #include <string.h>
 
 #include "libyuv/convert.h"
+#include "libyuv/scale_argb.h"
 
 // options
 bool verbose = false;
-int image_width = 0, image_height = 0;
+int image_width = 0, image_height = 0;  // original width and height
+int dst_width = 0, dst_height = 0;  // new width and height
 int fileindex_org = 0;  // argv argument contains the original file name.
 int fileindex_rec = 0;  // argv argument contains the reconstructed file name.
 int num_rec = 0;  // Number of reconstructed images.
@@ -51,10 +53,11 @@ bool ExtractResolutionFromFilename(const char* name,
 
 void PrintHelp(const char * program) {
   printf("%s [-options] src_argb.raw dst_yuv.raw\n", program);
-  printf(" -s <width> <height> .... specify resolution.  "
+  printf(" -s <width> <height> .... specify source resolution.  "
          "Optional if name contains\n"
          "                          resolution (ie. "
          "name.1920x800_24Hz_P420.yuv)\n");
+  printf(" -d <width> <height> .... specify destination resolution.\n");
   printf(" -skip <src_argb> ....... Number of frame to skip of src_argb\n");
   printf(" -frames <num> .......... Number of frames to convert\n");
   printf(" -v ..................... verbose\n");
@@ -72,6 +75,9 @@ void ParseOptions(int argc, const char* argv[]) {
     } else if (!strcmp(argv[c], "-s") && c + 2 < argc) {
       image_width = atoi(argv[++c]);    // NOLINT
       image_height = atoi(argv[++c]);   // NOLINT
+    } else if (!strcmp(argv[c], "-d") && c + 2 < argc) {
+      dst_width = atoi(argv[++c]);    // NOLINT
+      dst_height = atoi(argv[++c]);   // NOLINT
     } else if (!strcmp(argv[c], "-skip") && c + 1 < argc) {
       num_skip_org = atoi(argv[++c]);   // NOLINT
     } else if (!strcmp(argv[c], "-frames") && c + 1 < argc) {
@@ -99,35 +105,34 @@ void ParseOptions(int argc, const char* argv[]) {
     fprintf(stderr, "Number of frames incorrect\n");
     PrintHelp(argv[0]);
   }
-  if (image_width <= 0 || image_height <=0) {
-    int org_width, org_height;
-    int rec_width, rec_height;
-    bool org_res_avail = ExtractResolutionFromFilename(argv[fileindex_org],
-                                                       &org_width,
-                                                       &org_height);
-    bool rec_res_avail = ExtractResolutionFromFilename(argv[fileindex_rec],
-                                                       &rec_width,
-                                                       &rec_height);
+
+  int org_width, org_height;
+  int rec_width, rec_height;
+  bool org_res_avail = ExtractResolutionFromFilename(argv[fileindex_org],
+                                                     &org_width,
+                                                     &org_height);
+  bool rec_res_avail = ExtractResolutionFromFilename(argv[fileindex_rec],
+                                                     &rec_width,
+                                                     &rec_height);
+  if (image_width <= 0 || image_height <= 0) {
     if (org_res_avail) {
-      if (rec_res_avail) {
-        if ((org_width == rec_width) && (org_height == rec_height)) {
-          image_width = org_width;
-          image_height = org_height;
-        } else {
-          // TODO(fbarchard): Apply scaling.
-          fprintf(stderr, "Sequences have different resolutions.\n");
-          PrintHelp(argv[0]);
-        }
-      } else {
-        image_width = org_width;
-        image_height = org_height;
-      }
+      image_width = org_width;
+      image_height = org_height;
     } else if (rec_res_avail) {
       image_width = rec_width;
       image_height = rec_height;
     } else {
       fprintf(stderr, "Missing dimensions.\n");
       PrintHelp(argv[0]);
+    }
+  }
+  if (dst_width <= 0 || dst_height <= 0) {
+    if (rec_res_avail) {
+      dst_width = rec_width;
+      dst_height = rec_height;
+    } else {
+      dst_width = image_width;
+      dst_height = image_height;
     }
   }
 }
@@ -159,8 +164,9 @@ int main(int argc, const char* argv[]) {
   }
 
   const int org_size = image_width * image_height * 4;  // ARGB
-  const int y_size = image_width * image_height;
-  const int uv_size = (image_width >> 1) * (image_height >> 1);
+  const int dst_size = dst_width * dst_height * 4;  // ARGB scaled
+  const int y_size = dst_width * dst_height;
+  const int uv_size = (dst_width + 1) / 2 * (dst_height + 1) / 2;
   const size_t total_size = y_size + 2 * uv_size;
 #if defined(_MSC_VER)
   _fseeki64(file_org,
@@ -171,6 +177,7 @@ int main(int argc, const char* argv[]) {
 #endif
 
   uint8* const ch_org = new uint8[org_size];
+  uint8* const ch_dst = new uint8[dst_size];
   uint8* const ch_rec = new uint8[total_size];
   if (ch_org == NULL || ch_rec == NULL) {
     fprintf(stderr, "No memory available\n");
@@ -179,13 +186,15 @@ int main(int argc, const char* argv[]) {
       fclose(file_rec[i]);
     }
     delete[] ch_org;
+    delete[] ch_dst;
     delete[] ch_rec;
     delete[] file_rec;
     exit(1);
   }
 
   if (verbose) {
-    printf("Size: %dx%d\n", image_width, image_height);
+    printf("Size: %dx%d to %dx%d\n", image_width, image_height,
+           dst_width, dst_height);
   }
 
   int number_of_frames;
@@ -198,14 +207,20 @@ int main(int argc, const char* argv[]) {
       break;
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
-      int half_width = (image_width + 1) / 2;
-      int half_height = (image_height + 1) / 2;
-      libyuv::ARGBToI420(ch_org, image_width * 4,
-                         ch_rec, image_width,
-                         ch_rec + image_width * image_height, half_width,
-                         ch_rec + image_width * image_height +
+      libyuv::ARGBScale(ch_org, image_width * 4,
+                        image_width, image_height,
+                        ch_dst, dst_width * 4,
+                        dst_width, dst_height,
+                        libyuv::kFilterBilinear);
+
+      int half_width = (dst_width + 1) / 2;
+      int half_height = (dst_height + 1) / 2;
+      libyuv::ARGBToI420(ch_dst, dst_width * 4,
+                         ch_rec, dst_width,
+                         ch_rec + dst_width * dst_height, half_width,
+                         ch_rec + dst_width * dst_height +
                              half_width * half_height,  half_width,
-                         image_width, image_height);
+                         dst_width, dst_height);
       size_t bytes_rec = fwrite(ch_rec, sizeof(uint8),
                                 total_size, file_rec[cur_rec]);
       if (bytes_rec < total_size)
@@ -226,6 +241,7 @@ int main(int argc, const char* argv[]) {
     fclose(file_rec[cur_rec]);
   }
   delete[] ch_org;
+  delete[] ch_dst;
   delete[] ch_rec;
   delete[] file_rec;
   return 0;
