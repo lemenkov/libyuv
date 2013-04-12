@@ -557,14 +557,24 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
       }
     }
   }
-#elif defined(HAS_I422TOARGBROW_NEON)
+#endif
+#if defined(HAS_I422TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I422ToARGBRow = I422ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_NEON;
     }
   }
-#elif defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+#endif
+#if defined(HAS_I422TOARGBROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&

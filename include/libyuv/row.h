@@ -133,12 +133,12 @@ extern "C" {
 #define HAS_ARGBCOLORTABLEROW_X86
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
-// TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
-#define HAS_ARGBTOYROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
+#define HAS_ARGBTOYROW_AVX2
 #define HAS_HALFROW_AVX2
+#define HAS_I422TOARGBROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_SPLITUVROW_AVX2
@@ -826,7 +826,11 @@ void I422ToRGB565Row_C(const uint8* src_y,
 void YToARGBRow_C(const uint8* src_y,
                   uint8* dst_argb,
                   int width);
-
+void I422ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
 void I444ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -950,6 +954,11 @@ void I422ToRGBARow_Unaligned_SSSE3(const uint8* src_y,
                                    const uint8* src_v,
                                    uint8* dst_rgba,
                                    int width);
+void I422ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
 void I444ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
