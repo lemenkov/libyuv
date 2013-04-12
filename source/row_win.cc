@@ -3497,10 +3497,9 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_SSE2
 
-#ifdef HAS_COPYROW_AVX2
 // Unaligned Multiple of 1.
 __declspec(naked) __declspec(align(16))
-void CopyRow_AVX2(const uint8* src, uint8* dst, int count) {
+void CopyRow_ERMS(const uint8* src, uint8* dst, int count) {
   __asm {
     mov        eax, esi
     mov        edx, edi
@@ -3513,7 +3512,6 @@ void CopyRow_AVX2(const uint8* src, uint8* dst, int count) {
     ret
   }
 }
-#endif  // HAS_COPYROW_AVX2
 
 #ifdef HAS_COPYROW_X86
 __declspec(naked) __declspec(align(16))

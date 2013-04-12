@@ -308,10 +308,10 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
     CopyRow = CopyRow_SSE2;
   }
 #endif
-#if defined(HAS_COPYROW_AVX2)
+#if defined(HAS_COPYROW_ERMS)
   // TODO(fbarchard): Detect Fast String support.
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    CopyRow = CopyRow_AVX2;
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_NEON)
@@ -539,9 +539,9 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     CopyRow = CopyRow_SSE2;
   }
 #endif
-#if defined(HAS_COPYROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    CopyRow = CopyRow_AVX2;
+#if defined(HAS_COPYROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_MIPS)

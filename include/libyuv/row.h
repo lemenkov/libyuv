@@ -61,6 +61,7 @@ extern "C" {
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
+#define HAS_COPYROW_ERMS
 #define HAS_HALFROW_SSE2
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
@@ -130,7 +131,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_COPYROW_AVX2
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 // TODO(fbarchard): Hook these up to all functions. e.g. format conversion.
@@ -649,7 +649,7 @@ void MergeUVRow_Any_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                          int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
-void CopyRow_AVX2(const uint8* src, uint8* dst, int count);
+void CopyRow_ERMS(const uint8* src, uint8* dst, int count);
 void CopyRow_X86(const uint8* src, uint8* dst, int count);
 void CopyRow_NEON(const uint8* src, uint8* dst, int count);
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count);

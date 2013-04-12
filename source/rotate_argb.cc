@@ -128,10 +128,9 @@ void ARGBRotate180(const uint8* src, int src_stride,
     CopyRow = CopyRow_SSE2;
   }
 #endif
-#if defined(HAS_COPYROW_AVX2)
-  // TODO(fbarchard): Detect Fast String support.
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    CopyRow = CopyRow_AVX2;
+#if defined(HAS_COPYROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_MIPS)

@@ -64,9 +64,9 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
     CopyRow = CopyRow_SSE2;
   }
 #endif
-#if defined(HAS_COPYROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    CopyRow = CopyRow_AVX2;
+#if defined(HAS_COPYROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_ERMS;
   }
 #endif
 #if defined(HAS_COPYROW_NEON)

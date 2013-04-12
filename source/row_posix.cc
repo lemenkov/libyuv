@@ -3027,6 +3027,19 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_COPYROW_X86
 
+// Unaligned Multiple of 1.
+void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
+  size_t width_tmp = static_cast<size_t>(width);
+  asm volatile (
+    "rep movsb                                 \n"
+  : "+S"(src),  // %0
+    "+D"(dst),  // %1
+    "+c"(width_tmp) // %2
+  :
+  : "memory", "cc"
+  );
+}
+
 #ifdef HAS_SETROW_X86
 void SetRow_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
