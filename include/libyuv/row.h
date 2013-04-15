@@ -19,12 +19,11 @@ extern "C" {
 #endif
 
 // TODO(fbarchard): Remove kMaxStride.
-// Functions should allocate a single row buffer of this size on the stack.
-// Functions that allocate more than one row buffer may fail or cause stack
-// probe.
-// This size is a retina Mac pixels of 32 bit ARGB.
-// Functions may want less for 8 or 16 bit row buffers.
-#define kMaxStride (2880 * 4)
+#ifdef __arm__
+#define kMaxStride (1920 * 4)
+#else
+#define kMaxStride (4096 * 4)
+#endif
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \

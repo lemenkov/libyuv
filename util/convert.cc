@@ -32,6 +32,7 @@ int fileindex_rec = 0;  // argv argument contains the reconstructed file name.
 int num_rec = 0;  // Number of reconstructed images.
 int num_skip_org = 0;  // Number of frames to skip in original.
 int num_frames = 0;  // Number of frames to convert.
+int filter = 1;  // Bilinear filter for scaling.
 
 // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
 bool ExtractResolutionFromFilename(const char* name,
@@ -58,6 +59,7 @@ void PrintHelp(const char * program) {
          "                          resolution (ie. "
          "name.1920x800_24Hz_P420.yuv)\n");
   printf(" -d <width> <height> .... specify destination resolution.\n");
+  printf(" -f <filter> ............ 0 = point, 1 = bilinear (default).\n");
   printf(" -skip <src_argb> ....... Number of frame to skip of src_argb\n");
   printf(" -frames <num> .......... Number of frames to convert\n");
   printf(" -v ..................... verbose\n");
@@ -82,6 +84,8 @@ void ParseOptions(int argc, const char* argv[]) {
       num_skip_org = atoi(argv[++c]);   // NOLINT
     } else if (!strcmp(argv[c], "-frames") && c + 1 < argc) {
       num_frames = atoi(argv[++c]);     // NOLINT
+    } else if (!strcmp(argv[c], "-f") && c + 1 < argc) {
+      filter = atoi(argv[++c]);     // NOLINT
     } else if (argv[c][0] == '-') {
       fprintf(stderr, "Unknown option. %s\n", argv[c]);
     } else if (fileindex_org == 0) {
@@ -202,8 +206,9 @@ int main(int argc, const char* argv[]) {
     if (num_frames && number_of_frames >= num_frames)
       break;
 
-    size_t bytes_org = fread(ch_org, sizeof(uint8), org_size, file_org);
-    if (bytes_org < total_size)
+    size_t bytes_org = fread(ch_org, sizeof(uint8),
+                             static_cast<size_t>(org_size), file_org);
+    if (bytes_org < static_cast<size_t>(org_size))
       break;
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
@@ -211,20 +216,31 @@ int main(int argc, const char* argv[]) {
                         image_width, image_height,
                         ch_dst, dst_width * 4,
                         dst_width, dst_height,
-                        libyuv::kFilterBilinear);
+                        static_cast<libyuv::FilterMode>(filter));
 
-      int half_width = (dst_width + 1) / 2;
-      int half_height = (dst_height + 1) / 2;
-      libyuv::ARGBToI420(ch_dst, dst_width * 4,
-                         ch_rec, dst_width,
-                         ch_rec + dst_width * dst_height, half_width,
-                         ch_rec + dst_width * dst_height +
-                             half_width * half_height,  half_width,
-                         dst_width, dst_height);
-      size_t bytes_rec = fwrite(ch_rec, sizeof(uint8),
-                                total_size, file_rec[cur_rec]);
-      if (bytes_rec < total_size)
-        break;
+      // Output scaled ARGB.
+      if (strstr(argv[fileindex_rec + cur_rec], "_ARGB.")) {
+        size_t bytes_rec = fwrite(ch_dst, sizeof(uint8),
+                                  static_cast<size_t>(dst_size),
+                                  file_rec[cur_rec]);
+        if (bytes_rec < static_cast<size_t>(dst_size))
+          break;
+      } else {
+        // Output YUV.
+        int half_width = (dst_width + 1) / 2;
+        int half_height = (dst_height + 1) / 2;
+        libyuv::ARGBToI420(ch_dst, dst_width * 4,
+                           ch_rec, dst_width,
+                           ch_rec + dst_width * dst_height, half_width,
+                           ch_rec + dst_width * dst_height +
+                               half_width * half_height,  half_width,
+                           dst_width, dst_height);
+        size_t bytes_rec = fwrite(ch_rec, sizeof(uint8),
+                                  static_cast<size_t>(total_size),
+                                  file_rec[cur_rec]);
+        if (bytes_rec < static_cast<size_t>(total_size))
+          break;
+      }
 
       if (verbose) {
         printf("%5d", number_of_frames);
