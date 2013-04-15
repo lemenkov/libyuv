@@ -832,7 +832,9 @@ TEST_F(libyuvTest, ARGBInterpolate##TERP##N) {                                 \
     TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
              benchmark_width_, TERP, 1, _Invert, -, 0)                         \
     TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_, TERP, 1, _Opt, +, 0)
+             benchmark_width_, TERP, 1, _Opt, +, 0)                            \
+    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
+             benchmark_width_ - 1, TERP, 1, _Any_Invert, -, 0)
 
 TESTINTERPOLATE(0)
 TESTINTERPOLATE(64)

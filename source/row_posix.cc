@@ -5012,6 +5012,222 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
+// Bilinear image filtering.
+// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
+void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                        ptrdiff_t src_stride, int dst_width,
+                                        int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        100f                            \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
+    "cmp       $0x40,%3                        \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
+
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+
+    // General purpose row blend.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm2                \n"
+    "movdqu    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm2,%%xmm0                   \n"
+    "punpckhbw %%xmm2,%%xmm1                   \n"
+    "pmaddubsw %%xmm5,%%xmm0                   \n"
+    "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "psrlw     $0x7,%%xmm1                     \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
+    ".p2align  4                               \n"
+  "25:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    ".p2align  4                               \n"
+  "50:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    ".p2align  4                               \n"
+  "75:                                         \n"
+    "movdqu    (%1),%%xmm1                     \n"
+    "movdqu    (%1,%4,1),%%xmm0                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    ".p2align  4                               \n"
+  "100:                                        \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        100b                            \n"
+
+  "99:                                         \n"
+  : "+r"(dst_argb),   // %0
+    "+r"(src_argb),   // %1
+    "+r"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm5"
+#endif
+  );
+}
+
+// Bilinear image filtering.
+// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
+void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
+                                       ptrdiff_t src_stride, int dst_width,
+                                       int source_y_fraction) {
+  asm volatile (
+    "sub       %1,%0                           \n"
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        100f                            \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
+    "cmp       $0x40,%3                        \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
+
+    "movd      %3,%%xmm0                       \n"
+    "neg       %3                              \n"
+    "add       $0x80,%3                        \n"
+    "movd      %3,%%xmm5                       \n"
+    "punpcklbw %%xmm0,%%xmm5                   \n"
+    "punpcklwd %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
+
+    // General purpose row blend.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm2                \n"
+    "movdqu    %%xmm0,%%xmm1                   \n"
+    "movdqu    %%xmm2,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm2                   \n"
+    "punpckhbw %%xmm4,%%xmm3                   \n"
+    "punpcklbw %%xmm4,%%xmm0                   \n"
+    "punpckhbw %%xmm4,%%xmm1                   \n"
+    "psubw     %%xmm0,%%xmm2                   \n"
+    "psubw     %%xmm1,%%xmm3                   \n"
+    "paddw     %%xmm2,%%xmm2                   \n"
+    "paddw     %%xmm3,%%xmm3                   \n"
+    "pmulhw    %%xmm5,%%xmm2                   \n"
+    "pmulhw    %%xmm5,%%xmm3                   \n"
+    "paddw     %%xmm2,%%xmm0                   \n"
+    "paddw     %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        1b                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
+    ".p2align  4                               \n"
+  "25:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    ".p2align  4                               \n"
+  "50:                                         \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    ".p2align  4                               \n"
+  "75:                                         \n"
+    "movdqu    (%1),%%xmm1                     \n"
+    "movdqu    (%1,%4,1),%%xmm0                \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    ".p2align  4                               \n"
+  "100:                                        \n"
+    "movdqu    (%1),%%xmm0                     \n"
+    "sub       $0x4,%2                         \n"
+    "movdqu    %%xmm0,(%1,%0,1)                \n"
+    "lea       0x10(%1),%1                     \n"
+    "jg        100b                            \n"
+
+  "99:                                         \n"
+  : "+r"(dst_argb),   // %0
+    "+r"(src_argb),   // %1
+    "+r"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {
   asm volatile (

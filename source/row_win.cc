@@ -2130,41 +2130,41 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
  convertloop:
     vmovq      xmm0, qword ptr [esi]          //  U
     vmovq      xmm1, qword ptr [esi + edi]    //  V
-    lea        esi,  [esi + 8]                                           
-    vpunpcklbw ymm0, ymm0, ymm1               // UV                              
+    lea        esi,  [esi + 8]
+    vpunpcklbw ymm0, ymm0, ymm1               // UV
     vpermq     ymm0, ymm0, 0xd8
     vpunpcklwd ymm0, ymm0, ymm0              // UVUV
-    vpmaddubsw ymm2, ymm0, kUVToB_AVX        // scale B UV                       
-    vpmaddubsw ymm1, ymm0, kUVToG_AVX        // scale G UV                       
-    vpmaddubsw ymm0, ymm0, kUVToR_AVX        // scale R UV                       
-    vpsubw     ymm2, ymm2, kUVBiasB_AVX      // unbias back to signed           
-    vpsubw     ymm1, ymm1, kUVBiasG_AVX                                            
-    vpsubw     ymm0, ymm0, kUVBiasR_AVX                                            
+    vpmaddubsw ymm2, ymm0, kUVToB_AVX        // scale B UV
+    vpmaddubsw ymm1, ymm0, kUVToG_AVX        // scale G UV
+    vpmaddubsw ymm0, ymm0, kUVToR_AVX        // scale R UV
+    vpsubw     ymm2, ymm2, kUVBiasB_AVX      // unbias back to signed
+    vpsubw     ymm1, ymm1, kUVBiasG_AVX
+    vpsubw     ymm0, ymm0, kUVBiasR_AVX
 
-    // Step 2: Find Y contribution to 16 R,G,B values                         
-    vmovdqu    xmm3, [eax]                  // NOLINT  
-    lea        eax, [eax + 16]                                            
+    // Step 2: Find Y contribution to 16 R,G,B values
+    vmovdqu    xmm3, [eax]                  // NOLINT
+    lea        eax, [eax + 16]
     vpermq     ymm3, ymm3, 0xd8
     vpunpcklbw ymm3, ymm3, ymm4
-    vpsubsw    ymm3, ymm3, kYSub16_AVX                                             
-    vpmullw    ymm3, ymm3, kYToRgb_AVX                                             
-    vpaddsw    ymm2, ymm2, ymm3           // B += Y                         
-    vpaddsw    ymm1, ymm1, ymm3           // G += Y                          
-    vpaddsw    ymm0, ymm0, ymm3           // R += Y                         
-    vpsraw     ymm2, ymm2, 6                                                   
-    vpsraw     ymm1, ymm1, 6                                                   
-    vpsraw     ymm0, ymm0, 6                                                   
+    vpsubsw    ymm3, ymm3, kYSub16_AVX
+    vpmullw    ymm3, ymm3, kYToRgb_AVX
+    vpaddsw    ymm2, ymm2, ymm3           // B += Y
+    vpaddsw    ymm1, ymm1, ymm3           // G += Y
+    vpaddsw    ymm0, ymm0, ymm3           // R += Y
+    vpsraw     ymm2, ymm2, 6
+    vpsraw     ymm1, ymm1, 6
+    vpsraw     ymm0, ymm0, 6
     vpackuswb  ymm2, ymm2, ymm2           // B
     vpackuswb  ymm1, ymm1, ymm1           // G
-    vpackuswb  ymm0, ymm0, ymm0           // R  
+    vpackuswb  ymm0, ymm0, ymm0           // R
 
     // Step 3: Weave into ARGB
     vpunpcklbw ymm2, ymm2, ymm1           // BG
     vpermq     ymm2, ymm2, 0xd8
     vpunpcklbw ymm0, ymm0, ymm5           // RA
     vpermq     ymm0, ymm0, 0xd8
-    vpunpcklwd ymm1, ymm2, ymm0           // BGRA first 4 pixels
-    vpunpckhwd ymm2, ymm2, ymm0           // BGRA next 4 pixels
+    vpunpcklwd ymm1, ymm2, ymm0           // BGRA first 8 pixels
+    vpunpckhwd ymm2, ymm2, ymm0           // BGRA next 8 pixels
     vmovdqu    [edx], ymm1
     vmovdqu    [edx + 32], ymm2
     lea        edx,  [edx + 64]
@@ -6111,6 +6111,224 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     movdqa     xmm0, [esi]
     sub        ecx, 4
     movdqa     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop100
+
+  xloop99:
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// Bilinear image filtering.
+// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
+__declspec(naked) __declspec(align(16))
+void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                        ptrdiff_t src_stride, int dst_width,
+                                        int source_y_fraction) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]   // dst_argb
+    mov        esi, [esp + 8 + 8]   // src_argb
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
+    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
+    shr        eax, 1
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 128.  Blend 100 / 0.
+    cmp        eax, 32
+    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
+    cmp        eax, 64
+    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
+    cmp        eax, 96
+    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
+
+    movd       xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    movd       xmm5, eax  // low fraction 128..1
+    punpcklbw  xmm5, xmm0
+    punpcklwd  xmm5, xmm5
+    pshufd     xmm5, xmm5, 0
+
+    align      16
+  xloop:
+    movdqu     xmm0, [esi]
+    movdqu     xmm2, [esi + edx]
+    movdqu     xmm1, xmm0
+    punpcklbw  xmm0, xmm2
+    punpckhbw  xmm1, xmm2
+    pmaddubsw  xmm0, xmm5
+    pmaddubsw  xmm1, xmm5
+    psrlw      xmm0, 7
+    psrlw      xmm1, 7
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop
+    jmp        xloop99
+
+    // Blend 25 / 75.
+    align      16
+  xloop25:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop25
+    jmp        xloop99
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqu     xmm1, [esi]
+    movdqu     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    movdqu     xmm0, [esi]
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop100
+
+  xloop99:
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// Bilinear image filtering.
+// Same as ScaleARGBFilterRows_SSE2 but without last pixel duplicated.
+__declspec(naked) __declspec(align(16))
+void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
+                                       ptrdiff_t src_stride, int dst_width,
+                                       int source_y_fraction) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]   // dst_argb
+    mov        esi, [esp + 8 + 8]   // src_argb
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
+    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    sub        edi, esi
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 256.  Blend 100 / 0.
+    cmp        eax, 64
+    je         xloop75   // 64 / 256 is 0.25.  Blend 75 / 25.
+    cmp        eax, 128
+    je         xloop50   // 128 / 256 is 0.50.  Blend 50 / 50.
+    cmp        eax, 192
+    je         xloop25   // 192 / 256 is 0.75.  Blend 25 / 75.
+
+    movd       xmm5, eax            // xmm5 = y fraction
+    punpcklbw  xmm5, xmm5
+    psrlw      xmm5, 1
+    punpcklwd  xmm5, xmm5
+    punpckldq  xmm5, xmm5
+    punpcklqdq xmm5, xmm5
+    pxor       xmm4, xmm4
+
+    align      16
+  xloop:
+    movdqu     xmm0, [esi]  // row0
+    movdqu     xmm2, [esi + edx]  // row1
+    movdqu     xmm1, xmm0
+    movdqu     xmm3, xmm2
+    punpcklbw  xmm2, xmm4
+    punpckhbw  xmm3, xmm4
+    punpcklbw  xmm0, xmm4
+    punpckhbw  xmm1, xmm4
+    psubw      xmm2, xmm0  // row1 - row0
+    psubw      xmm3, xmm1
+    paddw      xmm2, xmm2  // 9 bits * 15 bits = 8.16
+    paddw      xmm3, xmm3
+    pmulhw     xmm2, xmm5  // scale diff
+    pmulhw     xmm3, xmm5
+    paddw      xmm0, xmm2  // sum rows
+    paddw      xmm1, xmm3
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop
+    jmp        xloop99
+
+    // Blend 25 / 75.
+    align      16
+  xloop25:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop25
+    jmp        xloop99
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    movdqu     xmm0, [esi]
+    movdqu     xmm1, [esi + edx]
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    movdqu     xmm1, [esi]
+    movdqu     xmm0, [esi + edx]
+    pavgb      xmm0, xmm1
+    pavgb      xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
+    lea        esi, [esi + 16]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    movdqu     xmm0, [esi]
+    sub        ecx, 4
+    movdqu     [esi + edi], xmm0
     lea        esi, [esi + 16]
     jg         xloop100
 

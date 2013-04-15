@@ -1730,12 +1730,12 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
 // C version 2x2 -> 2x1.
 void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                           ptrdiff_t src_stride,
-                          int dst_width, int source_y_fraction) {
+                          int width, int source_y_fraction) {
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
-  uint8* end = dst_ptr + (dst_width << 2);
-  do {
+
+  for (int x = 0; x < width - 1; x += 2) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
     dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
     dst_ptr[2] = (src_ptr[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
@@ -1747,7 +1747,13 @@ void ARGBInterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
     src_ptr += 8;
     src_ptr1 += 8;
     dst_ptr += 8;
-  } while (dst_ptr < end);
+  }
+  if (width & 1) {
+    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    dst_ptr[2] = (src_ptr[2] * y0_fraction + src_ptr1[2] * y1_fraction) >> 8;
+    dst_ptr[3] = (src_ptr[3] * y0_fraction + src_ptr1[3] * y1_fraction) >> 8;
+  }
 }
 
 // Blend 2 rows into 1 for conversions such as I422ToI420.

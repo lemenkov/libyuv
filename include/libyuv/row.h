@@ -1456,18 +1456,34 @@ LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 
+// Used for ARGBScale and ARGBInterpolate.
 void ARGBInterpolateRow_C(uint8* dst_argb, const uint8* src_argb,
                           ptrdiff_t src_stride_argb,
-                          int dst_width, int source_y_fraction);
+                          int width, int source_y_fraction);
 void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
-                             ptrdiff_t src_stride_argb, int dst_width,
+                             ptrdiff_t src_stride_argb, int width,
                              int source_y_fraction);
 void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                              ptrdiff_t src_stride_argb, int dst_width,
+                              ptrdiff_t src_stride_argb, int width,
                               int source_y_fraction);
 void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
-                             ptrdiff_t src_stride_argb, int dst_width,
+                             ptrdiff_t src_stride_argb, int width,
                              int source_y_fraction);
+void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
+                                       ptrdiff_t src_stride_argb, int width,
+                                       int source_y_fraction);
+void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                        ptrdiff_t src_stride_argb, int width,
+                                        int source_y_fraction);
+void ARGBInterpolateRow_Any_NEON(uint8* dst_argb, const uint8* src_argb,
+                                 ptrdiff_t src_stride_argb, int width,
+                                 int source_y_fraction);
+void ARGBInterpolateRow_Any_SSE2(uint8* dst_argb, const uint8* src_argb,
+                                 ptrdiff_t src_stride_argb, int width,
+                                 int source_y_fraction);
+void ARGBInterpolateRow_Any_SSSE3(uint8* dst_argb, const uint8* src_argb,
+                                  ptrdiff_t src_stride_argb, int width,
+                                  int source_y_fraction);
 
 // Sobel images.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,

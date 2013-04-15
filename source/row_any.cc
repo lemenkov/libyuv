@@ -482,6 +482,33 @@ YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
 #endif
 #undef YANY
 
+// Interpolate may want to work in place, so last16 method can not be used.
+#define NANY(NAMEANY, ARGBTERP_SIMD, ARGBTERP_C, SBPP, BPP, MASK)              \
+    void NAMEANY(uint8* dst_argb, const uint8* src_argb,                       \
+                 ptrdiff_t src_stride_argb, int width,                         \
+                 int source_y_fraction) {                                      \
+      int n = width & ~MASK;                                                   \
+      ARGBTERP_SIMD(dst_argb, src_argb, src_stride_argb,                       \
+                    n, source_y_fraction);                                     \
+      ARGBTERP_C(dst_argb + n * BPP,                                           \
+                 src_argb + n * SBPP, src_stride_argb,                         \
+                 width & MASK, source_y_fraction);                             \
+    }
+
+#ifdef HAS_ARGBINTERPOLATEROW_SSSE3
+NANY(ARGBInterpolateRow_Any_SSSE3, ARGBInterpolateRow_Unaligned_SSSE3,
+     ARGBInterpolateRow_C, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBINTERPOLATEROW_SSE2
+NANY(ARGBInterpolateRow_Any_SSE2, ARGBInterpolateRow_Unaligned_SSE2,
+     ARGBInterpolateRow_C, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBINTERPOLATEROW_NEON
+NANY(ARGBInterpolateRow_Any_NEON, ARGBInterpolateRow_NEON,
+     ARGBInterpolateRow_C, 4, 4, 3)
+#endif
+#undef NANY
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
