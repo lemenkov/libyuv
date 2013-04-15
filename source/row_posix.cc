@@ -2038,7 +2038,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
                                  uint8* dst_rgb24,
                                  int width) {
 // fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__llvm__)
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
@@ -2047,7 +2047,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
 #endif
 
   asm volatile (
-#ifndef __APPLE__
+#if !(defined(__APPLE__) || defined(__llvm__))
     "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
 #endif
@@ -2076,7 +2076,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
-#ifndef __APPLE__
+#if !(defined(__APPLE__) || defined(__llvm__))
     , [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
     [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
 #endif
@@ -2093,7 +2093,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
                                uint8* dst_raw,
                                int width) {
 // fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__llvm__)
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
@@ -2102,7 +2102,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
 #endif
 
   asm volatile (
-#ifndef __APPLE__
+#if !(defined(__APPLE__) || defined(__llvm__))
     "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
 #endif
@@ -2131,7 +2131,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     [dst_raw]"+r"(dst_raw),  // %[dst_raw]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
-#ifndef __APPLE__
+#if !(defined(__APPLE__) || defined(__llvm__))
     , [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
     [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
 #endif
