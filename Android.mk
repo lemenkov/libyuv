@@ -32,6 +32,8 @@ LOCAL_SRC_FILES := \
 
 # TODO(fbarchard): Enable mjpeg encoder.
 #   source/mjpeg_decoder.cc
+#   source/convert_jpeg.cc
+#   source/mjpeg_validate.cc
 
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
     LOCAL_CFLAGS += -DLIBYUV_NEON

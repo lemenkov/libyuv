@@ -172,7 +172,7 @@ void ParseOptions(int argc, const char* argv[]) {
     fprintf(stderr, "Number of frames incorrect\n");
     PrintHelp(argv[0]);
   }
-  if (image_width <= 0 || image_height <=0) {
+  if (image_width <= 0 || image_height <= 0) {
     int org_width, org_height;
     int rec_width, rec_height;
     bool org_res_avail = ExtractResolutionFromFilename(argv[fileindex_org],
@@ -307,7 +307,7 @@ int main(int argc, const char* argv[]) {
   }
 
   const int y_size = image_width * image_height;
-  const int uv_size = (image_width >> 1) * (image_height >> 1);
+  const int uv_size = (image_width + 1) / 2 * (image_height + 1) / 2;
   const size_t total_size = y_size + 2 * uv_size;    // NOLINT
 #if defined(_MSC_VER)
   _fseeki64(file_org,
