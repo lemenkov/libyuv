@@ -274,12 +274,18 @@ TEST_F(libyuvTest, Ssim) {
   memset(src_a, 0, kSrcPlaneSize);
   memset(src_b, 0, kSrcPlaneSize);
 
+  if (kSrcWidth <=8 || kSrcHeight <= 8) {
+    printf("warning - Ssim size too small.  Testing function executes.\n");
+  }
+
   double err;
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
                       src_b + kSrcStride * b + b, kSrcStride,
                       kSrcWidth, kSrcHeight);
 
-  EXPECT_EQ(err, 1.0);
+  if (kSrcWidth > 8 && kSrcHeight > 8) {
+    EXPECT_EQ(err, 1.0);
+  }
 
   memset(src_a, 255, kSrcPlaneSize);
 
@@ -287,7 +293,9 @@ TEST_F(libyuvTest, Ssim) {
                       src_b + kSrcStride * b + b, kSrcStride,
                       kSrcWidth, kSrcHeight);
 
-  EXPECT_LT(err, 0.0001);
+  if (kSrcWidth > 8 && kSrcHeight > 8) {
+    EXPECT_LT(err, 0.0001);
+  }
 
   memset(src_a, 1, kSrcPlaneSize);
 
@@ -295,8 +303,10 @@ TEST_F(libyuvTest, Ssim) {
                       src_b + kSrcStride * b + b, kSrcStride,
                       kSrcWidth, kSrcHeight);
 
-  EXPECT_GT(err, 0.0001);
-  EXPECT_LT(err, 0.9);
+  if (kSrcWidth > 8 && kSrcHeight > 8) {
+    EXPECT_GT(err, 0.0001);
+    EXPECT_LT(err, 0.9);
+  }
 
   for (int i = 0; i < kSrcPlaneSize; ++i) {
     src_a[i] = i;
@@ -306,8 +316,10 @@ TEST_F(libyuvTest, Ssim) {
                       src_b + kSrcStride * b + b, kSrcStride,
                       kSrcWidth, kSrcHeight);
 
-  EXPECT_GT(err, 0.0);
-  EXPECT_LT(err, 0.01);
+  if (kSrcWidth > 8 && kSrcHeight > 8) {
+    EXPECT_GT(err, 0.0);
+    EXPECT_LT(err, 0.01);
+  }
 
   srandom(time(NULL));
   for (int i = b; i < (kSrcHeight + b); ++i) {
@@ -330,7 +342,9 @@ TEST_F(libyuvTest, Ssim) {
                           src_b + kSrcStride * b + b, kSrcStride,
                           kSrcWidth, kSrcHeight);
 
-  EXPECT_EQ(opt_err, c_err);
+  if (kSrcWidth > 8 && kSrcHeight > 8) {
+    EXPECT_EQ(opt_err, c_err);
+  }
 
   free_aligned_buffer_64(src_a)
   free_aligned_buffer_64(src_b)

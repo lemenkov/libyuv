@@ -348,7 +348,6 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
     ARGBToUVRow(src_argb, 0, row_u, row_v, width);
     MergeUVRow_(row_u, row_v, dst_uv, halfwidth);
     ARGBToYRow(src_argb, dst_y, width);
-    ARGBToYRow(src_argb + 0, dst_y + dst_stride_y, width);
   }
   return 0;
 }
@@ -451,7 +450,6 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
     ARGBToUVRow(src_argb, 0, row_u, row_v, width);
     MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
     ARGBToYRow(src_argb, dst_y, width);
-    ARGBToYRow(src_argb + 0, dst_y + dst_stride_y, width);
   }
   return 0;
 }

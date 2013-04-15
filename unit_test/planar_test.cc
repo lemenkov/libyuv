@@ -783,7 +783,7 @@ TEST_F(libyuvTest, TestInterpolate) {
                  FMT_B, BPP_B, STRIDE_B,                                       \
                  W1280, TERP, DIFF, N, NEG, OFF)                               \
 TEST_F(libyuvTest, ARGBInterpolate##TERP##N) {                                 \
-  const int kWidth = W1280;                                                    \
+  const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
   const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;  \
   const int kStrideB = (kWidth * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;  \
