@@ -737,14 +737,14 @@ void ARGBMultiplyRow_C(const uint8* src_argb0, const uint8* src_argb1,
 void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
                   uint8* dst_argb, int width) {
   for (int i = 0; i < width; ++i) {
-    const uint32 b = src_argb0[0];
-    const uint32 g = src_argb0[1];
-    const uint32 r = src_argb0[2];
-    const uint32 a = src_argb0[3];
-    const uint32 b_add = src_argb1[0];
-    const uint32 g_add = src_argb1[1];
-    const uint32 r_add = src_argb1[2];
-    const uint32 a_add = src_argb1[3];
+    const int b = src_argb0[0];
+    const int g = src_argb0[1];
+    const int r = src_argb0[2];
+    const int a = src_argb0[3];
+    const int b_add = src_argb1[0];
+    const int g_add = src_argb1[1];
+    const int r_add = src_argb1[2];
+    const int a_add = src_argb1[3];
     dst_argb[0] = SHADE(b, b_add);
     dst_argb[1] = SHADE(g, g_add);
     dst_argb[2] = SHADE(r, r_add);
@@ -756,19 +756,19 @@ void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
-#define SHADE(f, v) ((f - v) > f) ? 0 : (f - v)
+#define SHADE(f, v) ((f - v) < 0) ? 0 : (f - v)
 
 void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
                        uint8* dst_argb, int width) {
   for (int i = 0; i < width; ++i) {
-    const uint32 b = src_argb0[0];
-    const uint32 g = src_argb0[1];
-    const uint32 r = src_argb0[2];
-    const uint32 a = src_argb0[3];
-    const uint32 b_sub = src_argb1[0];
-    const uint32 g_sub = src_argb1[1];
-    const uint32 r_sub = src_argb1[2];
-    const uint32 a_sub = src_argb1[3];
+    const int b = src_argb0[0];
+    const int g = src_argb0[1];
+    const int r = src_argb0[2];
+    const int a = src_argb0[3];
+    const int b_sub = src_argb1[0];
+    const int g_sub = src_argb1[1];
+    const int r_sub = src_argb1[2];
+    const int a_sub = src_argb1[3];
     dst_argb[0] = SHADE(b, b_sub);
     dst_argb[1] = SHADE(g, g_sub);
     dst_argb[2] = SHADE(r, r_sub);

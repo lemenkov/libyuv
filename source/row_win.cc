@@ -5350,9 +5350,9 @@ void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     vpmulhuw   ymm0, ymm0, ymm2   // src_argb0 * src_argb1 low 4
     vpmulhuw   ymm1, ymm1, ymm3   // src_argb0 * src_argb1 high 4
     vpackuswb  ymm0, ymm0, ymm1
-    sub        ecx, 8
     vmovdqu    [eax + edx], ymm0
     lea        eax, [eax + 32]
+    sub        ecx, 8
     jg         convertloop
 
     pop        esi
@@ -5381,9 +5381,9 @@ void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
  convertloop:
     vmovdqu    ymm0, [eax]              // read 8 pixels from src_argb0
     vpaddusb   ymm0, ymm0, [eax + esi]  // add 8 pixels from src_argb1
-    sub        ecx, 8
     vmovdqu    [eax + edx], ymm0
     lea        eax, [eax + 32]
+    sub        ecx, 8
     jg         convertloop
 
     pop        esi
@@ -5411,9 +5411,9 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
  convertloop:
     vmovdqu    ymm0, [eax]              // read 8 pixels from src_argb0
     vpsubusb   ymm0, ymm0, [eax + esi]  // src_argb0 - src_argb1
-    sub        ecx, 8
     vmovdqu    [eax + edx], ymm0
     lea        eax, [eax + 32]
+    sub        ecx, 8
     jg         convertloop
 
     pop        esi
