@@ -20,17 +20,7 @@
 int main(int argc, const char* argv[]) {
   int cpu_flags = TestCpuFlag(-1);
   int has_arm = TestCpuFlag(kCpuHasARM);
-  int has_avx = TestCpuFlag(kCpuHasAVX);
-  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
-  int has_erms = TestCpuFlag(kCpuHasERMS);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
-  int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);
-  int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
-  int has_neon = TestCpuFlag(kCpuHasNEON);
-  int has_sse2 = TestCpuFlag(kCpuHasSSE2);
-  int has_sse41 = TestCpuFlag(kCpuHasSSE41);
-  int has_sse42 = TestCpuFlag(kCpuHasSSE42);
-  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
   int has_x86 = TestCpuFlag(kCpuHasX86);
 #if defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
@@ -68,26 +58,35 @@ int main(int argc, const char* argv[]) {
   }
 #endif
   printf("Cpu Flags %x\n", cpu_flags);
-#if defined(__arm__)
   printf("Has ARM %x\n", has_arm);
-  printf("Has NEON %x\n", has_neon);
-#elif defined(__i386__) || defined(__x86_64__) || \
-    defined(_M_IX86) || defined(_M_X64)
-  printf("Has X86 %x\n", has_x86);
-  printf("Has SSE2 %x\n", has_sse2);
-  printf("Has SSSE3 %x\n", has_ssse3);
-  printf("Has SSE4.1 %x\n", has_sse41);
-  printf("Has SSE4.2 %x\n", has_sse42);
-  printf("Has AVX %x\n", has_avx);
-  printf("Has AVX2 %x\n", has_avx2);
-  printf("Has ERMS %x\n", has_erms);
-#else
-  printf("Has ARM %x\n", has_arm);
-  printf("Has X86 %x\n", has_x86);
   printf("Has MIPS %x\n", has_mips);
-  printf("Has MIPS DSP %x\n", has_mips_dsp);
-  printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
-#endif
+  printf("Has X86 %x\n", has_x86);
+  if (has_arm) {
+    int has_neon = TestCpuFlag(kCpuHasNEON);
+    printf("Has NEON %x\n", has_neon);
+  }
+  if (has_mips) {
+    int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);
+    int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
+    printf("Has MIPS DSP %x\n", has_mips_dsp);
+    printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
+  }
+  if (has_x86) {
+    int has_sse2 = TestCpuFlag(kCpuHasSSE2);
+    int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+    int has_sse41 = TestCpuFlag(kCpuHasSSE41);
+    int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+    int has_avx = TestCpuFlag(kCpuHasAVX);
+    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+    int has_erms = TestCpuFlag(kCpuHasERMS);
+    printf("Has SSE2 %x\n", has_sse2);
+    printf("Has SSSE3 %x\n", has_ssse3);
+    printf("Has SSE4.1 %x\n", has_sse41);
+    printf("Has SSE4.2 %x\n", has_sse42);
+    printf("Has AVX %x\n", has_avx);
+    printf("Has AVX2 %x\n", has_avx2);
+    printf("Has ERMS %x\n", has_erms);
+  }
   return 0;
 }
 
