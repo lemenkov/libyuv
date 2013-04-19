@@ -732,13 +732,9 @@ void ARGBMultiplyRow_C(const uint8* src_argb0, const uint8* src_argb1,
 #undef REPEAT8
 #undef SHADE
 
-#ifdef __llvm__
+// llvm x86 is poor at ternary operator, so use branchless min/max.
 #define min0(v) ((-(v) >> 31) & (v))
-#define max255(v) (((256 - (v)) >> 31) | (v))
-#else
-#define min0(v) (((v) < 0) ? 0 : v)
-#define max255(v) (((v) > 255) ? 255 : (v))
-#endif
+#define max255(v) (((255 - (v)) >> 31) | (v))
 #define SHADE(f, v) max255(v + f)
 
 void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
