@@ -732,7 +732,14 @@ void ARGBMultiplyRow_C(const uint8* src_argb0, const uint8* src_argb1,
 #undef REPEAT8
 #undef SHADE
 
-#define SHADE(f, v) ((v + f) > 255) ? 255 : (v + f)
+#ifdef __llvm__
+#define min0(v) ((-(v) >> 31) & (v))
+#define max255(v) (((256 - (v)) >> 31) | (v))
+#else
+#define min0(v) (((v) < 0) ? 0 : v)
+#define max255(v) (((v) > 255) ? 255 : (v))
+#endif
+#define SHADE(f, v) max255(v + f)
 
 void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
                   uint8* dst_argb, int width) {
@@ -756,7 +763,7 @@ void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
-#define SHADE(f, v) ((f - v) < 0) ? 0 : (f - v)
+#define SHADE(f, v) min0(f - v)
 
 void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
                        uint8* dst_argb, int width) {
@@ -779,6 +786,8 @@ void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 #undef SHADE
+#undef min0
+#undef max255
 
 // Sobel functions which mimics SSSE3.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,

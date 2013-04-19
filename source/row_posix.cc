@@ -4201,7 +4201,6 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 // Multiply 2 rows of ARGB pixels together, 4 pixels at a time.
-// Aligned to 16 bytes.
 void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
   asm volatile (
@@ -4212,10 +4211,10 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%1),%%xmm2                  \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    (%0,%1),%%xmm2                  \n"
+    "movdqu    %%xmm0,%%xmm1                   \n"
+    "movdqu    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
@@ -4224,7 +4223,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "pmulhuw   %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqa    %%xmm0,(%0,%2,1)                \n"
+    "movdqu    %%xmm0,(%0,%2,1)                \n"
     "lea       0x10(%0),%0                     \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0
@@ -4242,7 +4241,6 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBADDROW_SSE2
 // Add 2 rows of ARGB pixels together, 4 pixels at a time.
-// Aligned to 16 bytes.
 void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                      uint8* dst_argb, int width) {
   asm volatile (
@@ -4252,11 +4250,11 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%1),%%xmm1                  \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    (%0,%1),%%xmm1                  \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqa    %%xmm0,(%0,%2,1)                \n"
+    "movdqu    %%xmm0,(%0,%2,1)                \n"
     "lea       0x10(%0),%0                     \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0
@@ -4274,7 +4272,6 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 // Subtract 2 rows of ARGB pixels, 4 pixels at a time.
-// Aligned to 16 bytes.
 void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
   asm volatile (
@@ -4284,11 +4281,11 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%1),%%xmm1                  \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    (%0,%1),%%xmm1                  \n"
     "psubusb   %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqa    %%xmm0,(%0,%2,1)                \n"
+    "movdqu    %%xmm0,(%0,%2,1)                \n"
     "lea       0x10(%0),%0                     \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0

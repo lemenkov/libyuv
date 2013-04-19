@@ -558,10 +558,7 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
   void (*ARGBMultiplyRow)(const uint8* src0, const uint8* src1, uint8* dst,
                           int width) = ARGBMultiplyRow_C;
 #if defined(HAS_ARGBMULTIPLYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
-      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
-      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBMultiplyRow = ARGBMultiplyRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBMultiplyRow = ARGBMultiplyRow_SSE2;
@@ -622,11 +619,13 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
 
   void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
                      int width) = ARGBAddRow_C;
-#if defined(HAS_ARGBADDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
-      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
-      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+#if defined(HAS_ARGBADDROW_SSE2) && defined(_MSC_VER)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBAddRow = ARGBAddRow_SSE2;
+  }
+#endif
+#if defined(HAS_ARGBADDROW_SSE2) && !defined(_MSC_VER)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBAddRow = ARGBAddRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBAddRow = ARGBAddRow_SSE2;
@@ -688,10 +687,7 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
   void (*ARGBSubtractRow)(const uint8* src0, const uint8* src1, uint8* dst,
                           int width) = ARGBSubtractRow_C;
 #if defined(HAS_ARGBSUBTRACTROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
-      IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
-      IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBSubtractRow = ARGBSubtractRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBSubtractRow = ARGBSubtractRow_SSE2;

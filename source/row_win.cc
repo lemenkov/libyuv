@@ -5223,7 +5223,6 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 // Multiply 2 rows of ARGB pixels together, 4 pixels at a time.
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
@@ -5239,10 +5238,10 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
-    movdqa     xmm2, [eax + esi]  // read 4 pixels from src_argb1
-    movdqa     xmm1, xmm0
-    movdqa     xmm3, xmm2
+    movdqu     xmm0, [eax]        // read 4 pixels from src_argb0
+    movdqu     xmm2, [eax + esi]  // read 4 pixels from src_argb1
+    movdqu     xmm1, xmm0
+    movdqu     xmm3, xmm2
     punpcklbw  xmm0, xmm0       // first 2
     punpckhbw  xmm1, xmm1       // next 2
     punpcklbw  xmm2, xmm5       // first 2
@@ -5251,7 +5250,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pmulhuw    xmm1, xmm3       // src_argb0 * src_argb1 next 2
     packuswb   xmm0, xmm1
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
+    movdqu     [eax + edx], xmm0
     lea        eax, [eax + 16]
     jg         convertloop
 
@@ -5263,7 +5262,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBADDROW_SSE2
 // Add 2 rows of ARGB pixels together, 4 pixels at a time.
-// Aligned to 16 bytes.
+// TODO(fbarchard): Port this to posix, neon and other math functions.
 __declspec(naked) __declspec(align(16))
 void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                      uint8* dst_argb, int width) {
@@ -5273,20 +5272,36 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     mov        esi, [esp + 4 + 8]   // src_argb1
     mov        edx, [esp + 4 + 12]  // dst_argb
     mov        ecx, [esp + 4 + 16]  // width
-    pxor       xmm5, xmm5  // constant 0
     sub        esi, eax
     sub        edx, eax
 
+    sub        ecx, 4
+    jl         convertloop49
+
     align      16
- convertloop:
-    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
-    movdqa     xmm1, [eax + esi]  // read 4 pixels from src_argb1
+ convertloop4:
+    movdqu     xmm0, [eax]        // read 4 pixels from src_argb0
+    movdqu     xmm1, [eax + esi]  // read 4 pixels from src_argb1
     paddusb    xmm0, xmm1         // src_argb0 + src_argb1
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
+    movdqu     [eax + edx], xmm0
     lea        eax, [eax + 16]
-    jg         convertloop
+    jge        convertloop4
 
+ convertloop49:
+    add        ecx, 4 - 1
+    jl         convertloop19
+
+ convertloop1:
+    movd       xmm0, [eax]        // read 1 pixels from src_argb0
+    movd       xmm1, [eax + esi]  // read 1 pixels from src_argb1
+    paddusb    xmm0, xmm1         // src_argb0 + src_argb1
+    sub        ecx, 1
+    movd       [eax + edx], xmm0
+    lea        eax, [eax + 4]
+    jge        convertloop1
+
+ convertloop19:
     pop        esi
     ret
   }
@@ -5295,7 +5310,6 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 // Subtract 2 rows of ARGB pixels together, 4 pixels at a time.
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
@@ -5310,11 +5324,11 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]        // read 4 pixels from src_argb0
-    movdqa     xmm1, [eax + esi]  // read 4 pixels from src_argb1
+    movdqu     xmm0, [eax]        // read 4 pixels from src_argb0
+    movdqu     xmm1, [eax + esi]  // read 4 pixels from src_argb1
     psubusb    xmm0, xmm1         // src_argb0 - src_argb1
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
+    movdqu     [eax + edx], xmm0
     lea        eax, [eax + 16]
     jg         convertloop
 
@@ -5373,7 +5387,6 @@ void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     mov        esi, [esp + 4 + 8]   // src_argb1
     mov        edx, [esp + 4 + 12]  // dst_argb
     mov        ecx, [esp + 4 + 16]  // width
-    vpxor      ymm5, ymm5, ymm5  // constant 0
     sub        esi, eax
     sub        edx, eax
 
