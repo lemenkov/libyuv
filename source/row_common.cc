@@ -887,20 +887,8 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
-                              int ashift, int rshift, int gshift, int bshift) {
-  int32 y1 = (static_cast<int32>(y) - 16) * YG;
-  uint32 b = Clamp(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
-  uint32 g = Clamp(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
-  uint32 r = Clamp(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
-  *reinterpret_cast<uint32*>(rgb_buf) = (b << bshift) |
-                                        (g << gshift) |
-                                        (r << rshift) |
-                                        (255u << ashift);
-}
-
-static __inline void YuvPixel2(uint8 y, uint8 u, uint8 v,
-                               uint8* b, uint8* g, uint8* r) {
+static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
+                              uint8* b, uint8* g, uint8* r) {
   int32 y1 = (static_cast<int32>(y) - 16) * YG;
   *b = Clamp(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
   *g = Clamp(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
@@ -919,9 +907,9 @@ void I444ToARGBRow_C(const uint8* src_y,
   for (int x = 0; x < width - 1; x += 2) {
     uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
     uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
-    YuvPixel2(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
-    YuvPixel2(src_y[1], u, v, rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+    YuvPixel(src_y[1], u, v, rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 2;
@@ -929,8 +917,8 @@ void I444ToARGBRow_C(const uint8* src_y,
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
   }
 }
 #else
@@ -940,8 +928,8 @@ void I444ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width; ++x) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;
@@ -957,11 +945,11 @@ void I422ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
-    YuvPixel2(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 1;
@@ -969,8 +957,8 @@ void I422ToARGBRow_C(const uint8* src_y,
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
   }
 }
@@ -981,18 +969,18 @@ void I422ToRGB24Row_C(const uint8* src_y,
                       uint8* rgb_buf,
                       int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    YuvPixel2(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 6;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
   }
 }
 
@@ -1002,18 +990,18 @@ void I422ToRAWRow_C(const uint8* src_y,
                     uint8* rgb_buf,
                     int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
-    YuvPixel2(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 5, rgb_buf + 4, rgb_buf + 3);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 5, rgb_buf + 4, rgb_buf + 3);
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 6;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
   }
 }
 
@@ -1029,8 +1017,8 @@ void I422ToARGB4444Row_C(const uint8* src_y,
   uint8 g1;
   uint8 r1;
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel2(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
     b0 = b0 >> 4;
     g0 = g0 >> 4;
     r0 = r0 >> 4;
@@ -1045,7 +1033,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
     dst_argb4444 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
     b0 = b0 >> 4;
     g0 = g0 >> 4;
     r0 = r0 >> 4;
@@ -1066,8 +1054,8 @@ void I422ToARGB1555Row_C(const uint8* src_y,
   uint8 g1;
   uint8 r1;
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel2(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
     b0 = b0 >> 3;
     g0 = g0 >> 3;
     r0 = r0 >> 3;
@@ -1082,7 +1070,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
     dst_argb1555 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
     b0 = b0 >> 3;
     g0 = g0 >> 3;
     r0 = r0 >> 3;
@@ -1103,8 +1091,8 @@ void I422ToRGB565Row_C(const uint8* src_y,
   uint8 g1;
   uint8 r1;
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel2(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1119,7 +1107,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1133,23 +1121,37 @@ void I411ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 3; x += 4) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 24, 16, 8, 0);
-    YuvPixel(src_y[2], src_u[0], src_v[0], rgb_buf + 8, 24, 16, 8, 0);
-    YuvPixel(src_y[3], src_u[0], src_v[0], rgb_buf + 12, 24, 16, 8, 0);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
+    YuvPixel(src_y[2], src_u[0], src_v[0],
+             rgb_buf + 8, rgb_buf + 9, rgb_buf + 10);
+    rgb_buf[11] = 255;
+    YuvPixel(src_y[3], src_u[0], src_v[0],
+             rgb_buf + 12, rgb_buf + 13, rgb_buf + 14);
+    rgb_buf[15] = 255;
     src_y += 4;
     src_u += 1;
     src_v += 1;
     rgb_buf += 16;  // Advance 4 pixels.
   }
   if (width & 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
     src_y += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1158,14 +1160,20 @@ void NV12ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], usrc_v[0], usrc_v[1], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(src_y[0], usrc_v[0], usrc_v[1],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], usrc_v[0], usrc_v[1],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
     src_y += 2;
     usrc_v += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(src_y[0], usrc_v[0], usrc_v[1],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1174,14 +1182,22 @@ void NV21ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_vu[1], src_vu[0], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], src_vu[1], src_vu[0], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(src_y[0], src_vu[1], src_vu[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+
+    YuvPixel(src_y[1], src_vu[1], src_vu[0],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
+
     src_y += 2;
     src_vu += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_vu[1], src_vu[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(src_y[0], src_vu[1], src_vu[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1196,8 +1212,8 @@ void NV12ToRGB565Row_C(const uint8* src_y,
   uint8 g1;
   uint8 r1;
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
-    YuvPixel2(src_y[1], usrc_v[0], usrc_v[1], &b1, &g1, &r1);
+    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
+    YuvPixel(src_y[1], usrc_v[0], usrc_v[1], &b1, &g1, &r1);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1211,7 +1227,7 @@ void NV12ToRGB565Row_C(const uint8* src_y,
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
+    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1230,8 +1246,8 @@ void NV21ToRGB565Row_C(const uint8* src_y,
   uint8 g1;
   uint8 r1;
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel2(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
-    YuvPixel2(src_y[1], vsrc_u[1], vsrc_u[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
+    YuvPixel(src_y[1], vsrc_u[1], vsrc_u[0], &b1, &g1, &r1);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1245,7 +1261,7 @@ void NV21ToRGB565Row_C(const uint8* src_y,
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel2(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1257,13 +1273,19 @@ void YUY2ToARGBRow_C(const uint8* src_yuy2,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_yuy2[2], src_yuy2[1], src_yuy2[3], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_yuy2[2], src_yuy2[1], src_yuy2[3],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
     src_yuy2 += 4;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1271,13 +1293,19 @@ void UYVYToARGBRow_C(const uint8* src_uyvy,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_uyvy[3], src_uyvy[0], src_uyvy[2], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_uyvy[3], src_uyvy[0], src_uyvy[2],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
     src_uyvy += 4;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1287,15 +1315,21 @@ void I422ToBGRARow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 0, 8, 16, 24);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 0, 8, 16, 24);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1);
+    rgb_buf[0] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 7, rgb_buf + 6, rgb_buf + 5);
+    rgb_buf[4] = 255;
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf, 0, 8, 16, 24);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1);
+    rgb_buf[0] = 255;
   }
 }
 
@@ -1305,15 +1339,21 @@ void I422ToABGRRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 0, 8, 16);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 24, 0, 8, 16);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+    rgb_buf[7] = 255;
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 0, 8, 16);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1323,23 +1363,39 @@ void I422ToRGBARow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 0, 24, 16, 8);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 0, 24, 16, 8);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3);
+    rgb_buf[0] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 5, rgb_buf + 6, rgb_buf + 7);
+    rgb_buf[4] = 255;
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 0, 24, 16, 8);
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3);
+    rgb_buf[0] = 255;
   }
 }
 
 void YToARGBRow_C(const uint8* src_y, uint8* rgb_buf, int width) {
-  for (int x = 0; x < width; ++x) {
-    YuvPixel(src_y[0], 128, 128, rgb_buf, 24, 16, 8, 0);
-    src_y += 1;
-    rgb_buf += 4;  // Advance 1 pixel.
+  for (int x = 0; x < width - 1; x += 2) {
+    YuvPixel(src_y[0], 128, 128,
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], 128, 128,
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(src_y[0], 128, 128,
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
