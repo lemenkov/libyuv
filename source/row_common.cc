@@ -19,6 +19,46 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// llvm x86 is poor at ternary operator, so use branchless min/max.
+
+#define USE_BRANCHLESS 1
+#if USE_BRANCHLESS
+static __inline int32 clamp0(int32 v) {
+  return ((-(v) >> 31) & (v));
+}
+
+static __inline int32 clamp255(int32 v) {
+  return (((255 - (v)) >> 31) | (v)) & 255;
+}
+
+static __inline uint32 Clamp(int32 val) {
+  int v = clamp0(val);
+  return static_cast<uint32>(clamp255(v));
+}
+
+static __inline uint32 Abs(int32 v) {
+  int m = v >> 31;
+  return (v + m) ^ m;
+}
+#else  // USE_BRANCHLESS
+static __inline int32 clamp0(int32 v) {
+  return (v < 0) ? 0 : v;
+}
+
+static __inline int32 clamp255(int32 v) {
+  return (v > 255) ? 255 : v;
+}
+
+static __inline uint32 Clamp(int32 val) {
+  int v = clamp0(val);
+  return static_cast<uint32>(clamp255(v));
+}
+
+static __inline uint32 Abs(int32 v) {
+  return (v < 0) ? -v : v;
+}
+#endif  // USE_BRANCHLESS
+
 #ifdef LIBYUV_LITTLE_ENDIAN
 #define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
 #else
@@ -601,15 +641,9 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width) {
     int sg = (b * 22 + g * 88 + r * 45) >> 7;
     int sr = (b * 24 + g * 98 + r * 50) >> 7;
     // b does not over flow. a is preserved from original.
-    if (sg > 255) {
-      sg = 255;
-    }
-    if (sr > 255) {
-      sr = 255;
-    }
     dst_argb[0] = sb;
-    dst_argb[1] = sg;
-    dst_argb[2] = sr;
+    dst_argb[1] = clamp255(sg);
+    dst_argb[2] = clamp255(sr);
     dst_argb += 4;
   }
 }
@@ -627,27 +661,9 @@ void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width) {
               r * matrix_argb[6] + a * matrix_argb[7]) >> 7;
     int sr = (b * matrix_argb[8] + g * matrix_argb[9] +
               r * matrix_argb[10] + a * matrix_argb[11]) >> 7;
-    if (sb < 0) {
-      sb = 0;
-    }
-    if (sb > 255) {
-      sb = 255;
-    }
-    if (sg < 0) {
-      sg = 0;
-    }
-    if (sg > 255) {
-      sg = 255;
-    }
-    if (sr < 0) {
-      sr = 0;
-    }
-    if (sr > 255) {
-      sr = 255;
-    }
-    dst_argb[0] = sb;
-    dst_argb[1] = sg;
-    dst_argb[2] = sr;
+    dst_argb[0] = Clamp(sb);
+    dst_argb[1] = Clamp(sg);
+    dst_argb[2] = Clamp(sr);
     dst_argb += 4;
   }
 }
@@ -732,10 +748,7 @@ void ARGBMultiplyRow_C(const uint8* src_argb0, const uint8* src_argb1,
 #undef REPEAT8
 #undef SHADE
 
-// llvm x86 is poor at ternary operator, so use branchless min/max.
-#define min0(v) ((-(v) >> 31) & (v))
-#define max255(v) (((255 - (v)) >> 31) | (v))
-#define SHADE(f, v) max255(v + f)
+#define SHADE(f, v) clamp255(v + f)
 
 void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
                   uint8* dst_argb, int width) {
@@ -759,7 +772,7 @@ void ARGBAddRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef SHADE
 
-#define SHADE(f, v) min0(f - v)
+#define SHADE(f, v) clamp0(f - v)
 
 void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
                        uint8* dst_argb, int width) {
@@ -782,8 +795,6 @@ void ARGBSubtractRow_C(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 #undef SHADE
-#undef min0
-#undef max255
 
 // Sobel functions which mimics SSSE3.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
@@ -798,14 +809,8 @@ void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
     int a_diff = a - a_sub;
     int b_diff = b - b_sub;
     int c_diff = c - c_sub;
-    int sobel = a_diff + b_diff * 2 + c_diff;
-    if (sobel < 0) {
-      sobel = -sobel;
-    }
-    if (sobel > 255) {
-      sobel = 255;
-    }
-    dst_sobelx[i] = static_cast<uint8>(sobel);
+    int sobel = Abs(a_diff + b_diff * 2 + c_diff);
+    dst_sobelx[i] = static_cast<uint8>(clamp255(sobel));
   }
 }
 
@@ -821,14 +826,8 @@ void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
     int a_diff = a - a_sub;
     int b_diff = b - b_sub;
     int c_diff = c - c_sub;
-    int sobel = a_diff + b_diff * 2 + c_diff;
-    if (sobel < 0) {
-      sobel = -sobel;
-    }
-    if (sobel > 255) {
-      sobel = 255;
-    }
-    dst_sobely[i] = static_cast<uint8>(sobel);
+    int sobel = Abs(a_diff + b_diff * 2 + c_diff);
+    dst_sobely[i] = static_cast<uint8>(clamp255(sobel));
   }
 }
 
@@ -837,10 +836,7 @@ void SobelRow_C(const uint8* src_sobelx, const uint8* src_sobely,
   for (int i = 0; i < width; ++i) {
     int r = src_sobelx[i];
     int b = src_sobely[i];
-    int s = r + b;
-    if (s > 255) {
-      s = 255;
-    }
+    int s = clamp255(r + b);
     dst_argb[0] = static_cast<uint8>(s);
     dst_argb[1] = static_cast<uint8>(s);
     dst_argb[2] = static_cast<uint8>(s);
@@ -854,10 +850,7 @@ void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
   for (int i = 0; i < width; ++i) {
     int r = src_sobelx[i];
     int b = src_sobely[i];
-    int g = r + b;
-    if (g > 255) {
-      g = 255;
-    }
+    int g = clamp255(r + b);
     dst_argb[0] = static_cast<uint8>(b);
     dst_argb[1] = static_cast<uint8>(g);
     dst_argb[2] = static_cast<uint8>(r);
@@ -894,21 +887,12 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-static __inline uint32 Clip(int32 val) {
-  if (val < 0) {
-    return static_cast<uint32>(0);
-  } else if (val > 255) {
-    return static_cast<uint32>(255);
-  }
-  return static_cast<uint32>(val);
-}
-
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
                               int ashift, int rshift, int gshift, int bshift) {
   int32 y1 = (static_cast<int32>(y) - 16) * YG;
-  uint32 b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
-  uint32 g = Clip(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
-  uint32 r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
+  uint32 b = Clamp(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
+  uint32 g = Clamp(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
+  uint32 r = Clamp(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
   *reinterpret_cast<uint32*>(rgb_buf) = (b << bshift) |
                                         (g << gshift) |
                                         (r << rshift) |
@@ -918,9 +902,9 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v, uint8* rgb_buf,
 static __inline void YuvPixel2(uint8 y, uint8 u, uint8 v,
                                uint8* b, uint8* g, uint8* r) {
   int32 y1 = (static_cast<int32>(y) - 16) * YG;
-  *b = Clip(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
-  *g = Clip(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
-  *r = Clip(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
+  *b = Clamp(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
+  *g = Clamp(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
+  *r = Clamp(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
 }
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
@@ -935,15 +919,18 @@ void I444ToARGBRow_C(const uint8* src_y,
   for (int x = 0; x < width - 1; x += 2) {
     uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
     uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
-    YuvPixel(src_y[0], u, v, rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], u, v, rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel2(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel2(src_y[1], u, v, rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+    rgb_buf[7] = 255;
     src_y += 2;
     src_u += 2;
     src_v += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel2(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
   }
 }
 #else
@@ -953,7 +940,9 @@ void I444ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width; ++x) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf, 24, 16, 8, 0);
+    YuvPixel2(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;
     src_v += 1;
@@ -968,15 +957,21 @@ void I422ToARGBRow_C(const uint8* src_y,
                      uint8* rgb_buf,
                      int width) {
   for (int x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], rgb_buf + 4, 24, 16, 8, 0);
+    YuvPixel2(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvPixel2(src_y[1], src_u[0], src_v[0],
+              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
     src_y += 2;
     src_u += 1;
     src_v += 1;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], rgb_buf + 0, 24, 16, 8, 0);
+    YuvPixel2(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1665,18 +1660,9 @@ void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
     g = (g * ia) >> 8;
     r = (r * ia) >> 8;
     // Clamping should not be necessary but is free in assembly.
-    if (b > 255) {
-      b = 255;
-    }
-    if (g > 255) {
-      g = 255;
-    }
-    if (r > 255) {
-      r = 255;
-    }
-    dst_argb[0] = b;
-    dst_argb[1] = g;
-    dst_argb[2] = r;
+    dst_argb[0] = clamp255(b);
+    dst_argb[1] = clamp255(g);
+    dst_argb[2] = clamp255(r);
     dst_argb[3] = a;
     src_argb += 4;
     dst_argb += 4;
@@ -1953,6 +1939,8 @@ void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
 
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
+#undef clamp0
+#undef clamp255
 
 #ifdef __cplusplus
 }  // extern "C"
