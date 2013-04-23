@@ -13,7 +13,7 @@ vars = {
   "googlecode_url": "http://%s.googlecode.com/svn",
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
-  "chromium_revision": "195633",
+  "chromium_revision": "195751",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than

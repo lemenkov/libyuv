@@ -1122,7 +1122,7 @@ void I411ToARGBRow_C(const uint8* src_y,
                      int width) {
   for (int x = 0; x < width - 3; x += 4) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
