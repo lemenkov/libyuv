@@ -162,4 +162,3 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
 }  // extern "C"
 }  // namespace libyuv
 #endif
-

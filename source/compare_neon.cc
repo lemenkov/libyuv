@@ -59,4 +59,3 @@ uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count) {
 }  // extern "C"
 }  // namespace libyuv
 #endif
-

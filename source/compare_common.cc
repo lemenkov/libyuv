@@ -38,4 +38,3 @@ uint32 HashDjb2_C(const uint8* src, int count, uint32 seed) {
 }  // extern "C"
 }  // namespace libyuv
 #endif
-
