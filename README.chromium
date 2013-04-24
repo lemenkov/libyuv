@@ -1,6 +1,7 @@
 Name: libyuv
 URL: http://code.google.com/p/libyuv/
-Version: 677
+Version: 678
+License: BSD
 License File: LICENSE
 
 Description:
