@@ -909,7 +909,7 @@ void I444ToARGBRow_C(const uint8* src_y,
     uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
     YuvPixel(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
-    YuvPixel(src_y[1], u, v, rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+    YuvPixel(src_y[1], u, v, rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 2;
