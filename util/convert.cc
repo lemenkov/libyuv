@@ -34,6 +34,10 @@ int num_skip_org = 0;  // Number of frames to skip in original.
 int num_frames = 0;  // Number of frames to convert.
 int filter = 1;  // Bilinear filter for scaling.
 
+static __inline uint32 Abs(int32 v) {
+  return v >= 0 ? v : -v;
+}
+
 // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
 bool ExtractResolutionFromFilename(const char* name,
                                    int* width_ptr,
@@ -57,7 +61,8 @@ void PrintHelp(const char * program) {
   printf(" -s <width> <height> .... specify source resolution.  "
          "Optional if name contains\n"
          "                          resolution (ie. "
-         "name.1920x800_24Hz_P420.yuv)\n");
+         "name.1920x800_24Hz_P420.yuv)\n"
+         "                          Negative value mirrors.\n");
   printf(" -d <width> <height> .... specify destination resolution.\n");
   printf(" -f <filter> ............ 0 = point, 1 = bilinear (default).\n");
   printf(" -skip <src_argb> ....... Number of frame to skip of src_argb\n");
@@ -118,7 +123,7 @@ void ParseOptions(int argc, const char* argv[]) {
   bool rec_res_avail = ExtractResolutionFromFilename(argv[fileindex_rec],
                                                      &rec_width,
                                                      &rec_height);
-  if (image_width <= 0 || image_height <= 0) {
+  if (image_width == 0 || image_height == 0) {
     if (org_res_avail) {
       image_width = org_width;
       image_height = org_height;
@@ -130,13 +135,13 @@ void ParseOptions(int argc, const char* argv[]) {
       PrintHelp(argv[0]);
     }
   }
-  if (dst_width <= 0 || dst_height <= 0) {
+  if (dst_width == 0 || dst_height == 0) {
     if (rec_res_avail) {
       dst_width = rec_width;
       dst_height = rec_height;
     } else {
-      dst_width = image_width;
-      dst_height = image_height;
+      dst_width = Abs(image_width);
+      dst_height = Abs(image_height);
     }
   }
 }
@@ -167,7 +172,7 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  const int org_size = image_width * image_height * 4;  // ARGB
+  const int org_size = Abs(image_width) * Abs(image_height) * 4;  // ARGB
   const int dst_size = dst_width * dst_height * 4;  // ARGB scaled
   const int y_size = dst_width * dst_height;
   const int uv_size = (dst_width + 1) / 2 * (dst_height + 1) / 2;
@@ -212,7 +217,7 @@ int main(int argc, const char* argv[]) {
       break;
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
-      libyuv::ARGBScale(ch_org, image_width * 4,
+      libyuv::ARGBScale(ch_org, Abs(image_width) * 4,
                         image_width, image_height,
                         ch_dst, dst_width * 4,
                         dst_width, dst_height,

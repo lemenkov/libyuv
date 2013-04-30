@@ -172,7 +172,7 @@ void ParseOptions(int argc, const char* argv[]) {
     fprintf(stderr, "Number of frames incorrect\n");
     PrintHelp(argv[0]);
   }
-  if (image_width <= 0 || image_height <= 0) {
+  if (image_width == 0 || image_height == 0) {
     int org_width, org_height;
     int rec_width, rec_height;
     bool org_res_avail = ExtractResolutionFromFilename(argv[fileindex_org],
