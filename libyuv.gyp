@@ -15,6 +15,8 @@
       'target_name': 'libyuv',
       # Change type to 'shared_library' to build .so or .dll files.
       'type': 'static_library',
+      # Allows libyuv.a redistributable library without external dependencies.
+      'standalone_static_library': 1,
       'conditions': [
         # TODO(fbarchard): Use gyp define to enable jpeg.
         [ 'OS != "ios"', {

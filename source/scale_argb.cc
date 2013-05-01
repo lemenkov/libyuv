@@ -160,18 +160,18 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
     mov        ebx, [esp + 12 + 12]   // src_stepx
     mov        edx, [esp + 12 + 16]   // dst_argb
     mov        ecx, [esp + 12 + 20]   // dst_width
-    lea        esi, [eax + esi]      // row1 pointer
+    lea        esi, [eax + esi]       // row1 pointer
     lea        ebx, [ebx * 4]
     lea        edi, [ebx + ebx * 2]
 
     align      16
   wloop:
-    movq       xmm0, qword ptr [eax] // row0 4 pairs
+    movq       xmm0, qword ptr [eax]  // row0 4 pairs
     movhps     xmm0, qword ptr [eax + ebx]
     movq       xmm1, qword ptr [eax + ebx * 2]
     movhps     xmm1, qword ptr [eax + edi]
     lea        eax,  [eax + ebx * 4]
-    movq       xmm2, qword ptr [esi] // row1 4 pairs
+    movq       xmm2, qword ptr [esi]  // row1 4 pairs
     movhps     xmm2, qword ptr [esi + ebx]
     movq       xmm3, qword ptr [esi + ebx * 2]
     movhps     xmm3, qword ptr [esi + edi]
@@ -209,7 +209,7 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     mov        ecx, [esp + 8 + 12]   // dst_width
     movd       xmm2, [esp + 8 + 16]  // x
     movd       xmm3, [esp + 8 + 20]  // dx
-    pextrw     eax, xmm2, 1         // get x0 integer. preroll
+    pextrw     eax, xmm2, 1          // get x0 integer. preroll
     sub        ecx, 2
     jl         xloop29
 
@@ -352,8 +352,8 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-  : "+r"(src_argb),   // %0
-    "+r"(dst_argb),   // %1
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
     "+r"(dst_width)  // %2
   :
   : "memory", "cc"
@@ -384,8 +384,8 @@ static void ScaleARGBRowDown2Int_SSE2(const uint8* src_argb,
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
-  : "+r"(src_argb),    // %0
-    "+r"(dst_argb),    // %1
+  : "+r"(src_argb),   // %0
+    "+r"(dst_argb),   // %1
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
   : "memory", "cc"
@@ -420,9 +420,9 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
     "movdqa    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "jg        1b                              \n"
-  : "+r"(src_argb),       // %0
+  : "+r"(src_argb),      // %0
     "+r"(src_stepx_x4),  // %1
-    "+r"(dst_argb),       // %2
+    "+r"(dst_argb),      // %2
     "+r"(dst_width),     // %3
     "+r"(src_stepx_x12)  // %4
   :
@@ -467,9 +467,9 @@ static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
     "movdqa    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "jg        1b                              \n"
-  : "+r"(src_argb),        // %0
+  : "+r"(src_argb),       // %0
     "+r"(src_stepx_x4),   // %1
-    "+r"(dst_argb),        // %2
+    "+r"(dst_argb),       // %2
     "+rm"(dst_width),     // %3
     "+r"(src_stepx_x12),  // %4
     "+r"(row1)            // %5
@@ -1059,7 +1059,6 @@ static void ScaleARGBAnySize(int src_width, int src_height,
 }
 
 // ScaleARGB a ARGB.
-//
 // This function in turn calls a scaling function
 // suitable for handling the desired resolutions.
 
@@ -1070,7 +1069,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
                       FilterMode filtering) {
 #ifdef CPU_X86
   // environment variable overrides for testing.
-  char *filter_override = getenv("LIBYUV_FILTER");
+  char* filter_override = getenv("LIBYUV_FILTER");
   if (filter_override) {
     filtering = (FilterMode)atoi(filter_override);  // NOLINT
   }
@@ -1108,10 +1107,10 @@ static void ScaleARGB(const uint8* src, int src_stride,
 // ScaleARGB an ARGB image.
 LIBYUV_API
 int ARGBScale(const uint8* src_argb, int src_stride_argb,
-             int src_width, int src_height,
-             uint8* dst_argb, int dst_stride_argb,
-             int dst_width, int dst_height,
-             FilterMode filtering) {
+              int src_width, int src_height,
+              uint8* dst_argb, int dst_stride_argb,
+              int dst_width, int dst_height,
+              FilterMode filtering) {
   if (!src_argb || src_width <= 0 || src_height == 0 ||
       !dst_argb || dst_width <= 0 || dst_height <= 0) {
     return -1;
