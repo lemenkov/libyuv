@@ -23,6 +23,10 @@ namespace libyuv {
 extern "C" {
 #endif
 
+static __inline int Abs(int v) {
+  return v >= 0 ? v : -v;
+}
+
 // ARGB scaling uses bilinear or point, but not box filter.
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
@@ -794,7 +798,13 @@ static void ScaleARGBDownEven(int src_width, int src_height,
   // Adjust to point to center of box.
   int row_step = src_height / dst_height;
   int row_stride = row_step * src_stride;
-  src_argb += ((row_step >> 1) - 1) * src_stride + ((src_step >> 1) - 1) * 4;
+  src_argb += ((row_step >> 1) - 1) * src_stride +
+      ((Abs(src_step) >> 1) - 1) * 4;
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    src_argb += -src_step * (dst_width - 1) * 4;
+  }
+
   for (int y = 0; y < dst_height; ++y) {
     ScaleARGBRowDownEven(src_argb, src_stride, src_step, dst_argb, dst_width);
     src_argb += row_stride;
@@ -810,15 +820,15 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
                                   const uint8* src_argb, uint8* dst_argb) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(src_width * 4 <= kMaxStride);
+  assert(Abs(src_width) * 4 <= kMaxStride);
   SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
   void (*ScaleARGBFilterRows)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       ARGBInterpolateRow_C;
 #if defined(HAS_ARGBINTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && src_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSE2) && Abs(src_width) >= 4) {
     ScaleARGBFilterRows = ARGBInterpolateRow_Any_SSE2;
-    if (IS_ALIGNED(src_width, 4)) {
+    if (IS_ALIGNED(Abs(src_width), 4)) {
       ScaleARGBFilterRows = ARGBInterpolateRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
         ScaleARGBFilterRows = ARGBInterpolateRow_SSE2;
@@ -827,9 +837,9 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_ARGBINTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && src_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && Abs(src_width) >= 4) {
     ScaleARGBFilterRows = ARGBInterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(src_width, 4)) {
+    if (IS_ALIGNED(Abs(src_width), 4)) {
       ScaleARGBFilterRows = ARGBInterpolateRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
         ScaleARGBFilterRows = ARGBInterpolateRow_SSSE3;
@@ -838,9 +848,9 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_ARGBINTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && src_width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON) && Abs(src_width) >= 4) {
     ScaleARGBFilterRows = ARGBInterpolateRow_Any_NEON;
-    if (IS_ALIGNED(src_width, 4)) {
+    if (IS_ALIGNED(Abs(src_width), 4)) {
       ScaleARGBFilterRows = ARGBInterpolateRow_NEON;
     }
   }
@@ -856,11 +866,17 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   int dy = 0;
   int x = 0;
   int y = 0;
-  if (dst_width <= src_width) {
-    dx = (src_width << 16) / dst_width;
+  if (dst_width <= Abs(src_width)) {
+    dx = (Abs(src_width) << 16) / dst_width;
     x = (dx >> 1) - 32768;
   } else if (dst_width > 1) {
-    dx = ((src_width - 1) << 16) / (dst_width - 1);
+    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
   }
   if (dst_height <= src_height) {
     dy = (src_height << 16) / dst_height;
@@ -936,11 +952,17 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   int dy = 0;
   int x = 0;
   int y = 0;
-  if (dst_width <= src_width) {
-    dx = (src_width << 16) / dst_width;
+  if (dst_width <= Abs(src_width)) {
+    dx = (Abs(src_width) << 16) / dst_width;
     x = (dx >> 1) - 32768;
   } else if (dst_width > 1) {
-    dx = ((src_width - 1) << 16) / (dst_width - 1);
+    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
   }
   if (dst_height <= src_height) {
     dy = (src_height << 16) / dst_height;
@@ -1024,10 +1046,29 @@ static void ScaleARGBSimple(int src_width, int src_height,
     ScaleARGBCols = ScaleARGBCols_SSE2;
   }
 #endif
-  int dx = (src_width << 16) / dst_width;
-  int dy = (src_height << 16) / dst_height;
-  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int dx = 0;
+  int dy = 0;
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    dx = (Abs(src_width) << 16) / dst_width;
+    x = (dx >> 1) - 32768;
+  } else if (dst_width > 1) {
+    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
+  if (dst_height <= src_height) {
+    dy = (src_height << 16) / dst_height;
+    y = (dy >> 1) - 32768;
+  } else if (dst_height > 1) {
+    dy = ((src_height - 1) << 16) / (dst_height - 1);
+  }
+
   for (int i = 0; i < dst_height; ++i) {
     ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride,
                   dst_width, x, dx);
@@ -1044,7 +1085,7 @@ static void ScaleARGBAnySize(int src_width, int src_height,
                              const uint8* src_argb, uint8* dst_argb,
                              FilterMode filtering) {
   if (!filtering ||
-      (src_width * 4 > kMaxStride && dst_width * 4 > kMaxStride)) {
+      (Abs(src_width) * 4 > kMaxStride && dst_width * 4 > kMaxStride)) {
     ScaleARGBSimple(src_width, src_height, dst_width, dst_height,
                     src_stride, dst_stride, src_argb, dst_argb);
     return;
@@ -1111,7 +1152,7 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int dst_width, int dst_height,
               FilterMode filtering) {
-  if (!src_argb || src_width <= 0 || src_height == 0 ||
+  if (!src_argb || src_width == 0 || src_height == 0 ||
       !dst_argb || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
