@@ -20,10 +20,11 @@ extern "C" {
 typedef unsigned int uint32;     // NOLINT
 typedef unsigned short uint16;   // NOLINT
 
-#if defined(_M_X64) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 2))
+#if !defined(LIBYUV_DISABLE_X86) && \
+  (defined(_M_X64) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 2)))
 #define __SSE2__
 #endif
-#ifdef __SSE2__
+#if !defined(LIBYUV_DISABLE_X86) && defined(__SSE2__)
 #include <emmintrin.h>
 #endif
 
@@ -48,7 +49,7 @@ static const double kiW[KERNEL + 1 + 1] = {
   1. / 726.,    // 1 / sum(i:0..3, j..6) K[i]*K[j]
 };
 
-#ifdef __SSE2__
+#if !defined(LIBYUV_DISABLE_X86) && defined(__SSE2__)
 
 #define PWEIGHT(A, B)  static_cast<uint16>(K[(A)] * K[(B)])   // weight product
 #define MAKE_WEIGHT(L)                                               \
@@ -130,7 +131,7 @@ double GetSSIMFullKernel(const uint8 *org, const uint8 *rec,
                          double area_weight) {
   uint32 xm = 0, ym = 0, xxm = 0, xym = 0, yym = 0;
 
-#ifndef __SSE2__
+#if defined(LIBYUV_DISABLE_X86) || !defined(__SSE2__)
 
   org += yo * stride + xo;
   rec += yo * stride + xo;

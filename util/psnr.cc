@@ -159,7 +159,7 @@ static uint32 SumSquareError_SSE2(const uint8* src_a,
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );  // NOLINT
   return sse;
