@@ -1046,15 +1046,12 @@ static void ScaleARGBSimple(int src_width, int src_height,
     ScaleARGBCols = ScaleARGBCols_SSE2;
   }
 #endif
-  int dx = 0;
-  int dy = 0;
+  int dx = (Abs(src_width) << 16) / dst_width;
+  int dy = (src_height << 16) / dst_height;
   int x = 0;
   int y = 0;
   if (dst_width <= Abs(src_width)) {
-    dx = (Abs(src_width) << 16) / dst_width;
     x = (dx >> 1) - 32768;
-  } else if (dst_width > 1) {
-    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
   }
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
@@ -1063,10 +1060,7 @@ static void ScaleARGBSimple(int src_width, int src_height,
     src_width = -src_width;
   }
   if (dst_height <= src_height) {
-    dy = (src_height << 16) / dst_height;
     y = (dy >> 1) - 32768;
-  } else if (dst_height > 1) {
-    dy = ((src_height - 1) << 16) / (dst_height - 1);
   }
 
   for (int i = 0; i < dst_height; ++i) {
