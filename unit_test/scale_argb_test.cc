@@ -25,7 +25,8 @@ static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
                           FilterMode f, int benchmark_iterations) {
   const int b = 128;
-  int src_argb_plane_size = (Abs(src_width) + b * 2) * (Abs(src_height) + b * 2) * 4;
+  int src_argb_plane_size = (Abs(src_width) + b * 2) *
+      (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
   align_buffer_64(src_argb, src_argb_plane_size)
