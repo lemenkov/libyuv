@@ -20,7 +20,7 @@ extern "C" {
 typedef unsigned int uint32;     // NOLINT
 typedef unsigned short uint16;   // NOLINT
 
-#if !defined(LIBYUV_DISABLE_X86) && \
+#if !defined(LIBYUV_DISABLE_X86) && !defined(__SSE2__) && \
   (defined(_M_X64) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 2)))
 #define __SSE2__
 #endif
