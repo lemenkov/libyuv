@@ -5,9 +5,7 @@ CODE_REVIEW_SERVER: webrtc-codereview.appspot.com
 VIEW_VC: https://code.google.com/p/libyuv/source/detail?r=
 #STATUS:
 TRY_ON_UPLOAD: False
-TRYSERVER_HTTP_HOST: webrtc-cb-linux-master.cbf.corp.google.com
-TRYSERVER_HTTP_PORT: 9020
 TRYSERVER_ROOT: src
-#TRYSERVER_SVN_URL:
+TRYSERVER_SVN_URL: svn://svn.chromium.org/chrome-try/try-libyuv
 #GITCL_PREUPLOAD:
 #GITCL_PREDCOMMIT:
