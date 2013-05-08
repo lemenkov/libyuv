@@ -30,6 +30,50 @@ static uint32 ReferenceHashDjb2(const uint8* src, uint64 count, uint32 seed) {
   return hash;
 }
 
+TEST_F(libyuvTest, Djb2_Test) {
+  const int kMaxTest = benchmark_width_ * benchmark_height_;
+  align_buffer_64(src_a, kMaxTest)
+  align_buffer_64(src_b, kMaxTest)
+
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i] = (random() & 0xff);
+    src_b[i] = (random() & 0xff);
+  }
+  // Compare different buffers. Expect hash is different.
+  uint32 h1 = HashDjb2(src_a, kMaxTest, 5381);
+  uint32 h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make last half same. Expect hash is different.
+  memcpy(src_a + kMaxTest / 2, src_b + kMaxTest / 2, kMaxTest / 2);
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make first half same. Expect hash is different.
+  memcpy(src_a + kMaxTest / 2, src_a, kMaxTest / 2);
+  memcpy(src_b + kMaxTest / 2, src_b, kMaxTest / 2);
+  memcpy(src_a, src_b, kMaxTest / 2);
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make same. Expect hash is same.
+  memcpy(src_a, src_b, kMaxTest);
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_EQ(h1, h2);
+
+  // Mask seed different. Expect hash is different.
+  memcpy(src_a, src_b, kMaxTest);
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 1234);
+  EXPECT_NE(h1, h2);
+
+  free_aligned_buffer_64(src_a)
+  free_aligned_buffer_64(src_b)
+}
+
 TEST_F(libyuvTest, BenchmakDjb2_Opt) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_64(src_a, kMaxTest)
