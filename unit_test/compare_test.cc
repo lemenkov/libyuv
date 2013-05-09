@@ -70,6 +70,39 @@ TEST_F(libyuvTest, Djb2_Test) {
   h2 = HashDjb2(src_b, kMaxTest, 1234);
   EXPECT_NE(h1, h2);
 
+  // Make one byte different in middle. Expect hash is different.
+  memcpy(src_a, src_b, kMaxTest);
+  ++src_b[kMaxTest / 2];
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make first byte different. Expect hash is different.
+  memcpy(src_a, src_b, kMaxTest);
+  ++src_b[0];
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make last byte different. Expect hash is different.
+  memcpy(src_a, src_b, kMaxTest);
+  ++src_b[kMaxTest - 1];
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_b, kMaxTest, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make a zeros. Test different lengths. Expect hash is different.
+  memset(src_a, 0, kMaxTest);
+  h1 = HashDjb2(src_a, kMaxTest, 5381);
+  h2 = HashDjb2(src_a, kMaxTest / 2, 5381);
+  EXPECT_NE(h1, h2);
+
+  // Make a zeros and seed of zero. Test different lengths. Expect hash is same.
+  memset(src_a, 0, kMaxTest);
+  h1 = HashDjb2(src_a, kMaxTest, 0);
+  h2 = HashDjb2(src_a, kMaxTest / 2, 0);
+  EXPECT_EQ(h1, h2);
+
   free_aligned_buffer_64(src_a)
   free_aligned_buffer_64(src_b)
 }
