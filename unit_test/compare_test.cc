@@ -107,7 +107,7 @@ TEST_F(libyuvTest, Djb2_Test) {
   free_aligned_buffer_64(src_b)
 }
 
-TEST_F(libyuvTest, BenchmakDjb2_Opt) {
+TEST_F(libyuvTest, BenchmarkDjb2_Opt) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_64(src_a, kMaxTest)
 
@@ -123,7 +123,7 @@ TEST_F(libyuvTest, BenchmakDjb2_Opt) {
   free_aligned_buffer_64(src_a)
 }
 
-TEST_F(libyuvTest, BenchmakDjb2_Unaligned) {
+TEST_F(libyuvTest, BenchmarkDjb2_Unaligned) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
   align_buffer_64(src_a, kMaxTest + 1)
   for (int i = 0; i < kMaxTest; ++i) {
