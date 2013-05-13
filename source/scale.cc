@@ -23,6 +23,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
+static __inline int Abs(int v) {
+  return v >= 0 ? v : -v;
+}
+
+static __inline int Half(int v) {
+  return v >= 0 ? ((v + 1) >> 1) : -((-v + 1) >> 1);
+}
+
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
 
@@ -3009,10 +3017,16 @@ static void ScalePlaneBox(int src_width, int src_height,
                           const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dx = (src_width << 16) / dst_width;
+  int dx = (Abs(src_width) << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
   int x = 0;
   int y = 0;
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
   int maxy = (src_height << 16);
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxStride) ||
       dst_height * 2 > src_height) {
@@ -3033,7 +3047,7 @@ static void ScalePlaneBox(int src_width, int src_height,
   } else {
     SIMD_ALIGNED(uint16 row[kMaxStride]);
     void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
-                         uint16* dst_ptr, int src_width, int src_height)=
+                         uint16* dst_ptr, int src_width, int src_height) =
         ScaleAddRows_C;
     void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
                          const uint16* src_ptr, uint8* dst_ptr);
@@ -3070,22 +3084,44 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
                                      int dst_width, int dst_height,
                                      int src_stride, int dst_stride,
                                      const uint8* src_ptr, uint8* dst_ptr) {
-  int dx = (src_width << 16) / dst_width;
-  int dy = (src_height << 16) / dst_height;
-  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
-  int maxx = (src_width > 1) ? ((src_width - 1) << 16) - 1 : 0;
+  int dx = 0;
+  int dy = 0;
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    dx = (Abs(src_width) << 16) / dst_width;
+    x = (dx >> 1) - 32768;
+  } else if (dst_width > 1) {
+    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
+  if (dst_height <= src_height) {
+    dy = (src_height << 16) / dst_height;
+    y = (dy >> 1) - 32768;
+  } else if (dst_height > 1) {
+    dy = ((src_height - 1) << 16) / (dst_height - 1);
+  }
+  int maxx = (Abs(src_width) > 1) ? ((Abs(src_width) - 1) << 16) - 1 : 0;
   int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  if (y > maxy) {
+    y = maxy;
+  }
   for (int i = 0; i < dst_height; ++i) {
-    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+    int xs = x;
     int yi = y >> 16;
     int yf = y & 0xffff;
     const uint8* src0 = src_ptr + yi * src_stride;
     const uint8* src1 = (yi < src_height - 1) ? src0 + src_stride : src0;
     uint8* dst = dst_ptr;
     for (int j = 0; j < dst_width; ++j) {
-      int xi = x >> 16;
-      int xf = x & 0xffff;
-      int x1 = (xi < src_width - 1) ? xi + 1 : xi;
+      int xi = xs >> 16;
+      int xf = xs & 0xffff;
+      int x1 = (xi < (src_width - 1)) ? xi + 1 : xi;
       int a = src0[xi];
       int b = src0[x1];
       int r0 = BLENDER(a, b, xf);
@@ -3093,9 +3129,9 @@ static void ScalePlaneBilinearSimple(int src_width, int src_height,
       b = src1[x1];
       int r1 = BLENDER(a, b, xf);
       *dst++ = BLENDER(r0, r1, yf);
-      x += dx;
-      if (x > maxx)
-        x = maxx;
+      xs += dx;
+      if (xs > maxx)
+        xs = maxx;
     }
     dst_ptr += dst_stride;
     y += dy;
@@ -3113,7 +3149,7 @@ void ScalePlaneBilinear(int src_width, int src_height,
                         const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  if (src_width > kMaxStride) {
+  if (Abs(src_width) > kMaxStride) {
     ScalePlaneBilinearSimple(src_width, src_height, dst_width, dst_height,
                              src_stride, dst_stride, src_ptr, dst_ptr);
 
@@ -3148,11 +3184,28 @@ void ScalePlaneBilinear(int src_width, int src_height,
       ScaleFilterRows = ScaleFilterRows_MIPS_DSPR2;
     }
 #endif
-
-    int dx = (src_width << 16) / dst_width;
-    int dy = (src_height << 16) / dst_height;
-    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-    int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+    int dx = 0;
+    int dy = 0;
+    int x = 0;
+    int y = 0;
+    if (dst_width <= Abs(src_width)) {
+      dx = (Abs(src_width) << 16) / dst_width;
+      x = (dx >> 1) - 32768;
+    } else if (dst_width > 1) {
+      dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+    }
+    // Negative src_width means horizontally mirror.
+    if (src_width < 0) {
+      x += (dst_width - 1) * dx;
+      dx = -dx;
+      src_width = -src_width;
+    }
+    if (dst_height <= src_height) {
+      dy = (src_height << 16) / dst_height;
+      y = (dy >> 1) - 32768;
+    } else if (dst_height > 1) {
+      dy = ((src_height - 1) << 16) / (dst_height - 1);
+    }
     int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
     for (int j = 0; j < dst_height; ++j) {
       if (y > maxy) {
@@ -3178,17 +3231,31 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr) {
-  int dx = (src_width << 16) / dst_width;
+  int dx = (Abs(src_width) << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
-  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    x = (dx >> 1) - 32768;
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
+  if (dst_height <= src_height) {
+    y = (dy >> 1) - 32768;
+  }
+
   for (int j = 0; j < dst_height; ++j) {
-    int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
+    int xs = x;
     int yi = y >> 16;
     const uint8* src = src_ptr + yi * src_stride;
     uint8* dst = dst_ptr;
     for (int i = 0; i < dst_width; ++i) {
-      *dst++ = src[x >> 16];
-      x += dx;
+      *dst++ = src[xs >> 16];
+      xs += dx;
     }
     dst_ptr += dst_stride;
     y += dy;
@@ -3258,7 +3325,7 @@ void ScalePlane(const uint8* src, int src_stride,
   if (dst_width == src_width && dst_height == src_height) {
     // Straight copy.
     CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
-  } else if (dst_width <= src_width && dst_height <= src_height) {
+  } else if (dst_width <= Abs(src_width) && dst_height <= src_height) {
     // Scale down.
     if (use_reference_impl_) {
       // For testing, allow the optimized versions to be disabled.
@@ -3316,14 +3383,14 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               uint8* dst_v, int dst_stride_v,
               int dst_width, int dst_height,
               FilterMode filtering) {
-  if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
+  if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
       !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
   // Negative height means invert the image.
   if (src_height < 0) {
     src_height = -src_height;
-    int halfheight = (src_height + 1) >> 1;
+    int halfheight = Half(src_height);
     src_y = src_y + (src_height - 1) * src_stride_y;
     src_u = src_u + (halfheight - 1) * src_stride_u;
     src_v = src_v + (halfheight - 1) * src_stride_v;
@@ -3331,17 +3398,17 @@ int I420Scale(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int src_halfwidth = (src_width + 1) >> 1;
-  int src_halfheight = (src_height + 1) >> 1;
-  int dst_halfwidth = (dst_width + 1) >> 1;
-  int dst_halfheight = (dst_height + 1) >> 1;
+  int src_halfwidth = Half(src_width);
+  int src_halfheight = Half(src_height);
+  int dst_halfwidth = Half(dst_width);
+  int dst_halfheight = Half(dst_height);
 
 #ifdef UNDER_ALLOCATED_HACK
   // If caller passed width / 2 for stride, adjust halfwidth to match.
-  if ((src_width & 1) && src_stride_u && src_halfwidth > abs(src_stride_u)) {
+  if ((src_width & 1) && src_stride_u && src_halfwidth > Abs(src_stride_u)) {
     src_halfwidth = src_width >> 1;
   }
-  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > abs(dst_stride_u)) {
+  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > Abs(dst_stride_u)) {
     dst_halfwidth = dst_width >> 1;
   }
   // If caller used height / 2 when computing src_v, it will point into what
@@ -3386,7 +3453,7 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
   // Negative height means invert the image.
   if (src_height < 0) {
     src_height = -src_height;
-    int halfheight = (src_height + 1) >> 1;
+    int halfheight = Half(src_height);
     src_y = src_y + (src_height - 1) * src_stride_y;
     src_u = src_u + (halfheight - 1) * src_stride_u;
     src_v = src_v + (halfheight - 1) * src_stride_v;
@@ -3394,18 +3461,18 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int src_halfwidth = (src_width + 1) >> 1;
-  int src_halfheight = (src_height + 1) >> 1;
-  int dst_halfwidth = (dst_width + 1) >> 1;
-  int dst_halfheight = (dst_height + 1) >> 1;
+  int src_halfwidth = Half(src_width);
+  int src_halfheight = Half(src_height);
+  int dst_halfwidth = Half(dst_width);
+  int dst_halfheight = Half(dst_height);
   FilterMode filtering = interpolate ? kFilterBox : kFilterNone;
 
 #ifdef UNDER_ALLOCATED_HACK
   // If caller passed width / 2 for stride, adjust halfwidth to match.
-  if ((src_width & 1) && src_stride_u && src_halfwidth > abs(src_stride_u)) {
+  if ((src_width & 1) && src_stride_u && src_halfwidth > Abs(src_stride_u)) {
     src_halfwidth = src_width >> 1;
   }
-  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > abs(dst_stride_u)) {
+  if ((dst_width & 1) && dst_stride_u && dst_halfwidth > Abs(dst_stride_u)) {
     dst_halfwidth = dst_width >> 1;
   }
   // If caller used height / 2 when computing src_v, it will point into what
@@ -3445,10 +3512,10 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
     return -1;
   }
   dst_yoffset = dst_yoffset & ~1;  // chroma requires offset to multiple of 2.
-  int src_halfwidth = (src_width + 1) >> 1;
-  int src_halfheight = (src_height + 1) >> 1;
-  int dst_halfwidth = (dst_width + 1) >> 1;
-  int dst_halfheight = (dst_height + 1) >> 1;
+  int src_halfwidth = Half(src_width);
+  int src_halfheight = Half(src_height);
+  int dst_halfwidth = Half(dst_width);
+  int dst_halfheight = Half(dst_height);
   int aheight = dst_height - dst_yoffset * 2;  // actual output height
   const uint8* src_y = src;
   const uint8* src_u = src + src_width * src_height;
