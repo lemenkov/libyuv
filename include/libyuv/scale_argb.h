@@ -26,6 +26,14 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int dst_width, int dst_height,
               enum FilterMode filtering);
 
+LIBYUV_API
+int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
+                  int src_width, int src_height,
+                  uint8* dst_argb, int dst_stride_argb,
+                  int dst_width, int dst_height,
+                  int clip_x, int clip_y, int clip_width, int clip_height,
+                  enum FilterMode filtering);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

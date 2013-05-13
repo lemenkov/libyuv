@@ -31,7 +31,7 @@ static int TestFilter(int src_width, int src_height,
   int src_y_plane_size = (Abs(src_width) + b * 2) * (Abs(src_height) + b * 2);
   int src_uv_plane_size = (src_width_uv + b * 2) * (src_height_uv + b * 2);
 
-  int src_stride_y = b * 2 + Abs(src_width) ;
+  int src_stride_y = b * 2 + Abs(src_width);
   int src_stride_uv = b * 2 + src_width_uv;
 
   align_buffer_page_end(src_y, src_y_plane_size)
