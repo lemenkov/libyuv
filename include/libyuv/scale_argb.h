@@ -26,6 +26,7 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int dst_width, int dst_height,
               enum FilterMode filtering);
 
+// Clipped scale takes destination rectangle coordinates for clip values.
 LIBYUV_API
 int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
                   int src_width, int src_height,

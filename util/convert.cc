@@ -146,6 +146,37 @@ void ParseOptions(int argc, const char* argv[]) {
   }
 }
 
+static const int kTileX = 12;
+static const int kTileY = 8;
+
+static int TileARGBScale(const uint8* src_argb, int src_stride_argb,
+                         int src_width, int src_height,
+                         uint8* dst_argb, int dst_stride_argb,
+                         int dst_width, int dst_height,
+                         libyuv::FilterMode filtering) {
+  for (int y = 0; y < dst_height; y += kTileY) {
+    for (int x = 0; x < dst_width; x += kTileX) {
+      int clip_width = kTileX;
+      if (x + clip_width > dst_width) {
+        clip_width = dst_width - x;
+      }
+      int clip_height = kTileY;
+      if (y + clip_height > dst_height) {
+        clip_height = dst_height - y;
+      }
+      int r = libyuv::ARGBScaleClip(src_argb, src_stride_argb,
+                                    src_width, src_height,
+                                    dst_argb, dst_stride_argb,
+                                    dst_width, dst_height,
+                                    x, y, clip_width, clip_height, filtering);
+      if (r) {
+        return r;
+      }
+    }
+  }
+  return 0;
+}
+
 int main(int argc, const char* argv[]) {
   ParseOptions(argc, argv);
 
@@ -217,11 +248,11 @@ int main(int argc, const char* argv[]) {
       break;
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
-      libyuv::ARGBScale(ch_org, Abs(image_width) * 4,
-                        image_width, image_height,
-                        ch_dst, dst_width * 4,
-                        dst_width, dst_height,
-                        static_cast<libyuv::FilterMode>(filter));
+      TileARGBScale(ch_org, Abs(image_width) * 4,
+                    image_width, image_height,
+                    ch_dst, dst_width * 4,
+                    dst_width, dst_height,
+                    static_cast<libyuv::FilterMode>(filter));
 
       // Output scaled ARGB.
       if (strstr(argv[fileindex_rec + cur_rec], "_ARGB.")) {
