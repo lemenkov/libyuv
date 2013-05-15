@@ -743,7 +743,7 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int x, int dx, int y, int dy,
                            FilterMode filtering) {
   assert(dx == 65536 * 2);  // Test scale factor of 2.
-  assert(dy == 65536 * 2);
+  assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
   void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
@@ -762,11 +762,12 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   }
 #endif
   src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
+  int row_stride = src_stride * (dy >> 16);
 
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleARGBRowDown2(src_argb, src_stride, dst_argb, dst_width);
-    src_argb += (src_stride << 1);
+    src_argb += row_stride;
     dst_argb += dst_stride;
   }
 }
@@ -1115,35 +1116,32 @@ static void ScaleARGB(const uint8* src, int src_stride,
     filtering = (FilterMode)atoi(filter_override);  // NOLINT
   }
 #endif
-  if (dst_width == src_width && dst_height == src_height) {
-    // Straight copy.
-    ARGBCopy(src + (y >> 16) * src_stride + (x >> 16) * 4, src_stride,
-             dst, dst_stride, clip_width, clip_height);
-    return;
-  }
-  // TODO(fbarchard): Allow different vertical scales.
-  if (2 * dst_width == src_width && 2 * dst_height == src_height) {
-    // Optimized 1/2.
-    ScaleARGBDown2(src_width, src_height,
-                   clip_width, clip_height,
-                   src_stride, dst_stride, src, dst,
-                   x, dx, y, dy, filtering);
-    return;
-  }
-  // TODO(fbarchard): Remove this divide, reusing dx and dy.
-  int scale_down_x = src_width / dst_width;
-  int scale_down_y = src_height / dst_height;
-  if (dst_width * scale_down_x == src_width &&
-      dst_height * scale_down_y == src_height) {
-    if (!(scale_down_x & 1) && !(scale_down_y & 1)) {
-      // Optimized even scale down. ie 4, 6, 8, 10x.
+  // Special case for integer step values.
+  if (((dx | dy) & 0xffff) == 0) {
+    // Optimized even scale down. ie 2, 4, 6, 8, 10x.
+    if (!(dx & 0x10000) && !(dy & 0x10000)) {
+      if ((dx >> 16) == 2) {
+        // Optimized 1/2 horizontal.
+        ScaleARGBDown2(src_width, src_height, clip_width, clip_height,
+                       src_stride, dst_stride, src, dst,
+                       x, dx, y, dy, filtering);
+        return;
+      }
       ScaleARGBDownEven(src_width, src_height, clip_width, clip_height,
                         src_stride, dst_stride, src, dst,
                         x, dx, y, dy, filtering);
       return;
     }
-    if ((scale_down_x & 1) && (scale_down_y & 1)) {
+    // Optimized odd scale down. ie 3, 5, 7, 9x.
+    if ((dx & 0x10000) && (dy & 0x10000)) {
       filtering = kFilterNone;
+      if (dst_width == src_width && dst_height == src_height) {
+        // Straight copy.
+        ARGBCopy(src + (y >> 16) * src_stride + (x >> 16) * 4, src_stride,
+                 dst, dst_stride, clip_width, clip_height);
+        return;
+      }
+
     }
   }
   // Arbitrary scale up and/or down.
