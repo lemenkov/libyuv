@@ -12,7 +12,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <stdlib.h>  // For getenv()
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyARGB
@@ -1109,13 +1108,6 @@ static void ScaleARGB(const uint8* src, int src_stride,
     dst += clip_y * dst_stride;
   }
 
-#ifdef CPU_X86
-  // Environment variable overrides for testing.
-  char* filter_override = getenv("LIBYUV_FILTER");
-  if (filter_override) {
-    filtering = (FilterMode)atoi(filter_override);  // NOLINT
-  }
-#endif
   // Special case for integer step values.
   if (((dx | dy) & 0xffff) == 0) {
     // Optimized even scale down. ie 2, 4, 6, 8, 10x.

@@ -12,7 +12,6 @@
 
 #include <assert.h>
 #include <string.h>
-#include <stdlib.h>  // For getenv()
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyPlane
@@ -3313,13 +3312,6 @@ void ScalePlane(const uint8* src, int src_stride,
                 uint8* dst, int dst_stride,
                 int dst_width, int dst_height,
                 FilterMode filtering) {
-#ifdef CPU_X86
-  // environment variable overrides for testing.
-  char* filter_override = getenv("LIBYUV_FILTER");
-  if (filter_override) {
-    filtering = (FilterMode)atoi(filter_override);  // NOLINT
-  }
-#endif
   // Use specialized scales to improve performance for common resolutions.
   // For example, all the 1/2 scalings will use ScalePlaneDown2()
   if (dst_width == src_width && dst_height == src_height) {
