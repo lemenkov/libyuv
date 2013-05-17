@@ -810,28 +810,23 @@ static void ScaleARGBDownEven(int src_width, int src_height,
 }
 
 // ScaleARGB ARGB to/from any dimensions, with bilinear interpolation.
-static void ScaleARGBBilinearDown(int src_width, int src_height,
+static void ScaleARGBBilinearDown(int src_height,
                                   int dst_width, int dst_height,
                                   int src_stride, int dst_stride,
                                   const uint8* src_argb, uint8* dst_argb,
                                   int x, int dx, int y, int dy) {
-  assert(src_width > 0);
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-#ifdef CLIP_ADJUST
-  // TODO(fbarchard): Adjust end points for alignment.
-  // Adjust
   int xlast = x + (dst_width - 1) * dx;
   int xl = (dx >= 0) ? x : xlast;
   int xr = (dx >= 0) ? xlast : x;
-  int clip_src_width = (xr >> 16) - (xl >> 16) + 2;
-  src_argb -= (xl >> 16) * 4;
-  x -= (xl & 0xffff0000);
+  xl = (xl >> 16) & ~3;  // Left edge aligned.
+  xr = (xr >> 16) + 1;  // Right most pixel used.
+  int clip_src_width = ((xr - xl) + 1 + 3) & ~3;  // Width aligned to 4.
+  src_argb += xl * 4;
+  x -= (xl << 16);
   assert(clip_src_width * 4 <= kMaxStride);
-#else
-  int clip_src_width = src_width;
-#endif
   SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
   void (*ScaleARGBFilterRows)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
@@ -1036,7 +1031,7 @@ static void ScaleARGBAnySize(int src_width, int src_height,
     return;
   }
   if (dy >= 65536 || dst_width * 4 > kMaxStride) {
-    ScaleARGBBilinearDown(src_width, src_height,
+    ScaleARGBBilinearDown(src_height,
                           clip_width, clip_height,
                           src_stride, dst_stride, src_argb, dst_argb,
                           x, dx, y, dy);
@@ -1133,7 +1128,6 @@ static void ScaleARGB(const uint8* src, int src_stride,
                  dst, dst_stride, clip_width, clip_height);
         return;
       }
-
     }
   }
   // Arbitrary scale up and/or down.
@@ -1142,6 +1136,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
                    clip_width, clip_height,
                    src_stride, dst_stride, src, dst, x, dx, y, dy, filtering);
 }
+
 LIBYUV_API
 int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
                   int src_width, int src_height,
