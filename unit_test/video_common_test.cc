@@ -54,6 +54,8 @@ TEST_F(libyuvTest, TestCanonicalFourCC) {
   EXPECT_EQ(FOURCC_BGGR, CanonicalFourCC(FOURCC_BA81));
   EXPECT_EQ(FOURCC_RAW, CanonicalFourCC(FOURCC_RGB3));
   EXPECT_EQ(FOURCC_24BG, CanonicalFourCC(FOURCC_BGR3));
+  EXPECT_EQ(FOURCC_BGRA, CanonicalFourCC(FOURCC_CM32));
+  EXPECT_EQ(FOURCC_RAW, CanonicalFourCC(FOURCC_CM24));
 }
 
 TEST_F(libyuvTest, TestFourCC) {
