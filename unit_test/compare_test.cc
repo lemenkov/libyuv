@@ -35,6 +35,13 @@ TEST_F(libyuvTest, Djb2_Test) {
   align_buffer_64(src_a, kMaxTest)
   align_buffer_64(src_b, kMaxTest)
 
+  const char* fox = "The quick brown fox jumps over the lazy dog"
+      " and feels as if he were in the seventh heaven of typography"
+      " together with Hermann Zapf";
+  uint32 foxhash = HashDjb2(reinterpret_cast<const uint8*>(fox), 131, 5381);
+  const uint32 kExpectedFoxHash = 2611006483;
+  EXPECT_EQ(kExpectedFoxHash, foxhash);
+
   for (int i = 0; i < kMaxTest; ++i) {
     src_a[i] = (random() & 0xff);
     src_b[i] = (random() & 0xff);
