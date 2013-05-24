@@ -203,10 +203,24 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  const int org_size = Abs(image_width) * Abs(image_height) * 4;  // ARGB
+  bool org_is_yuv = strstr(argv[fileindex_org], "_P420.");
+  bool org_is_argb = strstr(argv[fileindex_org], "_ARGB.");
+  if (!org_is_yuv && !org_is_argb) {
+    fprintf(stderr, "Original format unknown %s\n", argv[fileindex_org]);
+    exit(1);
+  }
+  int org_size = Abs(image_width) * Abs(image_height) * 4;  // ARGB
+  // Input is YUV
+  if (org_is_yuv) {
+    const int y_size = Abs(image_width) * Abs(image_height);
+    const int uv_size = ((Abs(image_width) + 1) / 2) *
+        ((Abs(image_height) + 1) / 2);
+    org_size = y_size + 2 * uv_size;  // YUV original.
+  }
+
   const int dst_size = dst_width * dst_height * 4;  // ARGB scaled
   const int y_size = dst_width * dst_height;
-  const int uv_size = (dst_width + 1) / 2 * (dst_height + 1) / 2;
+  const int uv_size = ((dst_width + 1) / 2) * ((dst_height + 1) / 2);
   const size_t total_size = y_size + 2 * uv_size;
 #if defined(_MSC_VER)
   _fseeki64(file_org,
@@ -242,27 +256,49 @@ int main(int argc, const char* argv[]) {
     if (num_frames && number_of_frames >= num_frames)
       break;
 
+    // Load original YUV or ARGB frame.
     size_t bytes_org = fread(ch_org, sizeof(uint8),
                              static_cast<size_t>(org_size), file_org);
     if (bytes_org < static_cast<size_t>(org_size))
       break;
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
-      TileARGBScale(ch_org, Abs(image_width) * 4,
-                    image_width, image_height,
-                    ch_dst, dst_width * 4,
-                    dst_width, dst_height,
-                    static_cast<libyuv::FilterMode>(filter));
-
-      // Output scaled ARGB.
-      if (strstr(argv[fileindex_rec + cur_rec], "_ARGB.")) {
-        size_t bytes_rec = fwrite(ch_dst, sizeof(uint8),
-                                  static_cast<size_t>(dst_size),
-                                  file_rec[cur_rec]);
-        if (bytes_rec < static_cast<size_t>(dst_size))
-          break;
+      // Scale YUV or ARGB frame.
+      if (org_is_yuv) {
+        int src_width = Abs(image_width);
+        int src_height = Abs(image_height);
+        int half_src_width = (src_width + 1) / 2;
+        int half_src_height = (src_height + 1) / 2;
+        int half_dst_width = (dst_width + 1) / 2;
+        int half_dst_height = (dst_height + 1) / 2;
+        I420Scale(ch_org, src_width,
+                  ch_org + src_width * src_height, half_src_width,
+                  ch_org + src_width * src_height +
+                      half_src_width * half_src_height,  half_src_width,
+                  image_width, image_height,
+                  ch_rec, dst_width,
+                  ch_rec + dst_width * dst_height, half_dst_width,
+                  ch_rec + dst_width * dst_height +
+                      half_dst_width * half_dst_height,  half_dst_width,
+                  dst_width, dst_height,
+                      static_cast<libyuv::FilterMode>(filter));
       } else {
-        // Output YUV.
+        TileARGBScale(ch_org, Abs(image_width) * 4,
+                      image_width, image_height,
+                      ch_dst, dst_width * 4,
+                      dst_width, dst_height,
+                      static_cast<libyuv::FilterMode>(filter));
+      }
+      bool rec_is_yuv = strstr(argv[fileindex_rec + cur_rec], "_P420.");
+      bool rec_is_argb = strstr(argv[fileindex_rec + cur_rec], "_ARGB.");
+      if (!rec_is_yuv && !rec_is_argb) {
+        fprintf(stderr, "Output format unknown %s\n",
+                argv[fileindex_rec + cur_rec]);
+        continue;  // Advance to next file.
+      }
+
+      // Convert ARGB to YUV.
+      if (!org_is_yuv && rec_is_yuv) {
         int half_width = (dst_width + 1) / 2;
         int half_height = (dst_height + 1) / 2;
         libyuv::ARGBToI420(ch_dst, dst_width * 4,
@@ -271,13 +307,22 @@ int main(int argc, const char* argv[]) {
                            ch_rec + dst_width * dst_height +
                                half_width * half_height,  half_width,
                            dst_width, dst_height);
+      }
+
+      // Output YUV or ARGB frame.
+      if (rec_is_yuv) {
         size_t bytes_rec = fwrite(ch_rec, sizeof(uint8),
                                   static_cast<size_t>(total_size),
                                   file_rec[cur_rec]);
         if (bytes_rec < static_cast<size_t>(total_size))
           break;
+      } else {
+        size_t bytes_rec = fwrite(ch_dst, sizeof(uint8),
+                                  static_cast<size_t>(dst_size),
+                                  file_rec[cur_rec]);
+        if (bytes_rec < static_cast<size_t>(dst_size))
+          break;
       }
-
       if (verbose) {
         printf("%5d", number_of_frames);
       }
