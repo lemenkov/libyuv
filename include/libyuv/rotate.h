@@ -50,7 +50,13 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_v, int dst_stride_v,
                      int src_width, int src_height, enum RotationMode mode);
 
-// Rotate planes by 90, 180, 270
+// Rotate a plane by 0, 90, 180, or 270.
+LIBYUV_API
+int RotatePlane(const uint8* src, int src_stride,
+                uint8* dst, int dst_stride,
+                int src_width, int src_height, enum RotationMode mode);
+
+// Rotate planes by 90, 180, 270. Deprecated.
 LIBYUV_API
 void RotatePlane90(const uint8* src, int src_stride,
                    uint8* dst, int dst_stride,
@@ -75,7 +81,7 @@ void RotateUV90(const uint8* src, int src_stride,
 // Rotations for when U and V are interleaved.
 // These functions take one input pointer and
 // split the data into two buffers while
-// rotating them.
+// rotating them. Deprecated.
 LIBYUV_API
 void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_a, int dst_stride_a,
@@ -91,6 +97,7 @@ void RotateUV270(const uint8* src, int src_stride,
 // The 90 and 270 functions are based on transposes.
 // Doing a transpose with reversing the read/write
 // order will result in a rotation by +- 90 degrees.
+// Deprecated.
 LIBYUV_API
 void TransposePlane(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,

@@ -1090,6 +1090,50 @@ void RotateUV180(const uint8* src, int src_stride,
 }
 
 LIBYUV_API
+int RotatePlane(const uint8* src, int src_stride,
+                uint8* dst, int dst_stride,
+                int width, int height,
+                RotationMode mode) {
+  if (!src || width <= 0 || height == 0 || !dst) {
+    return -1;
+  }
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src = src + (height - 1) * src_stride;
+    src_stride = -src_stride;
+  }
+
+  switch (mode) {
+    case kRotate0:
+      // copy frame
+      CopyPlane(src, src_stride,
+                dst, dst_stride,
+                width, height);
+      return 0;
+    case kRotate90:
+      RotatePlane90(src, src_stride,
+                    dst, dst_stride,
+                    width, height);
+      return 0;
+    case kRotate270:
+      RotatePlane270(src, src_stride,
+                     dst, dst_stride,
+                     width, height);
+      return 0;
+    case kRotate180:
+      RotatePlane180(src, src_stride,
+                     dst, dst_stride,
+                     width, height);
+      return 0;
+    default:
+      break;
+  }
+  return -1;
+}
+
+LIBYUV_API
 int I420Rotate(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
                const uint8* src_v, int src_stride_v,
