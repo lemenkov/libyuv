@@ -203,8 +203,8 @@ int main(int argc, const char* argv[]) {
     }
   }
 
-  bool org_is_yuv = strstr(argv[fileindex_org], "_P420.");
-  bool org_is_argb = strstr(argv[fileindex_org], "_ARGB.");
+  bool org_is_yuv = strstr(argv[fileindex_org], "_P420.") != NULL;
+  bool org_is_argb = strstr(argv[fileindex_org], "_ARGB.") != NULL;
   if (!org_is_yuv && !org_is_argb) {
     fprintf(stderr, "Original format unknown %s\n", argv[fileindex_org]);
     exit(1);
@@ -289,8 +289,9 @@ int main(int argc, const char* argv[]) {
                       dst_width, dst_height,
                       static_cast<libyuv::FilterMode>(filter));
       }
-      bool rec_is_yuv = strstr(argv[fileindex_rec + cur_rec], "_P420.");
-      bool rec_is_argb = strstr(argv[fileindex_rec + cur_rec], "_ARGB.");
+      bool rec_is_yuv = strstr(argv[fileindex_rec + cur_rec], "_P420.") != NULL;
+      bool rec_is_argb =
+          strstr(argv[fileindex_rec + cur_rec], "_ARGB.") != NULL;
       if (!rec_is_yuv && !rec_is_argb) {
         fprintf(stderr, "Output format unknown %s\n",
                 argv[fileindex_rec + cur_rec]);
