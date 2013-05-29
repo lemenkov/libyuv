@@ -3232,8 +3232,8 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              const uint8* src_ptr, uint8* dst_ptr) {
   int dx = (Abs(src_width) << 16) / dst_width;
   int dy = (src_height << 16) / dst_height;
-  int x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-  int y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+  int x = dx >> 1;
+  int y = dy >> 1;
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
     x += (dst_width - 1) * dx;

@@ -1081,8 +1081,8 @@ static void ScaleARGB(const uint8* src, int src_stride,
     // Scale step for point sampling duplicates all pixels equally.
     dx = (Abs(src_width) << 16) / dst_width;
     dy = (src_height << 16) / dst_height;
-    x = (dx >= 65536) ? ((dx >> 1) - 32768) : (dx >> 1);
-    y = (dy >= 65536) ? ((dy >> 1) - 32768) : (dy >> 1);
+    x = dx >> 1;
+    y = dy >> 1;
   }
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
