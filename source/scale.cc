@@ -196,16 +196,14 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
-    psrlw      xmm5, 8
 
     align      16
   wloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm5
-    pand       xmm1, xmm5
+    psrlw      xmm0, 8               // isolate odd pixels.
+    psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     sub        ecx, 16
     movdqa     [edx], xmm0
@@ -271,16 +269,14 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
-    psrlw      xmm5, 8
 
     align      16
   wloop:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    pand       xmm0, xmm5
-    pand       xmm1, xmm5
+    psrlw      xmm0, 8               // isolate odd pixels.
+    psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     sub        ecx, 16
     movdqu     [edx], xmm0
@@ -1269,15 +1265,13 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
-    "pand      %%xmm5,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
@@ -1289,7 +1283,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
+    , "xmm0", "xmm1"
 #endif
   );
 }
@@ -1336,15 +1330,13 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
                                          ptrdiff_t src_stride,
                                          uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqu    (%0),%%xmm0                     \n"
     "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
-    "pand      %%xmm5,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
@@ -1356,7 +1348,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
+    , "xmm0", "xmm1"
 #endif
   );
 }
@@ -2324,13 +2316,13 @@ static void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
   do {
-    dst[0] = src_ptr[0];
-    dst[1] = src_ptr[2];
+    dst[0] = src_ptr[1];
+    dst[1] = src_ptr[3];
     dst += 2;
     src_ptr += 4;
   } while (dst < dend);
   if (dst_width & 1) {
-    dst[0] = src_ptr[0];
+    dst[0] = src_ptr[1];
   }
 }
 
@@ -2689,6 +2681,7 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  src_ptr += src_stride;  // Point to odd rows.
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);

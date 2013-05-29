@@ -62,7 +62,7 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
-    shufps     xmm0, xmm1, 0x88
+    shufps     xmm0, xmm1, 0xdd
     sub        ecx, 4
     movdqa     [edx], xmm0
     lea        edx, [edx + 16]
@@ -350,7 +350,7 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
     "movdqa    (%0),%%xmm0                     \n"
     "movdqa    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
-    "shufps    $0x88,%%xmm1,%%xmm0             \n"
+    "shufps    $0xdd,%%xmm1,%%xmm0             \n"
     "sub       $0x4,%2                         \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
@@ -634,13 +634,13 @@ static void ScaleARGBRowDown2_C(const uint8* src_argb,
   uint32* dst = reinterpret_cast<uint32*>(dst_argb);
 
   for (int x = 0; x < dst_width - 1; x += 2) {
-    dst[0] = src[0];
-    dst[1] = src[2];
+    dst[0] = src[1];
+    dst[1] = src[3];
     src += 4;
     dst += 2;
   }
   if (dst_width & 1) {
-    dst[0] = src[0];
+    dst[0] = src[1];
   }
 }
 
@@ -743,25 +743,26 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            FilterMode filtering) {
   assert(dx == 65536 * 2);  // Test scale factor of 2.
   assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
+  // Advance to odd row / even column.
+  src_argb += (y >> 16) * src_stride + ((x >> 16) - 1) * 4;
+  int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
-      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(row_stride, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
     ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 :
         ScaleARGBRowDown2_SSE2;
   }
 #elif defined(HAS_SCALEARGBROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8) &&
-      IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4)) {
+      IS_ALIGNED(src_argb, 4) && IS_ALIGNED(row_stride, 4)) {
     ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_NEON :
         ScaleARGBRowDown2_NEON;
   }
 #endif
-  src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
-  int row_stride = src_stride * (dy >> 16);
 
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
@@ -782,6 +783,9 @@ static void ScaleARGBDownEven(int src_width, int src_height,
                               FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
+  int col_step = dx >> 16;
+  int row_stride = (dy >> 16) * src_stride;
+  src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
   void (*ScaleARGBRowDownEven)(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_step, uint8* dst_argb, int dst_width) =
       filtering ? ScaleARGBRowDownEvenInt_C : ScaleARGBRowDownEven_C;
@@ -798,9 +802,6 @@ static void ScaleARGBDownEven(int src_width, int src_height,
         ScaleARGBRowDownEven_NEON;
   }
 #endif
-  int col_step = dx >> 16;
-  int row_stride = (dy >> 16) * src_stride;
-  src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
 
   for (int y = 0; y < dst_height; ++y) {
     ScaleARGBRowDownEven(src_argb, src_stride, col_step, dst_argb, dst_width);

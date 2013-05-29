@@ -27,8 +27,8 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
     "vld2.u32   {q0, q1}, [%0]!                \n"
     "vld2.u32   {q2, q3}, [%0]!                \n"
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
-    "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
-    "vst1.u8    {q2}, [%1]!                    \n"
+    "vst1.u8    {q1}, [%1]!                    \n"  // store odd pixels
+    "vst1.u8    {q3}, [%1]!                    \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst),              // %1
@@ -78,6 +78,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb, ptrdiff_t,
                                int src_stepx,
                                uint8* dst_argb, int dst_width) {
   asm volatile (
+    "add        %0, #4                         \n"  // point to odd pixels.
     "mov        r12, %3, lsl #2                \n"
     ".p2align  2                               \n"
   "1:                                          \n"

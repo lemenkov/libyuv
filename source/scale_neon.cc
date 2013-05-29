@@ -29,7 +29,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
     // load even pixels into q0, odd into q1
     "vld2.u8    {q0,q1}, [%0]!                 \n"
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
-    "vst1.u8    {q0}, [%1]!                    \n"  // store even pixels
+    "vst1.u8    {q1}, [%1]!                    \n"  // store odd pixels
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst),              // %1

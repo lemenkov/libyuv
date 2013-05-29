@@ -39,6 +39,7 @@ void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
     "lw             $t5, 20(%[src_ptr])            \n"  // |23|22|21|20|
     "lw             $t6, 24(%[src_ptr])            \n"  // |27|26|25|24|
     "lw             $t7, 28(%[src_ptr])            \n"  // |31|30|29|28|
+    // TODO(fbarchard): Use odd pixels instead of even.
     "precr.qb.ph    $t8, $t1, $t0                  \n"  // |6|4|2|0|
     "precr.qb.ph    $t0, $t3, $t2                  \n"  // |14|12|10|8|
     "precr.qb.ph    $t1, $t5, $t4                  \n"  // |22|20|18|16|
