@@ -2161,11 +2161,10 @@ void RAWToYRow_NEON(const uint8* src_raw, uint8* dst_y, int pix) {
   );
 }
 
-// 4x2 -> 4x1
-// Same as ScaleARGBFilterRows_NEON but with last pixel not duplicated.
-void ARGBInterpolateRow_NEON(uint8* dst_ptr,
-                             const uint8* src_ptr, ptrdiff_t src_stride,
-                             int dst_width, int source_y_fraction) {
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_NEON(uint8* dst_ptr,
+                         const uint8* src_ptr, ptrdiff_t src_stride,
+                         int dst_width, int source_y_fraction) {
   asm volatile (
     "cmp        %4, #0                         \n"
     "beq        100f                           \n"
@@ -2184,7 +2183,7 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
   "1:                                          \n"
     "vld1.u8    {q0}, [%1]!                    \n"
     "vld1.u8    {q1}, [%2]!                    \n"
-    "subs       %3, #4                         \n"
+    "subs       %3, %3, #16                    \n"
     "vmull.u8   q13, d0, d4                    \n"
     "vmull.u8   q14, d1, d4                    \n"
     "vmlal.u8   q13, d2, d5                    \n"
@@ -2199,7 +2198,7 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
   "25:                                         \n"
     "vld1.u8    {q0}, [%1]!                    \n"
     "vld1.u8    {q1}, [%2]!                    \n"
-    "subs       %3, #4                         \n"
+    "subs       %3, %3, #16                    \n"
     "vrhadd.u8  q0, q1                         \n"
     "vrhadd.u8  q0, q1                         \n"
     "vst1.u8    {q0}, [%0]!                    \n"
@@ -2210,7 +2209,7 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
   "50:                                         \n"
     "vld1.u8    {q0}, [%1]!                    \n"
     "vld1.u8    {q1}, [%2]!                    \n"
-    "subs       %3, #4                         \n"
+    "subs       %3, %3, #16                    \n"
     "vrhadd.u8  q0, q1                         \n"
     "vst1.u8    {q0}, [%0]!                    \n"
     "bgt        50b                            \n"
@@ -2220,7 +2219,7 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
   "75:                                         \n"
     "vld1.u8    {q1}, [%1]!                    \n"
     "vld1.u8    {q0}, [%2]!                    \n"
-    "subs       %3, #4                         \n"
+    "subs       %3, %3, #16                    \n"
     "vrhadd.u8  q0, q1                         \n"
     "vrhadd.u8  q0, q1                         \n"
     "vst1.u8    {q0}, [%0]!                    \n"
@@ -2230,7 +2229,7 @@ void ARGBInterpolateRow_NEON(uint8* dst_ptr,
     // Blend 100 / 0 - Copy row unchanged.
   "100:                                        \n"
     "vld1.u8    {q0}, [%1]!                    \n"
-    "subs       %3, #4                         \n"
+    "subs       %3, %3, #16                    \n"
     "vst1.u8    {q0}, [%0]!                    \n"
     "bgt        100b                           \n"
 

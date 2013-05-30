@@ -4781,7 +4781,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
   : "+r"(src_argb),  // %0
     "+r"(src_argb_stride_temp),  // %1
     "+r"(dst_argb),  // %2
-    "+r"(src_dudv),   // %3
+    "+r"(src_dudv),  // %3
     "+rm"(width),    // %4
     "+r"(temp)   // %5
   :
@@ -4793,11 +4793,10 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
-// Bilinear image filtering.
-// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
-void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                              ptrdiff_t src_stride, int dst_width,
-                              int source_y_fraction) {
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride, int dst_width,
+                          int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
@@ -4831,7 +4830,7 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
@@ -4844,7 +4843,7 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        25b                             \n"
@@ -4856,7 +4855,7 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1),%%xmm0                     \n"
     "movdqa    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        50b                             \n"
@@ -4869,7 +4868,7 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1,%4,1),%%xmm0                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        75b                             \n"
@@ -4879,14 +4878,14 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
     ".p2align  4                               \n"
   "100:                                        \n"
     "movdqa    (%1),%%xmm0                     \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
-  : "+r"(dst_argb),   // %0
-    "+r"(src_argb),   // %1
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
@@ -4897,11 +4896,10 @@ void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
-// Bilinear image filtering.
-// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
-void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
-                             ptrdiff_t src_stride, int dst_width,
-                             int source_y_fraction) {
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
@@ -4943,7 +4941,7 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     "paddw     %%xmm2,%%xmm0                   \n"
     "paddw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
@@ -4956,7 +4954,7 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        25b                             \n"
@@ -4968,7 +4966,7 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1),%%xmm0                     \n"
     "movdqa    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        50b                             \n"
@@ -4981,7 +4979,7 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqa    (%1,%4,1),%%xmm0                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        75b                             \n"
@@ -4991,14 +4989,14 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
     ".p2align  4                               \n"
   "100:                                        \n"
     "movdqa    (%1),%%xmm0                     \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqa    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
-  : "+r"(dst_argb),   // %0
-    "+r"(src_argb),   // %1
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
@@ -5009,11 +5007,10 @@ void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
-// Bilinear image filtering.
-// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
-void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                                        ptrdiff_t src_stride, int dst_width,
-                                        int source_y_fraction) {
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                                    ptrdiff_t src_stride, int dst_width,
+                                    int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
@@ -5047,7 +5044,7 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
@@ -5060,7 +5057,7 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        25b                             \n"
@@ -5072,7 +5069,7 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1),%%xmm0                     \n"
     "movdqu    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        50b                             \n"
@@ -5085,7 +5082,7 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1,%4,1),%%xmm0                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        75b                             \n"
@@ -5095,14 +5092,14 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
     ".p2align  4                               \n"
   "100:                                        \n"
     "movdqu    (%1),%%xmm0                     \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
-  : "+r"(dst_argb),   // %0
-    "+r"(src_argb),   // %1
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
@@ -5113,11 +5110,10 @@ void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
-// Bilinear image filtering.
-// Same as ScaleARGBFilterRows_SSSE3 but without last pixel duplicated.
-void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
-                                       ptrdiff_t src_stride, int dst_width,
-                                       int source_y_fraction) {
+// Bilinear filter 16x2 -> 16x1
+void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                                   ptrdiff_t src_stride, int dst_width,
+                                   int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
     "shr       %3                              \n"
@@ -5159,7 +5155,7 @@ void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
     "paddw     %%xmm2,%%xmm0                   \n"
     "paddw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        1b                              \n"
@@ -5172,7 +5168,7 @@ void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        25b                             \n"
@@ -5184,7 +5180,7 @@ void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1),%%xmm0                     \n"
     "movdqu    (%1,%4,1),%%xmm1                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        50b                             \n"
@@ -5197,7 +5193,7 @@ void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqu    (%1,%4,1),%%xmm0                \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        75b                             \n"
@@ -5207,14 +5203,14 @@ void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
     ".p2align  4                               \n"
   "100:                                        \n"
     "movdqu    (%1),%%xmm0                     \n"
-    "sub       $0x4,%2                         \n"
+    "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0,(%1,%0,1)                \n"
     "lea       0x10(%1),%1                     \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
-  : "+r"(dst_argb),   // %0
-    "+r"(src_argb),   // %1
+  : "+r"(dst_ptr),    // %0
+    "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4

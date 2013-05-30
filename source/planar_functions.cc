@@ -1617,7 +1617,7 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
 
 // Interpolate 2 ARGB images by specified amount (0 to 255).
 // TODO(fbarchard): Consider selecting a specialization for interpolation so
-//     row function doesn't need to check interpolation on each row.
+// row function doesn't need to check interpolation on each row.
 LIBYUV_API
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
@@ -1642,46 +1642,55 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                            width * height, 1,
                            interpolation);
   }
-  void (*ARGBInterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
-                             ptrdiff_t src_stride, int dst_width,
-                             int source_y_fraction) = ARGBInterpolateRow_C;
-#if defined(HAS_ARGBINTERPOLATEROW_SSE2)
+  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) = InterpolateRow_C;
+#if defined(HAS_INTERPOLATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
-    ARGBInterpolateRow = ARGBInterpolateRow_Any_SSE2;
+    InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
-      ARGBInterpolateRow = ARGBInterpolateRow_Unaligned_SSE2;
+      InterpolateRow = InterpolateRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
           IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        ARGBInterpolateRow = ARGBInterpolateRow_SSE2;
+        InterpolateRow = InterpolateRow_SSE2;
       }
     }
   }
 #endif
-#if defined(HAS_ARGBINTERPOLATEROW_SSSE3)
+#if defined(HAS_INTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 4) {
-    ARGBInterpolateRow = ARGBInterpolateRow_Any_SSSE3;
+    InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(width, 4)) {
-      ARGBInterpolateRow = ARGBInterpolateRow_Unaligned_SSSE3;
+      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_argb0, 16) && IS_ALIGNED(src_stride_argb0, 16) &&
           IS_ALIGNED(src_argb1, 16) && IS_ALIGNED(src_stride_argb1, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        ARGBInterpolateRow = ARGBInterpolateRow_SSSE3;
+        InterpolateRow = InterpolateRow_SSSE3;
       }
     }
   }
 #endif
-#if defined(HAS_ARGBINTERPOLATEROW_NEON)
+#if defined(HAS_INTERPOLATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
-    ARGBInterpolateRow = ARGBInterpolateRow_Any_NEON;
+    InterpolateRow = InterpolateRow_Any_NEON;
     if (IS_ALIGNED(width, 4)) {
-      ARGBInterpolateRow = ARGBInterpolateRow_NEON;
+      InterpolateRow = InterpolateRow_NEON;
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && width >= 1 &&
+      IS_ALIGNED(src_argb0, 4) && IS_ALIGNED(src_stride_argb0, 4) &&
+      IS_ALIGNED(src_argb1, 4) && IS_ALIGNED(src_stride_argb1, 4) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    ScaleARGBFilterRows = InterpolateRow_MIPS_DSPR2;
+  }
+#endif
+
   for (int y = 0; y < height; ++y) {
-    ARGBInterpolateRow(dst_argb, src_argb0, src_argb1 - src_argb0,
-                       width, interpolation);
+    InterpolateRow(dst_argb, src_argb0, src_argb1 - src_argb0,
+                   width * 4, interpolation);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;

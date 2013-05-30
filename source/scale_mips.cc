@@ -629,64 +629,6 @@ void ScaleRowDown38_3_Box_MIPS_DSPR2(const uint8* src_ptr,
   );
 }
 
-void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
-                                const unsigned char* src_ptr,
-                                ptrdiff_t src_stride,
-                                int dst_width, int source_y_fraction) {
-    int y0_fraction = 256 - source_y_fraction;
-    const unsigned char* src_ptr1 = src_ptr + src_stride;
-
-  __asm__ __volatile__ (
-     ".set push                                           \n"
-     ".set noreorder                                      \n"
-
-     "replv.ph          $t0, %[y0_fraction]               \n"
-     "replv.ph          $t1, %[source_y_fraction]         \n"
-   "1:                                                    \n"
-     "lw                $t2, 0(%[src_ptr])                \n"
-     "lw                $t3, 0(%[src_ptr1])               \n"
-     "lw                $t4, 4(%[src_ptr])                \n"
-     "lw                $t5, 4(%[src_ptr1])               \n"
-     "muleu_s.ph.qbl    $t6, $t2, $t0                     \n"
-     "muleu_s.ph.qbr    $t7, $t2, $t0                     \n"
-     "muleu_s.ph.qbl    $t8, $t3, $t1                     \n"
-     "muleu_s.ph.qbr    $t9, $t3, $t1                     \n"
-     "muleu_s.ph.qbl    $t2, $t4, $t0                     \n"
-     "muleu_s.ph.qbr    $t3, $t4, $t0                     \n"
-     "muleu_s.ph.qbl    $t4, $t5, $t1                     \n"
-     "muleu_s.ph.qbr    $t5, $t5, $t1                     \n"
-     "addq.ph           $t6, $t6, $t8                     \n"
-     "addq.ph           $t7, $t7, $t9                     \n"
-     "addq.ph           $t2, $t2, $t4                     \n"
-     "addq.ph           $t3, $t3, $t5                     \n"
-     "shra.ph           $t6, $t6, 8                       \n"
-     "shra.ph           $t7, $t7, 8                       \n"
-     "shra.ph           $t2, $t2, 8                       \n"
-     "shra.ph           $t3, $t3, 8                       \n"
-     "precr.qb.ph       $t6, $t6, $t7                     \n"
-     "precr.qb.ph       $t2, $t2, $t3                     \n"
-     "addiu             %[src_ptr], %[src_ptr], 8         \n"
-     "addiu             %[src_ptr1], %[src_ptr1], 8       \n"
-     "addiu             %[dst_width], %[dst_width], -8    \n"
-     "sw                $t6, 0(%[dst_ptr])                \n"
-     "sw                $t2, 4(%[dst_ptr])                \n"
-     "bgtz              %[dst_width], 1b                  \n"
-     " addiu            %[dst_ptr], %[dst_ptr], 8         \n"
-
-     "lbu               $t0, -1(%[dst_ptr])               \n"
-     "sb                $t0, 0(%[dst_ptr])                \n"
-     ".set pop                                            \n"
-  : [dst_ptr] "+r" (dst_ptr),
-    [src_ptr1] "+r" (src_ptr1),
-    [src_ptr] "+r" (src_ptr),
-    [dst_width] "+r" (dst_width)
-  : [source_y_fraction] "r" (source_y_fraction),
-    [y0_fraction] "r" (y0_fraction),
-    [src_stride] "r" (src_stride)
-  : "t0", "t1", "t2", "t3", "t4", "t5",
-    "t6", "t7", "t8", "t9"
-  );
-}
 #endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 
 #ifdef __cplusplus

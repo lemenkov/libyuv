@@ -483,29 +483,33 @@ YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
 #undef YANY
 
 // Interpolate may want to work in place, so last16 method can not be used.
-#define NANY(NAMEANY, ARGBTERP_SIMD, ARGBTERP_C, SBPP, BPP, MASK)              \
-    void NAMEANY(uint8* dst_argb, const uint8* src_argb,                       \
-                 ptrdiff_t src_stride_argb, int width,                         \
+#define NANY(NAMEANY, TERP_SIMD, TERP_C, SBPP, BPP, MASK)                      \
+    void NAMEANY(uint8* dst_ptr, const uint8* src_ptr,                         \
+                 ptrdiff_t src_stride_ptr, int width,                          \
                  int source_y_fraction) {                                      \
       int n = width & ~MASK;                                                   \
-      ARGBTERP_SIMD(dst_argb, src_argb, src_stride_argb,                       \
-                    n, source_y_fraction);                                     \
-      ARGBTERP_C(dst_argb + n * BPP,                                           \
-                 src_argb + n * SBPP, src_stride_argb,                         \
-                 width & MASK, source_y_fraction);                             \
+      TERP_SIMD(dst_ptr, src_ptr, src_stride_ptr,                              \
+                n, source_y_fraction);                                         \
+      TERP_C(dst_ptr + n * BPP,                                                \
+             src_ptr + n * SBPP, src_stride_ptr,                               \
+             width & MASK, source_y_fraction);                                 \
     }
 
-#ifdef HAS_ARGBINTERPOLATEROW_SSSE3
-NANY(ARGBInterpolateRow_Any_SSSE3, ARGBInterpolateRow_Unaligned_SSSE3,
-     ARGBInterpolateRow_C, 4, 4, 3)
+#ifdef HAS_INTERPOLATEROW_SSSE3
+NANY(InterpolateRow_Any_SSSE3, InterpolateRow_Unaligned_SSSE3,
+     InterpolateRow_C, 1, 1, 15)
 #endif
-#ifdef HAS_ARGBINTERPOLATEROW_SSE2
-NANY(ARGBInterpolateRow_Any_SSE2, ARGBInterpolateRow_Unaligned_SSE2,
-     ARGBInterpolateRow_C, 4, 4, 3)
+#ifdef HAS_INTERPOLATEROW_SSE2
+NANY(InterpolateRow_Any_SSE2, InterpolateRow_Unaligned_SSE2,
+     InterpolateRow_C, 1, 1, 15)
 #endif
-#ifdef HAS_ARGBINTERPOLATEROW_NEON
-NANY(ARGBInterpolateRow_Any_NEON, ARGBInterpolateRow_NEON,
-     ARGBInterpolateRow_C, 4, 4, 3)
+#ifdef HAS_INTERPOLATEROW_NEON
+NANY(InterpolateRow_Any_NEON, InterpolateRow_NEON,
+     InterpolateRow_C, 1, 1, 15)
+#endif
+#ifdef HAS_INTERPOLATEROW_MIPS_DSPR2
+NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2,
+     InterpolateRow_C, 1, 1, 3)
 #endif
 #undef NANY
 

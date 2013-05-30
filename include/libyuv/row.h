@@ -109,8 +109,8 @@ extern "C" {
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_ARGBGRAYROW_SSSE3
-#define HAS_ARGBINTERPOLATEROW_SSE2
-#define HAS_ARGBINTERPOLATEROW_SSSE3
+#define HAS_INTERPOLATEROW_SSE2
+#define HAS_INTERPOLATEROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSSE3
 #define HAS_ARGBMULTIPLYROW_SSE2
 #define HAS_ARGBQUANTIZEROW_SSE2
@@ -261,7 +261,6 @@ extern "C" {
 #define HAS_ARGBBLENDROW_NEON
 #define HAS_ARGBCOLORMATRIXROW_NEON
 #define HAS_ARGBGRAYROW_NEON
-#define HAS_ARGBINTERPOLATEROW_NEON
 #define HAS_ARGBMIRRORROW_NEON
 #define HAS_ARGBMULTIPLYROW_NEON
 #define HAS_ARGBQUANTIZEROW_NEON
@@ -272,6 +271,7 @@ extern "C" {
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELXROW_NEON
 #define HAS_SOBELYROW_NEON
+#define HAS_INTERPOLATEROW_NEON
 #endif
 
 // The following are available on Mips platforms
@@ -281,6 +281,7 @@ extern "C" {
 #define HAS_I422TOABGRROW_MIPS_DSPR2
 #define HAS_I422TOARGBROW_MIPS_DSPR2
 #define HAS_I422TOBGRAROW_MIPS_DSPR2
+#define HAS_INTERPOLATEROWS_MIPS_DSPR2
 #define HAS_MIRRORROW_MIPS_DSPR2
 #define HAS_MIRRORUVROW_MIPS_DSPR2
 #define HAS_SPLITUVROW_MIPS_DSPR2
@@ -1455,34 +1456,40 @@ LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* uv_dudv, int width);
 
-// Used for ARGBScale and ARGBInterpolate.
-void ARGBInterpolateRow_C(uint8* dst_argb, const uint8* src_argb,
-                          ptrdiff_t src_stride_argb,
-                          int width, int source_y_fraction);
-void ARGBInterpolateRow_SSE2(uint8* dst_argb, const uint8* src_argb,
-                             ptrdiff_t src_stride_argb, int width,
+// Used for I420Scale, ARGBScale, and ARGBInterpolate.
+void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
+                      ptrdiff_t src_stride_ptr,
+                      int width, int source_y_fraction);
+void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride_ptr, int width,
+                         int source_y_fraction);
+void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride_ptr, int width,
+                          int source_y_fraction);
+void InterpolateRow_NEON(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride_ptr, int width,
+                         int source_y_fraction);
+void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                                ptrdiff_t src_stride_ptr, int width,
+                                int source_y_fraction);
+void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                                   ptrdiff_t src_stride_ptr, int width,
+                                   int source_y_fraction);
+void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                                    ptrdiff_t src_stride_ptr, int width,
+                                    int source_y_fraction);
+void InterpolateRow_Any_NEON(uint8* dst_ptr, const uint8* src_ptr,
+                             ptrdiff_t src_stride_ptr, int width,
                              int source_y_fraction);
-void ARGBInterpolateRow_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                              ptrdiff_t src_stride_argb, int width,
+void InterpolateRow_Any_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                             ptrdiff_t src_stride_ptr, int width,
+                             int source_y_fraction);
+void InterpolateRow_Any_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                              ptrdiff_t src_stride_ptr, int width,
                               int source_y_fraction);
-void ARGBInterpolateRow_NEON(uint8* dst_argb, const uint8* src_argb,
-                             ptrdiff_t src_stride_argb, int width,
-                             int source_y_fraction);
-void ARGBInterpolateRow_Unaligned_SSE2(uint8* dst_argb, const uint8* src_argb,
-                                       ptrdiff_t src_stride_argb, int width,
-                                       int source_y_fraction);
-void ARGBInterpolateRow_Unaligned_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                                        ptrdiff_t src_stride_argb, int width,
-                                        int source_y_fraction);
-void ARGBInterpolateRow_Any_NEON(uint8* dst_argb, const uint8* src_argb,
-                                 ptrdiff_t src_stride_argb, int width,
-                                 int source_y_fraction);
-void ARGBInterpolateRow_Any_SSE2(uint8* dst_argb, const uint8* src_argb,
-                                 ptrdiff_t src_stride_argb, int width,
-                                 int source_y_fraction);
-void ARGBInterpolateRow_Any_SSSE3(uint8* dst_argb, const uint8* src_argb,
-                                  ptrdiff_t src_stride_argb, int width,
-                                  int source_y_fraction);
+void InterpolateRows_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                                    ptrdiff_t src_stride_ptr, int width,
+                                    int source_y_fraction);
 
 // Sobel images.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
