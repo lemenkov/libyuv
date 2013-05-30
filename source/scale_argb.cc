@@ -34,12 +34,12 @@ static __inline int Abs(int v) {
 void ScaleARGBRowDownEven_NEON(const uint8* src_argb, int src_stride,
                                int src_stepx,
                                uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEvenInt_NEON(const uint8* src_argb, int src_stride,
+void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, int src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width);
-void ScaleARGBRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
 #endif
 
@@ -75,7 +75,7 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
 // Blends 8x2 rectangle to 4x1.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDown2Int_SSE2(const uint8* src_argb,
+static void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
                                       ptrdiff_t src_stride,
                                       uint8* dst_argb, int dst_width) {
   __asm {
@@ -150,7 +150,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
 // Blends four 2x2 to 4x1.
 // Alignment requirement: dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
+static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
                                          ptrdiff_t src_stride,
                                          int src_stepx,
                                          uint8* dst_argb, int dst_width) {
@@ -366,7 +366,7 @@ static void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
   );
 }
 
-static void ScaleARGBRowDown2Int_SSE2(const uint8* src_argb,
+static void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
                                       ptrdiff_t src_stride,
                                       uint8* dst_argb, int dst_width) {
   asm volatile (
@@ -438,7 +438,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
 
 // Blends four 2x2 to 4x1.
 // Alignment requirement: dst_argb 16 byte aligned.
-static void ScaleARGBRowDownEvenInt_SSE2(const uint8* src_argb,
+static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
                                          ptrdiff_t src_stride, int src_stepx,
                                          uint8* dst_argb, int dst_width) {
   intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
@@ -644,7 +644,7 @@ static void ScaleARGBRowDown2_C(const uint8* src_argb,
   }
 }
 
-static void ScaleARGBRowDown2Int_C(const uint8* src_argb, ptrdiff_t src_stride,
+static void ScaleARGBRowDown2Box_C(const uint8* src_argb, ptrdiff_t src_stride,
                                    uint8* dst_argb, int dst_width) {
   for (int x = 0; x < dst_width; ++x) {
     dst_argb[0] = (src_argb[0] + src_argb[4] +
@@ -677,7 +677,7 @@ void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t /* src_stride */,
   }
 }
 
-static void ScaleARGBRowDownEvenInt_C(const uint8* src_argb,
+static void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
                                       ptrdiff_t src_stride,
                                       int src_stepx,
                                       uint8* dst_argb, int dst_width) {
@@ -748,18 +748,18 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) =
-      filtering ? ScaleARGBRowDown2Int_C : ScaleARGBRowDown2_C;
+      filtering ? ScaleARGBRowDown2Box_C : ScaleARGBRowDown2_C;
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(row_stride, 16) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_SSE2 :
+    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Box_SSE2 :
         ScaleARGBRowDown2_SSE2;
   }
 #elif defined(HAS_SCALEARGBROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8) &&
       IS_ALIGNED(src_argb, 4) && IS_ALIGNED(row_stride, 4)) {
-    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Int_NEON :
+    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Box_NEON :
         ScaleARGBRowDown2_NEON;
   }
 #endif
@@ -788,17 +788,17 @@ static void ScaleARGBDownEven(int src_width, int src_height,
   src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
   void (*ScaleARGBRowDownEven)(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_step, uint8* dst_argb, int dst_width) =
-      filtering ? ScaleARGBRowDownEvenInt_C : ScaleARGBRowDownEven_C;
+      filtering ? ScaleARGBRowDownEvenBox_C : ScaleARGBRowDownEven_C;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenInt_SSE2 :
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_SSE2 :
         ScaleARGBRowDownEven_SSE2;
   }
 #elif defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 4) &&
       IS_ALIGNED(src_argb, 4)) {
-    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenInt_NEON :
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_NEON :
         ScaleARGBRowDownEven_NEON;
   }
 #endif

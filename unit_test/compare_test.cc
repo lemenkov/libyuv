@@ -165,7 +165,7 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_Opt) {
   memset(src_b, 0, kMaxWidth);
 
   int count = benchmark_iterations_ *
-      (benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth;
+    ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
   for (int i = 0; i < count; ++i) {
     h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }

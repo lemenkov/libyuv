@@ -55,13 +55,13 @@ void SetUseReferenceImpl(bool use) {
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                         uint8* dst, int dst_width);
 
-void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
 
 #define HAS_SCALEROWDOWN4_NEON
 void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                         uint8* dst_ptr, int dst_width);
-void ScaleRowDown4Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
 
 #define HAS_SCALEROWDOWN34_NEON
@@ -71,10 +71,10 @@ void ScaleRowDown4Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown34_NEON(const uint8* src_ptr,
                          ptrdiff_t /* src_stride */,
                          uint8* dst_ptr, int dst_width);
-void ScaleRowDown34_0_Int_NEON(const uint8* src_ptr,
+void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
-void ScaleRowDown34_1_Int_NEON(const uint8* src_ptr,
+void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
 
@@ -84,11 +84,11 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
                          ptrdiff_t /* src_stride */,
                          uint8* dst_ptr, int dst_width);
 // 32x3 -> 12x1
-void ScaleRowDown38_3_Int_NEON(const uint8* src_ptr,
+void ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
 // 32x2 -> 12x1
-void ScaleRowDown38_2_Int_NEON(const uint8* src_ptr,
+void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
 // 16x2 -> 16x1
@@ -217,7 +217,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -290,7 +290,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
+static void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
                                             ptrdiff_t src_stride,
                                             uint8* dst_ptr, int dst_width) {
   __asm {
@@ -343,8 +343,9 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    pcmpeqb    xmm5, xmm5            // generate mask 0x000000ff
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff0000
     psrld      xmm5, 24
+    pslld      xmm5, 16
 
     align      16
   wloop:
@@ -354,6 +355,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     pand       xmm0, xmm5
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
+    psrlw      xmm0, 8
     packuswb   xmm0, xmm0
     sub        ecx, 8
     movq       qword ptr [edx], xmm0
@@ -367,7 +369,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Blends 32x4 rectangle to 8x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -419,112 +421,6 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     lea        edx, [edx + 8]
     jg         wloop
 
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-#define HAS_SCALEROWDOWN8_SSE2
-// Point samples 32 pixels to 4 pixels.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
-__declspec(naked) __declspec(align(16))
-static void ScaleRowDown8_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                               uint8* dst_ptr, int dst_width) {
-  __asm {
-    mov        eax, [esp + 4]        // src_ptr
-                                     // src_stride ignored
-    mov        edx, [esp + 12]       // dst_ptr
-    mov        ecx, [esp + 16]       // dst_width
-    pcmpeqb    xmm5, xmm5            // generate mask isolating 1 src 8 bytes
-    psrlq      xmm5, 56
-
-    align      16
-  wloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    lea        eax,  [eax + 32]
-    pand       xmm0, xmm5
-    pand       xmm1, xmm5
-    packuswb   xmm0, xmm1  // 32->16
-    packuswb   xmm0, xmm0  // 16->8
-    packuswb   xmm0, xmm0  // 8->4
-    sub        ecx, 4
-    movd       dword ptr [edx], xmm0
-    lea        edx, [edx + 4]
-    jg         wloop
-
-    ret
-  }
-}
-
-// Blends 32x8 rectangle to 4x1.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 4 byte aligned.
-__declspec(naked) __declspec(align(16))
-static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                                  uint8* dst_ptr, int dst_width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebp
-    mov        eax, [esp + 12 + 4]   // src_ptr
-    mov        esi, [esp + 12 + 8]   // src_stride
-    mov        edx, [esp + 12 + 12]  // dst_ptr
-    mov        ecx, [esp + 12 + 16]  // dst_width
-    lea        edi, [esi + esi * 2]  // src_stride * 3
-    pxor       xmm7, xmm7
-
-    align      16
-  wloop:
-    movdqa     xmm0, [eax]           // average 8 rows to 1
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + esi]
-    movdqa     xmm3, [eax + esi + 16]
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
-    movdqa     xmm2, [eax + esi * 2]
-    movdqa     xmm3, [eax + esi * 2 + 16]
-    movdqa     xmm4, [eax + edi]
-    movdqa     xmm5, [eax + edi + 16]
-    lea        ebp, [eax + esi * 4]
-    lea        eax, [eax + 32]
-    pavgb      xmm2, xmm4
-    pavgb      xmm3, xmm5
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
-
-    movdqa     xmm2, [ebp]
-    movdqa     xmm3, [ebp + 16]
-    movdqa     xmm4, [ebp + esi]
-    movdqa     xmm5, [ebp + esi + 16]
-    pavgb      xmm2, xmm4
-    pavgb      xmm3, xmm5
-    movdqa     xmm4, [ebp + esi * 2]
-    movdqa     xmm5, [ebp + esi * 2 + 16]
-    movdqa     xmm6, [ebp + edi]
-    pavgb      xmm4, xmm6
-    movdqa     xmm6, [ebp + edi + 16]
-    pavgb      xmm5, xmm6
-    pavgb      xmm2, xmm4
-    pavgb      xmm3, xmm5
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
-
-    psadbw     xmm0, xmm7            // average 32 pixels to 4
-    psadbw     xmm1, xmm7
-    pshufd     xmm0, xmm0, 0xd8      // x1x0 -> xx01
-    pshufd     xmm1, xmm1, 0x8d      // x3x2 -> 32xx
-    por        xmm0, xmm1            //      -> 3201
-    psrlw      xmm0, 3
-    packuswb   xmm0, xmm0
-    packuswb   xmm0, xmm0
-
-    sub        ecx, 4
-    movd       dword ptr [edx], xmm0
-    lea        edx, [edx + 4]
-    jg         wloop
-
-    pop        ebp
     pop        edi
     pop        esi
     ret
@@ -588,7 +484,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -647,7 +543,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
 // Note that movdqa+palign may be better than movdqu.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -743,7 +639,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
 
 // Scale 16x3 pixels to 6x1 with interpolation
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -809,7 +705,7 @@ static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr,
 
 // Scale 16x2 pixels to 6x1 with interpolation
 __declspec(naked) __declspec(align(16))
-static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   __asm {
@@ -1288,7 +1184,7 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1353,7 +1249,7 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
   );
 }
 
-static void ScaleRowDown2Int_Unaligned_SSE2(const uint8* src_ptr,
+static void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
                                             ptrdiff_t src_stride,
                                             uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -1398,6 +1294,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrld     $0x18,%%xmm5                    \n"
+    "pslld     $0x10,%%xmm5                    \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    (%0),%%xmm0                     \n"
@@ -1406,6 +1303,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
@@ -1422,7 +1320,7 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   intptr_t stridex3 = 0;
   asm volatile (
@@ -1476,103 +1374,6 @@ static void ScaleRowDown4Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-#define HAS_SCALEROWDOWN8_SSE2
-static void ScaleRowDown8_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                               uint8* dst_ptr, int dst_width) {
-  asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlq     $0x38,%%xmm5                    \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
-    "pand      %%xmm5,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,(%1)                     \n"
-    "lea       0x4(%1),%1                      \n"
-    "sub       $0x4,%2                         \n"
-    "jg        1b                              \n"
-  : "+r"(src_ptr),    // %0
-    "+r"(dst_ptr),    // %1
-    "+r"(dst_width)   // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
-  );
-}
-
-static void ScaleRowDown8Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                                  uint8* dst_ptr, int dst_width) {
-  intptr_t stridex3 = 0;
-  intptr_t row4 = 0;
-  asm volatile (
-    "lea       (%5,%5,2),%3                    \n"
-    "pxor      %%xmm7,%%xmm7                   \n"
-    ".p2align  4                               \n"
-  "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    (%0,%5,1),%%xmm2                \n"
-    "movdqa    0x10(%0,%5,1),%%xmm3            \n"
-    "pavgb     %%xmm2,%%xmm0                   \n"
-    "pavgb     %%xmm3,%%xmm1                   \n"
-    "movdqa    (%0,%5,2),%%xmm2                \n"
-    "movdqa    0x10(%0,%5,2),%%xmm3            \n"
-    "movdqa    (%0,%3,1),%%xmm4                \n"
-    "movdqa    0x10(%0,%3,1),%%xmm5            \n"
-    "lea       (%0,%5,4),%4                    \n"
-    "lea       0x20(%0),%0                     \n"
-    "pavgb     %%xmm4,%%xmm2                   \n"
-    "pavgb     %%xmm5,%%xmm3                   \n"
-    "pavgb     %%xmm2,%%xmm0                   \n"
-    "pavgb     %%xmm3,%%xmm1                   \n"
-    "movdqa    0x0(%4),%%xmm2                  \n"
-    "movdqa    0x10(%4),%%xmm3                 \n"
-    "movdqa    0x0(%4,%5,1),%%xmm4             \n"
-    "movdqa    0x10(%4,%5,1),%%xmm5            \n"
-    "pavgb     %%xmm4,%%xmm2                   \n"
-    "pavgb     %%xmm5,%%xmm3                   \n"
-    "movdqa    0x0(%4,%5,2),%%xmm4             \n"
-    "movdqa    0x10(%4,%5,2),%%xmm5            \n"
-    "movdqa    0x0(%4,%3,1),%%xmm6             \n"
-    "pavgb     %%xmm6,%%xmm4                   \n"
-    "movdqa    0x10(%4,%3,1),%%xmm6            \n"
-    "pavgb     %%xmm6,%%xmm5                   \n"
-    "pavgb     %%xmm4,%%xmm2                   \n"
-    "pavgb     %%xmm5,%%xmm3                   \n"
-    "pavgb     %%xmm2,%%xmm0                   \n"
-    "pavgb     %%xmm3,%%xmm1                   \n"
-    "psadbw    %%xmm7,%%xmm0                   \n"
-    "psadbw    %%xmm7,%%xmm1                   \n"
-    "pshufd    $0xd8,%%xmm0,%%xmm0             \n"
-    "pshufd    $0x8d,%%xmm1,%%xmm1             \n"
-    "por       %%xmm1,%%xmm0                   \n"
-    "psrlw     $0x3,%%xmm0                     \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,(%1)                     \n"
-    "lea       0x4(%1),%1                      \n"
-    "sub       $0x4,%2                         \n"
-    "jg        1b                              \n"
-  : "+r"(src_ptr),     // %0
-    "+r"(dst_ptr),     // %1
-    "+rm"(dst_width),  // %2
-    "+r"(stridex3),    // %3
-    "+r"(row4)         // %4
-  : "r"(static_cast<intptr_t>(src_stride))  // %5
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
-  );
-}
-
 #define HAS_SCALEROWDOWN34_SSSE3
 static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst_ptr, int dst_width) {
@@ -1613,7 +1414,7 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -1680,7 +1481,7 @@ static void ScaleRowDown34_1_Int_SSSE3(const uint8* src_ptr,
   );
 }
 
-static void ScaleRowDown34_0_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -1783,7 +1584,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -1829,7 +1630,7 @@ static void ScaleRowDown38_2_Int_SSSE3(const uint8* src_ptr,
   );
 }
 
-static void ScaleRowDown38_3_Int_SSSE3(const uint8* src_ptr,
+static void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
                                        ptrdiff_t src_stride,
                                        uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -2282,7 +2083,7 @@ static void ScaleFilterRows_Unaligned_SSSE3(uint8* dst_ptr,
 #define HAS_SCALEROWDOWN2_MIPS_DSPR2
 void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                               uint8* dst, int dst_width);
-void ScaleRowDown2Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst, int dst_width);
 #define HAS_SCALEFILTERROWS_MIPS_DSPR2
 void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
@@ -2292,21 +2093,21 @@ void ScaleFilterRows_MIPS_DSPR2(unsigned char *dst_ptr,
 #define HAS_SCALEROWDOWN4_MIPS_DSPR2
 void ScaleRowDown4_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                               uint8* dst, int dst_width);
-void ScaleRowDown4Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown4Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst, int dst_width);
 #define HAS_SCALEROWDOWN34_MIPS_DSPR2
 void ScaleRowDown34_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                                uint8* dst, int dst_width);
-void ScaleRowDown34_0_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown34_0_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* d, int dst_width);
-void ScaleRowDown34_1_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown34_1_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* d, int dst_width);
 #define HAS_SCALEROWDOWN38_MIPS_DSPR2
 void ScaleRowDown38_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                                uint8* dst, int dst_width);
-void ScaleRowDown38_2_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown38_2_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* dst_ptr, int dst_width);
-void ScaleRowDown38_3_Int_MIPS_DSPR2(const uint8* src_ptr,
+void ScaleRowDown38_3_Box_MIPS_DSPR2(const uint8* src_ptr,
                                      ptrdiff_t src_stride,
                                      uint8* dst_ptr, int dst_width);
 #endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)
@@ -2326,7 +2127,7 @@ static void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   }
 }
 
-void ScaleRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
@@ -2347,17 +2148,17 @@ static void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                             uint8* dst, int dst_width) {
   uint8* dend = dst + dst_width - 1;
   do {
-    dst[0] = src_ptr[0];
-    dst[1] = src_ptr[4];
+    dst[0] = src_ptr[2];
+    dst[1] = src_ptr[6];
     dst += 2;
     src_ptr += 8;
   } while (dst < dend);
   if (dst_width & 1) {
-    dst[0] = src_ptr[0];
+    dst[0] = src_ptr[2];
   }
 }
 
-static void ScaleRowDown4Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
   uint8* dend = dst + dst_width - 1;
@@ -2393,33 +2194,6 @@ static void ScaleRowDown4Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-static void ScaleRowDown8_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
-                            uint8* dst, int dst_width) {
-  uint8* dend = dst + dst_width - 1;
-  do {
-    dst[0] = src_ptr[0];
-    dst[1] = src_ptr[8];
-    dst += 2;
-    src_ptr += 16;
-  } while (dst < dend);
-  if (dst_width & 1) {
-    dst[0] = src_ptr[0];
-  }
-}
-
-// Note calling code checks width is less than max and if not
-// uses ScaleRowDown8_C instead.
-static void ScaleRowDown8Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
-                               uint8* dst, int dst_width) {
-  SIMD_ALIGNED(uint8 src_row[kMaxStride * 2]);
-  assert(dst_width <= kMaxStride);
-  ScaleRowDown4Int_C(src_ptr, src_stride, src_row, dst_width * 2);
-  ScaleRowDown4Int_C(src_ptr + src_stride * 4, src_stride,
-                     src_row + kMaxStride,
-                     dst_width * 2);
-  ScaleRowDown2Int_C(src_row, kMaxStride, dst, dst_width);
-}
-
 static void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                              uint8* dst, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
@@ -2434,7 +2208,7 @@ static void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 }
 
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
@@ -2457,7 +2231,7 @@ static void ScaleRowDown34_0_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* d, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
@@ -2524,7 +2298,7 @@ static void ScaleFilterCols34_C(uint8* dst_ptr, const uint8* src_ptr,
 
 #define HAS_SCALEROWDOWN34_SSE2
 // Filter rows 0 and 1 together, 3 : 1
-static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr,
+static void ScaleRowDown34_0_Box_SSE2(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
@@ -2534,7 +2308,7 @@ static void ScaleRowDown34_0_Int_SSE2(const uint8* src_ptr,
 }
 
 // Filter rows 1 and 2 together, 1 : 1
-static void ScaleRowDown34_1_Int_SSE2(const uint8* src_ptr,
+static void ScaleRowDown34_1_Box_SSE2(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
@@ -2557,7 +2331,7 @@ static void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 }
 
 // 8x3 -> 3x1
-static void ScaleRowDown38_3_Int_C(const uint8* src_ptr,
+static void ScaleRowDown38_3_Box_C(const uint8* src_ptr,
                                    ptrdiff_t src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
@@ -2583,7 +2357,7 @@ static void ScaleRowDown38_3_Int_C(const uint8* src_ptr,
 }
 
 // 8x2 -> 3x1
-static void ScaleRowDown38_2_Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+static void ScaleRowDown38_2_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* dst_ptr, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   intptr_t stride = src_stride;
@@ -2657,35 +2431,40 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
                             FilterMode filtering) {
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering ? ScaleRowDown2Int_C : ScaleRowDown2_C;
+      filtering ? ScaleRowDown2Box_C : ScaleRowDown2_C;
+  int row_stride = src_stride << 1;
+  if (!filtering) {
+    src_ptr += src_stride;  // Point to odd rows.
+    src_stride = 0;
+  }
+
 #if defined(HAS_SCALEROWDOWN2_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Int_NEON : ScaleRowDown2_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16)) {
+    ScaleRowDown2 = filtering ? ScaleRowDown2Box_NEON : ScaleRowDown2_NEON;
   }
 #elif defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Int_Unaligned_SSE2 :
+    ScaleRowDown2 = filtering ? ScaleRowDown2Box_Unaligned_SSE2 :
         ScaleRowDown2_Unaligned_SSE2;
-    if (IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
+    if (IS_ALIGNED(src_ptr, 16) &&
+        IS_ALIGNED(src_stride, 16) && IS_ALIGNED(row_stride, 16) &&
         IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
-      ScaleRowDown2 = filtering ? ScaleRowDown2Int_SSE2 : ScaleRowDown2_SSE2;
+      ScaleRowDown2 = filtering ? ScaleRowDown2Box_SSE2 : ScaleRowDown2_SSE2;
     }
   }
 #elif defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
-      IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_ptr, 4) &&
+      IS_ALIGNED(src_stride, 4) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
     ScaleRowDown2 = filtering ?
-        ScaleRowDown2Int_MIPS_DSPR2 : ScaleRowDown2_MIPS_DSPR2;
+        ScaleRowDown2Box_MIPS_DSPR2 : ScaleRowDown2_MIPS_DSPR2;
   }
 #endif
 
-  src_ptr += src_stride;  // Point to odd rows.
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
-    src_ptr += (src_stride << 1);
+    src_ptr += row_stride;
     dst_ptr += dst_stride;
   }
 }
@@ -2701,58 +2480,34 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
                             FilterMode filtering) {
   void (*ScaleRowDown4)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering ? ScaleRowDown4Int_C : ScaleRowDown4_C;
+      filtering ? ScaleRowDown4Box_C : ScaleRowDown4_C;
+  int row_stride = src_stride << 2;
+  if (!filtering) {
+    src_ptr += src_stride * 2;  // Point to row 2.
+    src_stride = 0;
+  }
 #if defined(HAS_SCALEROWDOWN4_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(dst_width, 4)) {
-    ScaleRowDown4 = filtering ? ScaleRowDown4Int_NEON : ScaleRowDown4_NEON;
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
+    ScaleRowDown4 = filtering ? ScaleRowDown4Box_NEON : ScaleRowDown4_NEON;
   }
 #elif defined(HAS_SCALEROWDOWN4_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst_width, 8) &&
+      IS_ALIGNED(dst_width, 8) && IS_ALIGNED(row_stride, 16) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
-    ScaleRowDown4 = filtering ? ScaleRowDown4Int_SSE2 : ScaleRowDown4_SSE2;
+    ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSE2 : ScaleRowDown4_SSE2;
   }
 #elif defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
     ScaleRowDown4 = filtering ?
-        ScaleRowDown4Int_MIPS_DSPR2 : ScaleRowDown4_MIPS_DSPR2;
+        ScaleRowDown4Box_MIPS_DSPR2 : ScaleRowDown4_MIPS_DSPR2;
   }
 #endif
 
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown4(src_ptr, src_stride, dst_ptr, dst_width);
-    src_ptr += (src_stride << 2);
-    dst_ptr += dst_stride;
-  }
-}
-
-// Scale plane, 1/8
-// This is an optimized version for scaling down a plane to 1/8
-// of its original size.
-
-static void ScalePlaneDown8(int /* src_width */, int /* src_height */,
-                            int dst_width, int dst_height,
-                            int src_stride, int dst_stride,
-                            const uint8* src_ptr, uint8* dst_ptr,
-                            FilterMode filtering) {
-  void (*ScaleRowDown8)(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) =
-      filtering && (dst_width <= kMaxStride) ?
-      ScaleRowDown8Int_C : ScaleRowDown8_C;
-#if defined(HAS_SCALEROWDOWN8_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(dst_width, 4) &&
-      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
-    ScaleRowDown8 = filtering ? ScaleRowDown8Int_SSE2 : ScaleRowDown8_SSE2;
-  }
-#endif
-
-  for (int y = 0; y < dst_height; ++y) {
-    ScaleRowDown8(src_ptr, src_stride, dst_ptr, dst_width);
-    src_ptr += (src_stride << 3);
+    src_ptr += row_stride;
     dst_ptr += dst_stride;
   }
 }
@@ -2773,8 +2528,8 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
     ScaleRowDown34_0 = ScaleRowDown34_C;
     ScaleRowDown34_1 = ScaleRowDown34_C;
   } else {
-    ScaleRowDown34_0 = ScaleRowDown34_0_Int_C;
-    ScaleRowDown34_1 = ScaleRowDown34_1_Int_C;
+    ScaleRowDown34_0 = ScaleRowDown34_0_Box_C;
+    ScaleRowDown34_1 = ScaleRowDown34_1_Box_C;
   }
 #if defined(HAS_SCALEROWDOWN34_NEON)
   if (TestCpuFlag(kCpuHasNEON) && (dst_width % 24 == 0)) {
@@ -2782,16 +2537,16 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
       ScaleRowDown34_0 = ScaleRowDown34_NEON;
       ScaleRowDown34_1 = ScaleRowDown34_NEON;
     } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Int_NEON;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Int_NEON;
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_NEON;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_NEON;
     }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && (dst_width % 24 == 0) &&
       IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) && filtering) {
-    ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSE2;
-    ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSE2;
+    ScaleRowDown34_0 = ScaleRowDown34_0_Box_SSE2;
+    ScaleRowDown34_1 = ScaleRowDown34_1_Box_SSE2;
   }
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
@@ -2801,8 +2556,8 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
       ScaleRowDown34_0 = ScaleRowDown34_SSSE3;
       ScaleRowDown34_1 = ScaleRowDown34_SSSE3;
     } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Int_SSSE3;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Int_SSSE3;
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_SSSE3;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_SSSE3;
     }
   }
 #endif
@@ -2814,8 +2569,8 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
       ScaleRowDown34_0 = ScaleRowDown34_MIPS_DSPR2;
       ScaleRowDown34_1 = ScaleRowDown34_MIPS_DSPR2;
     } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Int_MIPS_DSPR2;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Int_MIPS_DSPR2;
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_MIPS_DSPR2;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_MIPS_DSPR2;
     }
   }
 #endif
@@ -2874,8 +2629,8 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
     ScaleRowDown38_3 = ScaleRowDown38_C;
     ScaleRowDown38_2 = ScaleRowDown38_C;
   } else {
-    ScaleRowDown38_3 = ScaleRowDown38_3_Int_C;
-    ScaleRowDown38_2 = ScaleRowDown38_2_Int_C;
+    ScaleRowDown38_3 = ScaleRowDown38_3_Box_C;
+    ScaleRowDown38_2 = ScaleRowDown38_2_Box_C;
   }
 #if defined(HAS_SCALEROWDOWN38_NEON)
   if (TestCpuFlag(kCpuHasNEON) && (dst_width % 12 == 0)) {
@@ -2883,8 +2638,8 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
       ScaleRowDown38_3 = ScaleRowDown38_NEON;
       ScaleRowDown38_2 = ScaleRowDown38_NEON;
     } else {
-      ScaleRowDown38_3 = ScaleRowDown38_3_Int_NEON;
-      ScaleRowDown38_2 = ScaleRowDown38_2_Int_NEON;
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_NEON;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_NEON;
     }
   }
 #elif defined(HAS_SCALEROWDOWN38_SSSE3)
@@ -2894,8 +2649,8 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
       ScaleRowDown38_3 = ScaleRowDown38_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_SSSE3;
     } else {
-      ScaleRowDown38_3 = ScaleRowDown38_3_Int_SSSE3;
-      ScaleRowDown38_2 = ScaleRowDown38_2_Int_SSSE3;
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_SSSE3;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_SSSE3;
     }
   }
 #elif defined(HAS_SCALEROWDOWN38_MIPS_DSPR2)
@@ -2906,8 +2661,8 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
       ScaleRowDown38_3 = ScaleRowDown38_MIPS_DSPR2;
       ScaleRowDown38_2 = ScaleRowDown38_MIPS_DSPR2;
     } else {
-      ScaleRowDown38_3 = ScaleRowDown38_3_Int_MIPS_DSPR2;
-      ScaleRowDown38_2 = ScaleRowDown38_2_Int_MIPS_DSPR2;
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_MIPS_DSPR2;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_MIPS_DSPR2;
     }
   }
 #endif
@@ -3329,11 +3084,6 @@ void ScalePlane(const uint8* src, int src_stride,
                filtering != kFilterBilinear) {
       // optimized, 1/4
       ScalePlaneDown4(src_width, src_height, dst_width, dst_height,
-                      src_stride, dst_stride, src, dst, filtering);
-    } else if (8 * dst_width == src_width && 8 * dst_height == src_height &&
-               filtering != kFilterBilinear) {
-      // optimized, 1/8
-      ScalePlaneDown8(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);
     } else {
       // Arbitrary downsample

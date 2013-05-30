@@ -76,7 +76,7 @@ void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   );
 }
 
-void ScaleRowDown2Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                  uint8* dst, int dst_width) {
   const uint8* t = src_ptr + src_stride;
 
@@ -230,7 +230,7 @@ void ScaleRowDown4_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   );
 }
 
-void ScaleRowDown4Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown4Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                         uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
   const uint8* s1 = src_ptr + stride;
@@ -355,7 +355,7 @@ void ScaleRowDown34_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   );
 }
 
-void ScaleRowDown34_0_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown34_0_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* d, int dst_width) {
   __asm__ __volatile__ (
       ".set push                                         \n"
@@ -410,7 +410,7 @@ void ScaleRowDown34_0_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown34_1_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown34_1_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* d, int dst_width) {
   __asm__ __volatile__ (
       ".set push                                           \n"
@@ -506,7 +506,7 @@ void ScaleRowDown38_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   );
 }
 
-void ScaleRowDown38_2_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown38_2_Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                                      uint8* dst_ptr, int dst_width) {
   intptr_t stride = src_stride;
   const uint8* t = src_ptr + stride;
@@ -558,7 +558,7 @@ void ScaleRowDown38_2_Int_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown38_3_Int_MIPS_DSPR2(const uint8* src_ptr,
+void ScaleRowDown38_3_Box_MIPS_DSPR2(const uint8* src_ptr,
                                      ptrdiff_t src_stride,
                                      uint8* dst_ptr, int dst_width) {
   intptr_t stride = src_stride;

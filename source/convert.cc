@@ -137,15 +137,15 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEROWDOWN2_NEON
-void ScaleRowDown2Int_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
 #elif !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 
-void ScaleRowDown2Int_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
 #endif
-void ScaleRowDown2Int_C(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 
 LIBYUV_API
@@ -173,11 +173,11 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   }
   int halfwidth = (width + 1) >> 1;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) = ScaleRowDown2Int_C;
+                        uint8* dst_ptr, int dst_width) = ScaleRowDown2Box_C;
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(halfwidth, 16)) {
-    ScaleRowDown2 = ScaleRowDown2Int_NEON;
+    ScaleRowDown2 = ScaleRowDown2Box_NEON;
   }
 #elif defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
@@ -186,7 +186,7 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
       IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
       IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
       IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    ScaleRowDown2 = ScaleRowDown2Int_SSE2;
+    ScaleRowDown2 = ScaleRowDown2Box_SSE2;
   }
 #endif
 
