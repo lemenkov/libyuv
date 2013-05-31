@@ -1120,29 +1120,33 @@ static void ScaleARGB(const uint8* src, int src_stride,
   }
 
   // Special case for integer step values.
-  if (((dx | dy) & 0xffff) == 0 && dx && dy) {
-    // Optimized even scale down. ie 2, 4, 6, 8, 10x.
-    if (!(dx & 0x10000) && !(dy & 0x10000)) {
-      if ((dx >> 16) == 2) {
-        // Optimized 1/2 horizontal.
-        ScaleARGBDown2(src_width, src_height, clip_width, clip_height,
-                       src_stride, dst_stride, src, dst,
-                       x, dx, y, dy, filtering);
+  if (((dx | dy) & 0xffff) == 0) {
+    if (!dx || !dy) {
+      filtering = kFilterNone;
+    } else {
+      // Optimized even scale down. ie 2, 4, 6, 8, 10x.
+      if (!(dx & 0x10000) && !(dy & 0x10000)) {
+        if ((dx >> 16) == 2) {
+          // Optimized 1/2 horizontal.
+          ScaleARGBDown2(src_width, src_height, clip_width, clip_height,
+                         src_stride, dst_stride, src, dst,
+                         x, dx, y, dy, filtering);
+          return;
+        }
+        ScaleARGBDownEven(src_width, src_height, clip_width, clip_height,
+                          src_stride, dst_stride, src, dst,
+                          x, dx, y, dy, filtering);
         return;
       }
-      ScaleARGBDownEven(src_width, src_height, clip_width, clip_height,
-                        src_stride, dst_stride, src, dst,
-                        x, dx, y, dy, filtering);
-      return;
-    }
-    // Optimized odd scale down. ie 3, 5, 7, 9x.
-    if ((dx & 0x10000) && (dy & 0x10000)) {
-      filtering = kFilterNone;
-      if (dst_width == src_width && dst_height == src_height) {
-        // Straight copy.
-        ARGBCopy(src + (y >> 16) * src_stride + (x >> 16) * 4, src_stride,
-                 dst, dst_stride, clip_width, clip_height);
-        return;
+      // Optimized odd scale down. ie 3, 5, 7, 9x.
+      if ((dx & 0x10000) && (dy & 0x10000)) {
+        filtering = kFilterNone;
+        if (dst_width == src_width && dst_height == src_height) {
+          // Straight copy.
+          ARGBCopy(src + (y >> 16) * src_stride + (x >> 16) * 4, src_stride,
+                   dst, dst_stride, clip_width, clip_height);
+          return;
+        }
       }
     }
   }
