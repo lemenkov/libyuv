@@ -1120,7 +1120,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
   }
 
   // Special case for integer step values.
-  if (((dx | dy) & 0xffff) == 0) {
+  if (((dx | dy) & 0xffff) == 0 && dx && dy) {
     // Optimized even scale down. ie 2, 4, 6, 8, 10x.
     if (!(dx & 0x10000) && !(dy & 0x10000)) {
       if ((dx >> 16) == 2) {
