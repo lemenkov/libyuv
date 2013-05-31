@@ -1163,6 +1163,7 @@ int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
   if (!src_argb || src_width == 0 || src_height == 0 ||
       !dst_argb || dst_width <= 0 || dst_height <= 0 ||
       clip_x < 0 || clip_y < 0 ||
+      src_width > 32767 || src_height > 32767 ||
       (clip_x + clip_width) > dst_width ||
       (clip_y + clip_height) > dst_height) {
     return -1;
@@ -1181,7 +1182,8 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int dst_width, int dst_height,
               FilterMode filtering) {
   if (!src_argb || src_width == 0 || src_height == 0 ||
-      !dst_argb || dst_width <= 0 || dst_height <= 0) {
+      !dst_argb || dst_width <= 0 || dst_height <= 0 ||
+      src_width > 32767 || src_height > 32767) {
     return -1;
   }
   ScaleARGB(src_argb, src_stride_argb, src_width, src_height,

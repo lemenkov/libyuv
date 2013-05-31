@@ -387,6 +387,9 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
                 uint8* dst_bayer, int dst_stride_bayer,
                 int width, int height,
                 uint32 dst_fourcc_bayer) {
+  if (width * 4 > kMaxStride) {
+    return -1;  // Size too large for row buffer
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;

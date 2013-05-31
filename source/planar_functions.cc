@@ -939,7 +939,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = NV12ToRGB565Row_C;
 #if defined(HAS_NV12TORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width <= kMaxStride * 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
     NV12ToRGB565Row = NV12ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       NV12ToRGB565Row = NV12ToRGB565Row_SSSE3;
@@ -986,7 +986,7 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = NV21ToRGB565Row_C;
 #if defined(HAS_NV21TORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width <= kMaxStride * 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
     NV21ToRGB565Row = NV21ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       NV21ToRGB565Row = NV21ToRGB565Row_SSSE3;

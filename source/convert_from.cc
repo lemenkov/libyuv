@@ -886,7 +886,7 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = I422ToARGB1555Row_C;
 #if defined(HAS_I422TOARGB1555ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width <= kMaxStride * 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
     I422ToARGB1555Row = I422ToARGB1555Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       I422ToARGB1555Row = I422ToARGB1555Row_SSSE3;
@@ -937,7 +937,7 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = I422ToARGB4444Row_C;
 #if defined(HAS_I422TOARGB4444ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width <= kMaxStride * 4) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
     I422ToARGB4444Row = I422ToARGB4444Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       I422ToARGB4444Row = I422ToARGB4444Row_SSSE3;
@@ -989,7 +989,7 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
 #if defined(HAS_I422TORGB565ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8
 #if defined(__x86_64__) || defined(__i386__)
-      && width <= kMaxStride * 4
+      && width * 4 <= kMaxStride
 #endif
       ) {
     I422ToRGB565Row = I422ToRGB565Row_Any_SSSE3;

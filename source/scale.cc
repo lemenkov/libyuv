@@ -2299,7 +2299,8 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               int dst_width, int dst_height,
               FilterMode filtering) {
   if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
-      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0 ||
+      src_width > 32767 || src_height > 32767) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2362,7 +2363,8 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int dst_width, int dst_height,
           bool interpolate) {
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0 ||
+      src_width > 32767 || src_height > 32767) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2423,6 +2425,7 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
                 bool interpolate) {
   if (!src || src_width <= 0 || src_height <= 0 ||
       !dst || dst_width <= 0 || dst_height <= 0 || dst_yoffset < 0 ||
+      src_width > 32767 || src_height > 32767 ||
       dst_yoffset >= dst_height) {
     return -1;
   }
