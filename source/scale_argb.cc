@@ -744,7 +744,11 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   assert(dx == 65536 * 2);  // Test scale factor of 2.
   assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
   // Advance to odd row / even column.
-  src_argb += (y >> 16) * src_stride + ((x >> 16) - 1) * 4;
+  if (filtering) {
+    src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
+  } else {
+    src_argb += (y >> 16) * src_stride + ((x >> 16) - 1) * 4;
+  }
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) =
