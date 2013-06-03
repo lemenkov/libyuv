@@ -6028,6 +6028,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
+#ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1
 __declspec(naked) __declspec(align(16))
 void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
@@ -6138,6 +6139,7 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
+#endif  // HAS_INTERPOLATEROW_SSE2
 
 // Bilinear filter 16x2 -> 16x1
 __declspec(naked) __declspec(align(16))
@@ -6244,6 +6246,7 @@ void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
+#ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1
 __declspec(naked) __declspec(align(16))
 void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
@@ -6354,6 +6357,7 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
+#endif  // HAS_INTERPOLATEROW_SSE2
 
 __declspec(naked) __declspec(align(16))
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
