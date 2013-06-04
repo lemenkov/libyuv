@@ -21,6 +21,7 @@ static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
 
+// Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
                           FilterMode f, int benchmark_iterations) {
@@ -103,347 +104,6 @@ static int ARGBTestFilter(int src_width, int src_height,
   free_aligned_buffer_64(dst_argb_opt)
   free_aligned_buffer_64(src_argb)
   return max_diff;
-}
-
-// TODO(fbarchard): Consider TEST_P to iterate through test cases.
-
-TEST_F(libyuvTest, ARGBScaleDownBy2_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 2;
-  const int dst_height = Abs(src_height) / 2;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy2_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 2;
-  const int dst_height = Abs(src_height) / 2;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy1_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width);
-  const int dst_height = Abs(src_height);
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy1_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width);
-  const int dst_height = Abs(src_height);
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy4_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 4;
-  const int dst_height = Abs(src_height) / 4;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy4_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 4;
-  const int dst_height = Abs(src_height) / 4;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy5_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 5;
-  const int dst_height = Abs(src_height) / 5;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy5_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 5;
-  const int dst_height = Abs(src_height) / 5;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy8_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 8;
-  const int dst_height = Abs(src_height) / 8;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy8_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 8;
-  const int dst_height = Abs(src_height) / 8;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy16_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 16;
-  const int dst_height = Abs(src_height) / 16;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy16_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 16;
-  const int dst_height = Abs(src_height) / 16;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy23_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 2 / 3;
-  const int dst_height = Abs(src_height) * 2 / 3;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy23_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 2 / 3;
-  const int dst_height = Abs(src_height) * 2 / 3;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy34_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 3 / 4;
-  const int dst_height = Abs(src_height) * 3 / 4;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy34_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 3 / 4;
-  const int dst_height = Abs(src_height) * 3 / 4;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy38_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = Abs(src_width) * 3 / 8;
-  int dst_height = Abs(src_height) * 3 / 8;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleDownBy38_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = Abs(src_width) * 3 / 8;
-  int dst_height = Abs(src_height) * 3 / 8;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleTo1366x768_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1366;
-  int dst_height = 768;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleTo1366x768_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1366;
-  int dst_height = 768;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-
-TEST_F(libyuvTest, ARGBScaleTo1280x720_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1280;
-  int dst_height = 720;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleTo1280x720_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1280;
-  int dst_height = 720;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleTo853x480_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 853;
-  int dst_height = 480;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleTo853x480_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 853;
-  int dst_height = 480;
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
-}
-
-TEST_F(libyuvTest, ARGBScaleFrom640x360_None) {
-  int src_width = 640;
-  int src_height = 360;
-  int dst_width = Abs(benchmark_width_);
-  int dst_height = Abs(benchmark_height_);
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterNone,
-                                benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleFrom640x360_Bilinear) {
-  int src_width = 640;
-  int src_height = 360;
-  int dst_width = Abs(benchmark_width_);
-  int dst_height = Abs(benchmark_height_);
-
-  int max_diff = ARGBTestFilter(src_width, src_height,
-                                dst_width, dst_height,
-                                kFilterBilinear,
-                                benchmark_iterations_);
-  EXPECT_LE(max_diff, 2);
 }
 
 static const int kTileX = 16;
@@ -545,343 +205,77 @@ static int ARGBClipTestFilter(int src_width, int src_height,
   return max_diff;
 }
 
-TEST_F(libyuvTest, ARGBScaleClipDownBy1_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width);
-  const int dst_height = Abs(src_height);
+#define TEST_FACTOR1(name, filter, factor, max_diff)                           \
+    TEST_F(libyuvTest, ARGBScaleDownBy##name##_##filter) {                     \
+      int diff = ARGBTestFilter(benchmark_width_, benchmark_height_,           \
+                                Abs(benchmark_width_) / factor,                \
+                                Abs(benchmark_height_) / factor,               \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }                                                                          \
+    TEST_F(libyuvTest, ARGBScaleDownClipBy##name##_##filter) {                 \
+      int diff = ARGBClipTestFilter(benchmark_width_, benchmark_height_,       \
+                                Abs(benchmark_width_) / factor,                \
+                                Abs(benchmark_height_) / factor,               \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }
 
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
+// Test a scale factor with all 2 filters.  Expect unfiltered to be exact, but
+// filtering is different fixed point implementations for SSSE3, Neon and C.
+#define TEST_FACTOR(name, factor)                                              \
+    TEST_FACTOR1(name, None, factor, 0)                                        \
+    TEST_FACTOR1(name, Bilinear, factor, 2)
 
-TEST_F(libyuvTest, ARGBScaleClipDownBy1_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width);
-  const int dst_height = Abs(src_height);
+// TODO(fbarchard): ScaleDownBy1 should be lossless, but Box has error of 2.
+TEST_FACTOR(1, 1)
+TEST_FACTOR(2, 2)
+TEST_FACTOR(4, 4)
+TEST_FACTOR(5, 5)
+TEST_FACTOR(8, 8)
+TEST_FACTOR(16, 16)
+TEST_FACTOR(2by3, 2 / 3)
+TEST_FACTOR(3by4, 3 / 4)
+TEST_FACTOR(3by8, 3 / 8)
+#undef TEST_FACTOR1
+#undef TEST_FACTOR
 
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
+#define TEST_SCALETO1(width, height, filter, max_diff)                         \
+    TEST_F(libyuvTest, ARGBScaleTo##width##x##height##_##filter) {             \
+      int diff = ARGBTestFilter(benchmark_width_, benchmark_height_,           \
+                                width, height,                                 \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }                                                                          \
+    TEST_F(libyuvTest, ARGBScaleFrom##width##x##height##_##filter) {           \
+      int diff = ARGBTestFilter(width, height,                                 \
+                                Abs(benchmark_width_), Abs(benchmark_height_), \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }                                                                          \
+    TEST_F(libyuvTest, ARGBScaleClipTo##width##x##height##_##filter) {         \
+      int diff = ARGBClipTestFilter(benchmark_width_, benchmark_height_,       \
+                                width, height,                                 \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }                                                                          \
+    TEST_F(libyuvTest, ARGBScaleClipFrom##width##x##height##_##filter) {       \
+      int diff = ARGBClipTestFilter(width, height,                             \
+                                Abs(benchmark_width_), Abs(benchmark_height_), \
+                                kFilter##filter, benchmark_iterations_);       \
+      EXPECT_LE(diff, max_diff);                                               \
+    }
 
-TEST_F(libyuvTest, ARGBScaleClipDownBy2_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 2;
-  const int dst_height = Abs(src_height) / 2;
+// Test scale to a specified size with all 3 filters.
+#define TEST_SCALETO(width, height)                                            \
+    TEST_SCALETO1(width, height, None, 0)                                      \
+    TEST_SCALETO1(width, height, Bilinear, 2)
 
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy2_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 2;
-  const int dst_height = Abs(src_height) / 2;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy4_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 4;
-  const int dst_height = Abs(src_height) / 4;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy4_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 4;
-  const int dst_height = Abs(src_height) / 4;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy5_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 5;
-  const int dst_height = Abs(src_height) / 5;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy5_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 5;
-  const int dst_height = Abs(src_height) / 5;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy8_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 8;
-  const int dst_height = Abs(src_height) / 8;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy8_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 8;
-  const int dst_height = Abs(src_height) / 8;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy16_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 16;
-  const int dst_height = Abs(src_height) / 16;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy16_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) / 16;
-  const int dst_height = Abs(src_height) / 16;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy23_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 2 / 3;
-  const int dst_height = Abs(src_height) * 2 / 3;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy23_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 2 / 3;
-  const int dst_height = Abs(src_height) * 2 / 3;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy34_None) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 3 / 4;
-  const int dst_height = Abs(src_height) * 3 / 4;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy34_Bilinear) {
-  const int src_width = benchmark_width_;
-  const int src_height = benchmark_height_;
-  const int dst_width = Abs(src_width) * 3 / 4;
-  const int dst_height = Abs(src_height) * 3 / 4;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy38_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = Abs(src_width) * 3 / 8;
-  int dst_height = Abs(src_height) * 3 / 8;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipDownBy38_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = Abs(src_width) * 3 / 8;
-  int dst_height = Abs(src_height) * 3 / 8;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipTo1366x768_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1366;
-  int dst_height = 768;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipTo1366x768_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1366;
-  int dst_height = 768;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-
-TEST_F(libyuvTest, ARGBScaleClipTo1280x720_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1280;
-  int dst_height = 720;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipTo1280x720_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 1280;
-  int dst_height = 720;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipTo853x480_None) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 853;
-  int dst_height = 480;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipTo853x480_Bilinear) {
-  int src_width = benchmark_width_;
-  int src_height = benchmark_height_;
-  int dst_width = 853;
-  int dst_height = 480;
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipFrom640x360_None) {
-  int src_width = 640;
-  int src_height = 360;
-  int dst_width = Abs(benchmark_width_);
-  int dst_height = Abs(benchmark_height_);
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterNone,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
-
-TEST_F(libyuvTest, ARGBScaleClipFrom640x360_Bilinear) {
-  int src_width = 640;
-  int src_height = 360;
-  int dst_width = Abs(benchmark_width_);
-  int dst_height = Abs(benchmark_height_);
-
-  int max_diff = ARGBClipTestFilter(src_width, src_height,
-                                    dst_width, dst_height,
-                                    kFilterBilinear,
-                                    benchmark_iterations_);
-  EXPECT_EQ(0, max_diff);
-}
+TEST_SCALETO(640, 360)
+TEST_SCALETO(853, 480)
+TEST_SCALETO(1280, 720)
+TEST_SCALETO(1366, 768)
+#undef TEST_SCALETO1
+#undef TEST_SCALETO
 
 }  // namespace libyuv
