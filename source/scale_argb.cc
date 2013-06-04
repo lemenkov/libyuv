@@ -43,7 +43,7 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
 #endif
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_SCALEARGBROWDOWN2_SSE2
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
@@ -814,7 +814,7 @@ static void ScaleARGBDownEven(int src_width, int src_height,
   }
 }
 
-// ScaleARGB ARGB to/from any dimensions, with bilinear interpolation.
+// Scale ARGB down with bilinear interpolation.
 static void ScaleARGBBilinearDown(int src_height,
                                   int dst_width, int dst_height,
                                   int src_stride, int dst_stride,
@@ -898,7 +898,7 @@ static void ScaleARGBBilinearDown(int src_height,
   }
 }
 
-// ScaleARGB ARGB to/from any dimensions, with bilinear interpolation.
+// Scale ARGB up with bilinear interpolation.
 static void ScaleARGBBilinearUp(int src_width, int src_height,
                                 int dst_width, int dst_height,
                                 int src_stride, int dst_stride,

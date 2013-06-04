@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 // This module is for Visual C x86.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef HAS_ARGBTOYROW_SSSE3
 
@@ -6602,8 +6602,7 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
     ret
   }
 }
-
-#endif  // _M_IX86
+#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef __cplusplus
 }  // extern "C"

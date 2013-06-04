@@ -16,7 +16,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 __declspec(naked) __declspec(align(16))
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
@@ -184,7 +184,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     ret
   }
 }
-#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef __cplusplus
 }  // extern "C"

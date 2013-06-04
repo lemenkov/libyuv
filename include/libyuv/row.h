@@ -128,7 +128,7 @@ extern "C" {
 
 // The following are Windows only.
 // TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_ARGBCOLORTABLEROW_X86
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700

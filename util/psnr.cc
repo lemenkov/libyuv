@@ -79,7 +79,7 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
     : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10");
   return sse;
 }
-#elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_SUMSQUAREERROR_SSE2
 __declspec(naked)
 static uint32 SumSquareError_SSE2(const uint8* /*src_a*/,

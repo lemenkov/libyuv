@@ -74,7 +74,7 @@ void CpuId(int cpu_info[4], int) {
 static uint32 XGetBV(unsigned int xcr) {
   return static_cast<uint32>(_xgetbv(xcr));
 }
-#elif !defined(__CLR_VER) && defined(_M_IX86)
+#elif !defined(__CLR_VER) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_XGETBV
 __declspec(naked) __declspec(align(16))
 static uint32 XGetBV(unsigned int xcr) {

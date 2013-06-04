@@ -72,7 +72,7 @@ void TransposeUVWx8_MIPS_DSPR2(const uint8* src, int src_stride,
                                int width);
 #endif  // defined(__mips__)
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_TRANSPOSE_WX8_SSSE3
 __declspec(naked) __declspec(align(16))
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
