@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "./psnr.h"
+#include "./psnr.h"  // NOLINT
 
 #include <math.h>
 
@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-typedef unsigned int uint32;     // NOLINT
+typedef unsigned int uint32;  // NOLINT
 #ifdef _MSC_VER
 typedef unsigned __int64 uint64;
 #else  // COMPILER_MSVC
