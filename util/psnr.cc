@@ -245,4 +245,3 @@ double ComputeSumSquareError(const uint8* src_a,
 #ifdef __cplusplus
 }  // extern "C"
 #endif
-
