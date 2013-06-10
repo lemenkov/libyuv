@@ -25,6 +25,7 @@ static __inline int Abs(int v) {
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
                       FilterMode f, int benchmark_iterations) {
+  int i, j;
   const int b = 128;
   int src_width_uv = (Abs(src_width) + 1) >> 1;
   int src_height_uv = (Abs(src_height) + 1) >> 1;
@@ -38,6 +39,10 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_page_end(src_y, src_y_plane_size)
   align_buffer_page_end(src_u, src_uv_plane_size)
   align_buffer_page_end(src_v, src_uv_plane_size)
+  srandom(time(NULL));
+  MemRandomize(src_y, src_y_plane_size);
+  MemRandomize(src_u, src_uv_plane_size);
+  MemRandomize(src_v, src_uv_plane_size);
 
   int dst_width_uv = (dst_width + 1) >> 1;
   int dst_height_uv = (dst_height + 1) >> 1;
@@ -48,22 +53,6 @@ static int TestFilter(int src_width, int src_height,
   int dst_stride_y = b * 2 + dst_width;
   int dst_stride_uv = b * 2 + dst_width_uv;
 
-  srandom(time(NULL));
-
-  int i, j;
-  for (i = b; i < (Abs(src_height) + b); ++i) {
-    for (j = b; j < (Abs(src_width) + b); ++j) {
-      src_y[(i * src_stride_y) + j] = (random() & 0xff);
-    }
-  }
-
-  for (i = b; i < (src_height_uv + b); ++i) {
-    for (j = b; j < (src_width_uv + b); ++j) {
-      src_u[(i * src_stride_uv) + j] = (random() & 0xff);
-      src_v[(i * src_stride_uv) + j] = (random() & 0xff);
-    }
-  }
-
   align_buffer_page_end(dst_y_c, dst_y_plane_size)
   align_buffer_page_end(dst_u_c, dst_uv_plane_size)
   align_buffer_page_end(dst_v_c, dst_uv_plane_size)
@@ -71,25 +60,6 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_page_end(dst_u_opt, dst_uv_plane_size)
   align_buffer_page_end(dst_v_opt, dst_uv_plane_size)
 
-  // Warm up both versions for consistent benchmarks.
-  MaskCpuFlags(0);  // Disable all CPU optimization.
-  I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
-            src_u + (src_stride_uv * b) + b, src_stride_uv,
-            src_v + (src_stride_uv * b) + b, src_stride_uv,
-            src_width, src_height,
-            dst_y_c + (dst_stride_y * b) + b, dst_stride_y,
-            dst_u_c + (dst_stride_uv * b) + b, dst_stride_uv,
-            dst_v_c + (dst_stride_uv * b) + b, dst_stride_uv,
-            dst_width, dst_height, f);
-  MaskCpuFlags(-1);  // Enable all CPU optimization.
-  I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
-            src_u + (src_stride_uv * b) + b, src_stride_uv,
-            src_v + (src_stride_uv * b) + b, src_stride_uv,
-            src_width, src_height,
-            dst_y_opt + (dst_stride_y * b) + b, dst_stride_y,
-            dst_u_opt + (dst_stride_uv * b) + b, dst_stride_uv,
-            dst_v_opt + (dst_stride_uv * b) + b, dst_stride_uv,
-            dst_width, dst_height, f);
 
   MaskCpuFlags(0);  // Disable all CPU optimization.
   double c_time = get_time();
@@ -101,7 +71,6 @@ static int TestFilter(int src_width, int src_height,
             dst_u_c + (dst_stride_uv * b) + b, dst_stride_uv,
             dst_v_c + (dst_stride_uv * b) + b, dst_stride_uv,
             dst_width, dst_height, f);
-
   c_time = (get_time() - c_time);
 
   MaskCpuFlags(-1);  // Enable all CPU optimization.
@@ -117,10 +86,11 @@ static int TestFilter(int src_width, int src_height,
               dst_width, dst_height, f);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
-
   // Report performance of C vs OPT
   printf("filter %d - %8d us C - %8d us OPT\n",
-         f, static_cast<int>(c_time * 1e6), static_cast<int>(opt_time * 1e6));
+         f,
+         static_cast<int>(c_time * 1e6),
+         static_cast<int>(opt_time * 1e6));
 
   // C version may be a little off from the optimized. Order of
   //  operations may introduce rounding somewhere. So do a difference

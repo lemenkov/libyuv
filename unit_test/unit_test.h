@@ -13,6 +13,8 @@
 
 #include <gtest/gtest.h>
 
+#include "libyuv/basic_types.h"
+
 #define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
@@ -58,6 +60,17 @@ static inline double get_time() {
   return t.tv_sec + t.tv_usec * 1e-6;
 }
 #endif
+
+static inline void MemRandomize(uint8* dst, int len) {
+  int i;
+  for (i = 0; i < len - 3; i += 4) {
+    *reinterpret_cast<uint32*>(dst) = random();
+    dst += 4;
+  }
+  for (; i < len; ++i) {
+    *dst++ = random();
+  }
+}
 
 class libyuvTest : public ::testing::Test {
  protected:

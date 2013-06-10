@@ -26,24 +26,17 @@ static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
                           FilterMode f, int benchmark_iterations) {
   const int b = 128;
+  int i, j;
   int src_argb_plane_size = (Abs(src_width) + b * 2) *
       (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
   align_buffer_64(src_argb, src_argb_plane_size)
-  memset(src_argb, 1, src_argb_plane_size);
+  srandom(time(NULL));
+  MemRandomize(src_argb, src_argb_plane_size);
 
   int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
-
-  srandom(time(NULL));
-
-  int i, j;
-  for (i = b; i < (Abs(src_height) + b); ++i) {
-    for (j = b; j < (Abs(src_width) + b) * 4; ++j) {
-      src_argb[(i * src_stride_argb) + j] = (random() & 0xff);
-    }
-  }
 
   align_buffer_64(dst_argb_c, dst_argb_plane_size)
   align_buffer_64(dst_argb_opt, dst_argb_plane_size)
