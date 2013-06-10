@@ -27,9 +27,9 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   asm volatile (
   "1:                                          \n"
     // load even pixels into q0, odd into q1
-    "vld2.u8    {q0, q1}, [%0]!                \n"
+    "vld2.8     {q0, q1}, [%0]!                \n"
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
-    "vst1.u8    {q1}, [%1]!                    \n"  // store odd pixels
+    "vst1.8     {q1}, [%1]!                    \n"  // store odd pixels
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst),              // %1
@@ -45,8 +45,8 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     // change the stride to row 2 pointer
     "add        %1, %0                         \n"
   "1:                                          \n"
-    "vld1.u8    {q0, q1}, [%0]!                \n"  // load row 1 and post inc
-    "vld1.u8    {q2, q3}, [%1]!                \n"  // load row 2 and post inc
+    "vld1.8     {q0, q1}, [%0]!                \n"  // load row 1 and post inc
+    "vld1.8     {q2, q3}, [%1]!                \n"  // load row 2 and post inc
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     "vpaddl.u8  q0, q0                         \n"  // row 1 add adjacent
     "vpaddl.u8  q1, q1                         \n"
@@ -54,7 +54,7 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "vpadal.u8  q1, q3                         \n"
     "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
     "vrshrn.u16 d1, q1, #2                     \n"
-    "vst1.u8    {q0}, [%2]!                    \n"
+    "vst1.8     {q0}, [%2]!                    \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(src_stride),       // %1
@@ -69,9 +69,9 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
   "1:                                          \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
     "subs         %2, %2, #8                   \n" // 8 processed per loop
-    "vst1.u8      {d2}, [%1]!                  \n"
+    "vst1.8       {d2}, [%1]!                  \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -88,10 +88,10 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "add        r5, r4, %3                     \n"
     "add        %3, r5, %3                     \n"
   "1:                                          \n"
-    "vld1.u8    {q0}, [%0]!                    \n"   // load up 16x4
-    "vld1.u8    {q1}, [r4]!                    \n"
-    "vld1.u8    {q2}, [r5]!                    \n"
-    "vld1.u8    {q3}, [%3]!                    \n"
+    "vld1.8     {q0}, [%0]!                    \n"   // load up 16x4
+    "vld1.8     {q1}, [r4]!                    \n"
+    "vld1.8     {q2}, [r5]!                    \n"
+    "vld1.8     {q3}, [%3]!                    \n"
     "subs       %2, %2, #4                     \n"
     "vpaddl.u8  q0, q0                         \n"
     "vpadal.u8  q0, q1                         \n"
@@ -100,7 +100,7 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "vpaddl.u16 q0, q0                         \n"
     "vrshrn.u32 d0, q0, #4                     \n"   // divide by 16 w/rounding
     "vmovn.u16  d0, q0                         \n"
-    "vst1.u32   {d0[0]}, [%1]!                 \n"
+    "vst1.32    {d0[0]}, [%1]!                 \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -118,10 +118,10 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
   "1:                                          \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
     "subs         %2, %2, #24                  \n"
     "vmov         d2, d3                       \n" // order d0, d1, d2
-    "vst3.u8      {d0, d1, d2}, [%1]!          \n"
+    "vst3.8       {d0, d1, d2}, [%1]!          \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -138,8 +138,8 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
   "1:                                          \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n" // src line 1
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n" // src line 1
     "subs         %2, %2, #24                  \n"
 
     // filter src line 0 with src line 1
@@ -175,7 +175,7 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
     "vmlal.u8     q8, d3, d24                  \n"
     "vqrshrn.u16  d2, q8, #2                   \n"
 
-    "vst3.u8      {d0, d1, d2}, [%1]!          \n"
+    "vst3.8       {d0, d1, d2}, [%1]!          \n"
 
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
@@ -194,8 +194,8 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
     "vmov.u8      d24, #3                      \n"
     "add          %3, %0                       \n"
   "1:                                          \n"
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n" // src line 0
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n" // src line 1
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n" // src line 1
     "subs         %2, %2, #24                  \n"
     // average src line 0 with src line 1
     "vrhadd.u8    q0, q0, q2                   \n"
@@ -214,7 +214,7 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
     "vmlal.u8     q3, d3, d24                  \n"
     "vqrshrn.u16  d2, q3, #2                   \n"
 
-    "vst3.u8      {d0, d1, d2}, [%1]!          \n"
+    "vst3.8       {d0, d1, d2}, [%1]!          \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -242,14 +242,14 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
                          ptrdiff_t /* src_stride */,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "vld1.u8      {q3}, [%3]                   \n"
+    "vld1.8       {q3}, [%3]                   \n"
   "1:                                          \n"
-    "vld1.u8      {d0, d1, d2, d3}, [%0]!      \n"
+    "vld1.8       {d0, d1, d2, d3}, [%0]!      \n"
     "subs         %2, %2, #12                  \n"
     "vtbl.u8      d4, {d0, d1, d2, d3}, d6     \n"
     "vtbl.u8      d5, {d0, d1, d2, d3}, d7     \n"
-    "vst1.u8      {d4}, [%1]!                  \n"
-    "vst1.u32     {d5[0]}, [%1]!               \n"
+    "vst1.8       {d4}, [%1]!                  \n"
+    "vst1.32      {d5[0]}, [%1]!               \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -264,9 +264,9 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "vld1.u16     {q13}, [%4]                  \n"
-    "vld1.u8      {q14}, [%5]                  \n"
-    "vld1.u8      {q15}, [%6]                  \n"
+    "vld1.16      {q13}, [%4]                  \n"
+    "vld1.8       {q14}, [%5]                  \n"
+    "vld1.8       {q15}, [%6]                  \n"
     "add          r4, %0, %3, lsl #1           \n"
     "add          %3, %0                       \n"
   "1:                                          \n"
@@ -275,9 +275,9 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     // d1 = 10 50 11 51 12 52 13 53
     // d2 = 20 60 21 61 22 62 23 63
     // d3 = 30 70 31 71 32 72 33 73
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n"
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n"
-    "vld4.u8      {d16, d17, d18, d19}, [r4]!  \n"
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n"
+    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n"
+    "vld4.8       {d16, d17, d18, d19}, [r4]!  \n"
     "subs         %2, %2, #12                  \n"
 
     // Shuffle the input data around to get align the data
@@ -354,8 +354,8 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "vtbl.u8      d3, {d0, d1, d2}, d28        \n"
     "vtbl.u8      d4, {d0, d1, d2}, d29        \n"
 
-    "vst1.u8      {d3}, [%1]!                  \n"
-    "vst1.u32     {d4[0]}, [%1]!               \n"
+    "vst1.8       {d3}, [%1]!                  \n"
+    "vst1.32      {d4[0]}, [%1]!               \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
@@ -374,8 +374,8 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "vld1.u16     {q13}, [%4]                  \n"
-    "vld1.u8      {q14}, [%5]                  \n"
+    "vld1.16      {q13}, [%4]                  \n"
+    "vld1.8       {q14}, [%5]                  \n"
     "add          %3, %0                       \n"
   "1:                                          \n"
 
@@ -383,8 +383,8 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     // d1 = 10 50 11 51 12 52 13 53
     // d2 = 20 60 21 61 22 62 23 63
     // d3 = 30 70 31 71 32 72 33 73
-    "vld4.u8      {d0, d1, d2, d3}, [%0]!      \n"
-    "vld4.u8      {d4, d5, d6, d7}, [%3]!      \n"
+    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n"
+    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n"
     "subs         %2, %2, #12                  \n"
 
     // Shuffle the input data around to get align the data
@@ -450,8 +450,8 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     "vtbl.u8      d3, {d0, d1, d2}, d28        \n"
     "vtbl.u8      d4, {d0, d1, d2}, d29        \n"
 
-    "vst1.u8      {d3}, [%1]!                  \n"
-    "vst1.u32     {d4[0]}, [%1]!               \n"
+    "vst1.8       {d3}, [%1]!                  \n"
+    "vst1.32      {d4[0]}, [%1]!               \n"
     "bgt          1b                           \n"
   : "+r"(src_ptr),       // %0
     "+r"(dst_ptr),       // %1
@@ -483,8 +483,8 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "vdup.8       d4, %4                       \n"
     // General purpose row blend.
   "1:                                          \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
+    "vld1.8       {q0}, [%1]!                  \n"
+    "vld1.8       {q1}, [%2]!                  \n"
     "subs         %3, %3, #16                  \n"
     "vmull.u8     q13, d0, d4                  \n"
     "vmull.u8     q14, d1, d4                  \n"
@@ -492,51 +492,51 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "vmlal.u8     q14, d3, d5                  \n"
     "vrshrn.u16   d0, q13, #8                  \n"
     "vrshrn.u16   d1, q14, #8                  \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
+    "vst1.8       {q0}, [%0]!                  \n"
     "bgt          1b                           \n"
     "b            99f                          \n"
 
     // Blend 25 / 75.
   "25:                                         \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
+    "vld1.8       {q0}, [%1]!                  \n"
+    "vld1.8       {q1}, [%2]!                  \n"
     "subs         %3, %3, #16                  \n"
     "vrhadd.u8    q0, q1                       \n"
     "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
+    "vst1.8       {q0}, [%0]!                  \n"
     "bgt          25b                          \n"
     "b            99f                          \n"
 
     // Blend 50 / 50.
   "50:                                         \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
-    "vld1.u8      {q1}, [%2]!                  \n"
+    "vld1.8       {q0}, [%1]!                  \n"
+    "vld1.8       {q1}, [%2]!                  \n"
     "subs         %3, %3, #16                  \n"
     "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
+    "vst1.8       {q0}, [%0]!                  \n"
     "bgt          50b                          \n"
     "b            99f                          \n"
 
     // Blend 75 / 25.
   "75:                                         \n"
-    "vld1.u8      {q1}, [%1]!                  \n"
-    "vld1.u8      {q0}, [%2]!                  \n"
+    "vld1.8       {q1}, [%1]!                  \n"
+    "vld1.8       {q0}, [%2]!                  \n"
     "subs         %3, %3, #16                  \n"
     "vrhadd.u8    q0, q1                       \n"
     "vrhadd.u8    q0, q1                       \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
+    "vst1.8       {q0}, [%0]!                  \n"
     "bgt          75b                          \n"
     "b            99f                          \n"
 
     // Blend 100 / 0 - Copy row unchanged.
   "100:                                        \n"
-    "vld1.u8      {q0}, [%1]!                  \n"
+    "vld1.8       {q0}, [%1]!                  \n"
     "subs         %3, %3, #16                  \n"
-    "vst1.u8      {q0}, [%0]!                  \n"
+    "vst1.8       {q0}, [%0]!                  \n"
     "bgt          100b                         \n"
 
   "99:                                         \n"
-    "vst1.u8      {d1[7]}, [%0]                \n"
+    "vst1.8       {d1[7]}, [%0]                \n"
   : "+r"(dst_ptr),          // %0
     "+r"(src_ptr),          // %1
     "+r"(src_stride),       // %2

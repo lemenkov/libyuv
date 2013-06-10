@@ -27,8 +27,8 @@ uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count) {
 
     ".p2align  2                               \n"
   "1:                                          \n"
-    "vld1.u8    {q0}, [%0]!                    \n"
-    "vld1.u8    {q1}, [%1]!                    \n"
+    "vld1.8     {q0}, [%0]!                    \n"
+    "vld1.8     {q1}, [%1]!                    \n"
     "subs       %2, %2, #16                    \n"
     "vsubl.u8   q2, d0, d2                     \n"
     "vsubl.u8   q3, d1, d3                     \n"
