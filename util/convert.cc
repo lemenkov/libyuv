@@ -21,10 +21,13 @@
 #include <string.h>
 
 #include "libyuv/convert.h"
+#include "libyuv/planar_functions.h"
 #include "libyuv/scale_argb.h"
 
 // options
 bool verbose = false;
+bool attenuate = false;
+bool unattenuate = false;
 int image_width = 0, image_height = 0;  // original width and height
 int dst_width = 0, dst_height = 0;  // new width and height
 int fileindex_org = 0;  // argv argument contains the original file name.
@@ -67,6 +70,8 @@ void PrintHelp(const char * program) {
   printf(" -f <filter> ............ 0 = point, 1 = bilinear (default).\n");
   printf(" -skip <src_argb> ....... Number of frame to skip of src_argb\n");
   printf(" -frames <num> .......... Number of frames to convert\n");
+  printf(" -attenuate ............. Attenuate the ARGB image\n");
+  printf(" -unattenuate ........... Unattenuate the ARGB image\n");
   printf(" -v ..................... verbose\n");
   printf(" -h ..................... this help\n");
   exit(0);
@@ -77,6 +82,10 @@ void ParseOptions(int argc, const char* argv[]) {
   for (int c = 1; c < argc; ++c) {
     if (!strcmp(argv[c], "-v")) {
       verbose = true;
+    } else if (!strcmp(argv[c], "-attenuate")) {
+      attenuate = true;
+    } else if (!strcmp(argv[c], "-unattenuate")) {
+      unattenuate = true;
     } else if (!strcmp(argv[c], "-h") || !strcmp(argv[c], "-help")) {
       PrintHelp(argv[0]);
     } else if (!strcmp(argv[c], "-s") && c + 2 < argc) {
@@ -261,6 +270,16 @@ int main(int argc, const char* argv[]) {
                              static_cast<size_t>(org_size), file_org);
     if (bytes_org < static_cast<size_t>(org_size))
       break;
+
+    // TODO(fbarchard): Attenuate doesnt need to know dimensions.
+    // ARGB attenuate frame
+    if (org_is_argb && attenuate) {
+      libyuv::ARGBAttenuate(ch_org, 0, ch_org, 0, org_size / 4, 1);
+    }
+    // ARGB unattenuate frame
+    if (org_is_argb && unattenuate) {
+      libyuv::ARGBUnattenuate(ch_org, 0, ch_org, 0, org_size / 4, 1);
+    }
 
     for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
       // Scale YUV or ARGB frame.
