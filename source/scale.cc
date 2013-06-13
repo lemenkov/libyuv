@@ -2015,7 +2015,7 @@ static void ScalePlaneBox(int src_width, int src_height,
     dx = -dx;
     src_width = -src_width;
   }
-  int maxy = (src_height << 16);
+  const int max_y = (src_height << 16);
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxStride) ||
       dst_height * 2 > src_height) {
     uint8* dst = dst_ptr;
@@ -2023,8 +2023,8 @@ static void ScalePlaneBox(int src_width, int src_height,
       int iy = y >> 16;
       const uint8* src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > maxy) {
-        y = maxy;
+      if (y > max_y) {
+        y = max_y;
       }
       int boxheight = (y >> 16) - iy;
       ScalePlaneBoxRow_C(dst_width, boxheight,
@@ -2141,10 +2141,10 @@ void ScalePlaneBilinear(int src_width, int src_height,
   } else if (dst_height > 1) {
     dy = ((src_height - 1) << 16) / (dst_height - 1);
   }
-  int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
   for (int j = 0; j < dst_height; ++j) {
-    if (y > maxy) {
-      y = maxy;
+    if (y > max_y) {
+      y = max_y;
     }
     int yi = y >> 16;
     int yf = (y >> 8) & 255;

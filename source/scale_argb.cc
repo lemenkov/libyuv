@@ -883,10 +883,10 @@ static void ScaleARGBBilinearDown(int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
-  int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
   for (int j = 0; j < dst_height; ++j) {
-    if (y > maxy) {
-      y = maxy;
+    if (y > max_y) {
+      y = max_y;
     }
     int yi = y >> 16;
     int yf = (y >> 8) & 255;
@@ -955,9 +955,9 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
-  int maxy = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
-  if (y > maxy) {
-    y = maxy;
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  if (y > max_y) {
+    y = max_y;
   }
   int yi = y >> 16;
   const uint8* src = src_argb + yi * src_stride;
@@ -976,7 +976,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   for (int j = 0; j < dst_height; ++j) {
     yi = y >> 16;
     if (yi != lasty) {
-      if (y <= maxy) {
+      if (y <= max_y) {
         ScaleARGBFilterCols(rowptr, src, dst_width, x, dx);
         rowptr += rowstride;
         rowstride = -rowstride;
@@ -987,6 +987,169 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     int yf = (y >> 8) & 255;
     InterpolateRow(dst_argb, rowptr, rowstride, dst_width * 4, yf);
     dst_argb += dst_stride;
+    y += dy;
+  }
+}
+
+// Scale YUV to ARGB up with bilinear interpolation.
+static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
+                                     int dst_width, int dst_height,
+                                     int src_stride_y,
+                                     int src_stride_u,
+                                     int src_stride_v,
+                                     int dst_stride_argb,
+                                     const uint8* src_y,
+                                     const uint8* src_u,
+                                     const uint8* src_v,
+                                     uint8* dst_argb,
+                                     int x, int dx, int y, int dy) {
+  assert(src_width > 0);
+  assert(src_height > 0);
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  assert(dst_width * 4 <= kMaxStride);
+
+  void (*I422ToARGBRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToARGBRow_C;
+#if defined(HAS_I422TOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && src_width >= 8) {
+    I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(src_width, 8)) {
+      I422ToARGBRow = I422ToARGBRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        I422ToARGBRow = I422ToARGBRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && src_width >= 16) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(src_width, 16)) {
+      I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && src_width >= 8) {
+    I422ToARGBRow = I422ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(src_width, 8)) {
+      I422ToARGBRow = I422ToARGBRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
+  }
+#endif
+
+  void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
+      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
+      InterpolateRow_C;
+#if defined(HAS_INTERPOLATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 4) {
+    InterpolateRow = InterpolateRow_Any_SSE2;
+    if (IS_ALIGNED(dst_width, 4)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSE2;
+      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        InterpolateRow = InterpolateRow_SSE2;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 4) {
+    InterpolateRow = InterpolateRow_Any_SSSE3;
+    if (IS_ALIGNED(dst_width, 4)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+        InterpolateRow = InterpolateRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && dst_width >= 4) {
+    InterpolateRow = InterpolateRow_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_width >= 1 &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
+    InterpolateRow = InterpolateRow_MIPS_DSPR2;
+  }
+#endif
+  void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
+      int dst_width, int x, int dx) = ScaleARGBFilterCols_C;
+#if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+  }
+#endif
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  if (y > max_y) {
+    y = max_y;
+  }
+  const int kYShift = 1;  // Shift Y by 1 to convert Y plane to UV coordinate.
+  int yi = y >> 16;
+  int uv_yi = yi >> kYShift;
+  const uint8* src_row_y = src_y + yi * src_stride_y;
+  const uint8* src_row_u = src_u + uv_yi * src_stride_u;
+  const uint8* src_row_v = src_v + uv_yi * src_stride_v;
+  SIMD_ALIGNED(uint8 row[2 * kMaxStride]);
+  SIMD_ALIGNED(uint8 argb_row[kMaxStride * 4]);
+  uint8* rowptr = row;
+  int rowstride = kMaxStride;
+  int lasty = yi;
+
+  ScaleARGBFilterCols(rowptr, src_row_y, dst_width, x, dx);
+  if (src_height > 1) {
+    src_row_y += src_stride_y;
+    if (yi & 1) {
+      src_row_u += src_stride_u;
+      src_row_v += src_stride_v;
+    }
+  }
+  ScaleARGBFilterCols(rowptr + rowstride, src_row_y, dst_width, x, dx);
+  if (src_height > 2) {
+    src_row_y += src_stride_y;
+    if (!(yi & 1)) {
+      src_row_u += src_stride_u;
+      src_row_v += src_stride_v;
+    }
+  }
+
+  for (int j = 0; j < dst_height; ++j) {
+    yi = y >> 16;
+    if (yi != lasty) {
+      if (y <= max_y) {
+        // TODO(fbarchard): Convert the clipped region of row.
+        I422ToARGBRow(src_row_y, src_row_u, src_row_v, argb_row, src_width);
+        ScaleARGBFilterCols(rowptr, argb_row, dst_width, x, dx);
+        rowptr += rowstride;
+        rowstride = -rowstride;
+        lasty = yi;
+        src_row_y += src_stride_y;
+        if (yi & 1) {
+          src_row_u += src_stride_u;
+          src_row_v += src_stride_v;
+        }
+      }
+    }
+    int yf = (y >> 8) & 255;
+    InterpolateRow(dst_argb, rowptr, rowstride, dst_width * 4, yf);
+    dst_argb += dst_stride_argb;
     y += dy;
   }
 }
