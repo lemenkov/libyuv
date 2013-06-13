@@ -99,8 +99,8 @@ static int ARGBTestFilter(int src_width, int src_height,
   return max_diff;
 }
 
-static const int kTileX = 16;
-static const int kTileY = 16;
+static const int kTileX = 32;
+static const int kTileY = 32;
 
 static int TileARGBScale(const uint8* src_argb, int src_stride_argb,
                          int src_width, int src_height,

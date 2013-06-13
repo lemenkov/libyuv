@@ -155,8 +155,8 @@ void ParseOptions(int argc, const char* argv[]) {
   }
 }
 
-static const int kTileX = 12;
-static const int kTileY = 8;
+static const int kTileX = 32;
+static const int kTileY = 32;
 
 static int TileARGBScale(const uint8* src_argb, int src_stride_argb,
                          int src_width, int src_height,
