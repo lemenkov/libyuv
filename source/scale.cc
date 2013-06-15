@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "./fixed_math.h"  // For FixedDiv
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyPlane
 #include "libyuv/row.h"
@@ -2005,8 +2006,8 @@ static void ScalePlaneBox(int src_width, int src_height,
                           const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dx = (Abs(src_width) << 16) / dst_width;
-  int dy = (src_height << 16) / dst_height;
+  int dx = FixedDiv(Abs(src_width), dst_width);
+  int dy = FixedDiv(src_height, dst_height);
   int x = 0;
   int y = 0;
   // Negative src_width means horizontally mirror.
@@ -2124,10 +2125,10 @@ void ScalePlaneBilinear(int src_width, int src_height,
   int x = 0;
   int y = 0;
   if (dst_width <= Abs(src_width)) {
-    dx = (Abs(src_width) << 16) / dst_width;
+    dx = FixedDiv(Abs(src_width), dst_width);
     x = (dx >> 1) - 32768;
   } else if (dst_width > 1) {
-    dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
   }
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
@@ -2136,10 +2137,10 @@ void ScalePlaneBilinear(int src_width, int src_height,
     src_width = -src_width;
   }
   if (dst_height <= src_height) {
-    dy = (src_height << 16) / dst_height;
+    dy = FixedDiv(src_height, dst_height);
     y = (dy >> 1) - 32768;
   } else if (dst_height > 1) {
-    dy = ((src_height - 1) << 16) / (dst_height - 1);
+    dy = FixedDiv(src_height - 1, dst_height - 1);
   }
   const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
   for (int j = 0; j < dst_height; ++j) {
@@ -2165,8 +2166,8 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr) {
-  int dx = (Abs(src_width) << 16) / dst_width;
-  int dy = (src_height << 16) / dst_height;
+  int dx = FixedDiv(Abs(src_width), dst_width);
+  int dy = FixedDiv(src_height, dst_height);
   int x = dx >> 1;
   int y = dy >> 1;
   // Negative src_width means horizontally mirror.
@@ -2299,8 +2300,7 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               int dst_width, int dst_height,
               FilterMode filtering) {
   if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
-      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0 ||
-      src_width > 32767 || src_height > 32767) {
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2363,8 +2363,7 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           int dst_width, int dst_height,
           bool interpolate) {
   if (!src_y || !src_u || !src_v || src_width <= 0 || src_height == 0 ||
-      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0 ||
-      src_width > 32767 || src_height > 32767) {
+      !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2425,7 +2424,6 @@ int ScaleOffset(const uint8* src, int src_width, int src_height,
                 bool interpolate) {
   if (!src || src_width <= 0 || src_height <= 0 ||
       !dst || dst_width <= 0 || dst_height <= 0 || dst_yoffset < 0 ||
-      src_width > 32767 || src_height > 32767 ||
       dst_yoffset >= dst_height) {
     return -1;
   }

@@ -76,6 +76,7 @@
         'include/libyuv/scale_argb.h',
         'include/libyuv/version.h',
         'include/libyuv/video_common.h',
+        'source/fixed_math.h',
 
         # sources.
         'source/compare.cc',
@@ -91,6 +92,7 @@
         'source/convert_to_argb.cc',
         'source/convert_to_i420.cc',
         'source/cpu_id.cc',
+        'source/fixed_math.cc',
         'source/format_conversion.cc',
         'source/mjpeg_decoder.cc',
         'source/mjpeg_validate.cc',

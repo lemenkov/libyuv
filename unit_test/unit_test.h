@@ -15,6 +15,10 @@
 
 #include "libyuv/basic_types.h"
 
+static __inline int Abs(int v) {
+  return v >= 0 ? v : -v;
+}
+
 #define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \

@@ -17,10 +17,6 @@
 
 namespace libyuv {
 
-static __inline int Abs(int v) {
-  return v >= 0 ? v : -v;
-}
-
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
@@ -85,7 +81,7 @@ static int ARGBTestFilter(int src_width, int src_height,
   int max_diff = 0;
   for (i = b; i < (dst_height + b); ++i) {
     for (j = b * 4; j < (dst_width + b) * 4; ++j) {
-      int abs_diff = abs(dst_argb_c[(i * dst_stride_argb) + j] -
+      int abs_diff = Abs(dst_argb_c[(i * dst_stride_argb) + j] -
                          dst_argb_opt[(i * dst_stride_argb) + j]);
       if (abs_diff > max_diff) {
         max_diff = abs_diff;
@@ -99,8 +95,8 @@ static int ARGBTestFilter(int src_width, int src_height,
   return max_diff;
 }
 
-static const int kTileX = 32;
-static const int kTileY = 32;
+static const int kTileX = 8;
+static const int kTileY = 8;
 
 static int TileARGBScale(const uint8* src_argb, int src_stride_argb,
                          int src_width, int src_height,
@@ -184,7 +180,7 @@ static int ARGBClipTestFilter(int src_width, int src_height,
   int max_diff = 0;
   for (i = b; i < (dst_height + b); ++i) {
     for (j = b * 4; j < (dst_width + b) * 4; ++j) {
-      int abs_diff = abs(dst_argb_c[(i * dst_stride_argb) + j] -
+      int abs_diff = Abs(dst_argb_c[(i * dst_stride_argb) + j] -
                          dst_argb_opt[(i * dst_stride_argb) + j]);
       if (abs_diff > max_diff) {
         max_diff = abs_diff;

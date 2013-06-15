@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "./fixed_math.h"  // For FixedDiv
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyARGB
 #include "libyuv/row.h"
@@ -743,7 +744,7 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            FilterMode filtering) {
   assert(dx == 65536 * 2);  // Test scale factor of 2.
   assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
-  // Advance to odd row / even column.
+  // Advance to odd row, even column.
   if (filtering) {
     src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
   } else {
@@ -1249,21 +1250,21 @@ static void ScaleARGB(const uint8* src, int src_stride,
   if (filtering) {
     // Scale step for bilinear sampling renders last pixel once for upsample.
     if (dst_width <= Abs(src_width)) {
-      dx = (Abs(src_width) << 16) / dst_width;
+      dx = FixedDiv(Abs(src_width), dst_width);
       x = (dx >> 1) - 32768;
     } else if (dst_width > 1) {
-      dx = ((Abs(src_width) - 1) << 16) / (dst_width - 1);
+      dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
     }
     if (dst_height <= src_height) {
-      dy = (src_height << 16) / dst_height;
+      dy = FixedDiv(src_height,  dst_height);
       y = (dy >> 1) - 32768;
     } else if (dst_height > 1) {
-      dy = ((src_height - 1) << 16) / (dst_height - 1);
+      dy = FixedDiv(src_height - 1, dst_height - 1);
     }
   } else {
     // Scale step for point sampling duplicates all pixels equally.
-    dx = (Abs(src_width) << 16) / dst_width;
-    dy = (src_height << 16) / dst_height;
+    dx = FixedDiv(Abs(src_width), dst_width);
+    dy = FixedDiv(src_height, dst_height);
     x = dx >> 1;
     y = dy >> 1;
   }
@@ -1304,7 +1305,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
       // Optimized odd scale down. ie 3, 5, 7, 9x.
       if ((dx & 0x10000) && (dy & 0x10000)) {
         filtering = kFilterNone;
-        if (dst_width == src_width && dst_height == src_height) {
+        if (dx == 0x10000 && dy == 0x10000) {
           // Straight copy.
           ARGBCopy(src + (y >> 16) * src_stride + (x >> 16) * 4, src_stride,
                    dst, dst_stride, clip_width, clip_height);
@@ -1330,7 +1331,6 @@ int ARGBScaleClip(const uint8* src_argb, int src_stride_argb,
   if (!src_argb || src_width == 0 || src_height == 0 ||
       !dst_argb || dst_width <= 0 || dst_height <= 0 ||
       clip_x < 0 || clip_y < 0 ||
-      src_width > 32767 || src_height > 32767 ||
       (clip_x + clip_width) > dst_width ||
       (clip_y + clip_height) > dst_height) {
     return -1;
@@ -1349,8 +1349,7 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int dst_width, int dst_height,
               FilterMode filtering) {
   if (!src_argb || src_width == 0 || src_height == 0 ||
-      !dst_argb || dst_width <= 0 || dst_height <= 0 ||
-      src_width > 32767 || src_height > 32767) {
+      !dst_argb || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
   ScaleARGB(src_argb, src_stride_argb, src_width, src_height,

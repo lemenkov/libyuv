@@ -17,10 +17,6 @@
 
 namespace libyuv {
 
-static __inline int Abs(int v) {
-  return v >= 0 ? v : -v;
-}
-
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
@@ -99,7 +95,7 @@ static int TestFilter(int src_width, int src_height,
   int max_diff = 0;
   for (i = b; i < (dst_height + b); ++i) {
     for (j = b; j < (dst_width + b); ++j) {
-      int abs_diff = abs(dst_y_c[(i * dst_stride_y) + j] -
+      int abs_diff = Abs(dst_y_c[(i * dst_stride_y) + j] -
                          dst_y_opt[(i * dst_stride_y) + j]);
       if (abs_diff > max_diff) {
         max_diff = abs_diff;
@@ -109,12 +105,12 @@ static int TestFilter(int src_width, int src_height,
 
   for (i = b; i < (dst_height_uv + b); ++i) {
     for (j = b; j < (dst_width_uv + b); ++j) {
-      int abs_diff = abs(dst_u_c[(i * dst_stride_uv) + j] -
+      int abs_diff = Abs(dst_u_c[(i * dst_stride_uv) + j] -
                          dst_u_opt[(i * dst_stride_uv) + j]);
       if (abs_diff > max_diff) {
         max_diff = abs_diff;
       }
-      abs_diff = abs(dst_v_c[(i * dst_stride_uv) + j] -
+      abs_diff = Abs(dst_v_c[(i * dst_stride_uv) + j] -
                      dst_v_opt[(i * dst_stride_uv) + j]);
       if (abs_diff > max_diff) {
         max_diff = abs_diff;
