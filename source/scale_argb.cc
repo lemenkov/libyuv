@@ -992,6 +992,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 }
 
+#ifdef YUVSCALEUP
 // Scale YUV to ARGB up with bilinear interpolation.
 static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
                                      int dst_width, int dst_height,
@@ -1154,6 +1155,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
     y += dy;
   }
 }
+#endif
 
 // Scales a single row of pixels using point sampling.
 // Code is adapted from libyuv bilinear yuv scaling, but with bilinear
