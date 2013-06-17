@@ -13,7 +13,6 @@
 #include <assert.h>
 #include <string.h>
 
-#include "./fixed_math.h"  // For FixedDiv
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyPlane
 #include "libyuv/row.h"
