@@ -12,9 +12,7 @@
 #include <string.h>
 
 #include "libyuv/basic_types.h"
-#include "libyuv/cpu_id.h"
-#include "libyuv/version.h"
-#include "../source/fixed_math.h"
+#include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {

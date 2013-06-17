@@ -1516,6 +1516,17 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
 void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
+extern const float kRecipTable[4097];
+
+// Divide num by div and return value as 16.16 fixed point.
+#ifdef __cplusplus
+static __inline int FixedDiv(int num, int div) {
+  if (static_cast<unsigned int>(div) <= 4096u) {
+    return static_cast<int>(num * kRecipTable[div]);
+  }
+  return static_cast<int>((static_cast<int64>(num) << 16) / div);
+}
+#endif
 
 #ifdef __cplusplus
 }  // extern "C"
