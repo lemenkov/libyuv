@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/basic_types.h"
+#include "./fixed_math.h"  // NOLINT
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -708,6 +708,3 @@ extern const float kRecipTable[4097] = {
 }  // extern "C"
 }  // namespace libyuv
 #endif
-
-
-

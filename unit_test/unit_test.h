@@ -11,6 +11,13 @@
 #ifndef UNIT_TEST_UNIT_TEST_H_  // NOLINT
 #define UNIT_TEST_UNIT_TEST_H_
 
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
+
 #include <gtest/gtest.h>
 
 #include "libyuv/basic_types.h"
@@ -42,7 +49,6 @@ static __inline int Abs(int v) {
   var = 0;
 
 #ifdef WIN32
-#include <windows.h>
 static inline double get_time() {
   LARGE_INTEGER t, f;
   QueryPerformanceCounter(&t);
@@ -53,10 +59,6 @@ static inline double get_time() {
 #define random rand
 #define srandom srand
 #else
-
-#include <sys/time.h>
-#include <sys/resource.h>
-
 static inline double get_time() {
   struct timeval t;
   struct timezone tzp;
