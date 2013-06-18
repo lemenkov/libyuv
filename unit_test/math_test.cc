@@ -12,15 +12,11 @@
 #include <string.h>
 
 #include "libyuv/basic_types.h"
+#include "libyuv/cpu_id.h"
 #include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
-
-// Divide num by div and return value as 16.16 fixed point.
-static int FixedDiv_C(int num, int div) {
-  return static_cast<int>((static_cast<int64>(num) << 16) / div);
-}
 
 TEST_F(libyuvTest, TestFixedDiv) {
   int num[256];
@@ -43,7 +39,7 @@ TEST_F(libyuvTest, TestFixedDiv) {
   }
   for (int j = 0; j < 256; ++j) {
     result_c[j] = libyuv::FixedDiv_C(num[j], div[j]);
-    EXPECT_NEAR(result_c[j], result_opt[j], 3);
+    EXPECT_NEAR(result_c[j], result_opt[j], 1);
   }
 }
 
@@ -64,8 +60,7 @@ TEST_F(libyuvTest, TestFixedDiv_Opt) {
   EXPECT_EQ(0x20000, libyuv::FixedDiv(960 * 2, 960));
   EXPECT_EQ(0x08000, libyuv::FixedDiv(640 / 2, 640));
   EXPECT_EQ(0x04000, libyuv::FixedDiv(640 / 4, 640));
-  // TODO(fbarchard): Improve accuracy for divides should be exact.
-  EXPECT_NEAR(0x20000, libyuv::FixedDiv(1080 * 2, 1080), 1);
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(1080 * 2, 1080));
 
   srandom(time(NULL));
   MemRandomize(reinterpret_cast<uint8*>(&num[0]), sizeof(num));
@@ -77,14 +72,22 @@ TEST_F(libyuvTest, TestFixedDiv_Opt) {
       div[j] = 1280;
     }
   }
+
+  int has_x86 = TestCpuFlag(kCpuHasX86);
   for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    for (int j = 0; j < 256; ++j) {
-      result_opt[j] = libyuv::FixedDiv(num[j], div[j]);
+    if (has_x86) {
+      for (int j = 0; j < 256; ++j) {
+        result_opt[j] = libyuv::FixedDiv(num[j], div[j]);
+      }
+    } else {
+      for (int j = 0; j < 256; ++j) {
+        result_opt[j] = libyuv::FixedDiv_C(num[j], div[j]);
+      }
     }
   }
   for (int j = 0; j < 256; ++j) {
     result_c[j] = libyuv::FixedDiv_C(num[j], div[j]);
-    EXPECT_NEAR(result_c[j], result_opt[j], 3);
+    EXPECT_NEAR(result_c[j], result_opt[j], 1);
   }
 }
 
