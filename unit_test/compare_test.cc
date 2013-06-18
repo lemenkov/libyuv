@@ -39,7 +39,7 @@ TEST_F(libyuvTest, Djb2_Test) {
       " and feels as if he were in the seventh heaven of typography"
       " together with Hermann Zapf";
   uint32 foxhash = HashDjb2(reinterpret_cast<const uint8*>(fox), 131, 5381);
-  const uint32 kExpectedFoxHash = 2611006483;
+  const uint32 kExpectedFoxHash = 2611006483u;
   EXPECT_EQ(kExpectedFoxHash, foxhash);
 
   for (int i = 0; i < kMaxTest; ++i) {

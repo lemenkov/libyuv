@@ -24,6 +24,29 @@ TEST_F(libyuvTest, TestFixedDiv) {
   int result_opt[256];
   int result_c[256];
 
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(640 * 2, 640));
+  EXPECT_EQ(0x30000, libyuv::FixedDiv(640 * 3, 640));
+  EXPECT_EQ(0x40000, libyuv::FixedDiv(640 * 4, 640));
+  EXPECT_EQ(0x50000, libyuv::FixedDiv(640 * 5, 640));
+  EXPECT_EQ(0x60000, libyuv::FixedDiv(640 * 6, 640));
+  EXPECT_EQ(0x70000, libyuv::FixedDiv(640 * 7, 640));
+  EXPECT_EQ(0x80000, libyuv::FixedDiv(640 * 8, 640));
+  EXPECT_EQ(0xa0000, libyuv::FixedDiv(640 * 10, 640));
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(960 * 2, 960));
+  EXPECT_EQ(0x08000, libyuv::FixedDiv(640 / 2, 640));
+  EXPECT_EQ(0x04000, libyuv::FixedDiv(640 / 4, 640));
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(1080 * 2, 1080));
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(200000, 100000));
+  EXPECT_EQ(0x18000, libyuv::FixedDiv(150000, 100000));
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(40000, 20000));
+  EXPECT_EQ(0x20000, libyuv::FixedDiv(-40000, -20000));
+  EXPECT_EQ(-0x20000, libyuv::FixedDiv(40000, -20000));
+  EXPECT_EQ(-0x20000, libyuv::FixedDiv(-40000, 20000));
+  EXPECT_NEAR(0x10000, libyuv::FixedDiv(4095, 4095), 1);
+  EXPECT_EQ(0x10000, libyuv::FixedDiv(4096, 4096));
+  EXPECT_EQ(0x10000, libyuv::FixedDiv(4097, 4097));
+  EXPECT_NEAR(123 * 65536, libyuv::FixedDiv(123, 1), 1);
+
   srandom(time(NULL));
   MemRandomize(reinterpret_cast<uint8*>(&num[0]), sizeof(num));
   MemRandomize(reinterpret_cast<uint8*>(&div[0]), sizeof(div));
@@ -48,19 +71,6 @@ TEST_F(libyuvTest, TestFixedDiv_Opt) {
   int div[256];
   int result_opt[256];
   int result_c[256];
-
-  EXPECT_EQ(0x20000, libyuv::FixedDiv(640 * 2, 640));
-  EXPECT_EQ(0x30000, libyuv::FixedDiv(640 * 3, 640));
-  EXPECT_EQ(0x40000, libyuv::FixedDiv(640 * 4, 640));
-  EXPECT_EQ(0x50000, libyuv::FixedDiv(640 * 5, 640));
-  EXPECT_EQ(0x60000, libyuv::FixedDiv(640 * 6, 640));
-  EXPECT_EQ(0x70000, libyuv::FixedDiv(640 * 7, 640));
-  EXPECT_EQ(0x80000, libyuv::FixedDiv(640 * 8, 640));
-  EXPECT_EQ(0xa0000, libyuv::FixedDiv(640 * 10, 640));
-  EXPECT_EQ(0x20000, libyuv::FixedDiv(960 * 2, 960));
-  EXPECT_EQ(0x08000, libyuv::FixedDiv(640 / 2, 640));
-  EXPECT_EQ(0x04000, libyuv::FixedDiv(640 / 4, 640));
-  EXPECT_EQ(0x20000, libyuv::FixedDiv(1080 * 2, 1080));
 
   srandom(time(NULL));
   MemRandomize(reinterpret_cast<uint8*>(&num[0]), sizeof(num));

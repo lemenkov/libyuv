@@ -101,6 +101,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
+#define HAS_FIXEDDIV
 
 // Effects
 #define HAS_ARGBADDROW_SSE2
@@ -130,7 +131,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_FIXEDDIV
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 #define HAS_ARGBSHUFFLEROW_AVX2

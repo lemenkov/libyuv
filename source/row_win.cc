@@ -6619,7 +6619,7 @@ int FixedDiv(int num, int div) {
     ret
 
   largediv:
-    cwd                          // extend num to 64 bits
+    cdq                          // extend num to 64 bits
     shld       edx, eax, 16
     shl        eax, 16
     idiv       ecx

@@ -5401,6 +5401,38 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
   );
 }
 
+// Fixed point 0.32 reciprocal table.
+extern const uint32 kRecipTable[4097];
+
+// Divide num by div and return as 16.16 fixed point result.
+int FixedDiv(int num, int div) {
+  asm volatile (
+    "cmp       $0x1000,%%ecx                   \n"
+    "jbe       1f                              \n"
+
+    "cdq                                       \n"
+    "shld      $0x10,%%eax,%%edx               \n"
+    "shl       $0x10,%%eax                     \n"
+    "idiv      %%ecx                           \n"
+    "jmp       9f                              \n"
+
+  "1:                                          \n"
+#if defined(__x86_64__)
+    "mull      (%2,%%rcx,4)                    \n"
+#else
+    "mull      (%2,%%ecx,4)                    \n"
+#endif
+    "shrd      $0x10,%%edx,%%eax               \n"
+
+  "9:                                          \n"
+    "mov       %0, %%eax                       \n"
+    : "+a"(num)  // %0
+    : "c"(div),  // %1
+      "r"(kRecipTable)  // %2
+    : "memory", "cc", "edx"
+  );
+  return num;
+}
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus
