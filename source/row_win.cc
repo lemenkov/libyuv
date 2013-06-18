@@ -6603,27 +6603,15 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
   }
 }
 
-// Fixed point 0.32 reciprocal table.
-extern const uint32 kRecipTable[4097];
-
 // Divide num by div and return as 16.16 fixed point result.
 __declspec(naked) __declspec(align(16))
 int FixedDiv(int num, int div) {
   __asm {
     mov        eax, [esp + 4]    // num
-    mov        ecx, [esp + 8]    // div
-    cmp        ecx, 4096
-    ja         largediv
-    mul        dword ptr kRecipTable[ecx * 4]
-    shrd       eax, edx, 16
-    adc        eax, 0
-    ret
-
-  largediv:
     cdq                          // extend num to 64 bits
-    shld       edx, eax, 16
+    shld       edx, eax, 16      // 32.16
     shl        eax, 16
-    idiv       ecx
+    idiv       dword ptr [esp + 8]
     ret
   }
 }
