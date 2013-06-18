@@ -6616,6 +6616,7 @@ int FixedDiv(int num, int div) {
     ja         largediv
     mul        dword ptr kRecipTable[ecx * 4]
     shrd       eax, edx, 16
+    adc        eax, 0
     ret
 
   largediv:

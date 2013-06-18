@@ -42,10 +42,10 @@ TEST_F(libyuvTest, TestFixedDiv) {
   EXPECT_EQ(0x20000, libyuv::FixedDiv(-40000, -20000));
   EXPECT_EQ(-0x20000, libyuv::FixedDiv(40000, -20000));
   EXPECT_EQ(-0x20000, libyuv::FixedDiv(-40000, 20000));
-  EXPECT_NEAR(0x10000, libyuv::FixedDiv(4095, 4095), 1);
+  EXPECT_EQ(0x10000, libyuv::FixedDiv(4095, 4095));
   EXPECT_EQ(0x10000, libyuv::FixedDiv(4096, 4096));
   EXPECT_EQ(0x10000, libyuv::FixedDiv(4097, 4097));
-  EXPECT_NEAR(123 * 65536, libyuv::FixedDiv(123, 1), 1);
+  EXPECT_EQ(123 * 65536, libyuv::FixedDiv(123, 1));
 
   srandom(time(NULL));
   MemRandomize(reinterpret_cast<uint8*>(&num[0]), sizeof(num));

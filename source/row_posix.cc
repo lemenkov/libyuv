@@ -5423,6 +5423,7 @@ int FixedDiv(int num, int div) {
     "mull      (%2,%%ecx,4)                    \n"
 #endif
     "shrd      $0x10,%%edx,%%eax               \n"
+    "adc       $0,%%eax                        \n"
 
   "9:                                          \n"
     "mov       %0, %%eax                       \n"

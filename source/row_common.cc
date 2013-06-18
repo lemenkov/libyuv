@@ -757,7 +757,8 @@ extern const uint32 kRecipTable[4097] = {
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_C(int num, int div) {
   if (static_cast<unsigned int>(div) <= 4097u) {
-    return static_cast<int>((static_cast<int64>(num) * kRecipTable[div]) >> 16);
+    return static_cast<int>((static_cast<int64>(num) * kRecipTable[div] +
+                             0x8000) >> 16);
   }
   return static_cast<int>((static_cast<int64>(num) << 16) / div);
 }
