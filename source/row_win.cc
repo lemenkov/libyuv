@@ -5138,6 +5138,49 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
 }
 #endif  // HAS_ARGBCOLORTABLEROW_X86
 
+#ifdef HAS_RGBCOLORTABLEROW_X86
+// Tranform RGB pixels with color table.
+__declspec(naked) __declspec(align(16))
+void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
+  __asm {
+    push       ebx
+    push       esi
+    push       edi
+    push       ebp
+    mov        eax, [esp + 16 + 4]   /* dst_argb */
+    mov        edi, [esp + 16 + 8]   /* table_argb */
+    mov        ecx, [esp + 16 + 12]  /* width */
+    xor        ebx, ebx
+    xor        edx, edx
+
+    align      16
+ convertloop:
+    mov        ebp, dword ptr [eax]  // BGRA
+    mov        esi, ebp
+    and        ebp, 255
+    shr        esi, 8
+    and        esi, 255
+    mov        bl, [edi + ebp * 4 + 0]  // B
+    mov        dl, [edi + esi * 4 + 1]  // G
+    mov        ebp, dword ptr [eax]  // BGRA
+    shr        ebp, 16
+    and        ebp, 255
+    mov        [eax], bl
+    mov        [eax + 1], dl
+    mov        bl, [edi + ebp * 4 + 2]  // R
+    mov        [eax + 2], bl
+    lea        eax, [eax + 4]
+    sub        ecx, 1
+    jg         convertloop
+    pop        ebp
+    pop        edi
+    pop        esi
+    pop        ebx
+    ret
+  }
+}
+#endif  // HAS_RGBCOLORTABLEROW_X86
+
 #ifdef HAS_ARGBQUANTIZEROW_SSE2
 // Quantize 4 ARGB pixels (16 bytes).
 // Aligned to 16 bytes.

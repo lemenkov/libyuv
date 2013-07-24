@@ -1413,6 +1413,38 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
+// Apply a color table each ARGB pixel but preserve destination alpha.
+// Table contains 256 ARGB values.
+LIBYUV_API
+int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
+                  const uint8* table_argb,
+                  int dst_x, int dst_y, int width, int height) {
+  if (!dst_argb || !table_argb || width <= 0 || height <= 0 ||
+      dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+  // Coalesce contiguous rows.
+  if (dst_stride_argb == width * 4) {
+    return RGBColorTable(dst_argb, dst_stride_argb,
+                         table_argb,
+                         dst_x, dst_y,
+                         width * height, 1);
+  }
+  void (*RGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
+                           int width) = RGBColorTableRow_C;
+#if defined(HAS_RGBCOLORTABLEROW_X86)
+  if (TestCpuFlag(kCpuHasX86)) {
+    RGBColorTableRow = RGBColorTableRow_X86;
+  }
+#endif
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  for (int y = 0; y < height; ++y) {
+    RGBColorTableRow(dst, table_argb, width);
+    dst += dst_stride_argb;
+  }
+  return 0;
+}
+
 // ARGBQuantize is used to posterize art.
 // e.g. rgb / qvalue * qvalue + qvalue / 2
 // But the low levels implement efficiently with 3 parameters, and could be

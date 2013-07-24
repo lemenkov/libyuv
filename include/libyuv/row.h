@@ -28,7 +28,7 @@ extern "C" {
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR) || \
-    defined(__native_client__) && defined(__x86_64__)
+    (defined(__native_client__) && defined(__x86_64__))
 #define LIBYUV_DISABLE_X86
 #endif
 // True if compiling for SSSE3 as a requirement.
@@ -132,6 +132,7 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_ARGBCOLORTABLEROW_X86
+#define HAS_RGBCOLORTABLEROW_X86
 // Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -1425,6 +1426,9 @@ void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
 
 void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width);
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width);
+
+void RGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width);
+void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width);
 
 void ARGBQuantizeRow_C(uint8* dst_argb, int scale, int interval_size,
                        int interval_offset, int width);

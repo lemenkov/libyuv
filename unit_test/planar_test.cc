@@ -596,6 +596,65 @@ TEST_F(libyuvTest, TestARGBColorTable) {
   }
 }
 
+// Same as TestARGBColorTable except alpha does not change.
+TEST_F(libyuvTest, TestRGBColorTable) {
+  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  memset(orig_pixels, 0, sizeof(orig_pixels));
+
+  // Matrix for Sepia.
+  static const uint8 kARGBTable[256 * 4] = {
+    1u, 2u, 3u, 4u,
+    5u, 6u, 7u, 8u,
+    9u, 10u, 11u, 12u,
+    13u, 14u, 15u, 16u,
+  };
+
+  orig_pixels[0][0] = 0u;
+  orig_pixels[0][1] = 0u;
+  orig_pixels[0][2] = 0u;
+  orig_pixels[0][3] = 0u;
+  orig_pixels[1][0] = 1u;
+  orig_pixels[1][1] = 1u;
+  orig_pixels[1][2] = 1u;
+  orig_pixels[1][3] = 1u;
+  orig_pixels[2][0] = 2u;
+  orig_pixels[2][1] = 2u;
+  orig_pixels[2][2] = 2u;
+  orig_pixels[2][3] = 2u;
+  orig_pixels[3][0] = 0u;
+  orig_pixels[3][1] = 1u;
+  orig_pixels[3][2] = 2u;
+  orig_pixels[3][3] = 3u;
+  // Do 16 to test asm version.
+  RGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 16, 1);
+  EXPECT_EQ(1u, orig_pixels[0][0]);
+  EXPECT_EQ(2u, orig_pixels[0][1]);
+  EXPECT_EQ(3u, orig_pixels[0][2]);
+  EXPECT_EQ(0u, orig_pixels[0][3]);  // Alpha unchanged.
+  EXPECT_EQ(5u, orig_pixels[1][0]);
+  EXPECT_EQ(6u, orig_pixels[1][1]);
+  EXPECT_EQ(7u, orig_pixels[1][2]);
+  EXPECT_EQ(1u, orig_pixels[1][3]);  // Alpha unchanged.
+  EXPECT_EQ(9u, orig_pixels[2][0]);
+  EXPECT_EQ(10u, orig_pixels[2][1]);
+  EXPECT_EQ(11u, orig_pixels[2][2]);
+  EXPECT_EQ(2u, orig_pixels[2][3]);  // Alpha unchanged.
+  EXPECT_EQ(1u, orig_pixels[3][0]);
+  EXPECT_EQ(6u, orig_pixels[3][1]);
+  EXPECT_EQ(11u, orig_pixels[3][2]);
+  EXPECT_EQ(3u, orig_pixels[3][3]);  // Alpha unchanged.
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+    RGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
+  }
+}
+
 TEST_F(libyuvTest, TestARGBQuantize) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
 

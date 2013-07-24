@@ -203,6 +203,13 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int x, int y, int width, int height);
 
+// Apply a color table each ARGB pixel but preserve destination alpha.
+// Table contains 256 ARGB values.
+LIBYUV_API
+int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
+                  const uint8* table_argb,
+                  int x, int y, int width, int height);
+
 // Quantize a rectangle of ARGB. Alpha unaffected.
 // scale is a 16 bit fractional fixed point scaler between 0 and 65535.
 // interval_size should be a value between 1 and 255.

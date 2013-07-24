@@ -688,6 +688,19 @@ void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width) {
   }
 }
 
+// Apply color table to a row of image.
+void RGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width) {
+  for (int x = 0; x < width; ++x) {
+    int b = dst_argb[0];
+    int g = dst_argb[1];
+    int r = dst_argb[2];
+    dst_argb[0] = table_argb[b * 4 + 0];
+    dst_argb[1] = table_argb[g * 4 + 1];
+    dst_argb[2] = table_argb[r * 4 + 2];
+    dst_argb += 4;
+  }
+}
+
 void ARGBQuantizeRow_C(uint8* dst_argb, int scale, int interval_size,
                        int interval_offset, int width) {
   for (int x = 0; x < width; ++x) {
