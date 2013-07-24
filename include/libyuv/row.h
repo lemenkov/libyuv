@@ -27,7 +27,8 @@ extern "C" {
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
-    defined(TARGET_IPHONE_SIMULATOR)
+    defined(TARGET_IPHONE_SIMULATOR) || \
+    defined(__native_client__) && defined(__x86_64__)
 #define LIBYUV_DISABLE_X86
 #endif
 // True if compiling for SSSE3 as a requirement.
