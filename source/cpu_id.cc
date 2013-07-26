@@ -230,7 +230,7 @@ int InitCpuFlags(void) {
     cpu_info_ &= ~kCpuHasMIPS_DSPR2;
   }
 #elif defined(__arm__)
-#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON)) &&
+#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON)) && \
     !defined(__native_client__)
   // Linux arm parse text file for neon detect.
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
