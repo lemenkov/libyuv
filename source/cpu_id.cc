@@ -13,12 +13,14 @@
 #ifdef _MSC_VER
 #include <intrin.h>  // For __cpuid()
 #endif
-#if !defined(__CLR_VER) && defined(_M_X64) && \
+#if !defined(__CLR_VER) && !defined(__native_client__) && defined(_M_X64) && \
     defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #include <immintrin.h>  // For _xgetbv()
 #endif
 
+#if !defined(__native_client__)
 #include <stdlib.h>  // For getenv()
+#endif
 
 // For ArmCpuCaps() but unittested on all platforms
 #include <stdio.h>
@@ -68,8 +70,8 @@ void CpuId(int cpu_info[4], int) {
 #endif
 
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
-#if !defined(__CLR_VER) && defined(_M_X64) && \
-    defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
+#if !defined(__CLR_VER) && !defined(__native_client__)
+#if defined(_M_X64) && defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #define HAS_XGETBV
 static uint32 XGetBV(unsigned int xcr) {
   return static_cast<uint32>(_xgetbv(xcr));
@@ -98,6 +100,7 @@ static uint32 XGetBV(unsigned int xcr) {
   return xcr_feature_mask;
 }
 #endif
+#endif  // !defined(__CLR_VER) && !defined(__native_client__)
 #ifdef HAS_XGETBV
 static const int kXCR_XFEATURE_ENABLED_MASK = 0;
 #endif
@@ -148,6 +151,7 @@ int cpu_info_ = kCpuInit;  // cpu_info is not initialized yet.
 
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.
+#if !defined(__native_client__)
 static bool TestEnv(const char* name) {
   const char* var = getenv(name);
   if (var) {
@@ -157,6 +161,11 @@ static bool TestEnv(const char* name) {
   }
   return false;
 }
+#else  // nacl does not support getenv().
+static bool TestEnv(const char*) {
+  return false;
+}
+#endif
 
 LIBYUV_API
 int InitCpuFlags(void) {
@@ -221,10 +230,11 @@ int InitCpuFlags(void) {
     cpu_info_ &= ~kCpuHasMIPS_DSPR2;
   }
 #elif defined(__arm__)
-#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON)) &&
+    !defined(__native_client__)
   // Linux arm parse text file for neon detect.
   cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
-#elif defined(__ARM_NEON__)
+#elif defined(__ARM_NEON__) || defined(__native_client__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
   // to disable Neon on devices that do not have it.
