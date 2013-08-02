@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
-static const uvec8 kVTbl4x4Transpose =
+static uvec8 kVTbl4x4Transpose =
   { 0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
 
 void TransposeWx8_NEON(const uint8* src, int src_stride,
@@ -184,7 +184,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
   );
 }
 
-static const uvec8 kVTbl4x4TransposeDi =
+static uvec8 kVTbl4x4TransposeDi =
   { 0,  8,  1,  9,  2, 10,  3, 11,  4, 12,  5, 13,  6, 14,  7, 15 };
 
 void TransposeUVWx8_NEON(const uint8* src, int src_stride,

@@ -256,13 +256,13 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 // TODO(fbarchard): Port to Neon
 
 // Shuffle table for arranging 2 pixels into pairs for pmaddubsw
-static const uvec8 kShuffleColARGB = {
+static uvec8 kShuffleColARGB = {
   0u, 4u, 1u, 5u, 2u, 6u, 3u, 7u,  // bbggrraa 1st pixel
   8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  // bbggrraa 2nd pixel
 };
 
 // Shuffle table for duplicating 2 fractions into 8 bytes each
-static const uvec8 kShuffleFractions = {
+static uvec8 kShuffleFractions = {
   0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
 };
 
@@ -534,20 +534,14 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
-#ifdef __APPLE__
-#define CONST
-#else
-#define CONST static const
-#endif
-
 // Shuffle table for arranging 2 pixels into pairs for pmaddubsw
-CONST uvec8 kShuffleColARGB = {
+static uvec8 kShuffleColARGB = {
   0u, 4u, 1u, 5u, 2u, 6u, 3u, 7u,  // bbggrraa 1st pixel
   8u, 12u, 9u, 13u, 10u, 14u, 11u, 15u  // bbggrraa 2nd pixel
 };
 
 // Shuffle table for duplicating 2 fractions into 8 bytes each
-CONST uvec8 kShuffleFractions = {
+static uvec8 kShuffleFractions = {
   0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 4u, 4u, 4u, 4u, 4u, 4u, 4u,
 };
 

@@ -706,7 +706,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
 }
 
 // Shuffle table for converting ARGB to RGBA.
-static const uvec8 kShuffleMaskARGBToRGBA = {
+static uvec8 kShuffleMaskARGBToRGBA = {
   3u, 0u, 1u, 2u, 7u, 4u, 5u, 6u, 11u, 8u, 9u, 10u, 15u, 12u, 13u, 14u
 };
 

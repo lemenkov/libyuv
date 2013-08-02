@@ -176,7 +176,7 @@ void ScaleRowDown2Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 void ScaleRowDown4_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
-                                     uint8* dst, int dst_width) {
+                              uint8* dst, int dst_width) {
   __asm__ __volatile__ (
       ".set push                                    \n"
       ".set noreorder                               \n"
@@ -231,7 +231,7 @@ void ScaleRowDown4_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 }
 
 void ScaleRowDown4Box_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
-                                        uint8* dst, int dst_width) {
+                                 uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
   const uint8* s1 = src_ptr + stride;
   const uint8* s2 = s1 + stride;

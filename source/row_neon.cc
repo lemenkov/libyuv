@@ -102,10 +102,10 @@ extern "C" {
     "vtrn.u8    d16, d17                       \n"                             \
     "vmov.u8    d21, d16                       \n"
 
-static const vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
-                               0, 0, 0, 0, 0, 0, 0, 0 };
-static const vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
-                             0, 0, 0, 0, 0, 0, 0, 0 };
+static vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
+                         0, 0, 0, 0, 0, 0, 0, 0 };
+static vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
+                       0, 0, 0, 0, 0, 0, 0, 0 };
 
 void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,

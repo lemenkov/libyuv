@@ -20,125 +20,117 @@ extern "C" {
 // This module is for GCC x86 and x64
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
-// GCC 4.2 on OSX has link error when passing static or const to inline.
-// TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
-#ifdef __APPLE__
-#define CONST
-#else
-#define CONST static const
-#endif
-
 #ifdef HAS_ARGBTOYROW_SSSE3
 
 // Constants for ARGB
-CONST vec8 kARGBToY = {
+static vec8 kARGBToY = {
   13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
 };
 
 // JPeg full range.
-CONST vec8 kARGBToYJ = {
+static vec8 kARGBToYJ = {
   15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0
 };
 
-CONST vec8 kARGBToU = {
+static vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
-CONST vec8 kARGBToUJ = {
+static vec8 kARGBToUJ = {
   127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0
 };
 
-CONST vec8 kARGBToV = {
+static vec8 kARGBToV = {
   -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
 };
 
-CONST vec8 kARGBToVJ = {
+static vec8 kARGBToVJ = {
   -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0
 };
 
 // Constants for BGRA
-CONST vec8 kBGRAToY = {
+static vec8 kBGRAToY = {
   0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13
 };
 
-CONST vec8 kBGRAToU = {
+static vec8 kBGRAToU = {
   0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112
 };
 
-CONST vec8 kBGRAToV = {
+static vec8 kBGRAToV = {
   0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18
 };
 
 // Constants for ABGR
-CONST vec8 kABGRToY = {
+static vec8 kABGRToY = {
   33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0, 33, 65, 13, 0
 };
 
-CONST vec8 kABGRToU = {
+static vec8 kABGRToU = {
   -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0, -38, -74, 112, 0
 };
 
-CONST vec8 kABGRToV = {
+static vec8 kABGRToV = {
   112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0, 112, -94, -18, 0
 };
 
 // Constants for RGBA.
-CONST vec8 kRGBAToY = {
+static vec8 kRGBAToY = {
   0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33
 };
 
-CONST vec8 kRGBAToU = {
+static vec8 kRGBAToU = {
   0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38
 };
 
-CONST vec8 kRGBAToV = {
+static vec8 kRGBAToV = {
   0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112
 };
 
-CONST uvec8 kAddY16 = {
+static uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
-CONST vec16 kAddYJ64 = {
+static vec16 kAddYJ64 = {
   64, 64, 64, 64, 64, 64, 64, 64
 };
 
-CONST uvec8 kAddUV128 = {
+static uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
 
-CONST uvec16 kAddUVJ128 = {
+static uvec16 kAddUVJ128 = {
   0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u
 };
 
 // Shuffle table for converting RGB24 to ARGB.
-CONST uvec8 kShuffleMaskRGB24ToARGB = {
+static uvec8 kShuffleMaskRGB24ToARGB = {
   0u, 1u, 2u, 12u, 3u, 4u, 5u, 13u, 6u, 7u, 8u, 14u, 9u, 10u, 11u, 15u
 };
 
 // Shuffle table for converting RAW to ARGB.
-CONST uvec8 kShuffleMaskRAWToARGB = {
+static uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
 // Shuffle table for converting ARGB to RGB24.
-CONST uvec8 kShuffleMaskARGBToRGB24 = {
+static uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
 };
 
 // Shuffle table for converting ARGB to RAW.
-CONST uvec8 kShuffleMaskARGBToRAW = {
+static uvec8 kShuffleMaskARGBToRAW = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 8u, 14u, 13u, 12u, 128u, 128u, 128u, 128u
 };
 
 // Shuffle table for converting ARGBToRGB24 for I422ToRGB24.  First 8 + next 4
-CONST uvec8 kShuffleMaskARGBToRGB24_0 = {
+static uvec8 kShuffleMaskARGBToRGB24_0 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
 };
 
 // Shuffle table for converting ARGB to RAW.
-CONST uvec8 kShuffleMaskARGBToRAW_0 = {
+static uvec8 kShuffleMaskARGBToRAW_0 = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
 };
 
@@ -1901,7 +1893,7 @@ struct {
   vec8 kVUToB;  // 128
   vec8 kVUToG;  // 144
   vec8 kVUToR;  // 160
-} CONST SIMD_ALIGNED(kYuvConstants) = {
+} static SIMD_ALIGNED(kYuvConstants) = {
   { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
   { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
@@ -2728,7 +2720,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
-CONST uvec8 kShuffleMirror = {
+static uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
@@ -2790,7 +2782,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_MIRRORROW_UV_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
-CONST uvec8 kShuffleMirrorUV = {
+static uvec8 kShuffleMirrorUV = {
   14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u, 15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u
 };
 void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
@@ -2825,7 +2817,7 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 
 #ifdef HAS_ARGBMIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
-CONST uvec8 kARGBShuffleMirror = {
+static uvec8 kARGBShuffleMirror = {
   12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u
 };
 
@@ -3605,7 +3597,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for isolating alpha.
-CONST uvec8 kShuffleAlpha = {
+static uvec8 kShuffleAlpha = {
   3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
   11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
 };
@@ -3814,10 +3806,10 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
-CONST uvec8 kShuffleAlpha0 = {
+static uvec8 kShuffleAlpha0 = {
   3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
 };
-CONST uvec8 kShuffleAlpha1 = {
+static uvec8 kShuffleAlpha1 = {
   11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
   15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
 };
@@ -3971,15 +3963,15 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 //    g = (r * 45 + g * 88 + b * 22) >> 7
 //    r = (r * 50 + g * 98 + b * 24) >> 7
 // Constant for ARGB color to sepia tone
-CONST vec8 kARGBToSepiaB = {
+static vec8 kARGBToSepiaB = {
   17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0, 17, 68, 35, 0
 };
 
-CONST vec8 kARGBToSepiaG = {
+static vec8 kARGBToSepiaG = {
   22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0, 22, 88, 45, 0
 };
 
-CONST vec8 kARGBToSepiaR = {
+static vec8 kARGBToSepiaR = {
   24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0, 24, 98, 50, 0
 };
 
