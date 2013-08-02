@@ -352,18 +352,26 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// GCC 4.2 on OSX has link error when passing static or const to inline.
+// TODO(fbarchard): Use static const when gcc 4.2 support is dropped.
+#ifdef __APPLE__
+#define CONST
+#else
+#define CONST static const
+#endif
+
 // Shuffle table for converting BGRA to ARGB.
-static const uvec8 kShuffleMaskBGRAToARGB = {
+CONST uvec8 kShuffleMaskBGRAToARGB = {
   3u, 2u, 1u, 0u, 7u, 6u, 5u, 4u, 11u, 10u, 9u, 8u, 15u, 14u, 13u, 12u
 };
 
 // Shuffle table for converting ABGR to ARGB.
-static const uvec8 kShuffleMaskABGRToARGB = {
+CONST uvec8 kShuffleMaskABGRToARGB = {
   2u, 1u, 0u, 3u, 6u, 5u, 4u, 7u, 10u, 9u, 8u, 11u, 14u, 13u, 12u, 15u
 };
 
 // Shuffle table for converting RGBA to ARGB.
-static const uvec8 kShuffleMaskRGBAToARGB = {
+CONST uvec8 kShuffleMaskRGBAToARGB = {
   1u, 2u, 3u, 0u, 5u, 6u, 7u, 4u, 9u, 10u, 11u, 8u, 13u, 14u, 15u, 12u
 };
 
