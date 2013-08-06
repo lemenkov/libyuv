@@ -4922,7 +4922,6 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        ecx, [esp + 12]  /* width */
     movdqa     xmm4, kARGBToYJ
     movdqa     xmm5, kAddYJ64
-    sub        edx, eax
 
     align      16
  convertloop:
@@ -4936,6 +4935,7 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     packuswb   xmm0, xmm0   // 8 G bytes
     movdqa     xmm2, [eax]  // A
     movdqa     xmm3, [eax + 16]
+    lea        eax, [eax + 32]
     psrld      xmm2, 24
     psrld      xmm3, 24
     packuswb   xmm2, xmm3
@@ -4947,9 +4947,9 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     punpcklwd  xmm0, xmm3   // GGGA first 4
     punpckhwd  xmm1, xmm3   // GGGA next 4
     sub        ecx, 8
-    movdqa     [eax + edx], xmm0
-    movdqa     [eax + edx + 16], xmm1
-    lea        eax, [eax + 32]
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
     jg         convertloop
     ret
   }
