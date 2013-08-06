@@ -27,8 +27,7 @@ extern "C" {
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
-    defined(TARGET_IPHONE_SIMULATOR) || \
-    (defined(__native_client__) && defined(__x86_64__))
+    defined(TARGET_IPHONE_SIMULATOR)
 #define LIBYUV_DISABLE_X86
 #endif
 // True if compiling for SSSE3 as a requirement.
@@ -36,9 +35,17 @@ extern "C" {
 #define LIBYUV_SSSE3_ONLY
 #endif
 
-// The following are available on all x86 platforms:
+// The following are available on all x86 platforms, including NaCL:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+#define HAS_ARGBBLENDROW_SSSE3
+#endif
+
+// The following are available on all x86 platforms except NaCL x64:
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
+    !(defined(__native_client__) && defined(__x86_64__))
+
 // Conversions.
 #define HAS_ABGRTOUVROW_SSSE3
 #define HAS_ABGRTOYROW_SSSE3
@@ -108,7 +115,6 @@ extern "C" {
 #define HAS_ARGBADDROW_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
 #define HAS_ARGBATTENUATEROW_SSSE3
-#define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSSE3
@@ -180,9 +186,12 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(LIBYUV_SSSE3_ONLY)
-#define HAS_ARGBATTENUATEROW_SSE2
+// Available with NaCL:
 #define HAS_ARGBBLENDROW_SSE2
+#if !(defined(__native_client__) && defined(__x86_64__))
+#define HAS_ARGBATTENUATEROW_SSE2
 #define HAS_MIRRORROW_SSE2
+#endif
 #endif
 
 // The following are available on Neon platforms
