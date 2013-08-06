@@ -39,6 +39,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 #define HAS_ARGBBLENDROW_SSSE3
+#define HAS_ARGBATTENUATEROW_SSSE3
 #endif
 
 // The following are available on all x86 platforms except NaCL x64:
@@ -114,7 +115,6 @@ extern "C" {
 // Effects
 #define HAS_ARGBADDROW_SSE2
 #define HAS_ARGBAFFINEROW_SSE2
-#define HAS_ARGBATTENUATEROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBMIRRORROW_SSSE3
@@ -188,8 +188,8 @@ extern "C" {
     !defined(LIBYUV_SSSE3_ONLY)
 // Available with NaCL:
 #define HAS_ARGBBLENDROW_SSE2
-#if !(defined(__native_client__) && defined(__x86_64__))
 #define HAS_ARGBATTENUATEROW_SSE2
+#if !(defined(__native_client__) && defined(__x86_64__))
 #define HAS_MIRRORROW_SSE2
 #endif
 #endif

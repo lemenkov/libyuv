@@ -3770,7 +3770,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 // aligned to 16 bytes
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   asm volatile (
-    "sub       %0,%1                           \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -3779,17 +3778,18 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "pshufhw   $0xff,%%xmm0,%%xmm2             \n"
     "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "movdqa    (%0),%%xmm1                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
     "pshufhw   $0xff,%%xmm1,%%xmm2             \n"
     "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "movdqa    (%0),%%xmm2                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm2           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "pand      %%xmm4,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
@@ -3797,8 +3797,8 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "pand      %%xmm5,%%xmm0                   \n"
     "por       %%xmm2,%%xmm0                   \n"
     "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
@@ -3825,7 +3825,6 @@ static uvec8 kShuffleAlpha1 = {
 // aligned to 16 bytes
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   asm volatile (
-    "sub       %0,%1                           \n"
     "pcmpeqb   %%xmm3,%%xmm3                   \n"
     "pslld     $0x18,%%xmm3                    \n"
     "movdqa    %3,%%xmm4                       \n"
@@ -3834,25 +3833,26 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
-    "movdqa    (%0),%%xmm1                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
     "punpcklbw %%xmm1,%%xmm1                   \n"
     "pmulhuw   %%xmm1,%%xmm0                   \n"
-    "movdqa    (%0),%%xmm1                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
-    "movdqa    (%0),%%xmm2                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm2           \n"
     "punpckhbw %%xmm2,%%xmm2                   \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "movdqa    (%0),%%xmm2                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm2           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "pand      %%xmm3,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "por       %%xmm2,%%xmm0                   \n"
     "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1

@@ -4624,7 +4624,6 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        eax, [esp + 4]   // src_argb0
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
-    sub        edx, eax
     pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
     pslld      xmm4, 24
     pcmpeqb    xmm5, xmm5       // generate mask 0x00ffffff
@@ -4643,6 +4642,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     pshuflw    xmm2, xmm2, 0FFh
     pmulhuw    xmm1, xmm2       // rgb * a
     movdqa     xmm2, [eax]      // alphas
+    lea        eax, [eax + 16]
     psrlw      xmm0, 8
     pand       xmm2, xmm4
     psrlw      xmm1, 8
@@ -4650,8 +4650,8 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     pand       xmm0, xmm5       // keep original alphas
     por        xmm0, xmm2
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
-    lea        eax, [eax + 16]
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
     jg         convertloop
 
     ret
@@ -4674,7 +4674,6 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        eax, [esp + 4]   // src_argb0
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
-    sub        edx, eax
     pcmpeqb    xmm3, xmm3       // generate mask 0xff000000
     pslld      xmm3, 24
     movdqa     xmm4, kShuffleAlpha0
@@ -4693,14 +4692,15 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     punpckhbw  xmm2, xmm2       // next 2 pixel rgbs
     pmulhuw    xmm1, xmm2       // rgb * a
     movdqa     xmm2, [eax]      // mask original alpha
+    lea        eax, [eax + 16]
     pand       xmm2, xmm3
     psrlw      xmm0, 8
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     por        xmm0, xmm2       // copy original alpha
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
-    lea        eax, [eax + 16]
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
     jg         convertloop
 
     ret
