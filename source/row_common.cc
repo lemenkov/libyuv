@@ -1904,7 +1904,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
     }
 }
 
-#if !defined(LIBYUV_DISABLE_X86)
+#if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.  5% slower.
 // TODO(fbarchard): Handle width > kMaxStride here instead of calling code.
 #if defined(__x86_64__) || defined(__i386__)
@@ -2001,7 +2001,6 @@ void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
   UYVYToYRow_Unaligned_SSE2(src_uyvy, row_y, width);
   I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
 }
-
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
 #undef clamp0

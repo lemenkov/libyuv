@@ -3027,6 +3027,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_COPYROW_X86
 
+#ifdef HAS_COPYROW_ERMS
 // Unaligned Multiple of 1.
 void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = static_cast<size_t>(width);
@@ -3039,6 +3040,7 @@ void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
   : "memory", "cc"
   );
 }
+#endif  // HAS_COPYROW_ERMS
 
 #ifdef HAS_SETROW_X86
 void SetRow_X86(uint8* dst, uint32 v32, int width) {
@@ -4167,14 +4169,14 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value) {
   asm volatile (
     "movd      %3,%%xmm2                       \n"
-    "sub       %0,%1                           \n"
     "punpcklbw %%xmm2,%%xmm2                   \n"
     "punpcklqdq %%xmm2,%%xmm2                  \n"
 
     // 4 pixel loop.
     ".p2align  2                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
@@ -4184,8 +4186,8 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb),  // %1
@@ -4205,14 +4207,14 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
   asm volatile (
     "pxor      %%xmm5,%%xmm5                   \n"
-    "sub       %0,%1                           \n"
-    "sub       %0,%2                           \n"
 
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    (%0,%1),%%xmm2                  \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqu    "MEMACCESS(1)",%%xmm2           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "movdqu    %%xmm0,%%xmm1                   \n"
     "movdqu    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
@@ -4223,8 +4225,8 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "pmulhuw   %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqu    %%xmm0,(%0,%2,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqu    %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0
     "+r"(src_argb1),  // %1
@@ -4244,18 +4246,17 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                      uint8* dst_argb, int width) {
   asm volatile (
-    "sub       %0,%1                           \n"
-    "sub       %0,%2                           \n"
-
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    (%0,%1),%%xmm1                  \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqu    "MEMACCESS(1)",%%xmm1           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqu    %%xmm0,(%0,%2,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqu    %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0
     "+r"(src_argb1),  // %1
@@ -4275,18 +4276,17 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
   asm volatile (
-    "sub       %0,%1                           \n"
-    "sub       %0,%2                           \n"
-
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    (%0,%1),%%xmm1                  \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqu    "MEMACCESS(1)",%%xmm1           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "psubusb   %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%3                         \n"
-    "movdqu    %%xmm0,(%0,%2,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqu    %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "jg        1b                              \n"
   : "+r"(src_argb0),  // %0
     "+r"(src_argb1),  // %1
@@ -4793,6 +4793,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
+#ifdef HAS_INTERPOLATEROW_SSSE3
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                           ptrdiff_t src_stride, int dst_width,
@@ -4895,6 +4896,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 #endif
   );
 }
+#endif  // HAS_INTERPOLATEROW_SSSE3
 
 #ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1
@@ -5009,6 +5011,7 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
 
+#ifdef HAS_INTERPOLATEROW_SSSE3
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                                     ptrdiff_t src_stride, int dst_width,
@@ -5111,6 +5114,7 @@ void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 #endif
   );
 }
+#endif   // HAS_INTERPOLATEROW_SSSE3
 
 #ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1
@@ -5225,6 +5229,7 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
 
+#ifdef HAS_HALFROW_SSE2
 void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {
   asm volatile (
@@ -5247,7 +5252,9 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
 #endif
   );
 }
+#endif  // HAS_HALFROW_SSE2
 
+#ifdef HAS_ARGBTOBAYERROW_SSSE3
 void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
                           uint32 selector, int pix) {
   asm volatile (
@@ -5275,7 +5282,9 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
 #endif
   );
 }
+#endif  // HAS_ARGBTOBAYERROW_SSSE3
 
+#ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                           const uint8* shuffler, int pix) {
@@ -5330,7 +5339,9 @@ void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
 #endif
   );
 }
+#endif  // HAS_ARGBSHUFFLEROW_SSSE3
 
+#ifdef HAS_I422TOYUY2ROW_SSE2
 void I422ToYUY2Row_SSE2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -5365,7 +5376,9 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
 #endif
   );
 }
+#endif  // HAS_I422TOYUY2ROW_SSE2
 
+#ifdef HAS_I422TOUYVYROW_SSE2
 void I422ToUYVYRow_SSE2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -5400,9 +5413,11 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
 #endif
   );
 }
+#endif  // HAS_I422TOUYVYROW_SSE2
 
+#ifdef HAS_FIXEDDIV_X86
 // Divide num by div and return as 16.16 fixed point result.
-int FixedDiv(int num, int div) {
+int FixedDiv_X86(int num, int div) {
   asm volatile (
     "cdq                                       \n"
     "shld      $0x10,%%eax,%%edx               \n"
@@ -5415,6 +5430,7 @@ int FixedDiv(int num, int div) {
   );
   return num;
 }
+#endif  // HAS_FIXEDDIV_X86
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus
