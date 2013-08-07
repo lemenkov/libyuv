@@ -3322,12 +3322,13 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
+    lea       eax, [eax - 16 + ecx * 4]  // last 4 pixels.
     movdqa    xmm5, kARGBShuffleMirror
-    lea       eax, [eax - 16]
 
     align      16
  convertloop:
-    movdqa    xmm0, [eax + ecx * 4]
+    movdqa    xmm0, [eax]
+    lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
     sub       ecx, 4
     movdqa    [edx], xmm0
@@ -5806,7 +5807,6 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     mov        edx, cumsum
     mov        esi, previous_cumsum
     mov        ecx, width
-    sub        esi, edx
     pxor       xmm0, xmm0
     pxor       xmm1, xmm1
 
@@ -5833,19 +5833,20 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     punpckhwd  xmm5, xmm1
 
     paddd      xmm0, xmm2
-    movdqa     xmm2, [edx + esi]  // previous row above.
+    movdqa     xmm2, [esi]  // previous row above.
     paddd      xmm2, xmm0
 
     paddd      xmm0, xmm3
-    movdqa     xmm3, [edx + esi + 16]
+    movdqa     xmm3, [esi + 16]
     paddd      xmm3, xmm0
 
     paddd      xmm0, xmm4
-    movdqa     xmm4, [edx + esi + 32]
+    movdqa     xmm4, [esi + 32]
     paddd      xmm4, xmm0
 
     paddd      xmm0, xmm5
-    movdqa     xmm5, [edx + esi + 48]
+    movdqa     xmm5, [esi + 48]
+    lea        esi, [esi + 64]
     paddd      xmm5, xmm0
 
     movdqa     [edx], xmm2
@@ -5869,7 +5870,8 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     punpcklbw  xmm2, xmm1
     punpcklwd  xmm2, xmm1
     paddd      xmm0, xmm2
-    movdqu     xmm2, [edx + esi]
+    movdqu     xmm2, [esi]
+    lea        esi, [esi + 16]
     paddd      xmm2, xmm0
     movdqu     [edx], xmm2
     lea        edx, [edx + 16]
