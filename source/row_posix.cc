@@ -4596,6 +4596,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     "punpcklwd %%xmm1,%%xmm2                   \n"
     "paddd     %%xmm2,%%xmm0                   \n"
     "movdqu    "MEMACCESS(2)",%%xmm2           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "paddd     %%xmm0,%%xmm2                   \n"
     "movdqu    %%xmm2,"MEMACCESS(1)"           \n"
     "lea       "MEMLEA(0x10,1)",%1             \n"
