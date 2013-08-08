@@ -26,13 +26,13 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     mov        ecx, [esp + 12]   // count
     pxor       xmm0, xmm0
     pxor       xmm5, xmm5
-    sub        edx, eax
 
     align      16
   wloop:
     movdqa     xmm1, [eax]
-    movdqa     xmm2, [eax + edx]
     lea        eax,  [eax + 16]
+    movdqa     xmm2, [edx]
+    lea        edx,  [edx + 16]
     sub        ecx, 16
     movdqa     xmm3, xmm1  // abs trick
     psubusb    xmm1, xmm2

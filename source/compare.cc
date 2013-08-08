@@ -31,7 +31,6 @@ uint32 HashDjb2_C(const uint8* src, int count, uint32 seed);
 
 // This module is for Visual C x86
 #if !defined(LIBYUV_DISABLE_X86) && \
-    !(defined(__native_client__) && defined(__x86_64__)) && \
     (defined(_M_IX86) || \
     (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__))))
 #define HAS_HASHDJB2_SSE41
@@ -76,7 +75,6 @@ uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count);
 uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count);
 #endif
 #if !defined(LIBYUV_DISABLE_X86) && \
-    !(defined(__native_client__) && defined(__x86_64__)) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 #define HAS_SUMSQUAREERROR_SSE2
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count);

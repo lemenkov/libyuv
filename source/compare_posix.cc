@@ -16,21 +16,28 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_X86) && \
-    !(defined(__native_client__) && defined(__x86_64__)) && \
-    (defined(__x86_64__) || defined(__i386__))
+#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
+
+#if defined(__native_client__) && defined(__x86_64__)
+#define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
+#define MEMLEA(offset, base) #offset "(%q" #base ")"
+#else
+#define MEMACCESS(base) "(%" #base ")"
+#define MEMLEA(offset, base) #offset "(%" #base ")"
+#endif
 
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   uint32 sse;
-  asm volatile (
+  asm volatile (  // NOLINT
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
     "sub       %0,%1                           \n"
     ".p2align  4                               \n"
     "1:                                        \n"
-    "movdqa    (%0),%%xmm1                     \n"
-    "movdqa    (%0,%1,1),%%xmm2                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
+    "lea       "MEMLEA(0x10, 0)",%0            \n"
+    "movdqa    "MEMACCESS(1)",%%xmm2           \n"
+    "lea       "MEMLEA(0x10, 1)",%1            \n"
     "sub       $0x10,%2                        \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
     "psubusb   %%xmm2,%%xmm1                   \n"
@@ -60,14 +67,13 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
-  );
+  );  // NOLINT
   return sse;
 }
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #if !defined(LIBYUV_DISABLE_X86) && \
-    !(defined(__native_client__) && defined(__x86_64__)) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__)))
 #define HAS_HASHDJB2_SSE41
 static uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
@@ -98,14 +104,14 @@ static uvec32 kHashMul3 = {
 
 uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
   uint32 hash;
-  asm volatile (
+  asm volatile (  // NOLINT
     "movd      %2,%%xmm0                       \n"
     "pxor      %%xmm7,%%xmm7                   \n"
     "movdqa    %4,%%xmm6                       \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqu    (%0),%%xmm1                     \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqu    "MEMACCESS(0)",%%xmm1           \n"
+    "lea       "MEMLEA(0x10, 0)",%0            \n"
     "pmulld    %%xmm6,%%xmm0                   \n"
     "movdqa    %5,%%xmm5                       \n"
     "movdqa    %%xmm1,%%xmm2                   \n"
@@ -149,7 +155,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
-  );
+  );  // NOLINT
   return hash;
 }
 #endif  // defined(__x86_64__) || (defined(__i386__) && !defined(__pic__)))
@@ -158,3 +164,4 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
 }  // extern "C"
 }  // namespace libyuv
 #endif
+
