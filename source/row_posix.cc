@@ -26,12 +26,16 @@ extern "C" {
 #define MEMLEA(offset, base) #offset "(%q" #base ")"
 #define MEMLEA4(offset, base, index, scale) \
     #offset "(%q" #base ",%q" #index "," #scale ")"
+#define MEMMOVESTRING(s, d) "%%nacl:(%q" #s "),%%nacl:(%q" #d "), %%r15"
+#define MEMSTORESTRING(d) "%%nacl:(%q" #d "), %%r15"
 #else
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
 #define MEMLEA(offset, base) #offset "(%" #base ")"
 #define MEMLEA4(offset, base, index, scale) \
     #offset "(%" #base ",%" #index "," #scale ")"
+#define MEMMOVESTRING(s, d)
+#define MEMSTORESTRING(d)
 #endif
 
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
@@ -3040,7 +3044,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
     "shr       $0x2,%2                         \n"
-    "rep movsl                                 \n"
+    "rep movsl "MEMMOVESTRING(0,1)"            \n"
   : "+S"(src),  // %0
     "+D"(dst),  // %1
     "+c"(width_tmp) // %2
@@ -3055,7 +3059,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
-    "rep movsb                                 \n"
+    "rep movsb "MEMMOVESTRING(0,1)"           \n"
   : "+S"(src),  // %0
     "+D"(dst),  // %1
     "+c"(width_tmp) // %2
@@ -3070,7 +3074,7 @@ void SetRow_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
   asm volatile (
     "shr       $0x2,%1                         \n"
-    "rep stosl                                 \n"
+    "rep stosl "MEMSTORESTRING(0)"             \n"
     : "+D"(dst),       // %0
       "+c"(width_tmp)  // %1
     : "a"(v32)         // %2
@@ -3083,7 +3087,7 @@ void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
     size_t width_tmp = static_cast<size_t>(width);
     uint32* d = reinterpret_cast<uint32*>(dst);
     asm volatile (
-      "rep stosl                               \n"
+      "rep stosl "MEMSTORESTRING(0)"           \n"
       : "+D"(d),         // %0
         "+c"(width_tmp)  // %1
       : "a"(v32)         // %2
