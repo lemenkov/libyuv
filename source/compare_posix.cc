@@ -31,7 +31,6 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   asm volatile (  // NOLINT
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
-    "sub       %0,%1                           \n"
     ".p2align  4                               \n"
     "1:                                        \n"
     "movdqa    "MEMACCESS(0)",%%xmm1           \n"

@@ -43,6 +43,10 @@ libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
         static_cast<double>(Abs(benchmark_width_)) *
         static_cast<double>(Abs(benchmark_height_)) *
         static_cast<double>(benchmark_iterations_)  + 255.0) / 256.0);
+    benchmark_pixels_div1280_ = static_cast<int>((
+        static_cast<double>(Abs(benchmark_width_)) *
+        static_cast<double>(Abs(benchmark_height_)) *
+        static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
 }
 
 int main(int argc, char** argv) {

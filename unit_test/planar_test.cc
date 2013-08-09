@@ -32,10 +32,10 @@
 namespace libyuv {
 
 TEST_F(libyuvTest, TestAttenuate) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8 atten_pixels[256][4]);
-  SIMD_ALIGNED(uint8 unatten_pixels[256][4]);
-  SIMD_ALIGNED(uint8 atten2_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 atten_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 unatten_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 atten2_pixels[1280][4]);
 
   // Test unattenuation clamps
   orig_pixels[0][0] = 200u;
@@ -73,18 +73,18 @@ TEST_F(libyuvTest, TestAttenuate) {
   EXPECT_EQ(255u, unatten_pixels[3][2]);
   EXPECT_EQ(128u, unatten_pixels[3][3]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 256, 1);
-  ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 256, 1);
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 256, 1);
+  ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 1280, 1);
+  ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 1280, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 1280, 1);
   }
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     EXPECT_NEAR(atten_pixels[i][0], atten2_pixels[i][0], 2);
     EXPECT_NEAR(atten_pixels[i][1], atten2_pixels[i][1], 2);
     EXPECT_NEAR(atten_pixels[i][2], atten2_pixels[i][2], 2);
@@ -268,7 +268,7 @@ TEST_F(libyuvTest, TestARGBComputeCumulativeSum) {
 }
 
 TEST_F(libyuvTest, TestARGBGray) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   // Test blue
   orig_pixels[0][0] = 255u;
   orig_pixels[0][1] = 0u;
@@ -325,20 +325,20 @@ TEST_F(libyuvTest, TestARGBGray) {
   EXPECT_EQ(96u, orig_pixels[5][1]);
   EXPECT_EQ(96u, orig_pixels[5][2]);
   EXPECT_EQ(224u, orig_pixels[5][3]);
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBGray(&orig_pixels[0][0], 0, 0, 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBGray(&orig_pixels[0][0], 0, 0, 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBGrayTo) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8 gray_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 gray_pixels[1280][4]);
   // Test blue
   orig_pixels[0][0] = 255u;
   orig_pixels[0][1] = 0u;
@@ -395,19 +395,19 @@ TEST_F(libyuvTest, TestARGBGrayTo) {
   EXPECT_EQ(96u, gray_pixels[5][1]);
   EXPECT_EQ(96u, gray_pixels[5][2]);
   EXPECT_EQ(224u, gray_pixels[5][3]);
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBSepia) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
 
   // Test blue
   orig_pixels[0][0] = 255u;
@@ -466,19 +466,19 @@ TEST_F(libyuvTest, TestARGBSepia) {
   EXPECT_EQ(127u, orig_pixels[5][2]);
   EXPECT_EQ(224u, orig_pixels[5][3]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBSepia(&orig_pixels[0][0], 0, 0, 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBSepia(&orig_pixels[0][0], 0, 0, 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBColorMatrix) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
 
   // Matrix for Sepia.
   static const int8 kARGBToSepia[] = {
@@ -527,23 +527,23 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   EXPECT_EQ(127u, orig_pixels[3][2]);
   EXPECT_EQ(224u, orig_pixels[3][3]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBColorTable) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   memset(orig_pixels, 0, sizeof(orig_pixels));
 
   // Matrix for Sepia.
-  static const uint8 kARGBTable[256 * 4] = {
+  static const uint8 kARGBTable[1280 * 4] = {
     1u, 2u, 3u, 4u,
     5u, 6u, 7u, 8u,
     9u, 10u, 11u, 12u,
@@ -585,24 +585,24 @@ TEST_F(libyuvTest, TestARGBColorTable) {
   EXPECT_EQ(11u, orig_pixels[3][2]);
   EXPECT_EQ(16u, orig_pixels[3][3]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 1280, 1);
   }
 }
 
 // Same as TestARGBColorTable except alpha does not change.
 TEST_F(libyuvTest, TestRGBColorTable) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   memset(orig_pixels, 0, sizeof(orig_pixels));
 
   // Matrix for Sepia.
-  static const uint8 kARGBTable[256 * 4] = {
+  static const uint8 kARGBTable[1280 * 4] = {
     1u, 2u, 3u, 4u,
     5u, 6u, 7u, 8u,
     9u, 10u, 11u, 12u,
@@ -644,67 +644,67 @@ TEST_F(libyuvTest, TestRGBColorTable) {
   EXPECT_EQ(11u, orig_pixels[3][2]);
   EXPECT_EQ(3u, orig_pixels[3][3]);  // Alpha unchanged.
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    RGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    RGBColorTable(&orig_pixels[0][0], 0, &kARGBTable[0], 0, 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBQuantize) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
   ARGBQuantize(&orig_pixels[0][0], 0,
-               (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 256, 1);
+               (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 1280, 1);
 
-  for (int i = 0; i < 256; ++i) {
-    EXPECT_EQ(i / 8 * 8 + 8 / 2, orig_pixels[i][0]);
-    EXPECT_EQ(i / 2 / 8 * 8 + 8 / 2, orig_pixels[i][1]);
-    EXPECT_EQ(i / 3 / 8 * 8 + 8 / 2, orig_pixels[i][2]);
-    EXPECT_EQ(i, orig_pixels[i][3]);
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ((i / 8 * 8 + 8 / 2) & 255, orig_pixels[i][0]);
+    EXPECT_EQ((i / 2 / 8 * 8 + 8 / 2) & 255, orig_pixels[i][1]);
+    EXPECT_EQ((i / 3 / 8 * 8 + 8 / 2) & 255, orig_pixels[i][2]);
+    EXPECT_EQ(i & 255, orig_pixels[i][3]);
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     ARGBQuantize(&orig_pixels[0][0], 0,
-                 (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 256, 1);
+                 (65536 + (8 / 2)) / 8, 8, 8 / 2, 0, 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestARGBMirror) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8 dst_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 dst_pixels[1280][4]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i / 4;
   }
-  ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
+  ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 1280, 1);
 
-  for (int i = 0; i < 256; ++i) {
-    EXPECT_EQ(i, dst_pixels[255 - i][0]);
-    EXPECT_EQ(i / 2, dst_pixels[255 - i][1]);
-    EXPECT_EQ(i / 3, dst_pixels[255 - i][2]);
-    EXPECT_EQ(i / 4, dst_pixels[255 - i][3]);
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(i & 255, dst_pixels[1280 - 1 - i][0]);
+    EXPECT_EQ((i / 2) & 255, dst_pixels[1280 - 1 - i][1]);
+    EXPECT_EQ((i / 3) & 255, dst_pixels[1280 - 1 - i][2]);
+    EXPECT_EQ((i / 4) & 255, dst_pixels[1280 - 1 - i][3]);
   }
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 256, 1);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBMirror(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0, 1280, 1);
   }
 }
 
 TEST_F(libyuvTest, TestShade) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8 shade_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 shade_pixels[1280][4]);
 
   orig_pixels[0][0] = 10u;
   orig_pixels[0][1] = 20u;
@@ -753,16 +753,16 @@ TEST_F(libyuvTest, TestShade) {
   EXPECT_EQ(5u, shade_pixels[0][2]);
   EXPECT_EQ(5u, shade_pixels[0][3]);
 
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 256, 1,
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBShade(&orig_pixels[0][0], 0, &shade_pixels[0][0], 0, 1280, 1,
               0x80808080);
   }
 }
 
 TEST_F(libyuvTest, TestInterpolate) {
-  SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
-  SIMD_ALIGNED(uint8 orig_pixels_1[256][4]);
-  SIMD_ALIGNED(uint8 interpolate_pixels[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels_0[1280][4]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[1280][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels[1280][4]);
 
   orig_pixels_0[0][0] = 16u;
   orig_pixels_0[0][1] = 32u;
@@ -832,9 +832,9 @@ TEST_F(libyuvTest, TestInterpolate) {
   EXPECT_EQ(16u, interpolate_pixels[0][2]);
   EXPECT_EQ(32u, interpolate_pixels[0][3]);
 
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
-                    &interpolate_pixels[0][0], 0, 256, 1, 128);
+                    &interpolate_pixels[0][0], 0, 1280, 1, 128);
   }
 }
 
@@ -978,10 +978,10 @@ TEST_F(libyuvTest, ARGBBlend_Opt) {
 }
 
 TEST_F(libyuvTest, TestAffine) {
-  SIMD_ALIGNED(uint8 orig_pixels_0[256][4]);
-  SIMD_ALIGNED(uint8 interpolate_pixels_C[256][4]);
+  SIMD_ALIGNED(uint8 orig_pixels_0[1280][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels_C[1280][4]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     for (int j = 0; j < 4; ++j) {
       orig_pixels_0[i][j] = i;
     }
@@ -990,42 +990,42 @@ TEST_F(libyuvTest, TestAffine) {
   float uv_step[4] = { 0.f, 0.f, 0.75f, 0.f };
 
   ARGBAffineRow_C(&orig_pixels_0[0][0], 0, &interpolate_pixels_C[0][0],
-                  uv_step, 256);
+                  uv_step, 1280);
   EXPECT_EQ(0u, interpolate_pixels_C[0][0]);
   EXPECT_EQ(96u, interpolate_pixels_C[128][0]);
   EXPECT_EQ(191u, interpolate_pixels_C[255][3]);
 
 #if defined(HAS_ARGBAFFINEROW_SSE2)
-  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[256][4]);
+  SIMD_ALIGNED(uint8 interpolate_pixels_Opt[1280][4]);
   ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
-                     uv_step, 256);
-  EXPECT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 256 * 4));
+                     uv_step, 1280);
+  EXPECT_EQ(0, memcmp(interpolate_pixels_Opt, interpolate_pixels_C, 1280 * 4));
 
   int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   if (has_sse2) {
-    for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+    for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
       ARGBAffineRow_SSE2(&orig_pixels_0[0][0], 0, &interpolate_pixels_Opt[0][0],
-                         uv_step, 256);
+                         uv_step, 1280);
     }
   }
 #endif
 }
 
 TEST_F(libyuvTest, TestSobelX) {
-  SIMD_ALIGNED(uint8 orig_pixels_0[256 + 2]);
-  SIMD_ALIGNED(uint8 orig_pixels_1[256 + 2]);
-  SIMD_ALIGNED(uint8 orig_pixels_2[256 + 2]);
-  SIMD_ALIGNED(uint8 sobel_pixels_c[256]);
-  SIMD_ALIGNED(uint8 sobel_pixels_opt[256]);
+  SIMD_ALIGNED(uint8 orig_pixels_0[1280 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[1280 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_2[1280 + 2]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[1280]);
 
-  for (int i = 0; i < 256 + 2; ++i) {
+  for (int i = 0; i < 1280 + 2; ++i) {
     orig_pixels_0[i] = i;
     orig_pixels_1[i] = i * 2;
     orig_pixels_2[i] = i * 3;
   }
 
   SobelXRow_C(orig_pixels_0, orig_pixels_1, orig_pixels_2,
-              sobel_pixels_c, 256);
+              sobel_pixels_c, 1280);
 
   EXPECT_EQ(16u, sobel_pixels_c[0]);
   EXPECT_EQ(16u, sobel_pixels_c[100]);
@@ -1044,27 +1044,27 @@ TEST_F(libyuvTest, TestSobelX) {
     SobelXRow = SobelXRow_NEON;
   }
 #endif
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     SobelXRow(orig_pixels_0, orig_pixels_1, orig_pixels_2,
-              sobel_pixels_opt, 256);
+              sobel_pixels_opt, 1280);
   }
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
   }
 }
 
 TEST_F(libyuvTest, TestSobelY) {
-  SIMD_ALIGNED(uint8 orig_pixels_0[256 + 2]);
-  SIMD_ALIGNED(uint8 orig_pixels_1[256 + 2]);
-  SIMD_ALIGNED(uint8 sobel_pixels_c[256]);
-  SIMD_ALIGNED(uint8 sobel_pixels_opt[256]);
+  SIMD_ALIGNED(uint8 orig_pixels_0[1280 + 2]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[1280 + 2]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[1280]);
 
-  for (int i = 0; i < 256 + 2; ++i) {
+  for (int i = 0; i < 1280 + 2; ++i) {
     orig_pixels_0[i] = i;
     orig_pixels_1[i] = i * 2;
   }
 
-  SobelYRow_C(orig_pixels_0, orig_pixels_1, sobel_pixels_c, 256);
+  SobelYRow_C(orig_pixels_0, orig_pixels_1, sobel_pixels_c, 1280);
 
   EXPECT_EQ(4u, sobel_pixels_c[0]);
   EXPECT_EQ(255u, sobel_pixels_c[100]);
@@ -1081,26 +1081,26 @@ TEST_F(libyuvTest, TestSobelY) {
     SobelYRow = SobelYRow_NEON;
   }
 #endif
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    SobelYRow(orig_pixels_0, orig_pixels_1, sobel_pixels_opt, 256);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    SobelYRow(orig_pixels_0, orig_pixels_1, sobel_pixels_opt, 1280);
   }
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
   }
 }
 
 TEST_F(libyuvTest, TestSobel) {
-  SIMD_ALIGNED(uint8 orig_sobelx[256]);
-  SIMD_ALIGNED(uint8 orig_sobely[256]);
-  SIMD_ALIGNED(uint8 sobel_pixels_c[256 * 4]);
-  SIMD_ALIGNED(uint8 sobel_pixels_opt[256 * 4]);
+  SIMD_ALIGNED(uint8 orig_sobelx[1280]);
+  SIMD_ALIGNED(uint8 orig_sobely[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[1280 * 4]);
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[1280 * 4]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_sobelx[i] = i;
     orig_sobely[i] = i * 2;
   }
 
-  SobelRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 256);
+  SobelRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 1280);
 
   EXPECT_EQ(0u, sobel_pixels_c[0]);
   EXPECT_EQ(3u, sobel_pixels_c[4]);
@@ -1125,8 +1125,8 @@ TEST_F(libyuvTest, TestSobel) {
     SobelRow = SobelRow_NEON;
   }
 #endif
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    SobelRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 256);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    SobelRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 1280);
   }
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
@@ -1134,17 +1134,17 @@ TEST_F(libyuvTest, TestSobel) {
 }
 
 TEST_F(libyuvTest, TestSobelXY) {
-  SIMD_ALIGNED(uint8 orig_sobelx[256]);
-  SIMD_ALIGNED(uint8 orig_sobely[256]);
-  SIMD_ALIGNED(uint8 sobel_pixels_c[256 * 4]);
-  SIMD_ALIGNED(uint8 sobel_pixels_opt[256 * 4]);
+  SIMD_ALIGNED(uint8 orig_sobelx[1280]);
+  SIMD_ALIGNED(uint8 orig_sobely[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[1280 * 4]);
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[1280 * 4]);
 
-  for (int i = 0; i < 256; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     orig_sobelx[i] = i;
     orig_sobely[i] = i * 2;
   }
 
-  SobelXYRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 256);
+  SobelXYRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 1280);
 
   EXPECT_EQ(0u, sobel_pixels_c[0]);
   EXPECT_EQ(2u, sobel_pixels_c[4]);
@@ -1165,8 +1165,8 @@ TEST_F(libyuvTest, TestSobelXY) {
     SobelXYRow = SobelXYRow_NEON;
   }
 #endif
-  for (int i = 0; i < benchmark_pixels_div256_; ++i) {
-    SobelXYRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 256);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    SobelXYRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 1280);
   }
   for (int i = 0; i < 16; ++i) {
     EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);

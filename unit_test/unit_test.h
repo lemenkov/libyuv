@@ -89,6 +89,7 @@ class libyuvTest : public ::testing::Test {
   int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
   int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
   int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
+  int benchmark_pixels_div1280_;  // Total pixels to benchmark / 1280.
 };
 
 #endif  // UNIT_TEST_UNIT_TEST_H_  NOLINT
