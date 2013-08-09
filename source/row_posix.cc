@@ -20,6 +20,11 @@ extern "C" {
 // This module is for GCC x86 and x64
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
+// TODO(nfullagar): For Native Client: When new toolchain becomes available,
+// take advantage of bundle lock / unlock feature. This will reduce the amount
+// of manual bundle alignment done below, and bundle alignment could even be
+// moved into each macro that doesn't use %%nacl: such as MEMOPREG.
+
 #if defined(__native_client__) && defined(__x86_64__)
 #define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
 #define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
@@ -28,6 +33,10 @@ extern "C" {
     #offset "(%q" #base ",%q" #index "," #scale ")"
 #define MEMMOVESTRING(s, d) "%%nacl:(%q" #s "),%%nacl:(%q" #d "), %%r15"
 #define MEMSTORESTRING(reg, d) "%%" #reg ",%%nacl:(%q" #d "), %%r15"
+#define MEMOPREG(opcode, offset, base, index, scale, reg) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14),%%" #reg " \n"
+#define BUNDLEALIGN ".p2align 5 \n"
 #else
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
@@ -36,6 +45,9 @@ extern "C" {
     #offset "(%" #base ",%" #index "," #scale ")"
 #define MEMMOVESTRING(s, d)
 #define MEMSTORESTRING(reg, d)
+#define MEMOPREG(opcode, offset, base, index, scale, reg) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg " \n"
+#define BUNDLEALIGN
 #endif
 
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
@@ -4635,25 +4647,28 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
 
   // 4 pixel loop                              \n"
     ".p2align  2                               \n"
+    BUNDLEALIGN
   "40:                                         \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    0x20(%0),%%xmm2                 \n"
-    "movdqa    0x30(%0),%%xmm3                 \n"
-    "psubd     (%0,%4,4),%%xmm0                \n"
-    "psubd     0x10(%0,%4,4),%%xmm1            \n"
-    "psubd     0x20(%0,%4,4),%%xmm2            \n"
-    "psubd     0x30(%0,%4,4),%%xmm3            \n"
-    "lea       0x40(%0),%0                     \n"
-    "psubd     (%1),%%xmm0                     \n"
-    "psubd     0x10(%1),%%xmm1                 \n"
-    "psubd     0x20(%1),%%xmm2                 \n"
-    "psubd     0x30(%1),%%xmm3                 \n"
-    "paddd     (%1,%4,4),%%xmm0                \n"
-    "paddd     0x10(%1,%4,4),%%xmm1            \n"
-    "paddd     0x20(%1,%4,4),%%xmm2            \n"
-    "paddd     0x30(%1,%4,4),%%xmm3            \n"
-    "lea       0x40(%1),%1                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    "movdqa    "MEMACCESS2(0x10,0)",%%xmm1     \n"
+    "movdqa    "MEMACCESS2(0x20,0)",%%xmm2     \n"
+    "movdqa    "MEMACCESS2(0x30,0)",%%xmm3     \n"
+    BUNDLEALIGN
+    MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
+    MEMOPREG(psubd,0x10,0,4,4,xmm1)            // psubd    0x10(%0,%4,4),%%xmm1
+    MEMOPREG(psubd,0x20,0,4,4,xmm2)            // psubd    0x20(%0,%4,4),%%xmm2
+    MEMOPREG(psubd,0x30,0,4,4,xmm3)            // psubd    0x30(%0,%4,4),%%xmm3
+    "lea       "MEMLEA(0x40,0)",%0             \n"
+    "psubd     "MEMACCESS(1)",%%xmm0           \n"
+    "psubd     "MEMACCESS2(0x10,1)",%%xmm1     \n"
+    "psubd     "MEMACCESS2(0x20,1)",%%xmm2     \n"
+    "psubd     "MEMACCESS2(0x30,1)",%%xmm3     \n"
+    BUNDLEALIGN
+    MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
+    MEMOPREG(paddd,0x10,1,4,4,xmm1)            // paddd    0x10(%1,%4,4),%%xmm1
+    MEMOPREG(paddd,0x20,1,4,4,xmm2)            // paddd    0x20(%1,%4,4),%%xmm2
+    MEMOPREG(paddd,0x30,1,4,4,xmm3)            // paddd    0x30(%1,%4,4),%%xmm3
+    "lea       "MEMLEA(0x40,0)",%0             \n"
     "cvtdq2ps  %%xmm0,%%xmm0                   \n"
     "cvtdq2ps  %%xmm1,%%xmm1                   \n"
     "mulps     %%xmm4,%%xmm0                   \n"
@@ -4669,8 +4684,8 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     "packssdw  %%xmm1,%%xmm0                   \n"
     "packssdw  %%xmm3,%%xmm2                   \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0,(%2)                     \n"
-    "lea       0x10(%2),%2                     \n"
+    "movdqu    %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "sub       $0x4,%3                         \n"
     "jge       40b                             \n"
 
@@ -4680,20 +4695,22 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
 
   // 1 pixel loop                              \n"
     ".p2align  2                               \n"
+    BUNDLEALIGN
   "10:                                         \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "psubd     (%0,%4,4),%%xmm0                \n"
-    "lea       0x10(%0),%0                     \n"
-    "psubd     (%1),%%xmm0                     \n"
-    "paddd     (%1,%4,4),%%xmm0                \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "psubd     "MEMACCESS(1)",%%xmm0           \n"
+    BUNDLEALIGN
+    MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "cvtdq2ps  %%xmm0,%%xmm0                   \n"
     "mulps     %%xmm4,%%xmm0                   \n"
     "cvtps2dq  %%xmm0,%%xmm0                   \n"
     "packssdw  %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,(%2)                     \n"
-    "lea       0x4(%2),%2                      \n"
+    "movd      %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x4,2)",%2              \n"
     "sub       $0x1,%3                         \n"
     "jge       10b                             \n"
   "19:                                         \n"
@@ -4704,6 +4721,9 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
   : "r"(static_cast<intptr_t>(width)),  // %4
     "rm"(area)     // %5
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
