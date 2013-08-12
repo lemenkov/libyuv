@@ -503,7 +503,13 @@ extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "pop    %edi                               \n"
     "pop    %esi                               \n"
     "pop    %ebx                               \n"
+#if defined(__native_client__)
+    "pop    %ecx                               \n"
+    "and    $0xffffffe0,%ecx                   \n"
+    "jmp    *%ecx                              \n"
+#else
     "ret                                       \n"
+#endif
 );
 #elif !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__)
 // 64 bit version has enough registers to do 16x8 to 8x16 at a time.
