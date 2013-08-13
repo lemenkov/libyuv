@@ -782,7 +782,7 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
-#if defined(HAS_ARGBTOYROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
@@ -798,7 +798,7 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2) && width >= 32) {
     ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
