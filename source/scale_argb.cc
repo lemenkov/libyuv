@@ -236,6 +236,8 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     lea        edi, [edi + 8]
     sub        ecx, 2               // 2 pixels
     jge        xloop2
+
+    align      16
  xloop29:
 
     add        ecx, 2 - 1
@@ -244,6 +246,8 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     // 1 pixel remainder
     movd       xmm0, qword ptr [esi + eax * 4]  // 1 source x0 pixels
     movd       [edi], xmm0
+
+    align      16
  xloop99:
 
     pop        edi
@@ -313,6 +317,8 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     lea        edi, [edi + 8]
     sub        ecx, 2               // 2 pixels
     jge        xloop2
+
+    align      16
  xloop29:
 
     add        ecx, 2 - 1
@@ -328,6 +334,8 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     psrlw      xmm0, 7
     packuswb   xmm0, xmm0           // argb 8 bits, 1 pixel.
     movd       [edi], xmm0
+
+    align      16
  xloop99:
 
     pop        edi
@@ -485,6 +493,8 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 }
 
 #define HAS_SCALEARGBCOLS_SSE2
+// TODO(fbarchard): p2align 5 is for nacl branch targets.  Reduce using
+// pseudoop, bundle or macro.
 static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
                                int dst_width, int x, int dx) {
   intptr_t x0 = 0, x1 = 0;
@@ -501,7 +511,7 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
 
-    ".p2align  4                               \n"
+    ".p2align  5                               \n"
   "2:                                          \n"
     "paddd     %%xmm3,%%xmm2                   \n"
     "movd      (%1,%3,4),%%xmm0                \n"
@@ -514,11 +524,14 @@ static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     "sub       $0x2,%2                         \n"
     "jge       2b                              \n"
 
+    ".p2align  5                               \n"
   "29:                                         \n"
     "add       $0x1,%2                         \n"
     "jl        99f                             \n"
     "movd      (%1,%3,4),%%xmm0                \n"
     "movd      %%xmm0,(%0)                     \n"
+
+    ".p2align  5                               \n"
   "99:                                         \n"
   : "+r"(dst_argb),    // %0
     "+r"(src_argb),    // %1
@@ -593,6 +606,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "sub       $0x2,%2                         \n"
     "jge       2b                              \n"
 
+    ".p2align  4                               \n"
   "29:                                         \n"
     "add       $0x1,%2                         \n"
     "jl        99f                             \n"
@@ -605,6 +619,8 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,(%0)                     \n"
+
+    ".p2align  4                               \n"
   "99:                                         \n"
   : "+r"(dst_argb),    // %0
     "+r"(src_argb),    // %1

@@ -781,6 +781,8 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     paddusw    xmm1, xmm3
     sub        ebp, 1
     jg         yloop
+
+    align      16
   ydone:
     movdqa     [edi], xmm0
     movdqa     [edi + 16], xmm1
@@ -1358,6 +1360,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "mov       %5,%2                           \n"
     "test      %2,%2                           \n"
     "je        3f                              \n"
+    ".p2align  4                               \n"
   "2:                                          \n"
     "movdqa    (%0),%%xmm2                     \n"
     "add       %6,%0                           \n"
@@ -1368,6 +1371,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "paddusw   %%xmm3,%%xmm1                   \n"
     "sub       $0x1,%2                         \n"
     "jg        2b                              \n"
+    ".p2align  4                               \n"
   "3:                                          \n"
     "movdqa    %%xmm0,(%1)                     \n"
     "movdqa    %%xmm1,0x10(%1)                 \n"
