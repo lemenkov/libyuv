@@ -5017,9 +5017,10 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 
     // General purpose row blend.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "movdqa    (%1,%4,1),%%xmm2                \n"
+    "movdqa    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,1,4,1,xmm2)           //  movdqa    (%1,%4,1),%%xmm2
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
@@ -5036,56 +5037,64 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "paddw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
     "jmp       99f                             \n"
 
     // Blend 25 / 75.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "25:                                         \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "movdqa    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,1,4,1,xmm1)           //  movdqa    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        25b                             \n"
     "jmp       99f                             \n"
 
     // Blend 50 / 50.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "50:                                         \n"
-    "movdqa    (%1),%%xmm0                     \n"
-    "movdqa    (%1,%4,1),%%xmm1                \n"
+    "movdqa    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,1,4,1,xmm1)           //  movdqa    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        50b                             \n"
     "jmp       99f                             \n"
 
     // Blend 75 / 25.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "75:                                         \n"
-    "movdqa    (%1),%%xmm1                     \n"
-    "movdqa    (%1,%4,1),%%xmm0                \n"
+    "movdqa    "MEMACCESS(1)",%%xmm1           \n"
+    MEMOPREG(movdqa,0x00,1,4,1,xmm0)           //  movdqa    (%1,%4,1),%%xmm0
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        75b                             \n"
     "jmp       99f                             \n"
 
     // Blend 100 / 0 - Copy row unchanged.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "100:                                        \n"
-    "movdqa    (%1),%%xmm0                     \n"
+    "movdqa    "MEMACCESS(1)",%%xmm0           \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
@@ -5095,6 +5104,9 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
@@ -5247,9 +5259,10 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 
     // General purpose row blend.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqu    (%1),%%xmm0                     \n"
-    "movdqu    (%1,%4,1),%%xmm2                \n"
+    "movdqu    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm2)           //  movdqu    (%1,%4,1),%%xmm2
     "movdqu    %%xmm0,%%xmm1                   \n"
     "movdqu    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
@@ -5266,56 +5279,64 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "paddw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
     "jmp       99f                             \n"
 
     // Blend 25 / 75.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "25:                                         \n"
-    "movdqu    (%1),%%xmm0                     \n"
-    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "movdqu    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        25b                             \n"
     "jmp       99f                             \n"
 
     // Blend 50 / 50.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "50:                                         \n"
-    "movdqu    (%1),%%xmm0                     \n"
-    "movdqu    (%1,%4,1),%%xmm1                \n"
+    "movdqu    "MEMACCESS(1)",%%xmm0           \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        50b                             \n"
     "jmp       99f                             \n"
 
     // Blend 75 / 25.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "75:                                         \n"
-    "movdqu    (%1),%%xmm1                     \n"
-    "movdqu    (%1,%4,1),%%xmm0                \n"
+    "movdqu    "MEMACCESS(1)",%%xmm1           \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm0)           //  movdqu    (%1,%4,1),%%xmm0
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    BUNDLEALIGN
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        75b                             \n"
     "jmp       99f                             \n"
 
     // Blend 100 / 0 - Copy row unchanged.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "100:                                        \n"
-    "movdqu    (%1),%%xmm0                     \n"
+    "movdqu    "MEMACCESS(1)",%%xmm0           \n"
     "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0,(%1,%0,1)                \n"
-    "lea       0x10(%1),%1                     \n"
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        100b                            \n"
 
   "99:                                         \n"
@@ -5325,6 +5346,9 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(source_y_fraction)  // %3
   : "r"(static_cast<intptr_t>(src_stride))  // %4
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
