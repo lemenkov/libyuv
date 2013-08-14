@@ -27,7 +27,7 @@ static __inline int Abs(int v) {
 }
 
 // ARGB scaling uses bilinear or point, but not box filter.
-#if !defined(LIBYUV_DISABLE_NEON) && \
+#if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 #define HAS_SCALEARGBROWDOWN2_NEON
@@ -43,7 +43,8 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
 #endif
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
+#if !defined(LIBYUV_DISABLE_X86) && \
+    defined(_M_IX86) && defined(_MSC_VER)
 #define HAS_SCALEARGBROWDOWN2_SSE2
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
@@ -344,7 +345,8 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
-#elif !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
+#elif !defined(LIBYUV_DISABLE_X86) && \
+    ((defined(__x86_64__) && !defined(__native_client__)) || defined(__i386__))
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
