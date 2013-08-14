@@ -1528,14 +1528,19 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
   void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
-  void (*CUMULATIVESUMTOAVERAGEROW)(const int32* topleft, const int32* botleft,
+  void (*CumulativeSumToAverageRow)(const int32* topleft, const int32* botleft,
       int width, int area, uint8* dst, int count) = CumulativeSumToAverageRow_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
-    CUMULATIVESUMTOAVERAGEROW = CumulativeSumToAverageRow_SSE2;
+    CumulativeSumToAverageRow = CumulativeSumToAverageRow_SSE2;
   }
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this
@@ -1580,7 +1585,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     int boxwidth = radius * 4;
     int x;
     for (x = 0; x < radius + 1; ++x) {
-      CUMULATIVESUMTOAVERAGEROW(cumsum_top_row, cumsum_bot_row,
+      CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
                               boxwidth, area, &dst_argb[x * 4], 1);
       area += (bot_y - top_y);
       boxwidth += 4;
@@ -1588,14 +1593,14 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
 
     // Middle unclipped.
     int n = (width - 1) - radius - x + 1;
-    CUMULATIVESUMTOAVERAGEROW(cumsum_top_row, cumsum_bot_row,
+    CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
                            boxwidth, area, &dst_argb[x * 4], n);
 
     // Right clipped.
     for (x += n; x <= width - 1; ++x) {
       area -= (bot_y - top_y);
       boxwidth -= 4;
-      CUMULATIVESUMTOAVERAGEROW(cumsum_top_row + (x - radius - 1) * 4,
+      CumulativeSumToAverageRow(cumsum_top_row + (x - radius - 1) * 4,
                              cumsum_bot_row + (x - radius - 1) * 4,
                              boxwidth, area, &dst_argb[x * 4], 1);
     }

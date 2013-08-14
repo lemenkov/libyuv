@@ -4668,7 +4668,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     MEMOPREG(paddd,0x10,1,4,4,xmm1)            // paddd    0x10(%1,%4,4),%%xmm1
     MEMOPREG(paddd,0x20,1,4,4,xmm2)            // paddd    0x20(%1,%4,4),%%xmm2
     MEMOPREG(paddd,0x30,1,4,4,xmm3)            // paddd    0x30(%1,%4,4),%%xmm3
-    "lea       "MEMLEA(0x40,0)",%0             \n"
+    "lea       "MEMLEA(0x40,1)",%1             \n"
     "cvtdq2ps  %%xmm0,%%xmm0                   \n"
     "cvtdq2ps  %%xmm1,%%xmm1                   \n"
     "mulps     %%xmm4,%%xmm0                   \n"

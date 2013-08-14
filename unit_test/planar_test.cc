@@ -1584,4 +1584,76 @@ TEST_F(libyuvTest, ARGBSobelXY_Opt) {
   EXPECT_EQ(0, max_diff);
 }
 
+static int TestBlur(int width, int height, int benchmark_iterations,
+                    int invert, int off, int radius) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kBpp = 4;
+  const int kStride = (width * kBpp + 15) & ~15;
+  align_buffer_64(src_argb_a, kStride * height + off);
+  align_buffer_64(dst_cumsum, width * height * 16);
+  align_buffer_64(dst_argb_c, kStride * height);
+  align_buffer_64(dst_argb_opt, kStride * height);
+  srandom(time(NULL));
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb_a[i + off] = (random() & 0xff);
+  }
+  memset(dst_cumsum, 0, width * height * 16);
+  memset(dst_argb_c, 0, kStride * height);
+  memset(dst_argb_opt, 0, kStride * height);
+
+  MaskCpuFlags(0);
+  ARGBBlur(src_argb_a + off, kStride,
+           dst_argb_c, kStride,
+           reinterpret_cast<int32*>(dst_cumsum), width * 4,
+           width, invert * height, radius);
+  MaskCpuFlags(-1);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBBlur(src_argb_a + off, kStride,
+             dst_argb_opt, kStride,
+             reinterpret_cast<int32*>(dst_cumsum), width * 4,
+             width, invert * height, radius);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i]) -
+            static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_64(src_argb_a)
+  free_aligned_buffer_64(dst_cumsum)
+  free_aligned_buffer_64(dst_argb_c)
+  free_aligned_buffer_64(dst_argb_opt)
+  return max_diff;
+}
+
+static const int kBlurSize = 13;
+TEST_F(libyuvTest, ARGBBlur_Any) {
+  int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
+                          benchmark_iterations_, +1, 0, kBlurSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlur_Unaligned) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, +1, 1, kBlurSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlur_Invert) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, -1, 0, kBlurSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlur_Opt) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, +1, 0, kBlurSize);
+  EXPECT_LE(max_diff, 1);
+}
+
 }  // namespace libyuv
