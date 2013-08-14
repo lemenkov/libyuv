@@ -4748,8 +4748,8 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
   intptr_t src_argb_stride_temp = src_argb_stride;
   intptr_t temp = 0;
   asm volatile (
-    "movq      (%3),%%xmm2                     \n"
-    "movq      0x8(%3),%%xmm7                  \n"
+    "movq      "MEMACCESS(3)",%%xmm2           \n"
+    "movq      "MEMACCESS2(0x08,3)",%%xmm7     \n"
     "shl       $0x10,%1                        \n"
     "add       $0x4,%1                         \n"
     "movd      %1,%%xmm5                       \n"
@@ -4775,6 +4775,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "packssdw  %%xmm1,%%xmm0                   \n"
     "pmaddwd   %%xmm5,%%xmm0                   \n"
 #if defined(__x86_64__)
+// TODO(fbarchard): use a real movd to zero upper with %w1 for x64 and nacl.
     "movd      %%xmm0,%1                       \n"
     "mov       %1,%5                           \n"
     "and       $0x0fffffff,%1                  \n"
@@ -4786,11 +4787,19 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "movd      %%xmm0,%5                       \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 #endif
+#if defined(__x86_64__) && defined(__native_client__)
+    BUNDLEALIGN
+    "lea       (%q0,%q1,1),%%r14d              \n"
+    "movd      (%%r15,%%r14,1),%%xmm1          \n"
+    "lea       (%q0,%q5,1),%%r14d              \n"
+    "movd      (%%r15,%%r14,1),%%xmm6          \n"
+#else
     "movd      (%0,%1,1),%%xmm1                \n"
     "movd      (%0,%5,1),%%xmm6                \n"
+#endif
     "punpckldq %%xmm6,%%xmm1                   \n"
     "addps     %%xmm4,%%xmm2                   \n"
-    "movq      %%xmm1,(%2)                     \n"
+    "movq      %%xmm1,"MEMACCESS(2)"           \n"
 #if defined(__x86_64__)
     "movd      %%xmm0,%1                       \n"
     "mov       %1,%5                           \n"
@@ -4801,13 +4810,21 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
     "movd      %%xmm0,%5                       \n"
 #endif
+#if defined(__x86_64__) && defined(__native_client__)
+    BUNDLEALIGN
+    "lea       (%q0,%q1,1),%%r14d              \n"
+    "movd      (%%r15,%%r14,1),%%xmm0          \n"
+    "lea       (%q0,%q5,1),%%r14d              \n"
+    "movd      (%%r15,%%r14,1),%%xmm6          \n"
+#else
     "movd      (%0,%1,1),%%xmm0                \n"
     "movd      (%0,%5,1),%%xmm6                \n"
+#endif
     "punpckldq %%xmm6,%%xmm0                   \n"
     "addps     %%xmm4,%%xmm3                   \n"
     "sub       $0x4,%4                         \n"
-    "movq      %%xmm0,0x08(%2)                 \n"
-    "lea       0x10(%2),%2                     \n"
+    "movq      %%xmm0,"MEMACCESS2(0x08,2)"     \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
     "jge       40b                             \n"
 
   "49:                                         \n"
@@ -4825,10 +4842,16 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 #if defined(__x86_64__)
     "and       $0x0fffffff,%1                  \n"
 #endif
+#if defined(__x86_64__) && defined(__native_client__)
+    BUNDLEALIGN
+    "lea       (%q0,%q1,1),%%r14d              \n"
+    "movd      (%%r15,%%r14,1),%%xmm0          \n"
+#else
     "movd      (%0,%1,1),%%xmm0                \n"
+#endif
     "sub       $0x1,%4                         \n"
-    "movd      %%xmm0,(%2)                     \n"
-    "lea       0x4(%2),%2                      \n"
+    "movd      %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x04,2)",%2             \n"
     "jge       10b                             \n"
   "19:                                         \n"
   : "+r"(src_argb),  // %0
@@ -4839,6 +4862,9 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "+r"(temp)   // %5
   :
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif

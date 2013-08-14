@@ -40,6 +40,7 @@ extern "C" {
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Effects:
 #define HAS_ARGBADDROW_SSE2
+#define HAS_ARGBAFFINEROW_SSE2
 #define HAS_ARGBATTENUATEROW_SSSE3
 #define HAS_ARGBBLENDROW_SSSE3
 #define HAS_ARGBCOLORMATRIXROW_SSSE3
@@ -128,7 +129,6 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 
 // Effects:
-#define HAS_ARGBAFFINEROW_SSE2
 #define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_INTERPOLATEROW_SSE2
 #define HAS_SOBELROW_SSE2
