@@ -4765,7 +4765,6 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 8 + 4]   // src_argb0
     mov        edx, [esp + 8 + 8]   // dst_argb
     mov        ecx, [esp + 8 + 12]  // width
-    sub        edx, eax
 
     align      16
  convertloop:
@@ -4790,11 +4789,12 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     pshuflw    xmm3, xmm3, 040h // next 4 inv_alpha words
     movlhps    xmm2, xmm3
     pmulhuw    xmm1, xmm2       // rgb * a
+    lea        eax, [eax + 16]
 
     packuswb   xmm0, xmm1
     sub        ecx, 4
-    movdqa     [eax + edx], xmm0
-    lea        eax, [eax + 16]
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
     jg         convertloop
     pop        edi
     pop        esi

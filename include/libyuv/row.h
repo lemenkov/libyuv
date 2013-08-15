@@ -51,6 +51,7 @@ extern "C" {
 #define HAS_ARGBSEPIAROW_SSSE3
 #define HAS_ARGBSHADEROW_SSE2
 #define HAS_ARGBSUBTRACTROW_SSE2
+#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 #define HAS_INTERPOLATEROW_SSE2
@@ -130,7 +131,6 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 
 // Effects:
-#define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_SOBELROW_SSE2
 #define HAS_SOBELXROW_SSSE3
 #define HAS_SOBELXYROW_SSE2
@@ -1413,7 +1413,7 @@ void ARGBAttenuateRow_Any_NEON(const uint8* src_argb, uint8* dst_argb,
                                int width);
 
 // Inverse table for unattenuate, shared by C and SSE2.
-extern uint32 fixed_invtbl8[256];
+extern const uint32 fixed_invtbl8[256];
 void ARGBUnattenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);

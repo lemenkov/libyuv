@@ -3920,35 +3920,34 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
                              int width) {
   uintptr_t alpha = 0;
   asm volatile (
-    "sub       %0,%1                           \n"
-
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movzb     0x3(%0),%3                      \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    "movzb     "MEMACCESS2(0x03,0)",%3         \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
-    "movd      0x0(%4,%3,4),%%xmm2             \n"
-    "movzb     0x7(%0),%3                      \n"
-    "movd      0x0(%4,%3,4),%%xmm3             \n"
+    MEMOPREG(movd,0x00,4,3,4,xmm2)             //  movd      0x0(%4,%3,4),%%xmm2
+    "movzb     "MEMACCESS2(0x07,0)",%3         \n"
+    MEMOPREG(movd,0x00,4,3,4,xmm3)             //  movd      0x0(%4,%3,4),%%xmm3
     "pshuflw   $0x40,%%xmm2,%%xmm2             \n"
     "pshuflw   $0x40,%%xmm3,%%xmm3             \n"
     "movlhps   %%xmm3,%%xmm2                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "movdqa    (%0),%%xmm1                     \n"
-    "movzb     0xb(%0),%3                      \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
+    "movzb     "MEMACCESS2(0x0b,0)",%3         \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
-    "movd      0x0(%4,%3,4),%%xmm2             \n"
-    "movzb     0xf(%0),%3                      \n"
-    "movd      0x0(%4,%3,4),%%xmm3             \n"
+    MEMOPREG(movd,0x00,4,3,4,xmm2)             //  movd      0x0(%4,%3,4),%%xmm2
+    "movzb     "MEMACCESS2(0x0f,0)",%3         \n"
+    MEMOPREG(movd,0x00,4,3,4,xmm3)             //  movd      0x0(%4,%3,4),%%xmm3
     "pshuflw   $0x40,%%xmm2,%%xmm2             \n"
     "pshuflw   $0x40,%%xmm3,%%xmm3             \n"
     "movlhps   %%xmm3,%%xmm2                   \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0,(%0,%1,1)                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
     "jg        1b                              \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
@@ -3956,6 +3955,9 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     "+r"(alpha)        // %3
   : "r"(fixed_invtbl8)  // %4
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
 #endif
