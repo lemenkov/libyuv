@@ -4362,19 +4362,22 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 
     // 8 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movq      (%0),%%xmm0                     \n"
-    "movq      0x2(%0),%%xmm1                  \n"
+    "movq      "MEMACCESS(0)",%%xmm0           \n"
+    "movq      "MEMACCESS2(0x2,0)",%%xmm1      \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "psubw     %%xmm1,%%xmm0                   \n"
-    "movq      (%0,%1,1),%%xmm1                \n"
-    "movq      0x2(%0,%1,1),%%xmm2             \n"
+    BUNDLEALIGN
+    MEMOPREG(movq,0x00,0,1,1,xmm1)             //  movq      (%0,%1,1),%%xmm1
+    MEMOPREG(movq,0x02,0,1,1,xmm2)             //  movq      0x2(%0,%1,1),%%xmm2
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "psubw     %%xmm2,%%xmm1                   \n"
-    "movq      (%0,%2,1),%%xmm2                \n"
-    "movq      0x2(%0,%2,1),%%xmm3             \n"
+    BUNDLEALIGN
+    MEMOPREG(movq,0x00,0,2,1,xmm2)             //  movq      (%0,%2,1),%%xmm2
+    MEMOPREG(movq,0x02,0,2,1,xmm3)             //  movq      0x2(%0,%2,1),%%xmm3
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm3                   \n"
     "psubw     %%xmm3,%%xmm2                   \n"
@@ -4384,8 +4387,9 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "pabsw     %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "sub       $0x8,%4                         \n"
-    "movq      %%xmm0,(%0,%3,1)                \n"
-    "lea       0x8(%0),%0                      \n"
+    BUNDLEALIGN
+    MEMOPMEM(movq,xmm0,0x00,0,3,1)             //  movq      %%xmm0,(%0,%3,1)
+    "lea       "MEMLEA(0x8,0)",%0              \n"
     "jg        1b                              \n"
   : "+r"(src_y0),      // %0
     "+r"(src_y1),      // %1
@@ -4394,6 +4398,9 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "+r"(width)        // %4
   :
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
@@ -4415,19 +4422,22 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 
     // 8 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movq      (%0),%%xmm0                     \n"
-    "movq      (%0,%1,1),%%xmm1                \n"
+    "movq      "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(movq,0x00,0,1,1,xmm1)             //  movq      (%0,%1,1),%%xmm1
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "psubw     %%xmm1,%%xmm0                   \n"
-    "movq      0x1(%0),%%xmm1                  \n"
-    "movq      0x1(%0,%1,1),%%xmm2             \n"
+    BUNDLEALIGN
+    "movq      "MEMACCESS2(0x1,0)",%%xmm1      \n"
+    MEMOPREG(movq,0x01,0,1,1,xmm2)             //  movq      0x1(%0,%1,1),%%xmm2
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "psubw     %%xmm2,%%xmm1                   \n"
-    "movq      0x2(%0),%%xmm2                  \n"
-    "movq      0x2(%0,%1,1),%%xmm3             \n"
+    BUNDLEALIGN
+    "movq      "MEMACCESS2(0x2,0)",%%xmm2      \n"
+    MEMOPREG(movq,0x02,0,1,1,xmm3)             //  movq      0x2(%0,%1,1),%%xmm3
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm3                   \n"
     "psubw     %%xmm3,%%xmm2                   \n"
@@ -4437,8 +4447,9 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "pabsw     %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "sub       $0x8,%3                         \n"
-    "movq      %%xmm0,(%0,%2,1)                \n"
-    "lea       0x8(%0),%0                      \n"
+    BUNDLEALIGN
+    MEMOPMEM(movq,xmm0,0x00,0,2,1)             //  movq      %%xmm0,(%0,%2,1)
+    "lea       "MEMLEA(0x8,0)",%0              \n"
     "jg        1b                              \n"
   : "+r"(src_y0),      // %0
     "+r"(src_y1),      // %1
@@ -4446,6 +4457,9 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "+r"(width)        // %3
   :
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
@@ -4468,10 +4482,11 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
     // 8 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%1,1),%%xmm1                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,0,1,1,xmm1)           //  movdqa    (%0,%1,1),%%xmm1
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "punpcklbw %%xmm0,%%xmm2                   \n"
@@ -4487,11 +4502,11 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "por       %%xmm5,%%xmm3                   \n"
     "por       %%xmm5,%%xmm0                   \n"
     "sub       $0x10,%3                        \n"
-    "movdqa    %%xmm1,(%2)                     \n"
-    "movdqa    %%xmm2,0x10(%2)                 \n"
-    "movdqa    %%xmm3,0x20(%2)                 \n"
-    "movdqa    %%xmm0,0x30(%2)                 \n"
-    "lea       0x40(%2),%2                     \n"
+    "movdqa    %%xmm1,"MEMACCESS(2)"           \n"
+    "movdqa    %%xmm2,"MEMACCESS2(0x10,2)"     \n"
+    "movdqa    %%xmm3,"MEMACCESS2(0x20,2)"     \n"
+    "movdqa    %%xmm0,"MEMACCESS2(0x30,2)"     \n"
+    "lea       "MEMLEA(0x40,2)",%2             \n"
     "jg        1b                              \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
@@ -4499,6 +4514,9 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "+r"(width)        // %3
   :
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
@@ -4520,10 +4538,11 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
     // 8 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%1,1),%%xmm1                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,0,1,1,xmm1)           //  movdqa    (%0,%1,1),%%xmm1
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "paddusb   %%xmm1,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm3                   \n"
@@ -4539,11 +4558,11 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "punpcklwd %%xmm0,%%xmm7                   \n"
     "punpckhwd %%xmm0,%%xmm1                   \n"
     "sub       $0x10,%3                        \n"
-    "movdqa    %%xmm6,(%2)                     \n"
-    "movdqa    %%xmm4,0x10(%2)                 \n"
-    "movdqa    %%xmm7,0x20(%2)                 \n"
-    "movdqa    %%xmm1,0x30(%2)                 \n"
-    "lea       0x40(%2),%2                     \n"
+    "movdqa    %%xmm6,"MEMACCESS(2)"           \n"
+    "movdqa    %%xmm4,"MEMACCESS2(0x10,2)"     \n"
+    "movdqa    %%xmm7,"MEMACCESS2(0x20,2)"     \n"
+    "movdqa    %%xmm1,"MEMACCESS2(0x30,2)"     \n"
+    "lea       "MEMLEA(0x40,2)",%2             \n"
     "jg        1b                              \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
@@ -4551,6 +4570,9 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "+r"(width)        // %3
   :
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif

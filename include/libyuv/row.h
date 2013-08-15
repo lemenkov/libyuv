@@ -56,6 +56,10 @@ extern "C" {
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 #define HAS_INTERPOLATEROW_SSE2
 #define HAS_INTERPOLATEROW_SSSE3
+#define HAS_SOBELROW_SSE2
+#define HAS_SOBELXROW_SSSE3
+#define HAS_SOBELXYROW_SSE2
+#define HAS_SOBELYROW_SSSE3
 
 // Conversions:
 #define HAS_ARGBSHUFFLEROW_SSSE3
@@ -131,10 +135,6 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 
 // Effects:
-#define HAS_SOBELROW_SSE2
-#define HAS_SOBELXROW_SSSE3
-#define HAS_SOBELXYROW_SSE2
-#define HAS_SOBELYROW_SSSE3
 #endif
 
 // The following are Windows only:
