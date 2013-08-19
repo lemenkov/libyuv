@@ -513,6 +513,7 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     "movq      "MEMACCESS(0)",%%xmm0           \n"
     MEMOPREG(movhps,0x00,0,1,1,xmm0)           //  movhps    (%0,%1,1),%%xmm0
     MEMOPREG(movq,0x00,0,1,2,xmm1)             //  movq      (%0,%1,2),%%xmm1
+    BUNDLEALIGN
     MEMOPREG(movhps,0x00,0,4,1,xmm1)           //  movhps    (%0,%4,1),%%xmm1
     "lea       "MEMLEA4(0x00,0,1,4)",%0        \n"
     "movq      "MEMACCESS(5)",%%xmm2           \n"
