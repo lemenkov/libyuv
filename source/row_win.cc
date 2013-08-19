@@ -3585,15 +3585,15 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     mov        eax, [esp + 4]   // src
     mov        edx, [esp + 8]   // dst
     mov        ecx, [esp + 12]  // count
-    sub        edx, eax
 
     align      16
   convertloop:
     movdqa     xmm0, [eax]
     movdqa     xmm1, [eax + 16]
-    movdqa     [eax + edx], xmm0
-    movdqa     [eax + edx + 16], xmm1
     lea        eax, [eax + 32]
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
     sub        ecx, 32
     jg         convertloop
     ret

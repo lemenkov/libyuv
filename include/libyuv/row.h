@@ -67,6 +67,7 @@ extern "C" {
 #define HAS_ARGBTOYJROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
 #define HAS_COPYROW_ERMS
+#define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
 #define HAS_FIXEDDIV_X86
 #define HAS_I400TOARGBROW_SSE2
@@ -94,7 +95,6 @@ extern "C" {
 #define HAS_ARGBTOUVJROW_SSSE3
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
-#define HAS_COPYROW_SSE2
 #define HAS_HALFROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
@@ -133,8 +133,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
-
-// Effects:
 #endif
 
 // The following are Windows only:

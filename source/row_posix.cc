@@ -3034,14 +3034,14 @@ void MergeUVRow_Unaligned_SSE2(const uint8* src_u, const uint8* src_v,
 #ifdef HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
-    "sub        %0,%1                          \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    %%xmm0,(%0,%1)                  \n"
-    "movdqa    %%xmm1,0x10(%0,%1)              \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    "movdqa    "MEMACCESS2(0x10,0)",%%xmm1     \n"
+    "lea       "MEMLEA(0x20,0)",%0             \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "movdqa    %%xmm1,"MEMACCESS2(0x10,1)"     \n"
+    "lea       "MEMLEA(0x20,1)",%1             \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src),   // %0
