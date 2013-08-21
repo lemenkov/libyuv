@@ -176,6 +176,105 @@ static uvec8 kShuffleMaskARGBToRAW_0 = {
 };
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
+//#define TESTING 1
+#if defined(TESTING) && defined(__x86_64__)
+void TestRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
+  asm volatile (
+    ".p2align  5                               \n"
+    "mov       %%eax,%%eax                     \n"
+    "mov       %%ebx,%%ebx                     \n"
+    "mov       %%ecx,%%ecx                     \n"
+    "mov       %%edx,%%edx                     \n"
+    "mov       %%esi,%%esi                     \n"
+    "mov       %%edi,%%edi                     \n"
+    "mov       %%ebp,%%ebp                     \n"
+    "mov       %%esp,%%esp                     \n"
+    ".p2align  5                               \n"
+    "mov       %%r8d,%%r8d                     \n"
+    "mov       %%r9d,%%r9d                     \n"
+    "mov       %%r10d,%%r10d                   \n"
+    "mov       %%r11d,%%r11d                   \n"
+    "mov       %%r12d,%%r12d                   \n"
+    "mov       %%r13d,%%r13d                   \n"
+    "mov       %%r14d,%%r14d                   \n"
+    "mov       %%r15d,%%r15d                   \n"
+    ".p2align  5                               \n"
+    "lea       (%%rax),%%eax                   \n"
+    "lea       (%%rbx),%%ebx                   \n"
+    "lea       (%%rcx),%%ecx                   \n"
+    "lea       (%%rdx),%%edx                   \n"
+    "lea       (%%rsi),%%esi                   \n"
+    "lea       (%%rdi),%%edi                   \n"
+    "lea       (%%rbp),%%ebp                   \n"
+    "lea       (%%rsp),%%esp                   \n"
+    ".p2align  5                               \n"
+    "lea       (%%r8),%%r8d                    \n"
+    "lea       (%%r9),%%r9d                    \n"
+    "lea       (%%r10),%%r10d                  \n"
+    "lea       (%%r11),%%r11d                  \n"
+    "lea       (%%r12),%%r12d                  \n"
+    "lea       (%%r13),%%r13d                  \n"
+    "lea       (%%r14),%%r14d                  \n"
+    "lea       (%%r15),%%r15d                  \n"
+
+    ".p2align  5                               \n"
+    "lea       0x10(%%rax),%%eax               \n"
+    "lea       0x10(%%rbx),%%ebx               \n"
+    "lea       0x10(%%rcx),%%ecx               \n"
+    "lea       0x10(%%rdx),%%edx               \n"
+    "lea       0x10(%%rsi),%%esi               \n"
+    "lea       0x10(%%rdi),%%edi               \n"
+    "lea       0x10(%%rbp),%%ebp               \n"
+    "lea       0x10(%%rsp),%%esp               \n"
+    ".p2align  5                               \n"
+    "lea       0x10(%%r8),%%r8d                \n"
+    "lea       0x10(%%r9),%%r9d                \n"
+    "lea       0x10(%%r10),%%r10d              \n"
+    "lea       0x10(%%r11),%%r11d              \n"
+    "lea       0x10(%%r12),%%r12d              \n"
+    "lea       0x10(%%r13),%%r13d              \n"
+    "lea       0x10(%%r14),%%r14d              \n"
+    "lea       0x10(%%r15),%%r15d              \n"
+
+    ".p2align  5                               \n"
+    "add       0x10,%%eax                      \n"
+    "add       0x10,%%ebx                      \n"
+    "add       0x10,%%ecx                      \n"
+    "add       0x10,%%edx                      \n"
+    "add       0x10,%%esi                      \n"
+    "add       0x10,%%edi                      \n"
+    "add       0x10,%%ebp                      \n"
+    "add       0x10,%%esp                      \n"
+    ".p2align  5                               \n"
+    "add       0x10,%%r8d                      \n"
+    "add       0x10,%%r9d                      \n"
+    "add       0x10,%%r10d                     \n"
+    "add       0x10,%%r11d                     \n"
+    "add       0x10,%%r12d                     \n"
+    "add       0x10,%%r13d                     \n"
+    "add       0x10,%%r14d                     \n"
+    "add       0x10,%%r15d                     \n"
+
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x8,0)",%0              \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x20,1)",%1             \n"
+    "sub       $0x8,%2                         \n"
+    "jg        1b                              \n"
+  : "+r"(src_y),     // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+#endif  // TESTING
+
 #ifdef HAS_I400TOARGBROW_SSE2
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm volatile (
