@@ -893,6 +893,78 @@ static void ScaleARGBDownEven(int src_width, int src_height,
   }
 }
 
+// Scale ARGB vertically with bilinear interpolation.
+// TODO(fbarchard): Use this for all formats.
+static void ScaleARGBBilinearVertical(int src_height,
+                                      int dst_width, int dst_height,
+                                      int src_stride, int dst_stride,
+                                      const uint8* src_argb, uint8* dst_argb,
+                                      int x, int y, int dy,
+                                      int bpp, FilterMode filtering) {
+  int dst_widthx4 = dst_width * bpp;
+  src_argb += (x >> 16) * bpp;
+  assert(src_height > 0);
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
+      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
+      InterpolateRow_C;
+#if defined(HAS_INTERPOLATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && dst_widthx4 >= 16) {
+    InterpolateRow = InterpolateRow_Any_SSE2;
+    if (IS_ALIGNED(dst_widthx4, 16)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSE2;
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
+        InterpolateRow = InterpolateRow_SSE2;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && dst_widthx4 >= 16) {
+    InterpolateRow = InterpolateRow_Any_SSSE3;
+    if (IS_ALIGNED(dst_widthx4, 16)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
+        InterpolateRow = InterpolateRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && dst_widthx4 >= 16) {
+    InterpolateRow = InterpolateRow_Any_NEON;
+    if (IS_ALIGNED(dst_widthx4, 16)) {
+      InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_widthx4 >= 4 &&
+      IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride, 4)) {
+    InterpolateRow = InterpolateRow_Any_MIPS_DSPR2;
+    if (IS_ALIGNED(dst_widthx4, 4)) {
+      InterpolateRow = InterpolateRow_MIPS_DSPR2;
+    }
+  }
+#endif
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  for (int j = 0; j < dst_height; ++j) {
+    if (y > max_y) {
+      y = max_y;
+    }
+    int yi = y >> 16;
+    int yf = filtering ? ((y >> 8) & 255) : 0;
+    const uint8* src = src_argb + yi * src_stride;
+    InterpolateRow(dst_argb, src, src_stride, dst_widthx4, yf);
+    dst_argb += dst_stride;
+    y += dy;
+  }
+}
+
 // Scale ARGB down with bilinear interpolation.
 static void ScaleARGBBilinearDown(int src_height,
                                   int dst_width, int dst_height,
@@ -1365,19 +1437,21 @@ static void ScaleARGB(const uint8* src, int src_stride,
 
   // Special case for integer step values.
   if (((dx | dy) & 0xffff) == 0) {
-    if (!dx || !dy) {
+    if (!dx || !dy) {  // 1 pixel wide and/or tall.
       filtering = kFilterNone;
     } else {
       // Optimized even scale down. ie 2, 4, 6, 8, 10x.
       if (!(dx & 0x10000) && !(dy & 0x10000)) {
         if ((dx >> 16) == 2) {
           // Optimized 1/2 horizontal.
-          ScaleARGBDown2(src_width, src_height, clip_width, clip_height,
+          ScaleARGBDown2(src_width, src_height,
+                         clip_width, clip_height,
                          src_stride, dst_stride, src, dst,
                          x, dx, y, dy, filtering);
           return;
         }
-        ScaleARGBDownEven(src_width, src_height, clip_width, clip_height,
+        ScaleARGBDownEven(src_width, src_height,
+                          clip_width, clip_height,
                           src_stride, dst_stride, src, dst,
                           x, dx, y, dy, filtering);
         return;
@@ -1394,11 +1468,21 @@ static void ScaleARGB(const uint8* src, int src_stride,
       }
     }
   }
+  if (dx == 0x10000 && (dx & 0xffff) == 0) {
+    // Arbitrary scale vertically, but unscaled vertically.
+    ScaleARGBBilinearVertical(src_height,
+                              clip_width, clip_height,
+                              src_stride, dst_stride, src, dst,
+                              x, y, dy, 4, filtering);
+    return;
+  }
+
   // Arbitrary scale up and/or down.
   ScaleARGBAnySize(src_width, src_height,
                    dst_width, dst_height,
                    clip_width, clip_height,
-                   src_stride, dst_stride, src, dst, x, dx, y, dy, filtering);
+                   src_stride, dst_stride, src, dst,
+                   x, dx, y, dy, filtering);
 }
 
 LIBYUV_API

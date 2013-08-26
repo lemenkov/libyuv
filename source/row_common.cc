@@ -1796,6 +1796,10 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
                       int width, int source_y_fraction) {
+  if (source_y_fraction == 0) {
+    memcpy(dst_ptr, src_ptr, width);
+    return;
+  }
   int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
