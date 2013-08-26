@@ -1468,7 +1468,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
       }
     }
   }
-  if (dx == 0x10000 && (dx & 0xffff) == 0) {
+  if (dx == 0x10000 && (x & 0xffff) == 0) {
     // Arbitrary scale vertically, but unscaled vertically.
     ScaleARGBBilinearVertical(src_height,
                               clip_width, clip_height,

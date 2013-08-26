@@ -1792,12 +1792,24 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
   }
 }
 
+// Blend 2 rows into 1 for conversions such as I422ToI420.
+void HalfRow_C(const uint8* src_uv, int src_uv_stride,
+               uint8* dst_uv, int pix) {
+  for (int x = 0; x < pix; ++x) {
+    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+  }
+}
+
 // C version 2x2 -> 2x1.
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
                       int width, int source_y_fraction) {
   if (source_y_fraction == 0) {
     memcpy(dst_ptr, src_ptr, width);
+    return;
+  }
+  if (source_y_fraction == 128) {
+    HalfRow_C(src_ptr, static_cast<int>(src_stride), dst_ptr, width);
     return;
   }
   int y1_fraction = source_y_fraction;
@@ -1813,14 +1825,6 @@ void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
   }
   if (width & 1) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
-  }
-}
-
-// Blend 2 rows into 1 for conversions such as I422ToI420.
-void HalfRow_C(const uint8* src_uv, int src_uv_stride,
-               uint8* dst_uv, int pix) {
-  for (int x = 0; x < pix; ++x) {
-    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
   }
 }
 
