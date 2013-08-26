@@ -177,7 +177,6 @@ static uvec8 kShuffleMaskARGBToRAW_0 = {
 };
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
-//#define TESTING 1
 #if defined(TESTING) && defined(__x86_64__)
 void TestRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm volatile (
