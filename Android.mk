@@ -27,6 +27,7 @@ LOCAL_SRC_FILES := \
     source/row_posix.cc         \
     source/scale.cc             \
     source/scale_argb.cc        \
+    source/scale_common.cc      \
     source/scale_mips.cc        \
     source/video_common.cc
 
