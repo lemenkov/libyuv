@@ -16,7 +16,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyARGB
 #include "libyuv/row.h"
-#include "../source/scale_row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -1399,7 +1399,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
   }
   if (dx == 0x10000 && (x & 0xffff) == 0) {
     // Arbitrary scale vertically, but unscaled vertically.
-    ScaleARGBBilinearVertical(src_height,
+    ScalePlaneVertical(src_height,
                               clip_width, clip_height,
                               src_stride, dst_stride, src, dst,
                               x, y, dy, 4, filtering);
