@@ -1400,9 +1400,9 @@ static void ScaleARGB(const uint8* src, int src_stride,
   if (dx == 0x10000 && (x & 0xffff) == 0) {
     // Arbitrary scale vertically, but unscaled vertically.
     ScalePlaneVertical(src_height,
-                              clip_width, clip_height,
-                              src_stride, dst_stride, src, dst,
-                              x, y, dy, 4, filtering);
+                       clip_width, clip_height,
+                       src_stride, dst_stride, src, dst,
+                       x, y, dy, 4, filtering);
     return;
   }
 
