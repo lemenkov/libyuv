@@ -22,6 +22,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Remove this macro if OVERREAD is safe.
+#define AVOID_OVERREAD 1
+
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
@@ -741,6 +744,7 @@ static void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
 #define HAS_SCALEADDROWS_SSE2
 
 // Reads 16xN bytes and produces 16 shorts at a time.
+// TODO(fbarchard): Make this handle 4xN bytes for any width ARGB.
 __declspec(naked) __declspec(align(16))
 static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint16* dst_ptr, int src_width,
@@ -2046,6 +2050,9 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) &&
+#ifdef AVOID_OVERREAD
+        IS_ALIGNED(src_width, 16) &&
+#endif
         IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
       ScaleAddRows = ScaleAddRows_SSE2;
     }
