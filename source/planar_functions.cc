@@ -1708,6 +1708,14 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 8) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      InterpolateRow = InterpolateRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 4) {
     InterpolateRow = InterpolateRow_Any_NEON;

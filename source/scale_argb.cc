@@ -939,6 +939,14 @@ static void ScaleARGBBilinearDown(int src_height,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && clip_src_width >= 32) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(clip_src_width, 32)) {
+      InterpolateRow = InterpolateRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && clip_src_width >= 16) {
     InterpolateRow = InterpolateRow_Any_NEON;
@@ -1011,6 +1019,14 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
       if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
         InterpolateRow = InterpolateRow_SSSE3;
       }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && dst_width >= 8) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      InterpolateRow = InterpolateRow_AVX2;
     }
   }
 #endif
@@ -1154,6 +1170,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
       if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
         InterpolateRow = InterpolateRow_SSSE3;
       }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && dst_width >= 8) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      InterpolateRow = InterpolateRow_AVX2;
     }
   }
 #endif

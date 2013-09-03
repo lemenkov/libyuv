@@ -5970,6 +5970,108 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
+#ifdef HAS_INTERPOLATEROW_AVX2
+// Bilinear filter 16x2 -> 16x1
+__declspec(naked) __declspec(align(16))
+void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
+                          ptrdiff_t src_stride, int dst_width,
+                          int source_y_fraction) {
+  __asm {
+    push       esi
+    push       edi
+    mov        edi, [esp + 8 + 4]   // dst_ptr
+    mov        esi, [esp + 8 + 8]   // src_ptr
+    mov        edx, [esp + 8 + 12]  // src_stride
+    mov        ecx, [esp + 8 + 16]  // dst_width
+    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
+    shr        eax, 1
+    // Dispatch to specialized filters if applicable.
+    cmp        eax, 0
+    je         xloop100  // 0 / 128.  Blend 100 / 0.
+    sub        edi, esi
+    cmp        eax, 32
+    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
+    cmp        eax, 64
+    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
+    cmp        eax, 96
+    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
+
+    vmovd      xmm0, eax  // high fraction 0..127
+    neg        eax
+    add        eax, 128
+    vmovd      xmm5, eax  // low fraction 128..1
+    vpunpcklbw xmm5, xmm5, xmm0
+    vpunpcklwd xmm5, xmm5, xmm5
+    vpxor      ymm0, ymm0, ymm0
+    vpermd     ymm5, ymm0, ymm5
+
+    align      16
+  xloop:
+    vmovdqu    ymm0, [esi]
+    vmovdqu    ymm2, [esi + edx]
+    vpunpckhbw ymm1, ymm0, ymm2  // mutates
+    vpunpcklbw ymm0, ymm0, ymm2  // mutates
+    vpmaddubsw ymm0, ymm0, ymm5
+    vpmaddubsw ymm1, ymm1, ymm5
+    vpsrlw     ymm0, ymm0, 7
+    vpsrlw     ymm1, ymm1, 7
+    vpackuswb  ymm0, ymm0, ymm1  // unmutates
+    sub        ecx, 32
+    vmovdqu    [esi + edi], ymm0
+    lea        esi, [esi + 32]
+    jg         xloop
+    jmp        xloop99
+
+    // Blend 25 / 75.
+    align      16
+  xloop25:
+    vmovdqu    ymm0, [esi]
+    vpavgb     ymm0, ymm0, [esi + edx]
+    vpavgb     ymm0, ymm0, [esi + edx]
+    sub        ecx, 32
+    vmovdqu    [esi + edi], ymm0
+    lea        esi, [esi + 32]
+    jg         xloop25
+    jmp        xloop99
+
+    // Blend 50 / 50.
+    align      16
+  xloop50:
+    vmovdqu    ymm0, [esi]
+    vpavgb     ymm0, ymm0, [esi + edx]
+    sub        ecx, 32
+    vmovdqu    [esi + edi], ymm0
+    lea        esi, [esi + 32]
+    jg         xloop50
+    jmp        xloop99
+
+    // Blend 75 / 25.
+    align      16
+  xloop75:
+    vmovdqu    ymm0, [esi + edx]
+    vpavgb     ymm0, ymm0, [esi]
+    vpavgb     ymm0, ymm0, [esi]
+    sub        ecx, 32
+    vmovdqu     [esi + edi], ymm0
+    lea        esi, [esi + 32]
+    jg         xloop75
+    jmp        xloop99
+
+    // Blend 100 / 0 - Copy row unchanged.
+    align      16
+  xloop100:
+    rep movsb
+
+  xloop99:
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_INTERPOLATEROW_AVX2
+
+#ifdef HAS_INTERPOLATEROW_SSSE3
 // Bilinear filter 16x2 -> 16x1
 __declspec(naked) __declspec(align(16))
 void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
@@ -6074,6 +6176,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
+#endif  // HAS_INTERPOLATEROW_SSSE3
 
 #ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1

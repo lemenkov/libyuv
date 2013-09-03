@@ -159,6 +159,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_INTERPOLATEROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -1484,6 +1485,9 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                           ptrdiff_t src_stride_ptr, int width,
                           int source_y_fraction);
+void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride_ptr, int width,
+                         int source_y_fraction);
 void InterpolateRow_NEON(uint8* dst_ptr, const uint8* src_ptr,
                          ptrdiff_t src_stride_ptr, int width,
                          int source_y_fraction);
@@ -1505,6 +1509,9 @@ void InterpolateRow_Any_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 void InterpolateRow_Any_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                               ptrdiff_t src_stride_ptr, int width,
                               int source_y_fraction);
+void InterpolateRow_Any_AVX2(uint8* dst_ptr, const uint8* src_ptr,
+                             ptrdiff_t src_stride_ptr, int width,
+                             int source_y_fraction);
 void InterpolateRows_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
                                     ptrdiff_t src_stride_ptr, int width,
                                     int source_y_fraction);

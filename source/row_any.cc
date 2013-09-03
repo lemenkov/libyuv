@@ -501,6 +501,10 @@ YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
              width & MASK, source_y_fraction);                                 \
     }
 
+#ifdef HAS_INTERPOLATEROW_AVX2
+NANY(InterpolateRow_Any_AVX2, InterpolateRow_AVX2,
+     InterpolateRow_C, 1, 1, 32)
+#endif
 #ifdef HAS_INTERPOLATEROW_SSSE3
 NANY(InterpolateRow_Any_SSSE3, InterpolateRow_Unaligned_SSSE3,
      InterpolateRow_C, 1, 1, 15)

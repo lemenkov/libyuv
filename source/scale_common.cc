@@ -62,6 +62,14 @@ void ScalePlaneVertical(int src_height,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && dst_widthx4 >= 32) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(dst_widthx4, 32)) {
+      InterpolateRow = InterpolateRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_INTERPOLATEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && dst_widthx4 >= 16) {
     InterpolateRow = InterpolateRow_Any_NEON;

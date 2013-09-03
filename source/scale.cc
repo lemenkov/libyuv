@@ -620,7 +620,7 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
     paddusb    xmm0, xmm1
 
     sub        ecx, 12
-    movq       qword ptr [edx], xmm0 // write 12 pixels
+    movq       qword ptr [edx], xmm0  // write 12 pixels
     movhlps    xmm1, xmm0
     movd       [edx + 8], xmm1
     lea        edx, [edx + 12]
@@ -2107,6 +2107,14 @@ void ScalePlaneBilinear(int src_width, int src_height,
       if (IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
         InterpolateRow = InterpolateRow_SSSE3;
       }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && src_width >= 32) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(src_width, 32)) {
+      InterpolateRow = InterpolateRow_AVX2;
     }
   }
 #endif
