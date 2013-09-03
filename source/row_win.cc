@@ -6767,6 +6767,53 @@ int FixedDiv_X86(int num, int div) {
   }
 }
 #endif  // HAS_FIXEDDIV_X86
+
+#ifdef HAS_ARGBPOLYNOMIALROW_SSE2
+__declspec(naked) __declspec(align(16))
+void ARGBPolynomialRow_SSE2(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width) {
+  __asm {
+    mov        eax, [esp + 12]   /* poly */
+    movdqu     xmm4, [eax]
+    movdqu     xmm5, [eax + 16]
+    movdqu     xmm6, [eax + 32]
+    movdqu     xmm7, [eax + 48]
+
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_argb */
+    mov        ecx, [esp + 16]  /* width */
+    pxor       xmm3, xmm3  // 4 bytes to 4 ints
+
+    align      16
+ convertloop:
+    movd       xmm0, [eax]  // BGRA
+    lea        eax, [eax + 4]
+    punpcklbw  xmm0, xmm3
+    punpcklwd  xmm0, xmm3
+    cvtdq2ps   xmm0, xmm0  // 4 floats
+    movdqa     xmm1, xmm0  // X
+    mulps      xmm0, xmm5  // C1 * X
+    addps      xmm0, xmm4  // result = C0 + C1 * X
+    movdqa     xmm2, xmm1
+    mulps      xmm2, xmm1  // X * X
+    mulps      xmm1, xmm2  // X * X * X
+    mulps      xmm2, xmm6  // C2 * X * X
+    mulps      xmm1, xmm7  // C3 * X * X * X
+    addps      xmm0, xmm2  // result += C2 * X * X
+    addps      xmm0, xmm1  // result += C3 * X * X * X
+    cvttps2dq  xmm0, xmm0
+    packuswb   xmm0, xmm0
+    packuswb   xmm0, xmm0
+    sub        ecx, 1
+    movd       [edx], xmm0
+    lea        edx, [edx + 4]
+    jg         convertloop
+    ret
+  }
+}
+#endif  // HAS_ARGBPOLYNOMIALROW_SSE2
+
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef __cplusplus

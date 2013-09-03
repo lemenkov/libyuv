@@ -140,8 +140,11 @@ extern "C" {
 // The following are Windows only:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
+// Effects:
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_RGBCOLORTABLEROW_X86
+#define HAS_ARGBPOLYNOMIALROW_SSE2
+
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -320,6 +323,7 @@ typedef __declspec(align(32)) uint32 ulvec32[8];
 typedef __declspec(align(32)) uint8 ulvec8[32];
 
 #elif defined(__GNUC__)
+// Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 typedef int16 __attribute__((vector_size(16))) vec16;
 typedef int32 __attribute__((vector_size(16))) vec32;
@@ -1541,6 +1545,14 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
 void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
+
+void ARGBPolynomialRow_C(const uint8* src_argb,
+                         uint8* dst_argb, const float* poly,
+                         int width);
+
+void ARGBPolynomialRow_SSE2(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width);
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_C(int num, int div);

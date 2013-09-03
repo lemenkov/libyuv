@@ -2032,6 +2032,38 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Apply a 4x4 polynomial to each ARGB pixel.
+LIBYUV_API
+int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb, int dst_stride_argb,
+                   const float* poly,
+                   int width, int height) {
+  if (!src_argb || !dst_argb || !poly || width <= 0 || height <= 0) {
+    return -1;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_argb == width * 4 && dst_stride_argb == width * 4) {
+    return ARGBPolynomial(src_argb, 0,
+                          dst_argb, 0,
+                          poly,
+                          width * height, 1);
+  }
+  void (*ARGBPolynomialRow)(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width) = ARGBPolynomialRow_C;
+#if defined(HAS_ARGBPOLYNOMIALROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBPolynomialRow = ARGBPolynomialRow_SSE2;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    ARGBPolynomialRow(src_argb, dst_argb, poly, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

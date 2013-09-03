@@ -210,6 +210,20 @@ int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
                   const uint8* table_argb,
                   int x, int y, int width, int height);
 
+// Apply a 3 term polynomial to ARGB values.
+// poly points to a 4x4 matrix.  The first row is constants.  The 2nd row is
+// coefficients for b, g, r and a.  The 3rd row is coefficients for b squared,
+// g squared, r squared and a squared.  The 4rd row is coefficients for b to
+// the 3, g to the 3, r to the 3 and a to the 3.  The values are summed and
+// result clamped to 0 to 255.
+// A polynomial approximation can be dirived using software such as 'R'.
+
+LIBYUV_API
+int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
+                   uint8* dst_argb, int dst_stride_argb,
+                   const float* poly,
+                   int width, int height);
+
 // Quantize a rectangle of ARGB. Alpha unaffected.
 // scale is a 16 bit fractional fixed point scaler between 0 and 65535.
 // interval_size should be a value between 1 and 255.

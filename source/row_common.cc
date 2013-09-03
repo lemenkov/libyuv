@@ -2009,8 +2009,48 @@ void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
   UYVYToYRow_Unaligned_SSE2(src_uyvy, row_y, width);
   I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
 }
+
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
+
+void ARGBPolynomialRow_C(const uint8* src_argb,
+                         uint8* dst_argb, const float* poly,
+                         int width) {
+  for (int i = 0; i < width; ++i) {
+    float b = static_cast<float>(src_argb[0]);
+    float g = static_cast<float>(src_argb[1]);
+    float r = static_cast<float>(src_argb[2]);
+    float a = static_cast<float>(src_argb[3]);
+    float b2 = b * b;
+    float g2 = g * g;
+    float r2 = r * r;
+    float a2 = a * a;
+    float db = poly[0] + poly[4] * b;
+    float dg = poly[1] + poly[5] * g;
+    float dr = poly[2] + poly[6] * r;
+    float da = poly[3] + poly[7] * a;
+    db += poly[8] * b2;
+    dg += poly[9] * g2;
+    dr += poly[10] * r2;
+    da += poly[11] * a2;
+    float b3 = b2 * b;
+    float g3 = g2 * g;
+    float r3 = r2 * r;
+    float a3 = a2 * a;
+    db += poly[12] * b3;
+    dg += poly[13] * g3;
+    dr += poly[14] * r3;
+    da += poly[15] * a3;
+
+    dst_argb[0]= Clamp(static_cast<int32>(db));
+    dst_argb[1]= Clamp(static_cast<int32>(dg));
+    dst_argb[2]= Clamp(static_cast<int32>(dr));
+    dst_argb[3]= Clamp(static_cast<int32>(da));
+    src_argb += 4;
+    dst_argb += 4;
+  }
+}
+
 #undef clamp0
 #undef clamp255
 
