@@ -16,6 +16,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"  // For CopyPlane
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -2260,6 +2261,13 @@ void ScalePlane(const uint8* src, int src_stride,
   if (dst_width == src_width && dst_height == src_height) {
     // Straight copy.
     CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
+  } else if (dst_width == src_width) {
+    int dy = FixedDiv(src_height, dst_height);
+    // Arbitrary scale vertically, but unscaled vertically.
+    ScalePlaneVertical(src_height,
+                       dst_width, dst_height,
+                       src_stride, dst_stride, src, dst,
+                       0, 0, dy, 1, filtering);
   } else if (dst_width <= Abs(src_width) && dst_height <= src_height) {
     // Scale down.
     if (use_reference_impl_) {
