@@ -1665,7 +1665,7 @@ TEST_F(libyuvTest, TestARGBPolynomial) {
     0.584500f,  1.112000f,    1.535000f, 1.f,  // C1 x
     0.001313f, -0.002503f,   -0.004496f, 0.f,  // C2 x * x
     0.0f,       0.000006965f, 0.000008781f, 0.f,  // C3 x * x * x
- };
+  };
 
   // Test blue
   orig_pixels[0][0] = 255u;

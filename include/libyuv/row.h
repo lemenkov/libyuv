@@ -142,8 +142,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 // Effects:
 #define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_RGBCOLORTABLEROW_X86
 #define HAS_ARGBPOLYNOMIALROW_SSE2
+#define HAS_RGBCOLORTABLEROW_X86
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
@@ -153,6 +153,7 @@ extern "C" {
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_HALFROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
+#define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_SPLITUVROW_AVX2
@@ -162,17 +163,17 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
-#define HAS_INTERPOLATEROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
 #define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBMULTIPLYROW_AVX2
+#define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
-#endif
-#endif
+#endif  // _MSC_VER >= 1700
+#endif  // defined(_MSC_VER)
 
 // The following are Yasm x86 only:
 // TODO(fbarchard): Port AVX2 to inline.
@@ -1549,10 +1550,12 @@ void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
 void ARGBPolynomialRow_C(const uint8* src_argb,
                          uint8* dst_argb, const float* poly,
                          int width);
-
 void ARGBPolynomialRow_SSE2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width);
+void ARGBPolynomialRow_AVX2(const uint8* src_argb,
+                           uint8* dst_argb, const float* poly,
+                           int width);
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_C(int num, int div);

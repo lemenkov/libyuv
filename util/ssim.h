@@ -10,7 +10,7 @@
 
 // Get SSIM for video sequence. Assuming RAW 4:2:0 Y:Cb:Cr format
 
-#ifndef UTIL_SSIM_H_
+#ifndef UTIL_SSIM_H_  // NOLINT
 #define UTIL_SSIM_H_
 
 #ifdef __cplusplus
@@ -32,4 +32,4 @@ double CalcLSSIM(double ssim);
 }  // extern "C"
 #endif
 
-#endif  // UTIL_SSIM_H_
+#endif  // UTIL_SSIM_H_  // NOLINT

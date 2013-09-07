@@ -6783,7 +6783,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 16]  /* width */
-    pxor       xmm3, xmm3  // 4 bytes to 4 ints
+    pxor       xmm3, xmm3  // 0 constant for zero extending bytes to ints.
 
     align      16
  convertloop:
@@ -6813,6 +6813,66 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
   }
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_SSE2
+
+#ifdef HAS_ARGBPOLYNOMIALROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGBPolynomialRow_AVX2(const uint8* src_argb,
+                           uint8* dst_argb, const float* poly,
+                           int width) {
+  __asm {
+    mov        eax, [esp + 12]   /* poly */
+    vmovdqu    xmm4, [eax]
+    vmovdqu    xmm5, [eax + 16]
+    vmovdqu    xmm6, [eax + 32]
+    vmovdqu    xmm7, [eax + 48]
+    vpermq     ymm4, ymm4, 0x44  // dup low qwords to high qwords
+    vpermq     ymm5, ymm5, 0x44
+    vpermq     ymm6, ymm6, 0x44
+    vpermq     ymm7, ymm7, 0x44
+
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_argb */
+    mov        ecx, [esp + 16]  /* width */
+    vpxor      ymm3, ymm3, ymm3  // 0 constant for zero extending bytes to ints.
+
+    align      16
+ convertloop:
+    vmovq      xmm0, qword ptr [eax]  // 2 BGRA pixels
+    lea        eax, [eax + 8]
+
+//    vpmovzxbd  ymm0, ymm0
+// TODO(fbarchard): Consider vex256 to avoid vpermq.
+    vpunpcklbw xmm0, xmm0, xmm3  // b0g0r0a0_b0g0r0a0_00000000_00000000
+    vpermq     ymm0, ymm0, 0xd8  // b0g0r0a0_00000000_b0g0r0a0_00000000
+    vpunpcklwd ymm0, ymm0, ymm3  // b000g000_r000a000_b000g000_r000a000
+
+    vcvtdq2ps  ymm0, ymm0  // 8 floats
+    vmovdqa    ymm1, ymm0  // X
+    vmulps     ymm0, ymm0, ymm5  // C1 * X
+    vaddps     ymm0, ymm0, ymm4  // result = C0 + C1 * X
+    vmovdqa    ymm2, ymm1
+    vmulps     ymm2, ymm2, ymm1  // X * X
+    vmulps     ymm1, ymm1, ymm2  // X * X * X
+    vmulps     ymm2, ymm2, ymm6  // C2 * X * X
+    vmulps     ymm1, ymm1, ymm7  // C3 * X * X * X
+    vaddps     ymm0, ymm0, ymm2  // result += C2 * X * X
+    vaddps     ymm0, ymm0, ymm1  // result += C3 * X * X * X
+    vcvttps2dq ymm0, ymm0
+
+//    vpmovzxdb  ymm0, ymm0      // b000g000_r000a000_b000g000_r000a000
+    vpackusdw  ymm0, ymm0, ymm3  // b0g0r0a0_00000000_b0g0r0a0_00000000
+    vpermq     ymm0, ymm0, 0xd8  // b0g0r0a0_b0g0r0a0_00000000_00000000
+    vpackuswb  xmm0, xmm0, xmm3  // b0g0r0a0_b0g0r0a0_00000000_00000000
+
+    sub        ecx, 2
+    vmovq      qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
+    jg         convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 

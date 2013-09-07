@@ -2056,6 +2056,11 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
     ARGBPolynomialRow = ARGBPolynomialRow_SSE2;
   }
 #endif
+#if defined(HAS_ARGBPOLYNOMIALROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 2)) {
+    ARGBPolynomialRow = ARGBPolynomialRow_AVX2;
+  }
+#endif
   for (int y = 0; y < height; ++y) {
     ARGBPolynomialRow(src_argb, dst_argb, poly, width);
     src_argb += src_stride_argb;

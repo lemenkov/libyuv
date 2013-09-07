@@ -2042,10 +2042,10 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
     dr += poly[14] * r3;
     da += poly[15] * a3;
 
-    dst_argb[0]= Clamp(static_cast<int32>(db));
-    dst_argb[1]= Clamp(static_cast<int32>(dg));
-    dst_argb[2]= Clamp(static_cast<int32>(dr));
-    dst_argb[3]= Clamp(static_cast<int32>(da));
+    dst_argb[0] = Clamp(static_cast<int32>(db));
+    dst_argb[1] = Clamp(static_cast<int32>(dg));
+    dst_argb[2] = Clamp(static_cast<int32>(dr));
+    dst_argb[3] = Clamp(static_cast<int32>(da));
     src_argb += 4;
     dst_argb += 4;
   }

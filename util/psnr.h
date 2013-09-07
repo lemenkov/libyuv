@@ -10,7 +10,7 @@
 
 // Get PSNR for video sequence. Assuming RAW 4:2:0 Y:Cb:Cr format
 
-#ifndef UTIL_PSNR_H_
+#ifndef UTIL_PSNR_H_  // NOLINT
 #define UTIL_PSNR_H_
 
 #ifdef __cplusplus
@@ -36,4 +36,4 @@ double ComputeSumSquareError(const uint8* org, const uint8* rec, int size);
 }  // extern "C"
 #endif
 
-#endif  // UTIL_PSNR_H_
+#endif  // UTIL_PSNR_H_  // NOLINT
