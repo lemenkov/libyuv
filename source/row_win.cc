@@ -6787,6 +6787,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 
     align      16
  convertloop:
+// (slow)   vpmovzxbd  xmm0, dword ptr [eax]  // BGRA pixel
     movd       xmm0, [eax]  // BGRA
     lea        eax, [eax + 4]
     punpcklbw  xmm0, xmm3
@@ -6833,39 +6834,26 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 16]  /* width */
-    vpxor      ymm3, ymm3, ymm3  // 0 constant for zero extending bytes to ints.
 
     align      16
  convertloop:
-    vmovq      xmm0, qword ptr [eax]  // 2 BGRA pixels
+    vpmovzxbd  ymm0, qword ptr [eax]  // 2 BGRA pixels
     lea        eax, [eax + 8]
-
-//    vpmovzxbd  ymm0, ymm0
-// TODO(fbarchard): Consider vex256 to avoid vpermq.
-    vpunpcklbw xmm0, xmm0, xmm3  // b0g0r0a0_b0g0r0a0_00000000_00000000
-    vpermq     ymm0, ymm0, 0xd8  // b0g0r0a0_00000000_b0g0r0a0_00000000
-    vpunpcklwd ymm0, ymm0, ymm3  // b000g000_r000a000_b000g000_r000a000
-
-    vcvtdq2ps  ymm0, ymm0  // 8 floats
-    vmovdqa    ymm1, ymm0  // X
-    vmulps     ymm0, ymm0, ymm5  // C1 * X
-    vaddps     ymm0, ymm0, ymm4  // result = C0 + C1 * X
-    vmovdqa    ymm2, ymm1
-    vmulps     ymm2, ymm2, ymm1  // X * X
-    vmulps     ymm1, ymm1, ymm2  // X * X * X
+    vcvtdq2ps  ymm0, ymm0  // X 8 floats
+    vmulps     ymm2, ymm0, ymm0  // X * X
+    vmulps     ymm3, ymm0, ymm7  // C3 * X
+    vmulps     ymm1, ymm0, ymm5  // C1 * X
+    vmulps     ymm3, ymm2, ymm3  // C3 * X * X * X
     vmulps     ymm2, ymm2, ymm6  // C2 * X * X
-    vmulps     ymm1, ymm1, ymm7  // C3 * X * X * X
-    vaddps     ymm0, ymm0, ymm2  // result += C2 * X * X
-    vaddps     ymm0, ymm0, ymm1  // result += C3 * X * X * X
-    vcvttps2dq ymm0, ymm0
-
-//    vpmovzxdb  ymm0, ymm0      // b000g000_r000a000_b000g000_r000a000
-    vpackusdw  ymm0, ymm0, ymm3  // b0g0r0a0_00000000_b0g0r0a0_00000000
-    vpermq     ymm0, ymm0, 0xd8  // b0g0r0a0_b0g0r0a0_00000000_00000000
-    vpackuswb  xmm0, xmm0, xmm3  // b0g0r0a0_b0g0r0a0_00000000_00000000
-
+    vaddps     ymm1, ymm1, ymm4  // result = C0 + C1 * X
+    vaddps     ymm1, ymm1, ymm3  // result += C3 * X * X * X
+    vaddps     ymm1, ymm1, ymm2  // result += C2 * X * X
+    vcvttps2dq ymm1, ymm1
+    vpackusdw  ymm1, ymm1, ymm1  // b0g0r0a0_00000000_b0g0r0a0_00000000
+    vpermq     ymm1, ymm1, 0xd8  // b0g0r0a0_b0g0r0a0_00000000_00000000
+    vpackuswb  xmm1, xmm1, xmm1  // bgrabgra_00000000_00000000_00000000
     sub        ecx, 2
-    vmovq      qword ptr [edx], xmm0
+    vmovq      qword ptr [edx], xmm1
     lea        edx, [edx + 8]
     jg         convertloop
     vzeroupper
