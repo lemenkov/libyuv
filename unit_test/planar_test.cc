@@ -1659,6 +1659,7 @@ TEST_F(libyuvTest, ARGBBlur_Opt) {
 TEST_F(libyuvTest, TestARGBPolynomial) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8 dst_pixels[1280][4]);
+  memset(orig_pixels, 0, sizeof(orig_pixels));
 
   SIMD_ALIGNED(static const float kWarmifyPolynomial[16]) = {
     0.94230f,  -3.03300f,    -2.92500f,  0.f,  // C0
@@ -1722,6 +1723,7 @@ TEST_F(libyuvTest, TestARGBPolynomial) {
 TEST_F(libyuvTest, TestARGBLumaColorTable) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8 dst_pixels[1280][4]);
+  memset(orig_pixels, 0, sizeof(orig_pixels));
 
   SIMD_ALIGNED(uint8 kLumaColorTable[32768]);
   int v = 0;
