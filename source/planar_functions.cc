@@ -2052,7 +2052,7 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
                             uint8* dst_argb, const float* poly,
                             int width) = ARGBPolynomialRow_C;
 #if defined(HAS_ARGBPOLYNOMIALROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 2)) {
     ARGBPolynomialRow = ARGBPolynomialRow_SSE2;
   }
 #endif

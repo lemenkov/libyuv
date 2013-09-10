@@ -6774,42 +6774,53 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width) {
   __asm {
-    mov        eax, [esp + 12]   /* poly */
-    movdqu     xmm4, [eax]
-    movdqu     xmm5, [eax + 16]
-    movdqu     xmm6, [eax + 32]
-    movdqu     xmm7, [eax + 48]
-
-    mov        eax, [esp + 4]   /* src_argb */
-    mov        edx, [esp + 8]   /* dst_argb */
-    mov        ecx, [esp + 16]  /* width */
+    push       esi
+    mov        eax, [esp + 4 + 4]   /* src_argb */
+    mov        edx, [esp + 4 + 8]   /* dst_argb */
+    mov        esi, [esp + 4 + 12]  /* poly */
+    mov        ecx, [esp + 4 + 16]  /* width */
     pxor       xmm3, xmm3  // 0 constant for zero extending bytes to ints.
 
     align      16
  convertloop:
-// (slow)   vpmovzxbd  xmm0, dword ptr [eax]  // BGRA pixel
-    movd       xmm0, [eax]  // BGRA
-    lea        eax, [eax + 4]
+// (slow)   pmovzxbd  xmm0, dword ptr [eax]  // BGRA pixel
+    movq       xmm0, qword ptr [eax]  // BGRABGRA
+    lea        eax, [eax + 8]
     punpcklbw  xmm0, xmm3
-    punpcklwd  xmm0, xmm3
+    movdqa     xmm4, xmm0
+    punpcklwd  xmm0, xmm3  // pixel 0
+    punpckhwd  xmm4, xmm3  // pixel 1
     cvtdq2ps   xmm0, xmm0  // 4 floats
+    cvtdq2ps   xmm4, xmm4
     movdqa     xmm1, xmm0  // X
-    mulps      xmm0, xmm5  // C1 * X
-    addps      xmm0, xmm4  // result = C0 + C1 * X
+    movdqa     xmm5, xmm4
+    mulps      xmm0, [esi + 16]  // C1 * X
+    mulps      xmm4, [esi + 16]
+    addps      xmm0, [esi]  // result = C0 + C1 * X
+    addps      xmm4, [esi]
     movdqa     xmm2, xmm1
+    movdqa     xmm6, xmm5
     mulps      xmm2, xmm1  // X * X
+    mulps      xmm6, xmm5
     mulps      xmm1, xmm2  // X * X * X
-    mulps      xmm2, xmm6  // C2 * X * X
-    mulps      xmm1, xmm7  // C3 * X * X * X
+    mulps      xmm5, xmm6
+    mulps      xmm2, [esi + 32]  // C2 * X * X
+    mulps      xmm6, [esi + 32]
+    mulps      xmm1, [esi + 48]  // C3 * X * X * X
+    mulps      xmm5, [esi + 48]
     addps      xmm0, xmm2  // result += C2 * X * X
+    addps      xmm4, xmm6
     addps      xmm0, xmm1  // result += C3 * X * X * X
+    addps      xmm4, xmm5
     cvttps2dq  xmm0, xmm0
+    cvttps2dq  xmm4, xmm4
+    packuswb   xmm0, xmm4
     packuswb   xmm0, xmm0
-    packuswb   xmm0, xmm0
-    sub        ecx, 1
-    movd       [edx], xmm0
-    lea        edx, [edx + 4]
+    sub        ecx, 2
+    movq       qword ptr [edx], xmm0
+    lea        edx, [edx + 8]
     jg         convertloop
+    pop        esi
     ret
   }
 }

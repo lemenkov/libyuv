@@ -1660,7 +1660,7 @@ TEST_F(libyuvTest, TestARGBPolynomial) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8 dst_pixels[1280][4]);
 
-  static const float kWarmifyPolynomial[16] = {
+  SIMD_ALIGNED(static const float kWarmifyPolynomial[16]) = {
     0.94230f,  -3.03300f,    -2.92500f,  0.f,  // C0
     0.584500f,  1.112000f,    1.535000f, 1.f,  // C1 x
     0.001313f, -0.002503f,   -0.004496f, 0.f,  // C2 x * x
