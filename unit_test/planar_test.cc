@@ -1719,5 +1719,67 @@ TEST_F(libyuvTest, TestARGBPolynomial) {
   }
 }
 
+TEST_F(libyuvTest, TestARGBLumaColorTable) {
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 dst_pixels[1280][4]);
+
+  SIMD_ALIGNED(uint8 kLumaColorTable[32768]);
+  int v = 0;
+  for (int i = 0; i < 32768; ++i) {
+    kLumaColorTable[i] = v;
+    v += 3;
+  }
+  // Test blue
+  orig_pixels[0][0] = 255u;
+  orig_pixels[0][1] = 0u;
+  orig_pixels[0][2] = 0u;
+  orig_pixels[0][3] = 128u;
+  // Test green
+  orig_pixels[1][0] = 0u;
+  orig_pixels[1][1] = 255u;
+  orig_pixels[1][2] = 0u;
+  orig_pixels[1][3] = 0u;
+  // Test red
+  orig_pixels[2][0] = 0u;
+  orig_pixels[2][1] = 0u;
+  orig_pixels[2][2] = 255u;
+  orig_pixels[2][3] = 255u;
+  // Test color
+  orig_pixels[3][0] = 16u;
+  orig_pixels[3][1] = 64u;
+  orig_pixels[3][2] = 192u;
+  orig_pixels[3][3] = 224u;
+  // Do 16 to test asm version.
+  ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0,
+                     &kLumaColorTable[0], 16, 1);
+  EXPECT_EQ(253u, dst_pixels[0][0]);
+  EXPECT_EQ(0u, dst_pixels[0][1]);
+  EXPECT_EQ(0u, dst_pixels[0][2]);
+  EXPECT_EQ(128u, dst_pixels[0][3]);
+  EXPECT_EQ(0u, dst_pixels[1][0]);
+  EXPECT_EQ(253u, dst_pixels[1][1]);
+  EXPECT_EQ(0u, dst_pixels[1][2]);
+  EXPECT_EQ(0u, dst_pixels[1][3]);
+  EXPECT_EQ(0u, dst_pixels[2][0]);
+  EXPECT_EQ(0u, dst_pixels[2][1]);
+  EXPECT_EQ(253u, dst_pixels[2][2]);
+  EXPECT_EQ(255u, dst_pixels[2][3]);
+  EXPECT_EQ(48u, dst_pixels[3][0]);
+  EXPECT_EQ(192u, dst_pixels[3][1]);
+  EXPECT_EQ(64u, dst_pixels[3][2]);
+  EXPECT_EQ(224u, dst_pixels[3][3]);
+
+  for (int i = 0; i < 1280; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels[0][0], 0,
+                       &kLumaColorTable[0], 1280, 1);
+  }
+}
+
 
 }  // namespace libyuv

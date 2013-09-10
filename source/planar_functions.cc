@@ -2069,6 +2069,38 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Apply a lumacolortable to each ARGB pixel.
+LIBYUV_API
+int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_argb, int dst_stride_argb,
+                       const uint8* luma,
+                       int width, int height) {
+  if (!src_argb || !dst_argb || !luma || width <= 0 || height <= 0) {
+    return -1;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_argb == width * 4 && dst_stride_argb == width * 4) {
+    return ARGBLumaColorTable(src_argb, 0,
+                              dst_argb, 0,
+                              luma,
+                              width * height, 1);
+  }
+  void (*ARGBLumaColorTableRow)(const uint8* src_argb,
+                                uint8* dst_argb, const uint8* luma,
+                                int width) = ARGBLumaColorTableRow_C;
+#if defined(HAS_ARGBLUMACOLORTABLEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 2)) {
+    ARGBLumaColorTableRow = ARGBLumaColorTableRow_SSSE3;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    ARGBLumaColorTableRow(src_argb, dst_argb, luma, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

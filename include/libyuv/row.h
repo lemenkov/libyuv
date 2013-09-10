@@ -144,6 +144,7 @@ extern "C" {
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_ARGBPOLYNOMIALROW_SSE2
 #define HAS_RGBCOLORTABLEROW_X86
+#define HAS_ARGBLUMACOLORTABLEROW_SSE2
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
@@ -1554,8 +1555,15 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width);
 void ARGBPolynomialRow_AVX2(const uint8* src_argb,
-                           uint8* dst_argb, const float* poly,
-                           int width);
+                            uint8* dst_argb, const float* poly,
+                            int width);
+
+void ARGBLumaColorTableRow_C(const uint8* src_argb,
+                             uint8* dst_argb, const uint8* luma,
+                             int width);
+void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
+                                 uint8* dst_argb, const uint8* luma,
+                                 int width);
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_C(int num, int div);

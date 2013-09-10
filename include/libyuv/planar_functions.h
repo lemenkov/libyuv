@@ -210,6 +210,15 @@ int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
                   const uint8* table_argb,
                   int x, int y, int width, int height);
 
+// Apply a luma/color table each ARGB pixel but preserve destination alpha.
+// Table contains 32768 values indexed by [Y][C] where 7 it 7 bit luma from
+// RGB (YJ style) and C is an 8 bit color component (R, G or B).
+LIBYUV_API
+int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_argb, int dst_stride_argb,
+                       const uint8* luma_rgb_table,
+                       int width, int height);
+
 // Apply a 3 term polynomial to ARGB values.
 // poly points to a 4x4 matrix.  The first row is constants.  The 2nd row is
 // coefficients for b, g, r and a.  The 3rd row is coefficients for b squared,

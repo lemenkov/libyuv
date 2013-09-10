@@ -2051,6 +2051,39 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
   }
 }
 
+// RGB to Luminance.
+// Leverage the fact that we want shifted left by 8 by the caller.
+//
+// Borrowed from libyuv/files/source/row_common.cc.
+// JPeg 7 bit Y:
+// b 0.11400 * 128 = 14.592 = 15
+// g 0.58700 * 128 = 75.136 = 75
+// r 0.29900 * 128 = 38.272 = 38
+static __inline unsigned int RGBToYJx256(uint8 r, uint8 g, uint8 b) {
+  return (38u * r + 75u * g + 15u * b) & 0x7F00u;
+}
+void ARGBLumaColorTableRow_C(const uint8* src_argb,
+                             uint8* dst_argb, const uint8* luma,
+                             int width) {
+  for (int i = 0; i < width - 1; i += 2) {
+    // Luminance in rows, color values in columns.
+    const uint8* luma0 = RGBToYJx256(src_argb[2], src_argb[1], src_argb[0]) +
+      luma;
+    dst_argb[0] = luma0[src_argb[0]];
+    dst_argb[1] = luma0[src_argb[1]];
+    dst_argb[2] = luma0[src_argb[2]];
+    dst_argb[3] = src_argb[3];
+    const uint8* luma1 = RGBToYJx256(src_argb[6], src_argb[5], src_argb[4]) +
+      luma;
+    dst_argb[4] = luma0[src_argb[4]];
+    dst_argb[5] = luma0[src_argb[5]];
+    dst_argb[6] = luma0[src_argb[6]];
+    dst_argb[7] = src_argb[7];
+    src_argb += 8;
+    dst_argb += 8;
+  }
+}
+
 #undef clamp0
 #undef clamp255
 
