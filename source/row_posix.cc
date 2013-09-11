@@ -4707,7 +4707,7 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 // G = Sobel
 // B = Sobel
 void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
-                     uint8* dst_argb, int width) {
+                   uint8* dst_argb, int width) {
   asm volatile (
     "sub       %0,%1                           \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -5816,6 +5816,65 @@ int FixedDiv_X86(int num, int div) {
   return num;
 }
 #endif  // HAS_FIXEDDIV_X86
+
+#ifdef HAS_ARGBPOLYNOMIALROW_SSE2
+void ARGBPolynomialRow_SSE2(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width) {
+  asm volatile (
+    "pxor      %%xmm3,%%xmm3                   \n"
+
+    // 2 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%0),%%xmm0                     \n"
+    "lea       0x8(%0),%0                      \n"
+    "punpcklbw %%xmm3,%%xmm0                   \n"
+    "movdqa    %%xmm0,%%xmm4                   \n"
+    "punpcklwd %%xmm3,%%xmm0                   \n"
+    "punpckhwd %%xmm3,%%xmm4                   \n"
+    "cvtdq2ps  %%xmm0,%%xmm0                   \n"
+    "cvtdq2ps  %%xmm4,%%xmm4                   \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "movdqa    %%xmm4,%%xmm5                   \n"
+    "mulps     0x10(%3),%%xmm0                 \n"
+    "mulps     0x10(%3),%%xmm4                 \n"
+    "addps     (%3),%%xmm0                     \n"
+    "addps     (%3),%%xmm4                     \n"
+    "movdqa    %%xmm1,%%xmm2                   \n"
+    "movdqa    %%xmm5,%%xmm6                   \n"
+    "mulps     %%xmm1,%%xmm2                   \n"
+    "mulps     %%xmm5,%%xmm6                   \n"
+    "mulps     %%xmm2,%%xmm1                   \n"
+    "mulps     %%xmm6,%%xmm5                   \n"
+    "mulps     0x20(%3),%%xmm2                 \n"
+    "mulps     0x20(%3),%%xmm6                 \n"
+    "mulps     0x30(%3),%%xmm1                 \n"
+    "mulps     0x30(%3),%%xmm5                 \n"
+    "addps     %%xmm2,%%xmm0                   \n"
+    "addps     %%xmm6,%%xmm4                   \n"
+    "addps     %%xmm1,%%xmm0                   \n"
+    "addps     %%xmm5,%%xmm4                   \n"
+    "cvttps2dq %%xmm0,%%xmm0                   \n"
+    "cvttps2dq %%xmm4,%%xmm4                   \n"
+    "packuswb  %%xmm4,%%xmm0                   \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "sub       $0x2,%2                         \n"
+    "movq      %%xmm0,(%1)                     \n"
+    "lea       0x8(%1),%1                      \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(width)      // %2
+  : "r"(poly)        // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBPOLYNOMIALROW_SSE2
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

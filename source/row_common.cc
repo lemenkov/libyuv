@@ -2075,12 +2075,21 @@ void ARGBLumaColorTableRow_C(const uint8* src_argb,
     dst_argb[3] = src_argb[3];
     const uint8* luma1 = RGBToYJx256(src_argb[6], src_argb[5], src_argb[4]) +
       luma;
-    dst_argb[4] = luma0[src_argb[4]];
-    dst_argb[5] = luma0[src_argb[5]];
-    dst_argb[6] = luma0[src_argb[6]];
+    dst_argb[4] = luma1[src_argb[4]];
+    dst_argb[5] = luma1[src_argb[5]];
+    dst_argb[6] = luma1[src_argb[6]];
     dst_argb[7] = src_argb[7];
     src_argb += 8;
     dst_argb += 8;
+  }
+  if (width & 1) {
+    // Luminance in rows, color values in columns.
+    const uint8* luma0 = RGBToYJx256(src_argb[2], src_argb[1], src_argb[0]) +
+      luma;
+    dst_argb[0] = luma0[src_argb[0]];
+    dst_argb[1] = luma0[src_argb[1]];
+    dst_argb[2] = luma0[src_argb[2]];
+    dst_argb[3] = src_argb[3];
   }
 }
 

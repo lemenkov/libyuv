@@ -6781,6 +6781,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     mov        ecx, [esp + 4 + 16]  /* width */
     pxor       xmm3, xmm3  // 0 constant for zero extending bytes to ints.
 
+    // 2 pixel loop.
     align      16
  convertloop:
 // (slow)   pmovzxbd  xmm0, dword ptr [eax]  // BGRA pixel
@@ -6829,8 +6830,8 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 #ifdef HAS_ARGBPOLYNOMIALROW_AVX2
 __declspec(naked) __declspec(align(16))
 void ARGBPolynomialRow_AVX2(const uint8* src_argb,
-                           uint8* dst_argb, const float* poly,
-                           int width) {
+                            uint8* dst_argb, const float* poly,
+                            int width) {
   __asm {
     mov        eax, [esp + 12]   /* poly */
     vmovdqu    xmm4, [eax]
@@ -6846,6 +6847,7 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 16]  /* width */
 
+    // 2 pixel loop.
     align      16
  convertloop:
     vpmovzxbd  ymm0, qword ptr [eax]  // 2 BGRA pixels
