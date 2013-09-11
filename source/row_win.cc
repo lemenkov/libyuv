@@ -479,10 +479,10 @@ void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 
     align      16
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 16 pixels of argb
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm2, [eax + 32]
-    movdqa    xmm3, [eax + 48]
+    movdqu    xmm0, [eax]   // fetch 16 pixels of argb
+    movdqu    xmm1, [eax + 16]
+    movdqu    xmm2, [eax + 32]
+    movdqu    xmm3, [eax + 48]
     lea       eax, [eax + 64]
     pshufb    xmm0, xmm6    // pack 16 bytes of ARGB to 12 bytes of RGB
     pshufb    xmm1, xmm6
@@ -494,13 +494,13 @@ void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
     movdqa    xmm5, xmm2   // 8 bytes from 2 for 1
     por       xmm0, xmm4   // 4 bytes from 1 for 0
     pslldq    xmm5, 8      // 8 bytes from 2 for 1
-    movdqa    [edx], xmm0  // store 0
+    movdqu    [edx], xmm0  // store 0
     por       xmm1, xmm5   // 8 bytes from 2 for 1
     psrldq    xmm2, 8      // 4 bytes from 2
     pslldq    xmm3, 4      // 12 bytes from 3 for 2
     por       xmm2, xmm3   // 12 bytes from 3 for 2
-    movdqa    [edx + 16], xmm1   // store 1
-    movdqa    [edx + 32], xmm2   // store 2
+    movdqu    [edx + 16], xmm1   // store 1
+    movdqu    [edx + 32], xmm2   // store 2
     lea       edx, [edx + 48]
     sub       ecx, 16
     jg        convertloop
@@ -518,10 +518,10 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
 
     align      16
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 16 pixels of argb
-    movdqa    xmm1, [eax + 16]
-    movdqa    xmm2, [eax + 32]
-    movdqa    xmm3, [eax + 48]
+    movdqu    xmm0, [eax]   // fetch 16 pixels of argb
+    movdqu    xmm1, [eax + 16]
+    movdqu    xmm2, [eax + 32]
+    movdqu    xmm3, [eax + 48]
     lea       eax, [eax + 64]
     pshufb    xmm0, xmm6    // pack 16 bytes of ARGB to 12 bytes of RGB
     pshufb    xmm1, xmm6
@@ -533,13 +533,13 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
     movdqa    xmm5, xmm2   // 8 bytes from 2 for 1
     por       xmm0, xmm4   // 4 bytes from 1 for 0
     pslldq    xmm5, 8      // 8 bytes from 2 for 1
-    movdqa    [edx], xmm0  // store 0
+    movdqu    [edx], xmm0  // store 0
     por       xmm1, xmm5   // 8 bytes from 2 for 1
     psrldq    xmm2, 8      // 4 bytes from 2
     pslldq    xmm3, 4      // 12 bytes from 3 for 2
     por       xmm2, xmm3   // 12 bytes from 3 for 2
-    movdqa    [edx + 16], xmm1   // store 1
-    movdqa    [edx + 32], xmm2   // store 2
+    movdqu    [edx + 16], xmm1   // store 1
+    movdqu    [edx + 32], xmm2   // store 2
     lea       edx, [edx + 48]
     sub       ecx, 16
     jg        convertloop
