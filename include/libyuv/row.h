@@ -142,9 +142,11 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 // Effects:
-#define HAS_ARGBCOLORTABLEROW_X86
-#define HAS_RGBCOLORTABLEROW_X86
-//#define HAS_ARGBLUMACOLORTABLEROW_SSSE3
+//  Disabled due to C versions being faster on Sandy Bridge with VC2012.
+//  #define HAS_ARGBCOLORTABLEROW_X86
+//  #define HAS_RGBCOLORTABLEROW_X86
+//  SSSE3 version incomplete:
+//  #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
