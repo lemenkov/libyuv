@@ -18,6 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// TODO(fbarchard): Consider overlapping bits for different architectures.
 // Internal flag to indicate cpuid requires initialization.
 static const int kCpuInit = 0x1;
 
@@ -35,11 +36,13 @@ static const int kCpuHasSSE42 = 0x100;
 static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
+static const int kCpuHasFMA3 = 0x1000;
+// 0x2000, 0x4000, 0x8000 reserved for future X86 flags.
 
 // These flags are only valid on MIPS processors.
-static const int kCpuHasMIPS = 0x1000;
-static const int kCpuHasMIPS_DSP = 0x2000;
-static const int kCpuHasMIPS_DSPR2 = 0x4000;
+static const int kCpuHasMIPS = 0x10000;
+static const int kCpuHasMIPS_DSP = 0x20000;
+static const int kCpuHasMIPS_DSPR2 = 0x40000;
 
 // Internal function used to auto-init.
 LIBYUV_API

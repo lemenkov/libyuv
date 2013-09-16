@@ -2057,7 +2057,8 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBPOLYNOMIALROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 2)) {
+  if (TestCpuFlag(kCpuHasAVX2) && TestCpuFlag(kCpuHasFMA3) &&
+      IS_ALIGNED(width, 2)) {
     ARGBPolynomialRow = ARGBPolynomialRow_AVX2;
   }
 #endif

@@ -179,6 +179,7 @@ int InitCpuFlags(void) {
               ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
               ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
               ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
+              ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
               kCpuHasX86;
 #ifdef HAS_XGETBV
   if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
@@ -211,6 +212,9 @@ int InitCpuFlags(void) {
   }
   if (TestEnv("LIBYUV_DISABLE_ERMS")) {
     cpu_info_ &= ~kCpuHasERMS;
+  }
+  if (TestEnv("LIBYUV_DISABLE_FMA3")) {
+    cpu_info_ &= ~kCpuHasFMA3;
   }
 #elif defined(__mips__) && defined(__linux__)
   // Linux mips parse text file for dsp detect.

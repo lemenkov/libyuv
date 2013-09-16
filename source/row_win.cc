@@ -6834,10 +6834,10 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             int width) {
   __asm {
     mov        eax, [esp + 12]   /* poly */
-    vmovdqu    xmm4, [eax]
-    vmovdqu    xmm5, [eax + 16]
-    vmovdqu    xmm6, [eax + 32]
-    vmovdqu    xmm7, [eax + 48]
+    vmovdqu    xmm4, [eax]       // C0
+    vmovdqu    xmm5, [eax + 16]  // C1
+    vmovdqu    xmm6, [eax + 32]  // C2
+    vmovdqu    xmm7, [eax + 48]  // C3
     vpermq     ymm4, ymm4, 0x44  // dup low qwords to high qwords
     vpermq     ymm5, ymm5, 0x44
     vpermq     ymm6, ymm6, 0x44
@@ -6850,25 +6850,22 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     // 2 pixel loop.
     align      16
  convertloop:
-    vpmovzxbd  ymm0, qword ptr [eax]  // 2 BGRA pixels
-    lea        eax, [eax + 8]
-    vcvtdq2ps  ymm0, ymm0  // X 8 floats
-    vmulps     ymm2, ymm0, ymm0  // X * X
-    vmulps     ymm3, ymm0, ymm7  // C3 * X
-    vmulps     ymm1, ymm0, ymm5  // C1 * X
-    vmulps     ymm3, ymm2, ymm3  // C3 * X * X * X
-    vmulps     ymm2, ymm2, ymm6  // C2 * X * X
-    vaddps     ymm1, ymm1, ymm4  // result = C0 + C1 * X
-    vaddps     ymm1, ymm1, ymm3  // result += C3 * X * X * X
-    vaddps     ymm1, ymm1, ymm2  // result += C2 * X * X
-    vcvttps2dq ymm1, ymm1
-    vpackusdw  ymm1, ymm1, ymm1  // b0g0r0a0_00000000_b0g0r0a0_00000000
-    vpermq     ymm1, ymm1, 0xd8  // b0g0r0a0_b0g0r0a0_00000000_00000000
-    vpackuswb  xmm1, xmm1, xmm1  // bgrabgra_00000000_00000000_00000000
-    sub        ecx, 2
-    vmovq      qword ptr [edx], xmm1
-    lea        edx, [edx + 8]
-    jg         convertloop
+    vpmovzxbd   ymm0, qword ptr [eax]  // 2 BGRA pixels
+    lea         eax, [eax + 8]
+    vcvtdq2ps   ymm0, ymm0        // X 8 floats
+    vmulps      ymm2, ymm0, ymm0  // X * X
+    vmulps      ymm3, ymm0, ymm7  // C3 * X
+    vfmadd132ps ymm0, ymm4, ymm5  // result = C0 + C1 * X
+    vfmadd231ps ymm0, ymm2, ymm6  // result += C2 * X * X
+    vfmadd231ps ymm0, ymm2, ymm3  // result += C3 * X * X * X
+    vcvttps2dq  ymm0, ymm0
+    vpackusdw   ymm0, ymm0, ymm0  // b0g0r0a0_00000000_b0g0r0a0_00000000
+    vpermq      ymm0, ymm0, 0xd8  // b0g0r0a0_b0g0r0a0_00000000_00000000
+    vpackuswb   xmm0, xmm0, xmm0  // bgrabgra_00000000_00000000_00000000
+    sub         ecx, 2
+    vmovq       qword ptr [edx], xmm0
+    lea         edx, [edx + 8]
+    jg          convertloop
     vzeroupper
     ret
   }

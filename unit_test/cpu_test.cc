@@ -41,6 +41,8 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has AVX2 %x\n", has_avx2);
   int has_erms = TestCpuFlag(kCpuHasERMS);
   printf("Has ERMS %x\n", has_erms);
+  int has_fma3 = TestCpuFlag(kCpuHasFMA3);
+  printf("Has FMA3 %x\n", has_fma3);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   printf("Has MIPS %x\n", has_mips);
   int has_mips_dsp = TestCpuFlag(kCpuHasMIPS_DSP);
@@ -93,10 +95,8 @@ TEST_F(libyuvTest, TestCpuId) {
 TEST_F(libyuvTest, TestLinuxNeon) {
   int testdata = ArmCpuCaps("unit_test/testdata/arm_v7.txt");
   if (testdata) {
-    EXPECT_EQ(0,
-              ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
-    EXPECT_EQ(kCpuHasNEON,
-              ArmCpuCaps("unit_test/testdata/tegra3.txt"));
+    EXPECT_EQ(0, ArmCpuCaps("unit_test/testdata/arm_v7.txt"));
+    EXPECT_EQ(kCpuHasNEON, ArmCpuCaps("unit_test/testdata/tegra3.txt"));
   } else {
     printf("WARNING: unable to load \"unit_test/testdata/arm_v7.txt\"\n");
   }
