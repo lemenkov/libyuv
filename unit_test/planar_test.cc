@@ -543,7 +543,7 @@ TEST_F(libyuvTest, TestARGBColorTable) {
   memset(orig_pixels, 0, sizeof(orig_pixels));
 
   // Matrix for Sepia.
-  static const uint8 kARGBTable[1280 * 4] = {
+  static const uint8 kARGBTable[256 * 4] = {
     1u, 2u, 3u, 4u,
     5u, 6u, 7u, 8u,
     9u, 10u, 11u, 12u,
@@ -602,7 +602,7 @@ TEST_F(libyuvTest, TestRGBColorTable) {
   memset(orig_pixels, 0, sizeof(orig_pixels));
 
   // Matrix for Sepia.
-  static const uint8 kARGBTable[1280 * 4] = {
+  static const uint8 kARGBTable[256 * 4] = {
     1u, 2u, 3u, 4u,
     5u, 6u, 7u, 8u,
     9u, 10u, 11u, 12u,

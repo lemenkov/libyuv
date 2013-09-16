@@ -5875,6 +5875,66 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_SSE2
 
+#ifdef HAS_ARGBCOLORTABLEROW_X86
+// Tranform ARGB pixels with color table.
+void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
+                           int width) {
+  uintptr_t pixel_temp = 0u;
+  asm volatile (
+    // 1 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movzb     (%0),%1                         \n"
+    "lea       0x4(%0),%0                      \n"
+    "movzb     (%3,%1,4),%1                    \n"
+    "mov       %b1,-0x4(%0)                    \n"
+    "movzb     -0x3(%0),%1                     \n"
+    "movzb     0x1(%3,%1,4),%1                 \n"
+    "mov       %b1,-0x3(%0)                    \n"
+    "movzb     -0x2(%0),%1                     \n"
+    "movzb     0x2(%3,%1,4),%1                 \n"
+    "mov       %b1,-0x2(%0)                    \n"
+    "movzb     -0x1(%0),%1                     \n"
+    "movzb     0x3(%3,%1,4),%1                 \n"
+    "mov       %b1,-0x1(%0)                    \n"
+    "dec       %2                              \n"
+    "jg        1b                              \n"
+  : "+r"(dst_argb),   // %0
+    "+d"(pixel_temp), // %1
+    "+r"(width)       // %2
+  : "r"(table_argb)   // %3
+  : "memory", "cc");
+}
+#endif  // HAS_ARGBCOLORTABLEROW_X86
+
+#ifdef HAS_RGBCOLORTABLEROW_X86
+// Tranform RGB pixels with color table.
+void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
+    uintptr_t pixel_temp = 0u;
+  asm volatile (
+    // 1 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movzb     (%0),%1                         \n"
+    "lea       0x4(%0),%0                      \n"
+    "movzb     (%3,%1,4),%1                    \n"
+    "mov       %b1,-0x4(%0)                    \n"
+    "movzb     -0x3(%0),%1                     \n"
+    "movzb     0x1(%3,%1,4),%1                 \n"
+    "mov       %b1,-0x3(%0)                    \n"
+    "movzb     -0x2(%0),%1                     \n"
+    "movzb     0x2(%3,%1,4),%1                 \n"
+    "mov       %b1,-0x2(%0)                    \n"
+    "dec       %2                              \n"
+    "jg        1b                              \n"
+  : "+r"(dst_argb),   // %0
+    "+d"(pixel_temp), // %1
+    "+r"(width)       // %2
+  : "r"(table_argb)   // %3
+  : "memory", "cc");
+}
+#endif  // HAS_RGBCOLORTABLEROW_X86
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

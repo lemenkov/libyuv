@@ -5097,43 +5097,28 @@ __declspec(naked) __declspec(align(16))
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
                            int width) {
   __asm {
-    push       ebx
     push       esi
-    push       edi
-    push       ebp
-    mov        eax, [esp + 16 + 4]   /* dst_argb */
-    mov        edi, [esp + 16 + 8]   /* table_argb */
-    mov        ecx, [esp + 16 + 12]  /* width */
-    xor        ebx, ebx
-    xor        edx, edx
+    mov        eax, [esp + 4 + 4]   /* dst_argb */
+    mov        esi, [esp + 4 + 8]   /* table_argb */
+    mov        ecx, [esp + 4 + 12]  /* width */
 
-    align      16
- convertloop:
-    mov        ebp, dword ptr [eax]  // BGRA
-    mov        esi, ebp
-    and        ebp, 255
-    shr        esi, 8
-    and        esi, 255
-    mov        bl, [edi + ebp * 4 + 0]  // B
-    mov        dl, [edi + esi * 4 + 1]  // G
-    mov        ebp, dword ptr [eax]  // BGRA
-    mov        esi, ebp
-    shr        ebp, 16
-    shr        esi, 24
-    and        ebp, 255
-    mov        [eax], bl
-    mov        [eax + 1], dl
-    mov        bl, [edi + ebp * 4 + 2]  // R
-    mov        dl, [edi + esi * 4 + 3]  // A
-    mov        [eax + 2], bl
-    mov        [eax + 3], dl
+  convertloop:
+    movzx      edx, byte ptr [eax]
     lea        eax, [eax + 4]
-    sub        ecx, 1
+    movzx      edx, byte ptr [esi + edx * 4]
+    mov        byte ptr [eax - 4], dl
+    movzx      edx, byte ptr [eax - 4 + 1]
+    movzx      edx, byte ptr [esi + edx * 4 + 1]
+    mov        byte ptr [eax - 4 + 1], dl
+    movzx      edx, byte ptr [eax - 4 + 2]
+    movzx      edx, byte ptr [esi + edx * 4 + 2]
+    mov        byte ptr [eax - 4 + 2], dl
+    movzx      edx, byte ptr [eax - 4 + 3]
+    movzx      edx, byte ptr [esi + edx * 4 + 3]
+    mov        byte ptr [eax - 4 + 3], dl
+    dec        ecx
     jg         convertloop
-    pop        ebp
-    pop        edi
     pop        esi
-    pop        ebx
     ret
   }
 }
@@ -5144,39 +5129,26 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
 __declspec(naked) __declspec(align(16))
 void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
   __asm {
-    push       ebx
     push       esi
-    push       edi
-    push       ebp
-    mov        eax, [esp + 16 + 4]   /* dst_argb */
-    mov        edi, [esp + 16 + 8]   /* table_argb */
-    mov        ecx, [esp + 16 + 12]  /* width */
-    xor        ebx, ebx
-    xor        edx, edx
+    mov        eax, [esp + 4 + 4]   /* dst_argb */
+    mov        esi, [esp + 4 + 8]   /* table_argb */
+    mov        ecx, [esp + 4 + 12]  /* width */
 
-    align      16
- convertloop:
-    mov        ebp, dword ptr [eax]  // BGRA
-    mov        esi, ebp
-    and        ebp, 255
-    shr        esi, 8
-    and        esi, 255
-    mov        bl, [edi + ebp * 4 + 0]  // B
-    mov        dl, [edi + esi * 4 + 1]  // G
-    mov        ebp, dword ptr [eax]  // BGRA
-    shr        ebp, 16
-    and        ebp, 255
-    mov        [eax], bl
-    mov        [eax + 1], dl
-    mov        bl, [edi + ebp * 4 + 2]  // R
-    mov        [eax + 2], bl
+  convertloop:
+    movzx      edx, byte ptr [eax]
     lea        eax, [eax + 4]
-    sub        ecx, 1
+    movzx      edx, byte ptr [esi + edx * 4]
+    mov        byte ptr [eax - 4], dl
+    movzx      edx, byte ptr [eax - 4 + 1]
+    movzx      edx, byte ptr [esi + edx * 4 + 1]
+    mov        byte ptr [eax - 4 + 1], dl
+    movzx      edx, byte ptr [eax - 4 + 2]
+    movzx      edx, byte ptr [esi + edx * 4 + 2]
+    mov        byte ptr [eax - 4 + 2], dl
+    dec        ecx
     jg         convertloop
-    pop        ebp
-    pop        edi
+
     pop        esi
-    pop        ebx
     ret
   }
 }

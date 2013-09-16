@@ -136,15 +136,16 @@ extern "C" {
 #define HAS_YTOARGBROW_SSE2
 #define HAS_YUY2TOARGBROW_SSSE3
 #define HAS_YUY2TOYROW_SSE2
+
+// Effects:
+#define HAS_ARGBCOLORTABLEROW_X86
+#define HAS_RGBCOLORTABLEROW_X86
 #endif
 
 // The following are Windows only:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 // Effects:
-//  Disabled due to C versions being faster on Sandy Bridge with VC2012.
-//  #define HAS_ARGBCOLORTABLEROW_X86
-//  #define HAS_RGBCOLORTABLEROW_X86
 //  SSSE3 version incomplete:
 //  #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
