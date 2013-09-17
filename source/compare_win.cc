@@ -184,6 +184,46 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     ret
   }
 }
+
+// Visual C 2012 required for AVX2.
+#if _MSC_VER >= 1700
+__declspec(naked) __declspec(align(16))
+uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
+  __asm {
+    mov        eax, [esp + 4]    // src
+    mov        ecx, [esp + 8]    // count
+    movd       xmm0, [esp + 12]  // seed
+    movdqa     xmm6, kHash16x33
+
+    align      16
+  wloop:
+    vpmovzxbd  xmm3, dword ptr [eax]  // src[0-3]
+    pmulld     xmm0, xmm6  // hash *= 33 ^ 16
+    vpmovzxbd  xmm4, dword ptr [eax + 4]  // src[4-7]
+    pmulld     xmm3, kHashMul0
+    vpmovzxbd  xmm2, dword ptr [eax + 8]  // src[8-11]
+    pmulld     xmm4, kHashMul1
+    vpmovzxbd  xmm1, dword ptr [eax + 12]  // src[12-15]
+    pmulld     xmm2, kHashMul2
+    lea        eax, [eax + 16]
+    pmulld     xmm1, kHashMul3
+    paddd      xmm3, xmm4        // add 16 results
+    paddd      xmm1, xmm2
+    sub        ecx, 16
+    paddd      xmm1, xmm3
+    pshufd     xmm2, xmm1, 0x0e  // upper 2 dwords
+    paddd      xmm1, xmm2
+    pshufd     xmm2, xmm1, 0x01
+    paddd      xmm1, xmm2
+    paddd      xmm0, xmm1
+    jg         wloop
+
+    movd       eax, xmm0         // return hash
+    ret
+  }
+}
+#endif  // _MSC_VER >= 1700
+
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef __cplusplus

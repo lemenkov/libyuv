@@ -10,6 +10,8 @@
 
 #include "libyuv/compare.h"
 
+#include <stdio.h>  // printf
+
 #include <float.h>
 #include <math.h>
 #ifdef _OPENMP
@@ -34,8 +36,12 @@ uint32 HashDjb2_C(const uint8* src, int count, uint32 seed);
     (defined(_M_IX86) || \
     (defined(__x86_64__) || (defined(__i386__) && !defined(__pic__))))
 #define HAS_HASHDJB2_SSE41
-
 uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed);
+
+#if _MSC_VER >= 1700
+#define HAS_HASHDJB2_AVX2
+uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed);
+#endif
 
 #endif  // HAS_HASHDJB2_SSE41
 
@@ -46,6 +52,11 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 #if defined(HAS_HASHDJB2_SSE41)
   if (TestCpuFlag(kCpuHasSSE41)) {
     HashDjb2_SSE = HashDjb2_SSE41;
+  }
+#endif
+#if defined(HAS_HASHDJB2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    HashDjb2_SSE = HashDjb2_AVX2;
   }
 #endif
 
