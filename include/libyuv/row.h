@@ -146,8 +146,7 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 // Effects:
-//  SSSE3 version incomplete:
-//  #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
+#define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700

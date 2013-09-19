@@ -5092,6 +5092,20 @@ void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
 #endif  // HAS_ARGBCOLORMATRIXROW_SSSE3
 
 #ifdef HAS_ARGBCOLORTABLEROW_X86
+
+static uvec8 kMaskB = {
+  255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0,
+};
+static uvec8 kMaskG = {
+  0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0,
+};
+static uvec8 kMaskR = {
+  0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0,
+};
+static uvec8 kMaskA = {
+  0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255, 0, 0, 0, 255,
+};
+
 // Tranform ARGB pixels with color table.
 __declspec(naked) __declspec(align(16))
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
@@ -6843,6 +6857,73 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
   }
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
+
+
+// RGB to Luminance.
+// Leverage the fact that we want shifted left by 8 by the caller.
+//
+// Borrowed from libyuv/files/source/row_common.cc.
+// JPeg 7 bit Y:
+// b 0.11400 * 128 = 14.592 = 15
+// g 0.58700 * 128 = 75.136 = 75
+// r 0.29900 * 128 = 38.272 = 38
+
+// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
+__declspec(naked) __declspec(align(16))
+void ARGBToYJx4_SSSE3(const uint8* src_argb, const uint8* luma, uint8** lut) {
+  __asm {
+    mov        eax, [esp + 4]   /* src_argb */
+    movdqa     xmm0, [eax]
+    pmaddubsw  xmm0, kARGBToYJ
+    movd       xmm1, [esp + 8]  /* luma */
+    mov        edx, [esp + 12]  /* lut */
+    phaddw     xmm0, xmm0
+    pshufd     xmm1, xmm1, 0
+    pxor       xmm2, xmm2
+    psrlw      xmm0, 8
+    psllw      xmm0, 8     // 0y0y0y0y
+    punpcklwd  xmm0, xmm2  // 000y000y000y000y
+    paddd      xmm0, xmm1  // lum0lum1lum2lum3
+    movdqa     [edx], xmm0
+    ret
+  }
+}
+
+void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
+                                 uint8* dst_argb, const uint8* luma,
+                                 int width) {
+  SIMD_ALIGNED(uint8* lut4[4]);
+  ARGBToYJx4_SSSE3(src_argb, luma, lut4);
+  for (int i = 0; i < width - 3; i += 4) {
+    // Luminance in rows, color values in columns.
+    const uint8* luma0 = lut4[0];
+    dst_argb[0] = luma0[src_argb[0]];
+    dst_argb[1] = luma0[src_argb[1]];
+    dst_argb[2] = luma0[src_argb[2]];
+    dst_argb[3] = src_argb[3];
+
+    luma0 = lut4[1];
+    dst_argb[4] = luma0[src_argb[4]];
+    dst_argb[5] = luma0[src_argb[5]];
+    dst_argb[6] = luma0[src_argb[6]];
+    dst_argb[7] = src_argb[7];
+
+    luma0 = lut4[2];
+    dst_argb[8] = luma0[src_argb[8]];
+    dst_argb[9] = luma0[src_argb[9]];
+    dst_argb[10] = luma0[src_argb[10]];
+    dst_argb[11] = src_argb[11];
+
+    luma0 = lut4[3];
+    dst_argb[12] = luma0[src_argb[12]];
+    dst_argb[13] = luma0[src_argb[13]];
+    dst_argb[14] = luma0[src_argb[14]];
+    dst_argb[15] = src_argb[15];
+
+    src_argb += 16;
+    dst_argb += 16;
+  }
+}
 
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
