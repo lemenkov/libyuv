@@ -90,7 +90,6 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #endif
 
-
 // The following are available on all x86 platforms except NaCL x64:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
@@ -142,6 +141,16 @@ extern "C" {
 #define HAS_RGBCOLORTABLEROW_X86
 #endif
 
+// The following are available on all x86 platforms, including NaCL, but
+// require VS2012, llvm or NaCL.
+// Caveat: llvm 3.1 required, but does not provide a version.
+#if !defined(LIBYUV_DISABLE_X86) && \
+  ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
+  defined(__native_client__) || defined(__llvm__))
+// Effects:
+#define HAS_ARGBPOLYNOMIALROW_AVX2
+#endif
+
 // The following are Windows only:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
@@ -173,7 +182,6 @@ extern "C" {
 #define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBMULTIPLYROW_AVX2
-#define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif  // _MSC_VER >= 1700

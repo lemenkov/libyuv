@@ -5875,6 +5875,52 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_SSE2
 
+#ifdef HAS_ARGBPOLYNOMIALROW_AVX2
+void ARGBPolynomialRow_AVX2(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width) {
+  asm volatile (
+    "vmovdqu   "MEMACCESS(3)",%%xmm4           \n"
+    "vmovdqu   "MEMACCESS2(0x10,3)",%%xmm5     \n"
+    "vmovdqu   "MEMACCESS2(0x20,3)",%%xmm6     \n"
+    "vmovdqu   "MEMACCESS2(0x30,3)",%%xmm7     \n"
+    "vpermq    $0x44,%%ymm4,%%ymm4             \n"
+    "vpermq    $0x44,%%ymm5,%%ymm5             \n"
+    "vpermq    $0x44,%%ymm6,%%ymm6             \n"
+    "vpermq    $0x44,%%ymm7,%%ymm7             \n"
+
+    // 2 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "vpmovzxbd   "MEMACCESS(0)",%%ymm0         \n"  // 2 ARGB pixels
+    "lea         "MEMLEA(0x8,0)",%0            \n"
+    "vcvtdq2ps   %%ymm0,%%ymm0                 \n"  // X 8 floats
+    "vmulps      %%ymm0,%%ymm0,%%ymm2          \n"  // X * X
+    "vmulps      %%ymm7,%%ymm0,%%ymm3          \n"  // C3 * X
+    "vfmadd132ps %%ymm5,%%ymm4,%%ymm0          \n"  // result = C0 + C1 * X
+    "vfmadd231ps %%ymm6,%%ymm2,%%ymm0          \n"  // result += C2 * X * X
+    "vfmadd231ps %%ymm3,%%ymm2,%%ymm0          \n"  // result += C3 * X * X * X
+    "vcvttps2dq  %%ymm0,%%ymm0                 \n"
+    "vpackusdw   %%ymm0,%%ymm0,%%ymm0          \n"
+    "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
+    "vpackuswb   %%xmm0,%%xmm0,%%xmm0          \n"
+    "sub         $0x2,%2                       \n"
+    "movq        %%xmm0,"MEMACCESS(1)"         \n"
+    "lea         "MEMLEA(0x8,1)",%1            \n"
+    "jg          1b                            \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(width)      // %2
+  : "r"(poly)        // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7"
+#endif
+  );
+}
+#endif  // HAS_ARGBPOLYNOMIALROW_AVX2
+
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
