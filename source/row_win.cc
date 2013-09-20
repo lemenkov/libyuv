@@ -6893,8 +6893,8 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
                                  uint8* dst_argb, const uint8* luma,
                                  int width) {
   SIMD_ALIGNED(uint8* lut4[4]);
-  ARGBToYJx4_SSSE3(src_argb, luma, lut4);
   for (int i = 0; i < width - 3; i += 4) {
+    ARGBToYJx4_SSSE3(src_argb, luma, lut4);
     // Luminance in rows, color values in columns.
     const uint8* luma0 = lut4[0];
     dst_argb[0] = luma0[src_argb[0]];

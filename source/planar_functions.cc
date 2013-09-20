@@ -2090,7 +2090,7 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
                                 uint8* dst_argb, const uint8* luma,
                                 int width) = ARGBLumaColorTableRow_C;
 #if defined(HAS_ARGBLUMACOLORTABLEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
     ARGBLumaColorTableRow = ARGBLumaColorTableRow_SSSE3;
   }
 #endif
