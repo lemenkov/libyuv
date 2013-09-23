@@ -146,7 +146,7 @@ extern "C" {
 // Caveat: llvm 3.1 required, but does not provide a version.
 #if !defined(LIBYUV_DISABLE_X86) && \
   ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  defined(__native_client__) || defined(__llvm__))
+  defined(__native_client__) || defined(__clang__))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #endif
