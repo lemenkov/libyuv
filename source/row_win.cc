@@ -2239,9 +2239,9 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // Read 2 UV from 411, upsample to 8 UV.
 #define READYUV411 __asm {                                                     \
-    __asm movzx      ebx, word ptr [esi]        /* U */                        \
+    __asm movzx      ebx, word ptr [esi]        /* U */           /* NOLINT */ \
     __asm movd       xmm0, ebx                                                 \
-    __asm movzx      ebx, word ptr [esi + edi]  /* V */                        \
+    __asm movzx      ebx, word ptr [esi + edi]  /* V */           /* NOLINT */ \
     __asm movd       xmm1, ebx                                                 \
     __asm lea        esi,  [esi + 2]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
