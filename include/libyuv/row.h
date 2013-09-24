@@ -142,11 +142,17 @@ extern "C" {
 #endif
 
 // The following are available on all x86 platforms, including NaCL, but
-// require VS2012, llvm or NaCL.
+// require VS2012, clang, gcc4.7 or NaCL.
 // Caveat: llvm 3.1 required, but does not provide a version.
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+/* Test for GCC >= 4.7.0 */
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
+#define GCC_HAS_AVX2 1
+#endif  // GNUC >= 4.7
+#endif  // __GNUC__
 #if !defined(LIBYUV_DISABLE_X86) && \
   ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  defined(__native_client__) || defined(__clang__))
+  defined(__native_client__) || defined(__clang__) || defined(GCC_HAS_AVX2))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #endif

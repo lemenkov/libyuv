@@ -5915,7 +5915,8 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
   : "r"(poly)        // %3
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "ymm0", "ymm1", "ymm2", "ymm3", "ymm4", "ymm5", "ymm6", "ymm7"
+// TODO(fbarchard): declare ymm usage when applicable.
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
   );
 }
