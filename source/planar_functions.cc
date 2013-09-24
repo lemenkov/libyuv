@@ -1533,7 +1533,13 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
+  if (radius > height) {
+      radius = height;
+  }
+  if (radius > width) {
+      radius = width;
+  }
+  void (*ComputeCumulativeSumRow)(const uint8 *row, int32 *cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
   void (*CumulativeSumToAverageRow)(const int32* topleft, const int32* botleft,
       int width, int area, uint8* dst, int count) = CumulativeSumToAverageRow_C;
@@ -1810,8 +1816,10 @@ LIBYUV_API
 int ARGBSobel(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
+  const int kMaxRow = kMaxStride / 4;
+  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
   if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > (kMaxStride / 4)) {
+      width <= 0 || height == 0 || width > (kMaxRow - kEdge)) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1878,15 +1886,15 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  SIMD_ALIGNED(uint8 row_y[(kMaxStride / 4 + kEdge) * 3 + kEdge]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride / 4]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxStride / 4]);
+  // 3 rows with edges before/after.
+  SIMD_ALIGNED(uint8 row_y[kEdge + kMaxRow * 3]);
+  SIMD_ALIGNED(uint8 row_sobelx[kMaxRow]);
+  SIMD_ALIGNED(uint8 row_sobely[kMaxRow]);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxStride / 4;
-  uint8* row_y2 = row_y1 + kMaxStride / 4;
+  uint8* row_y1 = row_y0 + kMaxRow;
+  uint8* row_y2 = row_y1 + kMaxRow;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
   memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
@@ -1925,8 +1933,10 @@ LIBYUV_API
 int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height) {
+  const int kMaxRow = kMaxStride / 4;
+  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
   if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > kMaxStride / 4) {
+      width <= 0 || height == 0 || width > (kMaxRow - kEdge)) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1993,15 +2003,14 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  SIMD_ALIGNED(uint8 row_y[(kMaxStride / 4 + kEdge) * 3 + kEdge]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxStride / 4]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxStride / 4]);
+  SIMD_ALIGNED(uint8 row_y[kEdge + kMaxRow * 3]);
+  SIMD_ALIGNED(uint8 row_sobelx[kMaxRow]);
+  SIMD_ALIGNED(uint8 row_sobely[kMaxRow]);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxStride / 4;
-  uint8* row_y2 = row_y1 + kMaxStride / 4;
+  uint8* row_y1 = row_y0 + kMaxRow;
+  uint8* row_y2 = row_y1 + kMaxRow;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
   memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
