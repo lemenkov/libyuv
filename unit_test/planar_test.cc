@@ -1502,8 +1502,7 @@ static int TestSobel(int width, int height, int benchmark_iterations,
   return max_diff;
 }
 
-// TODO(fbarchard): Fix disabled Sobel unittests which are failing DrMemory.
-TEST_F(libyuvTest, DISABLED_ARGBSobel_Any) {
+TEST_F(libyuvTest, ARGBSobel_Any) {
   int max_diff = TestSobel(benchmark_width_ - 1, benchmark_height_,
                            benchmark_iterations_, +1, 0);
   EXPECT_EQ(0, max_diff);
@@ -1515,13 +1514,13 @@ TEST_F(libyuvTest, ARGBSobel_Unaligned) {
   EXPECT_EQ(0, max_diff);
 }
 
-TEST_F(libyuvTest, DISABLED_ARGBSobel_Invert) {
+TEST_F(libyuvTest, ARGBSobel_Invert) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, -1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
-TEST_F(libyuvTest, DISABLED_ARGBSobel_Opt) {
+TEST_F(libyuvTest, ARGBSobel_Opt) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, +1, 0);
   EXPECT_EQ(0, max_diff);
@@ -1570,8 +1569,7 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
   return max_diff;
 }
 
-// TODO(fbarchard): Fix disabled SobelXY unittests which are failing DrMemory.
-TEST_F(libyuvTest, DISABLED_ARGBSobelXY_Any) {
+TEST_F(libyuvTest, ARGBSobelXY_Any) {
   int max_diff = TestSobelXY(benchmark_width_ - 1, benchmark_height_,
                              benchmark_iterations_, +1, 0);
   EXPECT_EQ(0, max_diff);
@@ -1583,13 +1581,13 @@ TEST_F(libyuvTest, ARGBSobelXY_Unaligned) {
   EXPECT_EQ(0, max_diff);
 }
 
-TEST_F(libyuvTest, DISABLED_ARGBSobelXY_Invert) {
+TEST_F(libyuvTest, ARGBSobelXY_Invert) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
                              benchmark_iterations_, -1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
-TEST_F(libyuvTest, DISABLED_ARGBSobelXY_Opt) {
+TEST_F(libyuvTest, ARGBSobelXY_Opt) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
                              benchmark_iterations_, +1, 0);
   EXPECT_EQ(0, max_diff);

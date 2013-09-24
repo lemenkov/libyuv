@@ -1889,10 +1889,11 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   uint8* row_y2 = row_y1 + kMaxStride / 4;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
-  row_y0[width] = row_y0[width - 1];
+  memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
   ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
   row_y1[-1] = row_y1[0];
-  row_y1[width] = row_y1[width - 1];
+  memset(row_y1 + width, row_y1[width - 1], 16);
+  memset(row_y2 + width, 0, 16);
 
   for (int y = 0; y < height; ++y) {
     // Convert next row of ARGB to Y.
@@ -2003,10 +2004,11 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
   uint8* row_y2 = row_y1 + kMaxStride / 4;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
-  row_y0[width] = row_y0[width - 1];
+  memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
   ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
   row_y1[-1] = row_y1[0];
-  row_y1[width] = row_y1[width - 1];
+  memset(row_y1 + width, row_y1[width - 1], 16);
+  memset(row_y2 + width, 0, 16);
 
   for (int y = 0; y < height; ++y) {
     // Convert next row of ARGB to Y.
