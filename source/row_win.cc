@@ -2220,7 +2220,7 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
 
-// Read 8 UV from 411.
+// Read 8 UV from 444.
 #define READYUV444 __asm {                                                     \
     __asm movq       xmm0, qword ptr [esi] /* U */                /* NOLINT */ \
     __asm movq       xmm1, qword ptr [esi + edi] /* V */          /* NOLINT */ \
@@ -2239,8 +2239,10 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // Read 2 UV from 411, upsample to 8 UV.
 #define READYUV411 __asm {                                                     \
-    __asm movd       xmm0, [esi]          /* U */                              \
-    __asm movd       xmm1, [esi + edi]    /* V */                              \
+    __asm movzx      ebx, word ptr [esi]        /* U */                        \
+    __asm movd       xmm0, ebx                                                 \
+    __asm movzx      ebx, word ptr [esi + edi]  /* V */                        \
+    __asm movd       xmm1, ebx                                                 \
     __asm lea        esi,  [esi + 2]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
@@ -2573,20 +2575,21 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
                          uint8* dst_argb,
                          int width) {
   __asm {
+    push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
     pxor       xmm4, xmm4
 
     align      16
  convertloop:
-    READYUV411
+    READYUV411  // modifies EBX
     YUVTORGB
 
     // Step 3: Weave into ARGB
@@ -2603,6 +2606,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
 
     pop        edi
     pop        esi
+    pop        ebx
     ret
   }
 }
@@ -2779,20 +2783,21 @@ void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    uint8* dst_argb,
                                    int width) {
   __asm {
+    push       ebx
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
     pxor       xmm4, xmm4
 
     align      16
  convertloop:
-    READYUV411
+    READYUV411  // modifies EBX
     YUVTORGB
 
     // Step 3: Weave into ARGB
@@ -2809,6 +2814,7 @@ void I411ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
 
     pop        edi
     pop        esi
+    pop        ebx
     ret
   }
 }
