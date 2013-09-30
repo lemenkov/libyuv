@@ -1592,7 +1592,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     int x;
     for (x = 0; x < radius + 1; ++x) {
       CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
-                              boxwidth, area, &dst_argb[x * 4], 1);
+                                boxwidth, area, &dst_argb[x * 4], 1);
       area += (bot_y - top_y);
       boxwidth += 4;
     }
@@ -1600,15 +1600,15 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     // Middle unclipped.
     int n = (width - 1) - radius - x + 1;
     CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
-                           boxwidth, area, &dst_argb[x * 4], n);
+                              boxwidth, area, &dst_argb[x * 4], n);
 
     // Right clipped.
     for (x += n; x <= width - 1; ++x) {
       area -= (bot_y - top_y);
       boxwidth -= 4;
       CumulativeSumToAverageRow(cumsum_top_row + (x - radius - 1) * 4,
-                             cumsum_bot_row + (x - radius - 1) * 4,
-                             boxwidth, area, &dst_argb[x * 4], 1);
+                                cumsum_bot_row + (x - radius - 1) * 4,
+                                boxwidth, area, &dst_argb[x * 4], 1);
     }
     dst_argb += dst_stride_argb;
   }

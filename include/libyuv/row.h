@@ -150,11 +150,14 @@ extern "C" {
 #define GCC_HAS_AVX2 1
 #endif  // GNUC >= 4.7
 #endif  // __GNUC__
+// TODO(fbarchard): Test with new NaCL tool chain.  Change __native_client__AVX2
+// to __native_client__ to test.
 #if !defined(LIBYUV_DISABLE_X86) && \
   ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  defined(__native_client__) || defined(__clang__) || defined(GCC_HAS_AVX2))
+  defined(__native_client__AVX2) || defined(__clang__) || defined(GCC_HAS_AVX2))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
+#define HAS_ARGBSHUFFLEROW_AVX2
 #endif
 
 // The following are Windows only:
@@ -166,7 +169,6 @@ extern "C" {
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
-#define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2

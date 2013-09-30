@@ -5726,6 +5726,38 @@ void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
 }
 #endif  // HAS_ARGBSHUFFLEROW_SSSE3
 
+#ifdef HAS_ARGBSHUFFLEROW_AVX2
+// For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
+void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
+                         const uint8* shuffler, int pix) {
+  asm volatile (
+    "vmovdqa   "MEMACCESS(3)",%%xmm5           \n"
+    "vpermq    $0x44,%%ymm5,%%ymm5             \n"
+
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "vmovdqu   "MEMACCESS(0)",%%ymm0           \n"
+    "vmovdqu   "MEMACCESS2(0x20,0)",%%ymm1     \n"
+    "lea       "MEMLEA(0x40,0)",%0             \n"
+    "vpshufb   %%ymm5,%%ymm0,%%ymm0            \n"
+    "vpshufb   %%ymm5,%%ymm1,%%ymm1            \n"
+    "sub       $0x10,%2                        \n"
+    "vmovdqu   %%ymm0,"MEMACCESS(1)"           \n"
+    "vmovdqu   %%ymm1,"MEMACCESS2(0x20,1)"     \n"
+    "lea       "MEMLEA(0x40,1)",%1             \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_argb),  // %1
+    "+r"(pix)        // %2
+  : "r"(shuffler)    // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBSHUFFLEROW_AVX2
+
 #ifdef HAS_I422TOYUY2ROW_SSE2
 void I422ToYUY2Row_SSE2(const uint8* src_y,
                         const uint8* src_u,
