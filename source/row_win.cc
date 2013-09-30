@@ -30,28 +30,12 @@ static const vec8 kARGBToYJ = {
   15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0
 };
 
-static const lvec8 kARGBToY_AVX = {
-  13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0,
-  13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0, 13, 65, 33, 0
-};
-
-static const lvec8 kARGBToYJ_AVX = {
-  15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0,
-  15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0, 15, 75, 38, 0
-};
-
 static const vec8 kARGBToU = {
   112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
 static const vec8 kARGBToUJ = {
   127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0, 127, -84, -43, 0
-};
-
-// TODO(fbarchard): Rename kARGBToU_AVX to kARGBToU and use for SSSE3 version.
-static const lvec8 kARGBToU_AVX = {
-  112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0,
-  112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0, 112, -74, -38, 0
 };
 
 static const vec8 kARGBToV = {
@@ -62,13 +46,8 @@ static const vec8 kARGBToVJ = {
   -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0
 };
 
-static const lvec8 kARGBToV_AVX = {
-  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0,
-  -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0, -18, -94, 112, 0
-};
-
 // vpermd for vphaddw + vpackuswb vpermd.
-static const lvec32 kShufARGBToY_AVX = {
+static const lvec32 kPermdARGBToY_AVX = {
   0, 4, 1, 5, 2, 6, 3, 7
 };
 
@@ -124,16 +103,6 @@ static const uvec8 kAddY16 = {
 static const vec16 kAddYJ64 = {
   64, 64, 64, 64, 64, 64, 64, 64
 };
-static const lvec16 kAddYJ64_AVX = {
-  64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64
-};
-
-static const ulvec8 kAddY16_AVX = {
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-  16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
-};
 
 static const uvec8 kAddUV128 = {
   128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
@@ -142,13 +111,6 @@ static const uvec8 kAddUV128 = {
 
 static const uvec16 kAddUVJ128 = {
   0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u, 0x8080u
-};
-
-static const ulvec8 kAddUV128_AVX = {
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
-  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
 };
 
 // Shuffle table for converting RGB24 to ARGB.
@@ -737,9 +699,9 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    vmovdqa    ymm6, kShufARGBToY_AVX
-    vmovdqa    ymm5, kAddY16_AVX
-    vmovdqa    ymm4, kARGBToY_AVX
+    vbroadcastf128 ymm4, kARGBToY
+    vbroadcastf128 ymm5, kAddY16
+    vmovdqa    ymm6, kPermdARGBToY_AVX
 
     align      16
  convertloop:
@@ -777,9 +739,9 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    vmovdqa    ymm4, kARGBToYJ_AVX
-    vmovdqa    ymm5, kAddYJ64_AVX
-    vmovdqa    ymm6, kShufARGBToY_AVX
+    vbroadcastf128 ymm4, kARGBToYJ
+    vbroadcastf128 ymm5, kAddYJ64
+    vmovdqa    ymm6, kPermdARGBToY_AVX
 
     align      16
  convertloop:
@@ -1229,9 +1191,9 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    vmovdqa    ymm7, kARGBToU_AVX
-    vmovdqa    ymm6, kARGBToV_AVX
-    vmovdqa    ymm5, kAddUV128_AVX
+    vbroadcastf128 ymm5, kAddUV128
+    vbroadcastf128 ymm6, kARGBToV
+    vbroadcastf128 ymm7, kARGBToU
     sub        edi, edx             // stride from u to v
 
     align      16
@@ -6640,8 +6602,7 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 4]     // src_argb
     mov        edx, [esp + 8]     // dst_bayer
     mov        ecx, [esp + 12]    // shuffler
-    vmovdqa    xmm5, [ecx]
-    vpermq     ymm5, ymm5, 0x44   // same shuffle in high as low.
+    vbroadcastf128 ymm5, [ecx]    // same shuffle in high as low.
     mov        ecx, [esp + 16]    // pix
 
     align      16
@@ -6825,18 +6786,13 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width) {
   __asm {
-    mov        eax, [esp + 12]   /* poly */
-    vmovdqu    xmm4, [eax]       // C0
-    vmovdqu    xmm5, [eax + 16]  // C1
-    vmovdqu    xmm6, [eax + 32]  // C2
-    vmovdqu    xmm7, [eax + 48]  // C3
-    vpermq     ymm4, ymm4, 0x44  // dup low qwords to high qwords
-    vpermq     ymm5, ymm5, 0x44
-    vpermq     ymm6, ymm6, 0x44
-    vpermq     ymm7, ymm7, 0x44
-
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
+    mov        ecx, [esp + 12]   /* poly */
+    vbroadcastf128 ymm4, [ecx]       // C0
+    vbroadcastf128 ymm5, [ecx + 16]  // C1
+    vbroadcastf128 ymm6, [ecx + 32]  // C2
+    vbroadcastf128 ymm7, [ecx + 48]  // C3
     mov        ecx, [esp + 16]  /* width */
 
     // 2 pixel loop.

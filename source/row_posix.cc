@@ -5880,14 +5880,10 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width) {
   asm volatile (
-    "vmovdqu   "MEMACCESS(3)",%%xmm4           \n"
-    "vmovdqu   "MEMACCESS2(0x10,3)",%%xmm5     \n"
-    "vmovdqu   "MEMACCESS2(0x20,3)",%%xmm6     \n"
-    "vmovdqu   "MEMACCESS2(0x30,3)",%%xmm7     \n"
-    "vpermq    $0x44,%%ymm4,%%ymm4             \n"
-    "vpermq    $0x44,%%ymm5,%%ymm5             \n"
-    "vpermq    $0x44,%%ymm6,%%ymm6             \n"
-    "vpermq    $0x44,%%ymm7,%%ymm7             \n"
+    "vbroadcastf128 "MEMACCESS(3)",%%ymm4       \n"
+    "vbroadcastf128 "MEMACCESS2(0x10,3)",%%ymm5 \n"
+    "vbroadcastf128 "MEMACCESS2(0x20,3)",%%ymm6 \n"
+    "vbroadcastf128 "MEMACCESS2(0x30,3)",%%ymm7 \n"
 
     // 2 pixel loop.
     ".p2align  4                               \n"
