@@ -484,9 +484,87 @@ TEST_F(libyuvTest, TestARGBSepia) {
 
 TEST_F(libyuvTest, TestARGBColorMatrix) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+  SIMD_ALIGNED(uint8 dst_pixels_opt[1280][4]);
+  SIMD_ALIGNED(uint8 dst_pixels_c[1280][4]);
 
   // Matrix for Sepia.
-  static const int8 kARGBToSepia[] = {
+  SIMD_ALIGNED(static const int8 kRGBToSepia[]) = {
+    17 / 2, 68 / 2, 35 / 2, 0,
+    22 / 2, 88 / 2, 45 / 2, 0,
+    24 / 2, 98 / 2, 50 / 2, 0,
+    0, 0, 0, 64,  // Copy alpha.
+  };
+  memset(orig_pixels, 0, sizeof(orig_pixels));
+
+  // Test blue
+  orig_pixels[0][0] = 255u;
+  orig_pixels[0][1] = 0u;
+  orig_pixels[0][2] = 0u;
+  orig_pixels[0][3] = 128u;
+  // Test green
+  orig_pixels[1][0] = 0u;
+  orig_pixels[1][1] = 255u;
+  orig_pixels[1][2] = 0u;
+  orig_pixels[1][3] = 0u;
+  // Test red
+  orig_pixels[2][0] = 0u;
+  orig_pixels[2][1] = 0u;
+  orig_pixels[2][2] = 255u;
+  orig_pixels[2][3] = 255u;
+  // Test color
+  orig_pixels[3][0] = 16u;
+  orig_pixels[3][1] = 64u;
+  orig_pixels[3][2] = 192u;
+  orig_pixels[3][3] = 224u;
+  // Do 16 to test asm version.
+  ARGBColorMatrix(&orig_pixels[0][0], 0, &dst_pixels_opt[0][0], 0,
+                  &kRGBToSepia[0], 16, 1);
+  EXPECT_EQ(31u, dst_pixels_opt[0][0]);
+  EXPECT_EQ(43u, dst_pixels_opt[0][1]);
+  EXPECT_EQ(47u, dst_pixels_opt[0][2]);
+  EXPECT_EQ(128u, dst_pixels_opt[0][3]);
+  EXPECT_EQ(135u, dst_pixels_opt[1][0]);
+  EXPECT_EQ(175u, dst_pixels_opt[1][1]);
+  EXPECT_EQ(195u, dst_pixels_opt[1][2]);
+  EXPECT_EQ(0u, dst_pixels_opt[1][3]);
+  EXPECT_EQ(67u, dst_pixels_opt[2][0]);
+  EXPECT_EQ(87u, dst_pixels_opt[2][1]);
+  EXPECT_EQ(99u, dst_pixels_opt[2][2]);
+  EXPECT_EQ(255u, dst_pixels_opt[2][3]);
+  EXPECT_EQ(87u, dst_pixels_opt[3][0]);
+  EXPECT_EQ(112u, dst_pixels_opt[3][1]);
+  EXPECT_EQ(127u, dst_pixels_opt[3][2]);
+  EXPECT_EQ(224u, dst_pixels_opt[3][3]);
+
+  for (int i = 0; i < 1280; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i / 2;
+    orig_pixels[i][2] = i / 3;
+    orig_pixels[i][3] = i;
+  }
+  MaskCpuFlags(0);
+  ARGBColorMatrix(&orig_pixels[0][0], 0, &dst_pixels_c[0][0], 0,
+                  &kRGBToSepia[0], 1280, 1);
+  MaskCpuFlags(-1);
+
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    ARGBColorMatrix(&orig_pixels[0][0], 0, &dst_pixels_opt[0][0], 0,
+                    &kRGBToSepia[0], 1280, 1);
+  }
+
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(dst_pixels_c[i][0], dst_pixels_opt[i][0]);
+    EXPECT_EQ(dst_pixels_c[i][1], dst_pixels_opt[i][1]);
+    EXPECT_EQ(dst_pixels_c[i][2], dst_pixels_opt[i][2]);
+    EXPECT_EQ(dst_pixels_c[i][3], dst_pixels_opt[i][3]);
+  }
+}
+
+TEST_F(libyuvTest, TestRGBColorMatrix) {
+  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
+
+  // Matrix for Sepia.
+  SIMD_ALIGNED(static const int8 kRGBToSepia[]) = {
     17, 68, 35, 0,
     22, 88, 45, 0,
     24, 98, 50, 0,
@@ -515,8 +593,8 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   orig_pixels[3][2] = 192u;
   orig_pixels[3][3] = 224u;
   // Do 16 to test asm version.
-  ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 16, 1);
-  EXPECT_EQ(33u, orig_pixels[0][0]);
+  RGBColorMatrix(&orig_pixels[0][0], 0, &kRGBToSepia[0], 0, 0, 16, 1);
+  EXPECT_EQ(31u, orig_pixels[0][0]);
   EXPECT_EQ(43u, orig_pixels[0][1]);
   EXPECT_EQ(47u, orig_pixels[0][2]);
   EXPECT_EQ(128u, orig_pixels[0][3]);
@@ -524,12 +602,12 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
   EXPECT_EQ(175u, orig_pixels[1][1]);
   EXPECT_EQ(195u, orig_pixels[1][2]);
   EXPECT_EQ(0u, orig_pixels[1][3]);
-  EXPECT_EQ(69u, orig_pixels[2][0]);
-  EXPECT_EQ(89u, orig_pixels[2][1]);
+  EXPECT_EQ(67u, orig_pixels[2][0]);
+  EXPECT_EQ(87u, orig_pixels[2][1]);
   EXPECT_EQ(99u, orig_pixels[2][2]);
   EXPECT_EQ(255u, orig_pixels[2][3]);
-  EXPECT_EQ(88u, orig_pixels[3][0]);
-  EXPECT_EQ(114u, orig_pixels[3][1]);
+  EXPECT_EQ(87u, orig_pixels[3][0]);
+  EXPECT_EQ(112u, orig_pixels[3][1]);
   EXPECT_EQ(127u, orig_pixels[3][2]);
   EXPECT_EQ(224u, orig_pixels[3][3]);
 
@@ -540,7 +618,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
     orig_pixels[i][3] = i;
   }
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-    ARGBColorMatrix(&orig_pixels[0][0], 0, &kARGBToSepia[0], 0, 0, 1280, 1);
+    RGBColorMatrix(&orig_pixels[0][0], 0, &kRGBToSepia[0], 0, 0, 1280, 1);
   }
 }
 

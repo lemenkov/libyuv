@@ -654,21 +654,27 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width) {
 }
 
 // Apply color matrix to a row of image. Matrix is signed.
-void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width) {
+// TODO(fbarchard): Consider adding rounding (+32).
+void ARGBColorMatrixRow_C(const uint8* src_argb, uint8* dst_argb,
+                          const int8* matrix_argb, int width) {
   for (int x = 0; x < width; ++x) {
-    int b = dst_argb[0];
-    int g = dst_argb[1];
-    int r = dst_argb[2];
-    int a = dst_argb[3];
+    int b = src_argb[0];
+    int g = src_argb[1];
+    int r = src_argb[2];
+    int a = src_argb[3];
     int sb = (b * matrix_argb[0] + g * matrix_argb[1] +
-              r * matrix_argb[2] + a * matrix_argb[3]) >> 7;
+              r * matrix_argb[2] + a * matrix_argb[3]) >> 6;
     int sg = (b * matrix_argb[4] + g * matrix_argb[5] +
-              r * matrix_argb[6] + a * matrix_argb[7]) >> 7;
+              r * matrix_argb[6] + a * matrix_argb[7]) >> 6;
     int sr = (b * matrix_argb[8] + g * matrix_argb[9] +
-              r * matrix_argb[10] + a * matrix_argb[11]) >> 7;
+              r * matrix_argb[10] + a * matrix_argb[11]) >> 6;
+    int sa = (b * matrix_argb[12] + g * matrix_argb[13] +
+              r * matrix_argb[14] + a * matrix_argb[15]) >> 6;
     dst_argb[0] = Clamp(sb);
     dst_argb[1] = Clamp(sg);
     dst_argb[2] = Clamp(sr);
+    dst_argb[3] = Clamp(sa);
+    src_argb += 4;
     dst_argb += 4;
   }
 }

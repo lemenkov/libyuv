@@ -5002,57 +5002,62 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 // TODO(fbarchard): packuswbs only use half of the reg. To make RGBA, combine R
 // and B into a high and low, then G/A, unpackl/hbw and then unpckl/hwd.
 __declspec(naked) __declspec(align(16))
-void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
-                              int width) {
+void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                              const int8* matrix_argb, int width) {
   __asm {
-    mov        eax, [esp + 4]   /* dst_argb */
-    mov        edx, [esp + 8]   /* matrix_argb */
-    mov        ecx, [esp + 12]  /* width */
-    movd       xmm2, [edx]
-    movd       xmm3, [edx + 4]
-    movd       xmm4, [edx + 8]
+    mov        eax, [esp + 4]   /* src_argb */
+    mov        edx, [esp + 8]   /* dst_argb */
+    mov        ecx, [esp + 12]  /* matrix_argb */
+    movd       xmm2, [ecx]
+    movd       xmm3, [ecx + 4]
+    movd       xmm4, [ecx + 8]
+    movd       xmm5, [ecx + 12]
     pshufd     xmm2, xmm2, 0
     pshufd     xmm3, xmm3, 0
     pshufd     xmm4, xmm4, 0
+    pshufd     xmm5, xmm5, 0
+    mov        ecx, [esp + 16]  /* width */
 
     align      16
  convertloop:
     movdqa     xmm0, [eax]  // B
-    movdqa     xmm6, [eax + 16]
+    movdqa     xmm7, [eax + 16]
     pmaddubsw  xmm0, xmm2
-    pmaddubsw  xmm6, xmm2
-    movdqa     xmm5, [eax]  // G
+    pmaddubsw  xmm7, xmm2
+    movdqa     xmm6, [eax]  // G
     movdqa     xmm1, [eax + 16]
-    pmaddubsw  xmm5, xmm3
+    pmaddubsw  xmm6, xmm3
     pmaddubsw  xmm1, xmm3
-    phaddsw    xmm0, xmm6   // B
-    phaddsw    xmm5, xmm1   // G
-    psraw      xmm0, 7      // B
-    psraw      xmm5, 7      // G
+    phaddsw    xmm0, xmm7   // B
+    phaddsw    xmm6, xmm1   // G
+    psraw      xmm0, 6      // B
+    psraw      xmm6, 6      // G
     packuswb   xmm0, xmm0   // 8 B values
-    packuswb   xmm5, xmm5   // 8 G values
-    punpcklbw  xmm0, xmm5   // 8 BG values
-    movdqa     xmm5, [eax]  // R
-    movdqa     xmm1, [eax + 16]
-    pmaddubsw  xmm5, xmm4
+    packuswb   xmm6, xmm6   // 8 G values
+    punpcklbw  xmm0, xmm6   // 8 BG values
+    movdqa     xmm1, [eax]  // R
+    movdqa     xmm7, [eax + 16]
     pmaddubsw  xmm1, xmm4
-    phaddsw    xmm5, xmm1
-    psraw      xmm5, 7
-    packuswb   xmm5, xmm5   // 8 R values
+    pmaddubsw  xmm7, xmm4
+    phaddsw    xmm1, xmm7   // R
     movdqa     xmm6, [eax]  // A
-    movdqa     xmm1, [eax + 16]
-    psrld      xmm6, 24
-    psrld      xmm1, 24
-    packuswb   xmm6, xmm1
+    movdqa     xmm7, [eax + 16]
+    pmaddubsw  xmm6, xmm5
+    pmaddubsw  xmm7, xmm5
+    phaddsw    xmm6, xmm7   // A
+    psraw      xmm1, 6      // R
+    psraw      xmm6, 6      // A
+    packuswb   xmm1, xmm1   // 8 R values
     packuswb   xmm6, xmm6   // 8 A values
-    movdqa     xmm1, xmm0   // Weave BG, RA together
-    punpcklbw  xmm5, xmm6   // 8 RA values
-    punpcklwd  xmm0, xmm5   // BGRA first 4
-    punpckhwd  xmm1, xmm5   // BGRA next 4
+    punpcklbw  xmm1, xmm6   // 8 RA values
+    movdqa     xmm6, xmm0   // Weave BG, RA together
+    punpcklwd  xmm0, xmm1   // BGRA first 4
+    punpckhwd  xmm6, xmm1   // BGRA next 4
     sub        ecx, 8
-    movdqa     [eax], xmm0
-    movdqa     [eax + 16], xmm1
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm6
     lea        eax, [eax + 32]
+    lea        edx, [edx + 32]
     jg         convertloop
     ret
   }

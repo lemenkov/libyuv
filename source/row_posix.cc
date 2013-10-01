@@ -4327,62 +4327,67 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 #ifdef HAS_ARGBCOLORMATRIXROW_SSSE3
 // Tranform 8 ARGB pixels (32 bytes) with color matrix.
 // Same as Sepia except matrix is provided.
-void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
-                              int width) {
+void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                              const int8* matrix_argb, int width) {
   asm volatile (
-    "movd      "MEMACCESS(2)",%%xmm2           \n"
-    "movd      "MEMACCESS2(0x4,2)",%%xmm3      \n"
-    "movd      "MEMACCESS2(0x8,2)",%%xmm4      \n"
+    "movd      "MEMACCESS(3)",%%xmm2           \n"
+    "movd      "MEMACCESS2(0x4,3)",%%xmm3      \n"
+    "movd      "MEMACCESS2(0x8,3)",%%xmm4      \n"
+    "movd      "MEMACCESS2(0xc,3)",%%xmm5      \n"
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
 
     // 8 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
     "movdqa    "MEMACCESS(0)",%%xmm0           \n"
-    "movdqa    "MEMACCESS2(0x10,0)",%%xmm6     \n"
+    "movdqa    "MEMACCESS2(0x10,0)",%%xmm7     \n"
     "pmaddubsw %%xmm2,%%xmm0                   \n"
-    "pmaddubsw %%xmm2,%%xmm6                   \n"
-    "movdqa    "MEMACCESS(0)",%%xmm5           \n"
-    "movdqa    "MEMACCESS2(0x10,0)",%%xmm1     \n"
-    "pmaddubsw %%xmm3,%%xmm5                   \n"
-    "pmaddubsw %%xmm3,%%xmm1                   \n"
-    "phaddsw   %%xmm6,%%xmm0                   \n"
-    "phaddsw   %%xmm1,%%xmm5                   \n"
-    "psraw     $0x7,%%xmm0                     \n"
-    "psraw     $0x7,%%xmm5                     \n"
-    "packuswb  %%xmm0,%%xmm0                   \n"
-    "packuswb  %%xmm5,%%xmm5                   \n"
-    "punpcklbw %%xmm5,%%xmm0                   \n"
-    "movdqa    "MEMACCESS(0)",%%xmm5           \n"
-    "movdqa    "MEMACCESS2(0x10,0)",%%xmm1     \n"
-    "pmaddubsw %%xmm4,%%xmm5                   \n"
-    "pmaddubsw %%xmm4,%%xmm1                   \n"
-    "phaddsw   %%xmm1,%%xmm5                   \n"
-    "psraw     $0x7,%%xmm5                     \n"
-    "packuswb  %%xmm5,%%xmm5                   \n"
+    "pmaddubsw %%xmm2,%%xmm7                   \n"
     "movdqa    "MEMACCESS(0)",%%xmm6           \n"
     "movdqa    "MEMACCESS2(0x10,0)",%%xmm1     \n"
-    "psrld     $0x18,%%xmm6                    \n"
-    "psrld     $0x18,%%xmm1                    \n"
-    "packuswb  %%xmm1,%%xmm6                   \n"
+    "pmaddubsw %%xmm3,%%xmm6                   \n"
+    "pmaddubsw %%xmm3,%%xmm1                   \n"
+    "phaddsw   %%xmm7,%%xmm0                   \n"
+    "phaddsw   %%xmm1,%%xmm6                   \n"
+    "psraw     $0x6,%%xmm0                     \n"
+    "psraw     $0x6,%%xmm6                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklbw %%xmm6,%%xmm5                   \n"
-    "punpcklwd %%xmm5,%%xmm0                   \n"
-    "punpckhwd %%xmm5,%%xmm1                   \n"
-    "sub       $0x8,%1                         \n"
-    "movdqa    %%xmm0,"MEMACCESS(0)"           \n"
-    "movdqa    %%xmm1,"MEMACCESS2(0x10,0)"     \n"
+    "punpcklbw %%xmm6,%%xmm0                   \n"
+    "movdqa    "MEMACCESS(0)",%%xmm1           \n"
+    "movdqa    "MEMACCESS2(0x10,0)",%%xmm7     \n"
+    "pmaddubsw %%xmm4,%%xmm1                   \n"
+    "pmaddubsw %%xmm4,%%xmm7                   \n"
+    "phaddsw   %%xmm7,%%xmm1                   \n"
+    "movdqa    "MEMACCESS(0)",%%xmm6           \n"
+    "movdqa    "MEMACCESS2(0x10,0)",%%xmm7     \n"
+    "pmaddubsw %%xmm5,%%xmm6                   \n"
+    "pmaddubsw %%xmm5,%%xmm7                   \n"
+    "phaddsw   %%xmm7,%%xmm6                   \n"
+    "psraw     $0x6,%%xmm1                     \n"
+    "psraw     $0x6,%%xmm6                     \n"
+    "packuswb  %%xmm1,%%xmm1                   \n"
+    "packuswb  %%xmm6,%%xmm6                   \n"
+    "punpcklbw %%xmm6,%%xmm1                   \n"
+    "movdqa    %%xmm0,%%xmm6                   \n"
+    "punpcklwd %%xmm1,%%xmm0                   \n"
+    "punpckhwd %%xmm1,%%xmm6                   \n"
+    "sub       $0x8,%2                         \n"
+    "movdqa    %%xmm0,"MEMACCESS(1)"           \n"
+    "movdqa    %%xmm6,"MEMACCESS2(0x10,1)"     \n"
     "lea       "MEMLEA(0x20,0)",%0             \n"
+    "lea       "MEMLEA(0x20,1)",%1             \n"
     "jg        1b                              \n"
-  : "+r"(dst_argb),      // %0
-    "+r"(width)          // %1
-  : "r"(matrix_argb)     // %2
+  : "+r"(src_argb),      // %0
+    "+r"(dst_argb),      // %1
+    "+r"(width)          // %2
+  : "r"(matrix_argb)     // %3
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
   );
 }

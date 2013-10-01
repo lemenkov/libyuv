@@ -186,15 +186,32 @@ LIBYUV_API
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int x, int y, int width, int height);
 
+// Deprecated.  Use ARGBColorMatrix instead.
 // Apply a matrix rotation to each ARGB pixel.
 // matrix_argb is 3 signed ARGB values. -128 to 127 representing -1 to 1.
 // The first 4 coefficients apply to B, G, R, A and produce B of the output.
 // The next 4 coefficients apply to B, G, R, A and produce G of the output.
 // The last 4 coefficients apply to B, G, R, A and produce R of the output.
 LIBYUV_API
-int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                   const int8* matrix_rgb,
+                   int x, int y, int width, int height);
+
+// Temporary API mapper.
+// #define ARGBColorMatrix(d, s, m, x, y, w, h) \
+//    RGBColorMatrix(d, s, m, x, y, w, h)
+
+// Apply a matrix rotation to each ARGB pixel.
+// matrix_argb is 4 signed ARGB values. -128 to 127 representing -2 to 2.
+// The first 4 coefficients apply to B, G, R, A and produce B of the output.
+// The next 4 coefficients apply to B, G, R, A and produce G of the output.
+// The next 4 coefficients apply to B, G, R, A and produce R of the output.
+// The last 4 coefficients apply to B, G, R, A and produce A of the output.
+LIBYUV_API
+int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
+                    uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
-                    int x, int y, int width, int height);
+                    int width, int height);
 
 // Apply a color table each ARGB pixel.
 // Table contains 256 ARGB values.

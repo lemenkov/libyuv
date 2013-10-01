@@ -1456,11 +1456,12 @@ void ARGBSepiaRow_C(uint8* dst_argb, int width);
 void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width);
 void ARGBSepiaRow_NEON(uint8* dst_argb, int width);
 
-void ARGBColorMatrixRow_C(uint8* dst_argb, const int8* matrix_argb, int width);
-void ARGBColorMatrixRow_SSSE3(uint8* dst_argb, const int8* matrix_argb,
-                              int width);
-void ARGBColorMatrixRow_NEON(uint8* dst_argb, const int8* matrix_argb,
-                             int width);
+void ARGBColorMatrixRow_C(const uint8* src_argb, uint8* dst_argb,
+                          const int8* matrix_argb, int width);
+void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                              const int8* matrix_argb, int width);
+void ARGBColorMatrixRow_NEON(const uint8* src_argb, uint8* dst_argb,
+                             const int8* matrix_argb, int width);
 
 void ARGBColorTableRow_C(uint8* dst_argb, const uint8* table_argb, int width);
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width);

@@ -1345,24 +1345,31 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
   return 0;
 }
 
-// Apply a 4x3 matrix rotation to each ARGB pixel.
+// Apply a 4x4 matrix to each ARGB pixel.
+// Note: Normally for shading, but can be used to swizzle or invert.
 LIBYUV_API
-int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
+                    uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
-                    int dst_x, int dst_y, int width, int height) {
-  if (!dst_argb || !matrix_argb || width <= 0 || height <= 0 ||
-      dst_x < 0 || dst_y < 0) {
+                    int width, int height) {
+  if (!src_argb || !dst_argb || !matrix_argb || width <= 0 || height == 0) {
     return -1;
   }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
   // Coalesce contiguous rows.
-  if (dst_stride_argb == width * 4) {
-    return ARGBColorMatrix(dst_argb, dst_stride_argb,
+  if (src_stride_argb == width * 4 &&
+      dst_stride_argb == width * 4) {
+    return ARGBColorMatrix(src_argb, 0,
+                           dst_argb, 0,
                            matrix_argb,
-                           dst_x, dst_y,
                            width * height, 1);
   }
-  void (*ARGBColorMatrixRow)(uint8* dst_argb, const int8* matrix_argb,
-                             int width) = ARGBColorMatrixRow_C;
+  void (*ARGBColorMatrixRow)(const uint8* src_argb, uint8* dst_argb,
+      const int8* matrix_argb, int width) = ARGBColorMatrixRow_C;
 #if defined(HAS_ARGBCOLORMATRIXROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -1373,12 +1380,46 @@ int ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
     ARGBColorMatrixRow = ARGBColorMatrixRow_NEON;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   for (int y = 0; y < height; ++y) {
-    ARGBColorMatrixRow(dst, matrix_argb, width);
-    dst += dst_stride_argb;
+    ARGBColorMatrixRow(src_argb, dst_argb, matrix_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
   }
   return 0;
+}
+
+// Apply a 4x3 matrix to each ARGB pixel.
+// Deprecated.
+LIBYUV_API
+int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                   const int8* matrix_rgb,
+                   int dst_x, int dst_y, int width, int height) {
+  if (!dst_argb || !matrix_rgb || width <= 0 || height <= 0 ||
+      dst_x < 0 || dst_y < 0) {
+    return -1;
+  }
+
+  // Convert 4x3 7 bit matrix to 4x4 6 bit matrix.
+  SIMD_ALIGNED(int8 matrix_argb[16]);
+  matrix_argb[0] = matrix_rgb[0] / 2;
+  matrix_argb[1] = matrix_rgb[1] / 2;
+  matrix_argb[2] = matrix_rgb[2] / 2;
+  matrix_argb[3] = matrix_rgb[3] / 2;
+  matrix_argb[4] = matrix_rgb[4] / 2;
+  matrix_argb[5] = matrix_rgb[5] / 2;
+  matrix_argb[6] = matrix_rgb[6] / 2;
+  matrix_argb[7] = matrix_rgb[7] / 2;
+  matrix_argb[8] = matrix_rgb[8] / 2;
+  matrix_argb[9] = matrix_rgb[9] / 2;
+  matrix_argb[10] = matrix_rgb[10] / 2;
+  matrix_argb[11] = matrix_rgb[11] / 2;
+  matrix_argb[14] = matrix_argb[13] = matrix_argb[12] = 0;
+  matrix_argb[15] = 64;  // 1.0
+
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
+  return ARGBColorMatrix(const_cast<const uint8*>(dst), dst_stride_argb,
+                         dst, dst_stride_argb,
+                         &matrix_argb[0], width, height);
 }
 
 // Apply a color table each ARGB pixel.
