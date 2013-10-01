@@ -186,21 +186,6 @@ LIBYUV_API
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int x, int y, int width, int height);
 
-// Deprecated.  Use ARGBColorMatrix instead.
-// Apply a matrix rotation to each ARGB pixel.
-// matrix_argb is 3 signed ARGB values. -128 to 127 representing -1 to 1.
-// The first 4 coefficients apply to B, G, R, A and produce B of the output.
-// The next 4 coefficients apply to B, G, R, A and produce G of the output.
-// The last 4 coefficients apply to B, G, R, A and produce R of the output.
-LIBYUV_API
-int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
-                   const int8* matrix_rgb,
-                   int x, int y, int width, int height);
-
-// Temporary API mapper.
-// #define ARGBColorMatrix(d, s, m, x, y, w, h) \
-//    RGBColorMatrix(d, s, m, x, y, w, h)
-
 // Apply a matrix rotation to each ARGB pixel.
 // matrix_argb is 4 signed ARGB values. -128 to 127 representing -2 to 2.
 // The first 4 coefficients apply to B, G, R, A and produce B of the output.
@@ -212,6 +197,29 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
                     int width, int height);
+
+// Deprecated. Use ARGBColorMatrix instead.
+// Apply a matrix rotation to each ARGB pixel.
+// matrix_argb is 3 signed ARGB values. -128 to 127 representing -1 to 1.
+// The first 4 coefficients apply to B, G, R, A and produce B of the output.
+// The next 4 coefficients apply to B, G, R, A and produce G of the output.
+// The last 4 coefficients apply to B, G, R, A and produce R of the output.
+LIBYUV_API
+int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                   const int8* matrix_rgb,
+                   int x, int y, int width, int height);
+
+#ifdef __cplusplus
+}  // extern "C"
+// Deprecated. Temporary API mapper.
+int inline ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
+                           const int8* matrix_rgb,
+                           int x, int y, int width, int height) {
+  return RGBColorMatrix(dst_argb, dst_stride_argb, matrix_rgb,
+                        x, y, width, height);
+}
+extern "C" {
+#endif
 
 // Apply a color table each ARGB pixel.
 // Table contains 256 ARGB values.
