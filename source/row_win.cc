@@ -6552,7 +6552,7 @@ void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                           const uint8* shuffler, int pix) {
   __asm {
     mov        eax, [esp + 4]    // src_argb
-    mov        edx, [esp + 8]    // dst_bayer
+    mov        edx, [esp + 8]    // dst_argb
     mov        ecx, [esp + 12]   // shuffler
     movdqa     xmm5, [ecx]
     mov        ecx, [esp + 16]   // pix
@@ -6578,7 +6578,7 @@ void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
                                     const uint8* shuffler, int pix) {
   __asm {
     mov        eax, [esp + 4]    // src_argb
-    mov        edx, [esp + 8]    // dst_bayer
+    mov        edx, [esp + 8]    // dst_argb
     mov        ecx, [esp + 12]   // shuffler
     movdqa     xmm5, [ecx]
     mov        ecx, [esp + 16]   // pix
@@ -6605,7 +6605,7 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
                          const uint8* shuffler, int pix) {
   __asm {
     mov        eax, [esp + 4]     // src_argb
-    mov        edx, [esp + 8]     // dst_bayer
+    mov        edx, [esp + 8]     // dst_argb
     mov        ecx, [esp + 12]    // shuffler
     vbroadcastf128 ymm5, [ecx]    // same shuffle in high as low.
     mov        ecx, [esp + 16]    // pix
@@ -6628,6 +6628,126 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
   }
 }
 #endif
+
+__declspec(naked) __declspec(align(16))
+void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
+                         const uint8* shuffler, int pix) {
+  __asm {
+    push       ebx
+    push       esi
+    mov        eax, [esp + 8 + 4]    // src_argb
+    mov        edx, [esp + 8 + 8]    // dst_argb
+    mov        esi, [esp + 8 + 12]   // shuffler
+    mov        ecx, [esp + 8 + 16]   // pix
+    pxor       xmm7, xmm7
+
+    mov        ebx, [esi]   // shuffler
+    cmp        ebx, 0x03000102
+    je         shuf_3012
+    cmp        ebx, 0x00010203
+    je         shuf_0123
+    cmp        ebx, 0x00030201
+    je         shuf_0321
+    cmp        ebx, 0x02010003
+    je         shuf_2103
+
+  // TODO(fbarchard): Use one source pointer and 3 offsets.
+  shuf_any1:
+    movzx      ebx, byte ptr [esi]
+    movzx      ebx, byte ptr [eax + ebx]
+    mov        [edx], bl
+    movzx      ebx, byte ptr [esi + 1]
+    movzx      ebx, byte ptr [eax + ebx]
+    mov        [edx + 1], bl
+    movzx      ebx, byte ptr [esi + 2]
+    movzx      ebx, byte ptr [eax + ebx]
+    mov        [edx + 2], bl
+    movzx      ebx, byte ptr [esi + 3]
+    movzx      ebx, byte ptr [eax + ebx]
+    mov        [edx + 3], bl
+    lea        eax, [eax + 4]
+    lea        edx, [edx + 4]
+    sub        ecx, 1
+    jg         shuf_any1
+    jmp        shuf99
+
+    align      16
+  shuf_0123:
+    movdqu     xmm0, [eax]
+    lea        eax, [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm7
+    punpckhbw  xmm1, xmm7
+    pshufhw    xmm0, xmm0, 01Bh   // 1B = 00011011 = 0x0123 = BGRAToARGB
+    pshuflw    xmm0, xmm0, 01Bh
+    pshufhw    xmm1, xmm1, 01Bh
+    pshuflw    xmm1, xmm1, 01Bh
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         shuf_0123
+    jmp        shuf99
+
+    align      16
+  shuf_0321:
+    movdqu     xmm0, [eax]
+    lea        eax, [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm7
+    punpckhbw  xmm1, xmm7
+    pshufhw    xmm0, xmm0, 039h   // 39 = 00111001 = 0x0321 = RGBAToARGB
+    pshuflw    xmm0, xmm0, 039h
+    pshufhw    xmm1, xmm1, 039h
+    pshuflw    xmm1, xmm1, 039h
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         shuf_0321
+    jmp        shuf99
+
+    align      16
+  shuf_2103:
+    movdqu     xmm0, [eax]
+    lea        eax, [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm7
+    punpckhbw  xmm1, xmm7
+    pshufhw    xmm0, xmm0, 093h   // 93 = 10010011 = 0x2103 = ARGBToRGBA
+    pshuflw    xmm0, xmm0, 093h
+    pshufhw    xmm1, xmm1, 093h
+    pshuflw    xmm1, xmm1, 093h
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         shuf_2103
+    jmp        shuf99
+
+    align      16
+  shuf_3012:
+    movdqu     xmm0, [eax]
+    lea        eax, [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm7
+    punpckhbw  xmm1, xmm7
+    pshufhw    xmm0, xmm0, 0C6h   // C6 = 11000110 = 0x3012 = ABGRToARGB
+    pshuflw    xmm0, xmm0, 0C6h
+    pshufhw    xmm1, xmm1, 0C6h
+    pshuflw    xmm1, xmm1, 0C6h
+    packuswb   xmm0, xmm1
+    sub        ecx, 4
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         shuf_3012
+
+  shuf99:
+    pop        esi
+    pop        ebx
+    ret
+  }
+}
 
 // YUY2 - Macro-pixel = 2 image pixels
 // Y0U0Y1V0....Y2U2Y3V2...Y4U4Y5V4....

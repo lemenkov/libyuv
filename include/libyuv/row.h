@@ -163,6 +163,8 @@ extern "C" {
 // The following are Windows only:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
+#define HAS_ARGBSHUFFLEROW_SSE2
+
 // Effects:
 // TODO(fbarchard): Optimize and enable
 // #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
@@ -709,6 +711,8 @@ void ARGBSetRows_C(uint8* dst, uint32 v32, int width, int dst_stride,
 // ARGBShufflers for BGRAToARGB etc.
 void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,
                       const uint8* shuffler, int pix);
+void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
+                         const uint8* shuffler, int pix);
 void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                           const uint8* shuffler, int pix);
 void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
@@ -717,6 +721,8 @@ void ARGBShuffleRow_NEON(const uint8* src_argb, uint8* dst_argb,
                          const uint8* shuffler, int pix);
 void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
                                     const uint8* shuffler, int pix);
+void ARGBShuffleRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
+                             const uint8* shuffler, int pix);
 void ARGBShuffleRow_Any_SSSE3(const uint8* src_argb, uint8* dst_argb,
                               const uint8* shuffler, int pix);
 void ARGBShuffleRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,

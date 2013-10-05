@@ -1815,6 +1815,14 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
   }
   void (*ARGBShuffleRow)(const uint8* src_bgra, uint8* dst_argb,
                          const uint8* shuffler, int pix) = ARGBShuffleRow_C;
+#if defined(HAS_ARGBSHUFFLEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
+    ARGBShuffleRow = ARGBShuffleRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBShuffleRow = ARGBShuffleRow_SSE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBSHUFFLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     ARGBShuffleRow = ARGBShuffleRow_Any_SSSE3;

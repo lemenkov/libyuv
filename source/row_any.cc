@@ -474,6 +474,10 @@ MATHROW_ANY(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, ARGBSubtractRow_C,
                 dst_argb  + n * BPP, shuffler, width & MASK);                  \
     }
 
+#ifdef HAS_ARGBSHUFFLEROW_SSE2
+YANY(ARGBShuffleRow_Any_SSE2, ARGBShuffleRow_SSE2,
+     ARGBShuffleRow_C, 4, 4, 3)
+#endif
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 YANY(ARGBShuffleRow_Any_SSSE3, ARGBShuffleRow_Unaligned_SSSE3,
      ARGBShuffleRow_C, 4, 4, 7)
