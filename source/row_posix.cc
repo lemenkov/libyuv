@@ -5629,6 +5629,7 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   asm volatile (
     "sub       %0,%1                           \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
     "movdqa    "MEMACCESS(0)",%%xmm0           \n"
     MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb     (%0,%3),%%xmm0
