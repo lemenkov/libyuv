@@ -40,6 +40,9 @@ extern "C" {
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " %%" #reg ",(%%r15,%%r14)\n"
+#define MEMOP(opcode, offset, base, index, scale) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14)"
 #define BUNDLEALIGN ".p2align 5 \n"
 #else
 #define MEMACCESS(base) "(%" #base ")"
@@ -53,6 +56,8 @@ extern "C" {
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
+#define MEMOP(opcode, offset, base, index, scale) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale ")"
 #define BUNDLEALIGN
 #endif
 
@@ -5625,11 +5630,11 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
     "sub       %0,%1                           \n"
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pavgb     (%0,%3),%%xmm0                  \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb     (%0,%3),%%xmm0
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0,(%0,%1)                  \n"
-    "lea       0x10(%0),%0                     \n"
+    MEMOPMEM(movdqa,xmm0,0x00,0,1,1)           //  movdqa    %%xmm0,(%0,%1)
+    "lea       "MEMLEA(0x10,0)",%0             \n"
     "jg        1b                              \n"
   : "+r"(src_uv),  // %0
     "+r"(dst_uv),  // %1
@@ -5736,9 +5741,7 @@ void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
 void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
                          const uint8* shuffler, int pix) {
   asm volatile (
-    "vmovdqa   "MEMACCESS(3)",%%xmm5           \n"
-    "vpermq    $0x44,%%ymm5,%%ymm5             \n"
-
+    "vbroadcastf128 "MEMACCESS(3)",%%ymm5      \n"
     ".p2align  4                               \n"
   "1:                                          \n"
     "vmovdqu   "MEMACCESS(0)",%%ymm0           \n"
@@ -5762,6 +5765,132 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
   );
 }
 #endif  // HAS_ARGBSHUFFLEROW_AVX2
+
+#ifdef HAS_ARGBSHUFFLEROW_SSE2
+// For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
+void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
+                         const uint8* shuffler, int pix) {
+  uintptr_t pixel_temp = 0u;
+  asm volatile (
+    "pxor      %%xmm5,%%xmm5                   \n"
+    "mov       "MEMACCESS(4)",%k2              \n"
+    "cmp       $0x3000102,%k2                  \n"
+    "je        3012f                           \n"
+    "cmp       $0x10203,%k2                    \n"
+    "je        123f                            \n"
+    "cmp       $0x30201,%k2                    \n"
+    "je        321f                            \n"
+    "cmp       $0x2010003,%k2                  \n"
+    "je        2103f                           \n"
+
+  "1:                                          \n"
+    BUNDLEALIGN
+    "movzb     "MEMACCESS(4)",%2               \n"
+    MEMOP(movzb,0x00,0,2,1)",%2                \n"  //  movzb     (%0,%2,1),%2
+    "mov       %b2,"MEMACCESS(1)"              \n"
+    "movzb     "MEMACCESS2(0x1,4)",%2          \n"
+    MEMOP(movzb,0x00,0,2,1)",%2                \n"  //  movzb     (%0,%2,1),%2
+    "mov       %b2,"MEMACCESS2(0x1,1)"         \n"
+    BUNDLEALIGN
+    "movzb     "MEMACCESS2(0x2,4)",%2          \n"
+    MEMOP(movzb,0x00,0,2,1)",%2                \n"  //  movzb     (%0,%2,1),%2
+    "mov       %b2,"MEMACCESS2(0x2,1)"         \n"
+    "movzb     "MEMACCESS2(0x3,4)",%2          \n"
+    MEMOP(movzb,0x00,0,2,1)",%2                \n"  //  movzb     (%0,%2,1),%2
+    "mov       %b2,"MEMACCESS2(0x3,1)"         \n"
+    "lea       "MEMLEA(0x4,0)",%0              \n"
+    "lea       "MEMLEA(0x4,1)",%1              \n"
+    "sub       $0x1,%3                         \n"
+    "jg        1b                              \n"
+    "jmp       99f                             \n"
+
+    ".p2align  4                               \n"
+  "123:                                        \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpckhbw %%xmm5,%%xmm1                   \n"
+    "pshufhw   $0x1b,%%xmm0,%%xmm0             \n"
+    "pshuflw   $0x1b,%%xmm0,%%xmm0             \n"
+    "pshufhw   $0x1b,%%xmm1,%%xmm1             \n"
+    "pshuflw   $0x1b,%%xmm1,%%xmm1             \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqu    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
+    "jg        123b                            \n"
+    "jmp       99f                             \n"
+
+    ".p2align  4                               \n"
+  "321:                                        \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpckhbw %%xmm5,%%xmm1                   \n"
+    "pshufhw   $0x39,%%xmm0,%%xmm0             \n"
+    "pshuflw   $0x39,%%xmm0,%%xmm0             \n"
+    "pshufhw   $0x39,%%xmm1,%%xmm1             \n"
+    "pshuflw   $0x39,%%xmm1,%%xmm1             \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqu    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
+    "jg        321b                            \n"
+    "jmp       99f                             \n"
+
+    ".p2align  4                               \n"
+  "2103:                                       \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpckhbw %%xmm5,%%xmm1                   \n"
+    "pshufhw   $0x93,%%xmm0,%%xmm0             \n"
+    "pshuflw   $0x93,%%xmm0,%%xmm0             \n"
+    "pshufhw   $0x93,%%xmm1,%%xmm1             \n"
+    "pshuflw   $0x93,%%xmm1,%%xmm1             \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqu    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
+    "jg        2103b                           \n"
+    "jmp       99f                             \n"
+
+    ".p2align  4                               \n"
+  "3012:                                       \n"
+    "movdqu    "MEMACCESS(0)",%%xmm0           \n"
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpckhbw %%xmm5,%%xmm1                   \n"
+    "pshufhw   $0xc6,%%xmm0,%%xmm0             \n"
+    "pshuflw   $0xc6,%%xmm0,%%xmm0             \n"
+    "pshufhw   $0xc6,%%xmm1,%%xmm1             \n"
+    "pshuflw   $0xc6,%%xmm1,%%xmm1             \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x4,%3                         \n"
+    "movdqu    %%xmm0,"MEMACCESS(1)"           \n"
+    "lea       "MEMLEA(0x10,1)",%1             \n"
+    "jg        3012b                           \n"
+
+  "99:                                         \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+d"(pixel_temp),  // %2
+    "+r"(pix)         // %3
+  : "r"(shuffler)      // %4
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBSHUFFLEROW_SSE2
 
 #ifdef HAS_I422TOYUY2ROW_SSE2
 void I422ToYUY2Row_SSE2(const uint8* src_y,

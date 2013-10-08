@@ -6627,7 +6627,7 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     ret
   }
 }
-#endif
+#endif  // HAS_ARGBSHUFFLEROW_AVX2
 
 __declspec(naked) __declspec(align(16))
 void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
@@ -6639,7 +6639,7 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8 + 8]    // dst_argb
     mov        esi, [esp + 8 + 12]   // shuffler
     mov        ecx, [esp + 8 + 16]   // pix
-    pxor       xmm7, xmm7
+    pxor       xmm5, xmm5
 
     mov        ebx, [esi]   // shuffler
     cmp        ebx, 0x03000102
@@ -6676,8 +6676,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movdqu     xmm0, [eax]
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm7
-    punpckhbw  xmm1, xmm7
+    punpcklbw  xmm0, xmm5
+    punpckhbw  xmm1, xmm5
     pshufhw    xmm0, xmm0, 01Bh   // 1B = 00011011 = 0x0123 = BGRAToARGB
     pshuflw    xmm0, xmm0, 01Bh
     pshufhw    xmm1, xmm1, 01Bh
@@ -6694,8 +6694,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movdqu     xmm0, [eax]
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm7
-    punpckhbw  xmm1, xmm7
+    punpcklbw  xmm0, xmm5
+    punpckhbw  xmm1, xmm5
     pshufhw    xmm0, xmm0, 039h   // 39 = 00111001 = 0x0321 = RGBAToARGB
     pshuflw    xmm0, xmm0, 039h
     pshufhw    xmm1, xmm1, 039h
@@ -6712,8 +6712,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movdqu     xmm0, [eax]
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm7
-    punpckhbw  xmm1, xmm7
+    punpcklbw  xmm0, xmm5
+    punpckhbw  xmm1, xmm5
     pshufhw    xmm0, xmm0, 093h   // 93 = 10010011 = 0x2103 = ARGBToRGBA
     pshuflw    xmm0, xmm0, 093h
     pshufhw    xmm1, xmm1, 093h
@@ -6730,8 +6730,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movdqu     xmm0, [eax]
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm7
-    punpckhbw  xmm1, xmm7
+    punpcklbw  xmm0, xmm5
+    punpckhbw  xmm1, xmm5
     pshufhw    xmm0, xmm0, 0C6h   // C6 = 11000110 = 0x3012 = ABGRToARGB
     pshuflw    xmm0, xmm0, 0C6h
     pshufhw    xmm1, xmm1, 0C6h
