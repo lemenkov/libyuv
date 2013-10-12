@@ -209,18 +209,6 @@ int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                    const int8* matrix_rgb,
                    int x, int y, int width, int height);
 
-#ifdef __cplusplus
-}  // extern "C"
-// Deprecated. Temporary API mapper.
-int inline ARGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
-                           const int8* matrix_rgb,
-                           int x, int y, int width, int height) {
-  return RGBColorMatrix(dst_argb, dst_stride_argb, matrix_rgb,
-                        x, y, width, height);
-}
-extern "C" {
-#endif
-
 // Apply a color table each ARGB pixel.
 // Table contains 256 ARGB values.
 LIBYUV_API
@@ -272,6 +260,12 @@ LIBYUV_API
 int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
+
+// Copy ARGB to ARGB.
+LIBYUV_API
+int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
+                  uint8* dst_argb, int dst_stride_argb,
+                  int width, int height);
 
 typedef void (*ARGBBlendRow)(const uint8* src_argb0, const uint8* src_argb1,
                              uint8* dst_argb, int width);

@@ -3603,6 +3603,37 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_X86
 
+
+#ifdef HAS_ARGBCOPYALPHAROW_SSE2
+// width in pixels
+__declspec(naked) __declspec(align(16))
+void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
+  __asm {
+    mov        edx, edi
+    mov        eax, [esp + 4]   // src
+    mov        edi, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+    pcmpeqb    xmm5, xmm5  // generate mask 0xff000000
+    pslld      xmm5, 24
+
+    align      16
+  convertloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
+    maskmovdqu xmm0, xmm5
+    lea        edi, [edi + 16]
+    maskmovdqu xmm1, xmm5
+    lea        edi, [edi + 16]
+    sub        ecx, 8
+    jg         convertloop
+
+    mov        edi, edx
+    ret
+  }
+}
+#endif  // HAS_ARGBCOPYALPHAROW_SSE2
+
 #ifdef HAS_SETROW_X86
 // SetRow8 writes 'count' bytes using a 32 bit value repeated.
 __declspec(naked) __declspec(align(16))

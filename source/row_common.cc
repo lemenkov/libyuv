@@ -2099,6 +2099,18 @@ void ARGBLumaColorTableRow_C(const uint8* src_argb,
   }
 }
 
+void ARGBCopyAlphaRow_C(const uint8* src, uint8* dst, int width) {
+  for (int i = 0; i < width - 1; i += 2) {
+    dst[3] = src[3];
+    dst[7] = src[7];
+    dst += 8;
+    src += 8;
+  }
+  if (width & 1) {
+    dst[3] = src[3];
+  }
+}
+
 #undef clamp0
 #undef clamp255
 

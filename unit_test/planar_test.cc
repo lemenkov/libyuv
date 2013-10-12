@@ -1906,5 +1906,34 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
   }
 }
 
+TEST_F(libyuvTest, TestARGBCopyAlpha) {
+  const int kSize = benchmark_width_ * benchmark_height_ * 4;
+  align_buffer_64(orig_pixels, kSize);
+  align_buffer_64(dst_pixels_opt, kSize);
+  align_buffer_64(dst_pixels_c, kSize);
+
+  MemRandomize(orig_pixels, kSize);
+  MemRandomize(dst_pixels_opt, kSize);
+  memcpy(dst_pixels_c, dst_pixels_opt, kSize);
+
+  MaskCpuFlags(0);
+  ARGBCopyAlpha(orig_pixels, benchmark_width_ * 4,
+                dst_pixels_c, benchmark_width_ * 4,
+                benchmark_width_, benchmark_height_);
+  MaskCpuFlags(-1);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    ARGBCopyAlpha(orig_pixels, benchmark_width_ * 4,
+                  dst_pixels_opt, benchmark_width_ * 4,
+                  benchmark_width_, benchmark_height_);
+  }
+  for (int i = 0; i < kSize; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+
+  free_aligned_buffer_64(dst_pixels_c)
+  free_aligned_buffer_64(dst_pixels_opt)
+  free_aligned_buffer_64(orig_pixels)
+}
 
 }  // namespace libyuv

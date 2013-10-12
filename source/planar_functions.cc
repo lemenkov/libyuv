@@ -2162,6 +2162,44 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Copy ARGB with optional flipping
+LIBYUV_API
+int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
+                  uint8* dst_argb, int dst_stride_argb,
+                  int width, int height) {
+  // TODO(fbarchard): Consider macro for boiler plate checks, invert and/or
+  // row coalesce.
+  if (!src_argb || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_argb == width * 4 && dst_stride_argb == width * 4) {
+    return ARGBCopyAlpha(src_argb, 0,
+                         dst_argb, 0,
+                         width * height, 1);
+  }
+  void (*ARGBCopyAlphaRow)(const uint8* src_argb, uint8* dst_argb, int width) =
+      ARGBCopyAlphaRow_C;
+#if defined(HAS_ARGBCOPYALPHAROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
+    ARGBCopyAlphaRow = ARGBCopyAlphaRow_SSE2;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    ARGBCopyAlphaRow(src_argb, dst_argb, width);
+    src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
