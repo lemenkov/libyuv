@@ -286,7 +286,7 @@ TEST_F(libyuvTest, Psnr) {
                       src_b + kSrcStride * b + b, kSrcStride,
                       kSrcWidth, kSrcHeight);
 
-  EXPECT_GT(err, 4.0);
+  EXPECT_GT(err, 2.0);
   if (kSrcWidth * kSrcHeight >= 256) {
     EXPECT_LT(err, 5.0);
   }

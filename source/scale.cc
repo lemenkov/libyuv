@@ -1664,12 +1664,13 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
   assert(src_height > 0);
   for (int x = 0; x < src_width; ++x) {
     const uint8* s = src_ptr + x;
-    int sum = 0;
+    unsigned int sum = 0u;
     for (int y = 0; y < src_height; ++y) {
       sum += s[0];
       s += src_stride;
     }
-    dst_ptr[x] = sum;
+    // TODO(fbarchard): Consider limitting height to 256 to avoid overflow.
+    dst_ptr[x] = sum < 65535u ? sum : 65535u;
   }
 }
 
