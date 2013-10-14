@@ -3603,36 +3603,101 @@ void CopyRow_X86(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_X86
 
-
 #ifdef HAS_ARGBCOPYALPHAROW_SSE2
 // width in pixels
 __declspec(naked) __declspec(align(16))
 void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
   __asm {
-    mov        edx, edi
     mov        eax, [esp + 4]   // src
-    mov        edi, [esp + 8]   // dst
+    mov        edx, [esp + 8]   // dst
     mov        ecx, [esp + 12]  // count
-    pcmpeqb    xmm5, xmm5  // generate mask 0xff000000
-    pslld      xmm5, 24
+    pcmpeqb    xmm0, xmm0       // generate mask 0xff000000
+    pslld      xmm0, 24
+    pcmpeqb    xmm1, xmm1       // generate mask 0x00ffffff
+    psrld      xmm1, 8
 
-    align      16
+    align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax]
+    movdqa     xmm3, [eax + 16]
     lea        eax, [eax + 32]
-    maskmovdqu xmm0, xmm5
-    lea        edi, [edi + 16]
-    maskmovdqu xmm1, xmm5
-    lea        edi, [edi + 16]
+    movdqa     xmm4, [edx]
+    movdqa     xmm5, [edx + 16]
+    pand       xmm2, xmm0
+    pand       xmm3, xmm0
+    pand       xmm4, xmm1
+    pand       xmm5, xmm1
+    por        xmm2, xmm4
+    por        xmm3, xmm5
+    movdqa     [edx], xmm2
+    movdqa     [edx + 16], xmm3
+    lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop
 
-    mov        edi, edx
     ret
   }
 }
 #endif  // HAS_ARGBCOPYALPHAROW_SSE2
+
+#ifdef HAS_ARGBCOPYALPHAROW_SSE41
+// width in pixels
+__declspec(naked) __declspec(align(16))
+void ARGBCopyAlphaRow_SSE41(const uint8* src, uint8* dst, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+    pcmpeqb    xmm0, xmm0       // generate mask 0x00ffffff
+    psrld      xmm0, 8
+
+    align      4
+  convertloop:
+    movdqu     xmm1, [eax]
+    movdqu     xmm2, [eax + 16]
+    lea        eax, [eax + 32]
+    pblendvb   xmm1, [edx], xmm0
+    pblendvb   xmm2, [edx + 16], xmm0
+    movdqu     [edx], xmm1
+    movdqu     [edx + 16], xmm2
+    lea        edx, [edx + 32]
+    sub        ecx, 8
+    jg         convertloop
+
+    ret
+  }
+}
+#endif  // HAS_ARGBCOPYALPHAROW_SSE41
+
+#ifdef HAS_ARGBCOPYALPHAROW_AVX2
+// width in pixels
+__declspec(naked) __declspec(align(16))
+void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+    vpcmpeqb   ymm0, ymm0, ymm0  // generate mask 0x00ffffff
+    vpsrld     ymm0, ymm0, 8
+
+    align      4
+  convertloop:
+    vmovdqu    ymm1, [eax]
+    vmovdqu    ymm2, [eax + 32]
+    lea        eax, [eax + 64]
+    vpblendvb  ymm1, ymm1, [edx], ymm0
+    vpblendvb  ymm2, ymm2, [edx + 32], ymm0
+    vmovdqu    [edx], ymm1
+    vmovdqu    [edx + 32], ymm2
+    lea        edx, [edx + 64]
+    sub        ecx, 16
+    jg         convertloop
+
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBCOPYALPHAROW_AVX2
 
 #ifdef HAS_SETROW_X86
 // SetRow8 writes 'count' bytes using a 32 bit value repeated.
