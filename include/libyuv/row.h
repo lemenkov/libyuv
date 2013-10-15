@@ -168,7 +168,6 @@ extern "C" {
 // TODO(fbarchard): Optimize and enable
 // #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 #define HAS_ARGBCOPYALPHAROW_SSE2
-#define HAS_ARGBCOPYALPHAROW_SSE41
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
@@ -702,7 +701,6 @@ void CopyRow_C(const uint8* src, uint8* dst, int count);
 
 void ARGBCopyAlphaRow_C(const uint8* src, uint8* dst, int width);
 void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width);
-void ARGBCopyAlphaRow_SSE41(const uint8* src, uint8* dst, int width);
 void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width);
 
 void SetRow_X86(uint8* dst, uint32 v32, int count);

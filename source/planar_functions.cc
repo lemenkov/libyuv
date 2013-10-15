@@ -2195,11 +2195,6 @@ int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
     ARGBCopyAlphaRow = ARGBCopyAlphaRow_SSE2;
   }
 #endif
-#if defined(HAS_ARGBCOPYALPHAROW_SSE41)
-  if (TestCpuFlag(kCpuHasSSE41) && IS_ALIGNED(width, 8)) {
-    ARGBCopyAlphaRow = ARGBCopyAlphaRow_SSE41;
-  }
-#endif
 #if defined(HAS_ARGBCOPYALPHAROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 16)) {
     ARGBCopyAlphaRow = ARGBCopyAlphaRow_AVX2;
