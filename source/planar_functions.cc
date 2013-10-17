@@ -2162,15 +2162,14 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// Copy ARGB with optional flipping
+// Copy Alpha from one ARGB image to another.
 LIBYUV_API
 int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height) {
   // TODO(fbarchard): Consider macro for boiler plate checks, invert and/or
   // row coalesce.
-  if (!src_argb || !dst_argb ||
-      width <= 0 || height == 0) {
+  if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -2181,9 +2180,9 @@ int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
   }
   // Coalesce contiguous rows.
   if (src_stride_argb == width * 4 && dst_stride_argb == width * 4) {
-    return ARGBCopyAlpha(src_argb, 0,
-                         dst_argb, 0,
-                         width * height, 1);
+    width *= height;
+    height = 1;
+    src_stride_argb = dst_stride_argb = 0;
   }
   void (*ARGBCopyAlphaRow)(const uint8* src_argb, uint8* dst_argb, int width) =
       ARGBCopyAlphaRow_C;
@@ -2203,6 +2202,49 @@ int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
   for (int y = 0; y < height; ++y) {
     ARGBCopyAlphaRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Copy a planar Y channel to the alpha channel of a destination ARGB image.
+LIBYUV_API
+int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
+                     uint8* dst_argb, int dst_stride_argb,
+                     int width, int height) {
+  if (!src_y || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  // Coalesce contiguous rows.
+  if (src_stride_y == width && dst_stride_argb == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_argb = 0;
+  }
+  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
+      ARGBCopyYToAlphaRow_C;
+#if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16) &&
+      IS_ALIGNED(width, 8)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
+  }
+#endif
+#if defined(HAS_ARGBCOPYYTOALPHAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 16)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
+  }
+#endif
+  for (int y = 0; y < height; ++y) {
+    ARGBCopyYToAlphaRow(src_y, dst_argb, width);
+    src_y += src_stride_y;
     dst_argb += dst_stride_argb;
   }
   return 0;

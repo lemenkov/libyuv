@@ -1936,4 +1936,34 @@ TEST_F(libyuvTest, TestARGBCopyAlpha) {
   free_aligned_buffer_64(orig_pixels)
 }
 
+TEST_F(libyuvTest, TestARGBCopyYToAlpha) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_64(orig_pixels, kPixels);
+  align_buffer_64(dst_pixels_opt, kPixels * 4);
+  align_buffer_64(dst_pixels_c, kPixels * 4);
+
+  MemRandomize(orig_pixels, kPixels);
+  MemRandomize(dst_pixels_opt, kPixels * 4);
+  memcpy(dst_pixels_c, dst_pixels_opt, kPixels * 4);
+
+  MaskCpuFlags(0);
+  ARGBCopyYToAlpha(orig_pixels, benchmark_width_,
+                   dst_pixels_c, benchmark_width_ * 4,
+                   benchmark_width_, benchmark_height_);
+  MaskCpuFlags(-1);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    ARGBCopyYToAlpha(orig_pixels, benchmark_width_,
+                     dst_pixels_opt, benchmark_width_ * 4,
+                     benchmark_width_, benchmark_height_);
+  }
+  for (int i = 0; i < kPixels * 4; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+
+  free_aligned_buffer_64(dst_pixels_c)
+  free_aligned_buffer_64(dst_pixels_opt)
+  free_aligned_buffer_64(orig_pixels)
+}
+
 }  // namespace libyuv

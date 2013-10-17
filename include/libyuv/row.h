@@ -168,6 +168,7 @@ extern "C" {
 // TODO(fbarchard): Optimize and enable
 // #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 #define HAS_ARGBCOPYALPHAROW_SSE2
+#define HAS_ARGBCOPYYTOALPHAROW_SSE2
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
@@ -187,6 +188,7 @@ extern "C" {
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
 #define HAS_ARGBCOPYALPHAROW_AVX2
+#define HAS_ARGBCOPYYTOALPHAROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -699,9 +701,13 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count);
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count);
 void CopyRow_C(const uint8* src, uint8* dst, int count);
 
-void ARGBCopyAlphaRow_C(const uint8* src, uint8* dst, int width);
-void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width);
-void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width);
+void ARGBCopyAlphaRow_C(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBCopyAlphaRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBCopyAlphaRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
+
+void ARGBCopyYToAlphaRow_C(const uint8* src_y, uint8* dst_argb, int width);
+void ARGBCopyYToAlphaRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
+void ARGBCopyYToAlphaRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 
 void SetRow_X86(uint8* dst, uint32 v32, int count);
 void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
