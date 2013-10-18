@@ -230,26 +230,26 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
-#define TEST_SCALETO1(width, height, filter, max_diff)                         \
-    TEST_F(libyuvTest, ARGBScaleTo##width##x##height##_##filter) {             \
+#define TEST_SCALETO1(name, width, height, filter, max_diff)                   \
+    TEST_F(libyuvTest, name##To##width##x##height##_##filter) {                \
       int diff = ARGBTestFilter(benchmark_width_, benchmark_height_,           \
                                 width, height,                                 \
                                 kFilter##filter, benchmark_iterations_);       \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, ARGBScaleFrom##width##x##height##_##filter) {           \
+    TEST_F(libyuvTest, name##From##width##x##height##_##filter) {              \
       int diff = ARGBTestFilter(width, height,                                 \
                                 Abs(benchmark_width_), Abs(benchmark_height_), \
                                 kFilter##filter, benchmark_iterations_);       \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, ARGBScaleClipTo##width##x##height##_##filter) {         \
+    TEST_F(libyuvTest, name##ClipTo##width##x##height##_##filter) {            \
       int diff = ARGBClipTestFilter(benchmark_width_, benchmark_height_,       \
                                 width, height,                                 \
                                 kFilter##filter, benchmark_iterations_);       \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, ARGBScaleClipFrom##width##x##height##_##filter) {       \
+    TEST_F(libyuvTest, name##ClipFrom##width##x##height##_##filter) {          \
       int diff = ARGBClipTestFilter(width, height,                             \
                                 Abs(benchmark_width_), Abs(benchmark_height_), \
                                 kFilter##filter, benchmark_iterations_);       \
@@ -257,16 +257,17 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
     }
 
 // Test scale to a specified size with all 3 filters.
-#define TEST_SCALETO(width, height)                                            \
-    TEST_SCALETO1(width, height, None, 0)                                      \
-    TEST_SCALETO1(width, height, Bilinear, 2)
+#define TEST_SCALETO(name, width, height)                                      \
+    TEST_SCALETO1(name, width, height, None, 0)                                \
+    TEST_SCALETO1(name, width, height, Bilinear, 2)                            \
+    TEST_SCALETO1(name, width, height, Box, 2)
 
-TEST_SCALETO(640, 360)
-TEST_SCALETO(853, 480)
-TEST_SCALETO(1280, 720)
-TEST_SCALETO(1280, 800)
-TEST_SCALETO(1366, 768)
-TEST_SCALETO(1920, 1080)
+TEST_SCALETO(DISABLED_ARGBScale, 640, 360)
+TEST_SCALETO(ARGBScale, 853, 480)
+TEST_SCALETO(DISABLED_ARGBScale, 1280, 720)
+TEST_SCALETO(DISABLED_ARGBScale, 1280, 800)
+TEST_SCALETO(DISABLED_ARGBScale, 1366, 768)
+TEST_SCALETO(DISABLED_ARGBScale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 
