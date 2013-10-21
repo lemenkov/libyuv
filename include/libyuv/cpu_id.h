@@ -68,8 +68,10 @@ LIBYUV_API
 void MaskCpuFlags(int enable_flags);
 
 // Low level cpuid for X86. Returns zeros on other CPUs.
+// eax is the info type that you want.
+// ecx is typically the cpu number, and should normally be zero.
 LIBYUV_API
-void CpuId(int cpu_info[4], int info_type);
+void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info);
 
 #ifdef __cplusplus
 }  // extern "C"

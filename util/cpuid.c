@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]) {
 #if defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
   if (has_x86) {
-    int family, model, cpu_info[4];
+    uint32 family, model, cpu_info[4];
     // Vendor ID:
     // AuthenticAMD AMD processor
     // CentaurHauls Centaur processor
@@ -37,7 +37,7 @@ int main(int argc, const char* argv[]) {
     // RiseRiseRise Rise Technology processor
     // SiS SiS SiS  SiS processor
     // UMC UMC UMC  UMC processor
-    CpuId(cpu_info, 0);
+    CpuId(0, 0, &cpu_info[0]);
     cpu_info[0] = cpu_info[1];  // Reorder output
     cpu_info[1] = cpu_info[3];
     cpu_info[3] = 0;
@@ -50,7 +50,7 @@ int main(int argc, const char* argv[]) {
     // 13:12 - Processor Type
     // 19:16 - Extended Model
     // 27:20 - Extended Family
-    CpuId(cpu_info, 1);
+    CpuId(1, 0, &cpu_info[0]);
     family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
     model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
     printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family,

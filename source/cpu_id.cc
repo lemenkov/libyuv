@@ -11,7 +11,7 @@
 #include "libyuv/cpu_id.h"
 
 #ifdef _MSC_VER
-#include <intrin.h>  // For __cpuid()
+#include <intrin.h>  // For __cpuidex()
 #endif
 #if !defined(__CLR_VER) && !defined(__native_client__) && defined(_M_X64) && \
     defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
@@ -28,28 +28,6 @@
 
 #include "libyuv/basic_types.h"  // For CPU_X86
 
-// TODO(fbarchard): Consider cpu functionality for breakpoints, timer and cache.
-// arm - bkpt vs intel int 3
-
-// TODO(fbarchard): Use cpuid.h when gcc 4.4 is used on OSX and Linux.
-#if (defined(__pic__) || defined(__APPLE__)) && defined(__i386__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (  // NOLINT
-    "mov %%ebx, %%edi                          \n"
-    "cpuid                                     \n"
-    "xchg %%edi, %%ebx                         \n"
-    : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#elif defined(__i386__) || defined(__x86_64__)
-static __inline void __cpuid(int cpu_info[4], int info_type) {
-  asm volatile (  // NOLINT
-    "cpuid                                     \n"
-    : "=a"(cpu_info[0]), "=b"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
-    : "a"(info_type));
-}
-#endif
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -59,50 +37,42 @@ extern "C" {
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
 LIBYUV_API
-void CpuId(int cpu_info[4], int info_type) {
-  __cpuid(cpu_info, info_type);
+void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
+#if defined(_MSC_VER)
+  __cpuidex(reinterpret_cast<int*>(cpu_info), eax, ecx);
+#else
+  uint32 ebx, edx;
+  asm volatile (  // NOLINT
+#if defined( __i386__) && defined(__PIC__)
+    // Preserve ebx for fpic 32 bit.
+    "mov %%ebx, %%edi                          \n"
+    "cpuid                                     \n"
+    "xchg %%edi, %%ebx                         \n"
+    : "=D" (ebx),
+#else
+    "cpuid                                     \n"
+    : "+b" (ebx),
+#endif  //  defined( __i386__) && defined(__PIC__)
+      "+a" (eax), "+c" (ecx), "=d" (edx));
+  cpu_info[0] = eax; cpu_info[1] = ebx; cpu_info[2] = ecx; cpu_info[3] = edx;
+#endif  // defined(_MSC_VER)
+}
+#define HAS_XGETBV
+// X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
+int TestOsSaveYmm() {
+  uint32 xcr0;
+#if defined(_MSC_VER)
+  xcr0 = (uint32)_xgetbv(0);  /* min VS2010 SP1 compiler is required */
+#else
+  __asm__ ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );
+#endif
+  return((xcr0 & 6) == 6);  // Is ymm saved?
 }
 #else
 LIBYUV_API
-void CpuId(int cpu_info[4], int) {
+void CpuId(uint32, uint32, uint32* abcd) {
   cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
 }
-#endif
-
-// X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
-#if !defined(__CLR_VER) && !defined(__native_client__)
-#if defined(_M_X64) && defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
-#define HAS_XGETBV
-static uint32 XGetBV(unsigned int xcr) {
-  return static_cast<uint32>(_xgetbv(xcr));
-}
-#elif !defined(__CLR_VER) && defined(_M_IX86) && defined(_MSC_VER)
-#define HAS_XGETBV
-__declspec(naked) __declspec(align(16))
-static uint32 XGetBV(unsigned int xcr) {
-  __asm {
-    mov        ecx, [esp + 4]    // xcr
-    push       edx
-    _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // xgetbv for vs2005.
-    pop        edx
-    ret
-  }
-}
-#elif defined(__i386__) || defined(__x86_64__)
-#define HAS_XGETBV
-static uint32 XGetBV(unsigned int xcr) {
-  uint32 xcr_feature_mask;
-  asm volatile (  // NOLINT
-    ".byte 0x0f, 0x01, 0xd0\n"
-    : "=a"(xcr_feature_mask)
-    : "c"(xcr)
-    : "memory", "cc", "edx");  // edx unused.
-  return xcr_feature_mask;
-}
-#endif
-#endif  // !defined(__CLR_VER) && !defined(__native_client__)
-#ifdef HAS_XGETBV
-static const int kXCR_XFEATURE_ENABLED_MASK = 0;
 #endif
 
 // based on libvpx arm_cpudetect.c
@@ -170,10 +140,10 @@ static bool TestEnv(const char*) {
 LIBYUV_API
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
-  int cpu_info1[4] = { 0, 0, 0, 0 };
-  int cpu_info7[4] = { 0, 0, 0, 0 };
-  __cpuid(cpu_info1, 1);
-  __cpuid(cpu_info7, 7);
+  uint32 cpu_info1[4] = { 0, 0, 0, 0 };
+  uint32 cpu_info7[4] = { 0, 0, 0, 0 };
+  CpuId(1, 0, cpu_info1);
+  CpuId(7, 0, cpu_info7);
   cpu_info_ = ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
               ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
@@ -183,7 +153,7 @@ int InitCpuFlags(void) {
               kCpuHasX86;
 #ifdef HAS_XGETBV
   if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
-      (XGetBV(kXCR_XFEATURE_ENABLED_MASK) & 0x06) == 0x06) {  // Saves YMM.
+      TestOsSaveYmm()) {  // Saves YMM.
     cpu_info_ |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                  kCpuHasAVX;
   }

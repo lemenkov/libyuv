@@ -56,7 +56,7 @@ TEST_F(libyuvTest, TestCpuHas) {
 TEST_F(libyuvTest, TestCpuId) {
   int has_x86 = TestCpuFlag(kCpuHasX86);
   if (has_x86) {
-    int cpu_info[4];
+    uint32 cpu_info[4];
     // Vendor ID:
     // AuthenticAMD AMD processor
     // CentaurHauls Centaur processor
@@ -68,7 +68,7 @@ TEST_F(libyuvTest, TestCpuId) {
     // RiseRiseRise Rise Technology processor
     // SiS SiS SiS  SiS processor
     // UMC UMC UMC  UMC processor
-    CpuId(cpu_info, 0);
+    CpuId(0, 0, cpu_info);
     cpu_info[0] = cpu_info[1];  // Reorder output
     cpu_info[1] = cpu_info[3];
     cpu_info[3] = 0;
@@ -83,7 +83,7 @@ TEST_F(libyuvTest, TestCpuId) {
     // 13:12 - Processor Type
     // 19:16 - Extended Model
     // 27:20 - Extended Family
-    CpuId(cpu_info, 1);
+    CpuId(1, 0, cpu_info);
     int family = ((cpu_info[0] >> 8) & 0x0f) | ((cpu_info[0] >> 16) & 0xff0);
     int model = ((cpu_info[0] >> 4) & 0x0f) | ((cpu_info[0] >> 12) & 0xf0);
     printf("Cpu Family %d (0x%x), Model %d (0x%x)\n", family, family,
