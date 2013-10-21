@@ -64,13 +64,13 @@ int TestOsSaveYmm() {
 #if defined(_MSC_VER)
   xcr0 = (uint32)_xgetbv(0);  /* min VS2010 SP1 compiler is required */
 #else
-  __asm__ ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );
-#endif
+  asm volatile ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );  // NOLINT
+#endif  // defined(_MSC_VER)
   return((xcr0 & 6) == 6);  // Is ymm saved?
 }
 #else
 LIBYUV_API
-void CpuId(uint32, uint32, uint32* abcd) {
+void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
   cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
 }
 #endif
