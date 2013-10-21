@@ -54,20 +54,25 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
     : "+b" (ebx),
 #endif  //  defined( __i386__) && defined(__PIC__)
       "+a" (eax), "+c" (ecx), "=d" (edx));
-  cpu_info[0] = eax; cpu_info[1] = ebx; cpu_info[2] = ecx; cpu_info[3] = edx;
+  cpu_info[0] = eax;
+  cpu_info[1] = ebx;
+  cpu_info[2] = ecx;
+  cpu_info[3] = edx;
 #endif  // defined(_MSC_VER)
 }
+#if !defined(__native_client__)
 #define HAS_XGETBV
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
 int TestOsSaveYmm() {
   uint32 xcr0;
 #if defined(_MSC_VER)
-  xcr0 = (uint32)_xgetbv(0);  /* min VS2010 SP1 compiler is required */
+  xcr0 = static_cast<uint32>(_xgetbv(0));  // VS2010 SP1 required.
 #else
   asm volatile ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );  // NOLINT
 #endif  // defined(_MSC_VER)
   return((xcr0 & 6) == 6);  // Is ymm saved?
 }
+#endif  // !defined(__native_client__)
 #else
 LIBYUV_API
 void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {

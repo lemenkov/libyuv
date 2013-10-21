@@ -149,26 +149,26 @@ static int TestFilter(int src_width, int src_height,
     TEST_FACTOR1(name, Box, hfactor, vfactor, 2)                               \
 
 // TODO(fbarchard): ScaleDownBy1 should be lossless, but Box has error of 2.
-//TEST_FACTOR(1, 1 / 1, 1 / 1)
+// TEST_FACTOR(1, 1 / 1, 1 / 1)
 TEST_FACTOR(2, 1 / 2, 1 / 2)
 TEST_FACTOR(4, 1 / 4, 1 / 4)
-//TEST_FACTOR(8, 1 / 8, 1 / 8)
-//TEST_FACTOR(16, 1 / 16, 1 / 16)
-//TEST_FACTOR(2by3, 2 / 3, 2 / 3)
+// TEST_FACTOR(8, 1 / 8, 1 / 8)
+// TEST_FACTOR(16, 1 / 16, 1 / 16)
+// TEST_FACTOR(2by3, 2 / 3, 2 / 3)
 TEST_FACTOR(3by4, 3 / 4, 3 / 4)
-//TEST_FACTOR(3by8, 3 / 8, 3 / 8)
-//TEST_FACTOR(Vertical2by3, 1, 2 / 3)
+// TEST_FACTOR(3by8, 3 / 8, 3 / 8)
+// TEST_FACTOR(Vertical2by3, 1, 2 / 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
 #define TEST_SCALETO1(name, width, height, filter, max_diff)                   \
-    TEST_F(libyuvTest, name##To##width##x##height##_##filter) {                 \
+    TEST_F(libyuvTest, name##To##width##x##height##_##filter) {                \
       int diff = TestFilter(benchmark_width_, benchmark_height_,               \
                             width, height,                                     \
                             kFilter##filter, benchmark_iterations_);           \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, name##From##width##x##height##_##filter) {               \
+    TEST_F(libyuvTest, name##From##width##x##height##_##filter) {              \
       int diff = TestFilter(width, height,                                     \
                             Abs(benchmark_width_), Abs(benchmark_height_),     \
                             kFilter##filter, benchmark_iterations_);           \
