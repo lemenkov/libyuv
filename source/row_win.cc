@@ -5693,7 +5693,7 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 // B = Sobel
 __declspec(naked) __declspec(align(16))
 void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
-                     uint8* dst_argb, int width) {
+                   uint8* dst_argb, int width) {
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]   // src_sobelx
@@ -5736,6 +5736,36 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
   }
 }
 #endif  // HAS_SOBELROW_SSE2
+
+#ifdef HAS_SOBELTOPLANEROW_SSE2
+// Adds Sobel X and Sobel Y and stores Sobel into a plane.
+__declspec(naked) __declspec(align(16))
+void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // src_sobelx
+    mov        esi, [esp + 4 + 8]   // src_sobely
+    mov        edx, [esp + 4 + 12]  // dst_argb
+    mov        ecx, [esp + 4 + 16]  // width
+    sub        esi, eax
+
+    align      16
+ convertloop:
+    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    lea        eax, [eax + 16]
+    paddusb    xmm0, xmm1             // sobel = sobelx + sobely
+    sub        ecx, 16
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_SOBELTOPLANEROW_SSE2
 
 #ifdef HAS_SOBELXYROW_SSE2
 // Mixes Sobel X, Sobel Y and Sobel into ARGB.

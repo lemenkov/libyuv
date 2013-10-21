@@ -402,6 +402,12 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
                 uint8* dst_argb, int dst_stride_argb,
                 const uint8* shuffler, int width, int height);
 
+// Sobel ARGB effect with planar output.
+LIBYUV_API
+int ARGBSobelToPlane(const uint8* src_argb, int src_stride_argb,
+                     uint8* dst_y, int dst_stride_y,
+                     int width, int height);
+
 // Sobel ARGB effect.
 LIBYUV_API
 int ARGBSobel(const uint8* src_argb, int src_stride_argb,

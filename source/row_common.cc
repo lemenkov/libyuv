@@ -869,6 +869,16 @@ void SobelRow_C(const uint8* src_sobelx, const uint8* src_sobely,
   }
 }
 
+void SobelToPlaneRow_C(const uint8* src_sobelx, const uint8* src_sobely,
+                       uint8* dst_y, int width) {
+  for (int i = 0; i < width; ++i) {
+    int r = src_sobelx[i];
+    int b = src_sobely[i];
+    int s = clamp255(r + b);
+    dst_y[i] = static_cast<uint8>(s);
+  }
+}
+
 void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
                   uint8* dst_argb, int width) {
   for (int i = 0; i < width; ++i) {

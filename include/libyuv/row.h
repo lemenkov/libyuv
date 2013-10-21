@@ -59,6 +59,7 @@ extern "C" {
 #define HAS_INTERPOLATEROW_SSE2
 #define HAS_INTERPOLATEROW_SSSE3
 #define HAS_SOBELROW_SSE2
+#define HAS_SOBELTOPLANEROW_SSE2
 #define HAS_SOBELXROW_SSSE3
 #define HAS_SOBELXYROW_SSE2
 #define HAS_SOBELYROW_SSSE3
@@ -313,6 +314,7 @@ extern "C" {
 #define HAS_ARGBSHADEROW_NEON
 #define HAS_ARGBSUBTRACTROW_NEON
 #define HAS_SOBELROW_NEON
+#define HAS_SOBELTOPLANEROW_NEON
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELXROW_NEON
 #define HAS_SOBELYROW_NEON
@@ -1578,6 +1580,12 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
                    uint8* dst_argb, int width);
 void SobelRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                    uint8* dst_argb, int width);
+void SobelToPlaneRow_C(const uint8* src_sobelx, const uint8* src_sobely,
+                       uint8* dst_y, int width);
+void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width);
+void SobelToPlaneRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width);
 void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
                   uint8* dst_argb, int width);
 void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,

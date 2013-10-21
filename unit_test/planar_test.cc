@@ -1136,7 +1136,7 @@ TEST_F(libyuvTest, TestSobelX) {
               sobel_pixels_opt, 1280);
   }
   for (int i = 0; i < 1280; ++i) {
-    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+    EXPECT_EQ(sobel_pixels_c[i], sobel_pixels_opt[i]);
   }
 }
 
@@ -1172,7 +1172,7 @@ TEST_F(libyuvTest, TestSobelY) {
     SobelYRow(orig_pixels_0, orig_pixels_1, sobel_pixels_opt, 1280);
   }
   for (int i = 0; i < 1280; ++i) {
-    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+    EXPECT_EQ(sobel_pixels_c[i], sobel_pixels_opt[i]);
   }
 }
 
@@ -1215,8 +1215,46 @@ TEST_F(libyuvTest, TestSobel) {
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     SobelRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 1280);
   }
-  for (int i = 0; i < 16; ++i) {
-    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+  for (int i = 0; i < 1280 * 4; ++i) {
+    EXPECT_EQ(sobel_pixels_c[i], sobel_pixels_opt[i]);
+  }
+}
+
+TEST_F(libyuvTest, TestSobelToPlane) {
+  SIMD_ALIGNED(uint8 orig_sobelx[1280]);
+  SIMD_ALIGNED(uint8 orig_sobely[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_c[1280]);
+  SIMD_ALIGNED(uint8 sobel_pixels_opt[1280]);
+
+  for (int i = 0; i < 1280; ++i) {
+    orig_sobelx[i] = i;
+    orig_sobely[i] = i * 2;
+  }
+
+  SobelToPlaneRow_C(orig_sobelx, orig_sobely, sobel_pixels_c, 1280);
+
+  EXPECT_EQ(0u, sobel_pixels_c[0]);
+  EXPECT_EQ(3u, sobel_pixels_c[1]);
+  EXPECT_EQ(6u, sobel_pixels_c[2]);
+  EXPECT_EQ(99u, sobel_pixels_c[33]);
+  EXPECT_EQ(255u, sobel_pixels_c[100]);
+  void (*SobelToPlaneRow)(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width) = SobelToPlaneRow_C;
+#if defined(HAS_SOBELTOPLANEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelToPlaneRow = SobelToPlaneRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELTOPLANEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelToPlaneRow = SobelToPlaneRow_NEON;
+  }
+#endif
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    SobelToPlaneRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 1280);
+  }
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(sobel_pixels_c[i], sobel_pixels_opt[i]);
   }
 }
 
@@ -1255,8 +1293,8 @@ TEST_F(libyuvTest, TestSobelXY) {
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     SobelXYRow(orig_sobelx, orig_sobely, sobel_pixels_opt, 1280);
   }
-  for (int i = 0; i < 16; ++i) {
-    EXPECT_EQ(sobel_pixels_opt[i], sobel_pixels_c[i]);
+  for (int i = 0; i < 1280 * 4; ++i) {
+    EXPECT_EQ(sobel_pixels_c[i], sobel_pixels_opt[i]);
   }
 }
 
@@ -1601,6 +1639,75 @@ TEST_F(libyuvTest, ARGBSobel_Invert) {
 TEST_F(libyuvTest, ARGBSobel_Opt) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
                            benchmark_iterations_, +1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+static int TestSobelToPlane(int width, int height, int benchmark_iterations,
+                            int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kSrcBpp = 4;
+  const int kDstBpp = 1;
+  const int kSrcStride = (width * kSrcBpp + 15) & ~15;
+  const int kDstStride = (width * kDstBpp + 15) & ~15;
+  align_buffer_64(src_argb_a, kSrcStride * height + off);
+  align_buffer_64(dst_argb_c, kDstStride * height);
+  align_buffer_64(dst_argb_opt, kDstStride * height);
+  memset(src_argb_a, 0, kSrcStride * height + off);
+  srandom(time(NULL));
+  for (int i = 0; i < kSrcStride * height; ++i) {
+    src_argb_a[i + off] = (random() & 0xff);
+  }
+  memset(dst_argb_c, 0, kDstStride * height);
+  memset(dst_argb_opt, 0, kDstStride * height);
+
+  MaskCpuFlags(0);
+  ARGBSobelToPlane(src_argb_a + off, kSrcStride,
+                   dst_argb_c, kDstStride,
+                   width, invert * height);
+  MaskCpuFlags(-1);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    ARGBSobelToPlane(src_argb_a + off, kSrcStride,
+                     dst_argb_opt, kDstStride,
+                     width, invert * height);
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kDstStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i]) -
+            static_cast<int>(dst_argb_opt[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_64(src_argb_a)
+  free_aligned_buffer_64(dst_argb_c)
+  free_aligned_buffer_64(dst_argb_opt)
+  return max_diff;
+}
+
+TEST_F(libyuvTest, ARGBSobelToPlane_Any) {
+  int max_diff = TestSobelToPlane(benchmark_width_ - 1, benchmark_height_,
+                                  benchmark_iterations_, +1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBSobelToPlane_Unaligned) {
+  int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, +1, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBSobelToPlane_Invert) {
+  int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, -1, 0);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBSobelToPlane_Opt) {
+  int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
+                                  benchmark_iterations_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 

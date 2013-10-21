@@ -4767,6 +4767,43 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 }
 #endif  // HAS_SOBELROW_SSE2
 
+#ifdef HAS_SOBELTOPLANEROW_SSE2
+// Adds Sobel X and Sobel Y and stores Sobel into a plane.
+void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width) {
+  asm volatile (
+    "sub       %0,%1                           \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "pslld     $0x18,%%xmm5                    \n"
+
+    // 8 pixel loop.
+    ".p2align  4                               \n"
+    BUNDLEALIGN
+  "1:                                          \n"
+    "movdqa    "MEMACCESS(0)",%%xmm0           \n"
+    MEMOPREG(movdqa,0x00,0,1,1,xmm1)           //  movdqa    (%0,%1,1),%%xmm1
+    "lea       "MEMLEA(0x10,0)",%0             \n"
+    "paddusb   %%xmm1,%%xmm0                   \n"
+    "sub       $0x10,%3                        \n"
+    "movdqa    %%xmm0,"MEMACCESS(2)"           \n"
+    "lea       "MEMLEA(0x10,2)",%2             \n"
+    "jg        1b                              \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_y),       // %2
+    "+r"(width)        // %3
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+  );
+}
+#endif  // HAS_SOBELTOPLANEROW_SSE2
+
 #ifdef HAS_SOBELXYROW_SSE2
 // Mixes Sobel X, Sobel Y and Sobel into ARGB.
 // A = 255

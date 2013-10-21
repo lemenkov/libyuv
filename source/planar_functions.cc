@@ -1861,10 +1861,12 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
 }
 
 // Sobel ARGB effect.
-LIBYUV_API
-int ARGBSobel(const uint8* src_argb, int src_stride_argb,
-              uint8* dst_argb, int dst_stride_argb,
-              int width, int height) {
+static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
+                        uint8* dst_argb, int dst_stride_argb,
+                        int width, int height,
+                        void (*SobelRow)(const uint8* src_sobelx,
+                                         const uint8* src_sobely,
+                                         uint8* dst, int width)) {
   const int kMaxRow = kMaxStride / 4;
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
   if (!src_argb  || !dst_argb ||
@@ -1921,20 +1923,6 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_NEON;
   }
 #endif
-  void (*SobelRow)(const uint8* src_sobelx, const uint8* src_sobely,
-                   uint8* dst_argb, int width) = SobelRow_C;
-#if defined(HAS_SOBELROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-    SobelRow = SobelRow_SSE2;
-  }
-#endif
-#if defined(HAS_SOBELROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    SobelRow = SobelRow_NEON;
-  }
-#endif
-
   // 3 rows with edges before/after.
   SIMD_ALIGNED(uint8 row_y[kEdge + kMaxRow * 3]);
   SIMD_ALIGNED(uint8 row_sobelx[kMaxRow]);
@@ -1976,68 +1964,56 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// Sobel ARGB effect.
+LIBYUV_API
+int ARGBSobel(const uint8* src_argb, int src_stride_argb,
+              uint8* dst_argb, int dst_stride_argb,
+              int width, int height) {
+  void (*SobelRow)(const uint8* src_sobelx, const uint8* src_sobely,
+                   uint8* dst_argb, int width) = SobelRow_C;
+#if defined(HAS_SOBELROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
+    SobelRow = SobelRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    SobelRow = SobelRow_NEON;
+  }
+#endif
+  return ARGBSobelize(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                      width, height, SobelRow);
+}
+
+// Sobel ARGB effect with planar output.
+LIBYUV_API
+int ARGBSobelToPlane(const uint8* src_argb, int src_stride_argb,
+                     uint8* dst_y, int dst_stride_y,
+                     int width, int height) {
+  void (*SobelToPlaneRow)(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_, int width) = SobelToPlaneRow_C;
+#if defined(HAS_SOBELTOPLANEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    SobelToPlaneRow = SobelToPlaneRow_SSE2;
+  }
+#endif
+#if defined(HAS_SOBELTOPLANEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    SobelToPlaneRow = SobelToPlaneRow_NEON;
+  }
+#endif
+  return ARGBSobelize(src_argb, src_stride_argb, dst_y, dst_stride_y,
+                      width, height, SobelToPlaneRow);
+}
+
 // SobelXY ARGB effect.
 // Similar to Sobel, but also stores Sobel X in R and Sobel Y in B.  G = Sobel.
 LIBYUV_API
 int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height) {
-  const int kMaxRow = kMaxStride / 4;
-  const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > (kMaxRow - kEdge)) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_argb  = src_argb  + (height - 1) * src_stride_argb;
-    src_stride_argb = -src_stride_argb;
-  }
-  // ARGBToBayer used to select G channel from ARGB.
-  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
-                         uint32 selector, int pix) = ARGBToBayerRow_C;
-#if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 &&
-      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
-    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
-    }
-  }
-#elif defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerRow_NEON;
-    }
-  }
-#endif
-  void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
-                    uint8* dst_sobely, int width) = SobelYRow_C;
-#if defined(HAS_SOBELYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    SobelYRow = SobelYRow_SSSE3;
-  }
-#endif
-#if defined(HAS_SOBELYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    SobelYRow = SobelYRow_NEON;
-  }
-#endif
-  void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
-                    const uint8* src_y2, uint8* dst_sobely, int width) =
-      SobelXRow_C;
-#if defined(HAS_SOBELXROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    SobelXRow = SobelXRow_SSSE3;
-  }
-#endif
-#if defined(HAS_SOBELXROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    SobelXRow = SobelXRow_NEON;
-  }
-#endif
   void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) = SobelXYRow_C;
 #if defined(HAS_SOBELXYROW_SSE2)
@@ -2051,45 +2027,8 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
     SobelXYRow = SobelXYRow_NEON;
   }
 #endif
-
-  SIMD_ALIGNED(uint8 row_y[kEdge + kMaxRow * 3]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxRow]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxRow]);
-
-  // Convert first row.
-  uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxRow;
-  uint8* row_y2 = row_y1 + kMaxRow;
-  ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
-  row_y0[-1] = row_y0[0];
-  memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
-  ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
-  row_y1[-1] = row_y1[0];
-  memset(row_y1 + width, row_y1[width - 1], 16);
-  memset(row_y2 + width, 0, 16);
-
-  for (int y = 0; y < height; ++y) {
-    // Convert next row of ARGB to Y.
-    if (y < (height - 1)) {
-      src_argb += src_stride_argb;
-    }
-    ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
-    row_y2[-1] = row_y2[0];
-    row_y2[width] = row_y2[width - 1];
-
-    SobelXRow(row_y0 - 1, row_y1 - 1, row_y2 - 1, row_sobelx, width);
-    SobelYRow(row_y0 - 1, row_y2 - 1, row_sobely, width);
-    SobelXYRow(row_sobelx, row_sobely, dst_argb, width);
-
-    // Cycle thru circular queue of 3 row_y buffers.
-    uint8* row_yt = row_y0;
-    row_y0 = row_y1;
-    row_y1 = row_y2;
-    row_y2 = row_yt;
-
-    dst_argb += dst_stride_argb;
-  }
-  return 0;
+  return ARGBSobelize(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
+                      width, height, SobelXYRow);
 }
 
 // Apply a 4x4 polynomial to each ARGB pixel.

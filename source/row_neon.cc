@@ -2637,8 +2637,30 @@ void SobelRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
     "bgt        1b                             \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
-    "+r"(dst_argb),   // %2
-    "+r"(width)       // %3
+    "+r"(dst_argb),    // %2
+    "+r"(width)        // %3
+  :
+  : "cc", "memory", "q0", "q1"
+  );
+}
+
+// Adds Sobel X and Sobel Y and stores Sobel into plane.
+void SobelToPlaneRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                          uint8* dst_y, int width) {
+  asm volatile (
+    // 16 pixel loop.
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    "vld1.8     {q0}, [%0]!                    \n"  // load 16 sobelx.
+    "vld1.8     {q1}, [%1]!                    \n"  // load 16 sobely.
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop.
+    "vqadd.u8   q0, q0, q1                     \n"  // add
+    "vst1.8     {q0}, [%2]!                    \n"  // store 16 pixels.
+    "bgt        1b                             \n"
+  : "+r"(src_sobelx),  // %0
+    "+r"(src_sobely),  // %1
+    "+r"(dst_y),       // %2
+    "+r"(width)        // %3
   :
   : "cc", "memory", "q0", "q1"
   );
