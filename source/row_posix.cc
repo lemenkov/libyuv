@@ -6068,7 +6068,7 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
     "vpackuswb   %%xmm0,%%xmm0,%%xmm0          \n"
     "sub         $0x2,%2                       \n"
-    "movq        %%xmm0,"MEMACCESS(1)"         \n"
+    "vmovq       %%xmm0,"MEMACCESS(1)"         \n"
     "lea         "MEMLEA(0x8,1)",%1            \n"
     "jg          1b                            \n"
     "vzeroupper                                \n"
