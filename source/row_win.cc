@@ -4586,7 +4586,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     mov        esi, [esp + 4 + 8]   // src_argb1
     mov        edx, [esp + 4 + 12]  // dst_argb
     mov        ecx, [esp + 4 + 16]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
+    pcmpeqb    xmm7, xmm7       // generate constant 0x0001
     psrlw      xmm7, 15
     pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
     psrlw      xmm6, 8
@@ -4788,17 +4788,17 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqu     xmm0, [eax]      // read 4 pixels
     pshufb     xmm0, xmm4       // isolate first 2 alphas
-    movdqa     xmm1, [eax]      // read 4 pixels
+    movdqu     xmm1, [eax]      // read 4 pixels
     punpcklbw  xmm1, xmm1       // first 2 pixel rgbs
     pmulhuw    xmm0, xmm1       // rgb * a
-    movdqa     xmm1, [eax]      // read 4 pixels
+    movdqu     xmm1, [eax]      // read 4 pixels
     pshufb     xmm1, xmm5       // isolate next 2 alphas
-    movdqa     xmm2, [eax]      // read 4 pixels
+    movdqu     xmm2, [eax]      // read 4 pixels
     punpckhbw  xmm2, xmm2       // next 2 pixel rgbs
     pmulhuw    xmm1, xmm2       // rgb * a
-    movdqa     xmm2, [eax]      // mask original alpha
+    movdqu     xmm2, [eax]      // mask original alpha
     lea        eax, [eax + 16]
     pand       xmm2, xmm3
     psrlw      xmm0, 8
@@ -4806,7 +4806,7 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     packuswb   xmm0, xmm1
     por        xmm0, xmm2       // copy original alpha
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
 
@@ -4874,7 +4874,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 
     align      16
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqu     xmm0, [eax]      // read 4 pixels
     movzx      esi, byte ptr [eax + 3]  // first alpha
     movzx      edi, byte ptr [eax + 7]  // second alpha
     punpcklbw  xmm0, xmm0       // first 2
@@ -4885,7 +4885,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movlhps    xmm2, xmm3
     pmulhuw    xmm0, xmm2       // rgb * a
 
-    movdqa     xmm1, [eax]      // read 4 pixels
+    movdqu     xmm1, [eax]      // read 4 pixels
     movzx      esi, byte ptr [eax + 11]  // third alpha
     movzx      edi, byte ptr [eax + 15]  // forth alpha
     punpckhbw  xmm1, xmm1       // next 2
@@ -4899,7 +4899,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 
     packuswb   xmm0, xmm1
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     pop        edi
