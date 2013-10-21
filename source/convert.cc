@@ -369,20 +369,23 @@ static int X420ToI420(const uint8* src_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
-  // Coalesce contiguous rows.
+  // Coalesce rows.
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if (src_stride_y0 == width &&
       src_stride_y1 == width &&
       dst_stride_y == width) {
-    width = width * height;
+    width *= height;
     height = 1;
+    src_stride_y0 = src_stride_y1 = dst_stride_y = 0;
   }
-  if (src_stride_uv == width &&
-      dst_stride_u * 2 == width &&
-      dst_stride_v * 2 == width) {
-    halfwidth = halfwidth * halfheight;
+  // Coalesce rows.
+  if (src_stride_uv == halfwidth * 2 &&
+      dst_stride_u * 2 == halfwidth &&
+      dst_stride_v * 2 == halfwidth) {
+    halfwidth *= halfheight;
     halfheight = 1;
+    src_stride_uv = dst_stride_u = dst_stride_v = 0;
   }
   void (*SplitUVRow)(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) =
       SplitUVRow_C;

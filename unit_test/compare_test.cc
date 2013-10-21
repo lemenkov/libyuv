@@ -322,7 +322,7 @@ TEST_F(libyuvTest, Psnr) {
   free_aligned_buffer_64(src_b)
 }
 
-TEST_F(libyuvTest, BenchmarkSsim_Opt) {
+TEST_F(libyuvTest, DISABLED_BenchmarkSsim_Opt) {
   align_buffer_64(src_a, benchmark_width_ * benchmark_height_)
   align_buffer_64(src_b, benchmark_width_ * benchmark_height_)
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {

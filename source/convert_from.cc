@@ -237,16 +237,14 @@ int I422ToYUY2(const uint8* src_y, int src_stride_y,
     dst_yuy2 = dst_yuy2 + (height - 1) * dst_stride_yuy2;
     dst_stride_yuy2 = -dst_stride_yuy2;
   }
-  // Coalesce contiguous rows.
+  // Coalesce rows.
   if (src_stride_y == width &&
       src_stride_u * 2 == width &&
       src_stride_v * 2 == width &&
       dst_stride_yuy2 == width * 2) {
-    return I422ToYUY2(src_y, 0,
-                      src_u, 0,
-                      src_v, 0,
-                      dst_yuy2, 0,
-                      width * height, 1);
+    width *= height;
+    height = 1;
+    src_stride_y = src_stride_u = src_stride_v = dst_stride_yuy2 = 0;
   }
   void (*I422ToYUY2Row)(const uint8* src_y, const uint8* src_u,
                         const uint8* src_v, uint8* dst_yuy2, int width) =
@@ -343,16 +341,14 @@ int I422ToUYVY(const uint8* src_y, int src_stride_y,
     dst_uyvy = dst_uyvy + (height - 1) * dst_stride_uyvy;
     dst_stride_uyvy = -dst_stride_uyvy;
   }
-  // Coalesce contiguous rows.
+  // Coalesce rows.
   if (src_stride_y == width &&
       src_stride_u * 2 == width &&
       src_stride_v * 2 == width &&
       dst_stride_uyvy == width * 2) {
-    return I422ToUYVY(src_y, 0,
-                      src_u, 0,
-                      src_v, 0,
-                      dst_uyvy, 0,
-                      width * height, 1);
+    width *= height;
+    height = 1;
+    src_stride_y = src_stride_u = src_stride_v = dst_stride_uyvy = 0;
   }
   void (*I422ToUYVYRow)(const uint8* src_y, const uint8* src_u,
                         const uint8* src_v, uint8* dst_uyvy, int width) =
@@ -453,19 +449,22 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
     dst_stride_y = -dst_stride_y;
     dst_stride_uv = -dst_stride_uv;
   }
-  // Coalesce contiguous rows.
+  // Coalesce rows.
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if (src_stride_y == width &&
       dst_stride_y == width) {
-    width = width * height;
+    width *= height;
     height = 1;
+    src_stride_y = dst_stride_y = 0;
   }
-  if (src_stride_u * 2 == width &&
-      src_stride_v * 2 == width &&
-      dst_stride_uv == width) {
-    halfwidth = halfwidth * halfheight;
+  // Coalesce rows.
+  if (src_stride_u == halfwidth &&
+      src_stride_v == halfwidth &&
+      dst_stride_uv == halfwidth * 2) {
+    halfwidth *= halfheight;
     halfheight = 1;
+    src_stride_u = src_stride_v = dst_stride_uv = 0;
   }
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
