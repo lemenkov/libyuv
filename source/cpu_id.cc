@@ -51,7 +51,7 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
     : "=D" (ebx),
 #else
     "cpuid                                     \n"
-    : "+b" (ebx),
+    : "=b" (ebx),
 #endif  //  defined( __i386__) && defined(__PIC__)
       "+a" (eax), "+c" (ecx), "=d" (edx));
   cpu_info[0] = eax;
