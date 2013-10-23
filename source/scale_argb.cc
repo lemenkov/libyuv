@@ -204,8 +204,8 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 
 #define HAS_SCALEARGBCOLS_SSE2
 __declspec(naked) __declspec(align(16))
-static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
-                               int dst_width, int x, int dx) {
+void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int x, int dx) {
   __asm {
     push       esi
     push       edi
@@ -553,8 +553,8 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 #define HAS_SCALEARGBCOLS_SSE2
 // TODO(fbarchard): p2align 5 is for nacl branch targets.  Reduce using
 // pseudoop, bundle or macro.
-static void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
-                               int dst_width, int x, int dx) {
+void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int x, int dx) {
   intptr_t x0 = 0, x1 = 0;
   asm volatile (
     "movd      %5,%%xmm2                       \n"
@@ -1263,8 +1263,8 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
 // Scales a single row of pixels using point sampling.
 // Code is adapted from libyuv bilinear yuv scaling, but with bilinear
 // interpolation off, and argb pixels instead of yuv.
-static void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
-                            int dst_width, int x, int dx) {
+void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
+                     int dst_width, int x, int dx) {
   const uint32* src = reinterpret_cast<const uint32*>(src_argb);
   uint32* dst = reinterpret_cast<uint32*>(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {

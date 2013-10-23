@@ -5579,14 +5579,14 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBSUBTRACTROW_AVX2
 
-#ifdef HAS_SOBELXROW_SSSE3
+#ifdef HAS_SOBELXROW_SSE2
 // SobelX as a matrix is
 // -1  0  1
 // -2  0  2
 // -1  0  1
 __declspec(naked) __declspec(align(16))
-void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     const uint8* src_y2, uint8* dst_sobelx, int width) {
+void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobelx, int width) {
   __asm {
     push       esi
     push       edi
@@ -5620,7 +5620,9 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     paddw      xmm0, xmm2
     paddw      xmm0, xmm1
     paddw      xmm0, xmm1
-    pabsw      xmm0, xmm0   // SSSE3.  Could use SSE2 psubusw twice instead.
+    pxor       xmm1, xmm1   // abs = max(xmm0, -xmm0).  SSSE3 could use pabsw
+    psubw      xmm1, xmm0
+    pmaxsw     xmm0, xmm1
     packuswb   xmm0, xmm0
     sub        ecx, 8
     movq       qword ptr [eax + edx], xmm0
@@ -5632,16 +5634,16 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     ret
   }
 }
-#endif  // HAS_SOBELXROW_SSSE3
+#endif  // HAS_SOBELXROW_SSE2
 
-#ifdef HAS_SOBELYROW_SSSE3
+#ifdef HAS_SOBELYROW_SSE2
 // SobelY as a matrix is
 // -1 -2 -1
 //  0  0  0
 //  1  2  1
 __declspec(naked) __declspec(align(16))
-void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     uint8* dst_sobely, int width) {
+void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width) {
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]   // src_y0
@@ -5672,7 +5674,9 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     paddw      xmm0, xmm2
     paddw      xmm0, xmm1
     paddw      xmm0, xmm1
-    pabsw      xmm0, xmm0   // SSSE3.  Could use SSE2 psubusw twice instead.
+    pxor       xmm1, xmm1   // abs = max(xmm0, -xmm0).  SSSE3 could use pabsw
+    psubw      xmm1, xmm0
+    pmaxsw     xmm0, xmm1
     packuswb   xmm0, xmm0
     sub        ecx, 8
     movq       qword ptr [eax + edx], xmm0
@@ -5683,7 +5687,7 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     ret
   }
 }
-#endif  // HAS_SOBELYROW_SSSE3
+#endif  // HAS_SOBELYROW_SSE2
 
 #ifdef HAS_SOBELROW_SSE2
 // Adds Sobel X and Sobel Y and stores Sobel into ARGB.

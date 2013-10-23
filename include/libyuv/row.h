@@ -60,9 +60,9 @@ extern "C" {
 #define HAS_INTERPOLATEROW_SSSE3
 #define HAS_SOBELROW_SSE2
 #define HAS_SOBELTOPLANEROW_SSE2
-#define HAS_SOBELXROW_SSSE3
+#define HAS_SOBELXROW_SSE2
 #define HAS_SOBELXYROW_SSE2
-#define HAS_SOBELYROW_SSSE3
+#define HAS_SOBELYROW_SSE2
 
 // Conversions:
 #define HAS_ABGRTOUVROW_SSSE3
@@ -1564,14 +1564,14 @@ void InterpolateRows_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
 // Sobel images.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
                  uint8* dst_sobelx, int width);
-void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     const uint8* src_y2, uint8* dst_sobelx, int width);
+void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobelx, int width);
 void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
                     const uint8* src_y2, uint8* dst_sobelx, int width);
 void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
                  uint8* dst_sobely, int width);
-void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     uint8* dst_sobely, int width);
+void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width);
 void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
                     uint8* dst_sobely, int width);
 void SobelRow_C(const uint8* src_sobelx, const uint8* src_sobely,

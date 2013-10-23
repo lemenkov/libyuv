@@ -4590,13 +4590,13 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBSUBTRACTROW_SSE2
 
-#ifdef HAS_SOBELXROW_SSSE3
+#ifdef HAS_SOBELXROW_SSE2
 // SobelX as a matrix is
 // -1  0  1
 // -2  0  2
 // -1  0  1
-void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     const uint8* src_y2, uint8* dst_sobelx, int width) {
+void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobelx, int width) {
   asm volatile (
     "sub       %0,%1                           \n"
     "sub       %0,%2                           \n"
@@ -4627,7 +4627,9 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "paddw     %%xmm2,%%xmm0                   \n"
     "paddw     %%xmm1,%%xmm0                   \n"
     "paddw     %%xmm1,%%xmm0                   \n"
-    "pabsw     %%xmm0,%%xmm0                   \n"
+    "pxor      %%xmm1,%%xmm1                   \n"
+    "psubw     %%xmm0,%%xmm1                   \n"
+    "pmaxsw    %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "sub       $0x8,%4                         \n"
     BUNDLEALIGN
@@ -4649,15 +4651,15 @@ void SobelXRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 #endif
   );
 }
-#endif  // HAS_SOBELXROW_SSSE3
+#endif  // HAS_SOBELXROW_SSE2
 
-#ifdef HAS_SOBELYROW_SSSE3
+#ifdef HAS_SOBELYROW_SSE2
 // SobelY as a matrix is
 // -1 -2 -1
 //  0  0  0
 //  1  2  1
-void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
-                     uint8* dst_sobely, int width) {
+void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width) {
   asm volatile (
     "sub       %0,%1                           \n"
     "sub       %0,%2                           \n"
@@ -4687,7 +4689,9 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
     "paddw     %%xmm2,%%xmm0                   \n"
     "paddw     %%xmm1,%%xmm0                   \n"
     "paddw     %%xmm1,%%xmm0                   \n"
-    "pabsw     %%xmm0,%%xmm0                   \n"
+    "pxor      %%xmm1,%%xmm1                   \n"
+    "psubw     %%xmm0,%%xmm1                   \n"
+    "pmaxsw    %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "sub       $0x8,%3                         \n"
     BUNDLEALIGN
@@ -4708,7 +4712,7 @@ void SobelYRow_SSSE3(const uint8* src_y0, const uint8* src_y1,
 #endif
   );
 }
-#endif  // HAS_SOBELYROW_SSSE3
+#endif  // HAS_SOBELYROW_SSE2
 
 #ifdef HAS_SOBELROW_SSE2
 // Adds Sobel X and Sobel Y and stores Sobel into ARGB.

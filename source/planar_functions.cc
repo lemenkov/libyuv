@@ -1867,9 +1867,9 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
 #endif
   void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
                     uint8* dst_sobely, int width) = SobelYRow_C;
-#if defined(HAS_SOBELYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    SobelYRow = SobelYRow_SSSE3;
+#if defined(HAS_SOBELYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelYRow = SobelYRow_SSE2;
   }
 #endif
 #if defined(HAS_SOBELYROW_NEON)
@@ -1880,9 +1880,9 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
                     const uint8* src_y2, uint8* dst_sobely, int width) =
       SobelXRow_C;
-#if defined(HAS_SOBELXROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    SobelXRow = SobelXRow_SSSE3;
+#if defined(HAS_SOBELXROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelXRow = SobelXRow_SSE2;
   }
 #endif
 #if defined(HAS_SOBELXROW_NEON)
