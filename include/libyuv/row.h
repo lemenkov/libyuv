@@ -63,6 +63,8 @@ extern "C" {
 #define HAS_SOBELXROW_SSE2
 #define HAS_SOBELXYROW_SSE2
 #define HAS_SOBELYROW_SSE2
+#define HAS_ARGBCOPYALPHAROW_SSE2
+#define HAS_ARGBCOPYYTOALPHAROW_SSE2
 
 // Conversions:
 #define HAS_ABGRTOUVROW_SSSE3
@@ -163,6 +165,8 @@ extern "C" {
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
+#define HAS_ARGBCOPYALPHAROW_AVX2
+#define HAS_ARGBCOPYYTOALPHAROW_AVX2
 #endif
 
 // The following are Windows only:
@@ -171,8 +175,6 @@ extern "C" {
 // Effects:
 // TODO(fbarchard): Optimize and enable
 // #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
-#define HAS_ARGBCOPYALPHAROW_SSE2
-#define HAS_ARGBCOPYYTOALPHAROW_SSE2
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700
@@ -191,8 +193,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
-#define HAS_ARGBCOPYALPHAROW_AVX2
-#define HAS_ARGBCOPYYTOALPHAROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2

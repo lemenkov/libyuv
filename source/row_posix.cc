@@ -3276,6 +3276,148 @@ void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_COPYROW_ERMS
 
+#ifdef HAS_ARGBCOPYALPHAROW_SSE2
+// width in pixels
+void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm0,%%xmm0                   \n"
+    "pslld     $0x18,%%xmm0                    \n"
+    "pcmpeqb   %%xmm1,%%xmm1                   \n"
+    "psrld     $0x8,%%xmm1                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm2         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm3   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "movdqa    " MEMACCESS(1) ",%%xmm4         \n"
+    "movdqa    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
+    "pand      %%xmm0,%%xmm2                   \n"
+    "pand      %%xmm0,%%xmm3                   \n"
+    "pand      %%xmm1,%%xmm4                   \n"
+    "pand      %%xmm1,%%xmm5                   \n"
+    "por       %%xmm4,%%xmm2                   \n"
+    "por       %%xmm5,%%xmm3                   \n"
+    "movdqa    %%xmm2," MEMACCESS(1) "         \n"
+    "movdqa    %%xmm3," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x8,%2                         \n"
+    "jg        1b                              \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBCOPYALPHAROW_SSE2
+
+#ifdef HAS_ARGBCOPYALPHAROW_AVX2
+// width in pixels
+void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    "vpcmpeqb  %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpsrld    $0x8,%%ymm0,%%ymm0              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm1         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm2   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "vpblendvb %%ymm0," MEMACCESS(1) ",%%ymm1,%%ymm1        \n"
+    "vpblendvb %%ymm0," MEMACCESS2(0x20,1) ",%%ymm2,%%ymm2  \n"
+    "vmovdqu   %%ymm1," MEMACCESS(1) "         \n"
+    "vmovdqu   %%ymm2," MEMACCESS2(0x20,1) "   \n"
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
+    "sub       $0x10,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2"
+#endif
+  );
+}
+#endif  // HAS_ARGBCOPYALPHAROW_AVX2
+
+#ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
+// width in pixels
+void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm0,%%xmm0                   \n"
+    "pslld     $0x18,%%xmm0                    \n"
+    "pcmpeqb   %%xmm1,%%xmm1                   \n"
+    "psrld     $0x8,%%xmm1                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      " MEMACCESS(0) ",%%xmm2         \n"
+    "lea       " MEMLEA(0x8,0) ",%0            \n"
+    "punpcklbw %%xmm2,%%xmm2                   \n"
+    "punpckhwd %%xmm2,%%xmm3                   \n"
+    "punpcklwd %%xmm2,%%xmm2                   \n"
+    "movdqa    " MEMACCESS(1) ",%%xmm4         \n"
+    "movdqa    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
+    "pand      %%xmm0,%%xmm2                   \n"
+    "pand      %%xmm0,%%xmm3                   \n"
+    "pand      %%xmm1,%%xmm4                   \n"
+    "pand      %%xmm1,%%xmm5                   \n"
+    "por       %%xmm4,%%xmm2                   \n"
+    "por       %%xmm5,%%xmm3                   \n"
+    "movdqa    %%xmm2," MEMACCESS(1) "         \n"
+    "movdqa    %%xmm3," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x8,%2                         \n"
+    "jg        1b                              \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBCOPYYTOALPHAROW_SSE2
+
+#ifdef HAS_ARGBCOPYYTOALPHAROW_AVX2
+// width in pixels
+void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    "vpcmpeqb  %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpsrld    $0x8,%%ymm0,%%ymm0              \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "vpmovzxbd " MEMACCESS(0) ",%%ymm1         \n"
+    "vpmovzxbd " MEMACCESS2(0x8,0) ",%%ymm2    \n"
+    "lea       " MEMLEA(0x10,0) ",%0           \n"
+    "vpslld    $0x18,%%ymm1,%%ymm1             \n"
+    "vpslld    $0x18,%%ymm2,%%ymm2             \n"
+    "vpblendvb %%ymm0," MEMACCESS(1) ",%%ymm1,%%ymm1        \n"
+    "vpblendvb %%ymm0," MEMACCESS2(0x20,1) ",%%ymm2,%%ymm2  \n"
+    "vmovdqu   %%ymm1," MEMACCESS(1) "         \n"
+    "vmovdqu   %%ymm2," MEMACCESS2(0x20,1) "   \n"
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
+    "sub       $0x10,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2"
+#endif
+  );
+}
+#endif  // HAS_ARGBCOPYYTOALPHAROW_AVX2
+
 #ifdef HAS_SETROW_X86
 void SetRow_X86(uint8* dst, uint32 v32, int width) {
   size_t width_tmp = static_cast<size_t>(width);
