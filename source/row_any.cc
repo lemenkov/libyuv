@@ -199,6 +199,15 @@ BAYERANY(ARGBToBayerRow_Any_SSSE3, ARGBToBayerRow_SSSE3, ARGBToBayerRow_C,
 BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
          7, 4, 1)
 #endif
+#if defined(HAS_ARGBTOBAYERGGROW_SSE2)
+BAYERANY(ARGBToBayerGGRow_Any_SSE2, ARGBToBayerGGRow_SSE2, ARGBToBayerGGRow_C,
+         7, 4, 1)
+#endif
+#if defined(HAS_ARGBTOBAYERGGROW_NEON)
+BAYERANY(ARGBToBayerGGRow_Any_NEON, ARGBToBayerGGRow_NEON, ARGBToBayerGGRow_C,
+         7, 4, 1)
+#endif
+
 #undef BAYERANY
 
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.

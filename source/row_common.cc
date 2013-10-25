@@ -1861,6 +1861,21 @@ void ARGBToBayerRow_C(const uint8* src_argb,
   }
 }
 
+// Select G channel from ARGB.  e.g.  GGGGGGGG
+void ARGBToBayerGGRow_C(const uint8* src_argb,
+                        uint8* dst_bayer, uint32 /*selector*/, int pix) {
+  // Copy a row of Bayer.
+  for (int x = 0; x < pix - 1; x += 2) {
+    dst_bayer[0] = src_argb[1];
+    dst_bayer[1] = src_argb[5];
+    src_argb += 8;
+    dst_bayer += 2;
+  }
+  if (pix & 1) {
+    dst_bayer[0] = src_argb[1];
+  }
+}
+
 // Use first 4 shuffler values to reorder ARGB channels.
 void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,
                       const uint8* shuffler, int pix) {

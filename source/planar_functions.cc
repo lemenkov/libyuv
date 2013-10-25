@@ -1849,6 +1849,15 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   // ARGBToBayer used to select G channel from ARGB.
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) = ARGBToBayerRow_C;
+#if defined(HAS_ARGBTOBAYERGGROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
+    ARGBToBayerRow = ARGBToBayerGGRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToBayerRow = ARGBToBayerGGRow_SSE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
@@ -1857,11 +1866,12 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
     }
   }
-#elif defined(HAS_ARGBTOBAYERROW_NEON)
+#endif
+#if defined(HAS_ARGBTOBAYERGGROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
+    ARGBToBayerRow = ARGBToBayerGGRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerRow_NEON;
+      ARGBToBayerRow = ARGBToBayerGGRow_NEON;
     }
   }
 #endif

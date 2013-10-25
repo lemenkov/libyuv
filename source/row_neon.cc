@@ -1193,6 +1193,23 @@ void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
   );
 }
 
+// Select G channels from ARGB.  e.g.  GGGGGGGG
+void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
+                           uint32 /*selector*/, int pix) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load row 8 pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    "vst1.8     {d1}, [%1]!                    \n"  // store 8 G's.
+    "bgt        1b                             \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_bayer),  // %1
+    "+r"(pix)         // %2
+  :
+  : "cc", "memory", "q0", "q1"  // Clobber List
+  );
+}
+
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_NEON(const uint8* src_argb, uint8* dst_argb,
                          const uint8* shuffler, int pix) {

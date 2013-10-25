@@ -5721,6 +5721,39 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
 }
 #endif  // HAS_ARGBTOBAYERROW_SSSE3
 
+#ifdef HAS_ARGBTOBAYERGGROW_SSE2
+void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
+                           uint32 selector, int pix) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrld     $0x18,%%xmm5                    \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "psrld     $0x8,%%xmm0                     \n"
+    "psrld     $0x8,%%xmm1                     \n"
+    "pand      %%xmm5,%%xmm0                   \n"
+    "pand      %%xmm5,%%xmm1                   \n"
+    "packusdw  %%xmm1,%%xmm0                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "sub       $0x8,%2                         \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x8,1) ",%1            \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_bayer), // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBTOBAYERGGROW_SSE2
+
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,

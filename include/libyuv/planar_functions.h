@@ -351,8 +351,9 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int width, int height);
 
 // Blur ARGB image.
-// Caller should allocate dst_cumsum table of width * height * 16 bytes aligned
-// to 16 byte boundary.
+// dst_cumsum table of width * height * 16 bytes aligned to 16 byte boundary.
+// dst_stride32_cumsum is number of ints in a row (width * 4).
+// radius is number of pixels around the center.  e.g. 1 = 3x3. 2=5x5.
 LIBYUV_API
 int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,

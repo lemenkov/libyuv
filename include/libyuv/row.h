@@ -70,6 +70,7 @@ extern "C" {
 #define HAS_ARGBSHUFFLEROW_SSE2
 #define HAS_ARGBSHUFFLEROW_SSSE3
 #define HAS_ARGBTOBAYERROW_SSSE3
+#define HAS_ARGBTOBAYERGGROW_SSE2
 #define HAS_ARGBTOUV422ROW_SSSE3
 #define HAS_ARGBTOUV444ROW_SSSE3
 #define HAS_ARGBTOUVJROW_SSSE3
@@ -156,7 +157,9 @@ extern "C" {
 // to __native_client__ to test.
 #if !defined(LIBYUV_DISABLE_X86) && \
   ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  defined(__native_client__AVX2) || defined(__clang__) || defined(GCC_HAS_AVX2))
+  ((defined(__x86_64__) || defined(__i386__)) && \
+  (defined(__native_client__AVX2) || defined(__clang__) || \
+  defined(GCC_HAS_AVX2))))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -1398,8 +1401,16 @@ void ARGBToBayerRow_Any_SSSE3(const uint8* src_argb, uint8* dst_bayer,
                               uint32 selector, int pix);
 void ARGBToBayerRow_Any_NEON(const uint8* src_argb, uint8* dst_bayer,
                              uint32 selector, int pix);
+void ARGBToBayerGGRow_C(const uint8* src_argb, uint8* dst_bayer,
+                        uint32 /* selector */, int pix);
+void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
+                           uint32 /* selector */, int pix);
 void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
                            uint32 /* selector */, int pix);
+void ARGBToBayerGGRow_Any_SSE2(const uint8* src_argb, uint8* dst_bayer,
+                               uint32 /* selector */, int pix);
+void ARGBToBayerGGRow_Any_NEON(const uint8* src_argb, uint8* dst_bayer,
+                               uint32 /* selector */, int pix);
 
 void I422ToYUY2Row_C(const uint8* src_y,
                      const uint8* src_u,

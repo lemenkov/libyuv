@@ -78,6 +78,22 @@ deps_os = {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
   },
+  "ios": {
+    # NSS, for SSLClientSocketNSS.
+    "third_party/nss":
+      From("chromium_deps", "src/third_party/nss"),
+
+    "net/third_party/nss":
+      Var("chromium_trunk") + "/src/net/third_party/nss@" + Var("chromium_revision"),
+
+    # class-dump utility to generate header files for undocumented SDKs.
+    "testing/iossim/third_party/class-dump":
+      From("chromium_deps", "src/testing/iossim/third_party/class-dump"),
+
+    # Helper for running under the simulator.
+    "testing/iossim":
+      Var("chromium_trunk") + "/src/testing/iossim@" + Var("chromium_revision"),
+  },
 }
 
 hooks = [
