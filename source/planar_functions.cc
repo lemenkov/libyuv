@@ -1848,7 +1848,7 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   }
   // ARGBToBayer used to select G channel from ARGB.
   void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
-                         uint32 selector, int pix) = ARGBToBayerRow_C;
+                         uint32 selector, int pix) = ARGBToBayerGGRow_C;
 #if defined(HAS_ARGBTOBAYERGGROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
@@ -2014,8 +2014,14 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb, int dst_stride_argb,
                    const float* poly,
                    int width, int height) {
-  if (!src_argb || !dst_argb || !poly || width <= 0 || height <= 0) {
+  if (!src_argb || !dst_argb || !poly || width <= 0 || height == 0) {
     return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb  = src_argb  + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
   }
   // Coalesce rows.
   if (src_stride_argb == width * 4 &&
@@ -2052,8 +2058,14 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_argb, int dst_stride_argb,
                        const uint8* luma,
                        int width, int height) {
-  if (!src_argb || !dst_argb || !luma || width <= 0 || height <= 0) {
+  if (!src_argb || !dst_argb || !luma || width <= 0 || height == 0) {
     return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_argb  = src_argb  + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
   }
   // Coalesce rows.
   if (src_stride_argb == width * 4 &&

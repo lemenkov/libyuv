@@ -144,6 +144,7 @@ extern "C" {
 // Effects:
 #define HAS_ARGBCOLORTABLEROW_X86
 #define HAS_RGBCOLORTABLEROW_X86
+#define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 #endif
 
 // The following are available on all x86 platforms, including NaCL, but
@@ -173,8 +174,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 // Effects:
-// TODO(fbarchard): Optimize and enable
-// #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 // Caveat: Visual C 2012 required for AVX2.
 #if _MSC_VER >= 1700

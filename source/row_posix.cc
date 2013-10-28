@@ -6336,7 +6336,7 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
 #ifdef HAS_RGBCOLORTABLEROW_X86
 // Tranform RGB pixels with color table.
 void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
-    uintptr_t pixel_temp = 0u;
+  uintptr_t pixel_temp = 0u;
   asm volatile (
     // 1 pixel loop.
     ".p2align  4                               \n"
@@ -6360,6 +6360,104 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
   : "memory", "cc");
 }
 #endif  // HAS_RGBCOLORTABLEROW_X86
+
+#ifdef HAS_ARGBLUMACOLORTABLEROW_SSSE3
+// Tranform RGB pixels with luma table.
+void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
+                                 uint8* dst_argb, const uint8* luma,
+                                 int width) {
+  uintptr_t pixel_temp = 0u;
+  uintptr_t table_temp = 0u;
+  asm volatile (
+    "movdqa    %6,%%xmm3                       \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "psllw     $0x8,%%xmm4                     \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
+
+    // 4 pixel loop.
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movq      (%2),%%xmm0                     \n"
+    "pmaddubsw %%xmm3,%%xmm0                   \n"
+    "phaddw    %%xmm0,%%xmm0                   \n"
+    "pand      %%xmm4,%%xmm0                   \n"
+    "punpcklwd %%xmm5,%%xmm0                   \n"
+    "movd      %%xmm0,%k1                      \n"  // 32 bit offset
+    "add       %5,%1                           \n"
+    "pshufd    $0x39,%%xmm0,%%xmm0             \n"
+
+    "movzb     (%2),%0                         \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,(%3)                        \n"
+    "movzb     0x1(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x1(%3)                     \n"
+    "movzb     0x2(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x2(%3)                     \n"
+    "movzb     0x3(%2),%0                      \n"
+    "mov       %b0,0x3(%3)                     \n"
+
+    "movd      %%xmm0,%k1                      \n"  // 32 bit offset
+    "add       %5,%1                           \n"
+    "pshufd    $0x39,%%xmm0,%%xmm0             \n"
+
+    "movzb     0x4(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x4(%3)                     \n"
+    "movzb     0x5(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x5(%3)                     \n"
+    "movzb     0x6(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x6(%3)                     \n"
+    "movzb     0x7(%2),%0                      \n"
+    "mov       %b0,0x7(%3)                     \n"
+
+    "movd      %%xmm0,%k1                      \n"  // 32 bit offset
+    "add       %5,%1                           \n"
+    "pshufd    $0x39,%%xmm0,%%xmm0             \n"
+
+    "movzb     0x8(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x8(%3)                     \n"
+    "movzb     0x9(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0x9(%3)                     \n"
+    "movzb     0xa(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0xa(%3)                     \n"
+    "movzb     0xb(%2),%0                      \n"
+    "mov       %b0,0xb(%3)                     \n"
+
+    "movd      %%xmm0,%k1                      \n"  // 32 bit offset
+    "add       %5,%1                           \n"
+
+    "movzb     0xc(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0xc(%3)                     \n"
+    "movzb     0xd(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0xd(%3)                     \n"
+    "movzb     0xe(%2),%0                      \n"
+    "movzb     (%1,%0,1),%0                    \n"
+    "mov       %b0,0xe(%3)                     \n"
+    "movzb     0xf(%2),%0                      \n"
+    "mov       %b0,0xf(%3)                     \n"
+    "sub       $0x4,%4                         \n"
+    "lea       0x10(%2),%2                     \n"
+    "lea       0x10(%3),%3                     \n"
+    "jg        1b                              \n"
+  : "+d"(pixel_temp),  // %0
+    "+b"(table_temp),  // %1
+    "+r"(src_argb),    // %2
+    "+r"(dst_argb),    // %3
+    "+rm"(width)       // %4
+  : "rm"(luma),        // %5
+    "m"(kARGBToYJ)     // %6
+  : "memory", "cc");
+}
+#endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 #endif  // defined(__x86_64__) || defined(__i386__)
 

@@ -1864,7 +1864,7 @@ void ARGBToBayerRow_C(const uint8* src_argb,
 // Select G channel from ARGB.  e.g.  GGGGGGGG
 void ARGBToBayerGGRow_C(const uint8* src_argb,
                         uint8* dst_bayer, uint32 /*selector*/, int pix) {
-  // Copy a row of Bayer.
+  // Copy a row of G.
   for (int x = 0; x < pix - 1; x += 2) {
     dst_bayer[0] = src_argb[1];
     dst_bayer[1] = src_argb[5];
