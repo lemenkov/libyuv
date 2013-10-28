@@ -6361,6 +6361,7 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
 }
 #endif  // HAS_RGBCOLORTABLEROW_X86
 
+// TODO(fbarchard): Ensure this works with minimal number of registers/gcc32.
 #ifdef HAS_ARGBLUMACOLORTABLEROW_SSSE3
 // Tranform RGB pixels with luma table.
 void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
@@ -6449,13 +6450,17 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "lea       0x10(%3),%3                     \n"
     "jg        1b                              \n"
   : "+d"(pixel_temp),  // %0
-    "+b"(table_temp),  // %1
+    "+a"(table_temp),  // %1
     "+r"(src_argb),    // %2
     "+r"(dst_argb),    // %3
     "+rm"(width)       // %4
-  : "rm"(luma),        // %5
+  : "r"(luma),         // %5
     "m"(kARGBToYJ)     // %6
-  : "memory", "cc");
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm3", "xmm4", "xmm5"
+#endif
+  );
 }
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
