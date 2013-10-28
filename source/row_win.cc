@@ -7161,7 +7161,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     // 4 pixel loop.
     align      4
   convertloop:
-    movq       xmm0, qword ptr [eax]      // generate luma ptr
+    movdqu     xmm0, qword ptr [eax]      // generate luma ptr
     pmaddubsw  xmm0, xmm3
     phaddw     xmm0, xmm0
     pand       xmm0, xmm4  // mask out low bits

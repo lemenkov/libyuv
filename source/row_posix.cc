@@ -6378,7 +6378,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     // 4 pixel loop.
     ".p2align  4                               \n"
   "1:                                          \n"
-    "movq      (%2),%%xmm0                     \n"
+    "movdqu    (%2),%%xmm0                     \n"
     "pmaddubsw %%xmm3,%%xmm0                   \n"
     "phaddw    %%xmm0,%%xmm0                   \n"
     "pand      %%xmm4,%%xmm0                   \n"
