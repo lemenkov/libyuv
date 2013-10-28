@@ -5878,7 +5878,7 @@ void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
     "psrld     $0x8,%%xmm1                     \n"
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
-    "packusdw  %%xmm1,%%xmm0                   \n"
+    "packssdw  %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x8,%2                         \n"
     "movq      %%xmm0," MEMACCESS(1) "         \n"

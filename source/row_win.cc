@@ -6662,7 +6662,7 @@ void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
     psrld      xmm1, 8
     pand       xmm0, xmm5
     pand       xmm1, xmm5
-    packusdw   xmm0, xmm1
+    packssdw   xmm0, xmm1
     packuswb   xmm0, xmm1
     sub        ecx, 8
     movq       qword ptr [edx], xmm0
