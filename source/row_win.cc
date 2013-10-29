@@ -7153,7 +7153,9 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     movd       xmm2, dword ptr [esp + 8 + 12]  /* table_argb */
     pshufd     xmm2, xmm2, 0
     mov        ecx, [esp + 8 + 16]  /* width */
-    movdqa     xmm3, kARGBToYJ
+    mov        edx, 0x00264b0f  // kARGBToYJ
+    movd       xmm3, edx
+    pshufd     xmm3, xmm3, 0
     pcmpeqb    xmm4, xmm4       // generate mask 0xff00ff00
     psllw      xmm4, 8
     pxor       xmm5, xmm5

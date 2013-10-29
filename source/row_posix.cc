@@ -6370,7 +6370,9 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
   uintptr_t pixel_temp = 0u;
   uintptr_t table_temp = 0u;
   asm volatile (
-    "movdqa    %6,%%xmm3                       \n"
+    "mov       $0x264b0f,%%edx                 \n"
+    "movd      %%edx,%%xmm3                    \n"
+    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "psllw     $0x8,%%xmm4                     \n"
     "pxor      %%xmm5,%%xmm5                   \n"
@@ -6454,8 +6456,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "+r"(src_argb),    // %2
     "+r"(dst_argb),    // %3
     "+rm"(width)       // %4
-  : "r"(luma),         // %5
-    "m"(kARGBToYJ)     // %6
+  : "r"(luma)          // %5
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm3", "xmm4", "xmm5"
