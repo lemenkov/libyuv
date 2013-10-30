@@ -60,15 +60,22 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
   cpu_info[3] = edx;
 #endif  // defined(_MSC_VER)
 }
+
 #if !defined(__native_client__)
 #define HAS_XGETBV
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
 int TestOsSaveYmm() {
-  uint32 xcr0;
-#if defined(_MSC_VER)
+  uint32 xcr0 = 0u;
+#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
   xcr0 = static_cast<uint32>(_xgetbv(0));  // VS2010 SP1 required.
-#else
-  asm volatile ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );  // NOLINT
+#elif defined(_M_IX86)
+  __asm {
+    xor        ecx, ecx    // xcr 0
+    _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // For VS2010 and earlier.
+    mov        xcr0, eax
+  }
+#elif defined(__i386__) || defined(__x86_64__)
+  asm volatile (".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx" );
 #endif  // defined(_MSC_VER)
   return((xcr0 & 6) == 6);  // Is ymm saved?
 }

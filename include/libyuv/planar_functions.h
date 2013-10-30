@@ -72,6 +72,7 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
                int width, int height);
 
 // Convert UYVY to I422.
+LIBYUV_API
 int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_u, int dst_stride_u,
