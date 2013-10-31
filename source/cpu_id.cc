@@ -108,7 +108,7 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 __declspec(safebuffers)
 #endif
 LIBYUV_API
@@ -171,7 +171,7 @@ static bool TestEnv(const char*) {
 }
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 __declspec(safebuffers)
 #endif
 LIBYUV_API
