@@ -4477,14 +4477,10 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                               const int8* matrix_argb, int width) {
   asm volatile (
-    "movd      " MEMACCESS(3) ",%%xmm2         \n"
-    "movd      " MEMACCESS2(0x4,3) ",%%xmm3    \n"
-    "movd      " MEMACCESS2(0x8,3) ",%%xmm4    \n"
-    "movd      " MEMACCESS2(0xc,3) ",%%xmm5    \n"
-    "pshufd    $0x0,%%xmm2,%%xmm2              \n"
-    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "pshufd    $0x00," MEMACCESS(3) ",%%xmm2   \n"
+    "pshufd    $0x55," MEMACCESS(3) ",%%xmm3   \n"
+    "pshufd    $0xaa," MEMACCESS(3) ",%%xmm4   \n"
+    "pshufd    $0xff," MEMACCESS(3) ",%%xmm5   \n"
 
     // 8 pixel loop.
     ".p2align  4                               \n"
@@ -6361,17 +6357,15 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
 }
 #endif  // HAS_RGBCOLORTABLEROW_X86
 
-// TODO(fbarchard): Ensure this works with minimal number of registers/gcc32.
 #ifdef HAS_ARGBLUMACOLORTABLEROW_SSSE3
 // Tranform RGB pixels with luma table.
-void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
-                                 uint8* dst_argb, const uint8* luma,
-                                 int width) {
+void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                                 int width,
+                                 const uint8* luma, uint32 lumacoeff) {
   uintptr_t pixel_temp = 0u;
   uintptr_t table_temp = 0u;
   asm volatile (
-    "mov       $0x264b0f,%%edx                 \n"
-    "movd      %%edx,%%xmm3                    \n"
+    "movd      %6,%%xmm3                       \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "psllw     $0x8,%%xmm4                     \n"
@@ -6456,7 +6450,8 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "+r"(src_argb),    // %2
     "+r"(dst_argb),    // %3
     "+rm"(width)       // %4
-  : "r"(luma)          // %5
+  : "r"(luma),         // %5
+    "rm"(lumacoeff)    // %6
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm3", "xmm4", "xmm5"

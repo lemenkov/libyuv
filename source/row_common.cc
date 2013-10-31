@@ -2082,30 +2082,22 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
   }
 }
 
-// RGB to Luminance.
-// Leverage the fact that we want shifted left by 8 by the caller.
-//
-// Borrowed from libyuv/files/source/row_common.cc.
-// JPeg 7 bit Y:
-// b 0.11400 * 128 = 14.592 = 15
-// g 0.58700 * 128 = 75.136 = 75
-// r 0.29900 * 128 = 38.272 = 38
-static __inline unsigned int RGBToYJx256(uint8 r, uint8 g, uint8 b) {
-  return (38u * r + 75u * g + 15u * b) & 0x7F00u;
-}
-void ARGBLumaColorTableRow_C(const uint8* src_argb,
-                             uint8* dst_argb, const uint8* luma,
-                             int width) {
+void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
+                             const uint8* luma, const uint32 lumacoeff) {
+  uint32 bc = lumacoeff & 0xff;
+  uint32 gc = (lumacoeff >> 8) & 0xff;
+  uint32 rc = (lumacoeff >> 16) & 0xff;
+
   for (int i = 0; i < width - 1; i += 2) {
     // Luminance in rows, color values in columns.
-    const uint8* luma0 = RGBToYJx256(src_argb[2], src_argb[1], src_argb[0]) +
-      luma;
+    const uint8* luma0 = ((src_argb[0] * bc + src_argb[1] * gc +
+                           src_argb[2] * rc) & 0x7F00u) + luma;
     dst_argb[0] = luma0[src_argb[0]];
     dst_argb[1] = luma0[src_argb[1]];
     dst_argb[2] = luma0[src_argb[2]];
     dst_argb[3] = src_argb[3];
-    const uint8* luma1 = RGBToYJx256(src_argb[6], src_argb[5], src_argb[4]) +
-      luma;
+    const uint8* luma1 = ((src_argb[4] * bc + src_argb[5] * gc +
+                           src_argb[6] * rc) & 0x7F00u) + luma;
     dst_argb[4] = luma1[src_argb[4]];
     dst_argb[5] = luma1[src_argb[5]];
     dst_argb[6] = luma1[src_argb[6]];
@@ -2115,8 +2107,8 @@ void ARGBLumaColorTableRow_C(const uint8* src_argb,
   }
   if (width & 1) {
     // Luminance in rows, color values in columns.
-    const uint8* luma0 = RGBToYJx256(src_argb[2], src_argb[1], src_argb[0]) +
-      luma;
+    const uint8* luma0 = ((src_argb[0] * bc + src_argb[1] * gc +
+                           src_argb[2] * rc) & 0x7F00u) + luma;
     dst_argb[0] = luma0[src_argb[0]];
     dst_argb[1] = luma0[src_argb[1]];
     dst_argb[2] = luma0[src_argb[2]];

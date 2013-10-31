@@ -5146,17 +5146,13 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 12]  /* matrix_argb */
-    movd       xmm2, [ecx]
-    movd       xmm3, [ecx + 4]
-    movd       xmm4, [ecx + 8]
-    movd       xmm5, [ecx + 12]
-    pshufd     xmm2, xmm2, 0
-    pshufd     xmm3, xmm3, 0
-    pshufd     xmm4, xmm4, 0
-    pshufd     xmm5, xmm5, 0
+    pshufd     xmm2, [ecx], 0x00
+    pshufd     xmm3, [ecx], 0x55
+    pshufd     xmm4, [ecx], 0xaa
+    pshufd     xmm5, [ecx], 0xff
     mov        ecx, [esp + 16]  /* width */
 
-    align      16
+    align      4
  convertloop:
     movdqa     xmm0, [eax]  // B
     movdqa     xmm7, [eax + 16]
@@ -7142,21 +7138,20 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
 #ifdef HAS_ARGBLUMACOLORTABLEROW_SSSE3
 // Tranform RGB pixels with luma table.
 __declspec(naked) __declspec(align(16))
-void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
-                                 uint8* dst_argb, const uint8* luma,
-                                 int width) {
+void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
+                                 int width,
+                                 const uint8* luma, uint32 lumacoeff) {
   __asm {
     push       esi
     push       edi
     mov        eax, [esp + 8 + 4]   /* src_argb */
     mov        edi, [esp + 8 + 8]   /* dst_argb */
-    movd       xmm2, dword ptr [esp + 8 + 12]  /* table_argb */
+    mov        ecx, [esp + 8 + 12]  /* width */
+    movd       xmm2, dword ptr [esp + 8 + 16]  // luma table
+    movd       xmm3, dword ptr [esp + 8 + 20]  // lumacoeff
     pshufd     xmm2, xmm2, 0
-    mov        ecx, [esp + 8 + 16]  /* width */
-    mov        edx, 0x00264b0f  // kARGBToYJ
-    movd       xmm3, edx
     pshufd     xmm3, xmm3, 0
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff00ff00
+    pcmpeqb    xmm4, xmm4        // generate mask 0xff00ff00
     psllw      xmm4, 8
     pxor       xmm5, xmm5
 

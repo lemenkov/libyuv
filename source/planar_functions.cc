@@ -2074,16 +2074,16 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBLumaColorTableRow)(const uint8* src_argb,
-                                uint8* dst_argb, const uint8* luma,
-                                int width) = ARGBLumaColorTableRow_C;
+  void (*ARGBLumaColorTableRow)(const uint8* src_argb, uint8* dst_argb,
+      int width, const uint8* luma, const uint32 lumacoeff) =
+      ARGBLumaColorTableRow_C;
 #if defined(HAS_ARGBLUMACOLORTABLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
     ARGBLumaColorTableRow = ARGBLumaColorTableRow_SSSE3;
   }
 #endif
   for (int y = 0; y < height; ++y) {
-    ARGBLumaColorTableRow(src_argb, dst_argb, luma, width);
+    ARGBLumaColorTableRow(src_argb, dst_argb, width, luma, 0x00264b0f);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
   }

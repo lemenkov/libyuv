@@ -75,7 +75,7 @@ int TestOsSaveYmm() {
     mov        xcr0, eax
   }
 #elif defined(__i386__) || defined(__x86_64__)
-  asm volatile (".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx" );
+  asm(".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx");
 #endif  // defined(_MSC_VER)
   return((xcr0 & 6) == 6);  // Is ymm saved?
 }
