@@ -37,27 +37,46 @@ extern "C" {
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
 LIBYUV_API
-void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
+void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
 #if defined(_MSC_VER)
-  __cpuidex(reinterpret_cast<int*>(cpu_info), eax, ecx);
+#if (_MSC_FULL_VER >= 160040219)
+  __cpuidex(reinterpret_cast<int*>(cpu_info), info_eax, info_ecx);
+#elif defined(_M_IX86)
+  __asm {
+    mov        eax, info_eax
+    mov        ecx, info_ecx
+    mov        edi, cpu_info
+    cpuid
+    mov        [edi], eax
+    mov        [edi + 4], ebx
+    mov        [edi + 8], ecx
+    mov        [edi + 12], edx
+  }
 #else
-  uint32 ebx, edx;
+  if (info_ecx == 0) {
+    __cpuid(reinterpret_cast<int*>(cpu_info), info_eax);
+  } else {
+    cpu_info[3] = cpu_info[2] = cpu_info[1] = cpu_info[0] = 0;
+  }
+#endif
+#else  // defined(_MSC_VER)
+  uint32 info_ebx, info_edx;
   asm volatile (  // NOLINT
 #if defined( __i386__) && defined(__PIC__)
     // Preserve ebx for fpic 32 bit.
     "mov %%ebx, %%edi                          \n"
     "cpuid                                     \n"
     "xchg %%edi, %%ebx                         \n"
-    : "=D" (ebx),
+    : "=D" (info_ebx),
 #else
     "cpuid                                     \n"
-    : "=b" (ebx),
+    : "=b" (info_ebx),
 #endif  //  defined( __i386__) && defined(__PIC__)
-      "+a" (eax), "+c" (ecx), "=d" (edx));
-  cpu_info[0] = eax;
-  cpu_info[1] = ebx;
-  cpu_info[2] = ecx;
-  cpu_info[3] = edx;
+      "+a" (info_eax), "+c" (info_ecx), "=d" (info_edx));
+  cpu_info[0] = info_eax;
+  cpu_info[1] = info_ebx;
+  cpu_info[2] = info_ecx;
+  cpu_info[3] = info_edx;
 #endif  // defined(_MSC_VER)
 }
 
@@ -89,14 +108,17 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
+#if defined(_MSC_VER)
+__declspec(safebuffers)
+#endif
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name) {
   FILE* f = fopen(cpuinfo_name, "r");
   if (f) {
-    char buf[512];
-    while (fgets(buf, 511, f)) {
-      if (memcmp(buf, "Features", 8) == 0) {
-        char* p = strstr(buf, " neon");
+    char cpuinfo_line[512];
+    while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+      if (memcmp(cpuinfo_line, "Features", 8) == 0) {
+        char* p = strstr(cpuinfo_line, " neon");
         if (p && (p[5] == ' ' || p[5] == '\n')) {
           fclose(f);
           return kCpuHasNEON;
@@ -114,7 +136,7 @@ static int MipsCpuCaps(const char* search_string) {
   char cpuinfo_line[256];
   FILE* f = NULL;
   if ((f = fopen(file_name, "r")) != NULL) {
-    while (fgets(cpuinfo_line, sizeof(cpuinfo_line), f) != NULL) {
+    while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f) != NULL) {
       if (strstr(cpuinfo_line, search_string) != NULL) {
         fclose(f);
         return kCpuHasMIPS_DSP;
@@ -149,6 +171,9 @@ static bool TestEnv(const char*) {
 }
 #endif
 
+#if defined(_MSC_VER)
+__declspec(safebuffers)
+#endif
 LIBYUV_API
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
