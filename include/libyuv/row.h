@@ -377,6 +377,14 @@ typedef uint8 uvec8[16];
 #define OMITFP __attribute__((optimize("omit-frame-pointer")))
 #endif
 
+// For functions that use rowbuffer and have runtime checks for overflow,
+// use SAFEBUFFERS to avoid additional check.
+#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
+#define SAFEBUFFERS __declspec(safebuffers)
+#else
+#define SAFEBUFFERS
+#endif
+
 void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,

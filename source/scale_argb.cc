@@ -895,6 +895,7 @@ static void ScaleARGBDownEven(int src_width, int src_height,
 }
 
 // Scale ARGB down with bilinear interpolation.
+SAFEBUFFERS
 static void ScaleARGBBilinearDown(int src_height,
                                   int dst_width, int dst_height,
                                   int src_stride, int dst_stride,
@@ -987,6 +988,7 @@ static void ScaleARGBBilinearDown(int src_height,
 }
 
 // Scale ARGB up with bilinear interpolation.
+SAFEBUFFERS
 static void ScaleARGBBilinearUp(int src_width, int src_height,
                                 int dst_width, int dst_height,
                                 int src_stride, int dst_stride,
@@ -1089,6 +1091,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
 
 #ifdef YUVSCALEUP
 // Scale YUV to ARGB up with bilinear interpolation.
+SAFEBUFFERS
 static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
                                      int dst_width, int dst_height,
                                      int src_stride_y,

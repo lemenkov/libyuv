@@ -420,9 +420,12 @@ void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
   // recover from errors we use setjmp() as shown in their example. setjmp() is
   // C's implementation for the "call with current continuation" functionality
   // seen in some functional programming languages.
+  // A formatted message can be output, but is unsafe for release.
+#ifdef DEBUG
   char buf[JMSG_LENGTH_MAX];
   (*cinfo->err->format_message)(cinfo, buf);
   // ERROR: Error in jpeglib: buf
+#endif
 
   SetJmpErrorMgr* mgr = reinterpret_cast<SetJmpErrorMgr*>(cinfo->err);
   // This rewinds the call stack to the point of the corresponding setjmp()

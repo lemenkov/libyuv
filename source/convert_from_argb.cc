@@ -245,7 +245,7 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_uv, int dst_stride_uv,
@@ -347,7 +347,7 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
 }
 
 // Same as NV12 but U and V swapped.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_uv, int dst_stride_uv,
@@ -449,7 +449,7 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB to YUY2.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
                uint8* dst_yuy2, int dst_stride_yuy2,
                int width, int height) {
@@ -545,7 +545,7 @@ int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB to UYVY.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
                uint8* dst_uyvy, int dst_stride_uyvy,
                int width, int height) {

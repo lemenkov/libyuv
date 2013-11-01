@@ -33,6 +33,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// For functions that use rowbuffer and have runtime checks for overflow,
+// use SAFEBUFFERS to avoid additional check.
+#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
+#define SAFEBUFFERS __declspec(safebuffers)
+#else
+#define SAFEBUFFERS
+#endif
+
 // Low level cpuid for X86. Returns zeros on other CPUs.
 #if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
@@ -108,10 +116,7 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
-#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
-__declspec(safebuffers)
-#endif
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ArmCpuCaps(const char* cpuinfo_name) {
   FILE* f = fopen(cpuinfo_name, "r");
   if (f) {
@@ -171,10 +176,7 @@ static bool TestEnv(const char*) {
 }
 #endif
 
-#if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
-__declspec(safebuffers)
-#endif
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int InitCpuFlags(void) {
 #if !defined(__CLR_VER) && defined(CPU_X86)
   uint32 cpu_info1[4] = { 0, 0, 0, 0 };

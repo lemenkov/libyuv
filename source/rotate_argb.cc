@@ -89,6 +89,7 @@ void ARGBRotate270(const uint8* src, int src_stride,
   ARGBTranspose(src, src_stride, dst, dst_stride, width, height);
 }
 
+SAFEBUFFERS
 void ARGBRotate180(const uint8* src, int src_stride,
                    uint8* dst, int dst_stride,
                    int width, int height) {

@@ -1366,7 +1366,7 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
 
 // Apply a 4x3 matrix to each ARGB pixel.
 // Deprecated.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                    const int8* matrix_rgb,
                    int dst_x, int dst_y, int width, int height) {
@@ -1828,12 +1828,13 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
 }
 
 // Sobel ARGB effect.
-static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
-                        uint8* dst_argb, int dst_stride_argb,
-                        int width, int height,
-                        void (*SobelRow)(const uint8* src_sobelx,
-                                         const uint8* src_sobely,
-                                         uint8* dst, int width)) {
+static SAFEBUFFERS
+int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
+                 uint8* dst_argb, int dst_stride_argb,
+                 int width, int height,
+                 void (*SobelRow)(const uint8* src_sobelx,
+                                  const uint8* src_sobely,
+                                  uint8* dst, int width)) {
   const int kMaxRow = kMaxStride / 4;
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
   if (!src_argb  || !dst_argb ||

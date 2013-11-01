@@ -2004,7 +2004,7 @@ static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
 // one pixel of destination using fixed point (16.16) to step
 // through source, sampling a box of pixel with simple
 // averaging.
-
+SAFEBUFFERS
 static void ScalePlaneBox(int src_width, int src_height,
                           int dst_width, int dst_height,
                           int src_stride, int dst_stride,
@@ -2076,7 +2076,7 @@ static void ScalePlaneBox(int src_width, int src_height,
 }
 
 // Scale plane to/from any dimensions, with bilinear interpolation.
-
+SAFEBUFFERS
 void ScalePlaneBilinear(int src_width, int src_height,
                         int dst_width, int dst_height,
                         int src_stride, int dst_stride,

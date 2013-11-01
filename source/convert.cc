@@ -1047,7 +1047,7 @@ int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
 }
 
 // Convert RGB24 to I420.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,
@@ -1150,7 +1150,7 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
 }
 
 // Convert RAW to I420.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int RAWToI420(const uint8* src_raw, int src_stride_raw,
               uint8* dst_y, int dst_stride_y,
               uint8* dst_u, int dst_stride_u,
@@ -1253,7 +1253,7 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
 }
 
 // Convert RGB565 to I420.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
                 uint8* dst_y, int dst_stride_y,
                 uint8* dst_u, int dst_stride_u,
@@ -1356,7 +1356,7 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
 }
 
 // Convert ARGB1555 to I420.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
                    uint8* dst_y, int dst_stride_y,
                    uint8* dst_u, int dst_stride_u,
@@ -1461,7 +1461,7 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
 }
 
 // Convert ARGB4444 to I420.
-LIBYUV_API
+LIBYUV_API SAFEBUFFERS
 int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
                    uint8* dst_y, int dst_stride_y,
                    uint8* dst_u, int dst_stride_u,
