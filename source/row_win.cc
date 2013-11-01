@@ -5146,10 +5146,11 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 12]  /* matrix_argb */
-    pshufd     xmm2, [ecx], 0x00
-    pshufd     xmm3, [ecx], 0x55
-    pshufd     xmm4, [ecx], 0xaa
-    pshufd     xmm5, [ecx], 0xff
+    movdqu     xmm5, [ecx]
+    pshufd     xmm2, xmm5, 0x00
+    pshufd     xmm3, xmm5, 0x55
+    pshufd     xmm4, xmm5, 0xaa
+    pshufd     xmm5, xmm5, 0xff
     mov        ecx, [esp + 16]  /* width */
 
     align      4

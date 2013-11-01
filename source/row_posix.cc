@@ -4477,10 +4477,11 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                               const int8* matrix_argb, int width) {
   asm volatile (
-    "pshufd    $0x00," MEMACCESS(3) ",%%xmm2   \n"
-    "pshufd    $0x55," MEMACCESS(3) ",%%xmm3   \n"
-    "pshufd    $0xaa," MEMACCESS(3) ",%%xmm4   \n"
-    "pshufd    $0xff," MEMACCESS(3) ",%%xmm5   \n"
+    "movdqu    " MEMACCESS(3) ",%%xmm5         \n"
+    "pshufd    $0x00,%%xmm5,%%xmm2             \n"
+    "pshufd    $0x55,%%xmm5,%%xmm3             \n"
+    "pshufd    $0xaa,%%xmm5,%%xmm4             \n"
+    "pshufd    $0xff,%%xmm5,%%xmm5             \n"
 
     // 8 pixel loop.
     ".p2align  4                               \n"
