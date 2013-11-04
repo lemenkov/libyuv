@@ -32,77 +32,83 @@
 namespace libyuv {
 
 TEST_F(libyuvTest, TestAttenuate) {
-  SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
-  SIMD_ALIGNED(uint8 atten_pixels[1280][4]);
-  SIMD_ALIGNED(uint8 unatten_pixels[1280][4]);
-  SIMD_ALIGNED(uint8 atten2_pixels[1280][4]);
+  const int kSize = 1280 * 4;
+  align_buffer_64(orig_pixels, kSize);
+  align_buffer_64(atten_pixels, kSize);
+  align_buffer_64(unatten_pixels, kSize);
+  align_buffer_64(atten2_pixels, kSize);
 
   // Test unattenuation clamps
-  orig_pixels[0][0] = 200u;
-  orig_pixels[0][1] = 129u;
-  orig_pixels[0][2] = 127u;
-  orig_pixels[0][3] = 128u;
+  orig_pixels[0 * 4 + 0] = 200u;
+  orig_pixels[0 * 4 + 1] = 129u;
+  orig_pixels[0 * 4 + 2] = 127u;
+  orig_pixels[0 * 4 + 3] = 128u;
   // Test unattenuation transparent and opaque are unaffected
-  orig_pixels[1][0] = 16u;
-  orig_pixels[1][1] = 64u;
-  orig_pixels[1][2] = 192u;
-  orig_pixels[1][3] = 0u;
-  orig_pixels[2][0] = 16u;
-  orig_pixels[2][1] = 64u;
-  orig_pixels[2][2] = 192u;
-  orig_pixels[2][3] = 255u;
-  orig_pixels[3][0] = 16u;
-  orig_pixels[3][1] = 64u;
-  orig_pixels[3][2] = 192u;
-  orig_pixels[3][3] = 128u;
-  ARGBUnattenuate(&orig_pixels[0][0], 0, &unatten_pixels[0][0], 0, 4, 1);
-  EXPECT_EQ(255u, unatten_pixels[0][0]);
-  EXPECT_EQ(255u, unatten_pixels[0][1]);
-  EXPECT_EQ(254u, unatten_pixels[0][2]);
-  EXPECT_EQ(128u, unatten_pixels[0][3]);
-  EXPECT_EQ(0u, unatten_pixels[1][0]);
-  EXPECT_EQ(0u, unatten_pixels[1][1]);
-  EXPECT_EQ(0u, unatten_pixels[1][2]);
-  EXPECT_EQ(0u, unatten_pixels[1][3]);
-  EXPECT_EQ(16u, unatten_pixels[2][0]);
-  EXPECT_EQ(64u, unatten_pixels[2][1]);
-  EXPECT_EQ(192u, unatten_pixels[2][2]);
-  EXPECT_EQ(255u, unatten_pixels[2][3]);
-  EXPECT_EQ(32u, unatten_pixels[3][0]);
-  EXPECT_EQ(128u, unatten_pixels[3][1]);
-  EXPECT_EQ(255u, unatten_pixels[3][2]);
-  EXPECT_EQ(128u, unatten_pixels[3][3]);
+  orig_pixels[1 * 4 + 0] = 16u;
+  orig_pixels[1 * 4 + 1] = 64u;
+  orig_pixels[1 * 4 + 2] = 192u;
+  orig_pixels[1 * 4 + 3] = 0u;
+  orig_pixels[2 * 4 + 0] = 16u;
+  orig_pixels[2 * 4 + 1] = 64u;
+  orig_pixels[2 * 4 + 2] = 192u;
+  orig_pixels[2 * 4 + 3] = 255u;
+  orig_pixels[3 * 4 + 0] = 16u;
+  orig_pixels[3 * 4 + 1] = 64u;
+  orig_pixels[3 * 4 + 2] = 192u;
+  orig_pixels[3 * 4 + 3] = 128u;
+  ARGBUnattenuate(orig_pixels, 0, unatten_pixels, 0, 4, 1);
+  EXPECT_EQ(255u, unatten_pixels[0 * 4 + 0]);
+  EXPECT_EQ(255u, unatten_pixels[0 * 4 + 1]);
+  EXPECT_EQ(254u, unatten_pixels[0 * 4 + 2]);
+  EXPECT_EQ(128u, unatten_pixels[0 * 4 + 3]);
+  EXPECT_EQ(0u, unatten_pixels[1 * 4 + 0]);
+  EXPECT_EQ(0u, unatten_pixels[1 * 4 + 1]);
+  EXPECT_EQ(0u, unatten_pixels[1 * 4 + 2]);
+  EXPECT_EQ(0u, unatten_pixels[1 * 4 + 3]);
+  EXPECT_EQ(16u, unatten_pixels[2 * 4 + 0]);
+  EXPECT_EQ(64u, unatten_pixels[2 * 4 + 1]);
+  EXPECT_EQ(192u, unatten_pixels[2 * 4 + 2]);
+  EXPECT_EQ(255u, unatten_pixels[2 * 4 + 3]);
+  EXPECT_EQ(32u, unatten_pixels[3 * 4 + 0]);
+  EXPECT_EQ(128u, unatten_pixels[3 * 4 + 1]);
+  EXPECT_EQ(255u, unatten_pixels[3 * 4 + 2]);
+  EXPECT_EQ(128u, unatten_pixels[3 * 4 + 3]);
 
   for (int i = 0; i < 1280; ++i) {
-    orig_pixels[i][0] = i;
-    orig_pixels[i][1] = i / 2;
-    orig_pixels[i][2] = i / 3;
-    orig_pixels[i][3] = i;
+    orig_pixels[i * 4 + 0] = i;
+    orig_pixels[i * 4 + 1] = i / 2;
+    orig_pixels[i * 4 + 2] = i / 3;
+    orig_pixels[i * 4 + 3] = i;
   }
-  ARGBAttenuate(&orig_pixels[0][0], 0, &atten_pixels[0][0], 0, 1280, 1);
-  ARGBUnattenuate(&atten_pixels[0][0], 0, &unatten_pixels[0][0], 0, 1280, 1);
+  ARGBAttenuate(orig_pixels, 0, atten_pixels, 0, 1280, 1);
+  ARGBUnattenuate(atten_pixels, 0, unatten_pixels, 0, 1280, 1);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-    ARGBAttenuate(&unatten_pixels[0][0], 0, &atten2_pixels[0][0], 0, 1280, 1);
+    ARGBAttenuate(unatten_pixels, 0, atten2_pixels, 0, 1280, 1);
   }
   for (int i = 0; i < 1280; ++i) {
-    EXPECT_NEAR(atten_pixels[i][0], atten2_pixels[i][0], 2);
-    EXPECT_NEAR(atten_pixels[i][1], atten2_pixels[i][1], 2);
-    EXPECT_NEAR(atten_pixels[i][2], atten2_pixels[i][2], 2);
-    EXPECT_NEAR(atten_pixels[i][3], atten2_pixels[i][3], 2);
+    EXPECT_NEAR(atten_pixels[i * 4 + 0], atten2_pixels[i * 4 + 0], 2);
+    EXPECT_NEAR(atten_pixels[i * 4 + 1], atten2_pixels[i * 4 + 1], 2);
+    EXPECT_NEAR(atten_pixels[i * 4 + 2], atten2_pixels[i * 4 + 2], 2);
+    EXPECT_NEAR(atten_pixels[i * 4 + 3], atten2_pixels[i * 4 + 3], 2);
   }
   // Make sure transparent, 50% and opaque are fully accurate.
-  EXPECT_EQ(0, atten_pixels[0][0]);
-  EXPECT_EQ(0, atten_pixels[0][1]);
-  EXPECT_EQ(0, atten_pixels[0][2]);
-  EXPECT_EQ(0, atten_pixels[0][3]);
-  EXPECT_EQ(64, atten_pixels[128][0]);
-  EXPECT_EQ(32, atten_pixels[128][1]);
-  EXPECT_EQ(21,  atten_pixels[128][2]);
-  EXPECT_EQ(128, atten_pixels[128][3]);
-  EXPECT_NEAR(255, atten_pixels[255][0], 1);
-  EXPECT_NEAR(127, atten_pixels[255][1], 1);
-  EXPECT_NEAR(85,  atten_pixels[255][2], 1);
-  EXPECT_EQ(255, atten_pixels[255][3]);
+  EXPECT_EQ(0, atten_pixels[0 * 4 + 0]);
+  EXPECT_EQ(0, atten_pixels[0 * 4 + 1]);
+  EXPECT_EQ(0, atten_pixels[0 * 4 + 2]);
+  EXPECT_EQ(0, atten_pixels[0 * 4 + 3]);
+  EXPECT_EQ(64, atten_pixels[128 * 4 + 0]);
+  EXPECT_EQ(32, atten_pixels[128 * 4 + 1]);
+  EXPECT_EQ(21,  atten_pixels[128 * 4 + 2]);
+  EXPECT_EQ(128, atten_pixels[128 * 4 + 3]);
+  EXPECT_NEAR(255, atten_pixels[255 * 4 + 0], 1);
+  EXPECT_NEAR(127, atten_pixels[255 * 4 + 1], 1);
+  EXPECT_NEAR(85,  atten_pixels[255 * 4 + 2], 1);
+  EXPECT_EQ(255, atten_pixels[255 * 4 + 3]);
+
+  free_aligned_buffer_64(atten2_pixels)
+  free_aligned_buffer_64(unatten_pixels)
+  free_aligned_buffer_64(atten_pixels)
+  free_aligned_buffer_64(orig_pixels)
 }
 
 static int TestAttenuateI(int width, int height, int benchmark_iterations,
@@ -1942,10 +1948,10 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
   SIMD_ALIGNED(uint8 dst_pixels_c[1280][4]);
   memset(orig_pixels, 0, sizeof(orig_pixels));
 
-  SIMD_ALIGNED(uint8 kLumaColorTable[32768]);
+  align_buffer_64(lumacolortable, 32768);
   int v = 0;
   for (int i = 0; i < 32768; ++i) {
-    kLumaColorTable[i] = v;
+    lumacolortable[i] = v;
     v += 3;
   }
   // Test blue
@@ -1970,7 +1976,7 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
   orig_pixels[3][3] = 224u;
   // Do 16 to test asm version.
   ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels_opt[0][0], 0,
-                     &kLumaColorTable[0], 16, 1);
+                     &lumacolortable[0], 16, 1);
   EXPECT_EQ(253u, dst_pixels_opt[0][0]);
   EXPECT_EQ(0u, dst_pixels_opt[0][1]);
   EXPECT_EQ(0u, dst_pixels_opt[0][2]);
@@ -1997,12 +2003,12 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
 
   MaskCpuFlags(0);
   ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels_c[0][0], 0,
-                     &kLumaColorTable[0], 1280, 1);
+                     lumacolortable, 1280, 1);
   MaskCpuFlags(-1);
 
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels_opt[0][0], 0,
-                       &kLumaColorTable[0], 1280, 1);
+                       lumacolortable, 1280, 1);
   }
   for (int i = 0; i < 1280; ++i) {
     EXPECT_EQ(dst_pixels_c[i][0], dst_pixels_opt[i][0]);
@@ -2010,6 +2016,8 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
     EXPECT_EQ(dst_pixels_c[i][2], dst_pixels_opt[i][2]);
     EXPECT_EQ(dst_pixels_c[i][3], dst_pixels_opt[i][3]);
   }
+
+  free_aligned_buffer_64(lumacolortable);
 }
 
 TEST_F(libyuvTest, TestARGBCopyAlpha) {
