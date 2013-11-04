@@ -199,61 +199,84 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
   }
 }
 
-// Column scaling unfiltered. SSSE3 version.
-// TODO(fbarchard): Port to Neon
-
+// Column scaling unfiltered. SSE2 version.
 #define HAS_SCALEARGBCOLS_SSE2
 __declspec(naked) __declspec(align(16))
 void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int x, int dx) {
   __asm {
-    push       esi
     push       edi
+    push       esi
     mov        edi, [esp + 8 + 4]    // dst_argb
     mov        esi, [esp + 8 + 8]    // src_argb
     mov        ecx, [esp + 8 + 12]   // dst_width
     movd       xmm2, [esp + 8 + 16]  // x
     movd       xmm3, [esp + 8 + 20]  // dx
-    pextrw     eax, xmm2, 1          // get x0 integer. preroll
-    sub        ecx, 2
-    jl         xloop29
 
-    movdqa     xmm0, xmm2           // x1 = x0 + dx
-    paddd      xmm0, xmm3
-    punpckldq  xmm2, xmm0           // x0 x1
-    punpckldq  xmm3, xmm3           // dx dx
-    paddd      xmm3, xmm3           // dx * 2, dx * 2
-    pextrw     edx, xmm2, 3         // get x1 integer. preroll
+    pshufd     xmm2, xmm2, 0         // x0 x0 x0 x0
+    pshufd     xmm0, xmm3, 0x11      // dx  0 dx  0
+    paddd      xmm2, xmm0
+    paddd      xmm3, xmm3            // 0, 0, 0,  dx * 2
+    pshufd     xmm0, xmm3, 0x05      // dx * 2, dx * 2, 0, 0
+    paddd      xmm2, xmm0            // x3 x2 x1 x0
+    paddd      xmm3, xmm3            // 0, 0, 0,  dx * 4
+    pshufd     xmm3, xmm3, 0         // dx * 4, dx * 4, dx * 4, dx * 4
 
-    // 2 Pixel loop.
-    align      16
-  xloop2:
-    paddd      xmm2, xmm3           // x += dx
-    movd       xmm0, qword ptr [esi + eax * 4]  // 1 source x0 pixels
-    movd       xmm1, qword ptr [esi + edx * 4]  // 1 source x1 pixels
-    punpckldq  xmm0, xmm1           // x0 x1
-    pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
-    pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
+    pextrw     eax, xmm2, 1          // get x0 integer.
+    pextrw     edx, xmm2, 3          // get x1 integer.
+
+    cmp        ecx, 0
+    jle        xloop99
+    sub        ecx, 4
+    jl         xloop49
+
+    // 4 Pixel loop.
+    align      4
+ xloop4:
+    movd       xmm0, [esi + eax * 4]  // 1 source x0 pixels
+    movd       xmm1, [esi + edx * 4]  // 1 source x1 pixels
+    pextrw     eax, xmm2, 5           // get x2 integer.
+    pextrw     edx, xmm2, 7           // get x3 integer.
+    paddd      xmm2, xmm3             // x += dx
+    punpckldq  xmm0, xmm1             // x0 x1
+
+    movd       xmm1, [esi + eax * 4]  // 1 source x2 pixels
+    movd       xmm4, [esi + edx * 4]  // 1 source x3 pixels
+    pextrw     eax, xmm2, 1           // get x0 integer. next iteration.
+    pextrw     edx, xmm2, 3           // get x1 integer. next iteration.
+    punpckldq  xmm1, xmm4             // x2 x3
+    punpcklqdq xmm0, xmm1             // x0 x1 x2 x3
+    sub        ecx, 4                 // 4 pixels
+    movdqu     [edi], xmm0
+    lea        edi, [edi + 16]
+    jge        xloop4
+
+    align      4
+ xloop49:
+    test       ecx, 2
+    je         xloop29
+
+    // 2 Pixels.
+    movd       xmm0, [esi + eax * 4]  // 1 source x0 pixels
+    movd       xmm1, [esi + edx * 4]  // 1 source x1 pixels
+    pextrw     eax, xmm2, 5           // get x2 integer.
+    punpckldq  xmm0, xmm1             // x0 x1
+
     movq       qword ptr [edi], xmm0
     lea        edi, [edi + 8]
-    sub        ecx, 2               // 2 pixels
-    jge        xloop2
 
-    align      16
  xloop29:
+    test       ecx, 1
+    je         xloop99
 
-    add        ecx, 2 - 1
-    jl         xloop99
-
-    // 1 pixel remainder
-    movd       xmm0, qword ptr [esi + eax * 4]  // 1 source x0 pixels
-    movd       [edi], xmm0
-
-    align      16
+    // 1 Pixels.
+    movd       xmm0, [esi + eax * 4]  // 1 source x2 pixels
+    movd       dword ptr [edi], xmm0
+    align      4
  xloop99:
 
-    pop        edi
     pop        esi
+    pop        edi
     ret
   }
 }
@@ -551,53 +574,67 @@ static void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
 }
 
 #define HAS_SCALEARGBCOLS_SSE2
-// TODO(fbarchard): p2align 5 is for nacl branch targets.  Reduce using
-// pseudoop, bundle or macro.
 void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int x, int dx) {
   intptr_t x0 = 0, x1 = 0;
   asm volatile (
     "movd      %5,%%xmm2                       \n"
     "movd      %6,%%xmm3                       \n"
-    "pextrw    $0x1,%%xmm2,%k3                 \n"
-    "sub       $0x2,%2                         \n"
-    "jl        29f                             \n"
-    "movdqa    %%xmm2,%%xmm0                   \n"
-    "paddd     %%xmm3,%%xmm0                   \n"
-    "punpckldq %%xmm0,%%xmm2                   \n"
-    "punpckldq %%xmm3,%%xmm3                   \n"
+    "pshufd    $0x0,%%xmm2,%%xmm2              \n"
+    "pshufd    $0x11,%%xmm3,%%xmm0             \n"
+    "paddd     %%xmm0,%%xmm2                   \n"
     "paddd     %%xmm3,%%xmm3                   \n"
-    "pextrw    $0x3,%%xmm2,%k4                 \n"
-
-    ".p2align  5                               \n"
-    BUNDLEALIGN
-  "2:                                          \n"
-    "paddd     %%xmm3,%%xmm2                   \n"
-    MEMOPREG(movd,0x00,1,3,4,xmm0)             //  movd      (%1,%3,4),%%xmm0
-    MEMOPREG(movd,0x00,1,4,4,xmm1)             //  movd      (%1,%4,4),%%xmm1
-    "punpckldq %%xmm1,%%xmm0                   \n"
-    "pextrw    $0x1,%%xmm2,%k3                 \n"
-    "pextrw    $0x3,%%xmm2,%k4                 \n"
-    "movq      %%xmm0," MEMACCESS(0) "         \n"
-    "lea       " MEMLEA(0x8,0) ",%0            \n"
-    "sub       $0x2,%2                         \n"
-    "jge       2b                              \n"
-
-    ".p2align  5                               \n"
-  "29:                                         \n"
-    "add       $0x1,%2                         \n"
+    "pshufd    $0x5,%%xmm3,%%xmm0              \n"
+    "paddd     %%xmm0,%%xmm2                   \n"
+    "paddd     %%xmm3,%%xmm3                   \n"
+    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
+    "pextrw    $0x1,%%xmm2,%k0                 \n"
+    "pextrw    $0x3,%%xmm2,%k1                 \n"
+    "cmp       $0x0,%4                         \n"
     "jl        99f                             \n"
+    "sub       $0x4,%4                         \n"
+    "jl        49f                             \n"
+    ".p2align  2                               \n"
     BUNDLEALIGN
-    MEMOPREG(movd,0x00,1,3,4,xmm0)             //  movd      (%1,%3,4),%%xmm0
-    "movd      %%xmm0," MEMACCESS(0) "         \n"
+  "40:                                         \n"
+    MEMOPREG(movd,0x00,3,0,4,xmm0)             //  movd      (%3,%0,4),%%xmm0
+    MEMOPREG(movd,0x00,3,1,4,xmm1)             //  movd      (%3,%1,4),%%xmm1
+    "pextrw    $0x5,%%xmm2,%k0                 \n"
+    "pextrw    $0x7,%%xmm2,%k1                 \n"
+    "paddd     %%xmm3,%%xmm2                   \n"
+    "punpckldq %%xmm1,%%xmm0                   \n"
+    MEMOPREG(movd,0x00,3,0,4,xmm1)             //  movd      (%3,%0,4),%%xmm1
+    MEMOPREG(movd,0x00,3,1,4,xmm4)             //  movd      (%3,%1,4),%%xmm4
+    "pextrw    $0x1,%%xmm2,%k0                 \n"
+    "pextrw    $0x3,%%xmm2,%k1                 \n"
+    "punpckldq %%xmm4,%%xmm1                   \n"
+    "punpcklqdq %%xmm1,%%xmm0                  \n"
+    "sub       $0x4,%4                         \n"
+    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "jge       40b                             \n"
 
-    ".p2align  5                               \n"
+  "49:                                         \n"
+    "test      $0x2,%4                         \n"
+    "je        29f                             \n"
+    BUNDLEALIGN
+    MEMOPREG(movd,0x00,3,0,4,xmm0)             //  movd      (%3,%0,4),%%xmm0
+    MEMOPREG(movd,0x00,3,1,4,xmm1)             //  movd      (%3,%1,4),%%xmm1
+    "pextrw    $0x5,%%xmm2,%k0                 \n"
+    "punpckldq %%xmm1,%%xmm0                   \n"
+    "movq      %%xmm0," MEMACCESS(2) "         \n"
+    "lea       " MEMLEA(0x8,2) ",%2            \n"
+  "29:                                         \n"
+    "test      $0x1,%4                         \n"
+    "je        99f                             \n"
+    MEMOPREG(movd,0x00,3,0,4,xmm0)             //  movd      (%3,%0,4),%%xmm0
+    "movd      %%xmm0," MEMACCESS(2) "         \n"
   "99:                                         \n"
-  : "+r"(dst_argb),    // %0
-    "+r"(src_argb),    // %1
-    "+rm"(dst_width),  // %2
-    "+r"(x0),          // %3
-    "+r"(x1)           // %4
+  : "+a"(x0),          // %0
+    "+d"(x1),          // %1
+    "+r"(dst_argb),    // %2
+    "+r"(src_argb),    // %3
+    "+r"(dst_width)    // %4
   : "rm"(x),           // %5
     "rm"(dx)           // %6
   : "memory", "cc"
@@ -605,7 +642,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
 #endif
   );
 }
@@ -705,6 +742,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 #endif
   );
 }
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 static void ScaleARGBRowDown2_C(const uint8* src_argb,
