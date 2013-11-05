@@ -1855,6 +1855,31 @@ TEST_F(libyuvTest, ARGBBlur_Opt) {
   EXPECT_LE(max_diff, 1);
 }
 
+static const int kBlurSmallSize = 5;
+TEST_F(libyuvTest, ARGBBlurSmall_Any) {
+  int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
+                          benchmark_iterations_, +1, 0, kBlurSmallSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlurSmall_Unaligned) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, +1, 1, kBlurSmallSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlurSmall_Invert) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, -1, 0, kBlurSmallSize);
+  EXPECT_LE(max_diff, 1);
+}
+
+TEST_F(libyuvTest, ARGBBlurSmall_Opt) {
+  int max_diff = TestBlur(benchmark_width_, benchmark_height_,
+                          benchmark_iterations_, +1, 0, kBlurSmallSize);
+  EXPECT_LE(max_diff, 1);
+}
+
 TEST_F(libyuvTest, TestARGBPolynomial) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8 dst_pixels_opt[1280][4]);
