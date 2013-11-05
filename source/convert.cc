@@ -381,8 +381,8 @@ static int X420ToI420(const uint8* src_y,
   }
   // Coalesce rows.
   if (src_stride_uv == halfwidth * 2 &&
-      dst_stride_u * 2 == halfwidth &&
-      dst_stride_v * 2 == halfwidth) {
+      dst_stride_u == halfwidth &&
+      dst_stride_v == halfwidth) {
     halfwidth *= halfheight;
     halfheight = 1;
     src_stride_uv = dst_stride_u = dst_stride_v = 0;
