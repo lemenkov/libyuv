@@ -5096,6 +5096,51 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
     "sub       $0x4,%3                         \n"
     "jl        49f                             \n"
+    "cmpl      $0x80,%5                        \n"
+    "ja        40f                             \n"
+
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrld     $0x1f,%%xmm5                    \n"
+    "pslld     $0x10,%%xmm5                    \n"
+    "cvtdq2ps  %%xmm5,%%xmm5                   \n"
+    "mulps     %%xmm4,%%xmm5                   \n"
+    "cvtps2dq  %%xmm5,%%xmm5                   \n"
+    "packssdw  %%xmm5,%%xmm5                   \n"
+
+  // 4 pixel small loop                        \n"
+    ".p2align  2                               \n"
+    BUNDLEALIGN
+  "4:                                         \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqa    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqa    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    BUNDLEALIGN
+    MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
+    MEMOPREG(psubd,0x10,0,4,4,xmm1)            // psubd    0x10(%0,%4,4),%%xmm1
+    MEMOPREG(psubd,0x20,0,4,4,xmm2)            // psubd    0x20(%0,%4,4),%%xmm2
+    MEMOPREG(psubd,0x30,0,4,4,xmm3)            // psubd    0x30(%0,%4,4),%%xmm3
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "psubd     " MEMACCESS(1) ",%%xmm0         \n"
+    "psubd     " MEMACCESS2(0x10,1) ",%%xmm1   \n"
+    "psubd     " MEMACCESS2(0x20,1) ",%%xmm2   \n"
+    "psubd     " MEMACCESS2(0x30,1) ",%%xmm3   \n"
+    BUNDLEALIGN
+    MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
+    MEMOPREG(paddd,0x10,1,4,4,xmm1)            // paddd    0x10(%1,%4,4),%%xmm1
+    MEMOPREG(paddd,0x20,1,4,4,xmm2)            // paddd    0x20(%1,%4,4),%%xmm2
+    MEMOPREG(paddd,0x30,1,4,4,xmm3)            // paddd    0x30(%1,%4,4),%%xmm3
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
+    "packssdw  %%xmm1,%%xmm0                   \n"
+    "packssdw  %%xmm3,%%xmm2                   \n"
+    "pmulhuw   %%xmm5,%%xmm0                   \n"
+    "pmulhuw   %%xmm5,%%xmm2                   \n"
+    "packuswb  %%xmm2,%%xmm0                   \n"
+    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "sub       $0x4,%3                         \n"
+    "jge       4b                              \n"
+    "jmp       49f                             \n"
 
   // 4 pixel loop                              \n"
     ".p2align  2                               \n"
