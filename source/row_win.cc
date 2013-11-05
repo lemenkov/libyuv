@@ -5707,7 +5707,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     mov        edx, [esp + 4 + 12]  // dst_argb
     mov        ecx, [esp + 4 + 16]  // width
     sub        esi, eax
-    pcmpeqb    xmm5, xmm5            // alpha 255
+    pcmpeqb    xmm5, xmm5           // alpha 255
 
     align      16
  convertloop:
@@ -5771,6 +5771,60 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     pshufd     xmm4, xmm4, 0
     sub        ecx, 4
     jl         l4b
+
+    cmp        area, 128  // 128 pixels will not overflow 15 bits.
+    ja         l4
+
+    pcmpeqb    xmm5, xmm5           // constant of 65536.0
+    psrld      xmm5, 31
+    pslld      xmm5, 16
+    cvtdq2ps   xmm5, xmm5
+    mulps      xmm5, xmm4           // 65536.0 * 1 / area
+    cvtps2dq   xmm5, xmm5           // 0.16 fixed point
+    packssdw   xmm5, xmm5
+
+    // 4 pixel loop small blocks.
+    align      4
+  s4:
+    // top left
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    movdqa     xmm2, [eax + 32]
+    movdqa     xmm3, [eax + 48]
+
+    // - top right
+    psubd      xmm0, [eax + edx * 4]
+    psubd      xmm1, [eax + edx * 4 + 16]
+    psubd      xmm2, [eax + edx * 4 + 32]
+    psubd      xmm3, [eax + edx * 4 + 48]
+    lea        eax, [eax + 64]
+
+    // - bottom left
+    psubd      xmm0, [esi]
+    psubd      xmm1, [esi + 16]
+    psubd      xmm2, [esi + 32]
+    psubd      xmm3, [esi + 48]
+
+    // + bottom right
+    paddd      xmm0, [esi + edx * 4]
+    paddd      xmm1, [esi + edx * 4 + 16]
+    paddd      xmm2, [esi + edx * 4 + 32]
+    paddd      xmm3, [esi + edx * 4 + 48]
+    lea        esi, [esi + 64]
+
+    packssdw   xmm0, xmm1  // pack 4 pixels into 2 registers
+    packssdw   xmm2, xmm3
+
+    pmulhuw    xmm0, xmm5
+    pmulhuw    xmm2, xmm5
+
+    packuswb   xmm0, xmm2
+    movdqu     [edi], xmm0
+    lea        edi, [edi + 16]
+    sub        ecx, 4
+    jge        s4
+
+    jmp        l4b
 
     // 4 pixel loop
     align      4
