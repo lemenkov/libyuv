@@ -369,6 +369,34 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
+// Reads 4 pixels, duplicates them and writes 8 pixels.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+#define HAS_SCALEARGBCOLSUP2_SSE2
+__declspec(naked) __declspec(align(16))
+void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
+                           int dst_width, int /* x */, int /* dx */) {
+  __asm {
+    mov        edx, [esp + 4]    // dst_argb
+    mov        eax, [esp + 8]    // src_argb
+    mov        ecx, [esp + 12]   // dst_width
+
+    align      16
+  wloop:
+    movdqa     xmm0, [eax]
+    lea        eax,  [eax + 16]
+    movdqa     xmm1, xmm0
+    punpckldq  xmm0, xmm0
+    punpckhdq  xmm1, xmm1
+    sub        ecx, 8
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         wloop
+
+    ret
+  }
+}
+
 #elif !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || defined(__i386__))
 
@@ -1335,6 +1363,14 @@ static void ScaleARGBSimple(int src_width, int src_height,
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleARGBCols = ScaleARGBCols_SSE2;
+#if defined(HAS_SCALEARGBCOLS_SSE2)
+    if (src_width * 2 == dst_width && IS_ALIGNED(dst_width, 8) &&
+        (x >> 16) == 0 &&
+        IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
+      ScaleARGBCols = ScaleARGBColsUp2_SSE2;
+    }
+#endif
   }
 #endif
 
