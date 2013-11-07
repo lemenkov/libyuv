@@ -371,7 +371,6 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 
 // Reads 4 pixels, duplicates them and writes 8 pixels.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
-#define HAS_SCALEARGBCOLSUP2_SSE2
 __declspec(naked) __declspec(align(16))
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int /* x */, int /* dx */) {
@@ -671,6 +670,39 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 #endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
+
+// Reads 4 pixels, duplicates them and writes 8 pixels.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
+                           int dst_width, int /* x */, int /* dx */) {
+  asm volatile (
+    ".p2align  4                               \n"
+    BUNDLEALIGN
+  "1:                                          \n"
+    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpckldq %%xmm0,%%xmm0                   \n"
+    "punpckhdq %%xmm1,%%xmm1                   \n"
+    "sub       $0x8,%2                         \n"
+    "movdqa    %%xmm0," MEMACCESS(0) "         \n"
+    "movdqa    %%xmm1," MEMACCESS2(0x10,0) "   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "jg        1b                              \n"
+
+  : "+r"(dst_argb),    // %0
+    "+r"(src_argb),    // %1
+    "+r"(dst_width)    // %2
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
 #endif
   );
 }
@@ -1363,14 +1395,12 @@ static void ScaleARGBSimple(int src_width, int src_height,
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleARGBCols = ScaleARGBCols_SSE2;
-#if defined(HAS_SCALEARGBCOLS_SSE2)
     if (src_width * 2 == dst_width && IS_ALIGNED(dst_width, 8) &&
         (x >> 16) == 0 &&
         IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
       ScaleARGBCols = ScaleARGBColsUp2_SSE2;
     }
-#endif
   }
 #endif
 
