@@ -179,9 +179,9 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
 // Test scale to a specified size with all 4 filters.
 #define TEST_SCALETO(name, width, height)                                      \
     TEST_SCALETO1(name, width, height, None, 0)                                \
-    TEST_SCALETO1(name, width, height, Linear, 0)                              \
-    TEST_SCALETO1(name, width, height, Bilinear, 2)                            \
-    TEST_SCALETO1(name, width, height, Box, 2)
+    TEST_SCALETO1(name, width, height, Linear, 3)                              \
+    TEST_SCALETO1(name, width, height, Bilinear, 3)                            \
+    TEST_SCALETO1(name, width, height, Box, 3)
 
 TEST_SCALETO(Scale, 640, 360)
 TEST_SCALETO(Scale, 853, 480)

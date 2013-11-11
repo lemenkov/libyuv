@@ -870,6 +870,94 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
+// Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
+// TODO(fbarchard): Port to Neon
+
+// Shuffle table for duplicating 2 fractions into 8 bytes each
+static uvec8 kShuffleFractions = {
+  0u, 0u, 4u, 4u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u,
+};
+
+#define HAS_SCALEFILTERCOLS_SSSE3
+__declspec(naked) __declspec(align(16))
+static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                                  int dst_width, int x, int dx) {
+  __asm {
+    push       ebx
+    push       esi
+    push       edi
+    mov        edi, [esp + 12 + 4]    // dst_ptr
+    mov        esi, [esp + 12 + 8]    // src_ptr
+    mov        ecx, [esp + 12 + 12]   // dst_width
+    movd       xmm2, [esp + 12 + 16]  // x
+    movd       xmm3, [esp + 12 + 20]  // dx
+    movdqa     xmm5, kShuffleFractions
+    pcmpeqb    xmm6, xmm6           // generate 0x007f for inverting fraction.
+    psrlw      xmm6, 9
+    pextrw     eax, xmm2, 1         // get x0 integer. preroll
+    sub        ecx, 2
+    jl         xloop29
+
+    movdqa     xmm0, xmm2           // x1 = x0 + dx
+    paddd      xmm0, xmm3
+    punpckldq  xmm2, xmm0           // x0 x1
+    punpckldq  xmm3, xmm3           // dx dx
+    paddd      xmm3, xmm3           // dx * 2, dx * 2
+    pextrw     edx, xmm2, 3         // get x1 integer. preroll
+
+    // 2 Pixel loop.
+    align      16
+  xloop2:
+    movdqa     xmm1, xmm2           // x0, x1 fractions.
+    paddd      xmm2, xmm3           // x += dx
+    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
+    movd       xmm0, ebx
+    psrlw      xmm1, 9              // 7 bit fractions.
+    movzx      ebx, word ptr [esi + edx]  // 2 source x1 pixels
+    movd       xmm7, ebx
+    pshufb     xmm1, xmm5           // 0011
+    punpcklwd  xmm0, xmm7
+    pxor       xmm1, xmm6           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm1           // 16 bit, 2 pixels.
+    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
+    pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
+    pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
+    packuswb   xmm0, xmm0           // 8 bits, 2 pixels.
+    movd       ebx, xmm0
+    mov        word ptr [edi], bx
+    lea        edi, [edi + 2]
+    sub        ecx, 2               // 2 pixels
+    jge        xloop2
+
+    align      16
+ xloop29:
+
+    add        ecx, 2 - 1
+    jl         xloop99
+
+    // 1 pixel remainder
+    movdqa     xmm1, xmm2           // x0, x1 fractions.
+    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
+    movd       xmm0, ebx
+    psrlw      xmm1, 9              // 7 bit fractions.
+    pshufb     xmm1, xmm5           // 0011
+    pxor       xmm1, xmm6           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm1           // 16 bit, 2 pixels.
+    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
+    packuswb   xmm0, xmm0           // 8 bits, 2 pixels.
+    movd       ebx, xmm0
+    mov        byte ptr [edi], bl
+
+    align      16
+ xloop99:
+
+    pop        edi
+    pop        esi
+    pop        ebx
+    ret
+  }
+}
+
 #elif !defined(LIBYUV_DISABLE_X86) && \
     ((defined(__x86_64__) && !defined(__native_client__)) || defined(__i386__))
 // GCC versions of row functions are verbatim conversions from Visual C.
@@ -2297,6 +2385,15 @@ void ScalePlaneBilinear(int src_width, int src_height,
     }
   }
 #endif
+
+  void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
+                          int dst_width, int x, int dx) = ScaleFilterCols_C;
+#if defined(HAS_SCALEFILTERCOLS_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleFilterCols = ScaleFilterCols_SSSE3;
+  }
+#endif
+
   int dx = 0;
   int dy = 0;
   int x = 0;
@@ -2327,11 +2424,11 @@ void ScalePlaneBilinear(int src_width, int src_height,
     int yi = y >> 16;
     const uint8* src = src_ptr + yi * src_stride;
     if (filtering == kFilterLinear) {
-      ScaleFilterCols_C(dst_ptr, src, dst_width, x, dx);
+      ScaleFilterCols(dst_ptr, src, dst_width, x, dx);
     } else {
       int yf = (y >> 8) & 255;
       InterpolateRow(row, src, src_stride, src_width, yf);
-      ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
+      ScaleFilterCols(dst_ptr, row, dst_width, x, dx);
     }
     dst_ptr += dst_stride;
     y += dy;
