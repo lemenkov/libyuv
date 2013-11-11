@@ -5763,11 +5763,11 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     mov        eax, topleft  // eax topleft
     mov        esi, botleft  // esi botleft
     mov        edx, width
-    movd       xmm4, area
+    movd       xmm5, area
     mov        edi, dst
     mov        ecx, count
-    cvtdq2ps   xmm4, xmm4
-    rcpss      xmm4, xmm4  // 1.0f / area
+    cvtdq2ps   xmm5, xmm5
+    rcpss      xmm4, xmm5  // 1.0f / area
     pshufd     xmm4, xmm4, 0
     sub        ecx, 4
     jl         l4b
@@ -5775,13 +5775,14 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     cmp        area, 128  // 128 pixels will not overflow 15 bits.
     ja         l4
 
-    pcmpeqb    xmm5, xmm5           // constant of 65536.0
-    psrld      xmm5, 31
-    pslld      xmm5, 16
-    cvtdq2ps   xmm5, xmm5
-    mulps      xmm5, xmm4           // 65536.0 * 1 / area
+    pshufd     xmm5, xmm5, 0        // area
+    pcmpeqb    xmm6, xmm6           // constant of 65536.0 - 1 = 65535.0
+    psrld      xmm6, 16
+    cvtdq2ps   xmm6, xmm6
+    addps      xmm5, xmm6           // (65536.0 + area - 1)
+    mulps      xmm5, xmm4           // (65536.0 + area - 1) * 1 / area
     cvtps2dq   xmm5, xmm5           // 0.16 fixed point
-    packssdw   xmm5, xmm5
+    packssdw   xmm5, xmm5           // 16 bit shorts
 
     // 4 pixel loop small blocks.
     align      4

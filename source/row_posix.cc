@@ -5090,19 +5090,20 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
                                     int width, int area, uint8* dst,
                                     int count) {
   asm volatile (
-    "movd      %5,%%xmm4                       \n"
-    "cvtdq2ps  %%xmm4,%%xmm4                   \n"
-    "rcpss     %%xmm4,%%xmm4                   \n"
+    "movd      %5,%%xmm5                       \n"
+    "cvtdq2ps  %%xmm5,%%xmm5                   \n"
+    "rcpss     %%xmm5,%%xmm4                   \n"
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
     "sub       $0x4,%3                         \n"
     "jl        49f                             \n"
     "cmpl      $0x80,%5                        \n"
     "ja        40f                             \n"
 
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrld     $0x1f,%%xmm5                    \n"
-    "pslld     $0x10,%%xmm5                    \n"
-    "cvtdq2ps  %%xmm5,%%xmm5                   \n"
+    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrld     $0x10,%%xmm6                    \n"
+    "cvtdq2ps  %%xmm6,%%xmm6                   \n"
+    "addps     %%xmm6,%%xmm5                   \n"
     "mulps     %%xmm4,%%xmm5                   \n"
     "cvtps2dq  %%xmm5,%%xmm5                   \n"
     "packssdw  %%xmm5,%%xmm5                   \n"
@@ -5222,7 +5223,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
 #endif
   );
 }
