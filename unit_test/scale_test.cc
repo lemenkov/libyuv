@@ -141,23 +141,24 @@ static int TestFilter(int src_width, int src_height,
       EXPECT_LE(diff, max_diff);                                               \
     }
 
-// Test a scale factor with all 3 filters.  Expect unfiltered to be exact, but
+// Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
 #define TEST_FACTOR(name, hfactor, vfactor)                                    \
     TEST_FACTOR1(name, None, hfactor, vfactor, 0)                              \
+    TEST_FACTOR1(name, Linear, hfactor, vfactor, 2)                            \
     TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 2)                          \
     TEST_FACTOR1(name, Box, hfactor, vfactor, 2)                               \
 
 // TODO(fbarchard): ScaleDownBy1 should be lossless, but Box has error of 2.
-// TEST_FACTOR(1, 1 / 1, 1 / 1)
+TEST_FACTOR(1, 1 / 1, 1 / 1)
 TEST_FACTOR(2, 1 / 2, 1 / 2)
 TEST_FACTOR(4, 1 / 4, 1 / 4)
-// TEST_FACTOR(8, 1 / 8, 1 / 8)
-// TEST_FACTOR(16, 1 / 16, 1 / 16)
-// TEST_FACTOR(2by3, 2 / 3, 2 / 3)
+TEST_FACTOR(8, 1 / 8, 1 / 8)
+TEST_FACTOR(16, 1 / 16, 1 / 16)
+TEST_FACTOR(2by3, 2 / 3, 2 / 3)
 TEST_FACTOR(3by4, 3 / 4, 3 / 4)
-// TEST_FACTOR(3by8, 3 / 8, 3 / 8)
-// TEST_FACTOR(Vertical2by3, 1, 2 / 3)
+TEST_FACTOR(3by8, 3 / 8, 3 / 8)
+TEST_FACTOR(Vertical2by3, 1, 2 / 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
@@ -175,17 +176,19 @@ TEST_FACTOR(3by4, 3 / 4, 3 / 4)
       EXPECT_LE(diff, max_diff);                                               \
     }
 
-// Test scale to a specified size with all 3 filters.
+// Test scale to a specified size with all 4 filters.
 #define TEST_SCALETO(name, width, height)                                      \
     TEST_SCALETO1(name, width, height, None, 0)                                \
+    TEST_SCALETO1(name, width, height, Linear, 0)                              \
+    TEST_SCALETO1(name, width, height, Bilinear, 2)                            \
     TEST_SCALETO1(name, width, height, Box, 2)
 
 TEST_SCALETO(Scale, 640, 360)
-TEST_SCALETO(DISABLED_Scale, 853, 480)
-TEST_SCALETO(DISABLED_Scale, 1280, 720)
-TEST_SCALETO(DISABLED_Scale, 1280, 800)
-TEST_SCALETO(DISABLED_Scale, 1366, 768)
-TEST_SCALETO(DISABLED_Scale, 1920, 1080)
+TEST_SCALETO(Scale, 853, 480)
+TEST_SCALETO(Scale, 1280, 720)
+TEST_SCALETO(Scale, 1280, 800)
+TEST_SCALETO(Scale, 1366, 768)
+TEST_SCALETO(Scale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
 

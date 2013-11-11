@@ -37,19 +37,7 @@ static __inline int Half(int v) {
 // Note: Some SSE2 reference manuals
 // cpuvol1.pdf agner_instruction_tables.pdf 253666.pdf 253667.pdf
 
-// Set the following flag to true to revert to only
-// using the reference implementation ScalePlaneBox(), and
-// NOT the optimized versions. Useful for debugging and
-// when comparing the quality of the resulting YUV planes
-// as produced by the optimized and non-optimized versions.
-static bool use_reference_impl_ = false;
-
-LIBYUV_API
-void SetUseReferenceImpl(bool use) {
-  use_reference_impl_ = use;
-}
-
-// ScaleRowDown2Int also used by planar functions
+// ScaleRowDown2Box also used by planar functions
 // NEON downscalers with interpolation.
 
 #if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
@@ -208,6 +196,44 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
+// Blends 32x1 rectangle to 16x1.
+// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+__declspec(naked) __declspec(align(16))
+void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst_ptr, int dst_width) {
+  __asm {
+    mov        eax, [esp + 4]        // src_ptr
+                                     // src_stride
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+    align      16
+  wloop:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+
+    movdqa     xmm2, xmm0            // average columns (32 to 16 pixels)
+    psrlw      xmm0, 8
+    movdqa     xmm3, xmm1
+    psrlw      xmm1, 8
+    pand       xmm2, xmm5
+    pand       xmm3, xmm5
+    pavgw      xmm0, xmm2
+    pavgw      xmm1, xmm3
+    packuswb   xmm0, xmm1
+
+    sub        ecx, 16
+    movdqa     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         wloop
+
+    ret
+  }
+}
+
 // Blends 32x2 rectangle to 16x1.
 // Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
@@ -272,6 +298,44 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
     psrlw      xmm0, 8               // isolate odd pixels.
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
+    sub        ecx, 16
+    movdqu     [edx], xmm0
+    lea        edx, [edx + 16]
+    jg         wloop
+
+    ret
+  }
+}
+
+// Blends 32x1 rectangle to 16x1.
+// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
+__declspec(naked) __declspec(align(16))
+void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
+                                        uint8* dst_ptr, int dst_width) {
+  __asm {
+    mov        eax, [esp + 4]        // src_ptr
+                                     // src_stride
+    mov        edx, [esp + 12]       // dst_ptr
+    mov        ecx, [esp + 16]       // dst_width
+    pcmpeqb    xmm5, xmm5            // generate mask 0x00ff00ff
+    psrlw      xmm5, 8
+
+    align      16
+  wloop:
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    lea        eax,  [eax + 32]
+
+    movdqa     xmm2, xmm0            // average columns (32 to 16 pixels)
+    psrlw      xmm0, 8
+    movdqa     xmm3, xmm1
+    psrlw      xmm1, 8
+    pand       xmm2, xmm5
+    pand       xmm3, xmm5
+    pavgw      xmm0, xmm2
+    pavgw      xmm1, xmm3
+    packuswb   xmm0, xmm1
+
     sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
@@ -838,6 +902,40 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
+void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t,
+                              uint8* dst_ptr, int dst_width) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrlw     $0x8,%%xmm5                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "movdqa    %%xmm1,%%xmm3                   \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "pand      %%xmm5,%%xmm2                   \n"
+    "pand      %%xmm5,%%xmm3                   \n"
+    "pavgw     %%xmm2,%%xmm0                   \n"
+    "pavgw     %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "jg        1b                              \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
 void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -899,6 +997,40 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1"
+#endif
+  );
+}
+
+static void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
+                                               uint8* dst_ptr, int dst_width) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrlw     $0x8,%%xmm5                     \n"
+    ".p2align  4                               \n"
+  "1:                                          \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "lea       0x20(%0),%0                     \n"
+    "movdqa    %%xmm0,%%xmm2                   \n"
+    "psrlw     $0x8,%%xmm0                     \n"
+    "movdqa    %%xmm1,%%xmm3                   \n"
+    "psrlw     $0x8,%%xmm1                     \n"
+    "pand      %%xmm5,%%xmm2                   \n"
+    "pand      %%xmm5,%%xmm3                   \n"
+    "pavgw     %%xmm2,%%xmm0                   \n"
+    "pavgw     %%xmm3,%%xmm1                   \n"
+    "packuswb  %%xmm1,%%xmm0                   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "lea       0x10(%1),%1                     \n"
+    "sub       $0x10,%2                        \n"
+    "jg        1b                              \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
 #endif
   );
 }
@@ -1447,6 +1579,21 @@ static void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   }
 }
 
+void ScaleRowDown2Linear_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst, int dst_width) {
+  const uint8* s = src_ptr;
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = (s[0] + s[1] + 1) >> 1;
+    dst[1] = (s[2] + s[3] + 1) >> 1;
+    dst += 2;
+    s += 4;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = (s[0] + s[1] + 1) >> 1;
+  }
+}
+
 void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
@@ -1685,7 +1832,9 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
                             FilterMode filtering) {
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering ? ScaleRowDown2Box_C : ScaleRowDown2_C;
+    filtering == kFilterNone ? ScaleRowDown2_C :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_C :
+        ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
   if (!filtering) {
     src_ptr += src_stride;  // Point to odd rows.
@@ -1698,12 +1847,15 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
   }
 #elif defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Box_Unaligned_SSE2 :
-        ScaleRowDown2_Unaligned_SSE2;
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Unaligned_SSE2 :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_Unaligned_SSE2 :
+        ScaleRowDown2Box_Unaligned_SSE2);
     if (IS_ALIGNED(src_ptr, 16) &&
         IS_ALIGNED(src_stride, 16) && IS_ALIGNED(row_stride, 16) &&
         IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
-      ScaleRowDown2 = filtering ? ScaleRowDown2Box_SSE2 : ScaleRowDown2_SSE2;
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSE2 :
+          (filtering == kFilterLinear ? ScaleRowDown2Linear_SSE2 :
+          ScaleRowDown2Box_SSE2);
     }
   }
 #elif defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
@@ -1715,6 +1867,9 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  if (filtering == kFilterLinear) {
+    src_stride = 0;
+  }
   // TODO(fbarchard): Loop through source height to allow odd height.
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
@@ -1759,6 +1914,9 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  if (filtering == kFilterLinear) {
+    src_stride = 0;
+  }
   for (int y = 0; y < dst_height; ++y) {
     ScaleRowDown4(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += row_stride;
@@ -1822,14 +1980,15 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
   for (int y = 0; y < dst_height - 2; y += 3) {
-    ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown34_0(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
-    ScaleRowDown34_1(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown34_1(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
-    ScaleRowDown34_0(src_ptr + src_stride, -src_stride,
+    ScaleRowDown34_0(src_ptr + src_stride, -filter_stride,
                      dst_ptr, dst_width);
     src_ptr += src_stride * 2;
     dst_ptr += dst_stride;
@@ -1837,7 +1996,7 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
 
   // Remainder 1 or 2 rows with last row vertically unfiltered
   if ((dst_height % 3) == 2) {
-    ScaleRowDown34_0(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown34_0(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
     ScaleRowDown34_1(src_ptr, 0, dst_ptr, dst_width);
@@ -1914,21 +2073,22 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
   for (int y = 0; y < dst_height - 2; y += 3) {
-    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
-    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
-    ScaleRowDown38_2(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown38_2(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 2;
     dst_ptr += dst_stride;
   }
 
   // Remainder 1 or 2 rows with last row vertically unfiltered
   if ((dst_height % 3) == 2) {
-    ScaleRowDown38_3(src_ptr, src_stride, dst_ptr, dst_width);
+    ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
     ScaleRowDown38_3(src_ptr, 0, dst_ptr, dst_width);
@@ -2080,7 +2240,8 @@ SAFEBUFFERS
 void ScalePlaneBilinear(int src_width, int src_height,
                         int dst_width, int dst_height,
                         int src_stride, int dst_stride,
-                        const uint8* src_ptr, uint8* dst_ptr) {
+                        const uint8* src_ptr, uint8* dst_ptr,
+                        FilterMode filtering) {
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(Abs(src_width) <= kMaxStride);
@@ -2164,10 +2325,14 @@ void ScalePlaneBilinear(int src_width, int src_height,
       y = max_y;
     }
     int yi = y >> 16;
-    int yf = (y >> 8) & 255;
     const uint8* src = src_ptr + yi * src_stride;
-    InterpolateRow(row, src, src_stride, src_width, yf);
-    ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
+    if (filtering == kFilterLinear) {
+      ScaleFilterCols_C(dst_ptr, src, dst_width, x, dx);
+    } else {
+      int yf = (y >> 8) & 255;
+      InterpolateRow(row, src, src_stride, src_width, yf);
+      ScaleFilterCols_C(dst_ptr, row, dst_width, x, dx);
+    }
     dst_ptr += dst_stride;
     y += dy;
   }
@@ -2219,15 +2384,11 @@ static void ScalePlaneAnySize(int src_width, int src_height,
                      src_stride, dst_stride, src_ptr, dst_ptr);
   } else {
     ScalePlaneBilinear(src_width, src_height, dst_width, dst_height,
-                       src_stride, dst_stride, src_ptr, dst_ptr);
+                       src_stride, dst_stride, src_ptr, dst_ptr, filtering);
   }
 }
 
 // Scale plane down, any size
-//
-// This is an optimized version for scaling down a plane to any size.
-// The current implementation is ~10 times faster compared to the
-// reference implementation for e.g. XGA->LowResPAL
 
 static void ScalePlaneDown(int src_width, int src_height,
                            int dst_width, int dst_height,
@@ -2237,10 +2398,11 @@ static void ScalePlaneDown(int src_width, int src_height,
   if (!filtering || src_width > kMaxStride) {
     ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
                      src_stride, dst_stride, src_ptr, dst_ptr);
-  } else if (filtering == kFilterBilinear || dst_height * 2 > src_height) {
+  } else if (filtering == kFilterBilinear || filtering == kFilterLinear ||
+             dst_height * 2 > src_height) {
     // between 1/2x and 1x use bilinear
     ScalePlaneBilinear(src_width, src_height, dst_width, dst_height,
-                       src_stride, dst_stride, src_ptr, dst_ptr);
+                       src_stride, dst_stride, src_ptr, dst_ptr, filtering);
   } else {
     ScalePlaneBox(src_width, src_height, dst_width, dst_height,
                   src_stride, dst_stride, src_ptr, dst_ptr);
@@ -2271,12 +2433,8 @@ void ScalePlane(const uint8* src, int src_stride,
                        0, 0, dy, 1, filtering);
   } else if (dst_width <= Abs(src_width) && dst_height <= src_height) {
     // Scale down.
-    if (use_reference_impl_) {
-      // For testing, allow the optimized versions to be disabled.
-      ScalePlaneDown(src_width, src_height, dst_width, dst_height,
-                     src_stride, dst_stride, src, dst, filtering);
-    } else if (4 * dst_width == 3 * src_width &&
-               4 * dst_height == 3 * src_height) {
+    if (4 * dst_width == 3 * src_width &&
+        4 * dst_height == 3 * src_height) {
       // optimized, 3/4
       ScalePlaneDown34(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);

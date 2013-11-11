@@ -22,7 +22,8 @@ extern "C" {
 enum FilterMode {
   kFilterNone = 0,  // Point sample; Fastest.
   kFilterBilinear = 1,  // Faster than box, but lower quality scaling down.
-  kFilterBox = 2  // Highest quality.
+  kFilterBox = 2,  // Highest quality.
+  kFilterLinear = 3  // Faster than bilinear, slower than None.
 };
 
 // Scale a YUV plane.
