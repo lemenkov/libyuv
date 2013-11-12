@@ -873,11 +873,6 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
 // TODO(fbarchard): Port to Neon
 
-// Shuffle table for duplicating 2 fractions into 8 bytes each
-static uvec8 kShuffleFractions = {
-  0u, 0u, 4u, 4u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u, 80u,
-};
-
 #define HAS_SCALEFILTERCOLS_SSSE3
 __declspec(naked) __declspec(align(16))
 static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
@@ -891,7 +886,8 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     mov        ecx, [esp + 12 + 12]   // dst_width
     movd       xmm2, [esp + 12 + 16]  // x
     movd       xmm3, [esp + 12 + 20]  // dx
-    movdqa     xmm5, kShuffleFractions
+    mov        eax, 0x04040000      // shuffle to line up fractions with pixel.
+    movd       xmm5, eax
     pcmpeqb    xmm6, xmm6           // generate 0x007f for inverting fraction.
     psrlw      xmm6, 9
     pextrw     eax, xmm2, 1         // get x0 integer. preroll
@@ -1617,6 +1613,80 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
+
+// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
+#define HAS_SCALEFILTERCOLS_SSSE3
+static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
+                                  int dst_width, int x, int dx) {
+  intptr_t x0 = 0, x1 = 0, temp_pixel = 0;
+  asm volatile (
+    "movd      %6,%%xmm2                       \n"
+    "movd      %7,%%xmm3                       \n"
+    "movl      $0x04040000,%k5                 \n"
+    "movd      %k5,%%xmm5                      \n"
+    "pcmpeqb   %%xmm6,%%xmm6                   \n"
+    "psrlw     $0x9,%%xmm6                     \n"
+    "pextrw    $0x1,%%xmm2,%k3                 \n"
+    "subl      $0x2,%2                         \n"
+    "jl        29f                             \n"
+    "movdqa    %%xmm2,%%xmm0                   \n"
+    "paddd     %%xmm3,%%xmm0                   \n"
+    "punpckldq %%xmm0,%%xmm2                   \n"
+    "punpckldq %%xmm3,%%xmm3                   \n"
+    "paddd     %%xmm3,%%xmm3                   \n"
+    "pextrw    $0x3,%%xmm2,%k4                 \n"
+    ".p2align  4                               \n"
+  "2:                                          \n"
+    "movdqa    %%xmm2,%%xmm1                   \n"
+    "paddd     %%xmm3,%%xmm2                   \n"
+    "movzwl    (%1,%3,1),%k5                   \n"
+    "movd      %k5,%%xmm0                      \n"
+    "psrlw     $0x9,%%xmm1                     \n"
+    "movzwl    (%1,%4,1),%k5                   \n"
+    "movd      %k5,%%xmm7                      \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "punpcklwd %%xmm7,%%xmm0                   \n"
+    "pxor      %%xmm6,%%xmm1                   \n"
+    "pmaddubsw %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "pextrw    $0x1,%%xmm2,%k3                 \n"
+    "pextrw    $0x3,%%xmm2,%k4                 \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,%k5                      \n"
+    "mov       %w5,(%0)                        \n"
+    "lea       0x2(%0),%0                      \n"
+    "sub       $0x2,%2                         \n"
+    "jge       2b                              \n"
+    ".p2align  4                               \n"
+  "29:                                         \n"
+    "addl      $0x1,%2                         \n"
+    "jl        99f                             \n"
+    "movdqa    %%xmm2,%%xmm1                   \n"
+    "movzwl    (%1,%3,1),%k5                   \n"
+    "movd      %k5,%%xmm0                      \n"
+    "psrlw     $0x9,%%xmm1                     \n"
+    "pshufb    %%xmm5,%%xmm1                   \n"
+    "pxor      %%xmm6,%%xmm1                   \n"
+    "pmaddubsw %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x7,%%xmm0                     \n"
+    "packuswb  %%xmm0,%%xmm0                   \n"
+    "movd      %%xmm0,%k5                      \n"
+    "mov       %b5,(%0)                        \n"
+  "99:                                         \n"
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+rm"(dst_width),  // %2
+    "+a"(x0),          // %3
+    "+d"(x1),          // %4
+    "+b"(temp_pixel)   // %5
+  : "rm"(x),           // %6
+    "rm"(dx)           // %7
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6", "xmm7"
 #endif
   );
 }
