@@ -6043,8 +6043,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     "cmp       $0x2010003,%k2                  \n"
     "je        2103f                           \n"
 
-  "1:                                          \n"
     BUNDLEALIGN
+  "1:                                          \n"
     "movzb     " MEMACCESS(4) ",%2             \n"
     MEMOP(movzb,0x00,0,2,1) ",%2               \n"  //  movzb     (%0,%2,1),%2
     "mov       %b2," MEMACCESS(1) "            \n"
@@ -6352,20 +6352,21 @@ void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,
   asm volatile (
     // 1 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movzb     (%0),%1                         \n"
-    "lea       0x4(%0),%0                      \n"
-    "movzb     (%3,%1,4),%1                    \n"
-    "mov       %b1,-0x4(%0)                    \n"
-    "movzb     -0x3(%0),%1                     \n"
-    "movzb     0x1(%3,%1,4),%1                 \n"
-    "mov       %b1,-0x3(%0)                    \n"
-    "movzb     -0x2(%0),%1                     \n"
-    "movzb     0x2(%3,%1,4),%1                 \n"
-    "mov       %b1,-0x2(%0)                    \n"
-    "movzb     -0x1(%0),%1                     \n"
-    "movzb     0x3(%3,%1,4),%1                 \n"
-    "mov       %b1,-0x1(%0)                    \n"
+    "movzb     " MEMACCESS(0) ",%1             \n"
+    "lea       " MEMLEA(0x4,0) ",%0            \n"
+    MEMOP(movzb,0x00,3,1,4) ",%1               \n"  // movzb (%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
+    "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
+    MEMOP(movzb,0x01,3,1,4) ",%1               \n"  // movzb 0x1(%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
+    "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
+    MEMOP(movzb,0x02,3,1,4) ",%1               \n"  // movzb 0x2(%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
+    "movzb     " MEMACCESS2(-0x1,0) ",%1       \n"
+    MEMOP(movzb,0x03,3,1,4) ",%1               \n"  // movzb 0x3(%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x1,0) "      \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
   : "+r"(dst_argb),   // %0
@@ -6383,17 +6384,18 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
   asm volatile (
     // 1 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movzb     (%0),%1                         \n"
-    "lea       0x4(%0),%0                      \n"
-    "movzb     (%3,%1,4),%1                    \n"
-    "mov       %b1,-0x4(%0)                    \n"
-    "movzb     -0x3(%0),%1                     \n"
-    "movzb     0x1(%3,%1,4),%1                 \n"
-    "mov       %b1,-0x3(%0)                    \n"
-    "movzb     -0x2(%0),%1                     \n"
-    "movzb     0x2(%3,%1,4),%1                 \n"
-    "mov       %b1,-0x2(%0)                    \n"
+    "movzb     " MEMACCESS(0) ",%1             \n"
+    "lea       " MEMLEA(0x4,0) ",%0            \n"
+    MEMOP(movzb,0x00,3,1,4) ",%1               \n"  // movzb (%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
+    "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
+    MEMOP(movzb,0x01,3,1,4) ",%1               \n"  // movzb 0x1(%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
+    "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
+    MEMOP(movzb,0x02,3,1,4) ",%1               \n"  // movzb 0x2(%3,%1,4),%1
+    "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
   : "+r"(dst_argb),   // %0
@@ -6420,8 +6422,9 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
     // 4 pixel loop.
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqu    (%2),%%xmm0                     \n"
+    "movdqu    " MEMACCESS(2) ",%%xmm0         \n"
     "pmaddubsw %%xmm3,%%xmm0                   \n"
     "phaddw    %%xmm0,%%xmm0                   \n"
     "pand      %%xmm4,%%xmm0                   \n"
@@ -6430,67 +6433,68 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     (%2),%0                         \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,(%3)                        \n"
-    "movzb     0x1(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x1(%3)                     \n"
-    "movzb     0x2(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x2(%3)                     \n"
-    "movzb     0x3(%2),%0                      \n"
-    "mov       %b0,0x3(%3)                     \n"
+    "movzb     " MEMACCESS(2) ",%0             \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS(3) "            \n"
+    "movzb     " MEMACCESS2(0x1,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x1,3) "       \n"
+    "movzb     " MEMACCESS2(0x2,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x2,3) "       \n"
+    "movzb     " MEMACCESS2(0x3,2) ",%0        \n"
+    "mov       %b0," MEMACCESS2(0x3,3) "       \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     0x4(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x4(%3)                     \n"
-    "movzb     0x5(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x5(%3)                     \n"
-    "movzb     0x6(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x6(%3)                     \n"
-    "movzb     0x7(%2),%0                      \n"
-    "mov       %b0,0x7(%3)                     \n"
+    "movzb     " MEMACCESS2(0x4,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x4,3) "       \n"
+    BUNDLEALIGN
+    "movzb     " MEMACCESS2(0x5,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x5,3) "       \n"
+    "movzb     " MEMACCESS2(0x6,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x6,3) "       \n"
+    "movzb     " MEMACCESS2(0x7,2) ",%0        \n"
+    "mov       %b0," MEMACCESS2(0x7,3) "       \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     0x8(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x8(%3)                     \n"
-    "movzb     0x9(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0x9(%3)                     \n"
-    "movzb     0xa(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0xa(%3)                     \n"
-    "movzb     0xb(%2),%0                      \n"
-    "mov       %b0,0xb(%3)                     \n"
+    "movzb     " MEMACCESS2(0x8,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x8,3) "       \n"
+    "movzb     " MEMACCESS2(0x9,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0x9,3) "       \n"
+    "movzb     " MEMACCESS2(0xa,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0xa,3) "       \n"
+    "movzb     " MEMACCESS2(0xb,2) ",%0        \n"
+    "mov       %b0," MEMACCESS2(0xb,3) "       \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
 
-    "movzb     0xc(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0xc(%3)                     \n"
-    "movzb     0xd(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0xd(%3)                     \n"
-    "movzb     0xe(%2),%0                      \n"
-    "movzb     (%1,%0,1),%0                    \n"
-    "mov       %b0,0xe(%3)                     \n"
-    "movzb     0xf(%2),%0                      \n"
-    "mov       %b0,0xf(%3)                     \n"
+    "movzb     " MEMACCESS2(0xc,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0xc,3) "       \n"
+    "movzb     " MEMACCESS2(0xd,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0xd,3) "       \n"
+    "movzb     " MEMACCESS2(0xe,2) ",%0        \n"
+    MEMOP(movzb,0x00,1,0,1) ",%0               \n"  // movzb     (%1,%0,1),%0
+    "mov       %b0," MEMACCESS2(0xe,3) "       \n"
+    "movzb     " MEMACCESS2(0xf,2) ",%0        \n"
+    "mov       %b0," MEMACCESS2(0xf,3) "       \n"
     "sub       $0x4,%4                         \n"
-    "lea       0x10(%2),%2                     \n"
-    "lea       0x10(%3),%3                     \n"
+    "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "lea       " MEMLEA(0x10,3) ",%3           \n"
     "jg        1b                              \n"
   : "+d"(pixel_temp),  // %0
     "+a"(table_temp),  // %1
