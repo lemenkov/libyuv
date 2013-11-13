@@ -145,9 +145,9 @@ static int TestFilter(int src_width, int src_height,
 // filtering is different fixed point implementations for SSSE3, Neon and C.
 #define TEST_FACTOR(name, hfactor, vfactor)                                    \
     TEST_FACTOR1(name, None, hfactor, vfactor, 0)                              \
-    TEST_FACTOR1(name, Linear, hfactor, vfactor, 2)                            \
-    TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 2)                          \
-    TEST_FACTOR1(name, Box, hfactor, vfactor, 2)                               \
+    TEST_FACTOR1(name, Linear, hfactor, vfactor, 3)                            \
+    TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 3)                          \
+    TEST_FACTOR1(name, Box, hfactor, vfactor, 3)                               \
 
 // TODO(fbarchard): ScaleDownBy1 should be lossless, but Box has error of 2.
 TEST_FACTOR(1, 1 / 1, 1 / 1)
