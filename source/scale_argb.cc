@@ -353,7 +353,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     pextrw     edx, xmm2, 3         // get x1 integer. preroll
 
     // 2 Pixel loop.
-    align      16
+    align      4
   xloop2:
     movdqa     xmm1, xmm2           // x0, x1 fractions.
     paddd      xmm2, xmm3           // x += dx
@@ -364,16 +364,16 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     pshufb     xmm0, xmm4           // arrange pixels into pairs
     pxor       xmm1, xmm6           // 0..7f and 7f..0
     pmaddubsw  xmm0, xmm1           // argb_argb 16 bit, 2 pixels.
-    psrlw      xmm0, 7              // argb 8.7 fixed point to low 8 bits.
     pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
     pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
+    psrlw      xmm0, 7              // argb 8.7 fixed point to low 8 bits.
     packuswb   xmm0, xmm0           // argb_argb 8 bits, 2 pixels.
     movq       qword ptr [edi], xmm0
     lea        edi, [edi + 8]
     sub        ecx, 2               // 2 pixels
     jge        xloop2
 
-    align      16
+    align      4
  xloop29:
 
     add        ecx, 2 - 1
@@ -805,7 +805,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
 
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
     BUNDLEALIGN
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
@@ -827,7 +827,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "sub       $0x2,%2                         \n"
     "jge       2b                              \n"
 
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
     BUNDLEALIGN
   "29:                                         \n"
     "add       $0x1,%2                         \n"

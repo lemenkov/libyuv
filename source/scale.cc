@@ -902,7 +902,7 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     pextrw     edx, xmm2, 3         // get x1 integer. preroll
 
     // 2 Pixel loop.
-    align      16
+    align      4
   xloop2:
     movdqa     xmm1, xmm2           // x0, x1 fractions.
     paddd      xmm2, xmm3           // x += dx
@@ -910,39 +910,38 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movd       xmm0, ebx
     psrlw      xmm1, 9              // 7 bit fractions.
     movzx      ebx, word ptr [esi + edx]  // 2 source x1 pixels
-    movd       xmm7, ebx
+    movd       xmm4, ebx
     pshufb     xmm1, xmm5           // 0011
-    punpcklwd  xmm0, xmm7
+    punpcklwd  xmm0, xmm4
     pxor       xmm1, xmm6           // 0..7f and 7f..0
     pmaddubsw  xmm0, xmm1           // 16 bit, 2 pixels.
-    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
     pextrw     eax, xmm2, 1         // get x0 integer. next iteration.
     pextrw     edx, xmm2, 3         // get x1 integer. next iteration.
+    psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
     packuswb   xmm0, xmm0           // 8 bits, 2 pixels.
     movd       ebx, xmm0
-    mov        word ptr [edi], bx
+    mov        [edi], bx
     lea        edi, [edi + 2]
     sub        ecx, 2               // 2 pixels
     jge        xloop2
 
-    align      16
+    align      4
  xloop29:
 
     add        ecx, 2 - 1
     jl         xloop99
 
     // 1 pixel remainder
-    movdqa     xmm1, xmm2           // x0, x1 fractions.
     movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
     movd       xmm0, ebx
-    psrlw      xmm1, 9              // 7 bit fractions.
-    pshufb     xmm1, xmm5           // 0011
-    pxor       xmm1, xmm6           // 0..7f and 7f..0
-    pmaddubsw  xmm0, xmm1           // 16 bit, 2 pixels.
+    psrlw      xmm2, 9              // 7 bit fractions.
+    pshufb     xmm2, xmm5           // 0011
+    pxor       xmm2, xmm6           // 0..7f and 7f..0
+    pmaddubsw  xmm0, xmm2           // 16 bit
     psrlw      xmm0, 7              // 8.7 fixed point to low 8 bits.
-    packuswb   xmm0, xmm0           // 8 bits, 2 pixels.
+    packuswb   xmm0, xmm0           // 8 bits
     movd       ebx, xmm0
-    mov        byte ptr [edi], bl
+    mov        [edi], bl
 
     align      16
  xloop99:
@@ -1638,7 +1637,7 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "punpckldq %%xmm3,%%xmm3                   \n"
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
@@ -1646,25 +1645,24 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "movd      %k5,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
     "movzwl    (%1,%4,1),%k5                   \n"
-    "movd      %k5,%%xmm7                      \n"
+    "movd      %k5,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
-    "punpcklwd %%xmm7,%%xmm0                   \n"
+    "punpcklwd %%xmm4,%%xmm0                   \n"
     "pxor      %%xmm6,%%xmm1                   \n"
     "pmaddubsw %%xmm1,%%xmm0                   \n"
-    "psrlw     $0x7,%%xmm0                     \n"
     "pextrw    $0x1,%%xmm2,%k3                 \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
+    "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,%k5                      \n"
     "mov       %w5,(%0)                        \n"
     "lea       0x2(%0),%0                      \n"
     "sub       $0x2,%2                         \n"
     "jge       2b                              \n"
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
   "29:                                         \n"
     "addl      $0x1,%2                         \n"
     "jl        99f                             \n"
-    "movdqa    %%xmm2,%%xmm1                   \n"
     "movzwl    (%1,%3,1),%k5                   \n"
     "movd      %k5,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
@@ -1686,7 +1684,7 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "rm"(dx)           // %7
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6", "xmm7"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
 #endif
   );
 }
@@ -2393,13 +2391,13 @@ static void ScalePlaneBox(int src_width, int src_height,
   }
 }
 
-// Scale plane to/from any dimensions, with bilinear interpolation.
+// Scale plane down with bilinear interpolation.
 SAFEBUFFERS
-void ScalePlaneBilinear(int src_width, int src_height,
-                        int dst_width, int dst_height,
-                        int src_stride, int dst_stride,
-                        const uint8* src_ptr, uint8* dst_ptr,
-                        FilterMode filtering) {
+void ScalePlaneBilinearDown(int src_width, int src_height,
+                            int dst_width, int dst_height,
+                            int src_stride, int dst_stride,
+                            const uint8* src_ptr, uint8* dst_ptr,
+                            FilterMode filtering) {
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(Abs(src_width) <= kMaxStride);
@@ -2505,6 +2503,138 @@ void ScalePlaneBilinear(int src_width, int src_height,
   }
 }
 
+// Scale up down with bilinear interpolation.
+SAFEBUFFERS
+void ScalePlaneBilinearUp(int src_width, int src_height,
+                          int dst_width, int dst_height,
+                          int src_stride, int dst_stride,
+                          const uint8* src_ptr, uint8* dst_ptr,
+                          FilterMode filtering) {
+  assert(src_width != 0);
+  assert(src_height != 0);
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  assert(Abs(dst_width) <= kMaxStride);
+  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
+      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
+      InterpolateRow_C;
+#if defined(HAS_INTERPOLATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 16) {
+    InterpolateRow = InterpolateRow_Any_SSE2;
+    if (IS_ALIGNED(dst_width, 16)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSE2;
+      if (IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+        InterpolateRow = InterpolateRow_SSE2;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 16) {
+    InterpolateRow = InterpolateRow_Any_SSSE3;
+    if (IS_ALIGNED(dst_width, 16)) {
+      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
+      if (IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+        InterpolateRow = InterpolateRow_SSSE3;
+      }
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && dst_width >= 32) {
+    InterpolateRow = InterpolateRow_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 32)) {
+      InterpolateRow = InterpolateRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && dst_width >= 16) {
+    InterpolateRow = InterpolateRow_Any_NEON;
+    if (IS_ALIGNED(dst_width, 16)) {
+      InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_width >= 4) {
+    InterpolateRow = InterpolateRow_Any_MIPS_DSPR2;
+    if (IS_ALIGNED(dst_width, 4)) {
+      InterpolateRow = InterpolateRow_MIPS_DSPR2;
+    }
+  }
+#endif
+
+  void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
+       int dst_width, int x, int dx) = ScaleFilterCols_C;
+#if defined(HAS_SCALEFILTERCOLS_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleFilterCols = ScaleFilterCols_SSSE3;
+  }
+#endif
+  int dx = 0;
+  int dy = 0;
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    dx = FixedDiv(Abs(src_width), dst_width);
+    x = (dx >> 1) - 32768;
+  } else if (dst_width > 1) {
+    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
+  if (dst_height <= src_height) {
+    dy = FixedDiv(src_height, dst_height);
+    y = (dy >> 1) - 32768;
+  } else if (dst_height > 1) {
+    dy = FixedDiv(src_height - 1, dst_height - 1);
+  }
+
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  if (y > max_y) {
+    y = max_y;
+  }
+  int yi = y >> 16;
+  const uint8* src = src_ptr + yi * src_stride;
+  SIMD_ALIGNED(uint8 row[2 * kMaxStride]);
+  uint8* rowptr = row;
+  int rowstride = kMaxStride;
+  int lasty = yi;
+
+  ScaleFilterCols(rowptr, src, dst_width, x, dx);
+  if (src_height > 1) {
+    src += src_stride;
+  }
+  ScaleFilterCols(rowptr + rowstride, src, dst_width, x, dx);
+  src += src_stride;
+
+  for (int j = 0; j < dst_height; ++j) {
+    yi = y >> 16;
+    if (yi != lasty) {
+      if (y <= max_y) {
+        ScaleFilterCols(rowptr, src, dst_width, x, dx);
+        rowptr += rowstride;
+        rowstride = -rowstride;
+        lasty = yi;
+        src += src_stride;
+      }
+    }
+    if (filtering == kFilterLinear) {
+      InterpolateRow(dst_ptr, rowptr, 0, dst_width, 0);
+    } else {
+      int yf = (y >> 8) & 255;
+      InterpolateRow(dst_ptr, rowptr, rowstride, dst_width, yf);
+    }
+    dst_ptr += dst_stride;
+    y += dy;
+  }
+}
+
 // Scale plane to/from any dimensions, without interpolation.
 // Fixed point math is used for performance: The upper 16 bits
 // of x and dx is the integer part of the source position and
@@ -2540,40 +2670,29 @@ static void ScalePlaneSimple(int src_width, int src_height,
 }
 
 // Scale plane to/from any dimensions.
-
 static void ScalePlaneAnySize(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
                               const uint8* src_ptr, uint8* dst_ptr,
                               FilterMode filtering) {
-  if (!filtering || src_width > kMaxStride) {
-    ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
-                     src_stride, dst_stride, src_ptr, dst_ptr);
-  } else {
-    ScalePlaneBilinear(src_width, src_height, dst_width, dst_height,
-                       src_stride, dst_stride, src_ptr, dst_ptr, filtering);
-  }
-}
-
-// Scale plane down, any size
-
-static void ScalePlaneDown(int src_width, int src_height,
-                           int dst_width, int dst_height,
-                           int src_stride, int dst_stride,
-                           const uint8* src_ptr, uint8* dst_ptr,
-                           FilterMode filtering) {
-  if (!filtering || src_width > kMaxStride) {
-    ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
-                     src_stride, dst_stride, src_ptr, dst_ptr);
-  } else if (filtering == kFilterBilinear || filtering == kFilterLinear ||
-             dst_height * 2 > src_height) {
-    // between 1/2x and 1x use bilinear
-    ScalePlaneBilinear(src_width, src_height, dst_width, dst_height,
-                       src_stride, dst_stride, src_ptr, dst_ptr, filtering);
-  } else {
+  if (filtering == kFilterBox && src_width <= kMaxStride &&
+      dst_height * 2 < src_height  ) {
     ScalePlaneBox(src_width, src_height, dst_width, dst_height,
                   src_stride, dst_stride, src_ptr, dst_ptr);
+    return;
   }
+  if (filtering && dst_height > src_height && dst_width <= kMaxStride) {
+    ScalePlaneBilinearUp(src_width, src_height, dst_width, dst_height,
+                         src_stride, dst_stride, src_ptr, dst_ptr, filtering);
+    return;
+  }
+  if (filtering && src_width <= kMaxStride) {
+    ScalePlaneBilinearDown(src_width, src_height, dst_width, dst_height,
+                           src_stride, dst_stride, src_ptr, dst_ptr, filtering);
+    return;
+  }
+  ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
+                   src_stride, dst_stride, src_ptr, dst_ptr);
 }
 
 // Scale a plane.
@@ -2591,45 +2710,51 @@ void ScalePlane(const uint8* src, int src_stride,
   if (dst_width == src_width && dst_height == src_height) {
     // Straight copy.
     CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
-  } else if (dst_width == src_width) {
+    return;
+  }
+  if (dst_width == src_width) {
     int dy = FixedDiv(src_height, dst_height);
     // Arbitrary scale vertically, but unscaled vertically.
     ScalePlaneVertical(src_height,
                        dst_width, dst_height,
                        src_stride, dst_stride, src, dst,
                        0, 0, dy, 1, filtering);
-  } else if (dst_width <= Abs(src_width) && dst_height <= src_height) {
+    return;
+  }
+  if (dst_width <= Abs(src_width) && dst_height <= src_height) {
     // Scale down.
     if (4 * dst_width == 3 * src_width &&
         4 * dst_height == 3 * src_height) {
       // optimized, 3/4
       ScalePlaneDown34(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);
-    } else if (2 * dst_width == src_width && 2 * dst_height == src_height) {
+      return;
+    }
+    if (2 * dst_width == src_width && 2 * dst_height == src_height) {
       // optimized, 1/2
       ScalePlaneDown2(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);
+      return;
+    }
     // 3/8 rounded up for odd sized chroma height.
-    } else if (8 * dst_width == 3 * src_width &&
-               dst_height == ((src_height * 3 + 7) / 8)) {
+    if (8 * dst_width == 3 * src_width &&
+        dst_height == ((src_height * 3 + 7) / 8)) {
       // optimized, 3/8
       ScalePlaneDown38(src_width, src_height, dst_width, dst_height,
                        src_stride, dst_stride, src, dst, filtering);
-    } else if (4 * dst_width == src_width && 4 * dst_height == src_height &&
+      return;
+    }
+    if (4 * dst_width == src_width && 4 * dst_height == src_height &&
                filtering != kFilterBilinear) {
       // optimized, 1/4
       ScalePlaneDown4(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);
-    } else {
-      // Arbitrary downsample
-      ScalePlaneDown(src_width, src_height, dst_width, dst_height,
-                     src_stride, dst_stride, src, dst, filtering);
+      return;
     }
-  } else {
-    // Arbitrary scale up and/or down.
-    ScalePlaneAnySize(src_width, src_height, dst_width, dst_height,
-                      src_stride, dst_stride, src, dst, filtering);
   }
+  // Arbitrary scale up and/or down.
+  ScalePlaneAnySize(src_width, src_height, dst_width, dst_height,
+                    src_stride, dst_stride, src, dst, filtering);
 }
 
 // Scale an I420 image.
