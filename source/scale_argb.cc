@@ -401,6 +401,7 @@ static void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 
 // Reads 4 pixels, duplicates them and writes 8 pixels.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+#define HAS_SCALEARGBCOLSUP2_SSE2
 __declspec(naked) __declspec(align(16))
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int /* x */, int /* dx */) {
@@ -735,6 +736,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 
 // Reads 4 pixels, duplicates them and writes 8 pixels.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+#define HAS_SCALEARGBCOLSUP2_SSE2
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int /* x */, int /* dx */) {
   asm volatile (
@@ -945,6 +947,38 @@ static void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
   }
 }
 
+// Scales a single row of pixels using point sampling.
+void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
+                     int dst_width, int x, int dx) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst[0] = src[x >> 16];
+    x += dx;
+    dst[1] = src[x >> 16];
+    x += dx;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[x >> 16];
+  }
+}
+
+// Scales a single row of pixels up by 2x using point sampling.
+void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int, int) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst[1] = dst[0] = src[0];
+    src += 1;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[0];
+  }
+}
+
 // Mimics SSSE3 blender
 #define BLENDER1(a, b, f) ((a) * (0x7f ^ f) + (b) * f) >> 7
 #define BLENDERC(a, b, f, s) static_cast<uint32>( \
@@ -1151,7 +1185,7 @@ static void ScaleARGBBilinearDown(int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height - 1) << 16;
   for (int j = 0; j < dst_height; ++j) {
     if (y > max_y) {
       y = max_y;
@@ -1231,13 +1265,30 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 #endif
   void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
-      int dst_width, int x, int dx) = ScaleARGBFilterCols_C;
+      int dst_width, int x, int dx) =
+      filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (filtering && TestCpuFlag(kCpuHasSSSE3)) {
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+#if defined(HAS_SCALEARGBCOLS_SSE2)
+  if (!filtering && TestCpuFlag(kCpuHasSSE2)) {
+    ScaleARGBFilterCols = ScaleARGBCols_SSE2;
+  }
+#endif
+  if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
+    ScaleARGBFilterCols = ScaleARGBColsUp2_C;
+#if defined(HAS_SCALEARGBCOLSUP2_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8) &&
+        IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
+        IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
+      ScaleARGBFilterCols = ScaleARGBColsUp2_SSE2;
+    }
+#endif
+  }
+
+  const int max_y = (src_height - 1) << 16;
   if (y > max_y) {
     y = max_y;
   }
@@ -1258,7 +1309,11 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   for (int j = 0; j < dst_height; ++j) {
     yi = y >> 16;
     if (yi != lasty) {
-      if (y <= max_y) {
+      if (y > max_y) {
+        y = max_y;
+        yi = y >> 16;
+      }
+      if (yi != lasty) {
         ScaleARGBFilterCols(rowptr, src, dst_width, x, dx);
         rowptr += rowstride;
         rowstride = -rowstride;
@@ -1394,7 +1449,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height - 1) << 16;
   if (y > max_y) {
     y = max_y;
   }
@@ -1430,7 +1485,11 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   for (int j = 0; j < dst_height; ++j) {
     yi = y >> 16;
     if (yi != lasty) {
-      if (y <= max_y) {
+      if (y > max_y) {
+        y = max_y;
+        yi = y >> 16;
+      }
+      if (yi != lasty) {
         // TODO(fbarchard): Convert the clipped region of row.
         I422ToARGBRow(src_row_y, src_row_u, src_row_v, argb_row, src_width);
         ScaleARGBFilterCols(rowptr, argb_row, dst_width, x, dx);
@@ -1456,26 +1515,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
 }
 #endif
 
-// Scales a single row of pixels using point sampling.
-// Code is adapted from libyuv bilinear yuv scaling, but with bilinear
-// interpolation off, and argb pixels instead of yuv.
-void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
-                     int dst_width, int x, int dx) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
-    dst[0] = src[x >> 16];
-    x += dx;
-    dst[1] = src[x >> 16];
-    x += dx;
-    dst += 2;
-  }
-  if (dst_width & 1) {
-    dst[0] = src[x >> 16];
-  }
-}
-
-// ScaleARGB ARGB to/from any dimensions, without interpolation.
+// Scale ARGB to/from any dimensions, without interpolation.
 // Fixed point math is used for performance: The upper 16 bits
 // of x and dx is the integer part of the source position and
 // the lower 16 bits are the fixed decimal part.
@@ -1490,14 +1530,18 @@ static void ScaleARGBSimple(int src_width, int src_height,
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleARGBCols = ScaleARGBCols_SSE2;
-    if (src_width * 2 == dst_width && IS_ALIGNED(dst_width, 8) &&
-        (x >> 16) == 0 &&
+  }
+#endif
+  if (src_width * 2 == dst_width && x < 0x8000) {
+    ScaleARGBCols = ScaleARGBColsUp2_C;
+#if defined(HAS_SCALEARGBCOLSUP2_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8) &&
         IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
         IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
       ScaleARGBCols = ScaleARGBColsUp2_SSE2;
     }
-  }
 #endif
+  }
 
   for (int i = 0; i < dst_height; ++i) {
     ScaleARGBCols(dst_argb, src_argb + (y >> 16) * src_stride,
@@ -1505,33 +1549,6 @@ static void ScaleARGBSimple(int src_width, int src_height,
     dst_argb += dst_stride;
     y += dy;
   }
-}
-
-// ScaleARGB ARGB to/from any dimensions.
-static void ScaleARGBAnySize(int src_width, int src_height,
-                             int dst_width, int dst_height,
-                             int clip_width, int clip_height,
-                             int src_stride, int dst_stride,
-                             const uint8* src_argb, uint8* dst_argb,
-                             int x, int dx, int y, int dy,
-                             FilterMode filtering) {
-  if (filtering && dy < 65536 && dst_width * 4 <= kMaxStride) {
-    ScaleARGBBilinearUp(src_width, src_height,
-                        clip_width, clip_height,
-                        src_stride, dst_stride, src_argb, dst_argb,
-                        x, dx, y, dy, filtering);
-    return;
-  }
-  if (filtering && src_width * 4 < kMaxStride) {
-    ScaleARGBBilinearDown(src_height,
-                          clip_width, clip_height,
-                          src_stride, dst_stride, src_argb, dst_argb,
-                          x, dx, y, dy, filtering);
-    return;
-  }
-  ScaleARGBSimple(src_width, src_height, clip_width, clip_height,
-                  src_stride, dst_stride, src_argb, dst_argb,
-                  x, dx, y, dy);
 }
 
 // ScaleARGB a ARGB.
@@ -1631,13 +1648,23 @@ static void ScaleARGB(const uint8* src, int src_stride,
                        x, y, dy, 4, filtering);
     return;
   }
-
-  // Arbitrary scale up and/or down.
-  ScaleARGBAnySize(src_width, src_height,
-                   dst_width, dst_height,
-                   clip_width, clip_height,
-                   src_stride, dst_stride, src, dst,
-                   x, dx, y, dy, filtering);
+  if (filtering && dy < 65536 && dst_width * 4 <= kMaxStride) {
+    ScaleARGBBilinearUp(src_width, src_height,
+                        clip_width, clip_height,
+                        src_stride, dst_stride, src, dst,
+                        x, dx, y, dy, filtering);
+    return;
+  }
+  if (filtering && src_width * 4 < kMaxStride) {
+    ScaleARGBBilinearDown(src_height,
+                          clip_width, clip_height,
+                          src_stride, dst_stride, src, dst,
+                          x, dx, y, dy, filtering);
+    return;
+  }
+  ScaleARGBSimple(src_width, src_height, clip_width, clip_height,
+                  src_stride, dst_stride, src, dst,
+                  x, dx, y, dy);
 }
 
 LIBYUV_API

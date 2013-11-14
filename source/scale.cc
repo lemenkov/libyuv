@@ -953,11 +953,76 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 
+#define HAS_SCALECOLSUP2_SSE2
+// Reads 16 pixels, duplicates them and writes 32 pixels.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+__declspec(naked) __declspec(align(16))
+void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                       int dst_width, int /* x */, int /* dx */) {
+  __asm {
+    mov        edx, [esp + 4]    // dst_ptr
+    mov        eax, [esp + 8]    // src_ptr
+    mov        ecx, [esp + 12]   // dst_width
+
+    align      16
+  wloop:
+    movdqa     xmm0, [eax]
+    lea        eax,  [eax + 16]
+    movdqa     xmm1, xmm0
+    punpcklbw  xmm0, xmm0
+    punpckhbw  xmm1, xmm1
+    sub        ecx, 32
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    jg         wloop
+
+    ret
+  }
+}
+
 #elif !defined(LIBYUV_DISABLE_X86) && \
     ((defined(__x86_64__) && !defined(__native_client__)) || defined(__i386__))
+
+// TODO(nfullagar): For Native Client: When new toolchain becomes available,
+// take advantage of bundle lock / unlock feature. This will reduce the amount
+// of manual bundle alignment done below, and bundle alignment could even be
+// moved into each macro that doesn't use %%nacl: such as MEMOPREG.
+
+#if defined(__native_client__) && defined(__x86_64__)
+#define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
+#define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
+#define MEMLEA(offset, base) #offset "(%q" #base ")"
+#define MEMLEA3(offset, index, scale) \
+    #offset "(,%q" #index "," #scale ")"
+#define MEMLEA4(offset, base, index, scale) \
+    #offset "(%q" #base ",%q" #index "," #scale ")"
+#define MEMOPREG(opcode, offset, base, index, scale, reg) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14),%%" #reg "\n"
+#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " %%" #reg ",(%%r15,%%r14)\n"
+#define BUNDLEALIGN ".p2align 5 \n"
+#else
+#define MEMACCESS(base) "(%" #base ")"
+#define MEMACCESS2(offset, base) #offset "(%" #base ")"
+#define MEMLEA(offset, base) #offset "(%" #base ")"
+#define MEMLEA3(offset, index, scale) \
+    #offset "(,%" #index "," #scale ")"
+#define MEMLEA4(offset, base, index, scale) \
+    #offset "(%" #base ",%" #index "," #scale ")"
+#define MEMOPREG(opcode, offset, base, index, scale, reg) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
+#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
+    #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
+#define BUNDLEALIGN
+#endif
+
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
+
 #define HAS_SCALEROWDOWN2_SSE2
 static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
@@ -1689,6 +1754,40 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 
+// Reads 4 pixels, duplicates them and writes 8 pixels.
+// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
+#define HAS_SCALECOLSUP2_SSE2
+void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
+                       int dst_width, int /* x */, int /* dx */) {
+  asm volatile (
+    ".p2align  4                               \n"
+    BUNDLEALIGN
+  "1:                                          \n"
+    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "movdqa    %%xmm0,%%xmm1                   \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "punpckhbw %%xmm1,%%xmm1                   \n"
+    "sub       $0x20,%2                         \n"
+    "movdqa    %%xmm0," MEMACCESS(0) "         \n"
+    "movdqa    %%xmm1," MEMACCESS2(0x10,0) "   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "jg        1b                              \n"
+
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+r"(dst_width)    // %2
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1"
+#endif
+  );
+}
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #if !defined(LIBYUV_DISABLE_MIPS) && !defined(__native_client__) && \
@@ -1874,6 +1973,34 @@ static void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
     s += 4;
     t += 4;
   } while (d < dend);
+}
+
+// Scales a single row of pixels using point sampling.
+void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
+                 int dst_width, int x, int dx) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst_ptr[0] = src_ptr[x >> 16];
+    x += dx;
+    dst_ptr[1] = src_ptr[x >> 16];
+    x += dx;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    dst_ptr[0] = src_ptr[x >> 16];
+  }
+}
+
+// Scales a single row of pixels up by 2x using point sampling.
+void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
+                    int dst_width, int, int) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst_ptr[1] = dst_ptr[0] = src_ptr[0];
+    src_ptr += 1;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    dst_ptr[0] = src_ptr[0];
+  }
 }
 
 // (1-f)a + fb can be replaced with a + f(b-a)
@@ -2484,7 +2611,7 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   } else if (dst_height > 1) {
     dy = FixedDiv(src_height - 1, dst_height - 1);
   }
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height - 1) << 16;
   for (int j = 0; j < dst_height; ++j) {
     if (y > max_y) {
       y = max_y;
@@ -2515,6 +2642,29 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(Abs(dst_width) <= kMaxStride);
+  int dx = 0;
+  int dy = 0;
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    dx = FixedDiv(Abs(src_width), dst_width);
+    x = (dx >> 1) - 32768;
+  } else if (dst_width > 1) {
+    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    x += (dst_width - 1) * dx;
+    dx = -dx;
+    src_width = -src_width;
+  }
+  if (dst_height <= src_height) {
+    dy = FixedDiv(src_height, dst_height);
+    y = (dy >> 1) - 32768;
+  } else if (dst_height > 1) {
+    dy = FixedDiv(src_height - 1, dst_height - 1);
+  }
+
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
@@ -2566,36 +2716,25 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
 #endif
 
   void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
-       int dst_width, int x, int dx) = ScaleFilterCols_C;
+       int dst_width, int x, int dx) =
+       filtering ? ScaleFilterCols_C : ScaleCols_C;
 #if defined(HAS_SCALEFILTERCOLS_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (filtering && TestCpuFlag(kCpuHasSSSE3)) {
     ScaleFilterCols = ScaleFilterCols_SSSE3;
   }
 #endif
-  int dx = 0;
-  int dy = 0;
-  int x = 0;
-  int y = 0;
-  if (dst_width <= Abs(src_width)) {
-    dx = FixedDiv(Abs(src_width), dst_width);
-    x = (dx >> 1) - 32768;
-  } else if (dst_width > 1) {
-    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
-  }
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
-  if (dst_height <= src_height) {
-    dy = FixedDiv(src_height, dst_height);
-    y = (dy >> 1) - 32768;
-  } else if (dst_height > 1) {
-    dy = FixedDiv(src_height - 1, dst_height - 1);
+  if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
+    ScaleFilterCols = ScaleColsUp2_C;
+#if defined(HAS_SCALECOLS_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8) &&
+        IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
+        IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+      ScaleFilterCols = ScaleColsUp2_SSE2;
+    }
+#endif
   }
 
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  const int max_y = (src_height - 1) << 16;
   if (y > max_y) {
     y = max_y;
   }
@@ -2616,7 +2755,11 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   for (int j = 0; j < dst_height; ++j) {
     yi = y >> 16;
     if (yi != lasty) {
-      if (y <= max_y) {
+      if (y > max_y) {
+        y = max_y;
+        yi = y >> 16;
+      }
+      if (yi != lasty) {
         ScaleFilterCols(rowptr, src, dst_width, x, dx);
         rowptr += rowstride;
         rowstride = -rowstride;
@@ -2635,7 +2778,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   }
 }
 
-// Scale plane to/from any dimensions, without interpolation.
+// Scale Plane to/from any dimensions, without interpolation.
 // Fixed point math is used for performance: The upper 16 bits
 // of x and dx is the integer part of the source position and
 // the lower 16 bits are the fixed decimal part.
@@ -2654,45 +2797,25 @@ static void ScalePlaneSimple(int src_width, int src_height,
     dx = -dx;
     src_width = -src_width;
   }
-
-  for (int j = 0; j < dst_height; ++j) {
-    int xs = x;
-    int yi = y >> 16;
-    const uint8* src = src_ptr + yi * src_stride;
-    uint8* dst = dst_ptr;
-    for (int i = 0; i < dst_width; ++i) {
-      *dst++ = src[xs >> 16];
-      xs += dx;
+  void (*ScaleCols)(uint8* dst_ptr, const uint8* src_ptr,
+      int dst_width, int x, int dx) = ScaleCols_C;
+  if (src_width * 2 == dst_width && x < 0x8000) {
+    ScaleCols = ScaleColsUp2_C;
+#if defined(HAS_SCALECOLS_SSE2)
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8) &&
+        IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16) &&
+        IS_ALIGNED(dst_ptr, 16) && IS_ALIGNED(dst_stride, 16)) {
+      ScaleCols = ScaleColsUp2_SSE2;
     }
+#endif
+  }
+
+  for (int i = 0; i < dst_height; ++i) {
+    ScaleCols(dst_ptr, src_ptr + (y >> 16) * src_stride,
+              dst_width, x, dx);
     dst_ptr += dst_stride;
     y += dy;
   }
-}
-
-// Scale plane to/from any dimensions.
-static void ScalePlaneAnySize(int src_width, int src_height,
-                              int dst_width, int dst_height,
-                              int src_stride, int dst_stride,
-                              const uint8* src_ptr, uint8* dst_ptr,
-                              FilterMode filtering) {
-  if (filtering == kFilterBox && src_width <= kMaxStride &&
-      dst_height * 2 < src_height  ) {
-    ScalePlaneBox(src_width, src_height, dst_width, dst_height,
-                  src_stride, dst_stride, src_ptr, dst_ptr);
-    return;
-  }
-  if (filtering && dst_height > src_height && dst_width <= kMaxStride) {
-    ScalePlaneBilinearUp(src_width, src_height, dst_width, dst_height,
-                         src_stride, dst_stride, src_ptr, dst_ptr, filtering);
-    return;
-  }
-  if (filtering && src_width <= kMaxStride) {
-    ScalePlaneBilinearDown(src_width, src_height, dst_width, dst_height,
-                           src_stride, dst_stride, src_ptr, dst_ptr, filtering);
-    return;
-  }
-  ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
-                   src_stride, dst_stride, src_ptr, dst_ptr);
 }
 
 // Scale a plane.
@@ -2752,9 +2875,24 @@ void ScalePlane(const uint8* src, int src_stride,
       return;
     }
   }
-  // Arbitrary scale up and/or down.
-  ScalePlaneAnySize(src_width, src_height, dst_width, dst_height,
-                    src_stride, dst_stride, src, dst, filtering);
+  if (filtering == kFilterBox && src_width <= kMaxStride &&
+      dst_height * 2 < src_height  ) {
+    ScalePlaneBox(src_width, src_height, dst_width, dst_height,
+                  src_stride, dst_stride, src, dst);
+    return;
+  }
+  if (filtering && dst_height > src_height && dst_width <= kMaxStride) {
+    ScalePlaneBilinearUp(src_width, src_height, dst_width, dst_height,
+                         src_stride, dst_stride, src, dst, filtering);
+    return;
+  }
+  if (filtering && src_width <= kMaxStride) {
+    ScalePlaneBilinearDown(src_width, src_height, dst_width, dst_height,
+                           src_stride, dst_stride, src, dst, filtering);
+    return;
+  }
+  ScalePlaneSimple(src_width, src_height, dst_width, dst_height,
+                   src_stride, dst_stride, src, dst);
 }
 
 // Scale an I420 image.
