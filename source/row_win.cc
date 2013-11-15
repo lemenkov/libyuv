@@ -5998,7 +5998,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 12]   // src_argb
+    mov        eax, [esp + 12]  // src_argb
     mov        esi, [esp + 16]  // stride
     mov        edx, [esp + 20]  // dst_argb
     mov        ecx, [esp + 24]  // pointer to uv_dudv

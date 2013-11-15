@@ -5230,11 +5230,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
 #endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 
 #ifdef HAS_ARGBAFFINEROW_SSE2
-// TODO(fbarchard): Find 64 bit way to avoid masking.
 // Copy ARGB pixels from source image with slope to a row of destination.
-// Caveat - in 64 bit, movd is used with 64 bit gpr due to Mac gcc producing
-// an error if movq is used. movd  %%xmm0,%1
-
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
                         uint8* dst_argb, const float* src_dudv, int width) {
@@ -5263,56 +5259,24 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
   // 4 pixel loop                              \n"
     ".p2align  4                               \n"
   "40:                                         \n"
-    "cvttps2dq %%xmm2,%%xmm0                   \n"
-    "cvttps2dq %%xmm3,%%xmm1                   \n"
-    "packssdw  %%xmm1,%%xmm0                   \n"
-    "pmaddwd   %%xmm5,%%xmm0                   \n"
-#if defined(__x86_64__)
-// TODO(fbarchard): use a real movd to zero upper with %w1 for x64 and nacl.
-    "movd      %%xmm0,%1                       \n"
-    "mov       %1,%5                           \n"
-    "and       $0x0fffffff,%1                  \n"
-    "shr       $32,%5                          \n"
-    "pshufd    $0xEE,%%xmm0,%%xmm0             \n"
-#else
-    "movd      %%xmm0,%1                       \n"
+    "cvttps2dq %%xmm2,%%xmm0                   \n"  // x, y float to int first 2
+    "cvttps2dq %%xmm3,%%xmm1                   \n"  // x, y float to int next 2
+    "packssdw  %%xmm1,%%xmm0                   \n"  // x, y as 8 shorts
+    "pmaddwd   %%xmm5,%%xmm0                   \n"  // off = x * 4 + y * stride
+    "movd      %%xmm0,%k1                      \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
-    "movd      %%xmm0,%5                       \n"
+    "movd      %%xmm0,%k5                      \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
-#endif
-#if defined(__x86_64__) && defined(__native_client__)
-    BUNDLEALIGN
-    "lea       (%q0,%q1,1),%%r14d              \n"
-    "movd      (%%r15,%%r14,1),%%xmm1          \n"
-    "lea       (%q0,%q5,1),%%r14d              \n"
-    "movd      (%%r15,%%r14,1),%%xmm6          \n"
-#else
-    "movd      (%0,%1,1),%%xmm1                \n"
-    "movd      (%0,%5,1),%%xmm6                \n"
-#endif
+    MEMOPREG(movd,0x00,0,1,1,xmm1)             //  movd      (%0,%1,1),%%xmm1
+    MEMOPREG(movd,0x00,0,5,1,xmm6)             //  movd      (%0,%5,1),%%xmm6
     "punpckldq %%xmm6,%%xmm1                   \n"
     "addps     %%xmm4,%%xmm2                   \n"
     "movq      %%xmm1," MEMACCESS(2) "         \n"
-#if defined(__x86_64__)
-    "movd      %%xmm0,%1                       \n"
-    "mov       %1,%5                           \n"
-    "and       $0x0fffffff,%1                  \n"
-    "shr       $32,%5                          \n"
-#else
-    "movd      %%xmm0,%1                       \n"
+    "movd      %%xmm0,%k1                      \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
-    "movd      %%xmm0,%5                       \n"
-#endif
-#if defined(__x86_64__) && defined(__native_client__)
-    BUNDLEALIGN
-    "lea       (%q0,%q1,1),%%r14d              \n"
-    "movd      (%%r15,%%r14,1),%%xmm0          \n"
-    "lea       (%q0,%q5,1),%%r14d              \n"
-    "movd      (%%r15,%%r14,1),%%xmm6          \n"
-#else
-    "movd      (%0,%1,1),%%xmm0                \n"
-    "movd      (%0,%5,1),%%xmm6                \n"
-#endif
+    "movd      %%xmm0,%k5                      \n"
+    MEMOPREG(movd,0x00,0,1,1,xmm0)             //  movd      (%0,%1,1),%%xmm0
+    MEMOPREG(movd,0x00,0,5,1,xmm6)             //  movd      (%0,%5,1),%%xmm6
     "punpckldq %%xmm6,%%xmm0                   \n"
     "addps     %%xmm4,%%xmm3                   \n"
     "sub       $0x4,%4                         \n"
@@ -5331,17 +5295,8 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "packssdw  %%xmm0,%%xmm0                   \n"
     "pmaddwd   %%xmm5,%%xmm0                   \n"
     "addps     %%xmm7,%%xmm2                   \n"
-    "movd      %%xmm0,%1                       \n"
-#if defined(__x86_64__)
-    "and       $0x0fffffff,%1                  \n"
-#endif
-#if defined(__x86_64__) && defined(__native_client__)
-    BUNDLEALIGN
-    "lea       (%q0,%q1,1),%%r14d              \n"
-    "movd      (%%r15,%%r14,1),%%xmm0          \n"
-#else
-    "movd      (%0,%1,1),%%xmm0                \n"
-#endif
+    "movd      %%xmm0,%k1                      \n"
+    MEMOPREG(movd,0x00,0,1,1,xmm0)             //  movd      (%0,%1,1),%%xmm0
     "sub       $0x1,%4                         \n"
     "movd      %%xmm0," MEMACCESS(2) "         \n"
     "lea       " MEMLEA(0x04,2) ",%2           \n"

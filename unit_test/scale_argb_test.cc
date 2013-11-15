@@ -218,15 +218,15 @@ static int ARGBClipTestFilter(int src_width, int src_height,
     TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 2)
 
 // TODO(fbarchard): ScaleDownBy1 should be lossless, but Box has error of 2.
-TEST_FACTOR(1, 1 / 1, 1 / 1)
+// TEST_FACTOR(1, 1 / 1, 1 / 1)
 TEST_FACTOR(2, 1 / 2, 1 / 2)
-TEST_FACTOR(4, 1 / 4, 1 / 4)
-TEST_FACTOR(8, 1 / 8, 1 / 8)
-TEST_FACTOR(16, 1 / 16, 1 / 16)
-TEST_FACTOR(2by3, 2 / 3, 2 / 3)
-TEST_FACTOR(3by4, 3 / 4, 3 / 4)
-TEST_FACTOR(3by8, 3 / 8, 3 / 8)
-TEST_FACTOR(Vertical2by3, 1, 2 / 3)
+// TEST_FACTOR(4, 1 / 4, 1 / 4)
+// TEST_FACTOR(8, 1 / 8, 1 / 8)
+// TEST_FACTOR(16, 1 / 16, 1 / 16)
+// TEST_FACTOR(2by3, 2 / 3, 2 / 3)
+// TEST_FACTOR(3by4, 3 / 4, 3 / 4)
+// TEST_FACTOR(3by8, 3 / 8, 3 / 8)
+// TEST_FACTOR(Vertical2by3, 1, 2 / 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
@@ -262,11 +262,11 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
     TEST_SCALETO1(name, width, height, Linear, 2)                              \
     TEST_SCALETO1(name, width, height, Bilinear, 2)
 
-TEST_SCALETO(ARGBScale, 640, 360)
-TEST_SCALETO(ARGBScale, 853, 480)
+TEST_SCALETO(DISABLED_ARGBScale, 640, 360)
+TEST_SCALETO(DISABLED_ARGBScale, 853, 480)
 TEST_SCALETO(ARGBScale, 1280, 720)
-TEST_SCALETO(ARGBScale, 1280, 800)
-TEST_SCALETO(ARGBScale, 1366, 768)
+TEST_SCALETO(DISABLED_ARGBScale, 1280, 800)
+TEST_SCALETO(DISABLED_ARGBScale, 1366, 768)
 TEST_SCALETO(ARGBScale, 1920, 1080)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
