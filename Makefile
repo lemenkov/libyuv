@@ -44,5 +44,5 @@ convert: util/convert.cc Makefile
 	$(CC) $(CCFLAGS) -Iutil/ -o $@ util/convert.cc libyuv.a
 
 clean:
-	/bin/rm -f source/*.o libyuv.a convert
+	/bin/rm -f source/*.o *.ii *.s libyuv.a convert
 

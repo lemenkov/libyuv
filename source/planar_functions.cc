@@ -1548,10 +1548,13 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
   if (radius > height) {
-      radius = height;
+    radius = height;
   }
-  if (radius > width) {
-      radius = width;
+  if (radius > (width / 2 - 1)) {
+    radius = width / 2 - 1;
+  }
+  if (radius <= 0) {
+    return -1;
   }
   void (*ComputeCumulativeSumRow)(const uint8 *row, int32 *cumsum,
       const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
