@@ -1,5 +1,5 @@
 # This is a generic makefile for libyuv for gcc.
-# Caveat: This file will get overwritten by GYP if projects are generated 
+# Caveat: This file will get overwritten by GYP if projects are generated
 # with GYP_GENERATORS=make
 
 CC=g++
@@ -34,15 +34,15 @@ LOCAL_OBJ_FILES := \
 .cc.o:
 	$(CC) -c $(CCFLAGS) $*.cc -o $*.o
 
-all: libyuv.a convert
+all: libyuv.a convert Makefile
 
-libyuv.a: $(LOCAL_OBJ_FILES)
+libyuv.a: $(LOCAL_OBJ_FILES) Makefile
 	$(AR) $(ARFLAGS) -o $@ $(LOCAL_OBJ_FILES)
 
 # A test utility that uses libyuv conversion.
-convert: util/convert.cc
+convert: util/convert.cc Makefile
 	$(CC) $(CCFLAGS) -Iutil/ -o $@ util/convert.cc libyuv.a
 
 clean:
-	/bin/rm -f *.o libyuv.a convert
+	/bin/rm -f source/*.o libyuv.a convert
 

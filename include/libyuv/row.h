@@ -145,22 +145,26 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #endif
 
-// The following are available on all x86 platforms, including NaCL, but
-// require VS2012, clang, gcc4.7 or NaCL.
-// Caveat: llvm 3.1 required, but does not provide a version.
+// AVX2 functions available on all x86 platforms, but not NaCL, and
+// require VS2012, clang 3.4 or gcc 4.7.
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
 /* Test for GCC >= 4.7.0 */
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
 #define GCC_HAS_AVX2 1
 #endif  // GNUC >= 4.7
 #endif  // __GNUC__
-// TODO(fbarchard): Test with new NaCL tool chain.  Change __native_client__AVX2
-// to __native_client__ to test.
+
+#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+/* Test for clang >= 3.4.0 */
+#if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
+#define CLANG_HAS_AVX2 1
+#endif  // GNUC >= 4.7
+#endif  // __GNUC__
+
 #if !defined(LIBYUV_DISABLE_X86) && \
+  (defined(__x86_64__) || defined(__i386__)) && \
   ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  ((defined(__x86_64__) || defined(__i386__)) && \
-  (defined(__native_client__AVX2) || defined(__clang__) || \
-  defined(GCC_HAS_AVX2))))
+  defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2

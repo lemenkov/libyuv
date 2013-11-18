@@ -1689,12 +1689,12 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   asm volatile (
     "movd      %6,%%xmm2                       \n"
     "movd      %7,%%xmm3                       \n"
-    "movl      $0x04040000,%k5                 \n"
-    "movd      %k5,%%xmm5                      \n"
+    "movl      $0x04040000,%k2                 \n"
+    "movd      %k2,%%xmm5                      \n"
     "pcmpeqb   %%xmm6,%%xmm6                   \n"
     "psrlw     $0x9,%%xmm6                     \n"
     "pextrw    $0x1,%%xmm2,%k3                 \n"
-    "subl      $0x2,%2                         \n"
+    "subl      $0x2,%5                         \n"
     "jl        29f                             \n"
     "movdqa    %%xmm2,%%xmm0                   \n"
     "paddd     %%xmm3,%%xmm0                   \n"
@@ -1706,11 +1706,11 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
-    "movzwl    (%1,%3,1),%k5                   \n"
-    "movd      %k5,%%xmm0                      \n"
+    "movzwl    (%1,%3,1),%k2                   \n"
+    "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
-    "movzwl    (%1,%4,1),%k5                   \n"
-    "movd      %k5,%%xmm4                      \n"
+    "movzwl    (%1,%4,1),%k2                   \n"
+    "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
     "pxor      %%xmm6,%%xmm1                   \n"
@@ -1719,32 +1719,32 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "pextrw    $0x3,%%xmm2,%k4                 \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,%k5                      \n"
-    "mov       %w5,(%0)                        \n"
+    "movd      %%xmm0,%k2                      \n"
+    "mov       %w2,(%0)                        \n"
     "lea       0x2(%0),%0                      \n"
-    "sub       $0x2,%2                         \n"
+    "sub       $0x2,%5                         \n"
     "jge       2b                              \n"
     ".p2align  2                               \n"
   "29:                                         \n"
-    "addl      $0x1,%2                         \n"
+    "addl      $0x1,%5                         \n"
     "jl        99f                             \n"
-    "movzwl    (%1,%3,1),%k5                   \n"
-    "movd      %k5,%%xmm0                      \n"
+    "movzwl    (%1,%3,1),%k2                   \n"
+    "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "pxor      %%xmm6,%%xmm1                   \n"
     "pmaddubsw %%xmm1,%%xmm0                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0,%k5                      \n"
-    "mov       %b5,(%0)                        \n"
+    "movd      %%xmm0,%k2                      \n"
+    "mov       %b2,(%0)                        \n"
   "99:                                         \n"
   : "+r"(dst_ptr),     // %0
     "+r"(src_ptr),     // %1
-    "+rm"(dst_width),  // %2
-    "+a"(x0),          // %3
-    "+d"(x1),          // %4
-    "+b"(temp_pixel)   // %5
+    "+a"(temp_pixel),  // %2
+    "+r"(x0),          // %3
+    "+r"(x1),          // %4
+    "+rm"(dst_width)   // %5
   : "rm"(x),           // %6
     "rm"(dx)           // %7
   : "memory", "cc"
