@@ -1830,7 +1830,7 @@ static int TestBlur(int width, int height, int benchmark_iterations,
   return max_diff;
 }
 
-static const int kBlurSize = 13;
+static const int kBlurSize = 55;
 TEST_F(libyuvTest, ARGBBlur_Any) {
   int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
                           benchmark_iterations_, +1, 0, kBlurSize);

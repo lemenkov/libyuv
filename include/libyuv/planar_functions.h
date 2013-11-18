@@ -344,6 +344,7 @@ int MJPGToARGB(const uint8* sample, size_t sample_size,
                uint8* argb, int argb_stride,
                int w, int h, int dw, int dh);
 
+// Internal function - do not call directly.
 // Computes table of cumulative sum for image where the value is the sum
 // of all values above and to the left of the entry. Used by ARGBBlur.
 LIBYUV_API
@@ -352,7 +353,8 @@ int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int width, int height);
 
 // Blur ARGB image.
-// dst_cumsum table of width * height * 16 bytes aligned to 16 byte boundary.
+// dst_cumsum table of width * (height + 1) * 16 bytes aligned to
+//   16 byte boundary.
 // dst_stride32_cumsum is number of ints in a row (width * 4).
 // radius is number of pixels around the center.  e.g. 1 = 3x3. 2=5x5.
 // Blur is optimized for radius of 5 (11x11) or less.
