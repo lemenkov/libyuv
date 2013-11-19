@@ -145,26 +145,29 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #endif
 
-// AVX2 functions available on all x86 platforms, but not NaCL, and
-// require VS2012, clang 3.4 or gcc 4.7.
+// GCC >= 4.7.0 required for AVX2.
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-/* Test for GCC >= 4.7.0 */
 #if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
 #define GCC_HAS_AVX2 1
 #endif  // GNUC >= 4.7
 #endif  // __GNUC__
 
+// clang >= 3.4.0 required for AVX2.
 #if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
-/* Test for clang >= 3.4.0 */
 #if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
 #define CLANG_HAS_AVX2 1
-#endif  // GNUC >= 4.7
-#endif  // __GNUC__
+#endif  // clang >= 3.4
+#endif  // __clang__
 
-#if !defined(LIBYUV_DISABLE_X86) && \
-  (defined(__x86_64__) || defined(__i386__)) && \
-  ((defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700) || \
-  defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
+// Visual C 2012 required for AVX2.
+#if defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700
+#define VISUALC_HAS_AVX2 1
+#endif  // VisualStudio >= 2012
+
+// The following are available on all x86 platforms except NaCL x64, and
+// require VS2012, clang 3.4 or gcc 4.7.
+#if !defined(LIBYUV_DISABLE_X86) && (defined(VISUALC_HAS_AVX2) || \
+    defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 // Effects:
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -172,13 +175,9 @@ extern "C" {
 #define HAS_ARGBCOPYYTOALPHAROW_AVX2
 #endif
 
-// The following are Windows only:
+// The following are require VS2012.
 // TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
-// Effects:
-
-// Caveat: Visual C 2012 required for AVX2.
-#if _MSC_VER >= 1700
+#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
@@ -202,8 +201,7 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
-#endif  // _MSC_VER >= 1700
-#endif  // defined(_MSC_VER)
+#endif  // defined(VISUALC_HAS_AVX2)
 
 // The following are Yasm x86 only:
 // TODO(fbarchard): Port AVX2 to inline.
