@@ -870,7 +870,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-// Bilinear row filtering combines 2x1 -> 1x1. SSSE3 version.
+// Bilinear column filtering. SSSE3 version.
 // TODO(fbarchard): Port to Neon
 
 #define HAS_SCALEFILTERCOLS_SSSE3
@@ -1681,7 +1681,7 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-// Bilinear row filtering combines 4x2 -> 4x1. SSSE3 version
+// Bilinear column filtering. SSSE3 version.
 #define HAS_SCALEFILTERCOLS_SSSE3
 static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                                   int dst_width, int x, int dx) {
@@ -1730,10 +1730,10 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "jl        99f                             \n"
     "movzwl    (%1,%3,1),%k2                   \n"
     "movd      %k2,%%xmm0                      \n"
-    "psrlw     $0x9,%%xmm1                     \n"
-    "pshufb    %%xmm5,%%xmm1                   \n"
-    "pxor      %%xmm6,%%xmm1                   \n"
-    "pmaddubsw %%xmm1,%%xmm0                   \n"
+    "psrlw     $0x9,%%xmm2                     \n"
+    "pshufb    %%xmm5,%%xmm2                   \n"
+    "pxor      %%xmm6,%%xmm2                   \n"
+    "pmaddubsw %%xmm2,%%xmm0                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,%k2                      \n"
