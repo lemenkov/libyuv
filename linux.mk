@@ -1,6 +1,5 @@
 # This is a generic makefile for libyuv for gcc.
-# Caveat: This file will get overwritten by GYP if projects are generated
-# with GYP_GENERATORS=make
+# make -f linux.mk CC=clang++
 
 CC=g++
 CCFLAGS=-O2 -fomit-frame-pointer -Iinclude/
@@ -34,13 +33,13 @@ LOCAL_OBJ_FILES := \
 .cc.o:
 	$(CC) -c $(CCFLAGS) $*.cc -o $*.o
 
-all: libyuv.a convert Makefile
+all: libyuv.a convert linux.mk
 
-libyuv.a: $(LOCAL_OBJ_FILES) Makefile
+libyuv.a: $(LOCAL_OBJ_FILES) linux.mk
 	$(AR) $(ARFLAGS) -o $@ $(LOCAL_OBJ_FILES)
 
 # A test utility that uses libyuv conversion.
-convert: util/convert.cc Makefile
+convert: util/convert.cc linux.mk
 	$(CC) $(CCFLAGS) -Iutil/ -o $@ util/convert.cc libyuv.a
 
 clean:
