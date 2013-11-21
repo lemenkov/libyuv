@@ -87,8 +87,7 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
 // SSE2 downscalers with interpolation.
 // Constants for SSSE3 code
 #elif !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__i386__) || \
-    (defined(__x86_64__) && !defined(__native_client__)))
+    (defined(_M_IX86) || defined(__i386__) || defined(__x86_64__))
 
 // Offsets for source bytes 0 to 9
 static uvec8 kShuf0 =
@@ -982,7 +981,7 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 #elif !defined(LIBYUV_DISABLE_X86) && \
-    ((defined(__x86_64__) && !defined(__native_client__)) || defined(__i386__))
+    ((defined(__x86_64__)) || defined(__i386__))
 
 // TODO(nfullagar): For Native Client: When new toolchain becomes available,
 // take advantage of bundle lock / unlock feature. This will reduce the amount
@@ -1000,6 +999,9 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 #define MEMOPREG(opcode, offset, base, index, scale, reg) \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " (%%r15,%%r14),%%" #reg "\n"
+#define MEMOPREGK(opcode, offset, base, index, scale, reg) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14),%k" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " %%" #reg ",(%%r15,%%r14)\n"
@@ -1014,6 +1016,8 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     #offset "(%" #base ",%" #index "," #scale ")"
 #define MEMOPREG(opcode, offset, base, index, scale, reg) \
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
+#define MEMOPREGK(opcode, offset, base, index, scale, reg) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%k" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
 #define BUNDLEALIGN
@@ -1028,15 +1032,16 @@ static void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1056,10 +1061,11 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10, 0) ",%%xmm1  \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
@@ -1069,8 +1075,8 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t,
     "pavgw     %%xmm2,%%xmm0                   \n"
     "pavgw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1090,12 +1096,14 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    (%0,%3,1),%%xmm2                \n"
-    "movdqa    0x10(%0,%3,1),%%xmm3            \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqa,0x00,0,3,1,xmm2)           //  movdqa  (%0,%3,1),%%xmm2
+    BUNDLEALIGN
+    MEMOPREG(movdqa,0x10,0,3,1,xmm3)           //  movdqa  0x10(%0,%3,1),%%xmm3
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
@@ -1107,8 +1115,8 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pavgw     %%xmm2,%%xmm0                   \n"
     "pavgw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1116,6 +1124,9 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
@@ -1127,15 +1138,16 @@ static void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
                                          uint8* dst_ptr, int dst_width) {
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1155,10 +1167,11 @@ static void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
@@ -1168,8 +1181,8 @@ static void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
     "pavgw     %%xmm2,%%xmm0                   \n"
     "pavgw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1190,12 +1203,14 @@ static void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqu    (%0),%%xmm0                     \n"
-    "movdqu    0x10(%0),%%xmm1                 \n"
-    "movdqu    (%0,%3,1),%%xmm2                \n"
-    "movdqu    0x10(%0,%3,1),%%xmm3            \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu  (%0,%3,1),%%xmm2
+    BUNDLEALIGN
+    MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu  0x10(%0,%3,1),%%xmm3
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
@@ -1207,8 +1222,8 @@ static void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
     "pavgw     %%xmm2,%%xmm0                   \n"
     "pavgw     %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0,(%1)                     \n"
-    "lea       0x10(%1),%1                     \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1216,6 +1231,9 @@ static void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
@@ -1230,17 +1248,18 @@ static void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "psrld     $0x18,%%xmm5                    \n"
     "pslld     $0x10,%%xmm5                    \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movq      %%xmm0,(%1)                     \n"
-    "lea       0x8(%1),%1                      \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x8,1) ",%1            \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
@@ -1260,20 +1279,23 @@ static void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
     "psrlw     $0x8,%%xmm7                     \n"
-    "lea       (%4,%4,2),%3                    \n"
+    "lea       " MEMLEA4(0x00,4,4,2) ",%3      \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "movdqa    (%0,%4,1),%%xmm2                \n"
-    "movdqa    0x10(%0,%4,1),%%xmm3            \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqa,0x00,0,4,1,xmm2)           //  movdqa  (%0,%4,1),%%xmm2
+    BUNDLEALIGN
+    MEMOPREG(movdqa,0x10,0,4,1,xmm3)           //  movdqa  0x10(%0,%4,1),%%xmm3
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
-    "movdqa    (%0,%4,2),%%xmm2                \n"
-    "movdqa    0x10(%0,%4,2),%%xmm3            \n"
-    "movdqa    (%0,%3,1),%%xmm4                \n"
-    "movdqa    0x10(%0,%3,1),%%xmm5            \n"
-    "lea       0x20(%0),%0                     \n"
+    MEMOPREG(movdqa,0x00,0,4,2,xmm2)           //  movdqa  (%0,%4,2),%%xmm2
+    BUNDLEALIGN
+    MEMOPREG(movdqa,0x10,0,4,2,xmm3)           //  movdqa  0x10(%0,%4,2),%%xmm3
+    MEMOPREG(movdqa,0x00,0,3,1,xmm4)           //  movdqa  (%0,%3,1),%%xmm4
+    MEMOPREG(movdqa,0x10,0,3,1,xmm5)           //  movdqa  0x10(%0,%3,1),%%xmm5
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm4,%%xmm2                   \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm5,%%xmm3                   \n"
@@ -1292,8 +1314,8 @@ static void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pand      %%xmm7,%%xmm2                   \n"
     "pavgw     %%xmm2,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movq      %%xmm0,(%1)                     \n"
-    "lea       0x8(%1),%1                      \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x8,1) ",%1            \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
@@ -1302,6 +1324,9 @@ static void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "+r"(stridex3)     // %3
   : "r"(static_cast<intptr_t>(src_stride))    // %4
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm7"
 #endif
@@ -1322,19 +1347,20 @@ static void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
   );
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm2                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm2   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "palignr   $0x8,%%xmm0,%%xmm1              \n"
     "pshufb    %%xmm3,%%xmm0                   \n"
     "pshufb    %%xmm4,%%xmm1                   \n"
     "pshufb    %%xmm5,%%xmm2                   \n"
-    "movq      %%xmm0,(%1)                     \n"
-    "movq      %%xmm1,0x8(%1)                  \n"
-    "movq      %%xmm2,0x10(%1)                 \n"
-    "lea       0x18(%1),%1                     \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm1," MEMACCESS2(0x8,1) "    \n"
+    "movq      %%xmm2," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x18,1) ",%1           \n"
     "sub       $0x18,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),   // %0
@@ -1371,36 +1397,38 @@ static void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
   );
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm6                     \n"
-    "movdqa    (%0,%3),%%xmm7                  \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm6         \n"
+    MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm2,%%xmm6                   \n"
     "pmaddubsw %%xmm5,%%xmm6                   \n"
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,(%1)                     \n"
-    "movdqu    0x8(%0),%%xmm6                  \n"
-    "movdqu    0x8(%0,%3),%%xmm7               \n"
+    "movq      %%xmm6," MEMACCESS(1) "         \n"
+    "movdqu    " MEMACCESS2(0x8,0) ",%%xmm6    \n"
+    MEMOPREG(movdqu,0x8,0,3,1,xmm7)            //  movdqu  0x8(%0,%3),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm3,%%xmm6                   \n"
     "pmaddubsw %%xmm0,%%xmm6                   \n"
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,0x8(%1)                  \n"
-    "movdqa    0x10(%0),%%xmm6                 \n"
-    "movdqa    0x10(%0,%3),%%xmm7              \n"
-    "lea       0x20(%0),%0                     \n"
+    "movq      %%xmm6," MEMACCESS2(0x8,1) "    \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
+    BUNDLEALIGN
+    MEMOPREG(movdqa,0x10,0,3,1,xmm7)           //  movdqa  0x10(%0,%3),%%xmm7
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm4,%%xmm6                   \n"
     "pmaddubsw %4,%%xmm6                       \n"
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,0x10(%1)                 \n"
-    "lea       0x18(%1),%1                     \n"
+    "movq      %%xmm6," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x18,1) ",%1           \n"
     "sub       $0x18,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),   // %0
@@ -1409,6 +1437,9 @@ static void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
   : "r"(static_cast<intptr_t>(src_stride)),  // %3
     "m"(kMadd21)     // %4
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
@@ -1439,9 +1470,10 @@ static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
 
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm6                     \n"
-    "movdqa    (%0,%3,1),%%xmm7                \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm6         \n"
+    MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3,1),%%xmm7
     "pavgb     %%xmm6,%%xmm7                   \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm2,%%xmm6                   \n"
@@ -1449,9 +1481,9 @@ static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,(%1)                     \n"
-    "movdqu    0x8(%0),%%xmm6                  \n"
-    "movdqu    0x8(%0,%3,1),%%xmm7             \n"
+    "movq      %%xmm6," MEMACCESS(1) "         \n"
+    "movdqu    " MEMACCESS2(0x8,0) ",%%xmm6    \n"
+    MEMOPREG(movdqu,0x8,0,3,1,xmm7)            //  movdqu  0x8(%0,%3,1),%%xmm7
     "pavgb     %%xmm6,%%xmm7                   \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm3,%%xmm6                   \n"
@@ -1459,10 +1491,10 @@ static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,0x8(%1)                  \n"
-    "movdqa    0x10(%0),%%xmm6                 \n"
-    "movdqa    0x10(%0,%3,1),%%xmm7            \n"
-    "lea       0x20(%0),%0                     \n"
+    "movq      %%xmm6," MEMACCESS2(0x8,1) "    \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
+    MEMOPREG(movdqa,0x10,0,3,1,xmm7)           //  movdqa  0x10(%0,%3,1),%%xmm7
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm6,%%xmm7                   \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm4,%%xmm6                   \n"
@@ -1470,8 +1502,8 @@ static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     "paddsw    %%xmm1,%%xmm6                   \n"
     "psrlw     $0x2,%%xmm6                     \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "movq      %%xmm6,0x10(%1)                 \n"
-    "lea       0x18(%1),%1                     \n"
+    "movq      %%xmm6," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x18,1) ",%1           \n"
     "sub       $0x18,%2                        \n"
     "jg        1b                              \n"
     : "+r"(src_ptr),   // %0
@@ -1480,6 +1512,9 @@ static void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     : "r"(static_cast<intptr_t>(src_stride)),  // %3
       "m"(kMadd21)     // %4
     : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
@@ -1493,17 +1528,18 @@ static void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
     "movdqa    %3,%%xmm4                       \n"
     "movdqa    %4,%%xmm5                       \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    0x10(%0),%%xmm1                 \n"
-    "lea       0x20(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
-    "movq      %%xmm0,(%1)                     \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
     "movhlps   %%xmm0,%%xmm1                   \n"
-    "movd      %%xmm1,0x8(%1)                  \n"
-    "lea       0xc(%1),%1                      \n"
+    "movd      %%xmm1," MEMACCESS2(0x8,1) "    \n"
+    "lea       " MEMLEA(0xc,1) ",%1            \n"
     "sub       $0xc,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),   // %0
@@ -1534,10 +1570,11 @@ static void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
   );
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "pavgb     (%0,%3,1),%%xmm0                \n"
-    "lea       0x10(%0),%0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb   (%0,%3,1),%%xmm0
+    "lea       " MEMLEA(0x10,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "pshufb    %%xmm2,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm6                   \n"
@@ -1548,16 +1585,19 @@ static void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     "pmulhuw   %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
     "sub       $0x6,%2                         \n"
-    "movd      %%xmm1,(%1)                     \n"
+    "movd      %%xmm1," MEMACCESS(1) "         \n"
     "psrlq     $0x10,%%xmm1                    \n"
-    "movd      %%xmm1,0x2(%1)                  \n"
-    "lea       0x6(%1),%1                      \n"
+    "movd      %%xmm1," MEMACCESS2(0x2,1) "    \n"
+    "lea       " MEMLEA(0x6,1) ",%1            \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
   : "r"(static_cast<intptr_t>(src_stride))  // %3
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
 #endif
@@ -1579,9 +1619,10 @@ static void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
   );
   asm volatile (
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
-    "movdqa    (%0,%3,1),%%xmm6                \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqa,0x00,0,3,1,xmm6)           //  movdqa  (%0,%3,1),%%xmm6
     "movhlps   %%xmm0,%%xmm1                   \n"
     "movhlps   %%xmm6,%%xmm7                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
@@ -1590,8 +1631,8 @@ static void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "punpcklbw %%xmm5,%%xmm7                   \n"
     "paddusw   %%xmm6,%%xmm0                   \n"
     "paddusw   %%xmm7,%%xmm1                   \n"
-    "movdqa    (%0,%3,2),%%xmm6                \n"
-    "lea       0x10(%0),%0                     \n"
+    MEMOPREG(movdqa,0x00,0,3,2,xmm6)           //  movdqa  (%0,%3,2),%%xmm6
+    "lea       " MEMLEA(0x10,0) ",%0           \n"
     "movhlps   %%xmm6,%%xmm7                   \n"
     "punpcklbw %%xmm5,%%xmm6                   \n"
     "punpcklbw %%xmm5,%%xmm7                   \n"
@@ -1613,16 +1654,19 @@ static void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "pmulhuw   %%xmm4,%%xmm6                   \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
     "sub       $0x6,%2                         \n"
-    "movd      %%xmm6,(%1)                     \n"
+    "movd      %%xmm6," MEMACCESS(1) "         \n"
     "psrlq     $0x10,%%xmm6                    \n"
-    "movd      %%xmm6,0x2(%1)                  \n"
-    "lea       0x6(%1),%1                      \n"
+    "movd      %%xmm6," MEMACCESS2(0x2,1) "    \n"
+    "lea       " MEMLEA(0x6,1) ",%1            \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   : "r"(static_cast<intptr_t>(src_stride))   // %3
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
 #endif
@@ -1638,8 +1682,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pxor      %%xmm4,%%xmm4                   \n"
     "sub       $0x1,%5                         \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "1:                                          \n"
-    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "mov       %0,%3                           \n"
     "add       %6,%0                           \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1649,8 +1694,9 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "test      %2,%2                           \n"
     "je        3f                              \n"
     ".p2align  4                               \n"
+    BUNDLEALIGN
   "2:                                          \n"
-    "movdqa    (%0),%%xmm2                     \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm2         \n"
     "add       %6,%0                           \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
@@ -1661,10 +1707,11 @@ static void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "jg        2b                              \n"
     ".p2align  4                               \n"
   "3:                                          \n"
-    "movdqa    %%xmm0,(%1)                     \n"
-    "movdqa    %%xmm1,0x10(%1)                 \n"
-    "lea       0x10(%3),%0                     \n"
-    "lea       0x20(%1),%1                     \n"
+    BUNDLEALIGN
+    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqa    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x10,3) ",%0           \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x10,%4                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
@@ -1703,13 +1750,15 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
     ".p2align  2                               \n"
+    BUNDLEALIGN
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
-    "movzwl    (%1,%3,1),%k2                   \n"
+    MEMOPREGK(movzwl,0x00,1,3,1,2)             //  movzwl  (%1,%3,1),%k2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
-    "movzwl    (%1,%4,1),%k2                   \n"
+    BUNDLEALIGN
+    MEMOPREGK(movzwl,0x00,1,4,1,2)             //  movzwl  (%1,%4,1),%k2
     "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
@@ -1720,15 +1769,16 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,%k2                      \n"
-    "mov       %w2,(%0)                        \n"
-    "lea       0x2(%0),%0                      \n"
+    "mov       %w2," MEMACCESS(0) "            \n"
+    "lea       " MEMLEA(0x2,0) ",%0            \n"
     "sub       $0x2,%5                         \n"
     "jge       2b                              \n"
     ".p2align  2                               \n"
+    BUNDLEALIGN
   "29:                                         \n"
     "addl      $0x1,%5                         \n"
     "jl        99f                             \n"
-    "movzwl    (%1,%3,1),%k2                   \n"
+    MEMOPREGK(movzwl,0x00,1,3,1,2)             //  movzwl  (%1,%3,1),%k2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm2                     \n"
     "pshufb    %%xmm5,%%xmm2                   \n"
@@ -1737,7 +1787,7 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0,%k2                      \n"
-    "mov       %b2,(%0)                        \n"
+    "mov       %b2," MEMACCESS(0) "            \n"
   "99:                                         \n"
   : "+r"(dst_ptr),     // %0
     "+r"(src_ptr),     // %1
@@ -1748,6 +1798,9 @@ static void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   : "rm"(x),           // %6
     "rm"(dx)           // %7
   : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
 #endif
@@ -1779,9 +1832,6 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(dst_width)    // %2
   :
   : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1"
 #endif
