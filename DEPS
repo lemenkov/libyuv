@@ -78,6 +78,10 @@ deps_os = {
     "third_party/gold":
       From("chromium_deps", "src/third_party/gold"),
   },
+  "android": {
+    "third_party/android_tools":
+      From("chromium_deps", "src/third_party/android_tools"),
+  },
   "ios": {
     # NSS, for SSLClientSocketNSS.
     "third_party/nss":
