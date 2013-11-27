@@ -262,6 +262,7 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
     TEST_SCALETO1(name, width, height, Linear, 2)                              \
     TEST_SCALETO1(name, width, height, Bilinear, 2)
 
+TEST_SCALETO(ARGBScale, 352, 288)
 TEST_SCALETO(ARGBScale, 640, 360)
 TEST_SCALETO(ARGBScale, 853, 480)
 TEST_SCALETO(ARGBScale, 1280, 720)

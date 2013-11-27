@@ -183,6 +183,7 @@ TEST_FACTOR(Vertical2by3, 1, 2 / 3)
     TEST_SCALETO1(name, width, height, Bilinear, 3)                            \
     TEST_SCALETO1(name, width, height, Box, 3)
 
+TEST_SCALETO(Scale, 352, 288)
 TEST_SCALETO(Scale, 640, 360)
 TEST_SCALETO(Scale, 853, 480)
 TEST_SCALETO(Scale, 1280, 720)
