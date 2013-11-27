@@ -2175,50 +2175,50 @@ struct {
 #define READYUV444                                                             \
     "movq       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
     BUNDLEALIGN                                                                \
-    MEMOPREG(movq,0x00,[u_buf],[v_buf],1,xmm1)                                 \
-    "lea        " MEMLEA(0x8,[u_buf]) ",%[u_buf]                \n"            \
-    "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
+    MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
+    "punpcklbw  %%xmm1,%%xmm0                                   \n"
 
 // Read 4 UV from 422, upsample to 8 UV
 #define READYUV422                                                             \
     "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
     BUNDLEALIGN                                                                \
-    MEMOPREG(movq,0x00,[u_buf],[v_buf],1,xmm1)                                 \
-    "lea        " MEMLEA(0x4,[u_buf]) ",%[u_buf]                \n"            \
+    MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    "lea        " MEMLEA(0x4, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
-    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"
 
 // Read 2 UV from 411, upsample to 8 UV
 #define READYUV411                                                             \
     "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
     BUNDLEALIGN                                                                \
-    MEMOPREG(movd,0x00,[u_buf],[v_buf],1,xmm1)                                 \
-    "lea        " MEMLEA(0x2,[u_buf]) ",%[u_buf]                \n"            \
+    MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "punpckldq  %%xmm0,%%xmm0                                   \n"            \
+    "punpckldq  %%xmm0,%%xmm0                                   \n"
 
 // Read 4 UV from NV12, upsample to 8 UV
 #define READNV12                                                               \
     "movq       " MEMACCESS([uv_buf]) ",%%xmm0                  \n"            \
-    "lea        " MEMLEA(0x8,[uv_buf]) ",%[uv_buf]              \n"            \
-    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "lea        " MEMLEA(0x8, [uv_buf]) ",%[uv_buf]             \n"            \
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB                                                               \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
     "pmaddubsw  " MEMACCESS([kYuvConstants]) ",%%xmm0           \n"            \
-    "pmaddubsw  " MEMACCESS2(16,[kYuvConstants]) ",%%xmm1       \n"            \
-    "pmaddubsw  " MEMACCESS2(32,[kYuvConstants]) ",%%xmm2       \n"            \
-    "psubw      " MEMACCESS2(48,[kYuvConstants]) ",%%xmm0       \n"            \
-    "psubw      " MEMACCESS2(64,[kYuvConstants]) ",%%xmm1       \n"            \
-    "psubw      " MEMACCESS2(80,[kYuvConstants]) ",%%xmm2       \n"            \
+    "pmaddubsw  " MEMACCESS2(16, [kYuvConstants]) ",%%xmm1      \n"            \
+    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm2      \n"            \
+    "psubw      " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
+    "psubw      " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
+    "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
-    "lea        " MEMLEA(0x8,[y_buf]) ",%[y_buf]                \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm4,%%xmm3                                   \n"            \
-    "psubsw     " MEMACCESS2(96,[kYuvConstants]) ",%%xmm3       \n"            \
-    "pmullw     " MEMACCESS2(112,[kYuvConstants]) ",%%xmm3      \n"            \
+    "psubsw     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
+    "pmullw     " MEMACCESS2(112, [kYuvConstants]) ",%%xmm3     \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -2227,23 +2227,23 @@ struct {
     "psraw      $0x6,%%xmm2                                     \n"            \
     "packuswb   %%xmm0,%%xmm0                                   \n"            \
     "packuswb   %%xmm1,%%xmm1                                   \n"            \
-    "packuswb   %%xmm2,%%xmm2                                   \n"            \
+    "packuswb   %%xmm2,%%xmm2                                   \n"
 
 // Convert 8 pixels: 8 VU and 8 Y
 #define YVUTORGB                                                               \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
-    "pmaddubsw  " MEMACCESS2(128,[kYuvConstants]) ",%%xmm0      \n"            \
-    "pmaddubsw  " MEMACCESS2(144,[kYuvConstants]) ",%%xmm1      \n"            \
-    "pmaddubsw  " MEMACCESS2(160,[kYuvConstants]) ",%%xmm2      \n"            \
-    "psubw      " MEMACCESS2(48,[kYuvConstants]) ",%%xmm0       \n"            \
-    "psubw      " MEMACCESS2(64,[kYuvConstants]) ",%%xmm1       \n"            \
-    "psubw      " MEMACCESS2(80,[kYuvConstants]) ",%%xmm2       \n"            \
+    "pmaddubsw  " MEMACCESS2(128, [kYuvConstants]) ",%%xmm0     \n"            \
+    "pmaddubsw  " MEMACCESS2(144, [kYuvConstants]) ",%%xmm1     \n"            \
+    "pmaddubsw  " MEMACCESS2(160, [kYuvConstants]) ",%%xmm2     \n"            \
+    "psubw      " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
+    "psubw      " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
+    "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
-    "lea        " MEMLEA(0x8,[y_buf]) ",%[y_buf]                \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm4,%%xmm3                                   \n"            \
-    "psubsw     " MEMACCESS2(96,[kYuvConstants]) ",%%xmm3       \n"            \
-    "pmullw     " MEMACCESS2(112,[kYuvConstants]) ",%%xmm3      \n"            \
+    "psubsw     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
+    "pmullw     " MEMACCESS2(112, [kYuvConstants]) ",%%xmm3     \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -2252,7 +2252,7 @@ struct {
     "psraw      $0x6,%%xmm2                                     \n"            \
     "packuswb   %%xmm0,%%xmm0                                   \n"            \
     "packuswb   %%xmm1,%%xmm1                                   \n"            \
-    "packuswb   %%xmm2,%%xmm2                                   \n"            \
+    "packuswb   %%xmm2,%%xmm2                                   \n"
 
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
