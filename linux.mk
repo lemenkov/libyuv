@@ -28,6 +28,7 @@ LOCAL_OBJ_FILES := \
     source/scale_argb.o        \
     source/scale_common.o      \
     source/scale_mips.o        \
+    source/scale_posix.o       \
     source/video_common.o
 
 .cc.o:

@@ -74,6 +74,7 @@
         'include/libyuv/row.h',
         'include/libyuv/scale.h',
         'include/libyuv/scale_argb.h',
+        'include/libyuv/scale_row.h',
         'include/libyuv/version.h',
         'include/libyuv/video_common.h',
 
@@ -107,10 +108,12 @@
         'source/row_win.cc',
         'source/scale.cc',
         'source/scale_argb.cc',
-        'source/scale_argb_neon.cc',
+        'source/scale_argb_neon.cc',   # Deprecated.
         'source/scale_common.cc',
         'source/scale_mips.cc',
         'source/scale_neon.cc',
+        'source/scale_posix.cc',
+        'source/scale_win.cc',
         'source/video_common.cc',
       ],
     },

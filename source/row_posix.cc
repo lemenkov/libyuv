@@ -10,14 +10,12 @@
 
 #include "libyuv/row.h"
 
-#include "libyuv/basic_types.h"
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for GCC x86 and x64
+// This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
 // TODO(nfullagar): For Native Client: When new toolchain becomes available,

@@ -29,6 +29,7 @@ LOCAL_SRC_FILES := \
     source/scale_argb.cc        \
     source/scale_common.cc      \
     source/scale_mips.cc        \
+    source/scale_posix.cc       \
     source/video_common.cc
 
 # TODO(fbarchard): Enable mjpeg encoder.

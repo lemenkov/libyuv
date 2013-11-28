@@ -15,6 +15,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// The following are available on Mips platforms:
+#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__)
+
 #ifdef HAS_COPYROW_MIPS
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
   __asm__ __volatile__ (
@@ -967,6 +970,8 @@ void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 #endif  // __mips_dsp_rev >= 2
+
+#endif  // defined(__mips__)
 
 #ifdef __cplusplus
 }  // extern "C"

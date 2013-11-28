@@ -23,6 +23,444 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// CPU agnostic row functions
+void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                     uint8* dst, int dst_width) {
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = src_ptr[1];
+    dst[1] = src_ptr[3];
+    dst += 2;
+    src_ptr += 4;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = src_ptr[1];
+  }
+}
+
+void ScaleRowDown2Linear_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst, int dst_width) {
+  const uint8* s = src_ptr;
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = (s[0] + s[1] + 1) >> 1;
+    dst[1] = (s[2] + s[3] + 1) >> 1;
+    dst += 2;
+    s += 4;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = (s[0] + s[1] + 1) >> 1;
+  }
+}
+
+void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst, int dst_width) {
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
+    dst[1] = (s[2] + s[3] + t[2] + t[3] + 2) >> 2;
+    dst += 2;
+    s += 4;
+    t += 4;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
+  }
+}
+
+void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                     uint8* dst, int dst_width) {
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = src_ptr[2];
+    dst[1] = src_ptr[6];
+    dst += 2;
+    src_ptr += 8;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = src_ptr[2];
+  }
+}
+
+void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst, int dst_width) {
+  intptr_t stride = src_stride;
+  uint8* dend = dst + dst_width - 1;
+  do {
+    dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
+             src_ptr[stride + 0] + src_ptr[stride + 1] +
+             src_ptr[stride + 2] + src_ptr[stride + 3] +
+             src_ptr[stride * 2 + 0] + src_ptr[stride * 2 + 1] +
+             src_ptr[stride * 2 + 2] + src_ptr[stride * 2 + 3] +
+             src_ptr[stride * 3 + 0] + src_ptr[stride * 3 + 1] +
+             src_ptr[stride * 3 + 2] + src_ptr[stride * 3 + 3] +
+             8) >> 4;
+    dst[1] = (src_ptr[4] + src_ptr[5] + src_ptr[6] + src_ptr[7] +
+             src_ptr[stride + 4] + src_ptr[stride + 5] +
+             src_ptr[stride + 6] + src_ptr[stride + 7] +
+             src_ptr[stride * 2 + 4] + src_ptr[stride * 2 + 5] +
+             src_ptr[stride * 2 + 6] + src_ptr[stride * 2 + 7] +
+             src_ptr[stride * 3 + 4] + src_ptr[stride * 3 + 5] +
+             src_ptr[stride * 3 + 6] + src_ptr[stride * 3 + 7] +
+             8) >> 4;
+    dst += 2;
+    src_ptr += 8;
+  } while (dst < dend);
+  if (dst_width & 1) {
+    dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
+             src_ptr[stride + 0] + src_ptr[stride + 1] +
+             src_ptr[stride + 2] + src_ptr[stride + 3] +
+             src_ptr[stride * 2 + 0] + src_ptr[stride * 2 + 1] +
+             src_ptr[stride * 2 + 2] + src_ptr[stride * 2 + 3] +
+             src_ptr[stride * 3 + 0] + src_ptr[stride * 3 + 1] +
+             src_ptr[stride * 3 + 2] + src_ptr[stride * 3 + 3] +
+             8) >> 4;
+  }
+}
+
+void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                      uint8* dst, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  uint8* dend = dst + dst_width;
+  do {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[1];
+    dst[2] = src_ptr[3];
+    dst += 3;
+    src_ptr += 4;
+  } while (dst < dend);
+}
+
+// Filter rows 0 and 1 together, 3 : 1
+void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
+  uint8* dend = d + dst_width;
+  do {
+    uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
+    uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+    uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
+    uint8 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+    uint8 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
+    uint8 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+    d[0] = (a0 * 3 + b0 + 2) >> 2;
+    d[1] = (a1 * 3 + b1 + 2) >> 2;
+    d[2] = (a2 * 3 + b2 + 2) >> 2;
+    d += 3;
+    s += 4;
+    t += 4;
+  } while (d < dend);
+}
+
+// Filter rows 1 and 2 together, 1 : 1
+void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* d, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
+  uint8* dend = d + dst_width;
+  do {
+    uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
+    uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
+    uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
+    uint8 b0 = (t[0] * 3 + t[1] * 1 + 2) >> 2;
+    uint8 b1 = (t[1] * 1 + t[2] * 1 + 1) >> 1;
+    uint8 b2 = (t[2] * 1 + t[3] * 3 + 2) >> 2;
+    d[0] = (a0 + b0 + 1) >> 1;
+    d[1] = (a1 + b1 + 1) >> 1;
+    d[2] = (a2 + b2 + 1) >> 1;
+    d += 3;
+    s += 4;
+    t += 4;
+  } while (d < dend);
+}
+
+// Scales a single row of pixels using point sampling.
+void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
+                 int dst_width, int x, int dx) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst_ptr[0] = src_ptr[x >> 16];
+    x += dx;
+    dst_ptr[1] = src_ptr[x >> 16];
+    x += dx;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    dst_ptr[0] = src_ptr[x >> 16];
+  }
+}
+
+// Scales a single row of pixels up by 2x using point sampling.
+void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
+                    int dst_width, int, int) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst_ptr[1] = dst_ptr[0] = src_ptr[0];
+    src_ptr += 1;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    dst_ptr[0] = src_ptr[0];
+  }
+}
+
+// (1-f)a + fb can be replaced with a + f(b-a)
+#define BLENDER(a, b, f) (static_cast<int>(a) + \
+    ((f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
+
+void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
+                       int dst_width, int x, int dx) {
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    int xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
+    x += dx;
+    xi = x >> 16;
+    a = src_ptr[xi];
+    b = src_ptr[xi + 1];
+    dst_ptr[1] = BLENDER(a, b, x & 0xffff);
+    x += dx;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    int xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
+  }
+}
+#undef BLENDER
+
+void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+                      uint8* dst, int dst_width) {
+  assert(dst_width % 3 == 0);
+  for (int x = 0; x < dst_width; x += 3) {
+    dst[0] = src_ptr[0];
+    dst[1] = src_ptr[3];
+    dst[2] = src_ptr[6];
+    dst += 3;
+    src_ptr += 8;
+  }
+}
+
+// 8x3 -> 3x1
+void ScaleRowDown38_3_Box_C(const uint8* src_ptr,
+                            ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  intptr_t stride = src_stride;
+  for (int i = 0; i < dst_width; i += 3) {
+    dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
+        src_ptr[stride + 0] + src_ptr[stride + 1] +
+        src_ptr[stride + 2] + src_ptr[stride * 2 + 0] +
+        src_ptr[stride * 2 + 1] + src_ptr[stride * 2 + 2]) *
+        (65536 / 9) >> 16;
+    dst_ptr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
+        src_ptr[stride + 3] + src_ptr[stride + 4] +
+        src_ptr[stride + 5] + src_ptr[stride * 2 + 3] +
+        src_ptr[stride * 2 + 4] + src_ptr[stride * 2 + 5]) *
+        (65536 / 9) >> 16;
+    dst_ptr[2] = (src_ptr[6] + src_ptr[7] +
+        src_ptr[stride + 6] + src_ptr[stride + 7] +
+        src_ptr[stride * 2 + 6] + src_ptr[stride * 2 + 7]) *
+        (65536 / 6) >> 16;
+    src_ptr += 8;
+    dst_ptr += 3;
+  }
+}
+
+// 8x2 -> 3x1
+void ScaleRowDown38_2_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width) {
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  intptr_t stride = src_stride;
+  for (int i = 0; i < dst_width; i += 3) {
+    dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
+        src_ptr[stride + 0] + src_ptr[stride + 1] +
+        src_ptr[stride + 2]) * (65536 / 6) >> 16;
+    dst_ptr[1] = (src_ptr[3] + src_ptr[4] + src_ptr[5] +
+        src_ptr[stride + 3] + src_ptr[stride + 4] +
+        src_ptr[stride + 5]) * (65536 / 6) >> 16;
+    dst_ptr[2] = (src_ptr[6] + src_ptr[7] +
+        src_ptr[stride + 6] + src_ptr[stride + 7]) *
+        (65536 / 4) >> 16;
+    src_ptr += 8;
+    dst_ptr += 3;
+  }
+}
+
+void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
+                    uint16* dst_ptr, int src_width, int src_height) {
+  assert(src_width > 0);
+  assert(src_height > 0);
+  for (int x = 0; x < src_width; ++x) {
+    const uint8* s = src_ptr + x;
+    unsigned int sum = 0u;
+    for (int y = 0; y < src_height; ++y) {
+      sum += s[0];
+      s += src_stride;
+    }
+    // TODO(fbarchard): Consider limitting height to 256 to avoid overflow.
+    dst_ptr[x] = sum < 65535u ? sum : 65535u;
+  }
+}
+
+void ScaleARGBRowDown2_C(const uint8* src_argb,
+                         ptrdiff_t /* src_stride */,
+                         uint8* dst_argb, int dst_width) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = src[1];
+    dst[1] = src[3];
+    src += 4;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[1];
+  }
+}
+
+void ScaleARGBRowDown2Linear_C(const uint8* src_argb,
+                               ptrdiff_t /* src_stride */,
+                               uint8* dst_argb, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    dst_argb[0] = (src_argb[0] + src_argb[4] + 1) >> 1;
+    dst_argb[1] = (src_argb[1] + src_argb[5] + 1) >> 1;
+    dst_argb[2] = (src_argb[2] + src_argb[6] + 1) >> 1;
+    dst_argb[3] = (src_argb[3] + src_argb[7] + 1) >> 1;
+    src_argb += 8;
+    dst_argb += 4;
+  }
+}
+
+void ScaleARGBRowDown2Box_C(const uint8* src_argb, ptrdiff_t src_stride,
+                            uint8* dst_argb, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    dst_argb[0] = (src_argb[0] + src_argb[4] +
+                  src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
+    dst_argb[1] = (src_argb[1] + src_argb[5] +
+                  src_argb[src_stride + 1] + src_argb[src_stride + 5] + 2) >> 2;
+    dst_argb[2] = (src_argb[2] + src_argb[6] +
+                  src_argb[src_stride + 2] + src_argb[src_stride + 6] + 2) >> 2;
+    dst_argb[3] = (src_argb[3] + src_argb[7] +
+                  src_argb[src_stride + 3] + src_argb[src_stride + 7] + 2) >> 2;
+    src_argb += 8;
+    dst_argb += 4;
+  }
+}
+
+void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t /* src_stride */,
+                            int src_stepx,
+                            uint8* dst_argb, int dst_width) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+
+  for (int x = 0; x < dst_width - 1; x += 2) {
+    dst[0] = src[0];
+    dst[1] = src[src_stepx];
+    src += src_stepx * 2;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[0];
+  }
+}
+
+void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
+                               ptrdiff_t src_stride,
+                               int src_stepx,
+                               uint8* dst_argb, int dst_width) {
+  for (int x = 0; x < dst_width; ++x) {
+    dst_argb[0] = (src_argb[0] + src_argb[4] +
+                  src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
+    dst_argb[1] = (src_argb[1] + src_argb[5] +
+                  src_argb[src_stride + 1] + src_argb[src_stride + 5] + 2) >> 2;
+    dst_argb[2] = (src_argb[2] + src_argb[6] +
+                  src_argb[src_stride + 2] + src_argb[src_stride + 6] + 2) >> 2;
+    dst_argb[3] = (src_argb[3] + src_argb[7] +
+                  src_argb[src_stride + 3] + src_argb[src_stride + 7] + 2) >> 2;
+    src_argb += src_stepx * 4;
+    dst_argb += 4;
+  }
+}
+
+// Scales a single row of pixels using point sampling.
+void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
+                     int dst_width, int x, int dx) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst[0] = src[x >> 16];
+    x += dx;
+    dst[1] = src[x >> 16];
+    x += dx;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[x >> 16];
+  }
+}
+
+// Scales a single row of pixels up by 2x using point sampling.
+void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int, int) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst[1] = dst[0] = src[0];
+    src += 1;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[0];
+  }
+}
+
+// Mimics SSSE3 blender
+#define BLENDER1(a, b, f) ((a) * (0x7f ^ f) + (b) * f) >> 7
+#define BLENDERC(a, b, f, s) static_cast<uint32>( \
+    BLENDER1(((a) >> s) & 255, ((b) >> s) & 255, f) << s)
+#define BLENDER(a, b, f) \
+    BLENDERC(a, b, f, 24) | BLENDERC(a, b, f, 16) | \
+    BLENDERC(a, b, f, 8) | BLENDERC(a, b, f, 0)
+
+void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
+                           int dst_width, int x, int dx) {
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    int xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
+    uint32 a = src[xi];
+    uint32 b = src[xi + 1];
+    dst[0] = BLENDER(a, b, xf);
+    x += dx;
+    xi = x >> 16;
+    xf = (x >> 9) & 0x7f;
+    a = src[xi];
+    b = src[xi + 1];
+    dst[1] = BLENDER(a, b, xf);
+    x += dx;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    int xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
+    uint32 a = src[xi];
+    uint32 b = src[xi + 1];
+    dst[0] = BLENDER(a, b, xf);
+  }
+}
+#undef BLENDER1
+#undef BLENDERC
+#undef BLENDER
+
 // Scale plane vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width, int dst_height,
