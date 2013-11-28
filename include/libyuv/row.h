@@ -35,7 +35,7 @@ extern "C" {
 #define LIBYUV_SSSE3_ONLY
 #endif
 
-// The following are available on all x86 platforms, including NaCL:
+// The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 // Effects:
@@ -137,7 +137,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
-#endif  // The above are available on all x86 platforms, including NaCL
+#endif
 
 // GCC >= 4.7.0 required for AVX2.
 #if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
@@ -158,8 +158,9 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
-// The following are available on all x86 platforms except NaCL x64, and
+// The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
+// The code supports NaCL but requires a new compiler and validator.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(VISUALC_HAS_AVX2) || \
     defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 // Effects:
@@ -216,12 +217,9 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
     !defined(LIBYUV_SSSE3_ONLY)
-// Available with NaCL:
 #define HAS_ARGBBLENDROW_SSE2
 #define HAS_ARGBATTENUATEROW_SSE2
-#if !(defined(__native_client__) && defined(__x86_64__))
 #define HAS_MIRRORROW_SSE2
-#endif
 #endif
 
 // The following are available on Neon platforms:
