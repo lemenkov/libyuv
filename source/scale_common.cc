@@ -26,13 +26,12 @@ extern "C" {
 // CPU agnostic row functions
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                      uint8* dst, int dst_width) {
-  uint8* dend = dst + dst_width - 1;
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[1];
     dst[1] = src_ptr[3];
     dst += 2;
     src_ptr += 4;
-  } while (dst < dend);
+  }
   if (dst_width & 1) {
     dst[0] = src_ptr[1];
   }
@@ -41,13 +40,12 @@ void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 void ScaleRowDown2Linear_C(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
-  uint8* dend = dst + dst_width - 1;
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (s[0] + s[1] + 1) >> 1;
     dst[1] = (s[2] + s[3] + 1) >> 1;
     dst += 2;
     s += 4;
-  } while (dst < dend);
+  }
   if (dst_width & 1) {
     dst[0] = (s[0] + s[1] + 1) >> 1;
   }
@@ -57,14 +55,13 @@ void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  uint8* dend = dst + dst_width - 1;
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
     dst[1] = (s[2] + s[3] + t[2] + t[3] + 2) >> 2;
     dst += 2;
     s += 4;
     t += 4;
-  } while (dst < dend);
+  }
   if (dst_width & 1) {
     dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
   }
@@ -72,13 +69,12 @@ void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                      uint8* dst, int dst_width) {
-  uint8* dend = dst + dst_width - 1;
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[2];
     dst[1] = src_ptr[6];
     dst += 2;
     src_ptr += 8;
-  } while (dst < dend);
+  }
   if (dst_width & 1) {
     dst[0] = src_ptr[2];
   }
@@ -87,8 +83,7 @@ void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
 void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
-  uint8* dend = dst + dst_width - 1;
-  do {
+  for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
              src_ptr[stride + 0] + src_ptr[stride + 1] +
              src_ptr[stride + 2] + src_ptr[stride + 3] +
@@ -107,7 +102,7 @@ void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
              8) >> 4;
     dst += 2;
     src_ptr += 8;
-  } while (dst < dend);
+  }
   if (dst_width & 1) {
     dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
              src_ptr[stride + 0] + src_ptr[stride + 1] +
@@ -123,14 +118,13 @@ void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                       uint8* dst, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  uint8* dend = dst + dst_width;
-  do {
+  for (int x = 0; x < dst_width; x += 3) {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[1];
     dst[2] = src_ptr[3];
     dst += 3;
     src_ptr += 4;
-  } while (dst < dend);
+  }
 }
 
 // Filter rows 0 and 1 together, 3 : 1
@@ -139,8 +133,7 @@ void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  uint8* dend = d + dst_width;
-  do {
+  for (int x = 0; x < dst_width; x += 3) {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
@@ -153,7 +146,7 @@ void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
     d += 3;
     s += 4;
     t += 4;
-  } while (d < dend);
+  }
 }
 
 // Filter rows 1 and 2 together, 1 : 1
@@ -162,8 +155,7 @@ void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
   assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  uint8* dend = d + dst_width;
-  do {
+  for (int x = 0; x < dst_width; x += 3) {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
@@ -176,7 +168,7 @@ void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
     d += 3;
     s += 4;
     t += 4;
-  } while (d < dend);
+  }
 }
 
 // Scales a single row of pixels using point sampling.
