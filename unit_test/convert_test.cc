@@ -579,7 +579,8 @@ TESTBIPLANARTOB(NV21, 2, 2, RGB565, 2, 9)
 TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                     \
-  const int kStride = (kWidth * 8 * BPP_A + 7) / 8;                            \
+  const int kStride =                                                          \
+      (SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMP_X * 8 * BPP_A + 7) / 8;          \
   align_buffer_64(src_argb, kStride * kHeight + OFF);                          \
   align_buffer_64(dst_y_c, kWidth * kHeight);                                  \
   align_buffer_64(dst_u_c,                                                     \
