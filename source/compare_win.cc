@@ -27,7 +27,7 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     pxor       xmm0, xmm0
     pxor       xmm5, xmm5
 
-    align      16
+    align      4
   wloop:
     movdqa     xmm1, [eax]
     lea        eax,  [eax + 16]
@@ -70,7 +70,7 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
     vpxor      ymm5, ymm5, ymm5  // constant 0 for unpck
     sub        edx, eax
 
-    align      16
+    align      4
   wloop:
     vmovdqu    ymm1, [eax]
     vmovdqu    ymm2, [eax + edx]
@@ -145,7 +145,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     pxor       xmm7, xmm7        // constant 0 for unpck
     movdqa     xmm6, kHash16x33
 
-    align      16
+    align      4
   wloop:
     movdqu     xmm1, [eax]       // src[0-15]
     lea        eax, [eax + 16]
@@ -195,7 +195,7 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
     movd       xmm0, [esp + 12]  // seed
     movdqa     xmm6, kHash16x33
 
-    align      16
+    align      4
   wloop:
     vpmovzxbd  xmm3, dword ptr [eax]  // src[0-3]
     pmulld     xmm0, xmm6  // hash *= 33 ^ 16

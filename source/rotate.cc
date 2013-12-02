@@ -91,7 +91,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 
     // Read in the data from the source pointer.
     // First round of bit swap.
-    align      16
+    align      4
  convertloop:
     movq      xmm0, qword ptr [eax]
     lea       ebp, [eax + 8]
@@ -190,7 +190,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     mov       [esp + 16], ecx
     mov       ecx, [ecx + 16 + 28]  // w
 
-    align      16
+    align      4
  convertloop:
     // Read in the data from the source pointer.
     // First round of bit swap.
@@ -304,7 +304,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
   asm volatile (
     // Read in the data from the source pointer.
     // First round of bit swap.
-    ".p2align  4                                 \n"
+    ".p2align  2                                 \n"
   "1:                                            \n"
     "movq       (%0),%%xmm0                      \n"
     "movq       (%0,%3),%%xmm1                   \n"
@@ -523,7 +523,7 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
   asm volatile (
   // Read in the data from the source pointer.
   // First round of bit swap.
-  ".p2align  4                                 \n"
+  ".p2align  2                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     (%0,%3),%%xmm1                   \n"
@@ -664,7 +664,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   asm volatile (
   // Read in the data from the source pointer.
   // First round of bit swap.
-  ".p2align  4                                 \n"
+  ".p2align  2                                 \n"
 "1:                                            \n"
   "movdqa     (%0),%%xmm0                      \n"
   "movdqa     (%0,%4),%%xmm1                   \n"

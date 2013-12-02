@@ -31,7 +31,7 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   asm volatile (  // NOLINT
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
     "1:                                        \n"
     "movdqa    " MEMACCESS(0) ",%%xmm1         \n"
     "lea       " MEMLEA(0x10, 0) ",%0          \n"
@@ -107,7 +107,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     "movd      %2,%%xmm0                       \n"
     "pxor      %%xmm7,%%xmm7                   \n"
     "movdqa    %4,%%xmm6                       \n"
-    ".p2align  4                               \n"
+    ".p2align  2                               \n"
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
     "lea       " MEMLEA(0x10, 0) ",%0          \n"

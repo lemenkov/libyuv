@@ -28,7 +28,7 @@ cglobal %1ToYRow%3, 3, 3, 3, src_yuy2, dst_y, pix
     psrlw      m2, m2, 8
 %endif
 
-    ALIGN      16
+    align      4
 .convertloop:
     mov%2      m0, [src_yuy2q]
     mov%2      m1, [src_yuy2q + mmsize]
@@ -74,7 +74,7 @@ cglobal SplitUVRow%2, 4, 4, 5, src_uv, dst_u, dst_v, pix
     psrlw      m4, m4, 8
     sub        dst_vq, dst_uq
 
-    ALIGN      16
+    align      4
 .convertloop:
     mov%1      m0, [src_uvq]
     mov%1      m1, [src_uvq + mmsize]
@@ -113,7 +113,7 @@ SplitUVRow a,
 cglobal MergeUVRow_%2, 4, 4, 3, src_u, src_v, dst_uv, pix
     sub        src_vq, src_uq
 
-    ALIGN      16
+    align      4
 .convertloop:
     mov%1      m0, [src_uq]
     mov%1      m1, [src_vq]

@@ -386,6 +386,7 @@ void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            $t4, 2f                       \n"
     " andi           %[width], %[width], 0xf       \n"  // residual
 
+    ".p2align        2                             \n"
   "1:                                              \n"
     "addiu           $t4, $t4, -1                  \n"
     "lw              $t0, 0(%[src_uv])             \n"  // V1 | U1 | V0 | U0
@@ -452,6 +453,7 @@ void SplitUVRow_Unaligned_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u,
     "blez            $t4, 2f                       \n"
     " andi           %[width], %[width], 0xf       \n"  // residual
 
+    ".p2align        2                             \n"
   "1:                                              \n"
     "addiu           $t4, $t4, -1                  \n"
     "lwr             $t0, 0(%[src_uv])             \n"
@@ -535,7 +537,8 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
     "blez      $t4, 2f                     \n"
     " addu     %[src], %[src], %[width]    \n"  // src += width
 
-    "1:                                      \n"
+    ".p2align  2                           \n"
+   "1:                                     \n"
     "lw        $t0, -16(%[src])            \n"  // |3|2|1|0|
     "lw        $t1, -12(%[src])            \n"  // |7|6|5|4|
     "lw        $t2, -8(%[src])             \n"  // |11|10|9|8|
@@ -559,7 +562,7 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
     "beqz      $t5, 3f                     \n"
     " nop                                  \n"
 
-    "2:                                      \n"
+   "2:                                     \n"
     "lbu       $t0, -1(%[src])             \n"
     "addiu     $t5, $t5, -1                \n"
     "addiu     %[src], %[src], -1          \n"
@@ -567,7 +570,7 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
     "bgez      $t5, 2b                     \n"
     " addiu    %[dst], %[dst], 1           \n"
 
-    "3:                                      \n"
+   "3:                                     \n"
     ".set pop                              \n"
       : [src] "+r" (src), [dst] "+r" (dst)
       : [width] "r" (width)
@@ -589,7 +592,8 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            %[x], 2f                     \n"
     " addu           %[src_uv], %[src_uv], $t4    \n"
 
-    "1:                                             \n"
+    ".p2align        2                            \n"
+   "1:                                            \n"
     "lw              $t0, -32(%[src_uv])          \n"  // |3|2|1|0|
     "lw              $t1, -28(%[src_uv])          \n"  // |7|6|5|4|
     "lw              $t2, -24(%[src_uv])          \n"  // |11|10|9|8|
@@ -641,7 +645,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "b               2f                           \n"
     " nop                                         \n"
 
-    "2:                                             \n"
+   "2:                                            \n"
     "lbu             $t0, -2(%[src_uv])           \n"
     "lbu             $t1, -1(%[src_uv])           \n"
     "addiu           %[src_uv], %[src_uv], -2     \n"
@@ -652,7 +656,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "bgtz            %[y], 2b                     \n"
     " addiu          %[dst_v], %[dst_v], 1        \n"
 
-    "3:                                             \n"
+   "3:                                            \n"
     ".set pop                                     \n"
       : [src_uv] "+r" (src_uv),
         [dst_u] "+r" (dst_u),
@@ -673,62 +677,62 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 // t2 = | 0 | R0 | 0 | r0 |
 // t1 = | 0 | R1 | 0 | r1 |
 #define I422ToTransientMipsRGB                                                 \
-      "lw                $t0, 0(%[y_buf])       \n"                          \
-      "lhu               $t1, 0(%[u_buf])       \n"                          \
-      "lhu               $t2, 0(%[v_buf])       \n"                          \
-      "preceu.ph.qbr     $t1, $t1               \n"                          \
-      "preceu.ph.qbr     $t2, $t2               \n"                          \
-      "preceu.ph.qbra    $t3, $t0               \n"                          \
-      "preceu.ph.qbla    $t0, $t0               \n"                          \
-      "subu.ph           $t1, $t1, $s5          \n"                          \
-      "subu.ph           $t2, $t2, $s5          \n"                          \
-      "subu.ph           $t3, $t3, $s4          \n"                          \
-      "subu.ph           $t0, $t0, $s4          \n"                          \
-      "mul.ph            $t3, $t3, $s0          \n"                          \
-      "mul.ph            $t0, $t0, $s0          \n"                          \
-      "shll.ph           $t4, $t1, 0x7          \n"                          \
-      "subu.ph           $t4, $t4, $t1          \n"                          \
-      "mul.ph            $t6, $t1, $s1          \n"                          \
-      "mul.ph            $t1, $t2, $s2          \n"                          \
-      "addq_s.ph         $t5, $t4, $t3          \n"                          \
-      "addq_s.ph         $t4, $t4, $t0          \n"                          \
-      "shra.ph           $t5, $t5, 6            \n"                          \
-      "shra.ph           $t4, $t4, 6            \n"                          \
-      "addiu             %[u_buf], 2            \n"                          \
-      "addiu             %[v_buf], 2            \n"                          \
-      "addu.ph           $t6, $t6, $t1          \n"                          \
-      "mul.ph            $t1, $t2, $s3          \n"                          \
-      "addu.ph           $t9, $t6, $t3          \n"                          \
-      "addu.ph           $t8, $t6, $t0          \n"                          \
-      "shra.ph           $t9, $t9, 6            \n"                          \
-      "shra.ph           $t8, $t8, 6            \n"                          \
-      "addu.ph           $t2, $t1, $t3          \n"                          \
-      "addu.ph           $t1, $t1, $t0          \n"                          \
-      "shra.ph           $t2, $t2, 6            \n"                          \
-      "shra.ph           $t1, $t1, 6            \n"                          \
-      "subu.ph           $t5, $t5, $s5          \n"                          \
-      "subu.ph           $t4, $t4, $s5          \n"                          \
-      "subu.ph           $t9, $t9, $s5          \n"                          \
-      "subu.ph           $t8, $t8, $s5          \n"                          \
-      "subu.ph           $t2, $t2, $s5          \n"                          \
-      "subu.ph           $t1, $t1, $s5          \n"                          \
-      "shll_s.ph         $t5, $t5, 8            \n"                          \
-      "shll_s.ph         $t4, $t4, 8            \n"                          \
-      "shll_s.ph         $t9, $t9, 8            \n"                          \
-      "shll_s.ph         $t8, $t8, 8            \n"                          \
-      "shll_s.ph         $t2, $t2, 8            \n"                          \
-      "shll_s.ph         $t1, $t1, 8            \n"                          \
-      "shra.ph           $t5, $t5, 8            \n"                          \
-      "shra.ph           $t4, $t4, 8            \n"                          \
-      "shra.ph           $t9, $t9, 8            \n"                          \
-      "shra.ph           $t8, $t8, 8            \n"                          \
-      "shra.ph           $t2, $t2, 8            \n"                          \
-      "shra.ph           $t1, $t1, 8            \n"                          \
-      "addu.ph           $t5, $t5, $s5          \n"                          \
-      "addu.ph           $t4, $t4, $s5          \n"                          \
-      "addu.ph           $t9, $t9, $s5          \n"                          \
-      "addu.ph           $t8, $t8, $s5          \n"                          \
-      "addu.ph           $t2, $t2, $s5          \n"                          \
+      "lw                $t0, 0(%[y_buf])       \n"                            \
+      "lhu               $t1, 0(%[u_buf])       \n"                            \
+      "lhu               $t2, 0(%[v_buf])       \n"                            \
+      "preceu.ph.qbr     $t1, $t1               \n"                            \
+      "preceu.ph.qbr     $t2, $t2               \n"                            \
+      "preceu.ph.qbra    $t3, $t0               \n"                            \
+      "preceu.ph.qbla    $t0, $t0               \n"                            \
+      "subu.ph           $t1, $t1, $s5          \n"                            \
+      "subu.ph           $t2, $t2, $s5          \n"                            \
+      "subu.ph           $t3, $t3, $s4          \n"                            \
+      "subu.ph           $t0, $t0, $s4          \n"                            \
+      "mul.ph            $t3, $t3, $s0          \n"                            \
+      "mul.ph            $t0, $t0, $s0          \n"                            \
+      "shll.ph           $t4, $t1, 0x7          \n"                            \
+      "subu.ph           $t4, $t4, $t1          \n"                            \
+      "mul.ph            $t6, $t1, $s1          \n"                            \
+      "mul.ph            $t1, $t2, $s2          \n"                            \
+      "addq_s.ph         $t5, $t4, $t3          \n"                            \
+      "addq_s.ph         $t4, $t4, $t0          \n"                            \
+      "shra.ph           $t5, $t5, 6            \n"                            \
+      "shra.ph           $t4, $t4, 6            \n"                            \
+      "addiu             %[u_buf], 2            \n"                            \
+      "addiu             %[v_buf], 2            \n"                            \
+      "addu.ph           $t6, $t6, $t1          \n"                            \
+      "mul.ph            $t1, $t2, $s3          \n"                            \
+      "addu.ph           $t9, $t6, $t3          \n"                            \
+      "addu.ph           $t8, $t6, $t0          \n"                            \
+      "shra.ph           $t9, $t9, 6            \n"                            \
+      "shra.ph           $t8, $t8, 6            \n"                            \
+      "addu.ph           $t2, $t1, $t3          \n"                            \
+      "addu.ph           $t1, $t1, $t0          \n"                            \
+      "shra.ph           $t2, $t2, 6            \n"                            \
+      "shra.ph           $t1, $t1, 6            \n"                            \
+      "subu.ph           $t5, $t5, $s5          \n"                            \
+      "subu.ph           $t4, $t4, $s5          \n"                            \
+      "subu.ph           $t9, $t9, $s5          \n"                            \
+      "subu.ph           $t8, $t8, $s5          \n"                            \
+      "subu.ph           $t2, $t2, $s5          \n"                            \
+      "subu.ph           $t1, $t1, $s5          \n"                            \
+      "shll_s.ph         $t5, $t5, 8            \n"                            \
+      "shll_s.ph         $t4, $t4, 8            \n"                            \
+      "shll_s.ph         $t9, $t9, 8            \n"                            \
+      "shll_s.ph         $t8, $t8, 8            \n"                            \
+      "shll_s.ph         $t2, $t2, 8            \n"                            \
+      "shll_s.ph         $t1, $t1, 8            \n"                            \
+      "shra.ph           $t5, $t5, 8            \n"                            \
+      "shra.ph           $t4, $t4, 8            \n"                            \
+      "shra.ph           $t9, $t9, 8            \n"                            \
+      "shra.ph           $t8, $t8, 8            \n"                            \
+      "shra.ph           $t2, $t2, 8            \n"                            \
+      "shra.ph           $t1, $t1, 8            \n"                            \
+      "addu.ph           $t5, $t5, $s5          \n"                            \
+      "addu.ph           $t4, $t4, $s5          \n"                            \
+      "addu.ph           $t9, $t9, $s5          \n"                            \
+      "addu.ph           $t8, $t8, $s5          \n"                            \
+      "addu.ph           $t2, $t2, $s5          \n"                            \
       "addu.ph           $t1, $t1, $s5          \n"
 
 void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
@@ -748,7 +752,9 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
     "repl.ph           $s5, 128               \n"  // |128|128| // clipping
     "lui               $s6, 0xff00            \n"
     "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|ff|
-    "1:                                         \n"
+
+    ".p2align          2                      \n"
+   "1:                                        \n"
       I422ToTransientMipsRGB
 // Arranging into argb format
     "precr.qb.ph       $t4, $t8, $t4          \n"  // |G1|g1|B1|b1|
@@ -776,7 +782,7 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
     "sw                $t3, 12(%[rgb_buf])    \n"
     "bnez              %[width], 1b           \n"
     " addiu            %[rgb_buf], 16         \n"
-    "2:                                         \n"
+   "2:                                        \n"
     ".set pop                                 \n"
       :[y_buf] "+r" (y_buf),
        [u_buf] "+r" (u_buf),
@@ -797,47 +803,49 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
                               uint8* rgb_buf,
                               int width) {
   __asm__ __volatile__ (
-    ".set push                                \n\t"
-    ".set noreorder                           \n\t"
-    "beqz              %[width], 2f           \n\t"
-    " repl.ph          $s0, 74                \n\t"  // |YG|YG| = |74|74|
-    "repl.ph           $s1, -25               \n\t"  // |UG|UG| = |-25|-25|
-    "repl.ph           $s2, -52               \n\t"  // |VG|VG| = |-52|-52|
-    "repl.ph           $s3, 102               \n\t"  // |VR|VR| = |102|102|
-    "repl.ph           $s4, 16                \n\t"  // |0|16|0|16|
-    "repl.ph           $s5, 128               \n\t"  // |128|128|
-    "lui               $s6, 0xff00            \n\t"
-    "ori               $s6, 0xff00            \n\t"  // |ff|00|ff|00|
-    "1:                                         \n"
+    ".set push                                \n"
+    ".set noreorder                           \n"
+    "beqz              %[width], 2f           \n"
+    " repl.ph          $s0, 74                \n"  // |YG|YG| = |74|74|
+    "repl.ph           $s1, -25               \n"  // |UG|UG| = |-25|-25|
+    "repl.ph           $s2, -52               \n"  // |VG|VG| = |-52|-52|
+    "repl.ph           $s3, 102               \n"  // |VR|VR| = |102|102|
+    "repl.ph           $s4, 16                \n"  // |0|16|0|16|
+    "repl.ph           $s5, 128               \n"  // |128|128|
+    "lui               $s6, 0xff00            \n"
+    "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|
+
+    ".p2align          2                       \n"
+   "1:                                         \n"
       I422ToTransientMipsRGB
 // Arranging into abgr format
-    "precr.qb.ph      $t0, $t8, $t1           \n\t"  // |G1|g1|R1|r1|
-    "precr.qb.ph      $t3, $t9, $t2           \n\t"  // |G0|g0|R0|r0|
-    "precrq.qb.ph     $t8, $t0, $t3           \n\t"  // |G1|R1|G0|R0|
-    "precr.qb.ph      $t9, $t0, $t3           \n\t"  // |g1|r1|g0|r0|
+    "precr.qb.ph      $t0, $t8, $t1           \n"  // |G1|g1|R1|r1|
+    "precr.qb.ph      $t3, $t9, $t2           \n"  // |G0|g0|R0|r0|
+    "precrq.qb.ph     $t8, $t0, $t3           \n"  // |G1|R1|G0|R0|
+    "precr.qb.ph      $t9, $t0, $t3           \n"  // |g1|r1|g0|r0|
 
-    "precr.qb.ph       $t2, $t4, $t5          \n\t"  // |B1|b1|B0|b0|
-    "addiu             %[width], -4           \n\t"
-    "addiu             %[y_buf], 4            \n\t"
-    "preceu.ph.qbla    $t1, $t2               \n\t"  // |0 |B1|0 |B0|
-    "preceu.ph.qbra    $t2, $t2               \n\t"  // |0 |b1|0 |b0|
-    "or                $t1, $t1, $s6          \n\t"  // |ff|B1|ff|B0|
-    "or                $t2, $t2, $s6          \n\t"  // |ff|b1|ff|b0|
-    "precrq.ph.w       $t0, $t2, $t9          \n\t"  // |ff|b1|g1|r1|
-    "precrq.ph.w       $t3, $t1, $t8          \n\t"  // |ff|B1|G1|R1|
-    "sll               $t9, $t9, 16           \n\t"
-    "sll               $t8, $t8, 16           \n\t"
-    "packrl.ph         $t2, $t2, $t9          \n\t"  // |ff|b0|g0|r0|
-    "packrl.ph         $t1, $t1, $t8          \n\t"  // |ff|B0|G0|R0|
+    "precr.qb.ph       $t2, $t4, $t5          \n"  // |B1|b1|B0|b0|
+    "addiu             %[width], -4           \n"
+    "addiu             %[y_buf], 4            \n"
+    "preceu.ph.qbla    $t1, $t2               \n"  // |0 |B1|0 |B0|
+    "preceu.ph.qbra    $t2, $t2               \n"  // |0 |b1|0 |b0|
+    "or                $t1, $t1, $s6          \n"  // |ff|B1|ff|B0|
+    "or                $t2, $t2, $s6          \n"  // |ff|b1|ff|b0|
+    "precrq.ph.w       $t0, $t2, $t9          \n"  // |ff|b1|g1|r1|
+    "precrq.ph.w       $t3, $t1, $t8          \n"  // |ff|B1|G1|R1|
+    "sll               $t9, $t9, 16           \n"
+    "sll               $t8, $t8, 16           \n"
+    "packrl.ph         $t2, $t2, $t9          \n"  // |ff|b0|g0|r0|
+    "packrl.ph         $t1, $t1, $t8          \n"  // |ff|B0|G0|R0|
 // Store results.
-    "sw                $t2, 0(%[rgb_buf])     \n\t"
-    "sw                $t0, 4(%[rgb_buf])     \n\t"
-    "sw                $t1, 8(%[rgb_buf])     \n\t"
-    "sw                $t3, 12(%[rgb_buf])    \n\t"
-    "bnez              %[width], 1b           \n\t"
-    " addiu            %[rgb_buf], 16         \n\t"
-    "2:                                         \n\t"
-    ".set pop                                 \n\t"
+    "sw                $t2, 0(%[rgb_buf])     \n"
+    "sw                $t0, 4(%[rgb_buf])     \n"
+    "sw                $t1, 8(%[rgb_buf])     \n"
+    "sw                $t3, 12(%[rgb_buf])    \n"
+    "bnez              %[width], 1b           \n"
+    " addiu            %[rgb_buf], 16         \n"
+   "2:                                        \n"
+    ".set pop                                 \n"
       :[y_buf] "+r" (y_buf),
        [u_buf] "+r" (u_buf),
        [v_buf] "+r" (v_buf),
@@ -868,13 +876,15 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
     "repl.ph           $s5, 128               \n"  // |128|128|
     "lui               $s6, 0xff              \n"
     "ori               $s6, 0xff              \n"  // |00|ff|00|ff|
-    "1:                                         \n"
+
+    ".p2align          2                      \n"
+   "1:                                        \n"
       I422ToTransientMipsRGB
       // Arranging into bgra format
-    "precr.qb.ph      $t4, $t4, $t8           \n"  // |B1|b1|G1|g1|
-    "precr.qb.ph      $t5, $t5, $t9           \n"  // |B0|b0|G0|g0|
-    "precrq.qb.ph     $t8, $t4, $t5           \n"  // |B1|G1|B0|G0|
-    "precr.qb.ph      $t9, $t4, $t5           \n"  // |b1|g1|b0|g0|
+    "precr.qb.ph       $t4, $t4, $t8          \n"  // |B1|b1|G1|g1|
+    "precr.qb.ph       $t5, $t5, $t9          \n"  // |B0|b0|G0|g0|
+    "precrq.qb.ph      $t8, $t4, $t5          \n"  // |B1|G1|B0|G0|
+    "precr.qb.ph       $t9, $t4, $t5          \n"  // |b1|g1|b0|g0|
 
     "precr.qb.ph       $t2, $t1, $t2          \n"  // |R1|r1|R0|r0|
     "addiu             %[width], -4           \n"
@@ -898,7 +908,7 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
     "sw                $t3, 12(%[rgb_buf])    \n"
     "bnez              %[width], 1b           \n"
     " addiu            %[rgb_buf], 16         \n"
-    "2:                                         \n"
+   "2:                                        \n"
     ".set pop                                 \n"
       :[y_buf] "+r" (y_buf),
        [u_buf] "+r" (u_buf),
@@ -926,6 +936,8 @@ void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
 
      "replv.ph          $t0, %[y0_fraction]               \n"
      "replv.ph          $t1, %[source_y_fraction]         \n"
+
+    ".p2align           2                                 \n"
    "1:                                                    \n"
      "lw                $t2, 0(%[src_ptr])                \n"
      "lw                $t3, 0(%[src_ptr1])               \n"
