@@ -786,21 +786,23 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
 TESTATOBIPLANAR(ARGB, 4, NV12, 2, 2)
 TESTATOBIPLANAR(ARGB, 4, NV21, 2, 2)
 
-#define TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                      \
-                  FMT_B, BPP_B, STRIDE_B,                                      \
+#define TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                            \
+                  FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                            \
                   W1280, DIFF, N, NEG, OFF)                                    \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
+  const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;         \
+  const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;         \
   const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;  \
   const int kStrideB = (kWidth * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;  \
-  align_buffer_64(src_argb, kStrideA * kHeight + OFF);                         \
-  align_buffer_64(dst_argb_c, kStrideB * kHeight);                             \
-  align_buffer_64(dst_argb_opt, kStrideB * kHeight);                           \
-  memset(dst_argb_c, 0, kStrideB * kHeight);                                   \
-  memset(dst_argb_opt, 0, kStrideB * kHeight);                                 \
+  align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
+  align_buffer_64(dst_argb_c, kStrideB * kHeightB);                            \
+  align_buffer_64(dst_argb_opt, kStrideB * kHeightB);                          \
+  memset(dst_argb_c, 0, kStrideB * kHeightB);                                  \
+  memset(dst_argb_opt, 0, kStrideB * kHeightB);                                \
   srandom(time(NULL));                                                         \
-  for (int i = 0; i < kStrideA * kHeight; ++i) {                               \
+  for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
     src_argb[i + OFF] = (random() & 0xff);                                     \
   }                                                                            \
   MaskCpuFlags(0);                                                             \
@@ -814,7 +816,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
                      kWidth, NEG kHeight);                                     \
   }                                                                            \
   int max_diff = 0;                                                            \
-  for (int i = 0; i < kStrideB * kHeight; ++i) {                               \
+  for (int i = 0; i < kStrideB * kHeightB; ++i) {                              \
     int abs_diff =                                                             \
         abs(static_cast<int>(dst_argb_c[i]) -                                  \
             static_cast<int>(dst_argb_opt[i]));                                \
@@ -873,17 +875,17 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
 
 #define TESTATOB(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                             \
                  FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                       \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
-              FMT_B, BPP_B, STRIDE_B,                                          \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                                \
+              FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                                \
               benchmark_width_ - 4, DIFF, _Any, +, 0)                          \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
-              FMT_B, BPP_B, STRIDE_B,                                          \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                                \
+              FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                                \
               benchmark_width_, DIFF, _Unaligned, +, 1)                        \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
-              FMT_B, BPP_B, STRIDE_B,                                          \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                                \
+              FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                                \
               benchmark_width_, DIFF, _Invert, -, 0)                           \
-    TESTATOBI(FMT_A, BPP_A, STRIDE_A,                                          \
-              FMT_B, BPP_B, STRIDE_B,                                          \
+    TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                                \
+              FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                                \
               benchmark_width_, DIFF, _Opt, +, 0)                              \
     TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                           \
                    FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)
