@@ -43,7 +43,6 @@ ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
         source/compare_neon.cc.neon    \
         source/rotate_neon.cc.neon     \
         source/row_neon.cc.neon        \
-        source/scale_argb_neon.cc.neon \
         source/scale_neon.cc.neon
 endif
 

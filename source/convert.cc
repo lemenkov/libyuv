@@ -95,12 +95,12 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   // Resample U plane.
   ScalePlane(src_u, src_stride_u, halfwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, halfwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
   return 0;
 }
 
@@ -141,12 +141,12 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   // Resample U plane.
   ScalePlane(src_u, src_stride_u, width, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, width, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
   return 0;
 }
 
@@ -188,12 +188,12 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
   // Resample U plane.
   ScalePlane(src_u, src_stride_u, quarterwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, quarterwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterBilinear);
+             kFilterNone);
   return 0;
 }
 
