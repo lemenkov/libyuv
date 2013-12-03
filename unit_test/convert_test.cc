@@ -106,7 +106,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 1);                                                      \
+  EXPECT_LE(max_diff, 0);                                                      \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -119,7 +119,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 1);                                                      \
+  EXPECT_LE(max_diff, 3);                                                      \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -132,7 +132,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 1);                                                      \
+  EXPECT_LE(max_diff, 3);                                                      \
   free_aligned_buffer_64(dst_y_c)                                              \
   free_aligned_buffer_64(dst_u_c)                                              \
   free_aligned_buffer_64(dst_v_c)                                              \

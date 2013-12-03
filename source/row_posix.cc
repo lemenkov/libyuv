@@ -5389,6 +5389,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 
   // 1 pixel loop                              \n"
     ".p2align  2                               \n"
+    BUNDLEALIGN
   "10:                                         \n"
     "cvttps2dq %%xmm2,%%xmm0                   \n"
     "packssdw  %%xmm0,%%xmm0                   \n"

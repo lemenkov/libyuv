@@ -58,6 +58,8 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// 422 chroma is 1/2 width, 1x height
+// 420 chroma is 1/2 width, 1/2 height
 LIBYUV_API
 int I422ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -81,73 +83,29 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int halfwidth = (width + 1) >> 1;
-  void (*HalfRow)(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix) = HalfRow_C;
-#if defined(HAS_HALFROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 16) &&
-      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    HalfRow = HalfRow_SSE2;
-  }
-#endif
-#if defined(HAS_HALFROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(halfwidth, 32)) {
-    HalfRow = HalfRow_AVX2;
-  }
-#endif
-#if defined(HAS_HALFROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 16)) {
-    HalfRow = HalfRow_NEON;
-  }
-#endif
 
   // Copy Y plane
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  // SubSample U plane.
-  int y;
-  for (y = 0; y < height - 1; y += 2) {
-    HalfRow(src_u, src_stride_u, dst_u, halfwidth);
-    src_u += src_stride_u * 2;
-    dst_u += dst_stride_u;
-  }
-  if (height & 1) {
-    HalfRow(src_u, 0, dst_u, halfwidth);
-  }
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
 
-  // SubSample V plane.
-  for (y = 0; y < height - 1; y += 2) {
-    HalfRow(src_v, src_stride_v, dst_v, halfwidth);
-    src_v += src_stride_v * 2;
-    dst_v += dst_stride_v;
-  }
-  if (height & 1) {
-    HalfRow(src_v, 0, dst_v, halfwidth);
-  }
+  // Resample U plane.
+  ScalePlane(src_u, src_stride_u, halfwidth, height,
+             dst_u, dst_stride_u, halfwidth, halfheight,
+             kFilterBilinear);
+
+  // Resample V plane.
+  ScalePlane(src_v, src_stride_v, halfwidth, height,
+             dst_v, dst_stride_v, halfwidth, halfheight,
+             kFilterBilinear);
   return 0;
 }
 
-// Blends 32x2 pixels to 16x1
-// source in scale.cc
-#if !defined(LIBYUV_DISABLE_NEON) && \
-    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
-#define HAS_SCALEROWDOWN2_NEON
-void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst, int dst_width);
-#elif !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
-
-void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width);
-#endif
-void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width);
-
+// 444 chroma is 1x width, 1x height
+// 420 chroma is 1/2 width, 1/2 height
 LIBYUV_API
 int I444ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -171,54 +129,27 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int halfwidth = (width + 1) >> 1;
-  void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) = ScaleRowDown2Box_C;
-#if defined(HAS_SCALEROWDOWN2_NEON)
-  if (TestCpuFlag(kCpuHasNEON) &&
-      IS_ALIGNED(halfwidth, 16)) {
-    ScaleRowDown2 = ScaleRowDown2Box_NEON;
-  }
-#elif defined(HAS_SCALEROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(halfwidth, 16) &&
-      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    ScaleRowDown2 = ScaleRowDown2Box_SSE2;
-  }
-#endif
 
   // Copy Y plane
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  // SubSample U plane.
-  int y;
-  for (y = 0; y < height - 1; y += 2) {
-    ScaleRowDown2(src_u, src_stride_u, dst_u, halfwidth);
-    src_u += src_stride_u * 2;
-    dst_u += dst_stride_u;
-  }
-  if (height & 1) {
-    ScaleRowDown2(src_u, 0, dst_u, halfwidth);
-  }
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
 
-  // SubSample V plane.
-  for (y = 0; y < height - 1; y += 2) {
-    ScaleRowDown2(src_v, src_stride_v, dst_v, halfwidth);
-    src_v += src_stride_v * 2;
-    dst_v += dst_stride_v;
-  }
-  if (height & 1) {
-    ScaleRowDown2(src_v, 0, dst_v, halfwidth);
-  }
+  // Resample U plane.
+  ScalePlane(src_u, src_stride_u, width, height,
+             dst_u, dst_stride_u, halfwidth, halfheight,
+             kFilterBilinear);
+
+  // Resample V plane.
+  ScalePlane(src_v, src_stride_v, width, height,
+             dst_v, dst_stride_v, halfwidth, halfheight,
+             kFilterBilinear);
   return 0;
 }
 
-// TODO(fbarchard): Enable bilinear when fast enough or specialized upsampler.
 // 411 chroma is 1/4 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
 LIBYUV_API
@@ -254,15 +185,15 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
   int halfheight = (height + 1) >> 1;
   int quarterwidth = (width + 3) >> 2;
 
-  // Resample U plane from 1/4 width, 1x height to 1/2 width, 1/2 height.
+  // Resample U plane.
   ScalePlane(src_u, src_stride_u, quarterwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, quarterwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
   return 0;
 }
 
