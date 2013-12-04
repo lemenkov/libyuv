@@ -462,7 +462,7 @@ void ScalePlaneVertical(int src_height,
                         int bpp, FilterMode filtering) {
   int dst_widthx4 = dst_width * bpp;
   src_argb += (x >> 16) * bpp;
-  assert(src_height > 0);
+  assert(src_height != 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,

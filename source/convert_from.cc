@@ -25,6 +25,40 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#define SUBSAMPLE(v, a, s) (v < 0) ? (-((-v + a) >> s)) : ((v + a) >> s)
+static __inline int Abs(int v) {
+  return v >= 0 ? v : -v;
+}
+
+// I420 To any I4xx YUV format with mirroring.
+static int I420ToI4xx(const uint8* src_y, int src_stride_y,
+                      const uint8* src_u, int src_stride_u,
+                      const uint8* src_v, int src_stride_v,
+                      uint8* dst_y, int dst_stride_y,
+                      uint8* dst_u, int dst_stride_u,
+                      uint8* dst_v, int dst_stride_v,
+                      int src_y_width, int src_y_height,
+                      int dst_uv_width, int dst_uv_height) {
+  if (src_y_width == 0 || src_y_height == 0 ||
+      dst_uv_width <= 0 || dst_uv_height <= 0) {
+    return -1;
+  }
+  const int dst_y_width = Abs(src_y_width);
+  const int dst_y_height = Abs(src_y_height);
+  const int src_uv_width = SUBSAMPLE(src_y_width, 1, 1);
+  const int src_uv_height = SUBSAMPLE(src_y_height, 1, 1);
+  ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
+             dst_y, dst_stride_y, dst_y_width, dst_y_height,
+             kFilterBilinear);
+  ScalePlane(src_u, src_stride_u, src_uv_width, src_uv_height,
+             dst_u, dst_stride_u, dst_uv_width, dst_uv_height,
+             kFilterBilinear);
+  ScalePlane(src_v, src_stride_v, src_uv_width, src_uv_height,
+             dst_v, dst_stride_v, dst_uv_width, dst_uv_height,
+             kFilterBilinear);
+  return 0;
+}
+
 // 420 chroma is 1/2 width, 1/2 height
 // 422 chroma is 1/2 width, 1x height
 LIBYUV_API
@@ -35,38 +69,16 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-
-  // Copy Y plane.
-  // TODO(fbarchard): Scale Y plane, which will do a copy, but allows mirror.
-  if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  }
-
-  // Resample UV planes.
-  const int halfwidth = (width + 1) >> 1;
-  const int halfheight = (height + 1) >> 1;
-  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
-             dst_u, dst_stride_u, halfwidth, height,
-             kFilterBilinear);
-  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
-             dst_v, dst_stride_v, halfwidth, height,
-             kFilterBilinear);
-  return 0;
+  const int dst_uv_width = (Abs(width) + 1) >> 1;
+  const int dst_uv_height = Abs(height);
+  return I420ToI4xx(src_y, src_stride_y,
+                    src_u, src_stride_u,
+                    src_v, src_stride_v,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height,
+                    dst_uv_width, dst_uv_height);
 }
 
 // 420 chroma is 1/2 width, 1/2 height
@@ -79,37 +91,16 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (!src_y || !src_u|| !src_v ||
-      !dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-
-  // Copy Y plane
-  if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  }
-
-  // Resample UV planes.
-  const int halfwidth = (width + 1) >> 1;
-  const int halfheight = (height + 1) >> 1;
-  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
-             dst_u, dst_stride_u, width, height,
-             kFilterBilinear);
-  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
-             dst_v, dst_stride_v, width, height,
-             kFilterBilinear);
-  return 0;
+  const int dst_uv_width = Abs(width);
+  const int dst_uv_height = Abs(height);
+  return I420ToI4xx(src_y, src_stride_y,
+                    src_u, src_stride_u,
+                    src_v, src_stride_v,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height,
+                    dst_uv_width, dst_uv_height);
 }
 
 // 420 chroma is 1/2 width, 1/2 height
@@ -122,38 +113,16 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-
-  // Copy Y plane
-  if (dst_y) {
-    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
-  }
-
-  // Resample UV planes.
-  const int halfwidth = (width + 1) >> 1;
-  const int halfheight = (height + 1) >> 1;
-  const int quarterwidth = (width + 3) >> 2;
-  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
-             dst_u, dst_stride_u, quarterwidth, height,
-             kFilterBilinear);
-  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
-             dst_v, dst_stride_v, quarterwidth, height,
-             kFilterBilinear);
-  return 0;
+  const int dst_uv_width = (Abs(width) + 3) >> 2;
+  const int dst_uv_height = Abs(height);
+  return I420ToI4xx(src_y, src_stride_y,
+                    src_u, src_stride_u,
+                    src_v, src_stride_v,
+                    dst_y, dst_stride_y,
+                    dst_u, dst_stride_u,
+                    dst_v, dst_stride_v,
+                    width, height,
+                    dst_uv_width, dst_uv_height);
 }
 
 // Copy to I400. Source can be I420,422,444,400,NV12,NV21
