@@ -108,12 +108,12 @@ static uvec16 kScaleAb2 =
 #define MEMOPREG(opcode, offset, base, index, scale, reg) \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " (%%r15,%%r14),%%" #reg "\n"
-#define MEMOPREGK(opcode, offset, base, index, scale, reg) \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " (%%r15,%%r14),%k" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " %%" #reg ",(%%r15,%%r14)\n"
+#define MEMOP(opcode, offset, base, index, scale) \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14)"
 #define BUNDLEALIGN ".p2align 5\n"
 #else
 #define MEMACCESS(base) "(%" #base ")"
@@ -125,10 +125,10 @@ static uvec16 kScaleAb2 =
     #offset "(%" #base ",%" #index "," #scale ")"
 #define MEMOPREG(opcode, offset, base, index, scale, reg) \
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
-#define MEMOPREGK(opcode, offset, base, index, scale, reg) \
-    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%k" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
     #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
+#define MEMOP(opcode, offset, base, index, scale) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale ")"
 #define BUNDLEALIGN
 #endif
 
@@ -857,11 +857,13 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
-    MEMOPREGK(movzwl,0x00,1,3,1,2)             //  movzwl  (%1,%3,1),%k2
+    "xor       %2,%2                           \n"
+    MEMOP(mov,0x00,1,3,1) ",%w2                \n"  //  mov  (%1,%3,1),%w2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
     BUNDLEALIGN
-    MEMOPREGK(movzwl,0x00,1,4,1,2)             //  movzwl  (%1,%4,1),%k2
+    "xor       %2,%2                           \n"
+    MEMOP(mov,0x00,1,4,1) ",%w2                \n"  //  mov  (%1,%4,1),%w2
     "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
@@ -881,7 +883,8 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   "29:                                         \n"
     "addl      $0x1,%5                         \n"
     "jl        99f                             \n"
-    MEMOPREGK(movzwl,0x00,1,3,1,2)             //  movzwl  (%1,%3,1),%k2
+    "xor       %2,%2                           \n"
+    MEMOP(mov,0x00,1,3,1) ",%w2                \n"  //  mov  (%1,%3,1),%w2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm2                     \n"
     "pshufb    %%xmm5,%%xmm2                   \n"

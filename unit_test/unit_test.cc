@@ -19,8 +19,8 @@
 #define BENCHMARK_ITERATIONS 1
 
 libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
-    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(22),
-    benchmark_height_(14) {
+    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(33),
+    benchmark_height_(17) {
     const char* repeat = getenv("LIBYUV_REPEAT");
     if (repeat) {
       benchmark_iterations_ = atoi(repeat);  // NOLINT

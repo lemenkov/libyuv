@@ -95,12 +95,12 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
   // Resample U plane.
   ScalePlane(src_u, src_stride_u, halfwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, halfwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
   return 0;
 }
 
@@ -141,17 +141,19 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
   // Resample U plane.
   ScalePlane(src_u, src_stride_u, width, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
 
   // Resample V plane.
   ScalePlane(src_v, src_stride_v, width, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
-             kFilterNone);
+             kFilterBilinear);
   return 0;
 }
 
 // 411 chroma is 1/4 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
+// TODO(fbarchard): Change to kFilterBilinear; Test with valgrind.
+// TODO(fbarchard): Share code for 444 and 422 to 420.
 LIBYUV_API
 int I411ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,

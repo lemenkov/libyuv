@@ -791,6 +791,13 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 // Bilinear column filtering. SSSE3 version.
 // TODO(fbarchard): Port to Neon
+// TODO(fbarchard): Switch the following:
+//    xor        ebx, ebx
+//    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
+// To
+//    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
+// when drmemory bug fixed.
+// https://code.google.com/p/drmemory/issues/detail?id=1396
 
 __declspec(naked) __declspec(align(16))
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
@@ -824,10 +831,12 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   xloop2:
     movdqa     xmm1, xmm2           // x0, x1 fractions.
     paddd      xmm2, xmm3           // x += dx
-    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
+    xor        ebx, ebx
+    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
     movd       xmm0, ebx
     psrlw      xmm1, 9              // 7 bit fractions.
-    movzx      ebx, word ptr [esi + edx]  // 2 source x1 pixels
+    xor        ebx, ebx
+    mov        bx, word ptr [esi + edx]  // 2 source x1 pixels
     movd       xmm4, ebx
     pshufb     xmm1, xmm5           // 0011
     punpcklwd  xmm0, xmm4
@@ -850,7 +859,8 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jl         xloop99
 
     // 1 pixel remainder
-    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
+    xor        ebx, ebx
+    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
     movd       xmm0, ebx
     psrlw      xmm2, 9              // 7 bit fractions.
     pshufb     xmm2, xmm5           // 0011
