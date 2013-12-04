@@ -718,16 +718,29 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr) {
-  int dx = FixedDiv(Abs(src_width), dst_width);
-  int dy = FixedDiv(src_height, dst_height);
-  int x = dx >> 1;
-  int y = dy >> 1;
+  int dx = 0;
+  int dy = 0;
+  int x = 0;
+  int y = 0;
+  if (dst_width <= Abs(src_width)) {
+    dx = FixedDiv(Abs(src_width), dst_width);
+    x = (dx >> 1) - 32768;
+  } else if (dst_width > 1) {
+    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
+  }
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
     x += (dst_width - 1) * dx;
     dx = -dx;
     src_width = -src_width;
   }
+  if (dst_height <= src_height) {
+    dy = FixedDiv(src_height, dst_height);
+    y = (dy >> 1) - 32768;
+  } else if (dst_height > 1) {
+    dy = FixedDiv(src_height - 1, dst_height - 1);
+  }
+
   void (*ScaleCols)(uint8* dst_ptr, const uint8* src_ptr,
       int dst_width, int x, int dx) = ScaleCols_C;
   if (src_width * 2 == dst_width && x < 0x8000) {

@@ -39,7 +39,7 @@ int I420Copy(const uint8* src_y, int src_stride_y,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    int halfheight = (height + 1) >> 1;
+    const int halfheight = (height + 1) >> 1;
     src_y = src_y + (height - 1) * src_stride_y;
     src_u = src_u + (halfheight - 1) * src_stride_u;
     src_v = src_v + (halfheight - 1) * src_stride_v;
@@ -48,11 +48,12 @@ int I420Copy(const uint8* src_y, int src_stride_y,
     src_stride_v = -src_stride_v;
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
+  // Copy UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
   CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
   return 0;
@@ -89,15 +90,12 @@ int I422ToI420(const uint8* src_y, int src_stride_y,
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-
-  // Resample U plane.
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
   ScalePlane(src_u, src_stride_u, halfwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
              kFilterBilinear);
-
-  // Resample V plane.
   ScalePlane(src_v, src_stride_v, halfwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
              kFilterBilinear);
@@ -135,15 +133,12 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-
-  // Resample U plane.
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
   ScalePlane(src_u, src_stride_u, width, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
              kFilterBilinear);
-
-  // Resample V plane.
   ScalePlane(src_v, src_stride_v, width, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
              kFilterBilinear);
@@ -152,8 +147,6 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
 
 // 411 chroma is 1/4 width, 1x height
 // 420 chroma is 1/2 width, 1/2 height
-// TODO(fbarchard): Change to kFilterBilinear; Test with valgrind.
-// TODO(fbarchard): Share code for 444 and 422 to 420.
 LIBYUV_API
 int I411ToI420(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -183,16 +176,13 @@ int I411ToI420(const uint8* src_y, int src_stride_y,
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  int quarterwidth = (width + 3) >> 2;
-
-  // Resample U plane.
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
+  const int quarterwidth = (width + 3) >> 2;
   ScalePlane(src_u, src_stride_u, quarterwidth, height,
              dst_u, dst_stride_u, halfwidth, halfheight,
              kFilterNone);
-
-  // Resample V plane.
   ScalePlane(src_v, src_stride_v, quarterwidth, height,
              dst_v, dst_stride_v, halfwidth, halfheight,
              kFilterNone);

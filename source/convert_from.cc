@@ -25,6 +25,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// 420 chroma is 1/2 width, 1/2 height
+// 422 chroma is 1/2 width, 1x height
 LIBYUV_API
 int I420ToI422(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -48,69 +50,27 @@ int I420ToI422(const uint8* src_y, int src_stride_y,
     dst_stride_u = -dst_stride_u;
     dst_stride_v = -dst_stride_v;
   }
-  int halfwidth = (width + 1) >> 1;
-  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
-#if defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(halfwidth, 4)) {
-    CopyRow = CopyRow_X86;
-  }
-#endif
-#if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(halfwidth, 32) &&
-      IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-      IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-      IS_ALIGNED(dst_u, 16) && IS_ALIGNED(dst_stride_u, 16) &&
-      IS_ALIGNED(dst_v, 16) && IS_ALIGNED(dst_stride_v, 16)) {
-    CopyRow = CopyRow_SSE2;
-  }
-#endif
-#if defined(HAS_COPYROW_ERMS)
-  if (TestCpuFlag(kCpuHasERMS)) {
-    CopyRow = CopyRow_ERMS;
-  }
-#endif
-#if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(halfwidth, 32)) {
-    CopyRow = CopyRow_NEON;
-  }
-#endif
-#if defined(HAS_COPYROW_MIPS)
-  if (TestCpuFlag(kCpuHasMIPS)) {
-    CopyRow = CopyRow_MIPS;
-  }
-#endif
 
-  // Copy Y plane
+  // Copy Y plane.
+  // TODO(fbarchard): Scale Y plane, which will do a copy, but allows mirror.
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  // UpSample U plane.
-  int y;
-  for (y = 0; y < height - 1; y += 2) {
-    CopyRow(src_u, dst_u, halfwidth);
-    CopyRow(src_u, dst_u + dst_stride_u, halfwidth);
-    src_u += src_stride_u;
-    dst_u += dst_stride_u * 2;
-  }
-  if (height & 1) {
-    CopyRow(src_u, dst_u, halfwidth);
-  }
-
-  // UpSample V plane.
-  for (y = 0; y < height - 1; y += 2) {
-    CopyRow(src_v, dst_v, halfwidth);
-    CopyRow(src_v, dst_v + dst_stride_v, halfwidth);
-    src_v += src_stride_v;
-    dst_v += dst_stride_v * 2;
-  }
-  if (height & 1) {
-    CopyRow(src_v, dst_v, halfwidth);
-  }
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
+  ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
+             dst_u, dst_stride_u, halfwidth, height,
+             kFilterBilinear);
+  ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
+             dst_v, dst_stride_v, halfwidth, height,
+             kFilterBilinear);
   return 0;
 }
 
-// TODO(fbarchard): Enable bilinear when fast enough or specialized upsampler.
+// 420 chroma is 1/2 width, 1/2 height
+// 444 chroma is 1x width, 1x height
 LIBYUV_API
 int I420ToI444(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -140,18 +100,15 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-
-  // Upsample U plane from from 1/2 width, 1/2 height to 1x width, 1x height.
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
   ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
              dst_u, dst_stride_u, width, height,
-             kFilterNone);
-
-  // Upsample V plane.
+             kFilterBilinear);
   ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
              dst_v, dst_stride_v, width, height,
-             kFilterNone);
+             kFilterBilinear);
   return 0;
 }
 
@@ -186,19 +143,16 @@ int I420ToI411(const uint8* src_y, int src_stride_y,
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  int quarterwidth = (width + 3) >> 2;
-
-  // Resample U plane from 1/2 width, 1/2 height to 1/4 width, 1x height
+  // Resample UV planes.
+  const int halfwidth = (width + 1) >> 1;
+  const int halfheight = (height + 1) >> 1;
+  const int quarterwidth = (width + 3) >> 2;
   ScalePlane(src_u, src_stride_u, halfwidth, halfheight,
              dst_u, dst_stride_u, quarterwidth, height,
-             kFilterNone);
-
-  // Resample V plane.
+             kFilterBilinear);
   ScalePlane(src_v, src_stride_v, halfwidth, halfheight,
              dst_v, dst_stride_v, quarterwidth, height,
-             kFilterNone);
+             kFilterBilinear);
   return 0;
 }
 
