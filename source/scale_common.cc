@@ -460,18 +460,20 @@ void ScalePlaneVertical(int src_height,
                         const uint8* src_argb, uint8* dst_argb,
                         int x, int y, int dy,
                         int bpp, FilterMode filtering) {
-  int dst_widthx4 = dst_width * bpp;
-  src_argb += (x >> 16) * bpp;
+  // TODO(fbarchard): Allow higher bpp.
+  assert(bpp >= 1 && bpp <= 4);
   assert(src_height != 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
+  int dst_width_bytes = dst_width * bpp;
+  src_argb += (x >> 16) * bpp;
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
 #if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && dst_widthx4 >= 16) {
+  if (TestCpuFlag(kCpuHasSSE2) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_SSE2;
-    if (IS_ALIGNED(dst_widthx4, 16)) {
+    if (IS_ALIGNED(dst_width_bytes, 16)) {
       InterpolateRow = InterpolateRow_Unaligned_SSE2;
       if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
@@ -481,9 +483,9 @@ void ScalePlaneVertical(int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && dst_widthx4 >= 16) {
+  if (TestCpuFlag(kCpuHasSSSE3) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
-    if (IS_ALIGNED(dst_widthx4, 16)) {
+    if (IS_ALIGNED(dst_width_bytes, 16)) {
       InterpolateRow = InterpolateRow_Unaligned_SSSE3;
       if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
           IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
@@ -493,27 +495,27 @@ void ScalePlaneVertical(int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && dst_widthx4 >= 32) {
+  if (TestCpuFlag(kCpuHasAVX2) && dst_width_bytes >= 32) {
     InterpolateRow = InterpolateRow_Any_AVX2;
-    if (IS_ALIGNED(dst_widthx4, 32)) {
+    if (IS_ALIGNED(dst_width_bytes, 32)) {
       InterpolateRow = InterpolateRow_AVX2;
     }
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && dst_widthx4 >= 16) {
+  if (TestCpuFlag(kCpuHasNEON) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_NEON;
-    if (IS_ALIGNED(dst_widthx4, 16)) {
+    if (IS_ALIGNED(dst_width_bytes, 16)) {
       InterpolateRow = InterpolateRow_NEON;
     }
   }
 #endif
 #if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_widthx4 >= 4 &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_width_bytes >= 4 &&
       IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride, 4)) {
     InterpolateRow = InterpolateRow_Any_MIPS_DSPR2;
-    if (IS_ALIGNED(dst_widthx4, 4)) {
+    if (IS_ALIGNED(dst_width_bytes, 4)) {
       InterpolateRow = InterpolateRow_MIPS_DSPR2;
     }
   }
@@ -526,10 +528,51 @@ void ScalePlaneVertical(int src_height,
     int yi = y >> 16;
     int yf = filtering ? ((y >> 8) & 255) : 0;
     const uint8* src = src_argb + yi * src_stride;
-    InterpolateRow(dst_argb, src, src_stride, dst_widthx4, yf);
+    InterpolateRow(dst_argb, src, src_stride, dst_width_bytes, yf);
     dst_argb += dst_stride;
     y += dy;
   }
+}
+
+// Scale plane vertically with bilinear interpolation.
+FilterMode ScaleFilterReduce(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             FilterMode filtering) {
+  if (src_width < 0) {
+    src_width = -src_width;
+  }
+  if (src_height < 0) {
+    src_height = -src_height;
+  }
+  if (filtering == kFilterBox) {
+    // If scaling both axis to 0.5 or larger, switch from Box to Bilinear.
+    if (dst_width * 2 >= src_width && dst_height * 2 >= src_height) {
+      filtering = kFilterBilinear;
+    }
+    // If scaling to larger, switch from Box to Bilinear.
+    if (dst_width >= src_width || dst_height >= src_height) {
+      filtering = kFilterBilinear;
+    }
+  }
+  if (filtering == kFilterBilinear) {
+    if (src_height == 1) {
+      filtering = kFilterLinear;
+    }
+    // TODO(fbarchard): Detect any odd scale factor and reduce to Linear.
+    if (dst_height == src_height || dst_height * 3 == src_height) {
+      filtering = kFilterLinear;
+    }
+  }
+  if (filtering == kFilterLinear) {
+    if (src_width == 1) {
+      filtering = kFilterNone;
+    }
+    // TODO(fbarchard): Detect any odd scale factor and reduce to None.
+    if (dst_width == src_width || dst_width * 3 == src_width) {
+      filtering = kFilterNone;
+    }
+  }
+  return filtering;
 }
 
 #ifdef __cplusplus

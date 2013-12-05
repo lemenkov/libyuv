@@ -768,6 +768,11 @@ void ScalePlane(const uint8* src, int src_stride,
                 uint8* dst, int dst_stride,
                 int dst_width, int dst_height,
                 FilterMode filtering) {
+  // Simplify filtering when possible.
+  filtering = ScaleFilterReduce(src_width, src_height,
+                                dst_width, dst_height,
+                                filtering);
+
   // Negative height means invert the image.
   if (src_height < 0) {
     src_height = -src_height;

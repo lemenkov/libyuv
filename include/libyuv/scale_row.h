@@ -55,6 +55,10 @@ extern "C" {
 #define HAS_SCALEROWDOWN38_MIPS_DSPR2
 #endif
 
+FilterMode ScaleFilterReduce(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             FilterMode filtering);
+
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width, int dst_height,

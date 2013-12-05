@@ -572,6 +572,16 @@ static void ScaleARGB(const uint8* src, int src_stride,
                       int dst_width, int dst_height,
                       int clip_x, int clip_y, int clip_width, int clip_height,
                       FilterMode filtering) {
+  // ARGB does not support box filter yet, but allow the user to pass it.
+  // TODO(fbarchard): Support Box filter.  Move row function to common.
+  if (filtering == kFilterBox) {
+    filtering = kFilterBilinear;
+  }
+  // Simplify filtering when possible.
+  filtering = ScaleFilterReduce(src_width, src_height,
+                                dst_width, dst_height,
+                                filtering);
+
   // Negative src_height means invert the image.
   if (src_height < 0) {
     src_height = -src_height;

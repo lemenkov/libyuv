@@ -18,12 +18,12 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Supported filtering
+// Supported filtering.
 enum FilterMode {
   kFilterNone = 0,  // Point sample; Fastest.
-  kFilterBilinear = 1,  // Faster than box, but lower quality scaling down.
-  kFilterBox = 2,  // Highest quality.
-  kFilterLinear = 3  // Faster than bilinear, slower than None.
+  kFilterLinear = 1, // Filter horizontally only.
+  kFilterBilinear = 2,  // Faster than box, but lower quality scaling down.
+  kFilterBox = 3  // Highest quality.
 };
 
 // Scale a YUV plane.
