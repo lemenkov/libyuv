@@ -23,6 +23,10 @@ namespace libyuv {
 extern "C" {
 #endif
 
+static __inline int Abs(int v) {
+  return v >= 0 ? v : -v;
+}
+
 // CPU agnostic row functions
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                      uint8* dst, int dst_width) {
@@ -581,7 +585,7 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
 
 // Compute slope values for stepping.
 void ScaleSlope(int src_width, int src_height,
-                int dst_width, int src_height,
+                int dst_width, int dst_height,
                 FilterMode filtering,
                 int* x, int* y, int* dx, int* dy) {
   assert(x != NULL);
@@ -634,7 +638,7 @@ void ScaleSlope(int src_width, int src_height,
   }
   // Negative src_width means horizontally mirror.
   if (src_width < 0) {
-    *x += (dst_width - 1) * dx;
+    *x += (dst_width - 1) * *dx;
     *dx = -*dx;
     src_width = -src_width;
   }
