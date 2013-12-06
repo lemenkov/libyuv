@@ -55,10 +55,6 @@ extern "C" {
 #define HAS_SCALEROWDOWN38_MIPS_DSPR2
 #endif
 
-FilterMode ScaleFilterReduce(int src_width, int src_height,
-                             int dst_width, int dst_height,
-                             FilterMode filtering);
-
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width, int dst_height,
@@ -66,6 +62,17 @@ void ScalePlaneVertical(int src_height,
                         const uint8* src_argb, uint8* dst_argb,
                         int x, int y, int dy,
                         int bpp, FilterMode filtering);
+
+// Simplify the filtering based on scale factors.
+FilterMode ScaleFilterReduce(int src_width, int src_height,
+                             int dst_width, int dst_height,
+                             FilterMode filtering);
+
+// Compute slope values for stepping.
+void ScaleSlope(int src_width, int src_height,
+                int dst_width, int dst_height,
+                FilterMode filtering,
+                int* x, int* y, int* dx, int* dy);
 
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                      uint8* dst, int dst_width);

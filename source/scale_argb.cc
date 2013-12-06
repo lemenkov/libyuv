@@ -593,33 +593,8 @@ static void ScaleARGB(const uint8* src, int src_stride,
   int dy = 0;
   int x = 0;
   int y = 0;
-  if (filtering) {
-    // Scale step for bilinear sampling renders last pixel once for upsample.
-    if (dst_width <= Abs(src_width)) {
-      dx = FixedDiv(Abs(src_width), dst_width);
-      x = (dx >> 1) - 32768;
-    } else if (dst_width > 1) {
-      dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
-    }
-    if (dst_height <= src_height) {
-      dy = FixedDiv(src_height,  dst_height);
-      y = (dy >> 1) - 32768;
-    } else if (dst_height > 1) {
-      dy = FixedDiv(src_height - 1, dst_height - 1);
-    }
-  } else {
-    // Scale step for point sampling duplicates all pixels equally.
-    dx = FixedDiv(Abs(src_width), dst_width);
-    dy = FixedDiv(src_height, dst_height);
-    x = dx >> 1;
-    y = dy >> 1;
-  }
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
+  ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
+             &dx, &dy, &x, &y);
   if (clip_x) {
     x += clip_x * dx;
     dst += clip_x * 4;

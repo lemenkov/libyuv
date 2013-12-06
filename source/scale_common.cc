@@ -534,7 +534,7 @@ void ScalePlaneVertical(int src_height,
   }
 }
 
-// Scale plane vertically with bilinear interpolation.
+// Simplify the filtering based on scale factors.
 FilterMode ScaleFilterReduce(int src_width, int src_height,
                              int dst_width, int dst_height,
                              FilterMode filtering) {
@@ -574,6 +574,73 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
   }
   return filtering;
 }
+
+#define CENTERSTART(dx, s) (dx < 0) ? -((-dx >> 1) + s) : ((dx >> 1) + s)
+#define FIXEDDIV1(src, dst) FixedDiv((src << 16) - 0x00010001, \
+                                     (dst << 16) - 0x00010001);
+
+// Compute slope values for stepping.
+void ScaleSlope(int src_width, int src_height,
+                int dst_width, int src_height,
+                FilterMode filtering,
+                int* x, int* y, int* dx, int* dy) {
+  assert(x != NULL);
+  assert(y != NULL);
+  assert(dx != NULL);
+  assert(dy != NULL);
+  assert(src_width != 0);
+  assert(src_height != 0);
+  assert(dst_width > 0);
+  assert(dst_height > 0);
+  if (filtering == kFilterBox) {
+    // Scale step for point sampling duplicates all pixels equally.
+    *dx = FixedDiv(Abs(src_width), dst_width);
+    *dy = FixedDiv(src_height, dst_height);
+    *x = 0;
+    *y = 0;
+  } else if (filtering == kFilterBilinear) {
+    // Scale step for bilinear sampling renders last pixel once for upsample.
+    if (dst_width <= Abs(src_width)) {
+      *dx = FixedDiv(Abs(src_width), dst_width);
+      *x = CENTERSTART(*dx, -32768);
+    } else if (dst_width > 1) {
+      *dx = FIXEDDIV1(Abs(src_width), dst_width);
+      *x = 0;
+    }
+    if (dst_height <= src_height) {
+      *dy = FixedDiv(src_height,  dst_height);
+      *y = CENTERSTART(*dy, -32768);
+    } else if (dst_height > 1) {
+      *dy = FIXEDDIV1(src_height, dst_height);
+      *y = 0;
+    }
+  } else if (filtering == kFilterLinear) {
+    // Scale step for bilinear sampling renders last pixel once for upsample.
+    if (dst_width <= Abs(src_width)) {
+      *dx = FixedDiv(Abs(src_width), dst_width);
+      *x = CENTERSTART(*dx, -32768);
+    } else if (dst_width > 1) {
+      *dx = FIXEDDIV1(Abs(src_width), dst_width);
+      *x = 0;
+    }
+    *dy = FixedDiv(src_height, dst_height);
+    *y = *dy >> 1;
+  } else {
+    // Scale step for point sampling duplicates all pixels equally.
+    *dx = FixedDiv(Abs(src_width), dst_width);
+    *dy = FixedDiv(src_height, dst_height);
+    *x = CENTERSTART(*dx, 0);
+    *y = CENTERSTART(*dy, 0);
+  }
+  // Negative src_width means horizontally mirror.
+  if (src_width < 0) {
+    *x += (dst_width - 1) * dx;
+    *dx = -*dx;
+    src_width = -src_width;
+  }
+}
+#undef CENTERSTART
+#undef FIXEDDIV1
 
 #ifdef __cplusplus
 }  // extern "C"
