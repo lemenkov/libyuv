@@ -589,12 +589,12 @@ static void ScaleARGB(const uint8* src, int src_stride,
     src_stride = -src_stride;
   }
   // Initial source x/y coordinate and step values as 16.16 fixed point.
-  int dx = 0;
-  int dy = 0;
   int x = 0;
   int y = 0;
+  int dx = 0;
+  int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
-             &dx, &dy, &x, &y);
+             &x, &y, &dx, &dy);
   if (clip_x) {
     x += clip_x * dx;
     dst += clip_x * 4;
