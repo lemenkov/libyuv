@@ -21,7 +21,7 @@ extern "C" {
 // Supported filtering.
 enum FilterMode {
   kFilterNone = 0,  // Point sample; Fastest.
-  kFilterLinear = 1, // Filter horizontally only.
+  kFilterLinear = 1,  // Filter horizontally only.
   kFilterBilinear = 2,  // Faster than box, but lower quality scaling down.
   kFilterBox = 3  // Highest quality.
 };

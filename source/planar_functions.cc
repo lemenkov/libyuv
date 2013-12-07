@@ -172,10 +172,16 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Mirror a plane of data
+// Mirror a plane of data.
 void MirrorPlane(const uint8* src_y, int src_stride_y,
                  uint8* dst_y, int dst_stride_y,
                  int width, int height) {
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
   void (*MirrorRow)(const uint8* src, uint8* dst, int width) = MirrorRow_C;
 #if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {

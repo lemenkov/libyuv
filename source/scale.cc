@@ -382,16 +382,14 @@ static void ScalePlaneBox(int src_width, int src_height,
                           const uint8* src_ptr, uint8* dst_ptr) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dx = FixedDiv(Abs(src_width), dst_width);
-  int dy = FixedDiv(src_height, dst_height);
+
+  // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
+  int dx = 0;
+  int dy = 0;
+  ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
+             &x, &y, &dx, &dy);
   const int max_y = (src_height << 16);
   if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxStride) ||
       dst_height * 2 > src_height) {
@@ -457,6 +455,14 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   assert(dst_height > 0);
   assert(Abs(src_width) <= kMaxStride);
 
+  // Initial source x/y coordinate and step values as 16.16 fixed point.
+  int x = 0;
+  int y = 0;
+  int dx = 0;
+  int dy = 0;
+  ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
+             &x, &y, &dx, &dy);
+
   SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
 
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
@@ -517,28 +523,6 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   }
 #endif
 
-  int dx = 0;
-  int dy = 0;
-  int x = 0;
-  int y = 0;
-  if (dst_width <= Abs(src_width)) {
-    dx = FixedDiv(Abs(src_width), dst_width);
-    x = (dx >> 1) - 32768;
-  } else if (dst_width > 1) {
-    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
-  }
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
-  if (dst_height <= src_height) {
-    dy = FixedDiv(src_height, dst_height);
-    y = (dy >> 1) - 32768;
-  } else if (dst_height > 1) {
-    dy = FixedDiv(src_height - 1, dst_height - 1);
-  }
   const int max_y = (src_height - 1) << 16;
   for (int j = 0; j < dst_height; ++j) {
     if (y > max_y) {
@@ -570,28 +554,14 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   assert(dst_width > 0);
   assert(dst_height > 0);
   assert(Abs(dst_width) <= kMaxStride);
-  int dx = 0;
-  int dy = 0;
+
+  // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
-  if (dst_width <= Abs(src_width)) {
-    dx = FixedDiv(Abs(src_width), dst_width);
-    x = (dx >> 1) - 32768;
-  } else if (dst_width > 1) {
-    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
-  }
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
-  if (dst_height <= src_height) {
-    dy = FixedDiv(src_height, dst_height);
-    y = (dy >> 1) - 32768;
-  } else if (dst_height > 1) {
-    dy = FixedDiv(src_height - 1, dst_height - 1);
-  }
+  int dx = 0;
+  int dy = 0;
+  ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
+             &x, &y, &dx, &dy);
 
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
@@ -715,28 +685,13 @@ static void ScalePlaneSimple(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr) {
-  int dx = 0;
-  int dy = 0;
+  // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
-  if (dst_width <= Abs(src_width)) {
-    dx = FixedDiv(Abs(src_width), dst_width);
-    x = (dx >> 1) - 32768;
-  } else if (dst_width > 1) {
-    dx = FixedDiv(Abs(src_width) - 1, dst_width - 1);
-  }
-  // Negative src_width means horizontally mirror.
-  if (src_width < 0) {
-    x += (dst_width - 1) * dx;
-    dx = -dx;
-    src_width = -src_width;
-  }
-  if (dst_height <= src_height) {
-    dy = FixedDiv(src_height, dst_height);
-    y = (dy >> 1) - 32768;
-  } else if (dst_height > 1) {
-    dy = FixedDiv(src_height - 1, dst_height - 1);
-  }
+  int dx = 0;
+  int dy = 0;
+  ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterNone,
+             &x, &y, &dx, &dy);
 
   void (*ScaleCols)(uint8* dst_ptr, const uint8* src_ptr,
       int dst_width, int x, int dx) = ScaleCols_C;

@@ -613,7 +613,7 @@ void ScaleSlope(int src_width, int src_height,
     }
     if (dst_height <= src_height) {
       *dy = FixedDiv(src_height,  dst_height);
-      *y = CENTERSTART(*dy, -32768);
+      *y = CENTERSTART(*dy, -32768);  // 32768 = -0.5 to center bilinear.
     } else if (dst_height > 1) {
       *dy = FIXEDDIV1(src_height, dst_height);
       *y = 0;
