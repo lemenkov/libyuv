@@ -831,12 +831,10 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   xloop2:
     movdqa     xmm1, xmm2           // x0, x1 fractions.
     paddd      xmm2, xmm3           // x += dx
-    xor        ebx, ebx
-    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
+    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
     movd       xmm0, ebx
     psrlw      xmm1, 9              // 7 bit fractions.
-    xor        ebx, ebx
-    mov        bx, word ptr [esi + edx]  // 2 source x1 pixels
+    movzx      ebx, word ptr [esi + edx]  // 2 source x1 pixels
     movd       xmm4, ebx
     pshufb     xmm1, xmm5           // 0011
     punpcklwd  xmm0, xmm4
@@ -859,8 +857,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jl         xloop99
 
     // 1 pixel remainder
-    xor        ebx, ebx
-    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
+    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
     movd       xmm0, ebx
     psrlw      xmm2, 9              // 7 bit fractions.
     pshufb     xmm2, xmm5           // 0011
