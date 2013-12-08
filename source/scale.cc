@@ -656,6 +656,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
       if (y > max_y) {
         y = max_y;
         yi = y >> 16;
+        src = src_ptr + yi * src_stride;
       }
       if (yi != lasty) {
         ScaleFilterCols(rowptr, src, dst_width, x, dx);

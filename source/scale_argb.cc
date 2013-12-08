@@ -324,6 +324,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
       if (y > max_y) {
         y = max_y;
         yi = y >> 16;
+        src = src_argb + yi * src_stride;
       }
       if (yi != lasty) {
         ScaleARGBFilterCols(rowptr, src, dst_width, x, dx);
@@ -500,6 +501,10 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
       if (y > max_y) {
         y = max_y;
         yi = y >> 16;
+        uv_yi = yi >> kYShift;
+        src_row_y = src_y + yi * src_stride_y;
+        src_row_u = src_u + uv_yi * src_stride_u;
+        src_row_v = src_v + uv_yi * src_stride_v;
       }
       if (yi != lasty) {
         // TODO(fbarchard): Convert the clipped region of row.
