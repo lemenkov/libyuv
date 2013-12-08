@@ -581,7 +581,7 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
 
 #define CENTERSTART(dx, s) (dx < 0) ? -((-dx >> 1) + s) : ((dx >> 1) + s)
 #define FIXEDDIV1(src, dst) FixedDiv((src << 16) - 0x00010001, \
-                                     (dst << 16) - 0x00010001);
+                                     (dst << 16) - 0x00010000);
 
 // Compute slope values for stepping.
 void ScaleSlope(int src_width, int src_height,
