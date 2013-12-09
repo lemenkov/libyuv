@@ -566,6 +566,11 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
     if (dst_height == src_height || dst_height * 3 == src_height) {
       filtering = kFilterLinear;
     }
+    // TODO(fbarchard): Remove 1 pixel wide filter restriction, which is to
+    // avoid reading 2 pixels horizontally that causes memory exception.
+    if (src_width == 1) {
+      filtering = kFilterNone;
+    }
   }
   if (filtering == kFilterLinear) {
     if (src_width == 1) {
@@ -606,14 +611,14 @@ void ScaleSlope(int src_width, int src_height,
     // Scale step for bilinear sampling renders last pixel once for upsample.
     if (dst_width <= Abs(src_width)) {
       *dx = FixedDiv(Abs(src_width), dst_width);
-      *x = CENTERSTART(*dx, -32768);
+      *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_width > 1) {
       *dx = FIXEDDIV1(Abs(src_width), dst_width);
       *x = 0;
     }
     if (dst_height <= src_height) {
       *dy = FixedDiv(src_height,  dst_height);
-      *y = CENTERSTART(*dy, -32768);  // 32768 = -0.5 to center bilinear.
+      *y = CENTERSTART(*dy, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_height > 1) {
       *dy = FIXEDDIV1(src_height, dst_height);
       *y = 0;
@@ -622,7 +627,7 @@ void ScaleSlope(int src_width, int src_height,
     // Scale step for bilinear sampling renders last pixel once for upsample.
     if (dst_width <= Abs(src_width)) {
       *dx = FixedDiv(Abs(src_width), dst_width);
-      *x = CENTERSTART(*dx, -32768);
+      *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_width > 1) {
       *dx = FIXEDDIV1(Abs(src_width), dst_width);
       *x = 0;
