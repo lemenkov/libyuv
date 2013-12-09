@@ -30,7 +30,6 @@ static __inline int Abs(int v) {
 // ScaleARGB ARGB, 1/2
 // This is an optimized version for scaling down a ARGB to 1/2 of
 // its original size.
-
 static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
@@ -40,7 +39,7 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   assert(dx == 65536 * 2);  // Test scale factor of 2.
   assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
   // Advance to odd row, even column.
-  if (filtering) {
+  if (filtering == kFilterBilinear) {
     src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
   } else {
     src_argb += (y >> 16) * src_stride + ((x >> 16) - 1) * 4;
@@ -72,6 +71,49 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
   }
   for (int y = 0; y < dst_height; ++y) {
     ScaleARGBRowDown2(src_argb, src_stride, dst_argb, dst_width);
+    src_argb += row_stride;
+    dst_argb += dst_stride;
+  }
+}
+
+// ScaleARGB ARGB, 1/4
+// This is an optimized version for scaling down a ARGB to 1/4 of
+// its original size.
+static void ScaleARGBDown4Box(int /* src_width */, int /* src_height */,
+                              int dst_width, int dst_height,
+                              int src_stride, int dst_stride,
+                              const uint8* src_argb, uint8* dst_argb,
+                              int x, int dx, int y, int dy) {
+  assert(dx == 65536 * 4);  // Test scale factor of 4.
+  assert((dy & 0x3ffff) == 0);  // Test vertical scale is multiple of 4.
+
+  assert(dst_width * 2 <= kMaxStride);
+  // TODO(fbarchard): Remove clip_src_width alignment checks.
+  SIMD_ALIGNED(uint8 row[kMaxStride * 2 + 16]);
+
+  // Advance to odd row, even column.
+  src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
+  int row_stride = src_stride * (dy >> 16);
+  void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
+    uint8* dst_argb, int dst_width) = ScaleARGBRowDown2Box_C;
+#if defined(HAS_SCALEARGBROWDOWN2_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4) &&
+      IS_ALIGNED(src_argb, 16) && IS_ALIGNED(row_stride, 16) &&
+      IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
+    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_SSE2;
+  }
+#elif defined(HAS_SCALEARGBROWDOWN2_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8) &&
+      IS_ALIGNED(src_argb, 4) && IS_ALIGNED(row_stride, 4)) {
+    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_NEON;
+  }
+#endif
+
+  for (int y = 0; y < dst_height; ++y) {
+    ScaleARGBRowDown2(src_argb, src_stride, row, dst_width * 2);
+    ScaleARGBRowDown2(src_argb + src_stride * 2, src_stride,
+                      row + kMaxStride, dst_width * 2);
+    ScaleARGBRowDown2(row, kMaxStride, dst_argb, dst_width);
     src_argb += row_stride;
     dst_argb += dst_stride;
   }
@@ -578,10 +620,6 @@ static void ScaleARGB(const uint8* src, int src_stride,
                       int clip_x, int clip_y, int clip_width, int clip_height,
                       FilterMode filtering) {
   // ARGB does not support box filter yet, but allow the user to pass it.
-  // TODO(fbarchard): Support Box filter.  Move row function to common.
-  if (filtering == kFilterBox) {
-    filtering = kFilterBilinear;
-  }
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
                                 dst_width, dst_height,
@@ -616,12 +654,20 @@ static void ScaleARGB(const uint8* src, int src_stride,
     } else {
       // Optimized even scale down. ie 2, 4, 6, 8, 10x.
       if (!(dx & 0x10000) && !(dy & 0x10000)) {
-        if ((dx >> 16) == 2) {
-          // Optimized 1/2 horizontal.
+        if (dx == 0x20000) {
+          // Optimized 1/2 downsample.
           ScaleARGBDown2(src_width, src_height,
                          clip_width, clip_height,
                          src_stride, dst_stride, src, dst,
                          x, dx, y, dy, filtering);
+          return;
+        }
+        if (dx == 0x40000 && filtering == kFilterBox) {
+          // Optimized 1/4 box downsample.
+          ScaleARGBDown4Box(src_width, src_height,
+                            clip_width, clip_height,
+                            src_stride, dst_stride, src, dst,
+                            x, dx, y, dy);
           return;
         }
         ScaleARGBDownEven(src_width, src_height,
