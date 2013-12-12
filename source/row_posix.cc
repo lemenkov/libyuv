@@ -2181,7 +2181,7 @@ struct {
 #define READYUV422                                                             \
     "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
     BUNDLEALIGN                                                                \
-    MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        " MEMLEA(0x4, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"
