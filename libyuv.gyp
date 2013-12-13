@@ -24,16 +24,22 @@
             'HAVE_JPEG'
           ],
           'conditions': [
-            [ 'use_system_libjpeg==0', {
+            # Android uses libjpeg for system jpeg support.
+            [ 'OS == "android" and use_system_libjpeg == 1', {
+              'dependencies': [
+                 '<(DEPTH)/third_party/libjpeg/libjpeg.gyp:libjpeg',
+              ],
+            }, {
               'dependencies': [
                  '<(DEPTH)/third_party/libjpeg_turbo/libjpeg.gyp:libjpeg',
               ],
-            }, {
+            }],
+            [ 'use_system_libjpeg == 1', {
               'link_settings': {
                 'libraries': [
                   '-ljpeg',
                 ],
-              },
+              }
             }],
           ],
         }],

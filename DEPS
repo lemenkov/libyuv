@@ -81,6 +81,9 @@ deps_os = {
   "android": {
     "third_party/android_tools":
       From("chromium_deps", "src/third_party/android_tools"),
+
+    "third_party/libjpeg":
+      From("chromium_deps", "src/third_party/libjpeg"),
   },
   "ios": {
     # NSS, for SSLClientSocketNSS.
