@@ -229,7 +229,7 @@ int MJPGSize(const uint8* sample, size_t sample_size,
 //              crop_y = (src_height - dst_height) / 2
 // "src_width" / "src_height" is size of src_frame in pixels.
 //   "src_height" can be negative indicating a vertically flipped image source.
-// "dst_width" / "dst_height" is size of destination to crop to.
+// "crop_width" / "crop_height" is the size to crop the src to.
 //    Must be less than or equal to src_width/src_height
 //    Cropping parameters are pre-rotation.
 // "rotation" can be 0, 90, 180 or 270.
@@ -242,7 +242,7 @@ int ConvertToI420(const uint8* src_frame, size_t src_size,
                   uint8* dst_v, int dst_stride_v,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
-                  int dst_width, int dst_height,
+                  int crop_width, int crop_height,
                   enum RotationMode rotation,
                   uint32 format);
 
