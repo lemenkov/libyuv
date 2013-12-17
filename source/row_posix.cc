@@ -18,61 +18,6 @@ extern "C" {
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
-#if defined(__native_client__) && defined(__x86_64__)
-// TODO(nfullagar): When pepper_33 toolchain is distributed, default to
-// NEW_BINUTILS and remove all BUNDLEALIGN occurances.
-#if defined(NEW_BINUTILS)
-#define BUNDLELOCK ".bundle_lock\n"
-#define BUNDLEUNLOCK ".bundle_unlock\n"
-#define BUNDLEALIGN "\n"
-#else
-#define BUNDLELOCK "\n"
-#define BUNDLEUNLOCK "\n"
-#define BUNDLEALIGN ".p2align 5\n"
-#endif
-#define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
-#define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
-#define MEMLEA(offset, base) #offset "(%q" #base ")"
-#define MEMLEA4(offset, base, index, scale) \
-    #offset "(%q" #base ",%q" #index "," #scale ")"
-#define MEMMOVESTRING(s, d) "%%nacl:(%q" #s "),%%nacl:(%q" #d "), %%r15"
-#define MEMSTORESTRING(reg, d) "%%" #reg ",%%nacl:(%q" #d "), %%r15"
-#define MEMOPREG(opcode, offset, base, index, scale, reg) \
-    BUNDLELOCK \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " (%%r15,%%r14),%%" #reg "\n" \
-    BUNDLEUNLOCK
-#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
-    BUNDLELOCK \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " %%" #reg ",(%%r15,%%r14)\n" \
-    BUNDLEUNLOCK
-#define MEMOPARG(opcode, offset, base, index, scale, arg) \
-    BUNDLELOCK \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " (%%r15,%%r14),%" #arg "\n" \
-    BUNDLEUNLOCK
-#define LABELALIGN ".p2align 5\n"
-#else
-#define BUNDLELOCK "\n"
-#define BUNDLEUNLOCK "\n"
-#define BUNDLEALIGN "\n"
-#define MEMACCESS(base) "(%" #base ")"
-#define MEMACCESS2(offset, base) #offset "(%" #base ")"
-#define MEMLEA(offset, base) #offset "(%" #base ")"
-#define MEMLEA4(offset, base, index, scale) \
-    #offset "(%" #base ",%" #index "," #scale ")"
-#define MEMMOVESTRING(s, d)
-#define MEMSTORESTRING(reg, d)
-#define MEMOPREG(opcode, offset, base, index, scale, reg) \
-    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
-#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
-    #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
-#define MEMOPARG(opcode, offset, base, index, scale, arg) \
-    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%" #arg "\n"
-#define LABELALIGN ".p2align 2\n"
-#endif
-
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
 // Constants for ARGB

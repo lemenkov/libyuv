@@ -92,46 +92,6 @@ static uvec8 kShufAb2 =
 static uvec16 kScaleAb2 =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 
-// TODO(nfullagar): For Native Client: When new toolchain becomes available,
-// take advantage of bundle lock / unlock feature. This will reduce the amount
-// of manual bundle alignment done below, and bundle alignment could even be
-// moved into each macro that doesn't use %%nacl: such as MEMOPREG.
-
-#if defined(__native_client__) && defined(__x86_64__)
-#define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
-#define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
-#define MEMLEA(offset, base) #offset "(%q" #base ")"
-#define MEMLEA3(offset, index, scale) \
-    #offset "(,%q" #index "," #scale ")"
-#define MEMLEA4(offset, base, index, scale) \
-    #offset "(%q" #base ",%q" #index "," #scale ")"
-#define MEMOPREG(opcode, offset, base, index, scale, reg) \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " (%%r15,%%r14),%%" #reg "\n"
-#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " %%" #reg ",(%%r15,%%r14)\n"
-#define MEMOP(opcode, offset, base, index, scale) \
-    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " (%%r15,%%r14)"
-#define BUNDLEALIGN ".p2align 5\n"
-#else
-#define MEMACCESS(base) "(%" #base ")"
-#define MEMACCESS2(offset, base) #offset "(%" #base ")"
-#define MEMLEA(offset, base) #offset "(%" #base ")"
-#define MEMLEA3(offset, index, scale) \
-    #offset "(,%" #index "," #scale ")"
-#define MEMLEA4(offset, base, index, scale) \
-    #offset "(%" #base ",%" #index "," #scale ")"
-#define MEMOPREG(opcode, offset, base, index, scale, reg) \
-    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
-#define MEMOPMEM(opcode, reg, offset, base, index, scale) \
-    #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
-#define MEMOP(opcode, offset, base, index, scale) \
-    #opcode " " #offset "(%" #base ",%" #index "," #scale ")"
-#define BUNDLEALIGN
-#endif
-
 // GCC versions of row functions are verbatim conversions from Visual C.
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
@@ -139,8 +99,7 @@ static uvec16 kScaleAb2 =
 void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -168,8 +127,8 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10, 0) ",%%xmm1  \n"
@@ -203,8 +162,8 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -245,8 +204,7 @@ void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
                                   ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -274,8 +232,8 @@ void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -310,8 +268,8 @@ void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrlw     $0x8,%%xmm5                     \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -354,8 +312,8 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "psrld     $0x18,%%xmm5                    \n"
     "pslld     $0x10,%%xmm5                    \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -387,8 +345,8 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "pcmpeqb   %%xmm7,%%xmm7                   \n"
     "psrlw     $0x8,%%xmm7                     \n"
     "lea       " MEMLEA4(0x00,4,4,2) ",%3      \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -452,8 +410,7 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
     "m"(kShuf2)   // %2
   );
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm2   \n"
@@ -502,8 +459,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     "m"(kRound34)  // %2
   );
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm6         \n"
     MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3),%%xmm7
@@ -575,8 +531,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
   );
 
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm6         \n"
     MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3,1),%%xmm7
@@ -632,8 +587,8 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
     "movdqa    %4,%%xmm5                       \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -674,8 +629,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     "m"(kScaleAb2)   // %3
   );
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb   (%0,%3,1),%%xmm0
@@ -723,8 +677,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "m"(kScaleAc33)  // %2
   );
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(movdqa,0x00,0,3,1,xmm6)           //  movdqa  (%0,%3,1),%%xmm6
@@ -785,8 +738,8 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     "pxor      %%xmm4,%%xmm4                   \n"
     "sub       $0x1,%5                         \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "mov       %0,%3                           \n"
@@ -797,8 +750,8 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "mov       %5,%2                           \n"
     "test      %2,%2                           \n"
     "je        3f                              \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "2:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm2         \n"
     "add       %6,%0                           \n"
@@ -809,9 +762,9 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "paddusw   %%xmm3,%%xmm1                   \n"
     "sub       $0x1,%2                         \n"
     "jg        2b                              \n"
-    ".p2align  2                               \n"
+
+    LABELALIGN
   "3:                                          \n"
-    BUNDLEALIGN
     "movdqa    %%xmm0," MEMACCESS(1) "         \n"
     "movdqa    %%xmm1," MEMACCESS2(0x10,1) "   \n"
     "lea       " MEMLEA(0x10,3) ",%0           \n"
@@ -852,16 +805,16 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "punpckldq %%xmm3,%%xmm3                   \n"
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
-    MEMOP(movzwl,0x00,1,3,1) ",%k2             \n"  //  movzwl  (%1,%3,1),%k2
+    MEMOPARG(movzwl,0x00,1,3,1,k2)             //  movzwl  (%1,%3,1),%k2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
     BUNDLEALIGN
-    MEMOP(movzwl,0x00,1,4,1) ",%k2             \n"  //  movzwl  (%1,%4,1),%k2
+    MEMOPARG(movzwl,0x00,1,4,1,k2)             //  movzwl  (%1,%4,1),%k2
     "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
@@ -876,12 +829,12 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "lea       " MEMLEA(0x2,0) ",%0            \n"
     "sub       $0x2,%5                         \n"
     "jge       2b                              \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "29:                                         \n"
     "addl      $0x1,%5                         \n"
     "jl        99f                             \n"
-    MEMOP(movzwl,0x00,1,3,1) ",%k2             \n"  //  movzwl  (%1,%3,1),%k2
+    MEMOPARG(movzwl,0x00,1,3,1,k2)             //  movzwl  (%1,%3,1),%k2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm2                     \n"
     "pshufb    %%xmm5,%%xmm2                   \n"
@@ -915,8 +868,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int /* x */, int /* dx */) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
@@ -944,8 +896,7 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
                             ptrdiff_t /* src_stride */,
                             uint8* dst_argb, int dst_width) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -970,8 +921,7 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
                                   ptrdiff_t /* src_stride */,
                                   uint8* dst_argb, int dst_width) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -999,8 +949,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
                                ptrdiff_t src_stride,
                                uint8* dst_argb, int dst_width) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
@@ -1042,8 +991,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
   asm volatile (
     "lea       " MEMLEA3(0x00,1,4) ",%1        \n"
     "lea       " MEMLEA4(0x00,1,1,2) ",%4      \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movd      " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(movd,0x00,0,1,1,xmm1)             //  movd      (%0,%1,1),%%xmm1
@@ -1086,8 +1034,8 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     "lea       " MEMLEA3(0x00,1,4) ",%1        \n"
     "lea       " MEMLEA4(0x00,1,1,2) ",%4      \n"
     "lea       " MEMLEA4(0x00,0,5,1) ",%5      \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "1:                                          \n"
     "movq      " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(movhps,0x00,0,1,1,xmm0)           //  movhps    (%0,%1,1),%%xmm0
@@ -1148,8 +1096,8 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     "jl        99f                             \n"
     "sub       $0x4,%4                         \n"
     "jl        49f                             \n"
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+
+    LABELALIGN
   "40:                                         \n"
     MEMOPREG(movd,0x00,3,0,4,xmm0)             //  movd      (%3,%0,4),%%xmm0
     MEMOPREG(movd,0x00,3,1,4,xmm1)             //  movd      (%3,%1,4),%%xmm1
@@ -1206,8 +1154,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int /* x */, int /* dx */) {
   asm volatile (
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "1:                                          \n"
     "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
@@ -1272,8 +1219,7 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "paddd     %%xmm3,%%xmm3                   \n"
     "pextrw    $0x3,%%xmm2,%k4                 \n"
 
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
@@ -1294,8 +1240,7 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "sub       $0x2,%2                         \n"
     "jge       2b                              \n"
 
-    ".p2align  2                               \n"
-    BUNDLEALIGN
+    LABELALIGN
   "29:                                         \n"
     "add       $0x1,%2                         \n"
     "jl        99f                             \n"
@@ -1310,7 +1255,7 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "movd      %%xmm0," MEMACCESS(0) "         \n"
 
-    ".p2align  2                               \n"
+    LABELALIGN
   "99:                                         \n"
   : "+r"(dst_argb),    // %0
     "+r"(src_argb),    // %1
