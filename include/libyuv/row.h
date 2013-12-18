@@ -35,6 +35,9 @@ extern "C" {
 #define LIBYUV_SSSE3_ONLY
 #endif
 
+// Enable for NaCL pepper 33 for bundle and AVX2 support.
+//#define NEW_BINUTILS
+
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
@@ -373,6 +376,11 @@ typedef uint8 uvec8[16];
 
 // TODO(nfullagar): When pepper_33 toolchain is distributed, default to
 // NEW_BINUTILS and remove all BUNDLEALIGN occurances.
+#if defined(__native_client__)
+#define LABELALIGN ".p2align 5\n"
+#else
+#define LABELALIGN ".p2align 2\n"
+#endif
 #if defined(__native_client__) && defined(__x86_64__)
 #if defined(NEW_BINUTILS)
 #define BUNDLELOCK ".bundle_lock\n"
@@ -383,7 +391,6 @@ typedef uint8 uvec8[16];
 #define BUNDLEUNLOCK "\n"
 #define BUNDLEALIGN ".p2align 5\n"
 #endif
-#define LABELALIGN ".p2align 5\n"
 #define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
 #define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
 #define MEMLEA(offset, base) #offset "(%q" #base ")"
@@ -409,10 +416,7 @@ typedef uint8 uvec8[16];
     #opcode " (%%r15,%%r14),%" #arg "\n" \
     BUNDLEUNLOCK
 #else
-#define BUNDLELOCK "\n"
-#define BUNDLEUNLOCK "\n"
 #define BUNDLEALIGN "\n"
-#define LABELALIGN ".p2align 2\n"
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
 #define MEMLEA(offset, base) #offset "(%" #base ")"
