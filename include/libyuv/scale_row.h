@@ -48,7 +48,7 @@ extern "C" {
 
 // The following are available on Mips platforms:
 #if !defined(LIBYUV_DISABLE_MIPS) && !defined(__native_client__) && \
-    defined(__mips__)
+    defined(__mips__) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_SCALEROWDOWN2_MIPS_DSPR2
 #define HAS_SCALEROWDOWN4_MIPS_DSPR2
 #define HAS_SCALEROWDOWN34_MIPS_DSPR2
