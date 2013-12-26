@@ -74,6 +74,16 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
           (random() & 0xff);                                                   \
     }                                                                          \
   }                                                                            \
+  memset(dst_y_c, 1, kWidth * kHeight);                                        \
+  memset(dst_u_c, 2, SUBSAMPLE(kWidth, SUBSAMP_X) *                            \
+                     SUBSAMPLE(kHeight, SUBSAMP_Y));                           \
+  memset(dst_v_c, 3, SUBSAMPLE(kWidth, SUBSAMP_X) *                            \
+                     SUBSAMPLE(kHeight, SUBSAMP_Y));                           \
+  memset(dst_y_opt, 101, kWidth * kHeight);                                    \
+  memset(dst_u_opt, 102, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
+                         SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
+  memset(dst_v_opt, 103, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
+                         SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
   MaskCpuFlags(0);                                                             \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_u + OFF,                                  \
@@ -201,6 +211,12 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
           (random() & 0xff);                                                   \
     }                                                                          \
   }                                                                            \
+  memset(dst_y_c, 1, kWidth * kHeight);                                        \
+  memset(dst_uv_c, 2, SUBSAMPLE(kWidth * 2, SUBSAMP_X) *                       \
+                      SUBSAMPLE(kHeight, SUBSAMP_Y));                          \
+  memset(dst_y_opt, 101, kWidth * kHeight);                                    \
+  memset(dst_uv_opt, 102, SUBSAMPLE(kWidth * 2, SUBSAMP_X) *                   \
+                          SUBSAMPLE(kHeight, SUBSAMP_Y));                      \
   MaskCpuFlags(0);                                                             \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_u + OFF,                                  \
@@ -306,6 +322,16 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
           (random() & 0xff);                                                   \
     }                                                                          \
   }                                                                            \
+  memset(dst_y_c, 1, kWidth * kHeight);                                        \
+  memset(dst_u_c, 2, SUBSAMPLE(kWidth, SUBSAMP_X) *                            \
+                     SUBSAMPLE(kHeight, SUBSAMP_Y));                           \
+  memset(dst_v_c, 3, SUBSAMPLE(kWidth, SUBSAMP_X) *                            \
+                     SUBSAMPLE(kHeight, SUBSAMP_Y));                           \
+  memset(dst_y_opt, 101, kWidth * kHeight);                                    \
+  memset(dst_u_opt, 102, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
+                         SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
+  memset(dst_v_opt, 103, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
+                         SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
   MaskCpuFlags(0);                                                             \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_uv + OFF,                                 \
@@ -405,8 +431,6 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   align_buffer_64(src_v, kSizeUV + OFF);                                       \
   align_buffer_64(dst_argb_c, kStrideB * kHeight);                             \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight);                           \
-  memset(dst_argb_c, 0, kStrideB * kHeight);                                   \
-  memset(dst_argb_opt, 0, kStrideB * kHeight);                                 \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
     src_y[i + OFF] = (random() & 0xff);                                        \
@@ -415,6 +439,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
     src_u[i + OFF] = (random() & 0xff);                                        \
     src_v[i + OFF] = (random() & 0xff);                                        \
   }                                                                            \
+  memset(dst_argb_c, 1, kStrideB * kHeight);                                   \
+  memset(dst_argb_opt, 101, kStrideB * kHeight);                               \
   MaskCpuFlags(0);                                                             \
   FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                   \
                         src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
@@ -433,8 +459,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   /* Convert to ARGB so 565 is expanded to bytes that can be compared. */      \
   align_buffer_64(dst_argb32_c, kWidth * BPP_C  * kHeight);                    \
   align_buffer_64(dst_argb32_opt, kWidth * BPP_C  * kHeight);                  \
-  memset(dst_argb32_c, 0, kWidth * BPP_C  * kHeight);                          \
-  memset(dst_argb32_opt, 0, kWidth * BPP_C  * kHeight);                        \
+  memset(dst_argb32_c, 2, kWidth * BPP_C  * kHeight);                          \
+  memset(dst_argb32_opt, 102, kWidth * BPP_C  * kHeight);                      \
   FMT_B##To##FMT_C(dst_argb_c, kStrideB,                                       \
                    dst_argb32_c, kWidth * BPP_C ,                              \
                    kWidth, kHeight);                                           \
@@ -512,11 +538,14 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
       src_y[(i * kWidth) + j + OFF] = (random() & 0xff);                       \
-  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i)                      \
+  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X) * 2; ++j) {               \
       src_uv[(i * SUBSAMPLE(kWidth, SUBSAMP_X)) * 2 + j + OFF] =               \
           (random() & 0xff);                                                   \
     }                                                                          \
+  }                                                                            \
+  memset(dst_argb_c, 1, kStrideB * kHeight);                                   \
+  memset(dst_argb_opt, 101, kStrideB * kHeight);                               \
   MaskCpuFlags(0);                                                             \
   FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                   \
                         src_uv + OFF, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,        \
@@ -532,8 +561,8 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   /* Convert to ARGB so 565 is expanded to bytes that can be compared. */      \
   align_buffer_64(dst_argb32_c, kWidth * 4 * kHeight);                         \
   align_buffer_64(dst_argb32_opt, kWidth * 4 * kHeight);                       \
-  memset(dst_argb32_c, 1, kWidth * 4 * kHeight);                               \
-  memset(dst_argb32_opt, 2, kWidth * 4 * kHeight);                             \
+  memset(dst_argb32_c, 2, kWidth * 4 * kHeight);                               \
+  memset(dst_argb32_opt, 102, kWidth * 4 * kHeight);                           \
   FMT_B##ToARGB(dst_argb_c, kStrideB,                                          \
                 dst_argb32_c, kWidth * 4,                                      \
                 kWidth, kHeight);                                              \
@@ -598,14 +627,14 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
                   SUBSAMPLE(kWidth, SUBSAMP_X) *                               \
                   SUBSAMPLE(kHeight, SUBSAMP_Y));                              \
   memset(dst_y_c, 1, kWidth * kHeight);                                        \
-  memset(dst_u_c, 0,                                                           \
+  memset(dst_u_c, 2,                                                           \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
-  memset(dst_v_c, 0,                                                           \
+  memset(dst_v_c, 3,                                                           \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
-  memset(dst_y_opt, 2, kWidth * kHeight);                                      \
-  memset(dst_u_opt, 0,                                                         \
+  memset(dst_y_opt, 101, kWidth * kHeight);                                    \
+  memset(dst_u_opt, 102,                                                       \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
-  memset(dst_v_opt, 0,                                                         \
+  memset(dst_v_opt, 103,                                                       \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
@@ -730,6 +759,12 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kStride; ++j)                                          \
       src_argb[(i * kStride) + j + OFF] = (random() & 0xff);                   \
+  memset(dst_y_c, 1, kWidth * kHeight);                                        \
+  memset(dst_uv_c, 2, SUBSAMPLE(kWidth, SUBSAMP_X) * 2 *                       \
+                      SUBSAMPLE(kHeight, SUBSAMP_Y));                          \
+  memset(dst_y_opt, 101, kWidth * kHeight);                                    \
+  memset(dst_uv_opt, 102, SUBSAMPLE(kWidth, SUBSAMP_X) * 2 *                   \
+                        SUBSAMPLE(kHeight, SUBSAMP_Y));                        \
   MaskCpuFlags(0);                                                             \
   FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                               \
                         dst_y_c, kWidth,                                       \
@@ -800,12 +835,12 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
   align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
   align_buffer_64(dst_argb_c, kStrideB * kHeightB);                            \
   align_buffer_64(dst_argb_opt, kStrideB * kHeightB);                          \
-  memset(dst_argb_c, 0, kStrideB * kHeightB);                                  \
-  memset(dst_argb_opt, 0, kStrideB * kHeightB);                                \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
     src_argb[i + OFF] = (random() & 0xff);                                     \
   }                                                                            \
+  memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
+  memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
   MaskCpuFlags(0);                                                             \
   FMT_A##To##FMT_B(src_argb + OFF, kStrideA,                                   \
                    dst_argb_c, kStrideB,                                       \
@@ -845,11 +880,11 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
     align_buffer_page_end(src_argb, kStrideA * kHeightA);                      \
     align_buffer_page_end(dst_argb_c, kStrideB * kHeightB);                    \
     align_buffer_page_end(dst_argb_opt, kStrideB * kHeightB);                  \
-    memset(dst_argb_c, 0, kStrideB * kHeightB);                                \
-    memset(dst_argb_opt, 0, kStrideB * kHeightB);                              \
     for (int i = 0; i < kStrideA * kHeightA; ++i) {                            \
       src_argb[i] = (random() & 0xff);                                         \
     }                                                                          \
+    memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
+    memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
     MaskCpuFlags(0);                                                           \
     FMT_A##To##FMT_B(src_argb, kStrideA,                                       \
                      dst_argb_c, kStrideB,                                     \
@@ -900,10 +935,10 @@ TESTATOB(ARGB, 4, 4, 1, RGB24, 3, 3, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RGB565, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB1555, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB4444, 2, 2, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerBGGR, 1, 2, 2, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerRGGB, 1, 2, 2, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerGBRG, 1, 2, 2, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerGRBG, 1, 2, 2, 0)
+TESTATOB(ARGB, 4, 4, 1, BayerBGGR, 1, 1, 1, 0)
+TESTATOB(ARGB, 4, 4, 1, BayerRGGB, 1, 1, 1, 0)
+TESTATOB(ARGB, 4, 4, 1, BayerGBRG, 1, 1, 1, 0)
+TESTATOB(ARGB, 4, 4, 1, BayerGRBG, 1, 1, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, YUY2, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, UYVY, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, I400, 1, 1, 1, 2)
