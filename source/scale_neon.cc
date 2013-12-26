@@ -21,6 +21,7 @@ extern "C" {
 // NEON downscalers with interpolation.
 // Provided by Fritz Koenig
 
+// Read 32x1 throw away even pixels, and write 16x1.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                         uint8* dst, int dst_width) {
   asm volatile (
@@ -39,6 +40,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
   );
 }
 
+// Read 32x2 average down and write 16x1.
 void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (

@@ -1467,11 +1467,11 @@ void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix) {
   asm volatile (
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1485,12 +1485,18 @@ void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "vpaddl.u8  q4, q4                         \n"  // B 16 bytes -> 8 shorts.
     "vpaddl.u8  q5, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpaddl.u8  q6, q6                         \n"  // R 16 bytes -> 8 shorts.
+
     "vpadd.u16  d0, d0, d1                     \n"  // B 16 shorts -> 8 shorts.
     "vpadd.u16  d1, d8, d9                     \n"  // B
     "vpadd.u16  d2, d2, d3                     \n"  // G 16 shorts -> 8 shorts.
     "vpadd.u16  d3, d10, d11                   \n"  // G
     "vpadd.u16  d4, d4, d5                     \n"  // R 16 shorts -> 8 shorts.
     "vpadd.u16  d5, d12, d13                   \n"  // R
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %3, %3, #32                    \n"  // 32 processed per loop.
     "vmul.s16   q8, q0, q10                    \n"  // B
     "vmls.s16   q8, q1, q11                    \n"  // G
@@ -1528,15 +1534,16 @@ void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "vqshrn.u16  d0, q8, #8                    \n"  /* 16 bit to 8 bit U    */ \
     "vqshrn.u16  d1, q9, #8                    \n"  /* 16 bit to 8 bit V    */
 
+// TODO(fbarchard): Consider vhadd vertical, then vpaddl horizontal, avoid shr.
 void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_argb
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1550,6 +1557,11 @@ void ARGBToUVRow_NEON(const uint8* src_argb, int src_stride_argb,
     "vpadal.u8  q0, q4                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q6                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1571,11 +1583,11 @@ void ARGBToUVJRow_NEON(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_argb
-    "vmov.s16   q10, #127 / 4                  \n"  // UB / VR 0.500 coefficient
-    "vmov.s16   q11, #84 / 4                   \n"  // UG -0.33126 coefficient
-    "vmov.s16   q12, #43 / 4                   \n"  // UR -0.16874 coefficient
-    "vmov.s16   q13, #20 / 4                   \n"  // VB -0.08131 coefficient
-    "vmov.s16   q14, #107 / 4                  \n"  // VG -0.41869 coefficient
+    "vmov.s16   q10, #127 / 2                  \n"  // UB / VR 0.500 coefficient
+    "vmov.s16   q11, #84 / 2                   \n"  // UG -0.33126 coefficient
+    "vmov.s16   q12, #43 / 2                   \n"  // UR -0.16874 coefficient
+    "vmov.s16   q13, #20 / 2                   \n"  // VB -0.08131 coefficient
+    "vmov.s16   q14, #107 / 2                  \n"  // VG -0.41869 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1589,6 +1601,11 @@ void ARGBToUVJRow_NEON(const uint8* src_argb, int src_stride_argb,
     "vpadal.u8  q0, q4                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q6                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1609,11 +1626,11 @@ void BGRAToUVRow_NEON(const uint8* src_bgra, int src_stride_bgra,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_bgra
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1627,6 +1644,11 @@ void BGRAToUVRow_NEON(const uint8* src_bgra, int src_stride_bgra,
     "vpadal.u8  q3, q7                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q6                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q1, q1, #1                     \n"  // 2x average
+    "vrshr.u16  q2, q2, #1                     \n"
+    "vrshr.u16  q3, q3, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q3, q2, q1)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1647,11 +1669,11 @@ void ABGRToUVRow_NEON(const uint8* src_abgr, int src_stride_abgr,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_abgr
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1665,6 +1687,11 @@ void ABGRToUVRow_NEON(const uint8* src_abgr, int src_stride_abgr,
     "vpadal.u8  q2, q6                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q0, q4                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q2, q1, q0)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1685,11 +1712,11 @@ void RGBAToUVRow_NEON(const uint8* src_rgba, int src_stride_rgba,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_rgba
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1703,6 +1730,11 @@ void RGBAToUVRow_NEON(const uint8* src_rgba, int src_stride_rgba,
     "vpadal.u8  q0, q5                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q6                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q7                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1723,11 +1755,11 @@ void RGB24ToUVRow_NEON(const uint8* src_rgb24, int src_stride_rgb24,
                        uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_rgb24
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1741,6 +1773,11 @@ void RGB24ToUVRow_NEON(const uint8* src_rgb24, int src_stride_rgb24,
     "vpadal.u8  q0, q4                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q2, q6                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1761,11 +1798,11 @@ void RAWToUVRow_NEON(const uint8* src_raw, int src_stride_raw,
                      uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_raw
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1779,6 +1816,11 @@ void RAWToUVRow_NEON(const uint8* src_raw, int src_stride_raw,
     "vpadal.u8  q2, q6                         \n"  // B 16 bytes -> 8 shorts.
     "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
     "vpadal.u8  q0, q4                         \n"  // R 16 bytes -> 8 shorts.
+
+    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
+    "vrshr.u16  q1, q1, #1                     \n"
+    "vrshr.u16  q2, q2, #1                     \n"
+
     "subs       %4, %4, #16                    \n"  // 32 processed per loop.
     RGBTOUV(q2, q1, q0)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
@@ -1800,11 +1842,11 @@ void RGB565ToUVRow_NEON(const uint8* src_rgb565, int src_stride_rgb565,
                         uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_argb
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1829,6 +1871,10 @@ void RGB565ToUVRow_NEON(const uint8* src_rgb565, int src_stride_rgb565,
     "vpadal.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
     "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
     "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "vrshr.u16  q4, q4, #1                     \n"  // 2x average
+    "vrshr.u16  q5, q5, #1                     \n"
+    "vrshr.u16  q6, q6, #1                     \n"
 
     "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     "vmul.s16   q8, q4, q10                    \n"  // B
@@ -1860,11 +1906,11 @@ void ARGB1555ToUVRow_NEON(const uint8* src_argb1555, int src_stride_argb1555,
                         uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_argb
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1889,6 +1935,10 @@ void ARGB1555ToUVRow_NEON(const uint8* src_argb1555, int src_stride_argb1555,
     "vpadal.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
     "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
     "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "vrshr.u16  q4, q4, #1                     \n"  // 2x average
+    "vrshr.u16  q5, q5, #1                     \n"
+    "vrshr.u16  q6, q6, #1                     \n"
 
     "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     "vmul.s16   q8, q4, q10                    \n"  // B
@@ -1920,11 +1970,11 @@ void ARGB4444ToUVRow_NEON(const uint8* src_argb4444, int src_stride_argb4444,
                           uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
     "add        %1, %0, %1                     \n"  // src_stride + src_argb
-    "vmov.s16   q10, #112 / 4                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 4                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 4                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 4                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 4                   \n"  // VG -0.7344 coefficient
+    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
+    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
+    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
+    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
+    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
     "vmov.u16   q15, #0x8080                   \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -1949,6 +1999,10 @@ void ARGB4444ToUVRow_NEON(const uint8* src_argb4444, int src_stride_argb4444,
     "vpadal.u8  d9, d0                         \n"  // B 8 bytes -> 4 shorts.
     "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
     "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
+
+    "vrshr.u16  q4, q4, #1                     \n"  // 2x average
+    "vrshr.u16  q5, q5, #1                     \n"
+    "vrshr.u16  q6, q6, #1                     \n"
 
     "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     "vmul.s16   q8, q4, q10                    \n"  // B
