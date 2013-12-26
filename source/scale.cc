@@ -407,41 +407,38 @@ static void ScalePlaneBox(int src_width, int src_height,
                          src, dst);
       dst += dst_stride;
     }
-  } else {
-    SIMD_ALIGNED(uint16 row[kMaxStride]);
-    void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
-                         uint16* dst_ptr, int src_width, int src_height) =
-        ScaleAddRows_C;
-    void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
-                         const uint16* src_ptr, uint8* dst_ptr);
-    if (dx & 0xffff) {
-      ScaleAddCols = ScaleAddCols2_C;
-    } else {
-      ScaleAddCols = ScaleAddCols1_C;
-    }
+    return;
+  }
+  // TODO(fbarchard): Remove kMaxStride limitation.
+  SIMD_ALIGNED(uint16 row[kMaxStride]);
+  void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
+      uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
+  void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
+      const uint16* src_ptr, uint8* dst_ptr) =
+      (dx & 0xffff) ? ScaleAddCols2_C: ScaleAddCols1_C;
 #if defined(HAS_SCALEADDROWS_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) &&
+  if (TestCpuFlag(kCpuHasSSE2) &&
 #ifdef AVOID_OVERREAD
-        IS_ALIGNED(src_width, 16) &&
+      IS_ALIGNED(src_width, 16) &&
 #endif
-        IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
-      ScaleAddRows = ScaleAddRows_SSE2;
-    }
+      IS_ALIGNED(src_ptr, 16) && IS_ALIGNED(src_stride, 16)) {
+    ScaleAddRows = ScaleAddRows_SSE2;
+  }
 #endif
 
-    for (int j = 0; j < dst_height; ++j) {
-      int iy = y >> 16;
-      const uint8* src = src_ptr + iy * src_stride;
-      y += dy;
-      if (y > (src_height << 16)) {
-        y = (src_height << 16);
-      }
-      int boxheight = (y >> 16) - iy;
-      ScaleAddRows(src, src_stride, row, src_width, boxheight);
-      ScaleAddCols(dst_width, boxheight, x, dx, row, dst_ptr);
-      dst_ptr += dst_stride;
+  for (int j = 0; j < dst_height; ++j) {
+    int iy = y >> 16;
+    const uint8* src = src_ptr + iy * src_stride;
+    y += dy;
+    if (y > (src_height << 16)) {
+      y = (src_height << 16);
     }
+    int boxheight = (y >> 16) - iy;
+    ScaleAddRows(src, src_stride, row, src_width, boxheight);
+    ScaleAddCols(dst_width, boxheight, x, dx, row, dst_ptr);
+    dst_ptr += dst_stride;
   }
+
 }
 
 // Scale plane down with bilinear interpolation.
