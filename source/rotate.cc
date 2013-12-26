@@ -931,11 +931,9 @@ void RotatePlane180(const uint8* src, int src_stride,
     CopyRow = CopyRow_MIPS;
   }
 #endif
-  if (width > kMaxStride) {
-    return;
-  }
+
   // Swap first and last row and mirror the content. Uses a temporary row.
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  align_buffer_64(row, width);
   const uint8* src_bot = src + src_stride * (height - 1);
   uint8* dst_bot = dst + dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
@@ -949,6 +947,7 @@ void RotatePlane180(const uint8* src, int src_stride,
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }
+  free_aligned_buffer_64(row);
 }
 
 static void TransposeUVWx8_C(const uint8* src, int src_stride,

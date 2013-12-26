@@ -13,6 +13,7 @@
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale_argb.h"
+#include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
@@ -27,15 +28,15 @@ static int ARGBTestFilter(int src_width, int src_height,
       (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
-  align_buffer_64(src_argb, src_argb_plane_size)
+  align_buffer_64(src_argb, src_argb_plane_size);
   srandom(time(NULL));
   MemRandomize(src_argb, src_argb_plane_size);
 
   int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
 
-  align_buffer_64(dst_argb_c, dst_argb_plane_size)
-  align_buffer_64(dst_argb_opt, dst_argb_plane_size)
+  align_buffer_64(dst_argb_c, dst_argb_plane_size);
+  align_buffer_64(dst_argb_opt, dst_argb_plane_size);
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
@@ -89,9 +90,9 @@ static int ARGBTestFilter(int src_width, int src_height,
     }
   }
 
-  free_aligned_buffer_64(dst_argb_c)
-  free_aligned_buffer_64(dst_argb_opt)
-  free_aligned_buffer_64(src_argb)
+  free_aligned_buffer_64(dst_argb_c);
+  free_aligned_buffer_64(dst_argb_opt);
+  free_aligned_buffer_64(src_argb);
   return max_diff;
 }
 
@@ -134,7 +135,7 @@ static int ARGBClipTestFilter(int src_width, int src_height,
       (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
-  align_buffer_64(src_argb, src_argb_plane_size)
+  align_buffer_64(src_argb, src_argb_plane_size);
   memset(src_argb, 1, src_argb_plane_size);
 
   int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
@@ -149,8 +150,8 @@ static int ARGBClipTestFilter(int src_width, int src_height,
     }
   }
 
-  align_buffer_64(dst_argb_c, dst_argb_plane_size)
-  align_buffer_64(dst_argb_opt, dst_argb_plane_size)
+  align_buffer_64(dst_argb_c, dst_argb_plane_size);
+  align_buffer_64(dst_argb_opt, dst_argb_plane_size);
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
@@ -188,9 +189,9 @@ static int ARGBClipTestFilter(int src_width, int src_height,
     }
   }
 
-  free_aligned_buffer_64(dst_argb_c)
-  free_aligned_buffer_64(dst_argb_opt)
-  free_aligned_buffer_64(src_argb)
+  free_aligned_buffer_64(dst_argb_c);
+  free_aligned_buffer_64(dst_argb_opt);
+  free_aligned_buffer_64(src_argb);
   return max_diff;
 }
 

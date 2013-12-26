@@ -13,6 +13,8 @@
 
 #include "libyuv/basic_types.h"
 
+#include <stdlib.h>  // For malloc.
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -25,6 +27,18 @@ extern "C" {
 #define kMaxStride (4096 * 4)
 #endif
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
+
+// TODO (fbarchard): Port to C.
+#define align_buffer_64(var, size)                                             \
+  uint8* var;                                                                  \
+  uint8* var##_mem;                                                            \
+  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));                   \
+  var = reinterpret_cast<uint8*>                                               \
+        ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63)
+
+#define free_aligned_buffer_64(var) \
+  free(var##_mem);  \
+  var = 0
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)

@@ -26,18 +26,6 @@ static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
 
-#define align_buffer_64(var, size)                                             \
-  uint8* var;                                                                  \
-  uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));                   \
-  var = reinterpret_cast<uint8*>                                               \
-        ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63);
-
-#define free_aligned_buffer_64(var) \
-  free(var##_mem);  \
-  var = 0;
-
-
 #define align_buffer_page_end(var, size)                                       \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \

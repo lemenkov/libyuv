@@ -140,30 +140,23 @@ void ARGBRotate180(const uint8* src, int src_stride,
     CopyRow = CopyRow_MIPS;
   }
 #endif
-  bool direct = width * 4 > kMaxStride;
 
   // Swap first and last row and mirror the content. Uses a temporary row.
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  align_buffer_64(row, width * 4);
   const uint8* src_bot = src + src_stride * (height - 1);
   uint8* dst_bot = dst + dst_stride * (height - 1);
   int half_height = (height + 1) >> 1;
   // Odd height will harmlessly mirror the middle row twice.
   for (int y = 0; y < half_height; ++y) {
-    if (direct) {
-      ARGBMirrorRow(src, dst_bot, width);  // Mirror first row into a buffer
-      if (src != src_bot) {
-        ARGBMirrorRow(src_bot, dst, width);  // Mirror last row into first row
-      }
-    } else {
-      ARGBMirrorRow(src, row, width);  // Mirror first row into a buffer
-      ARGBMirrorRow(src_bot, dst, width);  // Mirror last row into first row
-      CopyRow(row, dst_bot, width * 4);  // Copy first mirrored row into last
-    }
+    ARGBMirrorRow(src, row, width);  // Mirror first row into a buffer
+    ARGBMirrorRow(src_bot, dst, width);  // Mirror last row into first row
+    CopyRow(row, dst_bot, width * 4);  // Copy first mirrored row into last
     src += src_stride;
     dst += dst_stride;
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }
+  free_aligned_buffer_64(row);
 }
 
 LIBYUV_API

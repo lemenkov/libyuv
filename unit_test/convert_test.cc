@@ -23,6 +23,7 @@
 #endif
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/row.h"
 #include "../unit_test/unit_test.h"
 
 #if defined(_MSC_VER)
@@ -133,15 +134,15 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, 3);                                                      \
-  free_aligned_buffer_64(dst_y_c)                                              \
-  free_aligned_buffer_64(dst_u_c)                                              \
-  free_aligned_buffer_64(dst_v_c)                                              \
-  free_aligned_buffer_64(dst_y_opt)                                            \
-  free_aligned_buffer_64(dst_u_opt)                                            \
-  free_aligned_buffer_64(dst_v_opt)                                            \
-  free_aligned_buffer_64(src_y)                                                \
-  free_aligned_buffer_64(src_u)                                                \
-  free_aligned_buffer_64(src_v)                                                \
+  free_aligned_buffer_64(dst_y_c);                                             \
+  free_aligned_buffer_64(dst_u_c);                                             \
+  free_aligned_buffer_64(dst_v_c);                                             \
+  free_aligned_buffer_64(dst_y_opt);                                           \
+  free_aligned_buffer_64(dst_u_opt);                                           \
+  free_aligned_buffer_64(dst_v_opt);                                           \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_u);                                               \
+  free_aligned_buffer_64(src_v);                                               \
 }
 
 #define TESTPLANARTOP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,            \
@@ -246,13 +247,13 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, 1);                                                      \
-  free_aligned_buffer_64(dst_y_c)                                              \
-  free_aligned_buffer_64(dst_uv_c)                                             \
-  free_aligned_buffer_64(dst_y_opt)                                            \
-  free_aligned_buffer_64(dst_uv_opt)                                           \
-  free_aligned_buffer_64(src_y)                                                \
-  free_aligned_buffer_64(src_u)                                                \
-  free_aligned_buffer_64(src_v)                                                \
+  free_aligned_buffer_64(dst_y_c);                                             \
+  free_aligned_buffer_64(dst_uv_c);                                            \
+  free_aligned_buffer_64(dst_y_opt);                                           \
+  free_aligned_buffer_64(dst_uv_opt);                                          \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_u);                                               \
+  free_aligned_buffer_64(src_v);                                               \
 }
 
 #define TESTPLANARTOBP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,           \
@@ -361,14 +362,14 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, 1);                                                      \
-  free_aligned_buffer_64(dst_y_c)                                              \
-  free_aligned_buffer_64(dst_u_c)                                              \
-  free_aligned_buffer_64(dst_v_c)                                              \
-  free_aligned_buffer_64(dst_y_opt)                                            \
-  free_aligned_buffer_64(dst_u_opt)                                            \
-  free_aligned_buffer_64(dst_v_opt)                                            \
-  free_aligned_buffer_64(src_y)                                                \
-  free_aligned_buffer_64(src_uv)                                               \
+  free_aligned_buffer_64(dst_y_c);                                             \
+  free_aligned_buffer_64(dst_u_c);                                             \
+  free_aligned_buffer_64(dst_v_c);                                             \
+  free_aligned_buffer_64(dst_y_opt);                                           \
+  free_aligned_buffer_64(dst_u_opt);                                           \
+  free_aligned_buffer_64(dst_v_opt);                                           \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_uv);                                              \
 }
 
 #define TESTBIPLANARTOP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,          \
@@ -449,13 +450,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, DIFF);                                                   \
-  free_aligned_buffer_64(src_y)                                                \
-  free_aligned_buffer_64(src_u)                                                \
-  free_aligned_buffer_64(src_v)                                                \
-  free_aligned_buffer_64(dst_argb_c)                                           \
-  free_aligned_buffer_64(dst_argb_opt)                                         \
-  free_aligned_buffer_64(dst_argb32_c)                                         \
-  free_aligned_buffer_64(dst_argb32_opt)                                       \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_u);                                               \
+  free_aligned_buffer_64(src_v);                                               \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
+  free_aligned_buffer_64(dst_argb32_c);                                        \
+  free_aligned_buffer_64(dst_argb32_opt);                                      \
 }
 
 #define TESTPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,   \
@@ -551,12 +552,12 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, DIFF);                                                   \
-  free_aligned_buffer_64(src_y)                                                \
-  free_aligned_buffer_64(src_uv)                                               \
-  free_aligned_buffer_64(dst_argb_c)                                           \
-  free_aligned_buffer_64(dst_argb_opt)                                         \
-  free_aligned_buffer_64(dst_argb32_c)                                         \
-  free_aligned_buffer_64(dst_argb32_opt)                                       \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_uv);                                              \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
+  free_aligned_buffer_64(dst_argb32_c);                                        \
+  free_aligned_buffer_64(dst_argb32_opt);                                      \
 }
 
 #define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, DIFF)  \
@@ -662,13 +663,13 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, DIFF);                                                   \
-  free_aligned_buffer_64(dst_y_c)                                              \
-  free_aligned_buffer_64(dst_u_c)                                              \
-  free_aligned_buffer_64(dst_v_c)                                              \
-  free_aligned_buffer_64(dst_y_opt)                                            \
-  free_aligned_buffer_64(dst_u_opt)                                            \
-  free_aligned_buffer_64(dst_v_opt)                                            \
-  free_aligned_buffer_64(src_argb)                                             \
+  free_aligned_buffer_64(dst_y_c);                                             \
+  free_aligned_buffer_64(dst_u_c);                                             \
+  free_aligned_buffer_64(dst_v_c);                                             \
+  free_aligned_buffer_64(dst_y_opt);                                           \
+  free_aligned_buffer_64(dst_u_opt);                                           \
+  free_aligned_buffer_64(dst_v_opt);                                           \
+  free_aligned_buffer_64(src_argb);                                            \
 }
 
 #define TESTATOPLANAR(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,  \
@@ -766,11 +767,11 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, 4);                                                      \
-  free_aligned_buffer_64(dst_y_c)                                              \
-  free_aligned_buffer_64(dst_uv_c)                                             \
-  free_aligned_buffer_64(dst_y_opt)                                            \
-  free_aligned_buffer_64(dst_uv_opt)                                           \
-  free_aligned_buffer_64(src_argb)                                             \
+  free_aligned_buffer_64(dst_y_c);                                             \
+  free_aligned_buffer_64(dst_uv_c);                                            \
+  free_aligned_buffer_64(dst_y_opt);                                           \
+  free_aligned_buffer_64(dst_uv_opt);                                          \
+  free_aligned_buffer_64(src_argb);                                            \
 }
 
 #define TESTATOBIPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)        \
@@ -825,9 +826,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
     }                                                                          \
   }                                                                            \
   EXPECT_LE(max_diff, DIFF);                                                   \
-  free_aligned_buffer_64(src_argb)                                             \
-  free_aligned_buffer_64(dst_argb_c)                                           \
-  free_aligned_buffer_64(dst_argb_opt)                                         \
+  free_aligned_buffer_64(src_argb);                                            \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
 }
 
 #define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                       \
@@ -867,9 +868,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
       }                                                                        \
     }                                                                          \
     EXPECT_LE(max_diff, DIFF);                                                 \
-    free_aligned_buffer_page_end(src_argb)                                     \
-    free_aligned_buffer_page_end(dst_argb_c)                                   \
-    free_aligned_buffer_page_end(dst_argb_opt)                                 \
+    free_aligned_buffer_page_end(src_argb);                                    \
+    free_aligned_buffer_page_end(dst_argb_c);                                  \
+    free_aligned_buffer_page_end(dst_argb_opt);                                \
   }                                                                            \
 }
 

@@ -16,6 +16,7 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/cpu_id.h"
+#include "libyuv/row.h"
 
 namespace libyuv {
 
@@ -32,8 +33,8 @@ static uint32 ReferenceHashDjb2(const uint8* src, uint64 count, uint32 seed) {
 
 TEST_F(libyuvTest, Djb2_Test) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
-  align_buffer_64(src_a, kMaxTest)
-  align_buffer_64(src_b, kMaxTest)
+  align_buffer_64(src_a, kMaxTest);
+  align_buffer_64(src_b, kMaxTest);
 
   const char* fox = "The quick brown fox jumps over the lazy dog"
       " and feels as if he were in the seventh heaven of typography"
@@ -110,13 +111,13 @@ TEST_F(libyuvTest, Djb2_Test) {
   h2 = HashDjb2(src_a, kMaxTest / 2, 0);
   EXPECT_EQ(h1, h2);
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, BenchmarkDjb2_Opt) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
-  align_buffer_64(src_a, kMaxTest)
+  align_buffer_64(src_a, kMaxTest);
 
   for (int i = 0; i < kMaxTest; ++i) {
     src_a[i] = i;
@@ -127,12 +128,12 @@ TEST_F(libyuvTest, BenchmarkDjb2_Opt) {
     h1 = HashDjb2(src_a, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
-  free_aligned_buffer_64(src_a)
+  free_aligned_buffer_64(src_a);
 }
 
 TEST_F(libyuvTest, BenchmarkDjb2_Unaligned) {
   const int kMaxTest = benchmark_width_ * benchmark_height_;
-  align_buffer_64(src_a, kMaxTest + 1)
+  align_buffer_64(src_a, kMaxTest + 1);
   for (int i = 0; i < kMaxTest; ++i) {
     src_a[i + 1] = i;
   }
@@ -142,13 +143,13 @@ TEST_F(libyuvTest, BenchmarkDjb2_Unaligned) {
     h1 = HashDjb2(src_a + 1, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
-  free_aligned_buffer_64(src_a)
+  free_aligned_buffer_64(src_a);
 }
 
 TEST_F(libyuvTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
-  align_buffer_64(src_a, kMaxWidth)
-  align_buffer_64(src_b, kMaxWidth)
+  align_buffer_64(src_a, kMaxWidth);
+  align_buffer_64(src_b, kMaxWidth);
   memset(src_a, 0, kMaxWidth);
   memset(src_b, 0, kMaxWidth);
 
@@ -172,14 +173,14 @@ TEST_F(libyuvTest, BenchmarkSumSquareError_Opt) {
 
   EXPECT_EQ(0, h1);
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, SumSquareError) {
   const int kMaxWidth = 4096 * 3;
-  align_buffer_64(src_a, kMaxWidth)
-  align_buffer_64(src_b, kMaxWidth)
+  align_buffer_64(src_a, kMaxWidth);
+  align_buffer_64(src_b, kMaxWidth);
   memset(src_a, 0, kMaxWidth);
   memset(src_b, 0, kMaxWidth);
 
@@ -214,13 +215,13 @@ TEST_F(libyuvTest, SumSquareError) {
 
   EXPECT_EQ(c_err, opt_err);
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, BenchmarkPsnr_Opt) {
-  align_buffer_64(src_a, benchmark_width_ * benchmark_height_)
-  align_buffer_64(src_b, benchmark_width_ * benchmark_height_)
+  align_buffer_64(src_a, benchmark_width_ * benchmark_height_);
+  align_buffer_64(src_b, benchmark_width_ * benchmark_height_);
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
     src_a[i] = i;
     src_b[i] = i;
@@ -239,8 +240,8 @@ TEST_F(libyuvTest, BenchmarkPsnr_Opt) {
 
   EXPECT_EQ(0, 0);
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, Psnr) {
@@ -249,8 +250,8 @@ TEST_F(libyuvTest, Psnr) {
   const int b = 128;
   const int kSrcPlaneSize = (kSrcWidth + b * 2) * (kSrcHeight + b * 2);
   const int kSrcStride = 2 * b + kSrcWidth;
-  align_buffer_64(src_a, kSrcPlaneSize)
-  align_buffer_64(src_b, kSrcPlaneSize)
+  align_buffer_64(src_a, kSrcPlaneSize);
+  align_buffer_64(src_b, kSrcPlaneSize);
   memset(src_a, 0, kSrcPlaneSize);
   memset(src_b, 0, kSrcPlaneSize);
 
@@ -318,13 +319,13 @@ TEST_F(libyuvTest, Psnr) {
 
   EXPECT_EQ(opt_err, c_err);
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, DISABLED_BenchmarkSsim_Opt) {
-  align_buffer_64(src_a, benchmark_width_ * benchmark_height_)
-  align_buffer_64(src_b, benchmark_width_ * benchmark_height_)
+  align_buffer_64(src_a, benchmark_width_ * benchmark_height_);
+  align_buffer_64(src_b, benchmark_width_ * benchmark_height_);
   for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
     src_a[i] = i;
     src_b[i] = i;
@@ -343,8 +344,8 @@ TEST_F(libyuvTest, DISABLED_BenchmarkSsim_Opt) {
 
   EXPECT_EQ(0, 0);  // Pass if we get this far.
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 TEST_F(libyuvTest, Ssim) {
@@ -353,8 +354,8 @@ TEST_F(libyuvTest, Ssim) {
   const int b = 128;
   const int kSrcPlaneSize = (kSrcWidth + b * 2) * (kSrcHeight + b * 2);
   const int kSrcStride = 2 * b + kSrcWidth;
-  align_buffer_64(src_a, kSrcPlaneSize)
-  align_buffer_64(src_b, kSrcPlaneSize)
+  align_buffer_64(src_a, kSrcPlaneSize);
+  align_buffer_64(src_b, kSrcPlaneSize);
   memset(src_a, 0, kSrcPlaneSize);
   memset(src_b, 0, kSrcPlaneSize);
 
@@ -430,8 +431,8 @@ TEST_F(libyuvTest, Ssim) {
     EXPECT_EQ(opt_err, c_err);
   }
 
-  free_aligned_buffer_64(src_a)
-  free_aligned_buffer_64(src_b)
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
 }
 
 }  // namespace libyuv
