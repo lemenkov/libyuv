@@ -1952,8 +1952,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
 
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
-// row_win.cc has asm version, but GCC uses 2 step wrapper.  5% slower.
-// TODO(fbarchard): Handle width > kMaxStride here instead of calling code.
+// row_win.cc has asm version, but GCC uses 2 step wrapper.
 #if defined(__x86_64__) || defined(__i386__)
 MAYBE_SAFEBUFFERS
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
@@ -1961,9 +1960,11 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_v,
                            uint8* rgb_buf,
                            int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  // Allocate a row of ARGB.
+  align_buffer_64(row, width * 4);
   I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
   ARGBToRGB565Row_SSE2(row, rgb_buf, width);
+  free_aligned_buffer_64(row);
 }
 #endif  // defined(__x86_64__) || defined(__i386__)
 
@@ -1974,9 +1975,11 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* rgb_buf,
                              int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  // Allocate a row of ARGB.
+  align_buffer_64(row, width * 4);
   I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
   ARGBToARGB1555Row_SSE2(row, rgb_buf, width);
+  free_aligned_buffer_64(row);
 }
 
 MAYBE_SAFEBUFFERS
@@ -1985,9 +1988,11 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* rgb_buf,
                              int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  // Allocate a row of ARGB.
+  align_buffer_64(row, width * 4);
   I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
   ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
+  free_aligned_buffer_64(row);
 }
 
 MAYBE_SAFEBUFFERS
@@ -1995,9 +2000,11 @@ void NV12ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_uv,
                            uint8* dst_rgb565,
                            int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  // Allocate a row of ARGB.
+  align_buffer_64(row, width * 4);
   NV12ToARGBRow_SSSE3(src_y, src_uv, row, width);
   ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
+  free_aligned_buffer_64(row);
 }
 
 MAYBE_SAFEBUFFERS
@@ -2005,57 +2012,75 @@ void NV21ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_vu,
                            uint8* dst_rgb565,
                            int width) {
-  SIMD_ALIGNED(uint8 row[kMaxStride]);
+  // Allocate a row of ARGB.
+  align_buffer_64(row, width * 4);
   NV21ToARGBRow_SSSE3(src_y, src_vu, row, width);
   ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
+  free_aligned_buffer_64(row);
 }
 
 MAYBE_SAFEBUFFERS
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
                          int width) {
-  SIMD_ALIGNED(uint8 row_y[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_u[kMaxStride / 2]);
-  SIMD_ALIGNED(uint8 row_v[kMaxStride / 2]);
+  // Allocate a row of yuv.
+  align_buffer_64(row_y, width);
+  align_buffer_64(row_u, (width + 1) / 2);
+  align_buffer_64(row_v, (width + 1) / 2);
   YUY2ToUV422Row_SSE2(src_yuy2, row_u, row_v, width);
   YUY2ToYRow_SSE2(src_yuy2, row_y, width);
   I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, width);
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_u);
+  free_aligned_buffer_64(row_v);
 }
 
 MAYBE_SAFEBUFFERS
 void YUY2ToARGBRow_Unaligned_SSSE3(const uint8* src_yuy2,
                                    uint8* dst_argb,
                                    int width) {
-  SIMD_ALIGNED(uint8 row_y[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_u[kMaxStride / 2]);
-  SIMD_ALIGNED(uint8 row_v[kMaxStride / 2]);
+  // Allocate a row of yuv.
+  align_buffer_64(row_y, width);
+  align_buffer_64(row_u, (width + 1) / 2);
+  align_buffer_64(row_v, (width + 1) / 2);
   YUY2ToUV422Row_Unaligned_SSE2(src_yuy2, row_u, row_v, width);
   YUY2ToYRow_Unaligned_SSE2(src_yuy2, row_y, width);
   I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_u);
+  free_aligned_buffer_64(row_v);
 }
 
 MAYBE_SAFEBUFFERS
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          uint8* dst_argb,
                          int width) {
-  SIMD_ALIGNED(uint8 row_y[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_u[kMaxStride / 2]);
-  SIMD_ALIGNED(uint8 row_v[kMaxStride / 2]);
+  // Allocate a row of yuv.
+  align_buffer_64(row_y, width);
+  align_buffer_64(row_u, (width + 1) / 2);
+  align_buffer_64(row_v, (width + 1) / 2);
   UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, width);
   UYVYToYRow_SSE2(src_uyvy, row_y, width);
   I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, width);
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_u);
+  free_aligned_buffer_64(row_v);
 }
 
 MAYBE_SAFEBUFFERS
 void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
                                    uint8* dst_argb,
                                    int width) {
-  SIMD_ALIGNED(uint8 row_y[kMaxStride]);
-  SIMD_ALIGNED(uint8 row_u[kMaxStride / 2]);
-  SIMD_ALIGNED(uint8 row_v[kMaxStride / 2]);
+  // Allocate a row of yuv.
+  align_buffer_64(row_y, width);
+  align_buffer_64(row_u, (width + 1) / 2);
+  align_buffer_64(row_v, (width + 1) / 2);
   UYVYToUV422Row_Unaligned_SSE2(src_uyvy, row_u, row_v, width);
   UYVYToYRow_Unaligned_SSE2(src_uyvy, row_y, width);
   I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_u);
+  free_aligned_buffer_64(row_v);
 }
 
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
