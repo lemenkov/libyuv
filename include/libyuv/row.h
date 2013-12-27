@@ -11,9 +11,9 @@
 #ifndef INCLUDE_LIBYUV_ROW_H_  // NOLINT
 #define INCLUDE_LIBYUV_ROW_H_
 
-#include "libyuv/basic_types.h"
-
 #include <stdlib.h>  // For malloc.
+
+#include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -22,7 +22,7 @@ extern "C" {
 
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
-// TODO (fbarchard): Port to C.
+// TODO(fbarchard): Port to C.
 #define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 // Enable for NaCL pepper 33 for bundle and AVX2 support.
-//#define NEW_BINUTILS
+//  #define NEW_BINUTILS
 
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
