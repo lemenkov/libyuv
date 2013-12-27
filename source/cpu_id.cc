@@ -33,7 +33,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// For functions that use rowbuffer and have runtime checks for overflow,
+// For functions that use the stack and have runtime checks for overflow,
 // use SAFEBUFFERS to avoid additional check.
 #if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #define SAFEBUFFERS __declspec(safebuffers)

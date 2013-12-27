@@ -1943,18 +1943,9 @@ void I422ToUYVYRow_C(const uint8* src_y,
     }
 }
 
-// TODO(fbarchard): Ensure these are stack safe.
-#ifdef DEBUG
-#define MAYBE_SAFEBUFFERS
-#else
-#define MAYBE_SAFEBUFFERS SAFEBUFFERS
-#endif
-
-
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
 #if defined(__x86_64__) || defined(__i386__)
-MAYBE_SAFEBUFFERS
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
@@ -1969,7 +1960,6 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #if defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
-MAYBE_SAFEBUFFERS
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
@@ -1982,7 +1972,6 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
   free_aligned_buffer_64(row);
 }
 
-MAYBE_SAFEBUFFERS
 void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
@@ -1995,7 +1984,6 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
   free_aligned_buffer_64(row);
 }
 
-MAYBE_SAFEBUFFERS
 void NV12ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_uv,
                            uint8* dst_rgb565,
@@ -2007,7 +1995,6 @@ void NV12ToRGB565Row_SSSE3(const uint8* src_y,
   free_aligned_buffer_64(row);
 }
 
-MAYBE_SAFEBUFFERS
 void NV21ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_vu,
                            uint8* dst_rgb565,
@@ -2019,7 +2006,6 @@ void NV21ToRGB565Row_SSSE3(const uint8* src_y,
   free_aligned_buffer_64(row);
 }
 
-MAYBE_SAFEBUFFERS
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
                          int width) {
@@ -2035,7 +2021,6 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
   free_aligned_buffer_64(row_v);
 }
 
-MAYBE_SAFEBUFFERS
 void YUY2ToARGBRow_Unaligned_SSSE3(const uint8* src_yuy2,
                                    uint8* dst_argb,
                                    int width) {
@@ -2051,7 +2036,6 @@ void YUY2ToARGBRow_Unaligned_SSSE3(const uint8* src_yuy2,
   free_aligned_buffer_64(row_v);
 }
 
-MAYBE_SAFEBUFFERS
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          uint8* dst_argb,
                          int width) {
@@ -2067,7 +2051,6 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
   free_aligned_buffer_64(row_v);
 }
 
-MAYBE_SAFEBUFFERS
 void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
                                    uint8* dst_argb,
                                    int width) {
