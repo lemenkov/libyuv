@@ -391,8 +391,8 @@ static void ScalePlaneBox(int src_width, int src_height,
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
   const int max_y = (src_height << 16);
-  if (!IS_ALIGNED(src_width, 16) || (src_width > kMaxStride) ||
-      dst_height * 2 > src_height) {
+  // TODO(fbarchard): Remove this and make AddRows handle boxheight 1.
+  if (!IS_ALIGNED(src_width, 16) || dst_height * 2 > src_height) {
     uint8* dst = dst_ptr;
     for (int j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
@@ -409,13 +409,14 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
     return;
   }
-  // TODO(fbarchard): Remove kMaxStride limitation.
-  SIMD_ALIGNED(uint16 row[kMaxStride]);
-  void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
-      uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
+  // Allocate a row buffer of uint16.
+  align_buffer_64(row16, src_width * 2);
+
   void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
       const uint16* src_ptr, uint8* dst_ptr) =
       (dx & 0xffff) ? ScaleAddCols2_C: ScaleAddCols1_C;
+  void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
+      uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
 #if defined(HAS_SCALEADDROWS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
 #ifdef AVOID_OVERREAD
@@ -434,11 +435,13 @@ static void ScalePlaneBox(int src_width, int src_height,
       y = (src_height << 16);
     }
     int boxheight = (y >> 16) - iy;
-    ScaleAddRows(src, src_stride, row, src_width, boxheight);
-    ScaleAddCols(dst_width, boxheight, x, dx, row, dst_ptr);
+    ScaleAddRows(src, src_stride, reinterpret_cast<uint16*>(row16),
+                 src_width, boxheight);
+    ScaleAddCols(dst_width, boxheight, x, dx, reinterpret_cast<uint16*>(row16),
+                 dst_ptr);
     dst_ptr += dst_stride;
   }
-
+  free_aligned_buffer_64(row16);
 }
 
 // Scale plane down with bilinear interpolation.
@@ -450,7 +453,6 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
                             FilterMode filtering) {
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(Abs(src_width) <= kMaxStride);
 
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
@@ -459,8 +461,6 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
-
-  SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
 
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
@@ -520,6 +520,10 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   }
 #endif
 
+  // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
+  // Allocate a row buffer.
+  align_buffer_64(row, src_width);
+
   const int max_y = (src_height - 1) << 16;
   for (int j = 0; j < dst_height; ++j) {
     if (y > max_y) {
@@ -537,6 +541,7 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
     dst_ptr += dst_stride;
     y += dy;
   }
+  free_aligned_buffer_64(row);
 }
 
 // Scale up down with bilinear interpolation.
@@ -550,7 +555,6 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   assert(src_height != 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(Abs(dst_width) <= kMaxStride);
 
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
@@ -635,9 +639,13 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   }
   int yi = y >> 16;
   const uint8* src = src_ptr + yi * src_stride;
-  SIMD_ALIGNED(uint8 row[2 * kMaxStride]);
+
+  // Allocate 2 row buffers.
+  const int kRowSize = (dst_width + 15) & ~15;
+  align_buffer_64(row, kRowSize * 2);
+
   uint8* rowptr = row;
-  int rowstride = kMaxStride;
+  int rowstride = kRowSize;
   int lasty = yi;
 
   ScaleFilterCols(rowptr, src, dst_width, x, dx);
@@ -672,6 +680,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
     dst_ptr += dst_stride;
     y += dy;
   }
+  free_aligned_buffer_64(row);
 }
 
 // Scale Plane to/from any dimensions, without interpolation.
@@ -780,18 +789,17 @@ void ScalePlane(const uint8* src, int src_stride,
       return;
     }
   }
-  if (filtering == kFilterBox && src_width <= kMaxStride &&
-      dst_height * 2 < src_height  ) {
+  if (filtering == kFilterBox && dst_height * 2 < src_height  ) {
     ScalePlaneBox(src_width, src_height, dst_width, dst_height,
                   src_stride, dst_stride, src, dst);
     return;
   }
-  if (filtering && dst_height > src_height && dst_width <= kMaxStride) {
+  if (filtering && dst_height > src_height) {
     ScalePlaneBilinearUp(src_width, src_height, dst_width, dst_height,
                          src_stride, dst_stride, src, dst, filtering);
     return;
   }
-  if (filtering && src_width <= kMaxStride) {
+  if (filtering) {
     ScalePlaneBilinearDown(src_width, src_height, dst_width, dst_height,
                            src_stride, dst_stride, src, dst, filtering);
     return;

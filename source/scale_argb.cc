@@ -87,10 +87,6 @@ static void ScaleARGBDown4Box(int /* src_width */, int /* src_height */,
   assert(dx == 65536 * 4);  // Test scale factor of 4.
   assert((dy & 0x3ffff) == 0);  // Test vertical scale is multiple of 4.
 
-  assert(dst_width * 2 <= kMaxStride);
-  // TODO(fbarchard): Remove clip_src_width alignment checks.
-  SIMD_ALIGNED(uint8 row[kMaxStride * 2 + 16]);
-
   // Advance to odd row, even column.
   src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
   int row_stride = src_stride * (dy >> 16);
@@ -109,14 +105,19 @@ static void ScaleARGBDown4Box(int /* src_width */, int /* src_height */,
   }
 #endif
 
+  // Allocate 2 rows of ARGB.
+  const int kRowSize = (dst_width * 2 * 4 + 15) & ~15;
+  align_buffer_64(row, kRowSize * 2);
+
   for (int y = 0; y < dst_height; ++y) {
     ScaleARGBRowDown2(src_argb, src_stride, row, dst_width * 2);
     ScaleARGBRowDown2(src_argb + src_stride * 2, src_stride,
-                      row + kMaxStride, dst_width * 2);
-    ScaleARGBRowDown2(row, kMaxStride, dst_argb, dst_width);
+                      row + kRowSize, dst_width * 2);
+    ScaleARGBRowDown2(row, kRowSize, dst_argb, dst_width);
     src_argb += row_stride;
     dst_argb += dst_stride;
   }
+  free_aligned_buffer_64(row);
 }
 
 // ScaleARGB ARGB Even
@@ -179,9 +180,6 @@ static void ScaleARGBBilinearDown(int src_height,
   int clip_src_width = (((xr - xl) + 1 + 3) & ~3) * 4;  // Width aligned to 4.
   src_argb += xl * 4;
   x -= (xl << 16);
-  assert(clip_src_width <= kMaxStride);
-  // TODO(fbarchard): Remove clip_src_width alignment checks.
-  SIMD_ALIGNED(uint8 row[kMaxStride + 16]);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
@@ -239,6 +237,10 @@ static void ScaleARGBBilinearDown(int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
+  // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
+  // Allocate a row of ARGB.
+  align_buffer_64(row, clip_src_width * 4);
+
   const int max_y = (src_height - 1) << 16;
   for (int j = 0; j < dst_height; ++j) {
     if (y > max_y) {
@@ -256,6 +258,7 @@ static void ScaleARGBBilinearDown(int src_height,
     dst_argb += dst_stride;
     y += dy;
   }
+  free_aligned_buffer_64(row);
 }
 
 // Scale ARGB up with bilinear interpolation.
@@ -270,7 +273,6 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(dst_width * 4 <= kMaxStride);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
@@ -348,9 +350,13 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
   int yi = y >> 16;
   const uint8* src = src_argb + yi * src_stride;
-  SIMD_ALIGNED(uint8 row[2 * kMaxStride]);
+
+  // Allocate 2 rows of ARGB.
+  const int kRowSize = (dst_width * 4 + 15) & ~15;
+  align_buffer_64(row, kRowSize * 2);
+
   uint8* rowptr = row;
-  int rowstride = kMaxStride;
+  int rowstride = kRowSize;
   int lasty = yi;
 
   ScaleARGBFilterCols(rowptr, src, dst_width, x, dx);
@@ -385,6 +391,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     dst_argb += dst_stride;
     y += dy;
   }
+  free_aligned_buffer_64(row);
 }
 
 #ifdef YUVSCALEUP
@@ -406,7 +413,6 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  assert(dst_width * 4 <= kMaxStride);
 
   void (*I422ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
@@ -514,12 +520,19 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   const uint8* src_row_y = src_y + yi * src_stride_y;
   const uint8* src_row_u = src_u + uv_yi * src_stride_u;
   const uint8* src_row_v = src_v + uv_yi * src_stride_v;
-  SIMD_ALIGNED(uint8 row[2 * kMaxStride]);
-  SIMD_ALIGNED(uint8 argb_row[kMaxStride * 4]);
+
+  // Allocate 2 rows of ARGB.
+  const int kRowSize = (dst_width * 4 + 15) & ~15;
+  align_buffer_64(row, kRowSize * 2);
+
+  // Allocate 1 row of ARGB for source conversion.
+  align_buffer_64(argb_row, src_width * 4);
+
   uint8* rowptr = row;
-  int rowstride = kMaxStride;
+  int rowstride = kRowSize;
   int lasty = yi;
 
+  // TODO(fbarchard): Convert first 2 rows of YUV to ARGB.
   ScaleARGBFilterCols(rowptr, src_row_y, dst_width, x, dx);
   if (src_height > 1) {
     src_row_y += src_stride_y;
@@ -571,6 +584,8 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
     dst_argb += dst_stride_argb;
     y += dy;
   }
+  free_aligned_buffer_64(row);
+  free_aligned_buffer_64(row_argb);
 }
 #endif
 
@@ -696,14 +711,14 @@ static void ScaleARGB(const uint8* src, int src_stride,
                        x, y, dy, 4, filtering);
     return;
   }
-  if (filtering && dy < 65536 && dst_width * 4 <= kMaxStride) {
+  if (filtering && dy < 65536) {
     ScaleARGBBilinearUp(src_width, src_height,
                         clip_width, clip_height,
                         src_stride, dst_stride, src, dst,
                         x, dx, y, dy, filtering);
     return;
   }
-  if (filtering && src_width * 4 < kMaxStride) {
+  if (filtering) {
     ScaleARGBBilinearDown(src_height,
                           clip_width, clip_height,
                           src_stride, dst_stride, src, dst,
