@@ -1908,10 +1908,10 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   }
 #endif
   // 3 rows with edges before/after.
-  const int kRowSize = (width + 15) & ~15;
-  align_buffer_64(row_y, kEdge + kRowSize * 3);
-  align_buffer_64(row_sobelx, width);
-  align_buffer_64(row_sobely, width);
+  const int kRowSize = (width + kEdge + 15) & ~15;
+  align_buffer_64(row_y, kEdge + kRowSize * 3 + kEdge);
+  align_buffer_64(row_sobelx, width + kEdge);
+  align_buffer_64(row_sobely, width + kEdge);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
@@ -1919,7 +1919,7 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   uint8* row_y2 = row_y1 + kRowSize;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
-  memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
+  memset(row_y0 + width, row_y0[width - 1], 16);  // Extrude 16 for valgrind.
   ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
   row_y1[-1] = row_y1[0];
   memset(row_y1 + width, row_y1[width - 1], 16);
