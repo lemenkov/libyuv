@@ -927,7 +927,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = NV12ToRGB565Row_C;
 #if defined(HAS_NV12TORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     NV12ToRGB565Row = NV12ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       NV12ToRGB565Row = NV12ToRGB565Row_SSSE3;
@@ -974,7 +974,7 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                           uint8* rgb_buf,
                           int width) = NV21ToRGB565Row_C;
 #if defined(HAS_NV21TORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8 && width * 4 <= kMaxStride) {
+  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     NV21ToRGB565Row = NV21ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       NV21ToRGB565Row = NV21ToRGB565Row_SSSE3;
@@ -1844,10 +1844,8 @@ int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
                  void (*SobelRow)(const uint8* src_sobelx,
                                   const uint8* src_sobely,
                                   uint8* dst, int width)) {
-  const int kMaxRow = kMaxStride / 4;
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
-  if (!src_argb  || !dst_argb ||
-      width <= 0 || height == 0 || width > (kMaxRow - kEdge)) {
+  if (!src_argb  || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1911,14 +1909,15 @@ int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
   }
 #endif
   // 3 rows with edges before/after.
-  SIMD_ALIGNED(uint8 row_y[kEdge + kMaxRow * 3]);
-  SIMD_ALIGNED(uint8 row_sobelx[kMaxRow]);
-  SIMD_ALIGNED(uint8 row_sobely[kMaxRow]);
+  const int kRowSize = (width + 15) & ~15;
+  align_buffer_64(row_y, kEdge + kRowSize * 3);
+  align_buffer_64(row_sobelx, width);
+  align_buffer_64(row_sobely, width);
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kMaxRow;
-  uint8* row_y2 = row_y1 + kMaxRow;
+  uint8* row_y1 = row_y0 + kRowSize;
+  uint8* row_y2 = row_y1 + kRowSize;
   ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
   row_y0[-1] = row_y0[0];
   memset(row_y0 + width, row_y0[width - 1], 16);  // extrude 16 pixels.
@@ -1948,6 +1947,9 @@ int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
 
     dst_argb += dst_stride_argb;
   }
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_sobelx);
+  free_aligned_buffer_64(row_sobely);
   return 0;
 }
 
