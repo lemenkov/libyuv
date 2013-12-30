@@ -325,9 +325,9 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  // Allocate a row of uv.
-  align_buffer_64(row_u, halfwidth);
-  align_buffer_64(row_v, halfwidth);
+  // Allocate a rows of uv.
+  align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
+  uint8* row_v = row_u + ((halfwidth + 15) & ~15);
 
   for (int y = 0; y < height - 1; y += 2) {
     ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -344,7 +344,6 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow(src_argb, dst_y, width);
   }
   free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
   return 0;
 }
 
@@ -429,9 +428,9 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  // Allocate a row of uv.
-  align_buffer_64(row_u, halfwidth);
-  align_buffer_64(row_v, halfwidth);
+  // Allocate a rows of uv.
+  align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
+  uint8* row_v = row_u + ((halfwidth + 15) & ~15);
 
   for (int y = 0; y < height - 1; y += 2) {
     ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -448,7 +447,6 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
     ARGBToYRow(src_argb, dst_y, width);
   }
   free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
   return 0;
 }
 
@@ -533,10 +531,10 @@ int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  // Allocate a row of yuv.
-  align_buffer_64(row_y, width);
-  align_buffer_64(row_u, (width + 1) / 2);
-  align_buffer_64(row_v, (width + 1) / 2);
+  // Allocate a rows of yuv.
+  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
+  uint8* row_u = row_y + ((width + 63) & ~63);
+  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
 
   for (int y = 0; y < height; ++y) {
     ARGBToUV422Row(src_argb, row_u, row_v, width);
@@ -547,8 +545,6 @@ int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
   }
 
   free_aligned_buffer_64(row_y);
-  free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
   return 0;
 }
 
@@ -632,10 +628,11 @@ int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-  // Allocate a row of yuv.
-  align_buffer_64(row_y, width);
-  align_buffer_64(row_u, (width + 1) / 2);
-  align_buffer_64(row_v, (width + 1) / 2);
+
+  // Allocate a rows of yuv.
+  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
+  uint8* row_u = row_y + ((width + 63) & ~63);
+  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
 
   for (int y = 0; y < height; ++y) {
     ARGBToUV422Row(src_argb, row_u, row_v, width);
@@ -646,8 +643,6 @@ int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
   }
 
   free_aligned_buffer_64(row_y);
-  free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
   return 0;
 }
 
