@@ -1909,9 +1909,10 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
 #endif
   // 3 rows with edges before/after.
   const int kRowSize = (width + kEdge + 15) & ~15;
-  align_buffer_64(row_y, kEdge + kRowSize * 3 + kEdge);
-  align_buffer_64(row_sobelx, width + kEdge);
-  align_buffer_64(row_sobely, width + kEdge);
+  align_buffer_64(rows, kRowSize * 2 + (kEdge + kRowSize * 3 + kEdge));
+  uint8* row_sobelx = rows;
+  uint8* row_sobely = rows + kRowSize;
+  uint8* row_y = rows + kRowSize * 2;
 
   // Convert first row.
   uint8* row_y0 = row_y + kEdge;
@@ -1946,9 +1947,7 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
 
     dst_argb += dst_stride_argb;
   }
-  free_aligned_buffer_64(row_y);
-  free_aligned_buffer_64(row_sobelx);
-  free_aligned_buffer_64(row_sobely);
+  free_aligned_buffer_64(rows);
   return 0;
 }
 
