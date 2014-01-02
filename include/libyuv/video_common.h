@@ -71,9 +71,9 @@ enum FourCC {
   FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
   FOURCC_RAW  = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
-  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // bgr565.
-  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // abgr1555.
-  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444.
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // rgb565 LE.
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE.
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE.
 
   // 4 Secondary RGB formats: 4 Bayer Patterns.
   FOURCC_RGGB = FOURCC('R', 'G', 'G', 'B'),
@@ -107,6 +107,9 @@ enum FourCC {
   FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG.
   FOURCC_CM32 = FOURCC(0, 0, 0, 32),  // Alias for BGRA kCMPixelFormat_32ARGB
   FOURCC_CM24 = FOURCC(0, 0, 0, 24),  // Alias for RAW kCMPixelFormat_24RGB
+  FOURCC_L555 = FOURCC('L', '5', '5', '5'),  // Alias for RGBO.
+  FOURCC_L565 = FOURCC('L', '5', '6', '5'),  // Alias for RGBP.
+  FOURCC_5551 = FOURCC('5', '5', '5', '1'),  // Alias for RGBO.
 
   // 1 Auxiliary compressed YUV format set aside for capturer.
   FOURCC_H264 = FOURCC('H', '2', '6', '4'),

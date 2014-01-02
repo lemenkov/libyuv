@@ -41,6 +41,9 @@ static const FourCCAliasEntry kFourCCAliases[] = {
 #if defined(__APPLE__)
   {FOURCC_BGRA, FOURCC_ARGB},  // kCMPixelFormat_32BGRA
 #endif
+  {FOURCC_L555, FOURCC_RGBO},  // kCMPixelFormat_16LE555
+  {FOURCC_L565, FOURCC_RGBP},  // kCMPixelFormat_16LE565
+  {FOURCC_5551, FOURCC_RGBO},  // kCMPixelFormat_16LE5551
 };
 
 LIBYUV_API

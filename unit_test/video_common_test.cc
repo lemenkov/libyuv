@@ -61,6 +61,9 @@ TEST_F(libyuvTest, TestCanonicalFourCC) {
 #else
   EXPECT_EQ(FOURCC_BGRA, CanonicalFourCC(FOURCC_BGRA));
 #endif
+  EXPECT_EQ(FOURCC_RGBO, CanonicalFourCC(FOURCC_L555));
+  EXPECT_EQ(FOURCC_RGBP, CanonicalFourCC(FOURCC_L565));
+  EXPECT_EQ(FOURCC_RGBO, CanonicalFourCC(FOURCC_5551));
 }
 
 TEST_F(libyuvTest, TestFourCC) {
