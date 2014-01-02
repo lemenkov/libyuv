@@ -104,7 +104,6 @@ extern "C" {
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
-#define HAS_FIXEDDIV_X86
 #define HAS_HALFROW_SSE2
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
@@ -1683,15 +1682,6 @@ void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
 void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
                                  int width, const uint8* luma,
                                  const uint32 lumacoeff);
-
-// Divide num by div and return as 16.16 fixed point result.
-int FixedDiv_C(int num, int div);
-int FixedDiv_X86(int num, int div);
-#ifdef HAS_FIXEDDIV_X86
-#define FixedDiv FixedDiv_X86
-#else
-#define FixedDiv FixedDiv_C
-#endif
 
 #ifdef __cplusplus
 }  // extern "C"

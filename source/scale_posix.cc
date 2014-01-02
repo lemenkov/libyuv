@@ -1274,6 +1274,39 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
   );
 }
 
+// Divide num by div and return as 16.16 fixed point result.
+int FixedDiv_X86(int num, int div) {
+  asm volatile (
+    "cdq                                       \n"
+    "shld      $0x10,%%eax,%%edx               \n"
+    "shl       $0x10,%%eax                     \n"
+    "idiv      %1                              \n"
+    "mov       %0, %%eax                       \n"
+    : "+a"(num)  // %0
+    : "c"(div)   // %1
+    : "memory", "cc", "edx"
+  );
+  return num;
+}
+
+// Divide num - 1 by div - 1 and return as 16.16 fixed point result.
+int FixedDiv1_X86(int num, int div) {
+  asm volatile (
+    "cdq                                       \n"
+    "shld      $0x10,%%eax,%%edx               \n"
+    "shl       $0x10,%%eax                     \n"
+    "sub       $0x10001,%%eax                  \n"
+    "sbb       $0x0,%%edx                      \n"
+    "sub       $0x1,%1                         \n"
+    "idiv      %1                              \n"
+    "mov       %0, %%eax                       \n"
+    : "+a"(num)  // %0
+    : "c"(div)   // %1
+    : "memory", "cc", "edx"
+  );
+  return num;
+}
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus

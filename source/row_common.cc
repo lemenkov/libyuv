@@ -59,11 +59,6 @@ static __inline uint32 Abs(int32 v) {
 }
 #endif  // USE_BRANCHLESS
 
-// Divide num by div and return as 16.16 fixed point result.
-int FixedDiv_C(int num, int div) {
-  return static_cast<int>((static_cast<int64>(num) << 16) / div);
-}
-
 #ifdef LIBYUV_LITTLE_ENDIAN
 #define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
 #else

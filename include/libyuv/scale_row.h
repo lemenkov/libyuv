@@ -33,6 +33,8 @@ extern "C" {
 #define HAS_SCALEARGBCOLS_SSE2
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
 #define HAS_SCALEARGBCOLSUP2_SSE2
+#define HAS_FIXEDDIV_X86
+#define HAS_FIXEDDIV1_X86
 #endif
 
 // The following are available on Neon platforms:
@@ -61,17 +63,31 @@ void ScalePlaneVertical(int src_height,
                         int src_stride, int dst_stride,
                         const uint8* src_argb, uint8* dst_argb,
                         int x, int y, int dy,
-                        int bpp, FilterMode filtering);
+                        int bpp, enum FilterMode filtering);
 
 // Simplify the filtering based on scale factors.
-FilterMode ScaleFilterReduce(int src_width, int src_height,
-                             int dst_width, int dst_height,
-                             FilterMode filtering);
+enum FilterMode ScaleFilterReduce(int src_width, int src_height,
+                                  int dst_width, int dst_height,
+                                  enum FilterMode filtering);
+
+// Divide num by div and return as 16.16 fixed point result.
+int FixedDiv_C(int num, int div);
+int FixedDiv_X86(int num, int div);
+// Divide num - 1 by div - 1 and return as 16.16 fixed point result.
+int FixedDiv1_C(int num, int div);
+int FixedDiv1_X86(int num, int div);
+#ifdef HAS_FIXEDDIV_X86
+#define FixedDiv FixedDiv_X86
+#define FixedDiv1 FixedDiv1_X86
+#else
+#define FixedDiv FixedDiv_C
+#define FixedDiv1 FixedDiv1_C
+#endif
 
 // Compute slope values for stepping.
 void ScaleSlope(int src_width, int src_height,
                 int dst_width, int dst_height,
-                FilterMode filtering,
+                enum FilterMode filtering,
                 int* x, int* y, int* dx, int* dy);
 
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,

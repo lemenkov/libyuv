@@ -584,9 +584,18 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
   return filtering;
 }
 
+// Divide num by div and return as 16.16 fixed point result.
+int FixedDiv_C(int num, int div) {
+  return static_cast<int>((static_cast<int64>(num) << 16) / div);
+}
+
+// Divide num by div and return as 16.16 fixed point result.
+int FixedDiv1_C(int num, int div) {
+  return static_cast<int>(((static_cast<int64>(num) << 16) - 0x00010001) /
+                          (div - 1));
+}
+
 #define CENTERSTART(dx, s) (dx < 0) ? -((-dx >> 1) + s) : ((dx >> 1) + s)
-#define FIXEDDIV1(src, dst) FixedDiv((src << 16) - 0x00010001, \
-                                     (dst << 16) - 0x00010000);
 
 // Compute slope values for stepping.
 void ScaleSlope(int src_width, int src_height,
@@ -613,14 +622,14 @@ void ScaleSlope(int src_width, int src_height,
       *dx = FixedDiv(Abs(src_width), dst_width);
       *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_width > 1) {
-      *dx = FIXEDDIV1(Abs(src_width), dst_width);
+      *dx = FixedDiv1(Abs(src_width), dst_width);
       *x = 0;
     }
     if (dst_height <= src_height) {
       *dy = FixedDiv(src_height,  dst_height);
       *y = CENTERSTART(*dy, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_height > 1) {
-      *dy = FIXEDDIV1(src_height, dst_height);
+      *dy = FixedDiv1(src_height, dst_height);
       *y = 0;
     }
   } else if (filtering == kFilterLinear) {
@@ -629,7 +638,7 @@ void ScaleSlope(int src_width, int src_height,
       *dx = FixedDiv(Abs(src_width), dst_width);
       *x = CENTERSTART(*dx, -32768);  // Subtract 0.5 (32768) to center filter.
     } else if (dst_width > 1) {
-      *dx = FIXEDDIV1(Abs(src_width), dst_width);
+      *dx = FixedDiv1(Abs(src_width), dst_width);
       *x = 0;
     }
     *dy = FixedDiv(src_height, dst_height);
@@ -649,7 +658,6 @@ void ScaleSlope(int src_width, int src_height,
   }
 }
 #undef CENTERSTART
-#undef FIXEDDIV1
 
 #ifdef __cplusplus
 }  // extern "C"

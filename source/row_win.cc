@@ -7009,21 +7009,6 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
   }
 }
 
-#ifdef HAS_FIXEDDIV_X86
-// Divide num by div and return as 16.16 fixed point result.
-__declspec(naked) __declspec(align(16))
-int FixedDiv_X86(int num, int div) {
-  __asm {
-    mov        eax, [esp + 4]    // num
-    cdq                          // extend num to 64 bits
-    shld       edx, eax, 16      // 32.16
-    shl        eax, 16
-    idiv       dword ptr [esp + 8]
-    ret
-  }
-}
-#endif  // HAS_FIXEDDIV_X86
-
 #ifdef HAS_ARGBPOLYNOMIALROW_SSE2
 __declspec(naked) __declspec(align(16))
 void ARGBPolynomialRow_SSE2(const uint8* src_argb,

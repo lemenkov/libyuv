@@ -1281,6 +1281,36 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
+// Divide num by div and return as 16.16 fixed point result.
+__declspec(naked) __declspec(align(16))
+int FixedDiv_X86(int num, int div) {
+  __asm {
+    mov        eax, [esp + 4]    // num
+    cdq                          // extend num to 64 bits
+    shld       edx, eax, 16      // 32.16
+    shl        eax, 16
+    idiv       dword ptr [esp + 8]
+    ret
+  }
+}
+
+// Divide num by div and return as 16.16 fixed point result.
+__declspec(naked) __declspec(align(16))
+int FixedDiv1_X86(int num, int div) {
+  __asm {
+    mov        eax, [esp + 4]    // num
+    mov        ecx, [esp + 8]    // denom
+    cdq                          // extend num to 64 bits
+    shld       edx, eax, 16      // 32.16
+    shl        eax, 16
+    sub        eax, 0x00010001
+    sbb        edx, 0
+    sub        ecx, 1
+    idiv       ecx
+    ret
+  }
+}
+
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 
 #ifdef __cplusplus

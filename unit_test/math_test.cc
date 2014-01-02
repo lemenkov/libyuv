@@ -14,6 +14,8 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/row.h"
+#include "libyuv/scale.h"
+#include "libyuv/scale_row.h"
 #include "../unit_test/unit_test.h"
 
 namespace libyuv {
@@ -27,7 +29,7 @@ TEST_F(libyuvTest, TestFixedDiv) {
   EXPECT_EQ(0x10000, libyuv::FixedDiv(1, 1));
   EXPECT_EQ(0x7fff0000, libyuv::FixedDiv(0x7fff, 1));
   // TODO(fbarchard): Avoid the following that throw exceptions.
-  // EXPECT_EQ(0x10000, libyuv::FixedDiv(0x10000, 1));
+  // EXPECT_EQ(0x100000000, libyuv::FixedDiv(0x10000, 1));
   // EXPECT_EQ(0x80000000, libyuv::FixedDiv(0x8000, 1));
 
   EXPECT_EQ(0x20000, libyuv::FixedDiv(640 * 2, 640));
@@ -114,6 +116,41 @@ TEST_F(libyuvTest, TestFixedDiv_Opt) {
   }
   for (int j = 0; j < 1280; ++j) {
     result_c[j] = libyuv::FixedDiv_C(num[j], div[j]);
+    EXPECT_NEAR(result_c[j], result_opt[j], 1);
+  }
+}
+
+TEST_F(libyuvTest, TestFixedDiv1_Opt) {
+  int num[1280];
+  int div[1280];
+  int result_opt[1280];
+  int result_c[1280];
+
+  srandom(time(NULL));
+  MemRandomize(reinterpret_cast<uint8*>(&num[0]), sizeof(num));
+  MemRandomize(reinterpret_cast<uint8*>(&div[0]), sizeof(div));
+  for (int j = 0; j < 1280; ++j) {
+    num[j] &= 4095;  // Make numerator smaller.
+    div[j] &= 4095;  // Make divisor smaller.
+    if (div[j] <= 1) {
+      div[j] = 1280;
+    }
+  }
+
+  int has_x86 = TestCpuFlag(kCpuHasX86);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    if (has_x86) {
+      for (int j = 0; j < 1280; ++j) {
+        result_opt[j] = libyuv::FixedDiv1(num[j], div[j]);
+      }
+    } else {
+      for (int j = 0; j < 1280; ++j) {
+        result_opt[j] = libyuv::FixedDiv1_C(num[j], div[j]);
+      }
+    }
+  }
+  for (int j = 0; j < 1280; ++j) {
+    result_c[j] = libyuv::FixedDiv1_C(num[j], div[j]);
     EXPECT_NEAR(result_c[j], result_opt[j], 1);
   }
 }

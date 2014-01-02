@@ -6170,23 +6170,6 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
 }
 #endif  // HAS_I422TOUYVYROW_SSE2
 
-#ifdef HAS_FIXEDDIV_X86
-// Divide num by div and return as 16.16 fixed point result.
-int FixedDiv_X86(int num, int div) {
-  asm volatile (
-    "cdq                                       \n"
-    "shld      $0x10,%%eax,%%edx               \n"
-    "shl       $0x10,%%eax                     \n"
-    "idiv      %1                              \n"
-    "mov       %0, %%eax                       \n"
-    : "+a"(num)  // %0
-    : "c"(div)   // %1
-    : "memory", "cc", "edx"
-  );
-  return num;
-}
-#endif  // HAS_FIXEDDIV_X86
-
 #ifdef HAS_ARGBPOLYNOMIALROW_SSE2
 void ARGBPolynomialRow_SSE2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
