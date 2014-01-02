@@ -151,30 +151,13 @@ uint64 ComputeSumSquareErrorPlane(const uint8* src_a, int stride_a,
   // Coalesce rows.
   if (stride_a == width &&
       stride_b == width) {
-    return ComputeSumSquareError(src_a, src_b, width * height);
+    width *= height;
+    height = 1;
+    stride_a = stride_b = 0;
   }
-  uint32 (*SumSquareError)(const uint8* src_a, const uint8* src_b, int count) =
-      SumSquareError_C;
-#if defined(HAS_SUMSQUAREERROR_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    SumSquareError = SumSquareError_NEON;
-  }
-#endif
-#if defined(HAS_SUMSQUAREERROR_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src_a, 16) && IS_ALIGNED(stride_a, 16) &&
-      IS_ALIGNED(src_b, 16) && IS_ALIGNED(stride_b, 16)) {
-    SumSquareError = SumSquareError_SSE2;
-  }
-#endif
-#if defined(HAS_SUMSQUAREERROR_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
-    SumSquareError = SumSquareError_AVX2;
-  }
-#endif
   uint64 sse = 0;
   for (int h = 0; h < height; ++h) {
-    sse += SumSquareError(src_a, src_b, width);
+    sse += ComputeSumSquareError(src_a, src_b, width);
     src_a += stride_a;
     src_b += stride_b;
   }
