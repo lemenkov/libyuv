@@ -178,7 +178,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   xr = (xr >> 16) + 1;  // Right most pixel used.
   int clip_src_width = (((xr - xl) + 1 + 3) & ~3) * 4;  // Width aligned to 4.
   src_argb += xl * 4;
-  x -= (xl << 16);
+  x -= static_cast<int>(xl << 16);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;

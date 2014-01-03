@@ -204,8 +204,8 @@ void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 // (1-f)a + fb can be replaced with a + f(b-a)
-#define BLENDER(a, b, f) (static_cast<int>(a) + \
-    ((f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
+#define BLENDER(a, b, f) static_cast<uint8>(static_cast<int>(a) + \
+    (static_cast<int>(f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
 
 void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx) {
