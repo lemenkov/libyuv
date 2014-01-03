@@ -229,6 +229,30 @@ void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
     dst_ptr[0] = BLENDER(a, b, x & 0xffff);
   }
 }
+
+void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
+                         int dst_width, int x32, int dx) {
+  int64 x = static_cast<int64>(x32);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    int64 xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
+    x += dx;
+    xi = x >> 16;
+    a = src_ptr[xi];
+    b = src_ptr[xi + 1];
+    dst_ptr[1] = BLENDER(a, b, x & 0xffff);
+    x += dx;
+    dst_ptr += 2;
+  }
+  if (dst_width & 1) {
+    int64 xi = x >> 16;
+    int a = src_ptr[xi];
+    int b = src_ptr[xi + 1];
+    dst_ptr[0] = BLENDER(a, b, x & 0xffff);
+  }
+}
 #undef BLENDER
 
 void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,

@@ -112,6 +112,8 @@ void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
                     int dst_width, int, int);
 void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx);
+void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
+                         int dst_width, int x, int dx);
 void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
                       uint8* dst, int dst_width);
 void ScaleRowDown38_3_Box_C(const uint8* src_ptr,

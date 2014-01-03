@@ -511,9 +511,11 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
 #endif
 
   void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
-                          int dst_width, int x, int dx) = ScaleFilterCols_C;
+      int dst_width, int x, int dx) =
+      (src_width >= 32768) ? ScaleFilterCols64_C : ScaleFilterCols_C;
+
 #if defined(HAS_SCALEFILTERCOLS_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_SSSE3;
   }
 #endif
@@ -614,8 +616,11 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
        int dst_width, int x, int dx) =
        filtering ? ScaleFilterCols_C : ScaleCols_C;
+  if (filtering && src_width >= 32768) {
+    ScaleFilterCols = ScaleFilterCols64_C;
+  }
 #if defined(HAS_SCALEFILTERCOLS_SSSE3)
-  if (filtering && TestCpuFlag(kCpuHasSSSE3)) {
+  if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_SSSE3;
   }
 #endif
