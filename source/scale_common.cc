@@ -634,6 +634,13 @@ void ScaleSlope(int src_width, int src_height,
   assert(src_height != 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
+  // Check for 1 pixel and avoid FixedDiv overflow.
+  if (dst_width == 1) {
+    dst_width = src_width;
+  }
+  if (dst_height == 1) {
+    dst_height = src_height;
+  }
   if (filtering == kFilterBox) {
     // Scale step for point sampling duplicates all pixels equally.
     *dx = FixedDiv(Abs(src_width), dst_width);
