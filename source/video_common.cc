@@ -38,13 +38,12 @@ static const FourCCAliasEntry kFourCCAliases[] = {
   {FOURCC_BGR3, FOURCC_24BG},
   {FOURCC_CM32, FOURCC_BGRA},  // kCMPixelFormat_32ARGB
   {FOURCC_CM24, FOURCC_RAW },  // kCMPixelFormat_24RGB
-#if defined(__APPLE__)
-  {FOURCC_BGRA, FOURCC_ARGB},  // kCMPixelFormat_32BGRA
-#endif
   {FOURCC_L555, FOURCC_RGBO},  // kCMPixelFormat_16LE555
   {FOURCC_L565, FOURCC_RGBP},  // kCMPixelFormat_16LE565
   {FOURCC_5551, FOURCC_RGBO},  // kCMPixelFormat_16LE5551
 };
+// TODO(fbarchard): Consider mapping kCMPixelFormat_32BGRA to FOURCC_ARGB.
+//  {FOURCC_BGRA, FOURCC_ARGB},  // kCMPixelFormat_32BGRA
 
 LIBYUV_API
 uint32 CanonicalFourCC(uint32 fourcc) {

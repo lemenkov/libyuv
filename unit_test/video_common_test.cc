@@ -56,11 +56,6 @@ TEST_F(libyuvTest, TestCanonicalFourCC) {
   EXPECT_EQ(FOURCC_24BG, CanonicalFourCC(FOURCC_BGR3));
   EXPECT_EQ(FOURCC_BGRA, CanonicalFourCC(FOURCC_CM32));
   EXPECT_EQ(FOURCC_RAW,  CanonicalFourCC(FOURCC_CM24));
-#if defined(__APPLE__)
-  EXPECT_EQ(FOURCC_ARGB, CanonicalFourCC(FOURCC_BGRA));
-#else
-  EXPECT_EQ(FOURCC_BGRA, CanonicalFourCC(FOURCC_BGRA));
-#endif
   EXPECT_EQ(FOURCC_RGBO, CanonicalFourCC(FOURCC_L555));
   EXPECT_EQ(FOURCC_RGBP, CanonicalFourCC(FOURCC_L565));
   EXPECT_EQ(FOURCC_RGBO, CanonicalFourCC(FOURCC_5551));
