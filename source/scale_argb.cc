@@ -676,11 +676,15 @@ static void ScaleARGB(const uint8* src, int src_stride,
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
   if (clip_x) {
-    x += clip_x * dx;
+    int64 clipf = static_cast<int64>(clip_x) * dx;
+    x += (clipf & 0xffff);
+    src += (clipf >> 16) * 4;
     dst += clip_x * 4;
   }
   if (clip_y) {
-    y += clip_y * dy;
+    int64 clipf = static_cast<int64>(clip_y) * dy;
+    y += (clipf & 0xffff);
+    src += (clipf >> 16) * src_stride;
     dst += clip_y * dst_stride;
   }
 
