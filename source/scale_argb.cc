@@ -171,9 +171,9 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int xlast = x + (dst_width - 1) * dx;
-  int xl = (dx >= 0) ? x : xlast;
-  int xr = (dx >= 0) ? xlast : x;
+  int64 xlast = x + static_cast<int64>(dst_width - 1) * dx;
+  int64 xl = (dx >= 0) ? x : xlast;
+  int64 xr = (dx >= 0) ? xlast : x;
   xl = (xl >> 16) & ~3;  // Left edge aligned.
   xr = (xr >> 16) + 1;  // Right most pixel used.
   int clip_src_width = (((xr - xl) + 1 + 3) & ~3) * 4;  // Width aligned to 4.
