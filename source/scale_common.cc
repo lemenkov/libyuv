@@ -427,6 +427,23 @@ void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
   }
 }
 
+void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
+                       int dst_width, int x32, int dx) {
+  int64 x = static_cast<int64>(x32);
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    dst[0] = src[x >> 16];
+    x += dx;
+    dst[1] = src[x >> 16];
+    x += dx;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    dst[0] = src[x >> 16];
+  }
+}
+
 // Scales a single row of pixels up by 2x using point sampling.
 void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int, int) {

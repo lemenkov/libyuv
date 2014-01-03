@@ -140,6 +140,8 @@ void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
                                uint8* dst_argb, int dst_width);
 void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
                      int dst_width, int x, int dx);
+void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
+                       int dst_width, int x, int dx);
 void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int, int);
 void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,

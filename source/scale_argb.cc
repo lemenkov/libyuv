@@ -322,8 +322,9 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
       int dst_width, int x, int dx) =
       filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
-  if (filtering && src_width >= 32768) {
-    ScaleARGBFilterCols = ScaleARGBFilterCols64_C;
+  if (src_width >= 32768) {
+    ScaleARGBFilterCols = filtering ?
+        ScaleARGBFilterCols64_C : ScaleARGBCols64_C;
   }
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
   if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
@@ -508,8 +509,9 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   void (*ScaleARGBFilterCols)(uint8* dst_argb, const uint8* src_argb,
       int dst_width, int x, int dx) =
       filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
-  if (filtering && src_width >= 32768) {
-    ScaleARGBFilterCols = ScaleARGBFilterCols64_C;
+  if (src_width >= 32768) {
+    ScaleARGBFilterCols = filtering ?
+        ScaleARGBFilterCols64_C : ScaleARGBCols64_C;
   }
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
   if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
@@ -622,9 +624,10 @@ static void ScaleARGBSimple(int src_width, int src_height,
                             const uint8* src_argb, uint8* dst_argb,
                             int x, int dx, int y, int dy) {
   void (*ScaleARGBCols)(uint8* dst_argb, const uint8* src_argb,
-      int dst_width, int x, int dx) = ScaleARGBCols_C;
+      int dst_width, int x, int dx) =
+      (src_width >= 32768) ? ScaleARGBCols64_C : ScaleARGBCols_C;
 #if defined(HAS_SCALEARGBCOLS_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
+  if (TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
     ScaleARGBCols = ScaleARGBCols_SSE2;
   }
 #endif
