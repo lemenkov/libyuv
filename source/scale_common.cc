@@ -477,6 +477,35 @@ void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
     dst[0] = BLENDER(a, b, xf);
   }
 }
+
+void ScaleARGBFilterCols64_C(uint8* dst_argb, const uint8* src_argb,
+                             int dst_width, int x32, int dx) {
+  int64 x = static_cast<int64>(x32);
+  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
+  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  for (int j = 0; j < dst_width - 1; j += 2) {
+    int64 xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
+    uint32 a = src[xi];
+    uint32 b = src[xi + 1];
+    dst[0] = BLENDER(a, b, xf);
+    x += dx;
+    xi = x >> 16;
+    xf = (x >> 9) & 0x7f;
+    a = src[xi];
+    b = src[xi + 1];
+    dst[1] = BLENDER(a, b, xf);
+    x += dx;
+    dst += 2;
+  }
+  if (dst_width & 1) {
+    int64 xi = x >> 16;
+    int xf = (x >> 9) & 0x7f;
+    uint32 a = src[xi];
+    uint32 b = src[xi + 1];
+    dst[0] = BLENDER(a, b, xf);
+  }
+}
 #undef BLENDER1
 #undef BLENDERC
 #undef BLENDER

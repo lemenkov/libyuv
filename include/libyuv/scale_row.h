@@ -144,6 +144,8 @@ void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int, int);
 void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx);
+void ScaleARGBFilterCols64_C(uint8* dst_argb, const uint8* src_argb,
+                             int dst_width, int x, int dx);
 
 void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
