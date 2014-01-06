@@ -10,32 +10,38 @@
 
 #include "libyuv/mjpeg_decoder.h"
 
+#ifdef __cplusplus
 namespace libyuv {
+extern "C" {
+#endif
 
 // Helper function to validate the jpeg appears intact.
 // TODO(fbarchard): Optimize case where SOI is found but EOI is not.
-bool ValidateJpeg(const uint8* sample, size_t sample_size) {
+LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
+  size_t i;
   if (sample_size < 64) {
     // ERROR: Invalid jpeg size: sample_size
-    return false;
+    return LIBYUV_FALSE;
   }
   if (sample[0] != 0xff || sample[1] != 0xd8) {  // Start Of Image
     // ERROR: Invalid jpeg initial start code
-    return false;
+    return LIBYUV_FALSE;
   }
-  for (int i = static_cast<int>(sample_size) - 2; i > 1;) {
+  for (i = sample_size - 2; i > 1;) {
     if (sample[i] != 0xd9) {
       if (sample[i] == 0xff && sample[i + 1] == 0xd9) {  // End Of Image
-        return true;
+        return LIBYUV_TRUE;  // Success: Valid jpeg.
       }
       --i;
     }
     --i;
   }
   // ERROR: Invalid jpeg end code not found. Size sample_size
-  return false;
+  return LIBYUV_FALSE;
 }
 
+#ifdef __cplusplus
+}  // extern "C"
 }  // namespace libyuv
-
+#endif
 

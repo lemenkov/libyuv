@@ -98,6 +98,10 @@ typedef signed char int8;
 #endif  // __GNUC__
 #endif  // LIBYUV_API
 
+#define LIBYUV_BOOL int
+#define LIBYUV_FALSE 0
+#define LIBYUV_TRUE 1
+
 // Visual C x86 or GCC little endian.
 #if defined(__x86_64__) || defined(_M_X64) || \
   defined(__i386__) || defined(_M_IX86) || \

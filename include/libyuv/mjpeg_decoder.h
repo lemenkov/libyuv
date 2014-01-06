@@ -11,10 +11,9 @@
 #ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_  // NOLINT
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
-#ifdef __cplusplus
-
 #include "libyuv/basic_types.h"
 
+#ifdef __cplusplus
 // NOTE: For a simplified public API use convert.h MJPGToI420().
 
 struct jpeg_common_struct;
@@ -23,7 +22,15 @@ struct jpeg_source_mgr;
 
 namespace libyuv {
 
-bool ValidateJpeg(const uint8* sample, size_t sample_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 static const uint32 kUnknownDataSize = 0xFFFFFFFF;
 

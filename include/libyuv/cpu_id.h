@@ -20,7 +20,7 @@ extern "C" {
 
 // TODO(fbarchard): Consider overlapping bits for different architectures.
 // Internal flag to indicate cpuid requires initialization.
-static const int kCpuInit = 0x1;
+#define kCpuInit 0x1
 
 // These flags are only valid on ARM processors.
 static const int kCpuHasARM = 0x2;
