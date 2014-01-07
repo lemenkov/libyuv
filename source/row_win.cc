@@ -2030,15 +2030,15 @@ void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
 
-#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
+#define YG 74 /* (int8)(1.164 * 64 + 0.5) */
 
-#define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
-#define UG -25 /* static_cast<int8>(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(63,(int8)(2.018 * 64)) */
+#define UG -25 /* (int8)(-0.391 * 64 - 0.5) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* static_cast<int8>(-0.813 * 64 - 0.5) */
-#define VR 102 /* static_cast<int8>(1.596 * 64 + 0.5) */
+#define VG -52 /* (int8)(-0.813 * 64 - 0.5) */
+#define VR 102 /* (int8)(1.596 * 64 + 0.5) */
 
 // Bias
 #define BB UB * 128 + VB * 128

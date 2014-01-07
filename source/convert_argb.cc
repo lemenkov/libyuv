@@ -368,7 +368,7 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                int width, int height) {
   return ARGBShuffle(src_bgra, src_stride_bgra,
                      dst_argb, dst_stride_argb,
-                     reinterpret_cast<const uint8*>(&kShuffleMaskBGRAToARGB),
+                     (const uint8*)(&kShuffleMaskBGRAToARGB),
                      width, height);
 }
 
@@ -379,7 +379,7 @@ int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
                int width, int height) {
   return ARGBShuffle(src_abgr, src_stride_abgr,
                      dst_argb, dst_stride_argb,
-                     reinterpret_cast<const uint8*>(&kShuffleMaskABGRToARGB),
+                     (const uint8*)(&kShuffleMaskABGRToARGB),
                      width, height);
 }
 
@@ -390,7 +390,7 @@ int RGBAToARGB(const uint8* src_rgba, int src_stride_rgba,
                int width, int height) {
   return ARGBShuffle(src_rgba, src_stride_rgba,
                      dst_argb, dst_stride_argb,
-                     reinterpret_cast<const uint8*>(&kShuffleMaskRGBAToARGB),
+                     (const uint8*)(&kShuffleMaskRGBAToARGB),
                      width, height);
 }
 

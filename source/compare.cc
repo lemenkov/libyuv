@@ -59,18 +59,18 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 #endif
 
   const int kBlockSize = 1 << 15;  // 32768;
-  while (count >= static_cast<uint64>(kBlockSize)) {
+  while (count >= (uint64)(kBlockSize)) {
     seed = HashDjb2_SSE(src, kBlockSize, seed);
     src += kBlockSize;
     count -= kBlockSize;
   }
-  int remainder = static_cast<int>(count) & ~15;
+  int remainder = (int)(count) & ~15;
   if (remainder) {
     seed = HashDjb2_SSE(src, remainder, seed);
     src += remainder;
     count -= remainder;
   }
-  remainder = static_cast<int>(count) & 15;
+  remainder = (int)(count) & 15;
   if (remainder) {
     seed = HashDjb2_C(src, remainder, seed);
   }
@@ -168,7 +168,7 @@ LIBYUV_API
 double SumSquareErrorToPsnr(uint64 sse, uint64 count) {
   double psnr;
   if (sse > 0) {
-    double mse = static_cast<double>(count) / static_cast<double>(sse);
+    double mse = (double)(count) / (double)(sse);
     psnr = 10.0 * log10(255.0 * 255.0 * mse);
   } else {
     psnr = kMaxPsnr;      // Limit to prevent divide by 0

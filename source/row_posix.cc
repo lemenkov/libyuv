@@ -952,7 +952,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_argb)) // %4
+  : "r"((intptr_t)(src_stride_argb)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1020,7 +1020,7 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_argb)) // %4
+  : "r"((intptr_t)(src_stride_argb)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1090,7 +1090,7 @@ void ARGBToUVRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_argb)) // %4
+  : "r"((intptr_t)(src_stride_argb)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1161,7 +1161,7 @@ void ARGBToUVJRow_Unaligned_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_argb))
+  : "r"((intptr_t)(src_stride_argb))
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1553,7 +1553,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_bgra)) // %4
+  : "r"((intptr_t)(src_stride_bgra)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1623,7 +1623,7 @@ void BGRAToUVRow_Unaligned_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_bgra)) // %4
+  : "r"((intptr_t)(src_stride_bgra)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1837,7 +1837,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_abgr)) // %4
+  : "r"((intptr_t)(src_stride_abgr)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1907,7 +1907,7 @@ void ABGRToUVRow_Unaligned_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_abgr)) // %4
+  : "r"((intptr_t)(src_stride_abgr)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1973,7 +1973,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_rgba))
+  : "r"((intptr_t)(src_stride_rgba))
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -2043,7 +2043,7 @@ void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"(static_cast<intptr_t>(src_stride_rgba)) // %4
+  : "r"((intptr_t)(src_stride_rgba)) // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -2056,20 +2056,20 @@ void RGBAToUVRow_Unaligned_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #endif  // HAS_ARGBTOUVROW_SSSE3
 
 #ifdef HAS_I422TOARGBROW_SSSE3
-#define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
-#define UG -25 /* static_cast<int8>(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(63,(int8)(2.018 * 64)) */
+#define UG -25 /* (int8)(-0.391 * 64 - 0.5) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* static_cast<int8>(-0.813 * 64 - 0.5) */
-#define VR 102 /* static_cast<int8>(1.596 * 64 + 0.5) */
+#define VG -52 /* (int8)(-0.813 * 64 - 0.5) */
+#define VR 102 /* (int8)(1.596 * 64 + 0.5) */
 
 // Bias
 #define BB UB * 128 + VB * 128
 #define BG UG * 128 + VG * 128
 #define BR UR * 128 + VR * 128
 
-#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
+#define YG 74 /* (int8)(1.164 * 64 + 0.5) */
 
 struct {
   vec8 kUVToB;  // 0
@@ -2964,7 +2964,7 @@ static uvec8 kShuffleMirror = {
 };
 
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
+  intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "movdqa    %3,%%xmm5                       \n"
     "lea       " MEMLEA(-0x10,0) ",%0          \n"
@@ -2993,7 +2993,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_MIRRORROW_SSE2
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
+  intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "lea       " MEMLEA(-0x10,0) ",%0          \n"
     LABELALIGN
@@ -3032,7 +3032,7 @@ static uvec8 kShuffleMirrorUV = {
 };
 void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
                        int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
+  intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "movdqa    %4,%%xmm1                       \n"
     "lea       " MEMLEA4(-0x10,0,3,2) ",%0       \n"
@@ -3071,7 +3071,7 @@ static uvec8 kARGBShuffleMirror = {
 };
 
 void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
-  intptr_t temp_width = static_cast<intptr_t>(width);
+  intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "lea       " MEMLEA4(-0x10,0,2,4) ",%0     \n"
     "movdqa    %3,%%xmm5                       \n"
@@ -3268,7 +3268,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 
 #ifdef HAS_COPYROW_X86
 void CopyRow_X86(const uint8* src, uint8* dst, int width) {
-  size_t width_tmp = static_cast<size_t>(width);
+  size_t width_tmp = (size_t)(width);
   asm volatile (
     "shr       $0x2,%2                         \n"
     "rep movsl " MEMMOVESTRING(0,1) "          \n"
@@ -3284,7 +3284,7 @@ void CopyRow_X86(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_COPYROW_ERMS
 // Unaligned Multiple of 1.
 void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
-  size_t width_tmp = static_cast<size_t>(width);
+  size_t width_tmp = (size_t)(width);
   asm volatile (
     "rep movsb " MEMMOVESTRING(0,1) "          \n"
   : "+S"(src),  // %0
@@ -3440,7 +3440,7 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_SETROW_X86
 void SetRow_X86(uint8* dst, uint32 v32, int width) {
-  size_t width_tmp = static_cast<size_t>(width);
+  size_t width_tmp = (size_t)(width);
   asm volatile (
     "shr       $0x2,%1                         \n"
     "rep stosl " MEMSTORESTRING(eax,0) "       \n"
@@ -3453,8 +3453,8 @@ void SetRow_X86(uint8* dst, uint32 v32, int width) {
 void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
                    int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
-    size_t width_tmp = static_cast<size_t>(width);
-    uint32* d = reinterpret_cast<uint32*>(dst);
+    size_t width_tmp = (size_t)(width);
+    uint32* d = (uint32*)(dst);
     asm volatile (
       "rep stosl " MEMSTORESTRING(eax,0) "     \n"
       : "+D"(d),         // %0
@@ -3528,7 +3528,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_u),       // %1
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
-  : "r"(static_cast<intptr_t>(stride_yuy2))  // %4
+  : "r"((intptr_t)(stride_yuy2))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -3642,7 +3642,7 @@ void YUY2ToUVRow_Unaligned_SSE2(const uint8* src_yuy2,
     "+r"(dst_u),       // %1
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
-  : "r"(static_cast<intptr_t>(stride_yuy2))  // %4
+  : "r"((intptr_t)(stride_yuy2))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -3752,7 +3752,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_u),       // %1
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
-  : "r"(static_cast<intptr_t>(stride_uyvy))  // %4
+  : "r"((intptr_t)(stride_uyvy))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -3863,7 +3863,7 @@ void UYVYToUVRow_Unaligned_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_u),       // %1
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
-  : "r"(static_cast<intptr_t>(stride_uyvy))  // %4
+  : "r"((intptr_t)(stride_uyvy))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -5217,7 +5217,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     "+r"(botleft),  // %1
     "+r"(dst),      // %2
     "+rm"(count)    // %3
-  : "r"(static_cast<intptr_t>(width)),  // %4
+  : "r"((intptr_t)(width)),  // %4
     "rm"(area)     // %5
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
@@ -5424,7 +5424,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -5544,7 +5544,7 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -5656,7 +5656,7 @@ void InterpolateRow_Unaligned_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -5776,7 +5776,7 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(src_ptr),    // %1
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
-  : "r"(static_cast<intptr_t>(src_stride))  // %4
+  : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -5804,7 +5804,7 @@ void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
   : "+r"(src_uv),  // %0
     "+r"(dst_uv),  // %1
     "+r"(pix)      // %2
-  : "r"(static_cast<intptr_t>(src_uv_stride))  // %3
+  : "r"((intptr_t)(src_uv_stride))  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
       , "xmm0"

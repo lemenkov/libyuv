@@ -35,7 +35,7 @@ static void JpegCopyI420(void* opaque,
                          const uint8* const* data,
                          const int* strides,
                          int rows) {
-  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Buffers* dest = (I420Buffers*)(opaque);
   I420Copy(data[0], strides[0],
            data[1], strides[1],
            data[2], strides[2],
@@ -53,7 +53,7 @@ static void JpegI422ToI420(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Buffers* dest = (I420Buffers*)(opaque);
   I422ToI420(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -71,7 +71,7 @@ static void JpegI444ToI420(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Buffers* dest = (I420Buffers*)(opaque);
   I444ToI420(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -89,7 +89,7 @@ static void JpegI411ToI420(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Buffers* dest = (I420Buffers*)(opaque);
   I411ToI420(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -107,7 +107,7 @@ static void JpegI400ToI420(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  I420Buffers* dest = static_cast<I420Buffers*>(opaque);
+  I420Buffers* dest = (I420Buffers*)(opaque);
   I400ToI420(data[0], strides[0],
              dest->y, dest->y_stride,
              dest->u, dest->u_stride,
@@ -233,7 +233,7 @@ static void JpegI420ToARGB(void* opaque,
                          const uint8* const* data,
                          const int* strides,
                          int rows) {
-  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  ARGBBuffers* dest = (ARGBBuffers*)(opaque);
   I420ToARGB(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -247,7 +247,7 @@ static void JpegI422ToARGB(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  ARGBBuffers* dest = (ARGBBuffers*)(opaque);
   I422ToARGB(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -261,7 +261,7 @@ static void JpegI444ToARGB(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  ARGBBuffers* dest = (ARGBBuffers*)(opaque);
   I444ToARGB(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -275,7 +275,7 @@ static void JpegI411ToARGB(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  ARGBBuffers* dest = (ARGBBuffers*)(opaque);
   I411ToARGB(data[0], strides[0],
              data[1], strides[1],
              data[2], strides[2],
@@ -289,7 +289,7 @@ static void JpegI400ToARGB(void* opaque,
                            const uint8* const* data,
                            const int* strides,
                            int rows) {
-  ARGBBuffers* dest = static_cast<ARGBBuffers*>(opaque);
+  ARGBBuffers* dest = (ARGBBuffers*)(opaque);
   I400ToARGB(data[0], strides[0],
              dest->argb, dest->argb_stride,
              dest->w, rows);

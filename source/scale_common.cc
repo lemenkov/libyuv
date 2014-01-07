@@ -204,8 +204,8 @@ void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 // (1-f)a + fb can be replaced with a + f(b-a)
-#define BLENDER(a, b, f) static_cast<uint8>(static_cast<int>(a) + \
-    (static_cast<int>(f) * (static_cast<int>(b) - static_cast<int>(a)) >> 16))
+#define BLENDER(a, b, f) (uint8)((int)(a) + \
+    ((int)(f) * ((int)(b) - (int)(a)) >> 16))
 
 void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx) {
@@ -232,7 +232,7 @@ void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 
 void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
                          int dst_width, int x32, int dx) {
-  int64 x = static_cast<int64>(x32);
+  int64 x = (int64)(x32);
   for (int j = 0; j < dst_width - 1; j += 2) {
     int64 xi = x >> 16;
     int a = src_ptr[xi];
@@ -332,8 +332,8 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleARGBRowDown2_C(const uint8* src_argb,
                          ptrdiff_t /* src_stride */,
                          uint8* dst_argb, int dst_width) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
 
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[1];
@@ -378,8 +378,8 @@ void ScaleARGBRowDown2Box_C(const uint8* src_argb, ptrdiff_t src_stride,
 void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t /* src_stride */,
                             int src_stepx,
                             uint8* dst_argb, int dst_width) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
 
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[0];
@@ -413,8 +413,8 @@ void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
 // Scales a single row of pixels using point sampling.
 void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
                      int dst_width, int x, int dx) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     dst[0] = src[x >> 16];
     x += dx;
@@ -429,9 +429,9 @@ void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
 
 void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
                        int dst_width, int x32, int dx) {
-  int64 x = static_cast<int64>(x32);
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  int64 x = (int64)(x32);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     dst[0] = src[x >> 16];
     x += dx;
@@ -447,8 +447,8 @@ void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
 // Scales a single row of pixels up by 2x using point sampling.
 void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int, int) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     dst[1] = dst[0] = src[0];
     src += 1;
@@ -461,7 +461,7 @@ void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
 
 // Mimics SSSE3 blender
 #define BLENDER1(a, b, f) ((a) * (0x7f ^ f) + (b) * f) >> 7
-#define BLENDERC(a, b, f, s) static_cast<uint32>( \
+#define BLENDERC(a, b, f, s) (uint32)( \
     BLENDER1(((a) >> s) & 255, ((b) >> s) & 255, f) << s)
 #define BLENDER(a, b, f) \
     BLENDERC(a, b, f, 24) | BLENDERC(a, b, f, 16) | \
@@ -469,8 +469,8 @@ void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
 
 void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx) {
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     int xi = x >> 16;
     int xf = (x >> 9) & 0x7f;
@@ -497,9 +497,9 @@ void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
 
 void ScaleARGBFilterCols64_C(uint8* dst_argb, const uint8* src_argb,
                              int dst_width, int x32, int dx) {
-  int64 x = static_cast<int64>(x32);
-  const uint32* src = reinterpret_cast<const uint32*>(src_argb);
-  uint32* dst = reinterpret_cast<uint32*>(dst_argb);
+  int64 x = (int64)(x32);
+  const uint32* src = (const uint32*)(src_argb);
+  uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {
     int64 xi = x >> 16;
     int xf = (x >> 9) & 0x7f;
@@ -656,12 +656,12 @@ FilterMode ScaleFilterReduce(int src_width, int src_height,
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv_C(int num, int div) {
-  return static_cast<int>((static_cast<int64>(num) << 16) / div);
+  return (int)(((int64)(num) << 16) / div);
 }
 
 // Divide num by div and return as 16.16 fixed point result.
 int FixedDiv1_C(int num, int div) {
-  return static_cast<int>(((static_cast<int64>(num) << 16) - 0x00010001) /
+  return (int)((((int64)(num) << 16) - 0x00010001) /
                           (div - 1));
 }
 

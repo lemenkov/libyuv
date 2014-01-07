@@ -377,8 +377,8 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
     : "+r"(src),    // %0
       "+r"(dst),    // %1
       "+r"(width)   // %2
-    : "r"(static_cast<intptr_t>(src_stride)),  // %3
-      "r"(static_cast<intptr_t>(dst_stride))   // %4
+    : "r"((intptr_t)(src_stride)),  // %3
+      "r"((intptr_t)(dst_stride))   // %4
     : "memory", "cc"
   #if defined(__SSE2__)
       , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
@@ -648,8 +648,8 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
-  : "r"(static_cast<intptr_t>(src_stride)),  // %3
-    "r"(static_cast<intptr_t>(dst_stride))   // %4
+  : "r"((intptr_t)(src_stride)),  // %3
+    "r"((intptr_t)(dst_stride))   // %4
   : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
     "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",  "xmm14",  "xmm15"
@@ -758,9 +758,9 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "+r"(dst_a),  // %1
     "+r"(dst_b),  // %2
     "+r"(w)   // %3
-  : "r"(static_cast<intptr_t>(src_stride)),    // %4
-    "r"(static_cast<intptr_t>(dst_stride_a)),  // %5
-    "r"(static_cast<intptr_t>(dst_stride_b))   // %6
+  : "r"((intptr_t)(src_stride)),    // %4
+    "r"((intptr_t)(dst_stride_a)),  // %5
+    "r"((intptr_t)(dst_stride_b))   // %6
   : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7",
     "xmm8", "xmm9"

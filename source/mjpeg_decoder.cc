@@ -81,7 +81,7 @@ bool MJpegDecoder::LoadFrame(const uint8* src, size_t src_len) {
   }
 
   buf_.data = src;
-  buf_.len = static_cast<int>(src_len);
+  buf_.len = (int)(src_len);
   buf_vec_.pos = 0;
   decompress_struct_->client_data = &buf_vec_;
 #ifdef HAVE_SETJMP
@@ -391,7 +391,7 @@ void MJpegDecoder::init_source(j_decompress_ptr cinfo) {
 }
 
 boolean MJpegDecoder::fill_input_buffer(j_decompress_ptr cinfo) {
-  BufferVector* buf_vec = static_cast<BufferVector*>(cinfo->client_data);
+  BufferVector* buf_vec = (BufferVector*)(cinfo->client_data);
   if (buf_vec->pos >= buf_vec->len) {
     assert(0 && "No more data");
     // ERROR: No more data
@@ -427,7 +427,7 @@ void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
   // ERROR: Error in jpeglib: buf
 #endif
 
-  SetJmpErrorMgr* mgr = reinterpret_cast<SetJmpErrorMgr*>(cinfo->err);
+  SetJmpErrorMgr* mgr = (SetJmpErrorMgr*)(cinfo->err);
   // This rewinds the call stack to the point of the corresponding setjmp()
   // and causes it to return (for a second time) with value 1.
   longjmp(mgr->setjmp_buffer, 1);
@@ -507,7 +507,7 @@ void MJpegDecoder::SetScanlinePointers(uint8** data) {
 }
 
 inline bool MJpegDecoder::DecodeImcuRow() {
-  return static_cast<unsigned int>(GetImageScanlinesPerImcuRow()) ==
+  return (unsigned int)(GetImageScanlinesPerImcuRow()) ==
       jpeg_read_raw_data(decompress_struct_,
                          scanlines_,
                          GetImageScanlinesPerImcuRow());

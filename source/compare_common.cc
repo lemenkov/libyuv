@@ -19,7 +19,7 @@ uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count) {
   uint32 sse = 0u;
   for (int i = 0; i < count; ++i) {
     int diff = src_a[i] - src_b[i];
-    sse += static_cast<uint32>(diff * diff);
+    sse += (uint32)(diff * diff);
   }
   return sse;
 }

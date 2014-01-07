@@ -171,14 +171,14 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int64 xlast = x + static_cast<int64>(dst_width - 1) * dx;
+  int64 xlast = x + (int64)(dst_width - 1) * dx;
   int64 xl = (dx >= 0) ? x : xlast;
   int64 xr = (dx >= 0) ? xlast : x;
   xl = (xl >> 16) & ~3;  // Left edge aligned.
   xr = (xr >> 16) + 1;  // Right most pixel used.
   int clip_src_width = (((xr - xl) + 1 + 3) & ~3) * 4;  // Width aligned to 4.
   src_argb += xl * 4;
-  x -= static_cast<int>(xl << 16);
+  x -= (int)(xl << 16);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
@@ -679,13 +679,13 @@ static void ScaleARGB(const uint8* src, int src_stride,
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
   if (clip_x) {
-    int64 clipf = static_cast<int64>(clip_x) * dx;
+    int64 clipf = (int64)(clip_x) * dx;
     x += (clipf & 0xffff);
     src += (clipf >> 16) * 4;
     dst += clip_x * 4;
   }
   if (clip_y) {
-    int64 clipf = static_cast<int64>(clip_y) * dy;
+    int64 clipf = (int64)(clip_y) * dy;
     y += (clipf & 0xffff);
     src += (clipf >> 16) * src_stride;
     dst += clip_y * dst_stride;

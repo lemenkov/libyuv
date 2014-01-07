@@ -33,7 +33,7 @@ static __inline int32 clamp255(int32 v) {
 
 static __inline uint32 Clamp(int32 val) {
   int v = clamp0(val);
-  return static_cast<uint32>(clamp255(v));
+  return (uint32)(clamp255(v));
 }
 
 static __inline uint32 Abs(int32 v) {
@@ -51,7 +51,7 @@ static __inline int32 clamp255(int32 v) {
 
 static __inline uint32 Clamp(int32 val) {
   int v = clamp0(val);
-  return static_cast<uint32>(clamp255(v));
+  return (uint32)(clamp255(v));
 }
 
 static __inline uint32 Abs(int32 v) {
@@ -60,7 +60,7 @@ static __inline uint32 Abs(int32 v) {
 #endif  // USE_BRANCHLESS
 
 #ifdef LIBYUV_LITTLE_ENDIAN
-#define WRITEWORD(p, v) *reinterpret_cast<uint32*>(p) = v
+#define WRITEWORD(p, v) *(uint32*)(p) = v
 #else
 static inline void WRITEWORD(uint8* p, uint32 v) {
   p[0] = (uint8)(v & 255);
@@ -187,7 +187,7 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 b0 = src_argb[0] >> 3;
     uint8 g0 = src_argb[1] >> 2;
     uint8 r0 = src_argb[2] >> 3;
-    *reinterpret_cast<uint16*>(dst_rgb) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16*)(dst_rgb) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
@@ -201,7 +201,7 @@ void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 g1 = src_argb[5] >> 3;
     uint8 r1 = src_argb[6] >> 3;
     uint8 a1 = src_argb[7] >> 7;
-    *reinterpret_cast<uint32*>(dst_rgb) =
+    *(uint32*)(dst_rgb) =
         b0 | (g0 << 5) | (r0 << 10) | (a0 << 15) |
         (b1 << 16) | (g1 << 21) | (r1 << 26) | (a1 << 31);
     dst_rgb += 4;
@@ -212,7 +212,7 @@ void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 g0 = src_argb[1] >> 3;
     uint8 r0 = src_argb[2] >> 3;
     uint8 a0 = src_argb[3] >> 7;
-    *reinterpret_cast<uint16*>(dst_rgb) =
+    *(uint16*)(dst_rgb) =
         b0 | (g0 << 5) | (r0 << 10) | (a0 << 15);
   }
 }
@@ -227,7 +227,7 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 g1 = src_argb[5] >> 4;
     uint8 r1 = src_argb[6] >> 4;
     uint8 a1 = src_argb[7] >> 4;
-    *reinterpret_cast<uint32*>(dst_rgb) =
+    *(uint32*)(dst_rgb) =
         b0 | (g0 << 4) | (r0 << 8) | (a0 << 12) |
         (b1 << 16) | (g1 << 20) | (r1 << 24) | (a1 << 28);
     dst_rgb += 4;
@@ -238,7 +238,7 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 g0 = src_argb[1] >> 4;
     uint8 r0 = src_argb[2] >> 4;
     uint8 a0 = src_argb[3] >> 4;
-    *reinterpret_cast<uint16*>(dst_rgb) =
+    *(uint16*)(dst_rgb) =
         b0 | (g0 << 4) | (r0 << 8) | (a0 << 12);
   }
 }
@@ -829,7 +829,7 @@ void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
     int b_diff = b - b_sub;
     int c_diff = c - c_sub;
     int sobel = Abs(a_diff + b_diff * 2 + c_diff);
-    dst_sobelx[i] = static_cast<uint8>(clamp255(sobel));
+    dst_sobelx[i] = (uint8)(clamp255(sobel));
   }
 }
 
@@ -846,7 +846,7 @@ void SobelYRow_C(const uint8* src_y0, const uint8* src_y1,
     int b_diff = b - b_sub;
     int c_diff = c - c_sub;
     int sobel = Abs(a_diff + b_diff * 2 + c_diff);
-    dst_sobely[i] = static_cast<uint8>(clamp255(sobel));
+    dst_sobely[i] = (uint8)(clamp255(sobel));
   }
 }
 
@@ -856,10 +856,10 @@ void SobelRow_C(const uint8* src_sobelx, const uint8* src_sobely,
     int r = src_sobelx[i];
     int b = src_sobely[i];
     int s = clamp255(r + b);
-    dst_argb[0] = static_cast<uint8>(s);
-    dst_argb[1] = static_cast<uint8>(s);
-    dst_argb[2] = static_cast<uint8>(s);
-    dst_argb[3] = static_cast<uint8>(255u);
+    dst_argb[0] = (uint8)(s);
+    dst_argb[1] = (uint8)(s);
+    dst_argb[2] = (uint8)(s);
+    dst_argb[3] = (uint8)(255u);
     dst_argb += 4;
   }
 }
@@ -870,7 +870,7 @@ void SobelToPlaneRow_C(const uint8* src_sobelx, const uint8* src_sobely,
     int r = src_sobelx[i];
     int b = src_sobely[i];
     int s = clamp255(r + b);
-    dst_y[i] = static_cast<uint8>(s);
+    dst_y[i] = (uint8)(s);
   }
 }
 
@@ -880,10 +880,10 @@ void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
     int r = src_sobelx[i];
     int b = src_sobely[i];
     int g = clamp255(r + b);
-    dst_argb[0] = static_cast<uint8>(b);
-    dst_argb[1] = static_cast<uint8>(g);
-    dst_argb[2] = static_cast<uint8>(r);
-    dst_argb[3] = static_cast<uint8>(255u);
+    dst_argb[0] = (uint8)(b);
+    dst_argb[1] = (uint8)(g);
+    dst_argb[2] = (uint8)(r);
+    dst_argb[3] = (uint8)(255u);
     dst_argb += 4;
   }
 }
@@ -901,15 +901,15 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 // C reference code that mimics the YUV assembly.
 
-#define YG 74 /* static_cast<int8>(1.164 * 64 + 0.5) */
+#define YG 74 /* (int8)(1.164 * 64 + 0.5) */
 
-#define UB 127 /* min(63,static_cast<int8>(2.018 * 64)) */
-#define UG -25 /* static_cast<int8>(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(63,(int8)(2.018 * 64)) */
+#define UG -25 /* (int8)(-0.391 * 64 - 0.5) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* static_cast<int8>(-0.813 * 64 - 0.5) */
-#define VR 102 /* static_cast<int8>(1.596 * 64 + 0.5) */
+#define VG -52 /* (int8)(-0.813 * 64 - 0.5) */
+#define VR 102 /* (int8)(1.596 * 64 + 0.5) */
 
 // Bias
 #define BB UB * 128 + VB * 128
@@ -918,10 +918,10 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
-  int32 y1 = (static_cast<int32>(y) - 16) * YG;
-  *b = Clamp(static_cast<int32>((u * UB + v * VB) - (BB) + y1) >> 6);
-  *g = Clamp(static_cast<int32>((u * UG + v * VG) - (BG) + y1) >> 6);
-  *r = Clamp(static_cast<int32>((u * UR + v * VR) - (BR) + y1) >> 6);
+  int32 y1 = ((int32)(y) - 16) * YG;
+  *b = Clamp((int32)((u * UB + v * VB) - (BB) + y1) >> 6);
+  *g = Clamp((int32)((u * UG + v * VG) - (BG) + y1) >> 6);
+  *r = Clamp((int32)((u * UR + v * VR) - (BR) + y1) >> 6);
 }
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
@@ -1054,7 +1054,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
     b1 = b1 >> 4;
     g1 = g1 >> 4;
     r1 = r1 >> 4;
-    *reinterpret_cast<uint32*>(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
+    *(uint32*)(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
         (b1 << 16) | (g1 << 20) | (r1 << 24) | 0xf000f000;
     src_y += 2;
     src_u += 1;
@@ -1066,7 +1066,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
     b0 = b0 >> 4;
     g0 = g0 >> 4;
     r0 = r0 >> 4;
-    *reinterpret_cast<uint16*>(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
+    *(uint16*)(dst_argb4444) = b0 | (g0 << 4) | (r0 << 8) |
         0xf000;
   }
 }
@@ -1091,7 +1091,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 3;
     r1 = r1 >> 3;
-    *reinterpret_cast<uint32*>(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
+    *(uint32*)(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
         (b1 << 16) | (g1 << 21) | (r1 << 26) | 0x80008000;
     src_y += 2;
     src_u += 1;
@@ -1103,7 +1103,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
     b0 = b0 >> 3;
     g0 = g0 >> 3;
     r0 = r0 >> 3;
-    *reinterpret_cast<uint16*>(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
+    *(uint16*)(dst_argb1555) = b0 | (g0 << 5) | (r0 << 10) |
         0x8000;
   }
 }
@@ -1128,7 +1128,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 2;
     r1 = r1 >> 3;
-    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+    *(uint32*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
         (b1 << 16) | (g1 << 21) | (r1 << 27);
     src_y += 2;
     src_u += 1;
@@ -1140,7 +1140,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
-    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
@@ -1249,7 +1249,7 @@ void NV12ToRGB565Row_C(const uint8* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 2;
     r1 = r1 >> 3;
-    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+    *(uint32*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
         (b1 << 16) | (g1 << 21) | (r1 << 27);
     src_y += 2;
     usrc_v += 2;
@@ -1260,7 +1260,7 @@ void NV12ToRGB565Row_C(const uint8* src_y,
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
-    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
@@ -1283,7 +1283,7 @@ void NV21ToRGB565Row_C(const uint8* src_y,
     b1 = b1 >> 3;
     g1 = g1 >> 2;
     r1 = r1 >> 3;
-    *reinterpret_cast<uint32*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
+    *(uint32*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
         (b1 << 16) | (g1 << 21) | (r1 << 27);
     src_y += 2;
     vsrc_u += 2;
@@ -1294,7 +1294,7 @@ void NV21ToRGB565Row_C(const uint8* src_y,
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
-    *reinterpret_cast<uint16*>(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
+    *(uint16*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
   }
 }
 
@@ -1456,8 +1456,8 @@ void MirrorUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) {
 }
 
 void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width) {
-  const uint32* src32 = reinterpret_cast<const uint32*>(src);
-  uint32* dst32 = reinterpret_cast<uint32*>(dst);
+  const uint32* src32 = (const uint32*)(src);
+  uint32* dst32 = (uint32*)(dst);
   src32 += width - 1;
   for (int x = 0; x < width - 1; x += 2) {
     dst32[x] = src32[0];
@@ -1516,7 +1516,7 @@ void SetRow_C(uint8* dst, uint32 v8, int count) {
 void ARGBSetRows_C(uint8* dst, uint32 v32, int width,
                  int dst_stride, int height) {
   for (int y = 0; y < height; ++y) {
-    uint32* d = reinterpret_cast<uint32*>(dst);
+    uint32* d = (uint32*)(dst);
     for (int x = 0; x < width; ++x) {
       d[x] = v32;
     }
@@ -1773,10 +1773,10 @@ void CumulativeSumToAverageRow_C(const int32* tl, const int32* bl,
                                 int w, int area, uint8* dst, int count) {
   float ooa = 1.0f / area;
   for (int i = 0; i < count; ++i) {
-    dst[0] = static_cast<uint8>((bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) * ooa);
-    dst[1] = static_cast<uint8>((bl[w + 1] + tl[1] - bl[1] - tl[w + 1]) * ooa);
-    dst[2] = static_cast<uint8>((bl[w + 2] + tl[2] - bl[2] - tl[w + 2]) * ooa);
-    dst[3] = static_cast<uint8>((bl[w + 3] + tl[3] - bl[3] - tl[w + 3]) * ooa);
+    dst[0] = (uint8)((bl[w + 0] + tl[0] - bl[0] - tl[w + 0]) * ooa);
+    dst[1] = (uint8)((bl[w + 1] + tl[1] - bl[1] - tl[w + 1]) * ooa);
+    dst[2] = (uint8)((bl[w + 2] + tl[2] - bl[2] - tl[w + 2]) * ooa);
+    dst[3] = (uint8)((bl[w + 3] + tl[3] - bl[3] - tl[w + 3]) * ooa);
     dst += 4;
     tl += 4;
     bl += 4;
@@ -1792,10 +1792,10 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
   uv[0] = uv_dudv[0];
   uv[1] = uv_dudv[1];
   for (int i = 0; i < width; ++i) {
-    int x = static_cast<int>(uv[0]);
-    int y = static_cast<int>(uv[1]);
-    *reinterpret_cast<uint32*>(dst_argb) =
-        *reinterpret_cast<const uint32*>(src_argb + y * src_argb_stride +
+    int x = (int)(uv[0]);
+    int y = (int)(uv[1]);
+    *(uint32*)(dst_argb) =
+        *(const uint32*)(src_argb + y * src_argb_stride +
                                          x * 4);
     dst_argb += 4;
     uv[0] += uv_dudv[2];
@@ -1820,7 +1820,7 @@ void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
     return;
   }
   if (source_y_fraction == 128) {
-    HalfRow_C(src_ptr, static_cast<int>(src_stride), dst_ptr, width);
+    HalfRow_C(src_ptr, (int)(src_stride), dst_ptr, width);
     return;
   }
   int y1_fraction = source_y_fraction;
@@ -2060,10 +2060,10 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
                          uint8* dst_argb, const float* poly,
                          int width) {
   for (int i = 0; i < width; ++i) {
-    float b = static_cast<float>(src_argb[0]);
-    float g = static_cast<float>(src_argb[1]);
-    float r = static_cast<float>(src_argb[2]);
-    float a = static_cast<float>(src_argb[3]);
+    float b = (float)(src_argb[0]);
+    float g = (float)(src_argb[1]);
+    float r = (float)(src_argb[2]);
+    float a = (float)(src_argb[3]);
     float b2 = b * b;
     float g2 = g * g;
     float r2 = r * r;
@@ -2085,10 +2085,10 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
     dr += poly[14] * r3;
     da += poly[15] * a3;
 
-    dst_argb[0] = Clamp(static_cast<int32>(db));
-    dst_argb[1] = Clamp(static_cast<int32>(dg));
-    dst_argb[2] = Clamp(static_cast<int32>(dr));
-    dst_argb[3] = Clamp(static_cast<int32>(da));
+    dst_argb[0] = Clamp((int32)(db));
+    dst_argb[1] = Clamp((int32)(dg));
+    dst_argb[2] = Clamp((int32)(dr));
+    dst_argb[3] = Clamp((int32)(da));
     src_argb += 4;
     dst_argb += 4;
   }

@@ -75,9 +75,13 @@ typedef signed char int8;
 #endif
 
 #ifndef ALIGNP
+#ifdef __cplusplus
 #define ALIGNP(p, t) \
     (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
     ((t) - 1)) & ~((t) - 1))))
+#else
+#define ALIGNP(p, t) ((uint8*)((((uintptr_t)(p) + ((t) - 1)) & ~((t) - 1))))
+#endif
 #endif
 
 #if !defined(LIBYUV_API)

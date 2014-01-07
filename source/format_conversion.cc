@@ -22,10 +22,10 @@ extern "C" {
 
 // generate a selector mask useful for pshufb
 static uint32 GenerateSelector(int select0, int select1) {
-  return static_cast<uint32>(select0) |
-         static_cast<uint32>((select1 + 4) << 8) |
-         static_cast<uint32>((select0 + 8) << 16) |
-         static_cast<uint32>((select1 + 12) << 24);
+  return (uint32)(select0) |
+         (uint32)((select1 + 4) << 8) |
+         (uint32)((select0 + 8) << 16) |
+         (uint32)((select1 + 12) << 24);
 }
 
 static int MakeSelectors(const int blue_index,

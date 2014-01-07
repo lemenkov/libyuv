@@ -717,7 +717,7 @@ int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   return ARGBShuffle(src_argb, src_stride_argb,
                      dst_rgba, dst_stride_rgba,
-                     reinterpret_cast<const uint8*>(&kShuffleMaskARGBToRGBA),
+                     (const uint8*)(&kShuffleMaskARGBToRGBA),
                      width, height);
 }
 

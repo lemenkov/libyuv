@@ -189,7 +189,7 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
-  : "r"(static_cast<intptr_t>(src_stride))   // %3
+  : "r"((intptr_t)(src_stride))   // %3
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -295,7 +295,7 @@ void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
-  : "r"(static_cast<intptr_t>(src_stride))   // %3
+  : "r"((intptr_t)(src_stride))   // %3
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -387,7 +387,7 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "+r"(dst_ptr),     // %1
     "+r"(dst_width),   // %2
     "+r"(stridex3)     // %3
-  : "r"(static_cast<intptr_t>(src_stride))    // %4
+  : "r"((intptr_t)(src_stride))    // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -496,7 +496,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
   : "+r"(src_ptr),   // %0
     "+r"(dst_ptr),   // %1
     "+r"(dst_width)  // %2
-  : "r"(static_cast<intptr_t>(src_stride)),  // %3
+  : "r"((intptr_t)(src_stride)),  // %3
     "m"(kMadd21)     // %4
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
@@ -570,7 +570,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     : "+r"(src_ptr),   // %0
       "+r"(dst_ptr),   // %1
       "+r"(dst_width)  // %2
-    : "r"(static_cast<intptr_t>(src_stride)),  // %3
+    : "r"((intptr_t)(src_stride)),  // %3
       "m"(kMadd21)     // %4
     : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
@@ -652,7 +652,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
-  : "r"(static_cast<intptr_t>(src_stride))  // %3
+  : "r"((intptr_t)(src_stride))  // %3
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -720,7 +720,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
-  : "r"(static_cast<intptr_t>(src_stride))   // %3
+  : "r"((intptr_t)(src_stride))   // %3
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -777,7 +777,7 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "+r"(tmp_src),     // %3
     "+r"(src_width),   // %4
     "+rm"(src_height)  // %5
-  : "rm"(static_cast<intptr_t>(src_stride))  // %6
+  : "rm"((intptr_t)(src_stride))  // %6
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
@@ -970,7 +970,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
   : "+r"(src_argb),   // %0
     "+r"(dst_argb),   // %1
     "+r"(dst_width)   // %2
-  : "r"(static_cast<intptr_t>(src_stride))   // %3
+  : "r"((intptr_t)(src_stride))   // %3
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -986,7 +986,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
 void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_stepx,
                                uint8* dst_argb, int dst_width) {
-  intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
+  intptr_t src_stepx_x4 = (intptr_t)(src_stepx);
   intptr_t src_stepx_x12 = 0;
   asm volatile (
     "lea       " MEMLEA3(0x00,1,4) ",%1        \n"
@@ -1027,9 +1027,9 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
 void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
                                   ptrdiff_t src_stride, int src_stepx,
                                   uint8* dst_argb, int dst_width) {
-  intptr_t src_stepx_x4 = static_cast<intptr_t>(src_stepx);
+  intptr_t src_stepx_x4 = (intptr_t)(src_stepx);
   intptr_t src_stepx_x12 = 0;
-  intptr_t row1 = static_cast<intptr_t>(src_stride);
+  intptr_t row1 = (intptr_t)(src_stride);
   asm volatile (
     "lea       " MEMLEA3(0x00,1,4) ",%1        \n"
     "lea       " MEMLEA4(0x00,1,1,2) ",%4      \n"

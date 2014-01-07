@@ -22,17 +22,25 @@ extern "C" {
 
 #define IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
 
-// TODO(fbarchard): Port to C.
+#ifdef __cplusplus
 #define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
   var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));                   \
   var = reinterpret_cast<uint8*>                                               \
         ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63)
+#else
+#define align_buffer_64(var, size)                                             \
+  uint8* var;                                                                  \
+  uint8* var##_mem;                                                            \
+  var##_mem = (uint8*)(malloc((size) + 63));                                   \
+  var = (uint8*) (((intptr_t)(var##_mem) + 63) & ~63)
+#endif
 
 #define free_aligned_buffer_64(var) \
   free(var##_mem);  \
   var = 0
+
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)

@@ -434,9 +434,9 @@ static void ScalePlaneBox(int src_width, int src_height,
       y = (src_height << 16);
     }
     int boxheight = (y >> 16) - iy;
-    ScaleAddRows(src, src_stride, reinterpret_cast<uint16*>(row16),
+    ScaleAddRows(src, src_stride, (uint16*)(row16),
                  src_width, boxheight);
-    ScaleAddCols(dst_width, boxheight, x, dx, reinterpret_cast<uint16*>(row16),
+    ScaleAddCols(dst_width, boxheight, x, dx, (uint16*)(row16),
                  dst_ptr);
     dst_ptr += dst_stride;
   }
