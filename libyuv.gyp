@@ -8,8 +8,57 @@
 
 {
   'variables': {
-     'use_system_libjpeg%': 0,
+    'use_system_libjpeg%': 0,
+    'build_neon': 0,
+    'conditions': [
+       ['OS == "android" or OS == "ios"', {
+         # TODO(noahric): Also check tool version for armv7
+         'build_neon': 1,
+       }],
+    ],
   },
+  'conditions': [
+    [ 'build_neon != 0', {
+      'targets': [
+        # The NEON-specific components.
+        {
+          'target_name': 'libyuv_neon',
+          'type': 'static_library',
+          'standalone_static_library': 1,
+          'defines': [
+            'LIBYUV_NEON',
+          ],
+          # TODO(noahric): This should remove whatever mfpu is set, not
+          # just vfpv3-d16.
+          'cflags!': [
+            '-mfpu=vfp',
+            '-mfpu=vfpv3',
+            '-mfpu=vfpv3-d16',
+          ],
+          'cflags': [
+            '-mfpu=neon',
+          ],
+          'include_dirs': [
+            'include',
+            '.',
+          ],
+          'direct_dependent_settings': {
+            'include_dirs': [
+              'include',
+              '.',
+            ],
+          },
+          'sources': [
+            # sources.
+            'source/compare_neon.cc',
+            'source/rotate_neon.cc',
+            'source/row_neon.cc',
+            'source/scale_neon.cc',
+          ],
+        },
+      ],
+    }],
+  ],
   'targets': [
     {
       'target_name': 'libyuv',
@@ -42,6 +91,14 @@
               }
             }],
           ],
+        }],
+        [ 'build_neon != 0', {
+          'dependencies': [
+            'libyuv_neon',
+          ],
+          'defines': [
+            'LIBYUV_NEON',
+          ]
         }],
       ],
       'defines': [
@@ -87,7 +144,6 @@
         # sources.
         'source/compare.cc',
         'source/compare_common.cc',
-        'source/compare_neon.cc',
         'source/compare_posix.cc',
         'source/compare_win.cc',
         'source/convert.cc',
@@ -105,18 +161,15 @@
         'source/rotate.cc',
         'source/rotate_argb.cc',
         'source/rotate_mips.cc',
-        'source/rotate_neon.cc',
         'source/row_any.cc',
         'source/row_common.cc',
         'source/row_mips.cc',
-        'source/row_neon.cc',
         'source/row_posix.cc',
         'source/row_win.cc',
         'source/scale.cc',
         'source/scale_argb.cc',
         'source/scale_common.cc',
         'source/scale_mips.cc',
-        'source/scale_neon.cc',
         'source/scale_posix.cc',
         'source/scale_win.cc',
         'source/video_common.cc',
