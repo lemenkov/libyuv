@@ -66,7 +66,7 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
   int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
   if (need_buf) {
     int argb_size = crop_width * abs_crop_height * 4;
-    rotate_buffer = new uint8[argb_size];
+    rotate_buffer = malloc(argb_size);
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }
@@ -313,7 +313,7 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
                      tmp_argb, tmp_argb_stride,
                      crop_width, abs_crop_height, rotation);
     }
-    delete [] rotate_buffer;
+    free(rotate_buffer);
   }
 
   return r;

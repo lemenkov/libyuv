@@ -30,7 +30,7 @@ static __inline int Abs(int v) {
 // ScaleARGB ARGB, 1/2
 // This is an optimized version for scaling down a ARGB to 1/2 of
 // its original size.
-static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
+static void ScaleARGBDown2(int src_width, int src_height,
                            int dst_width, int dst_height,
                            int src_stride, int dst_stride,
                            const uint8* src_argb, uint8* dst_argb,
@@ -79,7 +79,7 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
 // ScaleARGB ARGB, 1/4
 // This is an optimized version for scaling down a ARGB to 1/4 of
 // its original size.
-static void ScaleARGBDown4Box(int /* src_width */, int /* src_height */,
+static void ScaleARGBDown4Box(int src_width, int src_height,
                               int dst_width, int dst_height,
                               int src_stride, int dst_stride,
                               const uint8* src_argb, uint8* dst_argb,

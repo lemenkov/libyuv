@@ -36,7 +36,7 @@ static __inline int Abs(int v) {
 // This is an optimized version for scaling down a plane to 1/2 of
 // its original size.
 
-static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
+static void ScalePlaneDown2(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
@@ -93,7 +93,7 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
 // This is an optimized version for scaling down a plane to 1/4 of
 // its original size.
 
-static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
+static void ScalePlaneDown4(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
@@ -137,7 +137,7 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
 
 // Scale plane down, 3/4
 
-static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
+static void ScalePlaneDown34(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,
@@ -232,7 +232,7 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
 // ggghhhii
 // Boxes are 3x3, 2x3, 3x2 and 2x2
 
-static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
+static void ScalePlaneDown38(int src_width, int src_height,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,

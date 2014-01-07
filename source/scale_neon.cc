@@ -22,7 +22,7 @@ extern "C" {
 // Provided by Fritz Koenig
 
 // Read 32x1 throw away even pixels, and write 16x1.
-void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   asm volatile (
     ".p2align   2                              \n"
@@ -68,7 +68,7 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
     ".p2align   2                              \n"
@@ -119,7 +119,7 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 // to load up the every 4th pixel into a 4 different registers.
 // Point samples 32 pixels to 24 pixels.
 void ScaleRowDown34_NEON(const uint8* src_ptr,
-                         ptrdiff_t /* src_stride */,
+                         ptrdiff_t src_stride,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
     ".p2align   2                              \n"
@@ -247,7 +247,7 @@ static vec16 kMult38_Div9 =
 
 // 32 -> 12
 void ScaleRowDown38_NEON(const uint8* src_ptr,
-                         ptrdiff_t /* src_stride */,
+                         ptrdiff_t src_stride,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
     "vld1.8     {q3}, [%3]                     \n"
@@ -558,7 +558,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
   );
 }
 
-void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst, int dst_width) {
   asm volatile (
     ".p2align   2                              \n"
@@ -615,8 +615,8 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 
 // Reads 4 pixels at a time.
 // Alignment requirement: src_argb 4 byte aligned.
-void ScaleARGBRowDownEven_NEON(const uint8* src_argb, ptrdiff_t, int src_stepx,
-                               uint8* dst_argb, int dst_width) {
+void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
+                               int src_stepx, uint8* dst_argb, int dst_width) {
   asm volatile (
     "mov        r12, %3, lsl #2                \n"
     ".p2align   2                              \n"

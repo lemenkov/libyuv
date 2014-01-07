@@ -28,7 +28,7 @@ static __inline int Abs(int v) {
 }
 
 // CPU agnostic row functions
-void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width) {
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[1];
@@ -71,7 +71,7 @@ void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width) {
   for (int x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[2];
@@ -119,7 +119,7 @@ void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width) {
   assert((dst_width % 3 == 0) && (dst_width > 0));
   for (int x = 0; x < dst_width; x += 3) {
@@ -192,7 +192,7 @@ void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
 
 // Scales a single row of pixels up by 2x using point sampling.
 void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
-                    int dst_width, int, int) {
+                    int dst_width, int x, int dx) {
   for (int j = 0; j < dst_width - 1; j += 2) {
     dst_ptr[1] = dst_ptr[0] = src_ptr[0];
     src_ptr += 1;
@@ -255,7 +255,7 @@ void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
 }
 #undef BLENDER
 
-void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t /* src_stride */,
+void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width) {
   assert(dst_width % 3 == 0);
   for (int x = 0; x < dst_width; x += 3) {
@@ -330,7 +330,7 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 void ScaleARGBRowDown2_C(const uint8* src_argb,
-                         ptrdiff_t /* src_stride */,
+                         ptrdiff_t src_stride,
                          uint8* dst_argb, int dst_width) {
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
@@ -347,7 +347,7 @@ void ScaleARGBRowDown2_C(const uint8* src_argb,
 }
 
 void ScaleARGBRowDown2Linear_C(const uint8* src_argb,
-                               ptrdiff_t /* src_stride */,
+                               ptrdiff_t src_stride,
                                uint8* dst_argb, int dst_width) {
   for (int x = 0; x < dst_width; ++x) {
     dst_argb[0] = (src_argb[0] + src_argb[4] + 1) >> 1;
@@ -375,7 +375,7 @@ void ScaleARGBRowDown2Box_C(const uint8* src_argb, ptrdiff_t src_stride,
   }
 }
 
-void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t /* src_stride */,
+void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t src_stride,
                             int src_stepx,
                             uint8* dst_argb, int dst_width) {
   const uint32* src = (const uint32*)(src_argb);
@@ -446,7 +446,7 @@ void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
 
 // Scales a single row of pixels up by 2x using point sampling.
 void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
-                        int dst_width, int, int) {
+                        int dst_width, int x, int dx) {
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
   for (int j = 0; j < dst_width - 1; j += 2) {

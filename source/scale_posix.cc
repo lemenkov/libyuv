@@ -122,7 +122,7 @@ void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t,
+void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -200,8 +200,7 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
-                                  ptrdiff_t src_stride,
+void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width) {
   asm volatile (
     LABELALIGN
@@ -227,7 +226,8 @@ void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
   );
 }
 
-void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr, ptrdiff_t,
+void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr,
+                                        ptrdiff_t src_stride,
                                         uint8* dst_ptr, int dst_width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -866,7 +866,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 // Reads 4 pixels, duplicates them and writes 8 pixels.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                       int dst_width, int /* x */, int /* dx */) {
+                       int dst_width, int x, int dx) {
   asm volatile (
     LABELALIGN
   "1:                                          \n"
@@ -893,7 +893,7 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
-                            ptrdiff_t /* src_stride */,
+                            ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) {
   asm volatile (
     LABELALIGN
@@ -918,7 +918,7 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
 }
 
 void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
-                                  ptrdiff_t /* src_stride */,
+                                  ptrdiff_t src_stride,
                                   uint8* dst_argb, int dst_width) {
   asm volatile (
     LABELALIGN
@@ -1152,7 +1152,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
 // Reads 4 pixels, duplicates them and writes 8 pixels.
 // Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
-                           int dst_width, int /* x */, int /* dx */) {
+                           int dst_width, int x, int dx) {
   asm volatile (
     LABELALIGN
   "1:                                          \n"

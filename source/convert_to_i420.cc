@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdlib.h>
+
 #include "libyuv/convert.h"
 
 #include "libyuv/format_conversion.h"
@@ -25,11 +27,7 @@ extern "C" {
 //   With MJPEG it is the compressed size of the frame.
 LIBYUV_API
 int ConvertToI420(const uint8* sample,
-#ifdef HAVE_JPEG
                   size_t sample_size,
-#else
-                  size_t /* sample_size */,
-#endif
                   uint8* y, int y_stride,
                   uint8* u, int u_stride,
                   uint8* v, int v_stride,
@@ -73,7 +71,7 @@ int ConvertToI420(const uint8* sample,
   if (need_buf) {
     int y_size = crop_width * abs_crop_height;
     int uv_size = ((crop_width + 1) / 2) * ((abs_crop_height + 1) / 2);
-    rotate_buffer = new uint8[y_size + uv_size * 2];
+    rotate_buffer = malloc(y_size + uv_size * 2);
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }
@@ -372,7 +370,7 @@ int ConvertToI420(const uint8* sample,
                      tmp_v, tmp_v_stride,
                      crop_width, abs_crop_height, rotation);
     }
-    delete [] rotate_buffer;
+    free(rotate_buffer);
   }
 
   return r;

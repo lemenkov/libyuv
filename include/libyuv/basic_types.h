@@ -80,7 +80,8 @@ typedef signed char int8;
     (reinterpret_cast<uint8*>(((reinterpret_cast<uintptr_t>(p) + \
     ((t) - 1)) & ~((t) - 1))))
 #else
-#define ALIGNP(p, t) ((uint8*)((((uintptr_t)(p) + ((t) - 1)) & ~((t) - 1))))
+#define ALIGNP(p, t) \
+    ((uint8*)((((uintptr_t)(p) + ((t) - 1)) & ~((t) - 1))))  /* NOLINT */
 #endif
 #endif
 

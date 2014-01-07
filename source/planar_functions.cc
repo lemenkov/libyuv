@@ -155,8 +155,8 @@ int I400ToI400(const uint8* src_y, int src_stride_y,
 // Convert I420 to I400.
 LIBYUV_API
 int I420ToI400(const uint8* src_y, int src_stride_y,
-               uint8*, int,  // src_u
-               uint8*, int,  // src_v
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
   if (!src_y || !dst_y || width <= 0 || height == 0) {
