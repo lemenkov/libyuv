@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 // Supported rotation.
-enum RotationMode {
+typedef enum RotationMode {
   kRotate0 = 0,  // No rotation.
   kRotate90 = 90,  // Rotate 90 degrees clockwise.
   kRotate180 = 180,  // Rotate 180 degrees.
@@ -29,7 +29,7 @@ enum RotationMode {
   kRotateNone = 0,
   kRotateClockwise = 90,
   kRotateCounterClockwise = 270,
-};
+} RotationModeEnum;
 
 // Rotate I420 frame.
 LIBYUV_API

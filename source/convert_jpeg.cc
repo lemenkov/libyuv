@@ -124,7 +124,7 @@ LIBYUV_API
 int MJPGSize(const uint8* sample, size_t sample_size,
              int* width, int* height) {
   MJpegDecoder mjpeg_decoder;
-  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret) {
     *width = mjpeg_decoder.GetWidth();
     *height = mjpeg_decoder.GetHeight();
@@ -150,7 +150,7 @@ int MJPGToI420(const uint8* sample,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret && (mjpeg_decoder.GetWidth() != w ||
               mjpeg_decoder.GetHeight() != h)) {
     // ERROR: MJPEG frame has unexpected dimensions
@@ -312,7 +312,7 @@ int MJPGToARGB(const uint8* sample,
 
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
-  bool ret = mjpeg_decoder.LoadFrame(sample, sample_size);
+  LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
   if (ret && (mjpeg_decoder.GetWidth() != w ||
               mjpeg_decoder.GetHeight() != h)) {
     // ERROR: MJPEG frame has unexpected dimensions

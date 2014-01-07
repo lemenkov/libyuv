@@ -33,14 +33,13 @@ extern "C" {
 #define align_buffer_64(var, size)                                             \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
-  var##_mem = (uint8*)(malloc((size) + 63));                                   \
-  var = (uint8*) (((intptr_t)(var##_mem) + 63) & ~63)
+  var##_mem = (uint8*)(malloc((size) + 63));                      /* NOLINT */ \
+  var = (uint8*) (((intptr_t)(var##_mem) + 63) & ~63)             /* NOLINT */
 #endif
 
 #define free_aligned_buffer_64(var) \
   free(var##_mem);  \
   var = 0
-
 
 #if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)

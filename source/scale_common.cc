@@ -533,7 +533,7 @@ void ScalePlaneVertical(int src_height,
                         int src_stride, int dst_stride,
                         const uint8* src_argb, uint8* dst_argb,
                         int x, int y, int dy,
-                        int bpp, FilterMode filtering) {
+                        int bpp, enum FilterMode filtering) {
   // TODO(fbarchard): Allow higher bpp.
   assert(bpp >= 1 && bpp <= 4);
   assert(src_height != 0);
@@ -609,9 +609,9 @@ void ScalePlaneVertical(int src_height,
 }
 
 // Simplify the filtering based on scale factors.
-FilterMode ScaleFilterReduce(int src_width, int src_height,
-                             int dst_width, int dst_height,
-                             FilterMode filtering) {
+enum FilterMode ScaleFilterReduce(int src_width, int src_height,
+                                  int dst_width, int dst_height,
+                                  enum FilterMode filtering) {
   if (src_width < 0) {
     src_width = -src_width;
   }
@@ -670,7 +670,7 @@ int FixedDiv1_C(int num, int div) {
 // Compute slope values for stepping.
 void ScaleSlope(int src_width, int src_height,
                 int dst_width, int dst_height,
-                FilterMode filtering,
+                enum FilterMode filtering,
                 int* x, int* y, int* dx, int* dy) {
   assert(x != NULL);
   assert(y != NULL);

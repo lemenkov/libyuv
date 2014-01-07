@@ -162,7 +162,7 @@ LIBYUV_API
 int ARGBRotate(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height,
-               RotationMode mode) {
+               enum RotationMode mode) {
   if (!src_argb || width <= 0 || height == 0 || !dst_argb) {
     return -1;
   }

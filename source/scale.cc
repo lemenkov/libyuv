@@ -40,7 +40,7 @@ static void ScalePlaneDown2(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
-                            FilterMode filtering) {
+                            enum FilterMode filtering) {
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
     filtering == kFilterNone ? ScaleRowDown2_C :
@@ -97,7 +97,7 @@ static void ScalePlaneDown4(int /* src_width */, int /* src_height */,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
-                            FilterMode filtering) {
+                            enum FilterMode filtering) {
   void (*ScaleRowDown4)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown4Box_C : ScaleRowDown4_C;
@@ -141,7 +141,7 @@ static void ScalePlaneDown34(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,
-                             FilterMode filtering) {
+                             enum FilterMode filtering) {
   assert(dst_width % 3 == 0);
   void (*ScaleRowDown34_0)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
@@ -236,7 +236,7 @@ static void ScalePlaneDown38(int /* src_width */, int /* src_height */,
                              int dst_width, int dst_height,
                              int src_stride, int dst_stride,
                              const uint8* src_ptr, uint8* dst_ptr,
-                             FilterMode filtering) {
+                             enum FilterMode filtering) {
   assert(dst_width % 3 == 0);
   void (*ScaleRowDown38_3)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
@@ -448,7 +448,7 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
                             int dst_width, int dst_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
-                            FilterMode filtering) {
+                            enum FilterMode filtering) {
   assert(dst_width > 0);
   assert(dst_height > 0);
 
@@ -549,7 +549,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
                           int dst_width, int dst_height,
                           int src_stride, int dst_stride,
                           const uint8* src_ptr, uint8* dst_ptr,
-                          FilterMode filtering) {
+                          enum FilterMode filtering) {
   assert(src_width != 0);
   assert(src_height != 0);
   assert(dst_width > 0);
@@ -731,7 +731,7 @@ void ScalePlane(const uint8* src, int src_stride,
                 int src_width, int src_height,
                 uint8* dst, int dst_stride,
                 int dst_width, int dst_height,
-                FilterMode filtering) {
+                enum FilterMode filtering) {
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
                                 dst_width, dst_height,
@@ -822,7 +822,7 @@ int I420Scale(const uint8* src_y, int src_stride_y,
               uint8* dst_u, int dst_stride_u,
               uint8* dst_v, int dst_stride_v,
               int dst_width, int dst_height,
-              FilterMode filtering) {
+              enum FilterMode filtering) {
   if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
       !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
@@ -852,7 +852,7 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
           uint8* dst_y, uint8* dst_u, uint8* dst_v,
           int dst_stride_y, int dst_stride_u, int dst_stride_v,
           int dst_width, int dst_height,
-          bool interpolate) {
+          LIBYUV_BOOL interpolate) {
   return I420Scale(src_y, src_stride_y,
                    src_u, src_stride_u,
                    src_v, src_stride_v,
@@ -868,7 +868,7 @@ int Scale(const uint8* src_y, const uint8* src_u, const uint8* src_v,
 LIBYUV_API
 int ScaleOffset(const uint8* src, int src_width, int src_height,
                 uint8* dst, int dst_width, int dst_height, int dst_yoffset,
-                bool interpolate) {
+                LIBYUV_BOOL interpolate) {
   if (!src || src_width <= 0 || src_height <= 0 ||
       !dst || dst_width <= 0 || dst_height <= 0 || dst_yoffset < 0 ||
       dst_yoffset >= dst_height) {

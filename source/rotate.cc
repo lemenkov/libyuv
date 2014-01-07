@@ -1102,7 +1102,7 @@ LIBYUV_API
 int RotatePlane(const uint8* src, int src_stride,
                 uint8* dst, int dst_stride,
                 int width, int height,
-                RotationMode mode) {
+                enum RotationMode mode) {
   if (!src || width <= 0 || height == 0 || !dst) {
     return -1;
   }
@@ -1150,7 +1150,7 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height,
-               RotationMode mode) {
+               enum RotationMode mode) {
   if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
       !dst_y || !dst_u || !dst_v) {
     return -1;
@@ -1226,7 +1226,7 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_u, int dst_stride_u,
                      uint8* dst_v, int dst_stride_v,
                      int width, int height,
-                     RotationMode mode) {
+                     enum RotationMode mode) {
   if (!src_y || !src_uv || width <= 0 || height == 0 ||
       !dst_y || !dst_u || !dst_v) {
     return -1;

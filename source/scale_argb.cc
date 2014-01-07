@@ -35,7 +35,7 @@ static void ScaleARGBDown2(int /* src_width */, int /* src_height */,
                            int src_stride, int dst_stride,
                            const uint8* src_argb, uint8* dst_argb,
                            int x, int dx, int y, int dy,
-                           FilterMode filtering) {
+                           enum FilterMode filtering) {
   assert(dx == 65536 * 2);  // Test scale factor of 2.
   assert((dy & 0x1ffff) == 0);  // Test vertical scale is multiple of 2.
   // Advance to odd row, even column.
@@ -128,7 +128,7 @@ static void ScaleARGBDownEven(int src_width, int src_height,
                               int src_stride, int dst_stride,
                               const uint8* src_argb, uint8* dst_argb,
                               int x, int dx, int y, int dy,
-                              FilterMode filtering) {
+                              enum FilterMode filtering) {
   assert(IS_ALIGNED(src_width, 2));
   assert(IS_ALIGNED(src_height, 2));
   int col_step = dx >> 16;
@@ -167,7 +167,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
                                   int src_stride, int dst_stride,
                                   const uint8* src_argb, uint8* dst_argb,
                                   int x, int dx, int y, int dy,
-                                  FilterMode filtering) {
+                                  enum FilterMode filtering) {
   assert(src_height > 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
@@ -267,7 +267,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
                                 int src_stride, int dst_stride,
                                 const uint8* src_argb, uint8* dst_argb,
                                 int x, int dx, int y, int dy,
-                                FilterMode filtering) {
+                                enum FilterMode filtering) {
   assert(src_width > 0);
   assert(src_height > 0);
   assert(dst_width > 0);
@@ -410,7 +410,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
                                      const uint8* src_v,
                                      uint8* dst_argb,
                                      int x, int dx, int y, int dy,
-                                     FilterMode filtering) {
+                                     enum FilterMode filtering) {
   assert(src_width > 0);
   assert(src_height > 0);
   assert(dst_width > 0);
@@ -658,7 +658,7 @@ static void ScaleARGB(const uint8* src, int src_stride,
                       uint8* dst, int dst_stride,
                       int dst_width, int dst_height,
                       int clip_x, int clip_y, int clip_width, int clip_height,
-                      FilterMode filtering) {
+                      enum FilterMode filtering) {
   // ARGB does not support box filter yet, but allow the user to pass it.
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
@@ -785,7 +785,7 @@ int ARGBScale(const uint8* src_argb, int src_stride_argb,
               int src_width, int src_height,
               uint8* dst_argb, int dst_stride_argb,
               int dst_width, int dst_height,
-              FilterMode filtering) {
+              enum FilterMode filtering) {
   if (!src_argb || src_width == 0 || src_height == 0 ||
       !dst_argb || dst_width <= 0 || dst_height <= 0) {
     return -1;

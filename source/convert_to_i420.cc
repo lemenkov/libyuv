@@ -36,7 +36,7 @@ int ConvertToI420(const uint8* sample,
                   int crop_x, int crop_y,
                   int src_width, int src_height,
                   int crop_width, int crop_height,
-                  RotationMode rotation,
+                  enum RotationMode rotation,
                   uint32 fourcc) {
   uint32 format = CanonicalFourCC(fourcc);
   if (!y || !u || !v || !sample ||
@@ -59,7 +59,7 @@ int ConvertToI420(const uint8* sample,
   // and then rotate the I420 to the final destination buffer.
   // For in-place conversion, if destination y is same as source sample,
   // also enable temporary buffer.
-  bool need_buf = (rotation && format != FOURCC_I420 &&
+  LIBYUV_BOOL need_buf = (rotation && format != FOURCC_I420 &&
       format != FOURCC_NV12 && format != FOURCC_NV21 &&
       format != FOURCC_YU12 && format != FOURCC_YV12) || y == sample;
   uint8* tmp_y = y;
