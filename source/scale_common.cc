@@ -731,7 +731,7 @@ void ScaleSlope(int src_width, int src_height,
   if (src_width < 0) {
     *x += (dst_width - 1) * *dx;
     *dx = -*dx;
-    src_width = -src_width;
+    // src_width = -src_width;   // Caller must do this.
   }
 }
 #undef CENTERSTART

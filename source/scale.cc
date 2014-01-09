@@ -379,9 +379,6 @@ static void ScalePlaneBox(int src_width, int src_height,
                           int dst_width, int dst_height,
                           int src_stride, int dst_stride,
                           const uint8* src_ptr, uint8* dst_ptr) {
-  assert(dst_width > 0);
-  assert(dst_height > 0);
-
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
@@ -389,6 +386,7 @@ static void ScalePlaneBox(int src_width, int src_height,
   int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
+  src_width = Abs(src_width);
   const int max_y = (src_height << 16);
   // TODO(fbarchard): Remove this and make AddRows handle boxheight 1.
   if (!IS_ALIGNED(src_width, 16) || dst_height * 2 > src_height) {
@@ -449,9 +447,6 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
                             int src_stride, int dst_stride,
                             const uint8* src_ptr, uint8* dst_ptr,
                             enum FilterMode filtering) {
-  assert(dst_width > 0);
-  assert(dst_height > 0);
-
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
@@ -459,6 +454,7 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
+  src_width = Abs(src_width);
 
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
@@ -550,11 +546,6 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
                           int src_stride, int dst_stride,
                           const uint8* src_ptr, uint8* dst_ptr,
                           enum FilterMode filtering) {
-  assert(src_width != 0);
-  assert(src_height != 0);
-  assert(dst_width > 0);
-  assert(dst_height > 0);
-
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
   int y = 0;
@@ -562,6 +553,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
+  src_width = Abs(src_width);
 
   void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
@@ -701,6 +693,7 @@ static void ScalePlaneSimple(int src_width, int src_height,
   int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterNone,
              &x, &y, &dx, &dy);
+  src_width = Abs(src_width);
 
   void (*ScaleCols)(uint8* dst_ptr, const uint8* src_ptr,
       int dst_width, int x, int dx) = ScaleCols_C;

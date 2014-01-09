@@ -168,9 +168,6 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
                                   const uint8* src_argb, uint8* dst_argb,
                                   int x, int dx, int y, int dy,
                                   enum FilterMode filtering) {
-  assert(src_height > 0);
-  assert(dst_width > 0);
-  assert(dst_height > 0);
   int64 xlast = x + (int64)(dst_width - 1) * dx;
   int64 xl = (dx >= 0) ? x : xlast;
   int64 xr = (dx >= 0) ? xlast : x;
@@ -268,10 +265,6 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
                                 const uint8* src_argb, uint8* dst_argb,
                                 int x, int dx, int y, int dy,
                                 enum FilterMode filtering) {
-  assert(src_width > 0);
-  assert(src_height > 0);
-  assert(dst_width > 0);
-  assert(dst_height > 0);
   void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
@@ -411,11 +404,6 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
                                      uint8* dst_argb,
                                      int x, int dx, int y, int dy,
                                      enum FilterMode filtering) {
-  assert(src_width > 0);
-  assert(src_height > 0);
-  assert(dst_width > 0);
-  assert(dst_height > 0);
-
   void (*I422ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
@@ -659,6 +647,11 @@ static void ScaleARGB(const uint8* src, int src_stride,
                       int dst_width, int dst_height,
                       int clip_x, int clip_y, int clip_width, int clip_height,
                       enum FilterMode filtering) {
+  // Initial source x/y coordinate and step values as 16.16 fixed point.
+  int x = 0;
+  int y = 0;
+  int dx = 0;
+  int dy = 0;
   // ARGB does not support box filter yet, but allow the user to pass it.
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
@@ -671,13 +664,9 @@ static void ScaleARGB(const uint8* src, int src_stride,
     src = src + (src_height - 1) * src_stride;
     src_stride = -src_stride;
   }
-  // Initial source x/y coordinate and step values as 16.16 fixed point.
-  int x = 0;
-  int y = 0;
-  int dx = 0;
-  int dy = 0;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
+  src_width = Abs(src_width);
   if (clip_x) {
     int64 clipf = (int64)(clip_x) * dx;
     x += (clipf & 0xffff);
