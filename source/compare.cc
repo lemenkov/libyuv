@@ -47,7 +47,7 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed);
 LIBYUV_API
 uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
   const int kBlockSize = 1 << 15;  // 32768;
-  int remainder = (int)(count) & ~15;
+  int remainder;
   uint32 (*HashDjb2_SSE)(const uint8* src, int count, uint32 seed) = HashDjb2_C;
 #if defined(HAS_HASHDJB2_SSE41)
   if (TestCpuFlag(kCpuHasSSE41)) {
@@ -65,6 +65,7 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
     src += kBlockSize;
     count -= kBlockSize;
   }
+  remainder = (int)(count) & ~15;
   if (remainder) {
     seed = HashDjb2_SSE(src, remainder, seed);
     src += remainder;
