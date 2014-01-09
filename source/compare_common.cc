@@ -17,7 +17,8 @@ extern "C" {
 
 uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count) {
   uint32 sse = 0u;
-  for (int i = 0; i < count; ++i) {
+  int i;
+  for (i = 0; i < count; ++i) {
     int diff = src_a[i] - src_b[i];
     sse += (uint32)(diff * diff);
   }
@@ -28,7 +29,8 @@ uint32 SumSquareError_C(const uint8* src_a, const uint8* src_b, int count) {
 // Internal C version of HashDjb2 with int sized count for efficiency.
 uint32 HashDjb2_C(const uint8* src, int count, uint32 seed) {
   uint32 hash = seed;
-  for (int i = 0; i < count; ++i) {
+  int i;
+  for (i = 0; i < count; ++i) {
     hash += (hash << 5) + src[i];
   }
   return hash;
