@@ -24,17 +24,13 @@ extern "C" {
 
 #ifdef __cplusplus
 #define align_buffer_64(var, size)                                             \
-  uint8* var;                                                                  \
-  uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));                   \
-  var = reinterpret_cast<uint8*>                                               \
-        ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63)
+  uint8* var##_mem = reinterpret_cast<uint8*>(malloc((size) + 63));            \
+  uint8* var = reinterpret_cast<uint8*>                                        \
+      ((reinterpret_cast<intptr_t>(var##_mem) + 63) & ~63)
 #else
 #define align_buffer_64(var, size)                                             \
-  uint8* var;                                                                  \
-  uint8* var##_mem;                                                            \
-  var##_mem = (uint8*)(malloc((size) + 63));                      /* NOLINT */ \
-  var = (uint8*) (((intptr_t)(var##_mem) + 63) & ~63)             /* NOLINT */
+  uint8* var##_mem = (uint8*)(malloc((size) + 63));               /* NOLINT */ \
+  uint8* var = (uint8*)(((intptr_t)(var##_mem) + 63) & ~63)       /* NOLINT */
 #endif
 
 #define free_aligned_buffer_64(var) \

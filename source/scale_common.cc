@@ -30,7 +30,8 @@ static __inline int Abs(int v) {
 // CPU agnostic row functions
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[1];
     dst[1] = src_ptr[3];
     dst += 2;
@@ -44,7 +45,8 @@ void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown2Linear_C(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (s[0] + s[1] + 1) >> 1;
     dst[1] = (s[2] + s[3] + 1) >> 1;
     dst += 2;
@@ -59,7 +61,8 @@ void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (s[0] + s[1] + t[0] + t[1] + 2) >> 2;
     dst[1] = (s[2] + s[3] + t[2] + t[3] + 2) >> 2;
     dst += 2;
@@ -73,7 +76,8 @@ void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width) {
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src_ptr[2];
     dst[1] = src_ptr[6];
     dst += 2;
@@ -87,7 +91,8 @@ void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   intptr_t stride = src_stride;
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] + src_ptr[3] +
              src_ptr[stride + 0] + src_ptr[stride + 1] +
              src_ptr[stride + 2] + src_ptr[stride + 3] +
@@ -121,8 +126,9 @@ void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width) {
+  int x;
   assert((dst_width % 3 == 0) && (dst_width > 0));
-  for (int x = 0; x < dst_width; x += 3) {
+  for (x = 0; x < dst_width; x += 3) {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[1];
     dst[2] = src_ptr[3];
@@ -134,10 +140,11 @@ void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t src_stride,
 // Filter rows 0 and 1 together, 3 : 1
 void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* d, int dst_width) {
-  assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  for (int x = 0; x < dst_width; x += 3) {
+  int x;
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (x = 0; x < dst_width; x += 3) {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
@@ -156,10 +163,11 @@ void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 // Filter rows 1 and 2 together, 1 : 1
 void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* d, int dst_width) {
-  assert((dst_width % 3 == 0) && (dst_width > 0));
   const uint8* s = src_ptr;
   const uint8* t = src_ptr + src_stride;
-  for (int x = 0; x < dst_width; x += 3) {
+  int x;
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (x = 0; x < dst_width; x += 3) {
     uint8 a0 = (s[0] * 3 + s[1] * 1 + 2) >> 2;
     uint8 a1 = (s[1] * 1 + s[2] * 1 + 1) >> 1;
     uint8 a2 = (s[2] * 1 + s[3] * 3 + 2) >> 2;
@@ -178,7 +186,8 @@ void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 // Scales a single row of pixels using point sampling.
 void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
                  int dst_width, int x, int dx) {
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     dst_ptr[0] = src_ptr[x >> 16];
     x += dx;
     dst_ptr[1] = src_ptr[x >> 16];
@@ -193,7 +202,8 @@ void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
 // Scales a single row of pixels up by 2x using point sampling.
 void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
                     int dst_width, int x, int dx) {
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     dst_ptr[1] = dst_ptr[0] = src_ptr[0];
     src_ptr += 1;
     dst_ptr += 2;
@@ -209,7 +219,8 @@ void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
 
 void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx) {
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     int xi = x >> 16;
     int a = src_ptr[xi];
     int b = src_ptr[xi + 1];
@@ -233,7 +244,8 @@ void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
 void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
                          int dst_width, int x32, int dx) {
   int64 x = (int64)(x32);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     int64 xi = x >> 16;
     int a = src_ptr[xi];
     int b = src_ptr[xi + 1];
@@ -257,8 +269,9 @@ void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
 
 void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width) {
+  int x;
   assert(dst_width % 3 == 0);
-  for (int x = 0; x < dst_width; x += 3) {
+  for (x = 0; x < dst_width; x += 3) {
     dst[0] = src_ptr[0];
     dst[1] = src_ptr[3];
     dst[2] = src_ptr[6];
@@ -271,9 +284,10 @@ void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown38_3_Box_C(const uint8* src_ptr,
                             ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width) {
-  assert((dst_width % 3 == 0) && (dst_width > 0));
   intptr_t stride = src_stride;
-  for (int i = 0; i < dst_width; i += 3) {
+  int i;
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
         src_ptr[stride + 0] + src_ptr[stride + 1] +
         src_ptr[stride + 2] + src_ptr[stride * 2 + 0] +
@@ -296,9 +310,10 @@ void ScaleRowDown38_3_Box_C(const uint8* src_ptr,
 // 8x2 -> 3x1
 void ScaleRowDown38_2_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width) {
-  assert((dst_width % 3 == 0) && (dst_width > 0));
   intptr_t stride = src_stride;
-  for (int i = 0; i < dst_width; i += 3) {
+  int i;
+  assert((dst_width % 3 == 0) && (dst_width > 0));
+  for (i = 0; i < dst_width; i += 3) {
     dst_ptr[0] = (src_ptr[0] + src_ptr[1] + src_ptr[2] +
         src_ptr[stride + 0] + src_ptr[stride + 1] +
         src_ptr[stride + 2]) * (65536 / 6) >> 16;
@@ -315,12 +330,14 @@ void ScaleRowDown38_2_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
                     uint16* dst_ptr, int src_width, int src_height) {
+  int x;
   assert(src_width > 0);
   assert(src_height > 0);
-  for (int x = 0; x < src_width; ++x) {
+  for (x = 0; x < src_width; ++x) {
     const uint8* s = src_ptr + x;
     unsigned int sum = 0u;
-    for (int y = 0; y < src_height; ++y) {
+    int y;
+    for (y = 0; y < src_height; ++y) {
       sum += s[0];
       s += src_stride;
     }
@@ -335,7 +352,8 @@ void ScaleARGBRowDown2_C(const uint8* src_argb,
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
 
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[1];
     dst[1] = src[3];
     src += 4;
@@ -349,7 +367,8 @@ void ScaleARGBRowDown2_C(const uint8* src_argb,
 void ScaleARGBRowDown2Linear_C(const uint8* src_argb,
                                ptrdiff_t src_stride,
                                uint8* dst_argb, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
+  int x;
+  for (x = 0; x < dst_width; ++x) {
     dst_argb[0] = (src_argb[0] + src_argb[4] + 1) >> 1;
     dst_argb[1] = (src_argb[1] + src_argb[5] + 1) >> 1;
     dst_argb[2] = (src_argb[2] + src_argb[6] + 1) >> 1;
@@ -361,7 +380,8 @@ void ScaleARGBRowDown2Linear_C(const uint8* src_argb,
 
 void ScaleARGBRowDown2Box_C(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
+  int x;
+  for (x = 0; x < dst_width; ++x) {
     dst_argb[0] = (src_argb[0] + src_argb[4] +
                   src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
     dst_argb[1] = (src_argb[1] + src_argb[5] +
@@ -381,7 +401,8 @@ void ScaleARGBRowDownEven_C(const uint8* src_argb, ptrdiff_t src_stride,
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
 
-  for (int x = 0; x < dst_width - 1; x += 2) {
+  int x;
+  for (x = 0; x < dst_width - 1; x += 2) {
     dst[0] = src[0];
     dst[1] = src[src_stepx];
     src += src_stepx * 2;
@@ -396,7 +417,8 @@ void ScaleARGBRowDownEvenBox_C(const uint8* src_argb,
                                ptrdiff_t src_stride,
                                int src_stepx,
                                uint8* dst_argb, int dst_width) {
-  for (int x = 0; x < dst_width; ++x) {
+  int x;
+  for (x = 0; x < dst_width; ++x) {
     dst_argb[0] = (src_argb[0] + src_argb[4] +
                   src_argb[src_stride] + src_argb[src_stride + 4] + 2) >> 2;
     dst_argb[1] = (src_argb[1] + src_argb[5] +
@@ -415,7 +437,8 @@ void ScaleARGBCols_C(uint8* dst_argb, const uint8* src_argb,
                      int dst_width, int x, int dx) {
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     dst[0] = src[x >> 16];
     x += dx;
     dst[1] = src[x >> 16];
@@ -432,7 +455,8 @@ void ScaleARGBCols64_C(uint8* dst_argb, const uint8* src_argb,
   int64 x = (int64)(x32);
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     dst[0] = src[x >> 16];
     x += dx;
     dst[1] = src[x >> 16];
@@ -449,7 +473,8 @@ void ScaleARGBColsUp2_C(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int x, int dx) {
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     dst[1] = dst[0] = src[0];
     src += 1;
     dst += 2;
@@ -471,7 +496,8 @@ void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx) {
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     int xi = x >> 16;
     int xf = (x >> 9) & 0x7f;
     uint32 a = src[xi];
@@ -500,7 +526,8 @@ void ScaleARGBFilterCols64_C(uint8* dst_argb, const uint8* src_argb,
   int64 x = (int64)(x32);
   const uint32* src = (const uint32*)(src_argb);
   uint32* dst = (uint32*)(dst_argb);
-  for (int j = 0; j < dst_width - 1; j += 2) {
+  int j;
+  for (j = 0; j < dst_width - 1; j += 2) {
     int64 xi = x >> 16;
     int xf = (x >> 9) & 0x7f;
     uint32 a = src[xi];
@@ -535,15 +562,17 @@ void ScalePlaneVertical(int src_height,
                         int x, int y, int dy,
                         int bpp, enum FilterMode filtering) {
   // TODO(fbarchard): Allow higher bpp.
+  int dst_width_bytes = dst_width * bpp;
+  void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
+      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
+      InterpolateRow_C;
+  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
+  int j;
   assert(bpp >= 1 && bpp <= 4);
   assert(src_height != 0);
   assert(dst_width > 0);
   assert(dst_height > 0);
-  int dst_width_bytes = dst_width * bpp;
   src_argb += (x >> 16) * bpp;
-  void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
-      ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
-      InterpolateRow_C;
 #if defined(HAS_INTERPOLATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_SSE2;
@@ -594,15 +623,16 @@ void ScalePlaneVertical(int src_height,
     }
   }
 #endif
-  const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
-  for (int j = 0; j < dst_height; ++j) {
+  for (j = 0; j < dst_height; ++j) {
+    int yi;
+    int yf;
     if (y > max_y) {
       y = max_y;
     }
-    int yi = y >> 16;
-    int yf = filtering ? ((y >> 8) & 255) : 0;
-    const uint8* src = src_argb + yi * src_stride;
-    InterpolateRow(dst_argb, src, src_stride, dst_width_bytes, yf);
+    yi = y >> 16;
+    yf = filtering ? ((y >> 8) & 255) : 0;
+    InterpolateRow(dst_argb, src_argb + yi * src_stride,
+                   src_stride, dst_width_bytes, yf);
     dst_argb += dst_stride;
     y += dy;
   }
