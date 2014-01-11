@@ -82,7 +82,8 @@ static void ScalePlaneDown2(int src_width, int src_height,
     src_stride = 0;
   }
   // TODO(fbarchard): Loop through source height to allow odd height.
-  for (int y = 0; y < dst_height; ++y) {
+  int y;
+  for (y = 0; y < dst_height; ++y) {
     ScaleRowDown2(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += row_stride;
     dst_ptr += dst_stride;
@@ -128,7 +129,8 @@ static void ScalePlaneDown4(int src_width, int src_height,
   if (filtering == kFilterLinear) {
     src_stride = 0;
   }
-  for (int y = 0; y < dst_height; ++y) {
+  int y;
+  for (y = 0; y < dst_height; ++y) {
     ScaleRowDown4(src_ptr, src_stride, dst_ptr, dst_width);
     src_ptr += row_stride;
     dst_ptr += dst_stride;
@@ -192,7 +194,8 @@ static void ScalePlaneDown34(int src_width, int src_height,
 #endif
 
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
-  for (int y = 0; y < dst_height - 2; y += 3) {
+  int y;
+  for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown34_0(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride;
     dst_ptr += dst_stride;
@@ -285,7 +288,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
 #endif
 
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
-  for (int y = 0; y < dst_height - 2; y += 3) {
+  int y;
+  for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
     src_ptr += src_stride * 3;
     dst_ptr += dst_stride;
@@ -313,8 +317,10 @@ static __inline uint32 SumBox(int iboxwidth, int iboxheight,
   assert(iboxwidth > 0);
   assert(iboxheight > 0);
   uint32 sum = 0u;
-  for (int y = 0; y < iboxheight; ++y) {
-    for (int x = 0; x < iboxwidth; ++x) {
+  int y;
+  for (y = 0; y < iboxheight; ++y) {
+    int x;
+    for (x = 0; x < iboxwidth; ++x) {
       sum += src_ptr[x];
     }
     src_ptr += src_stride;
@@ -325,7 +331,8 @@ static __inline uint32 SumBox(int iboxwidth, int iboxheight,
 static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
                                int x, int dx, ptrdiff_t src_stride,
                                const uint8* src_ptr, uint8* dst_ptr) {
-  for (int i = 0; i < dst_width; ++i) {
+  int i;
+  for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
     int boxwidth = (x >> 16) - ix;
@@ -337,7 +344,8 @@ static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
 static __inline uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   assert(iboxwidth > 0);
   uint32 sum = 0u;
-  for (int x = 0; x < iboxwidth; ++x) {
+  int x;
+  for (x = 0; x < iboxwidth; ++x) {
     sum += src_ptr[x];
   }
   return sum;
@@ -350,7 +358,8 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int x, int dx,
   scaletbl[0] = 65536 / (minboxwidth * boxheight);
   scaletbl[1] = 65536 / ((minboxwidth + 1) * boxheight);
   int* scaleptr = scaletbl - minboxwidth;
-  for (int i = 0; i < dst_width; ++i) {
+  int i;
+  for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
     int boxwidth = (x >> 16) - ix;
@@ -362,7 +371,8 @@ static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
   int boxwidth = (dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
-  for (int i = 0; i < dst_width; ++i) {
+  int i;
+  for (i = 0; i < dst_width; ++i) {
     *dst_ptr++ = SumPixels(boxwidth, src_ptr + x) * scaleval >> 16;
     x += boxwidth;
   }
@@ -391,7 +401,8 @@ static void ScalePlaneBox(int src_width, int src_height,
   // TODO(fbarchard): Remove this and make AddRows handle boxheight 1.
   if (!IS_ALIGNED(src_width, 16) || dst_height * 2 > src_height) {
     uint8* dst = dst_ptr;
-    for (int j = 0; j < dst_height; ++j) {
+    int j;
+    for (j = 0; j < dst_height; ++j) {
       int iy = y >> 16;
       const uint8* src = src_ptr + iy * src_stride;
       y += dy;
@@ -424,7 +435,8 @@ static void ScalePlaneBox(int src_width, int src_height,
   }
 #endif
 
-  for (int j = 0; j < dst_height; ++j) {
+  int j;
+  for (j = 0; j < dst_height; ++j) {
     int iy = y >> 16;
     const uint8* src = src_ptr + iy * src_stride;
     y += dy;
@@ -521,7 +533,8 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
   align_buffer_64(row, src_width);
 
   const int max_y = (src_height - 1) << 16;
-  for (int j = 0; j < dst_height; ++j) {
+  int j;
+  for (j = 0; j < dst_height; ++j) {
     if (y > max_y) {
       y = max_y;
     }
@@ -649,7 +662,8 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
   ScaleFilterCols(rowptr + rowstride, src, dst_width, x, dx);
   src += src_stride;
 
-  for (int j = 0; j < dst_height; ++j) {
+  int j;
+  for (j = 0; j < dst_height; ++j) {
     yi = y >> 16;
     if (yi != lasty) {
       if (y > max_y) {
@@ -708,7 +722,8 @@ static void ScalePlaneSimple(int src_width, int src_height,
 #endif
   }
 
-  for (int i = 0; i < dst_height; ++i) {
+  int i;
+  for (i = 0; i < dst_height; ++i) {
     ScaleCols(dst_ptr, src_ptr + (y >> 16) * src_stride,
               dst_width, x, dx);
     dst_ptr += dst_stride;
