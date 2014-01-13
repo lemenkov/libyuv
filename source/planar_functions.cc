@@ -28,6 +28,8 @@ LIBYUV_API
 void CopyPlane(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
+  int y;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
   // Coalesce rows.
   if (src_stride_y == width &&
       dst_stride_y == width) {
@@ -35,7 +37,6 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = dst_stride_y = 0;
   }
-  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_X86)
   if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
     CopyRow = CopyRow_X86;
@@ -65,7 +66,7 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
 #endif
 
   // Copy plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     CopyRow(src_y, dst_y, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
@@ -81,6 +82,7 @@ int I422Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
              int width, int height) {
+  int halfwidth = (width + 1) >> 1;
   if (!src_y || !src_u || !src_v ||
       !dst_y || !dst_u || !dst_v ||
       width <= 0 || height == 0) {
@@ -96,7 +98,6 @@ int I422Copy(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  int halfwidth = (width + 1) >> 1;
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);
@@ -176,13 +177,14 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
 void MirrorPlane(const uint8* src_y, int src_stride_y,
                  uint8* dst_y, int dst_stride_y,
                  int width, int height) {
+  int y;
+  void (*MirrorRow)(const uint8* src, uint8* dst, int width) = MirrorRow_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_y = src_y + (height - 1) * src_stride_y;
     src_stride_y = -src_stride_y;
   }
-  void (*MirrorRow)(const uint8* src, uint8* dst, int width) = MirrorRow_C;
 #if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_NEON;
@@ -207,7 +209,7 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
 #endif
 
   // Mirror plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     MirrorRow(src_y, dst_y, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
@@ -221,6 +223,12 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  int y;
+  void (*YUY2ToUV422Row)(const uint8* src_yuy2,
+                         uint8* dst_u, uint8* dst_v, int pix) =
+      YUY2ToUV422Row_C;
+  void (*YUY2ToYRow)(const uint8* src_yuy2, uint8* dst_y, int pix) =
+      YUY2ToYRow_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -236,12 +244,6 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
     height = 1;
     src_stride_yuy2 = dst_stride_y = dst_stride_u = dst_stride_v = 0;
   }
-  void (*YUY2ToUV422Row)(const uint8* src_yuy2,
-                         uint8* dst_u, uint8* dst_v, int pix);
-  void (*YUY2ToYRow)(const uint8* src_yuy2,
-                     uint8* dst_y, int pix);
-  YUY2ToYRow = YUY2ToYRow_C;
-  YUY2ToUV422Row = YUY2ToUV422Row_C;
 #if defined(HAS_YUY2TOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     YUY2ToUV422Row = YUY2ToUV422Row_Any_SSE2;
@@ -281,7 +283,7 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     YUY2ToUV422Row(src_yuy2, dst_u, dst_v, width);
     YUY2ToYRow(src_yuy2, dst_y, width);
     src_yuy2 += src_stride_yuy2;
@@ -299,6 +301,12 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  int y;
+  void (*UYVYToUV422Row)(const uint8* src_uyvy,
+                         uint8* dst_u, uint8* dst_v, int pix) =
+      UYVYToUV422Row_C;
+  void (*UYVYToYRow)(const uint8* src_uyvy,
+                     uint8* dst_y, int pix) = UYVYToYRow_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -314,12 +322,6 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
     height = 1;
     src_stride_uyvy = dst_stride_y = dst_stride_u = dst_stride_v = 0;
   }
-  void (*UYVYToUV422Row)(const uint8* src_uyvy,
-                         uint8* dst_u, uint8* dst_v, int pix);
-  void (*UYVYToYRow)(const uint8* src_uyvy,
-                     uint8* dst_y, int pix);
-  UYVYToYRow = UYVYToYRow_C;
-  UYVYToUV422Row = UYVYToUV422Row_C;
 #if defined(HAS_UYVYTOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 16) {
     UYVYToUV422Row = UYVYToUV422Row_Any_SSE2;
@@ -359,7 +361,7 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     UYVYToUV422Row(src_uyvy, dst_u, dst_v, width);
     UYVYToYRow(src_uyvy, dst_y, width);
     src_uyvy += src_stride_uyvy;
@@ -399,6 +401,8 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
                uint8* dst_u, int dst_stride_u,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
   if (!src_y || !src_u || !src_v || !dst_y || !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
@@ -406,7 +410,7 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
-    int halfheight = (height + 1) >> 1;
+    halfheight = (height + 1) >> 1;
     src_y = src_y + (height - 1) * src_stride_y;
     src_u = src_u + (halfheight - 1) * src_stride_u;
     src_v = src_v + (halfheight - 1) * src_stride_v;
@@ -415,8 +419,6 @@ int I420Mirror(const uint8* src_y, int src_stride_y,
     src_stride_v = -src_stride_v;
   }
 
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
   if (dst_y) {
     MirrorPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
@@ -430,6 +432,9 @@ LIBYUV_API
 int ARGBMirror(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  int y;
+  void (*ARGBMirrorRow)(const uint8* src, uint8* dst, int width) =
+      ARGBMirrorRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -440,8 +445,6 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
 
-  void (*ARGBMirrorRow)(const uint8* src, uint8* dst, int width) =
-      ARGBMirrorRow_C;
 #if defined(HAS_ARGBMIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
@@ -461,7 +464,7 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
 #endif
 
   // Mirror plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBMirrorRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -501,6 +504,9 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               const uint8* src_argb1, int src_stride_argb1,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height) {
+  int y;
+  void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
+                       uint8* dst_argb, int width) = GetARGBBlend();
   if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -518,10 +524,8 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-  void (*ARGBBlendRow)(const uint8* src_argb, const uint8* src_argb1,
-                       uint8* dst_argb, int width) = GetARGBBlend();
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
@@ -536,6 +540,9 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
                  const uint8* src_argb1, int src_stride_argb1,
                  uint8* dst_argb, int dst_stride_argb,
                  int width, int height) {
+  int y;
+  void (*ARGBMultiplyRow)(const uint8* src0, const uint8* src1, uint8* dst,
+                          int width) = ARGBMultiplyRow_C;
   if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -553,8 +560,6 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-  void (*ARGBMultiplyRow)(const uint8* src0, const uint8* src1, uint8* dst,
-                          int width) = ARGBMultiplyRow_C;
 #if defined(HAS_ARGBMULTIPLYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBMultiplyRow = ARGBMultiplyRow_Any_SSE2;
@@ -581,7 +586,7 @@ int ARGBMultiply(const uint8* src_argb0, int src_stride_argb0,
 #endif
 
   // Multiply plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBMultiplyRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
@@ -596,6 +601,9 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
             const uint8* src_argb1, int src_stride_argb1,
             uint8* dst_argb, int dst_stride_argb,
             int width, int height) {
+  int y;
+  void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
+                     int width) = ARGBAddRow_C;
   if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -613,8 +621,6 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-  void (*ARGBAddRow)(const uint8* src0, const uint8* src1, uint8* dst,
-                     int width) = ARGBAddRow_C;
 #if defined(HAS_ARGBADDROW_SSE2) && defined(_MSC_VER)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBAddRow = ARGBAddRow_SSE2;
@@ -646,7 +652,7 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
 #endif
 
   // Add plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBAddRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
@@ -661,6 +667,9 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
                  const uint8* src_argb1, int src_stride_argb1,
                  uint8* dst_argb, int dst_stride_argb,
                  int width, int height) {
+  int y;
+  void (*ARGBSubtractRow)(const uint8* src0, const uint8* src1, uint8* dst,
+                          int width) = ARGBSubtractRow_C;
   if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -678,8 +687,6 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-  void (*ARGBSubtractRow)(const uint8* src0, const uint8* src1, uint8* dst,
-                          int width) = ARGBSubtractRow_C;
 #if defined(HAS_ARGBSUBTRACTROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBSubtractRow = ARGBSubtractRow_Any_SSE2;
@@ -706,7 +713,7 @@ int ARGBSubtract(const uint8* src_argb0, int src_stride_argb0,
 #endif
 
   // Subtract plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBSubtractRow(src_argb0, src_argb1, dst_argb, width);
     src_argb0 += src_stride_argb0;
     src_argb1 += src_stride_argb1;
@@ -722,6 +729,12 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_bgra, int dst_stride_bgra,
                int width, int height) {
+  int y;
+  void (*I422ToBGRARow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToBGRARow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_bgra ||
       width <= 0 || height == 0) {
@@ -742,11 +755,6 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_bgra = 0;
   }
-  void (*I422ToBGRARow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        int width) = I422ToBGRARow_C;
 #if defined(HAS_I422TOBGRAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToBGRARow = I422ToBGRARow_Any_NEON;
@@ -774,7 +782,7 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     I422ToBGRARow(src_y, src_u, src_v, dst_bgra, width);
     dst_bgra += dst_stride_bgra;
     src_y += src_stride_y;
@@ -791,6 +799,12 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_abgr, int dst_stride_abgr,
                int width, int height) {
+  int y;
+  void (*I422ToABGRRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToABGRRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_abgr ||
       width <= 0 || height == 0) {
@@ -811,11 +825,6 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_abgr = 0;
   }
-  void (*I422ToABGRRow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        int width) = I422ToABGRRow_C;
 #if defined(HAS_I422TOABGRROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToABGRRow = I422ToABGRRow_Any_NEON;
@@ -835,7 +844,7 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     I422ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
     dst_abgr += dst_stride_abgr;
     src_y += src_stride_y;
@@ -852,6 +861,12 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_rgba, int dst_stride_rgba,
                int width, int height) {
+  int y;
+  void (*I422ToRGBARow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToRGBARow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_rgba ||
       width <= 0 || height == 0) {
@@ -872,11 +887,6 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_rgba = 0;
   }
-  void (*I422ToRGBARow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        int width) = I422ToRGBARow_C;
 #if defined(HAS_I422TORGBAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToRGBARow = I422ToRGBARow_Any_NEON;
@@ -896,7 +906,7 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     I422ToRGBARow(src_y, src_u, src_v, dst_rgba, width);
     dst_rgba += dst_stride_rgba;
     src_y += src_stride_y;
@@ -912,6 +922,11 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_uv, int src_stride_uv,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
+  int y;
+  void (*NV12ToRGB565Row)(const uint8* y_buf,
+                          const uint8* uv_buf,
+                          uint8* rgb_buf,
+                          int width) = NV12ToRGB565Row_C;
   if (!src_y || !src_uv || !dst_rgb565 ||
       width <= 0 || height == 0) {
     return -1;
@@ -922,10 +937,6 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
     dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
-  void (*NV12ToRGB565Row)(const uint8* y_buf,
-                          const uint8* uv_buf,
-                          uint8* rgb_buf,
-                          int width) = NV12ToRGB565Row_C;
 #if defined(HAS_NV12TORGB565ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     NV12ToRGB565Row = NV12ToRGB565Row_Any_SSSE3;
@@ -942,7 +953,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     NV12ToRGB565Row(src_y, src_uv, dst_rgb565, width);
     dst_rgb565 += dst_stride_rgb565;
     src_y += src_stride_y;
@@ -959,6 +970,11 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
                  const uint8* src_vu, int src_stride_vu,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
+  int y;
+  void (*NV21ToRGB565Row)(const uint8* y_buf,
+                          const uint8* src_vu,
+                          uint8* rgb_buf,
+                          int width) = NV21ToRGB565Row_C;
   if (!src_y || !src_vu || !dst_rgb565 ||
       width <= 0 || height == 0) {
     return -1;
@@ -969,10 +985,6 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
     dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
     dst_stride_rgb565 = -dst_stride_rgb565;
   }
-  void (*NV21ToRGB565Row)(const uint8* y_buf,
-                          const uint8* src_vu,
-                          uint8* rgb_buf,
-                          int width) = NV21ToRGB565Row_C;
 #if defined(HAS_NV21TORGB565ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     NV21ToRGB565Row = NV21ToRGB565Row_Any_SSSE3;
@@ -989,7 +1001,7 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     NV21ToRGB565Row(src_y, src_vu, dst_rgb565, width);
     dst_rgb565 += dst_stride_rgb565;
     src_y += src_stride_y;
@@ -1004,13 +1016,15 @@ LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value) {
+  int y;
+  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
+  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
   // Coalesce rows.
   if (dst_stride_y == width) {
     width *= height;
     height = 1;
     dst_stride_y = 0;
   }
-  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
 #if defined(HAS_SETROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) &&
       IS_ALIGNED(width, 16) &&
@@ -1024,9 +1038,8 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
   }
 #endif
 
-  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
   // Set plane
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     SetRow(dst_y, v32, width);
     dst_y += dst_stride_y;
   }
@@ -1040,6 +1053,11 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
              int x, int y,
              int width, int height,
              int value_y, int value_u, int value_v) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  uint8* start_y = dst_y + y * dst_stride_y + x;
+  uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
+  uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
   if (!dst_y || !dst_u || !dst_v ||
       width <= 0 || height <= 0 ||
       x < 0 || y < 0 ||
@@ -1048,11 +1066,6 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
       value_v < 0 || value_v > 255) {
     return -1;
   }
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  uint8* start_y = dst_y + y * dst_stride_y + x;
-  uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
-  uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
 
   SetPlane(start_y, dst_stride_y, width, height, value_y);
   SetPlane(start_u, dst_stride_u, halfwidth, halfheight, value_u);
@@ -1112,6 +1125,9 @@ LIBYUV_API
 int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height) {
+  int y;
+  void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
+                           int width) = ARGBAttenuateRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1127,8 +1143,6 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
-                           int width) = ARGBAttenuateRow_C;
 #if defined(HAS_ARGBATTENUATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
@@ -1164,7 +1178,7 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBAttenuateRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -1177,6 +1191,9 @@ LIBYUV_API
 int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height) {
+  int y;
+  void (*ARGBUnattenuateRow)(const uint8* src_argb, uint8* dst_argb,
+                             int width) = ARGBUnattenuateRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1192,8 +1209,6 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBUnattenuateRow)(const uint8* src_argb, uint8* dst_argb,
-                             int width) = ARGBUnattenuateRow_C;
 #if defined(HAS_ARGBUNATTENUATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBUnattenuateRow = ARGBUnattenuateRow_Any_SSE2;
@@ -1212,7 +1227,7 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
 #endif
 // TODO(fbarchard): Neon version.
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBUnattenuateRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -1225,6 +1240,9 @@ LIBYUV_API
 int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
+  int y;
+  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
+                      int width) = ARGBGrayRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1240,8 +1258,6 @@ int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
-                      int width) = ARGBGrayRow_C;
 #if defined(HAS_ARGBGRAYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
@@ -1254,7 +1270,7 @@ int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBGrayRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -1267,6 +1283,10 @@ LIBYUV_API
 int ARGBGray(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
              int width, int height) {
+  int y;
+  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
+                      int width) = ARGBGrayRow_C;
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
     return -1;
   }
@@ -1276,8 +1296,6 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-  void (*ARGBGrayRow)(const uint8* src_argb, uint8* dst_argb,
-                      int width) = ARGBGrayRow_C;
 #if defined(HAS_ARGBGRAYROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -1288,8 +1306,7 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBGrayRow(dst, dst, width);
     dst += dst_stride_argb;
   }
@@ -1300,6 +1317,9 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
 LIBYUV_API
 int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
               int dst_x, int dst_y, int width, int height) {
+  int y;
+  void (*ARGBSepiaRow)(uint8* dst_argb, int width) = ARGBSepiaRow_C;
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0) {
     return -1;
   }
@@ -1309,7 +1329,6 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-  void (*ARGBSepiaRow)(uint8* dst_argb, int width) = ARGBSepiaRow_C;
 #if defined(HAS_ARGBSEPIAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -1320,8 +1339,7 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
     ARGBSepiaRow = ARGBSepiaRow_NEON;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBSepiaRow(dst, width);
     dst += dst_stride_argb;
   }
@@ -1335,6 +1353,9 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     const int8* matrix_argb,
                     int width, int height) {
+  int y;
+  void (*ARGBColorMatrixRow)(const uint8* src_argb, uint8* dst_argb,
+      const int8* matrix_argb, int width) = ARGBColorMatrixRow_C;
   if (!src_argb || !dst_argb || !matrix_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1350,8 +1371,6 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBColorMatrixRow)(const uint8* src_argb, uint8* dst_argb,
-      const int8* matrix_argb, int width) = ARGBColorMatrixRow_C;
 #if defined(HAS_ARGBCOLORMATRIXROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -1362,7 +1381,7 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
     ARGBColorMatrixRow = ARGBColorMatrixRow_NEON;
   }
 #endif
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBColorMatrixRow(src_argb, dst_argb, matrix_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -1376,13 +1395,14 @@ LIBYUV_API
 int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
                    const int8* matrix_rgb,
                    int dst_x, int dst_y, int width, int height) {
+  SIMD_ALIGNED(int8 matrix_argb[16]);
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || !matrix_rgb || width <= 0 || height <= 0 ||
       dst_x < 0 || dst_y < 0) {
     return -1;
   }
 
   // Convert 4x3 7 bit matrix to 4x4 6 bit matrix.
-  SIMD_ALIGNED(int8 matrix_argb[16]);
   matrix_argb[0] = matrix_rgb[0] / 2;
   matrix_argb[1] = matrix_rgb[1] / 2;
   matrix_argb[2] = matrix_rgb[2] / 2;
@@ -1398,7 +1418,6 @@ int RGBColorMatrix(uint8* dst_argb, int dst_stride_argb,
   matrix_argb[14] = matrix_argb[13] = matrix_argb[12] = 0;
   matrix_argb[15] = 64;  // 1.0
 
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   return ARGBColorMatrix((const uint8*)(dst), dst_stride_argb,
                          dst, dst_stride_argb,
                          &matrix_argb[0], width, height);
@@ -1410,6 +1429,10 @@ LIBYUV_API
 int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
                    const uint8* table_argb,
                    int dst_x, int dst_y, int width, int height) {
+  int y;
+  void (*ARGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
+                            int width) = ARGBColorTableRow_C;
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || !table_argb || width <= 0 || height <= 0 ||
       dst_x < 0 || dst_y < 0) {
     return -1;
@@ -1420,15 +1443,12 @@ int ARGBColorTable(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-  void (*ARGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
-                            int width) = ARGBColorTableRow_C;
 #if defined(HAS_ARGBCOLORTABLEROW_X86)
   if (TestCpuFlag(kCpuHasX86)) {
     ARGBColorTableRow = ARGBColorTableRow_X86;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBColorTableRow(dst, table_argb, width);
     dst += dst_stride_argb;
   }
@@ -1441,6 +1461,10 @@ LIBYUV_API
 int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
                   const uint8* table_argb,
                   int dst_x, int dst_y, int width, int height) {
+  int y;
+  void (*RGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
+                           int width) = RGBColorTableRow_C;
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || !table_argb || width <= 0 || height <= 0 ||
       dst_x < 0 || dst_y < 0) {
     return -1;
@@ -1451,15 +1475,12 @@ int RGBColorTable(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-  void (*RGBColorTableRow)(uint8* dst_argb, const uint8* table_argb,
-                           int width) = RGBColorTableRow_C;
 #if defined(HAS_RGBCOLORTABLEROW_X86)
   if (TestCpuFlag(kCpuHasX86)) {
     RGBColorTableRow = RGBColorTableRow_X86;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     RGBColorTableRow(dst, table_argb, width);
     dst += dst_stride_argb;
   }
@@ -1479,6 +1500,10 @@ LIBYUV_API
 int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
                  int scale, int interval_size, int interval_offset,
                  int dst_x, int dst_y, int width, int height) {
+  int y;
+  void (*ARGBQuantizeRow)(uint8* dst_argb, int scale, int interval_size,
+                          int interval_offset, int width) = ARGBQuantizeRow_C;
+  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
   if (!dst_argb || width <= 0 || height <= 0 || dst_x < 0 || dst_y < 0 ||
       interval_size < 1 || interval_size > 255) {
     return -1;
@@ -1489,8 +1514,6 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-  void (*ARGBQuantizeRow)(uint8* dst_argb, int scale, int interval_size,
-                          int interval_offset, int width) = ARGBQuantizeRow_C;
 #if defined(HAS_ARGBQUANTIZEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
@@ -1501,8 +1524,7 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
     ARGBQuantizeRow = ARGBQuantizeRow_NEON;
   }
 #endif
-  uint8* dst = dst_argb + dst_y * dst_stride_argb + dst_x * 4;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBQuantizeRow(dst, scale, interval_size, interval_offset, width);
     dst += dst_stride_argb;
   }
@@ -1515,19 +1537,20 @@ LIBYUV_API
 int ARGBComputeCumulativeSum(const uint8* src_argb, int src_stride_argb,
                              int32* dst_cumsum, int dst_stride32_cumsum,
                              int width, int height) {
+  int y;
+  void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
+      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
+  int32* previous_cumsum = dst_cumsum;
   if (!dst_cumsum || !src_argb || width <= 0 || height <= 0) {
     return -1;
   }
-  void (*ComputeCumulativeSumRow)(const uint8* row, int32* cumsum,
-      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
   }
 #endif
   memset(dst_cumsum, 0, width * sizeof(dst_cumsum[0]) * 4);  // 4 int per pixel.
-  int32* previous_cumsum = dst_cumsum;
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ComputeCumulativeSumRow(src_argb, dst_cumsum, previous_cumsum, width);
     previous_cumsum = dst_cumsum;
     dst_cumsum += dst_stride32_cumsum;
@@ -1545,6 +1568,15 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int32* dst_cumsum, int dst_stride32_cumsum,
              int width, int height, int radius) {
+  int y;
+  void (*ComputeCumulativeSumRow)(const uint8 *row, int32 *cumsum,
+      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
+  void (*CumulativeSumToAverageRow)(const int32* topleft, const int32* botleft,
+      int width, int area, uint8* dst, int count) = CumulativeSumToAverageRow_C;
+  int32* cumsum_bot_row;
+  int32* max_cumsum_bot_row;
+  int32* cumsum_top_row;
+
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1562,10 +1594,6 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
   if (radius <= 0) {
     return -1;
   }
-  void (*ComputeCumulativeSumRow)(const uint8 *row, int32 *cumsum,
-      const int32* previous_cumsum, int width) = ComputeCumulativeSumRow_C;
-  void (*CumulativeSumToAverageRow)(const int32* topleft, const int32* botleft,
-      int width, int area, uint8* dst, int count) = CumulativeSumToAverageRow_C;
 #if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
@@ -1579,16 +1607,18 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
                            width, radius);
 
   src_argb = src_argb + radius * src_stride_argb;
-  int32* cumsum_bot_row = &dst_cumsum[(radius - 1) * dst_stride32_cumsum];
+  cumsum_bot_row = &dst_cumsum[(radius - 1) * dst_stride32_cumsum];
 
-  const int32* max_cumsum_bot_row =
-      &dst_cumsum[(radius * 2 + 2) * dst_stride32_cumsum];
-  const int32* cumsum_top_row = &dst_cumsum[0];
+  max_cumsum_bot_row = &dst_cumsum[(radius * 2 + 2) * dst_stride32_cumsum];
+  cumsum_top_row = &dst_cumsum[0];
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     int top_y = ((y - radius - 1) >= 0) ? (y - radius - 1) : 0;
     int bot_y = ((y + radius) < height) ? (y + radius) : (height - 1);
     int area = radius * (bot_y - top_y);
+    int boxwidth = radius * 4;
+    int x;
+    int n;
 
     // Increment cumsum_top_row pointer with circular buffer wrap around.
     if (top_y) {
@@ -1611,8 +1641,6 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     }
 
     // Left clipped.
-    int boxwidth = radius * 4;
-    int x;
     for (x = 0; x < radius + 1; ++x) {
       CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
                                 boxwidth, area, &dst_argb[x * 4], 1);
@@ -1621,7 +1649,7 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
     }
 
     // Middle unclipped.
-    int n = (width - 1) - radius - x + 1;
+    n = (width - 1) - radius - x + 1;
     CumulativeSumToAverageRow(cumsum_top_row, cumsum_bot_row,
                               boxwidth, area, &dst_argb[x * 4], n);
 
@@ -1643,6 +1671,9 @@ LIBYUV_API
 int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value) {
+  int y;
+  void (*ARGBShadeRow)(const uint8* src_argb, uint8* dst_argb,
+                       int width, uint32 value) = ARGBShadeRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0 || value == 0u) {
     return -1;
   }
@@ -1658,8 +1689,6 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBShadeRow)(const uint8* src_argb, uint8* dst_argb,
-                       int width, uint32 value) = ARGBShadeRow_C;
 #if defined(HAS_ARGBSHADEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
@@ -1672,7 +1701,7 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBShadeRow(src_argb, dst_argb, width, value);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -1686,6 +1715,10 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height, int interpolation) {
+  int y;
+  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) = InterpolateRow_C;
   if (!src_argb0 || !src_argb1 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1703,9 +1736,6 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) = InterpolateRow_C;
 #if defined(HAS_INTERPOLATEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     InterpolateRow = InterpolateRow_Any_SSE2;
@@ -1757,7 +1787,7 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     InterpolateRow(dst_argb, src_argb0, src_argb1 - src_argb0,
                    width * 4, interpolation);
     src_argb0 += src_stride_argb0;
@@ -1772,6 +1802,9 @@ LIBYUV_API
 int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
                 uint8* dst_argb, int dst_stride_argb,
                 const uint8* shuffler, int width, int height) {
+  int y;
+  void (*ARGBShuffleRow)(const uint8* src_bgra, uint8* dst_argb,
+                         const uint8* shuffler, int pix) = ARGBShuffleRow_C;
   if (!src_bgra || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -1789,8 +1822,6 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
     height = 1;
     src_stride_bgra = dst_stride_argb = 0;
   }
-  void (*ARGBShuffleRow)(const uint8* src_bgra, uint8* dst_argb,
-                         const uint8* shuffler, int pix) = ARGBShuffleRow_C;
 #if defined(HAS_ARGBSHUFFLEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 4) {
     ARGBShuffleRow = ARGBShuffleRow_Any_SSE2;
@@ -1828,7 +1859,7 @@ int ARGBShuffle(const uint8* src_bgra, int src_stride_bgra,
   }
 #endif
 
-  for (int y = 0; y < height; ++y) {
+  for (y = 0; y < height; ++y) {
     ARGBShuffleRow(src_bgra, dst_argb, shuffler, width);
     src_bgra += src_stride_bgra;
     dst_argb += dst_stride_argb;
@@ -1843,6 +1874,14 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
                         void (*SobelRow)(const uint8* src_sobelx,
                                          const uint8* src_sobely,
                                          uint8* dst, int width)) {
+  int y;
+  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
+                         uint32 selector, int pix) = ARGBToBayerGGRow_C;
+  void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
+                    uint8* dst_sobely, int width) = SobelYRow_C;
+  void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
+                    const uint8* src_y2, uint8* dst_sobely, int width) =
+      SobelXRow_C;
   const int kEdge = 16;  // Extra pixels at start of row for extrude/align.
   if (!src_argb  || !dst_argb || width <= 0 || height == 0) {
     return -1;
@@ -1854,8 +1893,6 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
   // ARGBToBayer used to select G channel from ARGB.
-  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
-                         uint32 selector, int pix) = ARGBToBayerGGRow_C;
 #if defined(HAS_ARGBTOBAYERGGROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && width >= 8 &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16)) {
@@ -1882,8 +1919,6 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-  void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
-                    uint8* dst_sobely, int width) = SobelYRow_C;
 #if defined(HAS_SOBELYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     SobelYRow = SobelYRow_SSE2;
@@ -1894,9 +1929,6 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     SobelYRow = SobelYRow_NEON;
   }
 #endif
-  void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
-                    const uint8* src_y2, uint8* dst_sobely, int width) =
-      SobelXRow_C;
 #if defined(HAS_SOBELXROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     SobelXRow = SobelXRow_SSE2;
@@ -1907,47 +1939,51 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     SobelXRow = SobelXRow_NEON;
   }
 #endif
-  // 3 rows with edges before/after.
-  const int kRowSize = (width + kEdge + 15) & ~15;
-  align_buffer_64(rows, kRowSize * 2 + (kEdge + kRowSize * 3 + kEdge));
-  uint8* row_sobelx = rows;
-  uint8* row_sobely = rows + kRowSize;
-  uint8* row_y = rows + kRowSize * 2;
+  {
+    // 3 rows with edges before/after.
+    const int kRowSize = (width + kEdge + 15) & ~15;
+    align_buffer_64(rows, kRowSize * 2 + (kEdge + kRowSize * 3 + kEdge));
+    uint8* row_sobelx = rows;
+    uint8* row_sobely = rows + kRowSize;
+    uint8* row_y = rows + kRowSize * 2;
 
-  // Convert first row.
-  uint8* row_y0 = row_y + kEdge;
-  uint8* row_y1 = row_y0 + kRowSize;
-  uint8* row_y2 = row_y1 + kRowSize;
-  ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
-  row_y0[-1] = row_y0[0];
-  memset(row_y0 + width, row_y0[width - 1], 16);  // Extrude 16 for valgrind.
-  ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
-  row_y1[-1] = row_y1[0];
-  memset(row_y1 + width, row_y1[width - 1], 16);
-  memset(row_y2 + width, 0, 16);
+    // Convert first row.
+    uint8* row_y0 = row_y + kEdge;
+    uint8* row_y1 = row_y0 + kRowSize;
+    uint8* row_y2 = row_y1 + kRowSize;
+    ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
+    row_y0[-1] = row_y0[0];
+    memset(row_y0 + width, row_y0[width - 1], 16);  // Extrude 16 for valgrind.
+    ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
+    row_y1[-1] = row_y1[0];
+    memset(row_y1 + width, row_y1[width - 1], 16);
+    memset(row_y2 + width, 0, 16);
 
-  for (int y = 0; y < height; ++y) {
-    // Convert next row of ARGB to Y.
-    if (y < (height - 1)) {
-      src_argb += src_stride_argb;
+    for (y = 0; y < height; ++y) {
+      // Convert next row of ARGB to Y.
+      if (y < (height - 1)) {
+        src_argb += src_stride_argb;
+      }
+      ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
+      row_y2[-1] = row_y2[0];
+      row_y2[width] = row_y2[width - 1];
+
+      SobelXRow(row_y0 - 1, row_y1 - 1, row_y2 - 1, row_sobelx, width);
+      SobelYRow(row_y0 - 1, row_y2 - 1, row_sobely, width);
+      SobelRow(row_sobelx, row_sobely, dst_argb, width);
+
+      // Cycle thru circular queue of 3 row_y buffers.
+      {
+        uint8* row_yt = row_y0;
+        row_y0 = row_y1;
+        row_y1 = row_y2;
+        row_y2 = row_yt;
+      }
+
+      dst_argb += dst_stride_argb;
     }
-    ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
-    row_y2[-1] = row_y2[0];
-    row_y2[width] = row_y2[width - 1];
-
-    SobelXRow(row_y0 - 1, row_y1 - 1, row_y2 - 1, row_sobelx, width);
-    SobelYRow(row_y0 - 1, row_y2 - 1, row_sobely, width);
-    SobelRow(row_sobelx, row_sobely, dst_argb, width);
-
-    // Cycle thru circular queue of 3 row_y buffers.
-    uint8* row_yt = row_y0;
-    row_y0 = row_y1;
-    row_y1 = row_y2;
-    row_y2 = row_yt;
-
-    dst_argb += dst_stride_argb;
+    free_aligned_buffer_64(rows);
   }
-  free_aligned_buffer_64(rows);
   return 0;
 }
 
@@ -2024,6 +2060,10 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb, int dst_stride_argb,
                    const float* poly,
                    int width, int height) {
+  int y;
+  void (*ARGBPolynomialRow)(const uint8* src_argb,
+                            uint8* dst_argb, const float* poly,
+                            int width) = ARGBPolynomialRow_C;
   if (!src_argb || !dst_argb || !poly || width <= 0 || height == 0) {
     return -1;
   }
@@ -2040,9 +2080,6 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBPolynomialRow)(const uint8* src_argb,
-                            uint8* dst_argb, const float* poly,
-                            int width) = ARGBPolynomialRow_C;
 #if defined(HAS_ARGBPOLYNOMIALROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 2)) {
     ARGBPolynomialRow = ARGBPolynomialRow_SSE2;
@@ -2054,7 +2091,8 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
     ARGBPolynomialRow = ARGBPolynomialRow_AVX2;
   }
 #endif
-  for (int y = 0; y < height; ++y) {
+
+  for (y = 0; y < height; ++y) {
     ARGBPolynomialRow(src_argb, dst_argb, poly, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -2068,6 +2106,10 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_argb, int dst_stride_argb,
                        const uint8* luma,
                        int width, int height) {
+  int y;
+  void (*ARGBLumaColorTableRow)(const uint8* src_argb, uint8* dst_argb,
+      int width, const uint8* luma, const uint32 lumacoeff) =
+      ARGBLumaColorTableRow_C;
   if (!src_argb || !dst_argb || !luma || width <= 0 || height == 0) {
     return -1;
   }
@@ -2084,15 +2126,13 @@ int ARGBLumaColorTable(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBLumaColorTableRow)(const uint8* src_argb, uint8* dst_argb,
-      int width, const uint8* luma, const uint32 lumacoeff) =
-      ARGBLumaColorTableRow_C;
 #if defined(HAS_ARGBLUMACOLORTABLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4)) {
     ARGBLumaColorTableRow = ARGBLumaColorTableRow_SSSE3;
   }
 #endif
-  for (int y = 0; y < height; ++y) {
+
+  for (y = 0; y < height; ++y) {
     ARGBLumaColorTableRow(src_argb, dst_argb, width, luma, 0x00264b0f);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -2105,6 +2145,9 @@ LIBYUV_API
 int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height) {
+  int y;
+  void (*ARGBCopyAlphaRow)(const uint8* src_argb, uint8* dst_argb, int width) =
+      ARGBCopyAlphaRow_C;
   if (!src_argb || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -2121,8 +2164,6 @@ int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-  void (*ARGBCopyAlphaRow)(const uint8* src_argb, uint8* dst_argb, int width) =
-      ARGBCopyAlphaRow_C;
 #if defined(HAS_ARGBCOPYALPHAROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride_argb, 16) &&
@@ -2136,7 +2177,8 @@ int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
     ARGBCopyAlphaRow = ARGBCopyAlphaRow_AVX2;
   }
 #endif
-  for (int y = 0; y < height; ++y) {
+
+  for (y = 0; y < height; ++y) {
     ARGBCopyAlphaRow(src_argb, dst_argb, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
@@ -2149,6 +2191,9 @@ LIBYUV_API
 int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
                      uint8* dst_argb, int dst_stride_argb,
                      int width, int height) {
+  int y;
+  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
+      ARGBCopyYToAlphaRow_C;
   if (!src_y || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -2165,8 +2210,6 @@ int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = dst_stride_argb = 0;
   }
-  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
-      ARGBCopyYToAlphaRow_C;
 #if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) &&
       IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
@@ -2180,7 +2223,8 @@ int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
     ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
   }
 #endif
-  for (int y = 0; y < height; ++y) {
+
+  for (y = 0; y < height; ++y) {
     ARGBCopyYToAlphaRow(src_y, dst_argb, width);
     src_y += src_stride_y;
     dst_argb += dst_stride_argb;
