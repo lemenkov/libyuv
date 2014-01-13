@@ -229,8 +229,10 @@ static double Ssim8x8_C(const uint8* src_a, int stride_a,
   int64 sum_sq_b = 0;
   int64 sum_axb = 0;
 
-  for (int i = 0; i < 8; ++i) {
-    for (int j = 0; j < 8; ++j) {
+  int i;
+  for (i = 0; i < 8; ++i) {
+    int j;
+    for (j = 0; j < 8; ++j) {
       sum_a += src_a[j];
       sum_b += src_b[j];
       sum_sq_a += src_a[j] * src_a[j];
@@ -242,26 +244,29 @@ static double Ssim8x8_C(const uint8* src_a, int stride_a,
     src_b += stride_b;
   }
 
-  const int64 count = 64;
-  // scale the constants by number of pixels
-  const int64 c1 = (cc1 * count * count) >> 12;
-  const int64 c2 = (cc2 * count * count) >> 12;
+  {
+    const int64 count = 64;
+    // scale the constants by number of pixels
+    const int64 c1 = (cc1 * count * count) >> 12;
+    const int64 c2 = (cc2 * count * count) >> 12;
 
-  const int64 sum_a_x_sum_b = sum_a * sum_b;
+    const int64 sum_a_x_sum_b = sum_a * sum_b;
 
-  const int64 ssim_n = (2 * sum_a_x_sum_b + c1) *
-                       (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
+    const int64 ssim_n = (2 * sum_a_x_sum_b + c1) *
+                         (2 * count * sum_axb - 2 * sum_a_x_sum_b + c2);
 
-  const int64 sum_a_sq = sum_a*sum_a;
-  const int64 sum_b_sq = sum_b*sum_b;
+    const int64 sum_a_sq = sum_a*sum_a;
+    const int64 sum_b_sq = sum_b*sum_b;
 
-  const int64 ssim_d = (sum_a_sq + sum_b_sq + c1) *
-                       (count * sum_sq_a - sum_a_sq +
-                        count * sum_sq_b - sum_b_sq + c2);
+    const int64 ssim_d = (sum_a_sq + sum_b_sq + c1) *
+                         (count * sum_sq_a - sum_a_sq +
+                          count * sum_sq_b - sum_b_sq + c2);
 
-  if (ssim_d == 0.0)
-    return DBL_MAX;
-  return ssim_n * 1.0 / ssim_d;
+    if (ssim_d == 0.0) {
+      return DBL_MAX;
+    }
+    return ssim_n * 1.0 / ssim_d;
+  }
 }
 
 // We are using a 8x8 moving window with starting location of each 8x8 window
@@ -273,15 +278,14 @@ double CalcFrameSsim(const uint8* src_a, int stride_a,
                      int width, int height) {
   int samples = 0;
   double ssim_total = 0;
-
   double (*Ssim8x8)(const uint8* src_a, int stride_a,
-                    const uint8* src_b, int stride_b);
-
-  Ssim8x8 = Ssim8x8_C;
+                    const uint8* src_b, int stride_b) = Ssim8x8_C;
 
   // sample point start with each 4x4 location
-  for (int i = 0; i < height - 8; i += 4) {
-    for (int j = 0; j < width - 8; j += 4) {
+  int i;
+  for (i = 0; i < height - 8; i += 4) {
+    int j;
+    for (j = 0; j < width - 8; j += 4) {
       ssim_total += Ssim8x8(src_a + j, stride_a, src_b + j, stride_b);
       samples++;
     }
