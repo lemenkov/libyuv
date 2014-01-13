@@ -772,7 +772,8 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 static void TransposeWx8_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int width) {
-  for (int i = 0; i < width; ++i) {
+  int i;
+  for (i = 0; i < width; ++i) {
     dst[0] = src[0 * src_stride];
     dst[1] = src[1 * src_stride];
     dst[2] = src[2 * src_stride];
@@ -789,8 +790,10 @@ static void TransposeWx8_C(const uint8* src, int src_stride,
 static void TransposeWxH_C(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride,
                            int width, int height) {
-  for (int i = 0; i < width; ++i) {
-    for (int j = 0; j < height; ++j) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    int j;
+    for (j = 0; j < height; ++j) {
       dst[i * dst_stride + j] = src[j * src_stride + i];
     }
   }
@@ -800,6 +803,7 @@ LIBYUV_API
 void TransposePlane(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
+  int i = height;
   void (*TransposeWx8)(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride,
                        int width) = TransposeWx8_C;
@@ -832,7 +836,6 @@ void TransposePlane(const uint8* src, int src_stride,
 #endif
 
   // Work across the source in 8x8 tiles
-  int i = height;
   while (i >= 8) {
     TransposeWx8(src, src_stride, dst, dst_stride, width);
     src += 8 * src_stride;    // Go down 8 rows.
@@ -871,7 +874,14 @@ LIBYUV_API
 void RotatePlane180(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride,
                     int width, int height) {
+  // Swap first and last row and mirror the content. Uses a temporary row.
+  align_buffer_64(row, width);
+  const uint8* src_bot = src + src_stride * (height - 1);
+  uint8* dst_bot = dst + dst_stride * (height - 1);
+  int half_height = (height + 1) >> 1;
+  int y;
   void (*MirrorRow)(const uint8* src, uint8* dst, int width) = MirrorRow_C;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_NEON;
@@ -903,7 +913,6 @@ void RotatePlane180(const uint8* src, int src_stride,
     MirrorRow = MirrorRow_MIPS_DSPR2;
   }
 #endif
-  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_NEON;
@@ -932,13 +941,8 @@ void RotatePlane180(const uint8* src, int src_stride,
   }
 #endif
 
-  // Swap first and last row and mirror the content. Uses a temporary row.
-  align_buffer_64(row, width);
-  const uint8* src_bot = src + src_stride * (height - 1);
-  uint8* dst_bot = dst + dst_stride * (height - 1);
-  int half_height = (height + 1) >> 1;
   // Odd height will harmlessly mirror the middle row twice.
-  for (int y = 0; y < half_height; ++y) {
+  for (y = 0; y < half_height; ++y) {
     MirrorRow(src, row, width);  // Mirror first row into a buffer
     src += src_stride;
     MirrorRow(src_bot, dst, width);  // Mirror last row into first row
@@ -954,7 +958,8 @@ static void TransposeUVWx8_C(const uint8* src, int src_stride,
                              uint8* dst_a, int dst_stride_a,
                              uint8* dst_b, int dst_stride_b,
                              int width) {
-  for (int i = 0; i < width; ++i) {
+  int i;
+  for (i = 0; i < width; ++i) {
     dst_a[0] = src[0 * src_stride + 0];
     dst_b[0] = src[0 * src_stride + 1];
     dst_a[1] = src[1 * src_stride + 0];
@@ -981,11 +986,14 @@ static void TransposeUVWxH_C(const uint8* src, int src_stride,
                              uint8* dst_a, int dst_stride_a,
                              uint8* dst_b, int dst_stride_b,
                              int width, int height) {
-  for (int i = 0; i < width * 2; i += 2)
-    for (int j = 0; j < height; ++j) {
+  int i;
+  for (i = 0; i < width * 2; i += 2) {
+    int j;
+    for (j = 0; j < height; ++j) {
       dst_a[j + ((i >> 1) * dst_stride_a)] = src[i + (j * src_stride)];
       dst_b[j + ((i >> 1) * dst_stride_b)] = src[i + (j * src_stride) + 1];
     }
+  }
 }
 
 LIBYUV_API
@@ -993,6 +1001,7 @@ void TransposeUV(const uint8* src, int src_stride,
                  uint8* dst_a, int dst_stride_a,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height) {
+  int i = height;
   void (*TransposeUVWx8)(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
@@ -1015,7 +1024,6 @@ void TransposeUV(const uint8* src, int src_stride,
 #endif
 
   // Work through the source in 8x8 tiles.
-  int i = height;
   while (i >= 8) {
     TransposeUVWx8(src, src_stride,
                    dst_a, dst_stride_a,
@@ -1069,6 +1077,7 @@ void RotateUV180(const uint8* src, int src_stride,
                  uint8* dst_a, int dst_stride_a,
                  uint8* dst_b, int dst_stride_b,
                  int width, int height) {
+  int i;
   void (*MirrorRowUV)(const uint8* src, uint8* dst_u, uint8* dst_v, int width) =
       MirrorUVRow_C;
 #if defined(HAS_MIRRORUVROW_NEON)
@@ -1090,7 +1099,7 @@ void RotateUV180(const uint8* src, int src_stride,
   dst_a += dst_stride_a * (height - 1);
   dst_b += dst_stride_b * (height - 1);
 
-  for (int i = 0; i < height; ++i) {
+  for (i = 0; i < height; ++i) {
     MirrorRowUV(src, dst_a, dst_b, width);
     src += src_stride;
     dst_a -= dst_stride_a;
@@ -1151,12 +1160,12 @@ int I420Rotate(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height,
                enum RotationMode mode) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
   if (!src_y || !src_u || !src_v || width <= 0 || height == 0 ||
       !dst_y || !dst_u || !dst_v) {
     return -1;
   }
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
 
   // Negative height means invert the image.
   if (height < 0) {
@@ -1227,12 +1236,12 @@ int NV12ToI420Rotate(const uint8* src_y, int src_stride_y,
                      uint8* dst_v, int dst_stride_v,
                      int width, int height,
                      enum RotationMode mode) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
   if (!src_y || !src_uv || width <= 0 || height == 0 ||
       !dst_y || !dst_u || !dst_v) {
     return -1;
   }
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
 
   // Negative height means invert the image.
   if (height < 0) {

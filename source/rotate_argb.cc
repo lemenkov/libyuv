@@ -45,6 +45,7 @@ void ScaleARGBRowDownEven_C(const uint8* src_ptr, int,
 static void ARGBTranspose(const uint8* src, int src_stride,
                           uint8* dst, int dst_stride,
                           int width, int height) {
+  int i;
   int src_pixel_step = src_stride >> 2;
   void (*ScaleARGBRowDownEven)(const uint8* src_ptr, int src_stride,
       int src_step, uint8* dst_ptr, int dst_width) = ScaleARGBRowDownEven_C;
@@ -60,7 +61,7 @@ static void ARGBTranspose(const uint8* src, int src_stride,
   }
 #endif
 
-  for (int i = 0; i < width; ++i) {  // column of source to row of dest.
+  for (i = 0; i < width; ++i) {  // column of source to row of dest.
     ScaleARGBRowDownEven(src, 0, src_pixel_step, dst, height);
     dst += dst_stride;
     src += 4;
@@ -92,8 +93,15 @@ void ARGBRotate270(const uint8* src, int src_stride,
 void ARGBRotate180(const uint8* src, int src_stride,
                    uint8* dst, int dst_stride,
                    int width, int height) {
+  // Swap first and last row and mirror the content. Uses a temporary row.
+  align_buffer_64(row, width * 4);
+  const uint8* src_bot = src + src_stride * (height - 1);
+  uint8* dst_bot = dst + dst_stride * (height - 1);
+  int half_height = (height + 1) >> 1;
+  int y;
   void (*ARGBMirrorRow)(const uint8* src, uint8* dst, int width) =
       ARGBMirrorRow_C;
+  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_ARGBMIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
@@ -111,7 +119,6 @@ void ARGBRotate180(const uint8* src, int src_stride,
     ARGBMirrorRow = ARGBMirrorRow_NEON;
   }
 #endif
-  void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
 #if defined(HAS_COPYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width * 4, 32)) {
     CopyRow = CopyRow_NEON;
@@ -140,13 +147,8 @@ void ARGBRotate180(const uint8* src, int src_stride,
   }
 #endif
 
-  // Swap first and last row and mirror the content. Uses a temporary row.
-  align_buffer_64(row, width * 4);
-  const uint8* src_bot = src + src_stride * (height - 1);
-  uint8* dst_bot = dst + dst_stride * (height - 1);
-  int half_height = (height + 1) >> 1;
   // Odd height will harmlessly mirror the middle row twice.
-  for (int y = 0; y < half_height; ++y) {
+  for (y = 0; y < half_height; ++y) {
     ARGBMirrorRow(src, row, width);  // Mirror first row into a buffer
     ARGBMirrorRow(src_bot, dst, width);  // Mirror last row into first row
     CopyRow(row, dst_bot, width * 4);  // Copy first mirrored row into last
