@@ -37,26 +37,12 @@ int ConvertToI420(const uint8* sample,
                   enum RotationMode rotation,
                   uint32 fourcc) {
   uint32 format = CanonicalFourCC(fourcc);
-  if (!y || !u || !v || !sample ||
-      src_width <= 0 || crop_width <= 0  ||
-      src_height == 0 || crop_height == 0) {
-    return -1;
-  }
   int aligned_src_width = (src_width + 1) & ~1;
   const uint8* src;
   const uint8* src_uv;
   int abs_src_height = (src_height < 0) ? -src_height : src_height;
   int inv_crop_height = (crop_height < 0) ? -crop_height : crop_height;
-  if (src_height < 0) {
-    inv_crop_height = -inv_crop_height;
-  }
   int r = 0;
-
-  // One pass rotation is available for some formats. For the rest, convert
-  // to I420 (with optional vertical flipping) into a temporary I420 buffer,
-  // and then rotate the I420 to the final destination buffer.
-  // For in-place conversion, if destination y is same as source sample,
-  // also enable temporary buffer.
   LIBYUV_BOOL need_buf = (rotation && format != FOURCC_I420 &&
       format != FOURCC_NV12 && format != FOURCC_NV21 &&
       format != FOURCC_YU12 && format != FOURCC_YV12) || y == sample;
@@ -68,6 +54,21 @@ int ConvertToI420(const uint8* sample,
   int tmp_v_stride = v_stride;
   uint8* rotate_buffer = NULL;
   int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
+
+  if (!y || !u || !v || !sample ||
+      src_width <= 0 || crop_width <= 0  ||
+      src_height == 0 || crop_height == 0) {
+    return -1;
+  }
+  if (src_height < 0) {
+    inv_crop_height = -inv_crop_height;
+  }
+
+  // One pass rotation is available for some formats. For the rest, convert
+  // to I420 (with optional vertical flipping) into a temporary I420 buffer,
+  // and then rotate the I420 to the final destination buffer.
+  // For in-place conversion, if destination y is same as source sample,
+  // also enable temporary buffer.
   if (need_buf) {
     int y_size = crop_width * abs_crop_height;
     int uv_size = ((crop_width + 1) / 2) * ((abs_crop_height + 1) / 2);
