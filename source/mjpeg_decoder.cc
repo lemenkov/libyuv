@@ -18,7 +18,17 @@
 #define HAVE_SETJMP
 #endif
 struct FILE;  // For jpeglib.h.
+
+// C++ build requires extern C for jpeg internals.
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <jpeglib.h>
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #include "libyuv/planar_functions.h"  // For CopyPlane().
 
