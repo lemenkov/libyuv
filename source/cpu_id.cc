@@ -13,7 +13,8 @@
 #ifdef _MSC_VER
 #include <intrin.h>  // For __cpuidex()
 #endif
-#if !defined(__CLR_VER) && !defined(__native_client__) && defined(_M_X64) && \
+#if !defined(__pnacl__) && !defined(__CLR_VER) && \
+    !defined(__native_client__) && defined(_M_X64) && \
     defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #include <immintrin.h>  // For _xgetbv()
 #endif
@@ -42,7 +43,8 @@ extern "C" {
 #endif
 
 // Low level cpuid for X86. Returns zeros on other CPUs.
-#if !defined(__CLR_VER) && (defined(_M_IX86) || defined(_M_X64) || \
+#if !defined(__pnacl__) && !defined(__CLR_VER) && \
+    (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__))
 LIBYUV_API
 void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
@@ -179,7 +181,8 @@ static LIBYUV_BOOL TestEnv(const char*) {
 
 LIBYUV_API SAFEBUFFERS
 int InitCpuFlags(void) {
-#if !defined(__CLR_VER) && defined(CPU_X86)
+#if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
+
   uint32 cpu_info1[4] = { 0, 0, 0, 0 };
   uint32 cpu_info7[4] = { 0, 0, 0, 0 };
   CpuId(1, 0, cpu_info1);

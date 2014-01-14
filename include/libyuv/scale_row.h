@@ -18,6 +18,11 @@ namespace libyuv {
 extern "C" {
 #endif
 
+#if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
+    defined(TARGET_IPHONE_SIMULATOR)
+#define LIBYUV_DISABLE_X86
+#endif
+
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))

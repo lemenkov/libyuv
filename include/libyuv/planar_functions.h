@@ -382,10 +382,11 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height, int interpolation);
 
-#if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
+#if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)
 #define LIBYUV_DISABLE_X86
 #endif
+
 // Row functions for copying a pixels from a source with a slope to a row
 // of destination. Useful for scaling, rotation, mirror, texture mapping.
 LIBYUV_API

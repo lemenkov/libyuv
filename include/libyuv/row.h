@@ -37,7 +37,7 @@ extern "C" {
   free(var##_mem);  \
   var = 0
 
-#if defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
+#if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR)
 #define LIBYUV_DISABLE_X86
 #endif
