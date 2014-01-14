@@ -14,8 +14,8 @@
     'use_system_libjpeg%': 0,
     'build_neon': 0,
     'conditions': [
-       ['OS == "android" or OS == "ios"', {
-         # TODO(noahric): Also check tool version for armv7
+       ['OS == "ios" or
+        (OS == "android" and target_arch == "arm" and arm_version >= 7)', {
          'build_neon': 1,
        }],
     ],
