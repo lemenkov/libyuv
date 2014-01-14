@@ -14,8 +14,7 @@
     'use_system_libjpeg%': 0,
     'build_neon': 0,
     'conditions': [
-       ['OS == "ios" or
-        (OS == "android" and target_arch == "arm" and arm_version >= 7)', {
+       ['target_arch == "arm" and arm_version >= 7 and (arm_neon == 1 or arm_neon_optional == 1)', {
          'build_neon': 1,
        }],
     ],
