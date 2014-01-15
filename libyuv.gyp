@@ -14,7 +14,7 @@
     'use_system_libjpeg%': 0,
     'build_neon': 0,
     'conditions': [
-       ['target_arch == "arm" and arm_version >= 7 and (arm_neon == 1 or arm_neon_optional == 1)', {
+       ['OS == "ios" or (target_arch == "arm" and arm_version >= 7 and (arm_neon == 1 or arm_neon_optional == 1))', {
          'build_neon': 1,
        }],
     ],
@@ -27,9 +27,6 @@
           'target_name': 'libyuv_neon',
           'type': 'static_library',
           'standalone_static_library': 1,
-          'defines': [
-            'LIBYUV_NEON',
-          ],
           # TODO(noahric): This should remove whatever mfpu is set, not
           # just vfpv3-d16.
           'cflags!': [
