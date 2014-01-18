@@ -72,8 +72,8 @@
             'HAVE_JPEG'
           ],
           'conditions': [
-            # Android uses libjpeg for system jpeg support.
-            [ 'OS == "android" and use_system_libjpeg == 1', {
+            # Caveat system jpeg support may not support motion jpeg
+            [ 'use_system_libjpeg == 1', {
               'dependencies': [
                  '<(DEPTH)/third_party/libjpeg/libjpeg.gyp:libjpeg',
               ],
