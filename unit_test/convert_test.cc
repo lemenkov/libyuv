@@ -988,6 +988,7 @@ TEST_F(libyuvTest, ValidateJpeg) {
 
   // No SOI or EOI. Expect fail.
   memset(orig_pixels, 0, kSize);
+  EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
 
   // EOI, SOI. Expect pass.
   orig_pixels[0] = 0xff;
@@ -1028,6 +1029,74 @@ TEST_F(libyuvTest, InvalidateJpeg) {
   free_aligned_buffer_page_end(orig_pixels);
 }
 
-#endif
+TEST_F(libyuvTest, MJPGToI420) {
+  const int kOff = 10;
+  const int kMinJpeg = 64;
+  const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
+    benchmark_width_ * benchmark_height_ : kMinJpeg;
+  const int kSize = kImageSize + kOff;
+  align_buffer_64(orig_pixels, kSize);
+  align_buffer_64(dst_y_opt, benchmark_width_ * benchmark_height_);
+  align_buffer_64(dst_u_opt,
+                  SUBSAMPLE(benchmark_width_, 2) *
+                  SUBSAMPLE(benchmark_height_, 2));
+  align_buffer_64(dst_v_opt,
+                  SUBSAMPLE(benchmark_width_, 2) *
+                  SUBSAMPLE(benchmark_height_, 2));
+
+  // EOI, SOI to make MJPG appear valid.
+  memset(orig_pixels, 0, kSize);
+  orig_pixels[0] = 0xff;
+  orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[kSize - kOff + 0] = 0xff;
+  orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
+
+  for (int times = 0; times < benchmark_iterations_; ++times) {
+    int ret = MJPGToI420(orig_pixels, kSize,
+                         dst_y_opt, benchmark_width_,
+                         dst_u_opt, SUBSAMPLE(benchmark_width_, 2),
+                         dst_v_opt, SUBSAMPLE(benchmark_width_, 2),
+                         benchmark_width_, benchmark_height_,
+                         benchmark_width_, benchmark_height_);
+    // Expect failure because image is not really valid.
+    EXPECT_EQ(1, ret);
+  }
+
+  free_aligned_buffer_page_end(dst_y_opt);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_opt);
+  free_aligned_buffer_page_end(orig_pixels);
+}
+
+TEST_F(libyuvTest, MJPGToARGB) {
+  const int kOff = 10;
+  const int kMinJpeg = 64;
+  const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
+    benchmark_width_ * benchmark_height_ : kMinJpeg;
+  const int kSize = kImageSize + kOff;
+  align_buffer_64(orig_pixels, kSize);
+  align_buffer_64(dst_argb_opt, benchmark_width_ * benchmark_height_ * 4);
+
+  // EOI, SOI to make MJPG appear valid.
+  memset(orig_pixels, 0, kSize);
+  orig_pixels[0] = 0xff;
+  orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[kSize - kOff + 0] = 0xff;
+  orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
+
+  for (int times = 0; times < benchmark_iterations_; ++times) {
+    int ret = MJPGToARGB(orig_pixels, kSize,
+                         dst_argb_opt, benchmark_width_ * 4,
+                         benchmark_width_, benchmark_height_,
+                         benchmark_width_, benchmark_height_);
+    // Expect failure because image is not really valid.
+    EXPECT_EQ(1, ret);
+  }
+
+  free_aligned_buffer_page_end(dst_argb_opt);
+  free_aligned_buffer_page_end(orig_pixels);
+}
+
+#endif  // HAVE_JPEG
 
 }  // namespace libyuv
