@@ -1,8 +1,9 @@
 # This is a generic makefile for libyuv for gcc.
-# make -f linux.mk CC=clang++
+# make -f linux.mk CXX=clang++
 
-CC=g++
-CCFLAGS=-O2 -fomit-frame-pointer -Iinclude/
+CXX?=g++
+CXXFLAGS?=-O2 -fomit-frame-pointer
+CXXFLAGS+=-Iinclude/
 
 LOCAL_OBJ_FILES := \
     source/compare.o           \
@@ -32,16 +33,16 @@ LOCAL_OBJ_FILES := \
     source/video_common.o
 
 .cc.o:
-	$(CC) -c $(CCFLAGS) $*.cc -o $*.o
+	$(CXX) -c $(CXXFLAGS) $*.cc -o $*.o
 
-all: libyuv.a convert linux.mk
+all: libyuv.a convert
 
-libyuv.a: $(LOCAL_OBJ_FILES) linux.mk
+libyuv.a: $(LOCAL_OBJ_FILES)
 	$(AR) $(ARFLAGS) -o $@ $(LOCAL_OBJ_FILES)
 
 # A test utility that uses libyuv conversion.
-convert: util/convert.cc linux.mk
-	$(CC) $(CCFLAGS) -Iutil/ -o $@ util/convert.cc libyuv.a
+convert: util/convert.cc libyuv.a
+	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/convert.cc libyuv.a
 
 clean:
 	/bin/rm -f source/*.o *.ii *.s libyuv.a convert
