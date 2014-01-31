@@ -2024,7 +2024,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
-#if defined(__x86_64__) || defined(__i386__)
+#if !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
@@ -2036,7 +2036,7 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
   ARGBToRGB565Row_SSE2(row, rgb_buf, width);
   free_aligned_buffer_64(row);
 }
-#endif  // defined(__x86_64__) || defined(__i386__)
+#endif  // !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
 
 #if defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
