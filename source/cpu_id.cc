@@ -121,19 +121,20 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 LIBYUV_API SAFEBUFFERS
 int ArmCpuCaps(const char* cpuinfo_name) {
   FILE* f = fopen(cpuinfo_name, "r");
-  if (f) {
-    char cpuinfo_line[512];
-    while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
-      if (memcmp(cpuinfo_line, "Features", 8) == 0) {
-        char* p = strstr(cpuinfo_line, " neon");
-        if (p && (p[5] == ' ' || p[5] == '\n')) {
-          fclose(f);
-          return kCpuHasNEON;
-        }
+  if (!f) {
+    return kCpuHasNEON;  // Assume Neon if /proc/cpuinfo is unavailable.
+  }
+  char cpuinfo_line[512];
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
+    if (memcmp(cpuinfo_line, "Features", 8) == 0) {
+      char* p = strstr(cpuinfo_line, " neon");
+      if (p && (p[5] == ' ' || p[5] == '\n')) {
+        fclose(f);
+        return kCpuHasNEON;
       }
     }
-    fclose(f);
   }
+  fclose(f);
   return 0;
 }
 
@@ -247,15 +248,14 @@ int InitCpuFlags(void) {
     cpu_info_ &= ~kCpuHasMIPS_DSPR2;
   }
 #elif defined(__arm__)
-#if defined(__linux__) && (defined(__ARM_NEON__) || defined(LIBYUV_NEON)) && \
-    !defined(__native_client__)
-  // Linux arm parse text file for neon detect.
-  cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
-#elif defined(__ARM_NEON__) || defined(__native_client__)
+#if defined(__ARM_NEON__) || defined(__native_client__) || !defined(__linux__)
   // gcc -mfpu=neon defines __ARM_NEON__
   // Enable Neon if you want support for Neon and Arm, and use MaskCpuFlags
   // to disable Neon on devices that do not have it.
   cpu_info_ = kCpuHasNEON;
+#else
+  // Linux arm parse text file for neon detect.
+  cpu_info_ = ArmCpuCaps("/proc/cpuinfo");
 #endif
   cpu_info_ |= kCpuHasARM;
   if (TestEnv("LIBYUV_DISABLE_NEON")) {
