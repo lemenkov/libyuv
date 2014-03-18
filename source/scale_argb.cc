@@ -181,8 +181,12 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   int64 xr = (dx >= 0) ? xlast : x;
   int clip_src_width;
   xl = (xl >> 16) & ~3;  // Left edge aligned.
-  xr = (xr >> 16) + 1;  // Right most pixel used.
-  clip_src_width = (((xr - xl) + 1 + 3) & ~3) * 4;  // Width aligned to 4.
+  xr = (xr >> 16) + 1;  // Right most pixel used.  Bilinear uses 2 pixels.
+  xr = (xr + 1 + 3) & ~3;  // 1 beyond 4 pixel aligned right most pixel.
+  if (xr > src_width) {
+    xr = src_width;
+  }
+  clip_src_width = (xr - xl) * 4;  // Width aligned to 4.
   src_argb += xl * 4;
   x -= (int)(xl << 16);
 #if defined(HAS_INTERPOLATEROW_SSE2)

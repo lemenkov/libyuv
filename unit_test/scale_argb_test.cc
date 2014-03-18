@@ -22,21 +22,21 @@ namespace libyuv {
 static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
                           FilterMode f, int benchmark_iterations) {
-  const int b = 128;
   int i, j;
+  const int b = 0;  // 128 to test for padding/stride.
   int src_argb_plane_size = (Abs(src_width) + b * 2) *
       (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
-  align_buffer_64(src_argb, src_argb_plane_size);
+  align_buffer_page_end(src_argb, src_argb_plane_size);
   srandom(time(NULL));
   MemRandomize(src_argb, src_argb_plane_size);
 
   int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
 
-  align_buffer_64(dst_argb_c, dst_argb_plane_size);
-  align_buffer_64(dst_argb_opt, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_c, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_opt, dst_argb_plane_size);
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
@@ -90,9 +90,9 @@ static int ARGBTestFilter(int src_width, int src_height,
     }
   }
 
-  free_aligned_buffer_64(dst_argb_c);
-  free_aligned_buffer_64(dst_argb_opt);
-  free_aligned_buffer_64(src_argb);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+  free_aligned_buffer_page_end(src_argb);
   return max_diff;
 }
 
@@ -262,6 +262,7 @@ TEST_FACTOR(3by4, 3 / 4, 3 / 4)
 TEST_SCALETO(ARGBScale, 1, 1)
 TEST_SCALETO(ARGBScale, 320, 240)
 TEST_SCALETO(ARGBScale, 352, 288)
+TEST_SCALETO(ARGBScale, 569, 480)
 TEST_SCALETO(ARGBScale, 640, 360)
 TEST_SCALETO(ARGBScale, 1280, 720)
 #undef TEST_SCALETO1

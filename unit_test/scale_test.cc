@@ -22,7 +22,7 @@ static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
                       FilterMode f, int benchmark_iterations) {
   int i, j;
-  const int b = 128;
+  const int b = 0;  // 128 to test for padding/stride.
   int src_width_uv = (Abs(src_width) + 1) >> 1;
   int src_height_uv = (Abs(src_height) + 1) >> 1;
 
@@ -180,6 +180,7 @@ TEST_FACTOR(3by4, 3 / 4, 3 / 4)
 TEST_SCALETO(Scale, 1, 1)
 TEST_SCALETO(Scale, 320, 240)
 TEST_SCALETO(Scale, 352, 288)
+TEST_SCALETO(Scale, 569, 480)
 TEST_SCALETO(Scale, 640, 360)
 TEST_SCALETO(Scale, 1280, 720)
 #undef TEST_SCALETO1
