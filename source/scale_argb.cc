@@ -186,7 +186,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   if (xr > src_width) {
     xr = src_width;
   }
-  clip_src_width = (xr - xl) * 4;  // Width aligned to 4.
+  clip_src_width = (int)(xr - xl) * 4;  // Width aligned to 4.
   src_argb += xl * 4;
   x -= (int)(xl << 16);
 #if defined(HAS_INTERPOLATEROW_SSE2)
