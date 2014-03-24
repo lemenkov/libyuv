@@ -120,13 +120,13 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 // For Arm, but public to allow testing on any CPU
 LIBYUV_API SAFEBUFFERS
 int ArmCpuCaps(const char* cpuinfo_name) {
+  char cpuinfo_line[512];
   FILE* f = fopen(cpuinfo_name, "r");
   if (!f) {
     // Assume Neon if /proc/cpuinfo is unavailable.
     // This will occur for Chrome sandbox for Pepper or Render process.
     return kCpuHasNEON;
   }
-  char cpuinfo_line[512];
   while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
     if (memcmp(cpuinfo_line, "Features", 8) == 0) {
       char* p = strstr(cpuinfo_line, " neon");
@@ -142,19 +142,21 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 
 #if defined(__mips__) && defined(__linux__)
 static int MipsCpuCaps(const char* search_string) {
+  char cpuinfo_line[512];
   const char* file_name = "/proc/cpuinfo";
-  char cpuinfo_line[256];
-  FILE* f = NULL;
-  if ((f = fopen(file_name, "r")) != NULL) {
-    while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f) != NULL) {
-      if (strstr(cpuinfo_line, search_string) != NULL) {
-        fclose(f);
-        return kCpuHasMIPS_DSP;
-      }
-    }
-    fclose(f);
+  FILE* f = fopen(file_name, "r");
+  if (!f) {
+    // Assume DSP if /proc/cpuinfo is unavailable.
+    // This will occur for Chrome sandbox for Pepper or Render process.
+    return kCpuHasMIPS_DSP;
   }
-  /* Did not find string in the proc file, or not Linux ELF. */
+  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f) != NULL) {
+    if (strstr(cpuinfo_line, search_string) != NULL) {
+      fclose(f);
+      return kCpuHasMIPS_DSP;
+    }
+  }
+  fclose(f);
   return 0;
 }
 #endif
