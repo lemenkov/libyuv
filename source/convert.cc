@@ -1,4 +1,3 @@
-//test
 /*
  *  Copyright 2011 The LibYuv Project Authors. All rights reserved.
  *
