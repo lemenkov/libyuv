@@ -84,6 +84,8 @@ def main(_):
                     help='Additional arguments to --gtest_filter')
   parser.add_option('', '--gtest_repeat',
                     help='Argument for --gtest_repeat')
+  parser.add_option("--gtest_shuffle", action="store_true", default=False,
+                    help="Randomize tests' orders on every iteration.")
   parser.add_option('-v', '--verbose', action='store_true', default=False,
                     help='Verbose output - enable debug log messages')
   parser.add_option('', '--tool', dest='valgrind_tool', default='memcheck',
@@ -95,6 +97,10 @@ def main(_):
                           'instead of /tmp.\nThis can be useful for tool '
                           'developers/maintainers.\nPlease note that the <tool>'
                           '.logs directory will be clobbered on tool startup.'))
+  parser.add_option("--brave-new-test-launcher", action="store_true",
+                    help="run the tests with --brave-new-test-launcher")
+  parser.add_option("--test-launcher-bot-mode", action="store_true",
+                    help="run the tests with --test-launcher-bot-mode")
   options, args = parser.parse_args()
 
   if options.verbose:
