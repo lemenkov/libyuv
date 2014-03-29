@@ -14,7 +14,7 @@
     'use_system_libjpeg%': 0,
     'build_neon': 0,
     'conditions': [
-       [ '(target_arch == "armv7" or target_arch == "armv8" or (target_arch == "arm" and arm_version >= 7)) and (arm_neon == 1 or arm_neon_optional == 1)', {
+       [ '(target_arch == "armv7" or target_arch == "armv7s" or (target_arch == "arm" and arm_version >= 7)) and target_subarch != 64 and (arm_neon == 1 or arm_neon_optional == 1)', {
          'build_neon': 1,
        }],
     ],
@@ -66,6 +66,11 @@
       # Allows libyuv.a redistributable library without external dependencies.
       'standalone_static_library': 1,
       'conditions': [
+        [ 'OS == "ios" and target_subarch == 64', {
+          'defines': [
+            'LIBYUV_DISABLE_NEON'
+          ],
+        }],
         # TODO(fbarchard): Use gyp define to enable jpeg.
         [ 'OS != "ios"', {
           'defines': [

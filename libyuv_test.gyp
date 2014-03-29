@@ -51,6 +51,11 @@
             '-fexceptions',
           ],
         }],
+        [ 'OS == "ios" and target_subarch == 64', {
+          'defines': [
+            'LIBYUV_DISABLE_NEON'
+          ],
+        }],
         [ 'OS != "ios"', {
           'defines': [
             'HAVE_JPEG',
@@ -105,6 +110,13 @@
         'util/psnr.cc',
         'util/ssim.cc',
       ],
+      'conditions': [
+        [ 'OS == "ios" and target_subarch == 64', {
+          'defines': [
+            'LIBYUV_DISABLE_NEON'
+          ],
+        }],
+      ], # conditions
     },
     {
       'target_name': 'cpuid',
