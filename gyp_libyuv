@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(checkout_root, 'build'))
 sys.path.insert(0, os.path.join(checkout_root, 'tools', 'find_depot_tools'))
 import gyp_chromium
 import gyp_helper
+import vs_toolchain
 
 sys.path.insert(0, os.path.join(checkout_root, 'tools', 'gyp', 'pylib'))
 import gyp
@@ -49,22 +50,20 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
-  vs2013_runtime_dll_dirs = gyp_chromium.DownloadVsToolChain()
+  vs2013_runtime_dll_dirs = vs_toolchain.DownloadVsToolchain()
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
 
   supplemental_includes = gyp_chromium.GetSupplementalFiles()
-  gn_vars_dict = gyp_chromium.GetGypVarsForGN(supplemental_includes)
+  gyp_vars_dict = gyp_chromium.GetGypVars(supplemental_includes)
 
   # Automatically turn on crosscompile support for platforms that need it.
   if all(('ninja' in os.environ.get('GYP_GENERATORS', ''),
-          gn_vars_dict.get('OS') in ['android', 'ios'],
+          gyp_vars_dict.get('OS') in ['android', 'ios'],
           'GYP_CROSSCOMPILE' not in os.environ)):
     os.environ['GYP_CROSSCOMPILE'] = '1'
 
-  if not gyp_chromium.RunGN(gn_vars_dict):
-    sys.exit(1)
   args.extend(['-I' + i for i in
                gyp_chromium.additional_include_files(supplemental_includes,
                                                      args)])
@@ -80,7 +79,7 @@ if __name__ == '__main__':
 
   if vs2013_runtime_dll_dirs:
     x64_runtime, x86_runtime = vs2013_runtime_dll_dirs
-    gyp_chromium.CopyVsRuntimeDlls(
+    vs_toolchain.CopyVsRuntimeDlls(
         os.path.join(checkout_root, gyp_chromium.GetOutputDirectory()),
         (x86_runtime, x64_runtime))
 
