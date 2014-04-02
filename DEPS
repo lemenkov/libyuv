@@ -14,7 +14,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "255773",
+  "chromium_revision": "260824",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
