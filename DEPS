@@ -85,8 +85,8 @@ deps_os = {
       File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
   },
   "unix": {
-    "third_party/gold":
-      From("chromium_deps", "src/third_party/gold"),
+    "third_party/binutils":
+      From("chromium_deps", "src/third_party/binutils@" + Var("chromium_revision")),
   },
   "android": {
     "third_party/android_tools":
@@ -174,6 +174,12 @@ hooks = [
     "action": ["python", Var("root_dir") + "/tools/clang/scripts/update.py",
                "--if-needed"],
   },
+  {
+    # Pull binutils for gold.
+    "name": "binutils",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/third_party/binutils/download.py"],
+  }, 
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
