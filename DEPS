@@ -14,7 +14,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "260824",
+  "chromium_revision": "262938",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -58,6 +58,9 @@ deps = {
   "tools/win/supalink":
     Var("chromium_trunk") + "/src/tools/win/supalink@" + Var("chromium_revision"),
 
+  "third_party/binutils":
+    Var("chromium_trunk") + "/src/third_party/binutils@" + Var("chromium_revision"),
+
   "third_party/libjpeg_turbo":
     From("chromium_deps", "src/third_party/libjpeg_turbo"),
 
@@ -83,10 +86,6 @@ deps_os = {
 
     "tools/find_depot_tools":
       File(Var("chromium_trunk") + "/src/tools/find_depot_tools.py@" + Var("chromium_revision")),
-  },
-  "unix": {
-    "third_party/binutils":
-      From("chromium_deps", "src/third_party/binutils@" + Var("chromium_revision")),
   },
   "android": {
     "third_party/android_tools":
@@ -175,11 +174,18 @@ hooks = [
                "--if-needed"],
   },
   {
+  # Update the Windows toolchain if necessary.
+    "name": "win_toolchain",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/download_vs_toolchain.py",
+               "update"],
+  },
+  {
     # Pull binutils for gold.
     "name": "binutils",
     "pattern": ".",
     "action": ["python", Var("root_dir") + "/third_party/binutils/download.py"],
-  }, 
+  },
   {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     "pattern": ".",
