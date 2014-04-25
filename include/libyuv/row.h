@@ -312,7 +312,6 @@ extern "C" {
 #define HAS_ARGBADDROW_NEON
 #define HAS_ARGBATTENUATEROW_NEON
 #define HAS_ARGBBLENDROW_NEON
-#define HAS_ARGBCOLORMATRIXROW_NEON
 #define HAS_ARGBGRAYROW_NEON
 #define HAS_ARGBMIRRORROW_NEON
 #define HAS_ARGBMULTIPLYROW_NEON
@@ -326,6 +325,8 @@ extern "C" {
 #define HAS_SOBELXROW_NEON
 #define HAS_SOBELYROW_NEON
 #define HAS_INTERPOLATEROW_NEON
+// TODO(fbarchard): Investigate neon unittest failure.
+// #define HAS_ARGBCOLORMATRIXROW_NEON
 #endif
 
 // The following are available on Mips platforms:
