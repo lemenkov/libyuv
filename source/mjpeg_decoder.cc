@@ -50,6 +50,14 @@ const int MJpegDecoder::kColorSpaceYCbCr = JCS_YCbCr;
 const int MJpegDecoder::kColorSpaceCMYK = JCS_CMYK;
 const int MJpegDecoder::kColorSpaceYCCK = JCS_YCCK;
 
+// Methods that are passed to jpeglib.
+boolean fill_input_buffer(jpeg_decompress_struct* cinfo);
+void init_source(jpeg_decompress_struct* cinfo);
+void skip_input_data(jpeg_decompress_struct* cinfo,
+                     long num_bytes);  // NOLINT
+void term_source(jpeg_decompress_struct* cinfo);
+void ErrorHandler(jpeg_common_struct* cinfo);
+
 MJpegDecoder::MJpegDecoder()
     : has_scanline_padding_(LIBYUV_FALSE),
       num_outbufs_(0),
@@ -398,11 +406,11 @@ LIBYUV_BOOL MJpegDecoder::DecodeToCallback(CallbackFunction fn, void* opaque,
   return FinishDecode();
 }
 
-void MJpegDecoder::init_source(j_decompress_ptr cinfo) {
+void init_source(j_decompress_ptr cinfo) {
   fill_input_buffer(cinfo);
 }
 
-boolean MJpegDecoder::fill_input_buffer(j_decompress_ptr cinfo) {
+boolean fill_input_buffer(j_decompress_ptr cinfo) {
   BufferVector* buf_vec = (BufferVector*)(cinfo->client_data);
   if (buf_vec->pos >= buf_vec->len) {
     assert(0 && "No more data");
@@ -415,17 +423,17 @@ boolean MJpegDecoder::fill_input_buffer(j_decompress_ptr cinfo) {
   return TRUE;
 }
 
-void MJpegDecoder::skip_input_data(j_decompress_ptr cinfo,
-                                   long num_bytes) {  // NOLINT
+void skip_input_data(j_decompress_ptr cinfo,
+                     long num_bytes) {  // NOLINT
   cinfo->src->next_input_byte += num_bytes;
 }
 
-void MJpegDecoder::term_source(j_decompress_ptr cinfo) {
+void term_source(j_decompress_ptr cinfo) {
   // Nothing to do.
 }
 
 #ifdef HAVE_SETJMP
-void MJpegDecoder::ErrorHandler(j_common_ptr cinfo) {
+void ErrorHandler(j_common_ptr cinfo) {
   // This is called when a jpeglib command experiences an error. Unfortunately
   // jpeglib's error handling model is not very flexible, because it expects the
   // error handler to not return--i.e., it wants the program to terminate. To
@@ -491,11 +499,11 @@ LIBYUV_BOOL MJpegDecoder::StartDecode() {
   decompress_struct_->dct_method = JDCT_IFAST;  // JDCT_ISLOW is default
   decompress_struct_->dither_mode = JDITHER_NONE;
   // Not applicable to 'raw':
-  decompress_struct_->do_fancy_upsampling = LIBYUV_FALSE;
+  decompress_struct_->do_fancy_upsampling = (boolean)(LIBYUV_FALSE);
   // Only for buffered mode:
-  decompress_struct_->enable_2pass_quant = LIBYUV_FALSE;
+  decompress_struct_->enable_2pass_quant = (boolean)(LIBYUV_FALSE);
   // Blocky but fast:
-  decompress_struct_->do_block_smoothing = LIBYUV_FALSE;
+  decompress_struct_->do_block_smoothing = (boolean)(LIBYUV_FALSE);
 
   if (!jpeg_start_decompress(decompress_struct_)) {
     // ERROR: Couldn't start JPEG decompressor";
