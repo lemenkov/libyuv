@@ -1565,6 +1565,10 @@ void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }
 
+void CopyRow_16_C(const uint16* src, uint16* dst, int count) {
+  memcpy(dst, src, count * 2);
+}
+
 void SetRow_C(uint8* dst, uint32 v8, int count) {
 #ifdef _MSC_VER
   // VC will generate rep stosb.
@@ -1890,6 +1894,14 @@ void HalfRow_C(const uint8* src_uv, int src_uv_stride,
   }
 }
 
+void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
+                  uint16* dst_uv, int pix) {
+  int x;
+  for (x = 0; x < pix; ++x) {
+    dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
+  }
+}
+
 // C version 2x2 -> 2x1.
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
@@ -1904,6 +1916,33 @@ void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
   }
   if (source_y_fraction == 128) {
     HalfRow_C(src_ptr, (int)(src_stride), dst_ptr, width);
+    return;
+  }
+  for (x = 0; x < width - 1; x += 2) {
+    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    src_ptr += 2;
+    src_ptr1 += 2;
+    dst_ptr += 2;
+  }
+  if (width & 1) {
+    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+  }
+}
+
+void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                         ptrdiff_t src_stride,
+                         int width, int source_y_fraction) {
+  int y1_fraction = source_y_fraction;
+  int y0_fraction = 256 - y1_fraction;
+  const uint16* src_ptr1 = src_ptr + src_stride;
+  int x;
+  if (source_y_fraction == 0) {
+    memcpy(dst_ptr, src_ptr, width * 2);
+    return;
+  }
+  if (source_y_fraction == 128) {
+    HalfRow_16_C(src_ptr, (int)(src_stride), dst_ptr, width);
     return;
   }
   for (x = 0; x < width - 1; x += 2) {

@@ -73,6 +73,55 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
   }
 }
 
+LIBYUV_API
+void CopyPlane_16(const uint16* src_y, int src_stride_y,
+                  uint16* dst_y, int dst_stride_y,
+                  int width, int height) {
+  int y;
+  void (*CopyRow)(const uint16* src, uint16* dst, int width) = CopyRow_16_C;
+  // Coalesce rows.
+  if (src_stride_y == width &&
+      dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+#if defined(HAS_COPYROW_16_X86)
+  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
+    CopyRow = CopyRow_16_X86;
+  }
+#endif
+#if defined(HAS_COPYROW_16_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
+      IS_ALIGNED(src_y, 16) && IS_ALIGNED(src_stride_y, 16) &&
+      IS_ALIGNED(dst_y, 16) && IS_ALIGNED(dst_stride_y, 16)) {
+    CopyRow = CopyRow_16_SSE2;
+  }
+#endif
+#if defined(HAS_COPYROW_16_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    CopyRow = CopyRow_16_ERMS;
+  }
+#endif
+#if defined(HAS_COPYROW_16_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
+    CopyRow = CopyRow_16_NEON;
+  }
+#endif
+#if defined(HAS_COPYROW_16_MIPS)
+  if (TestCpuFlag(kCpuHasMIPS)) {
+    CopyRow = CopyRow_16_MIPS;
+  }
+#endif
+
+  // Copy plane
+  for (y = 0; y < height; ++y) {
+    CopyRow(src_y, dst_y, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+}
+
 // Copy I422.
 LIBYUV_API
 int I422Copy(const uint8* src_y, int src_stride_y,

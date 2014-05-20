@@ -70,6 +70,13 @@ void ScalePlaneVertical(int src_height,
                         int x, int y, int dy,
                         int bpp, enum FilterMode filtering);
 
+void ScalePlaneVertical_16(int src_height,
+                           int dst_width, int dst_height,
+                           int src_stride, int dst_stride,
+                           const uint16* src_argb, uint16* dst_argb,
+                           int x, int y, int dy,
+                           int wpp, enum FilterMode filtering);
+
 // Simplify the filtering based on scale factors.
 enum FilterMode ScaleFilterReduce(int src_width, int src_height,
                                   int dst_width, int dst_height,
@@ -97,37 +104,70 @@ void ScaleSlope(int src_width, int src_height,
 
 void ScaleRowDown2_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width);
+void ScaleRowDown2_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                        uint16* dst, int dst_width);
 void ScaleRowDown2Linear_C(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
+void ScaleRowDown2Linear_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                              uint16* dst, int dst_width);
 void ScaleRowDown2Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width);
+void ScaleRowDown2Box_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                           uint16* dst, int dst_width);
 void ScaleRowDown4_C(const uint8* src_ptr, ptrdiff_t src_stride,
                      uint8* dst, int dst_width);
+void ScaleRowDown4_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                        uint16* dst, int dst_width);
 void ScaleRowDown4Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width);
+void ScaleRowDown4Box_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                           uint16* dst, int dst_width);
 void ScaleRowDown34_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width);
+void ScaleRowDown34_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                         uint16* dst, int dst_width);
 void ScaleRowDown34_0_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* d, int dst_width);
+void ScaleRowDown34_0_Box_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                               uint16* d, int dst_width);
 void ScaleRowDown34_1_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* d, int dst_width);
+void ScaleRowDown34_1_Box_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                               uint16* d, int dst_width);
 void ScaleCols_C(uint8* dst_ptr, const uint8* src_ptr,
                  int dst_width, int x, int dx);
+void ScaleCols_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                    int dst_width, int x, int dx);
 void ScaleColsUp2_C(uint8* dst_ptr, const uint8* src_ptr,
                     int dst_width, int, int);
+void ScaleColsUp2_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                       int dst_width, int, int);
 void ScaleFilterCols_C(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx);
+void ScaleFilterCols_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                          int dst_width, int x, int dx);
 void ScaleFilterCols64_C(uint8* dst_ptr, const uint8* src_ptr,
                          int dst_width, int x, int dx);
+void ScaleFilterCols64_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                            int dst_width, int x, int dx);
 void ScaleRowDown38_C(const uint8* src_ptr, ptrdiff_t src_stride,
                       uint8* dst, int dst_width);
+void ScaleRowDown38_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                         uint16* dst, int dst_width);
 void ScaleRowDown38_3_Box_C(const uint8* src_ptr,
                             ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_3_Box_16_C(const uint16* src_ptr,
+                               ptrdiff_t src_stride,
+                               uint16* dst_ptr, int dst_width);
 void ScaleRowDown38_2_Box_C(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_2_Box_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                               uint16* dst_ptr, int dst_width);
 void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
                     uint16* dst_ptr, int src_width, int src_height);
+void ScaleAddRows_16_C(const uint16* src_ptr, ptrdiff_t src_stride,
+                       uint32* dst_ptr, int src_width, int src_height);
 void ScaleARGBRowDown2_C(const uint8* src_argb,
                          ptrdiff_t src_stride,
                          uint8* dst_argb, int dst_width);

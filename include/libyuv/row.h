@@ -773,6 +773,8 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count);
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count);
 void CopyRow_C(const uint8* src, uint8* dst, int count);
 
+void CopyRow_16_C(const uint16* src, uint16* dst, int count);
+
 void ARGBCopyAlphaRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBCopyAlphaRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBCopyAlphaRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
@@ -1458,6 +1460,9 @@ void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
 void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix);
 
+void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
+                  uint16* dst_uv, int pix);
+
 void ARGBToBayerRow_C(const uint8* src_argb, uint8* dst_bayer,
                       uint32 selector, int pix);
 void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
@@ -1638,6 +1643,10 @@ void InterpolateRow_Any_AVX2(uint8* dst_ptr, const uint8* src_ptr,
 void InterpolateRows_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
                                     ptrdiff_t src_stride_ptr, int width,
                                     int source_y_fraction);
+
+void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
+                         ptrdiff_t src_stride_ptr,
+                         int width, int source_y_fraction);
 
 // Sobel images.
 void SobelXRow_C(const uint8* src_y0, const uint8* src_y1, const uint8* src_y2,
