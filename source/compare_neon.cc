@@ -27,7 +27,14 @@ uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count) {
 
     ".p2align  2                               \n"
   "1:                                          \n"
+    // TODO(fbarchard): Define a macro for clearing address bits for NaCL.
+#if defined(__native_client__)
+    "bic        %0, #0xc0000000                \n"
+#endif
     "vld1.8     {q0}, [%0]!                    \n"
+#if defined(__native_client__)
+    "bic        %1, #0xc0000000                \n"
+#endif
     "vld1.8     {q1}, [%1]!                    \n"
     "subs       %2, %2, #16                    \n"
     "vsubl.u8   q2, d0, d2                     \n"
