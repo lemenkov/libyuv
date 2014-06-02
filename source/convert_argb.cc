@@ -372,9 +372,31 @@ int BGRAToARGB(const uint8* src_bgra, int src_stride_bgra,
                      width, height);
 }
 
+// Convert ARGB to BGRA (same as BGRAToARGB).
+LIBYUV_API
+int ARGBToBGRA(const uint8* src_bgra, int src_stride_bgra,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  return ARGBShuffle(src_bgra, src_stride_bgra,
+                     dst_argb, dst_stride_argb,
+                     (const uint8*)(&kShuffleMaskBGRAToARGB),
+                     width, height);
+}
+
 // Convert ABGR to ARGB.
 LIBYUV_API
 int ABGRToARGB(const uint8* src_abgr, int src_stride_abgr,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  return ARGBShuffle(src_abgr, src_stride_abgr,
+                     dst_argb, dst_stride_argb,
+                     (const uint8*)(&kShuffleMaskABGRToARGB),
+                     width, height);
+}
+
+// Convert ARGB to ABGR to (same as ABGRToARGB).
+LIBYUV_API
+int ARGBToABGR(const uint8* src_abgr, int src_stride_abgr,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
   return ARGBShuffle(src_abgr, src_stride_abgr,

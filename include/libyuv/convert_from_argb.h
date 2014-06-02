@@ -25,24 +25,22 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-// Convert ARGB To BGRA. (alias)
-#define ARGBToBGRA BGRAToARGB
+// Convert ARGB To BGRA.
 LIBYUV_API
-int BGRAToARGB(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_argb, int dst_stride_argb,
+int ARGBToBGRA(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_bgra, int dst_stride_bgra,
                int width, int height);
 
-// Convert ARGB To ABGR. (alias)
-#define ARGBToABGR ABGRToARGB
+// Convert ARGB To ABGR.
 LIBYUV_API
-int ABGRToARGB(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_argb, int dst_stride_argb,
+int ARGBToABGR(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_abgr, int dst_stride_abgr,
                int width, int height);
 
 // Convert ARGB To RGBA.
 LIBYUV_API
-int ARGBToRGBA(const uint8* src_frame, int src_stride_frame,
-               uint8* dst_argb, int dst_stride_argb,
+int ARGBToRGBA(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_rgba, int dst_stride_rgba,
                int width, int height);
 
 // Convert ARGB To RGB24.
