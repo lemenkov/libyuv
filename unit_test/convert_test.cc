@@ -963,6 +963,63 @@ TESTATOB(I400, 1, 1, 1, I400Mirror, 1, 1, 1, 0)
 TESTATOB(Y, 1, 1, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGBMirror, 4, 4, 1, 0)
 
+#define TESTSYMI(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A,                          \
+                 W1280, N, NEG, OFF)                                           \
+TEST_F(libyuvTest, FMT_ATOB##_Symetric##N) {                                   \
+  const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
+  const int kHeight = benchmark_height_;                                       \
+  const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;         \
+  const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;  \
+  align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
+  align_buffer_64(dst_argb_c, kStrideA * kHeightA);                            \
+  align_buffer_64(dst_argb_opt, kStrideA * kHeightA);                          \
+  srandom(time(NULL));                                                         \
+  for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
+    src_argb[i + OFF] = (random() & 0xff);                                     \
+  }                                                                            \
+  memset(dst_argb_c, 1, kStrideA * kHeightA);                                  \
+  memset(dst_argb_opt, 101, kStrideA * kHeightA);                              \
+  MaskCpuFlags(0);                                                             \
+  FMT_ATOB(src_argb + OFF, kStrideA,                                           \
+           dst_argb_c, kStrideA,                                               \
+           kWidth, NEG kHeight);                                               \
+  MaskCpuFlags(-1);                                                            \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
+    FMT_ATOB(src_argb + OFF, kStrideA,                                         \
+             dst_argb_opt, kStrideA,                                           \
+             kWidth, NEG kHeight);                                             \
+  }                                                                            \
+  MaskCpuFlags(0);                                                             \
+  FMT_ATOB(dst_argb_c, kStrideA,                                               \
+           dst_argb_c, kStrideA,                                               \
+           kWidth, NEG kHeight);                                               \
+  MaskCpuFlags(-1);                                                            \
+  FMT_ATOB(dst_argb_opt, kStrideA,                                             \
+           dst_argb_opt, kStrideA,                                             \
+           kWidth, NEG kHeight);                                               \
+  for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
+    EXPECT_EQ(src_argb[i + OFF], dst_argb_opt[i]);                             \
+    EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);                                 \
+  }                                                                            \
+  free_aligned_buffer_64(src_argb);                                            \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
+}
+
+#define TESTSYM(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A)                           \
+    TESTSYMI(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A,                              \
+              benchmark_width_ - 4, _Any, +, 0)                                \
+    TESTSYMI(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A,                              \
+              benchmark_width_, _Unaligned, +, 1)                              \
+    TESTSYMI(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A,                              \
+              benchmark_width_, _Opt, +, 0)                              
+
+TESTSYM(ARGBToARGB, 4, 4, 1)
+TESTSYM(ARGBToBGRA, 4, 4, 1)
+TESTSYM(ARGBToABGR, 4, 4, 1)
+TESTSYM(BGRAToARGB, 4, 4, 1)
+TESTSYM(ABGRToARGB, 4, 4, 1)
+
 TEST_F(libyuvTest, Test565) {
   SIMD_ALIGNED(uint8 orig_pixels[256][4]);
   SIMD_ALIGNED(uint8 pixels565[256][2]);
