@@ -37,6 +37,10 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = dst_stride_y = 0;
   }
+  // Nothing to do.
+  if (src_y == dst_y && src_stride_y == dst_stride_y) {
+    return;
+  }
 #if defined(HAS_COPYROW_X86)
   if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
     CopyRow = CopyRow_X86;
