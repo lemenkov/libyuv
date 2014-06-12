@@ -427,7 +427,7 @@ typedef uint8 uvec8[16];
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " (%%r15,%%r14),%" #arg "\n" \
     BUNDLEUNLOCK
-#else
+#else  // defined(__native_client__) && defined(__x86_64__)
 #define BUNDLEALIGN "\n"
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
@@ -444,6 +444,15 @@ typedef uint8 uvec8[16];
     #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
 #define MEMOPARG(opcode, offset, base, index, scale, arg) \
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%" #arg "\n"
+#endif  // defined(__native_client__) && defined(__x86_64__)
+
+#if defined(__arm__)
+#undef MEMACCESS
+#if defined(__native_client__)
+#define MEMACCESS(base) "bic %" #base ", #0xc0000000\n"
+#else
+#define MEMACCESS(base) "\n"
+#endif
 #endif
 
 void I444ToARGBRow_NEON(const uint8* src_y,
