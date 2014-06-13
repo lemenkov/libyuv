@@ -449,7 +449,7 @@ typedef uint8 uvec8[16];
 #if defined(__arm__)
 #undef MEMACCESS
 #if defined(__native_client__)
-#define MEMACCESS(base) "bic %" #base ", #0xc0000000\n"
+#define MEMACCESS(base) ".p2align   3\nbic %" #base ", #0xc0000000\n"
 #else
 #define MEMACCESS(base) "\n"
 #endif
