@@ -17,8 +17,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
-  !defined(__native_client__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
+
 static uvec8 kVTbl4x4Transpose =
   { 0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
 
@@ -37,13 +37,21 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "1:                                        \n"
       "mov         %0, %1                      \n"
 
+      MEMACCESS(0)
       "vld1.8      {d0}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d1}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d2}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d3}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d4}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d5}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d6}, [%0], %2              \n"
+      MEMACCESS(0)
       "vld1.8      {d7}, [%0]                  \n"
 
       "vtrn.8      d1, d0                      \n"
@@ -68,13 +76,21 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
       "mov         %0, %3                      \n"
 
+    MEMACCESS(0)
       "vst1.8      {d1}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d0}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d3}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d2}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d5}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d4}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d7}, [%0], %4              \n"
+    MEMACCESS(0)
       "vst1.8      {d6}, [%0]                  \n"
 
       "add         %1, #8                      \n"  // src += 8
@@ -96,17 +112,26 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     // 4x8 block
     "mov         %0, %1                        \n"
+    MEMACCESS(0)
     "vld1.32     {d0[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d0[1]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d1[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d1[1]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d2[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d2[1]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d3[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.32     {d3[1]}, [%0]                 \n"
 
     "mov         %0, %3                        \n"
 
+    MEMACCESS(6)
     "vld1.8      {q3}, [%6]                    \n"
 
     "vtbl.8      d4, {d0, d1}, d6              \n"
@@ -116,15 +141,23 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     // TODO(frkoenig): Rework shuffle above to
     // write out with 4 instead of 8 writes.
+    MEMACCESS(0)
     "vst1.32     {d4[0]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d4[1]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d5[0]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d5[1]}, [%0]                 \n"
 
     "add         %0, %3, #4                    \n"
+    MEMACCESS(0)
     "vst1.32     {d0[0]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d0[1]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d1[0]}, [%0], %4             \n"
+    MEMACCESS(0)
     "vst1.32     {d1[1]}, [%0]                 \n"
 
     "add         %1, #4                        \n"  // src += 4
@@ -140,20 +173,30 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     // 2x8 block
     "2:                                        \n"
     "mov         %0, %1                        \n"
+    MEMACCESS(0)
     "vld1.16     {d0[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d1[0]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d0[1]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d1[1]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d0[2]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d1[2]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d0[3]}, [%0], %2             \n"
+    MEMACCESS(0)
     "vld1.16     {d1[3]}, [%0]                 \n"
 
     "vtrn.8      d0, d1                        \n"
 
     "mov         %0, %3                        \n"
 
+    MEMACCESS(0)
     "vst1.64     {d0}, [%0], %4                \n"
+    MEMACCESS(0)
     "vst1.64     {d1}, [%0]                    \n"
 
     "add         %1, #2                        \n"  // src += 2
@@ -163,15 +206,24 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 
     // 1x8 block
     "3:                                        \n"
+    MEMACCESS(1)
     "vld1.8      {d0[0]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[1]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[2]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[3]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[4]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[5]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[6]}, [%1], %2             \n"
+    MEMACCESS(1)
     "vld1.8      {d0[7]}, [%1]                 \n"
 
+    MEMACCESS(3)
     "vst1.64     {d0}, [%3]                    \n"
 
     "4:                                        \n"
@@ -206,13 +258,21 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "1:                                        \n"
       "mov         %0, %1                      \n"
 
+      MEMACCESS(0)
       "vld2.8      {d0,  d1},  [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d2,  d3},  [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d4,  d5},  [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d6,  d7},  [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d16, d17}, [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d18, d19}, [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d20, d21}, [%0], %2        \n"
+      MEMACCESS(0)
       "vld2.8      {d22, d23}, [%0]            \n"
 
       "vtrn.8      q1, q0                      \n"
@@ -241,24 +301,40 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
       "mov         %0, %3                      \n"
 
+    MEMACCESS(0)
       "vst1.8      {d2},  [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d0},  [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d6},  [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d4},  [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d18}, [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d16}, [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d22}, [%0], %4             \n"
+    MEMACCESS(0)
       "vst1.8      {d20}, [%0]                 \n"
 
       "mov         %0, %5                      \n"
 
+    MEMACCESS(0)
       "vst1.8      {d3},  [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d1},  [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d7},  [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d5},  [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d19}, [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d17}, [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d23}, [%0], %6             \n"
+    MEMACCESS(0)
       "vst1.8      {d21}, [%0]                 \n"
 
       "add         %1, #8*2                    \n"  // src   += 8*2
@@ -279,18 +355,27 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "cmp         %7, #4                        \n"
     "blt         2f                            \n"
 
-    //TODO(frkoenig): Clean this up
+    // TODO(frkoenig): Clean this up
     // 4x8 block
     "mov         %0, %1                        \n"
+    MEMACCESS(0)
     "vld1.64     {d0}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d1}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d2}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d3}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d4}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d5}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d6}, [%0], %2                \n"
+    MEMACCESS(0)
     "vld1.64     {d7}, [%0]                    \n"
 
+    MEMACCESS(8)
     "vld1.8      {q15}, [%8]                   \n"
 
     "vtrn.8      q0, q1                        \n"
@@ -307,28 +392,44 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     "mov         %0, %3                        \n"
 
+    MEMACCESS(0)
     "vst1.32     {d16[0]},  [%0], %4           \n"
+    MEMACCESS(0)
     "vst1.32     {d16[1]},  [%0], %4           \n"
+    MEMACCESS(0)
     "vst1.32     {d17[0]},  [%0], %4           \n"
+    MEMACCESS(0)
     "vst1.32     {d17[1]},  [%0], %4           \n"
 
     "add         %0, %3, #4                    \n"
+    MEMACCESS(0)
     "vst1.32     {d20[0]}, [%0], %4            \n"
+    MEMACCESS(0)
     "vst1.32     {d20[1]}, [%0], %4            \n"
+    MEMACCESS(0)
     "vst1.32     {d21[0]}, [%0], %4            \n"
+    MEMACCESS(0)
     "vst1.32     {d21[1]}, [%0]                \n"
 
     "mov         %0, %5                        \n"
 
+    MEMACCESS(0)
     "vst1.32     {d18[0]}, [%0], %6            \n"
+    MEMACCESS(0)
     "vst1.32     {d18[1]}, [%0], %6            \n"
+    MEMACCESS(0)
     "vst1.32     {d19[0]}, [%0], %6            \n"
+    MEMACCESS(0)
     "vst1.32     {d19[1]}, [%0], %6            \n"
 
     "add         %0, %5, #4                    \n"
+    MEMACCESS(0)
     "vst1.32     {d22[0]},  [%0], %6           \n"
+    MEMACCESS(0)
     "vst1.32     {d22[1]},  [%0], %6           \n"
+    MEMACCESS(0)
     "vst1.32     {d23[0]},  [%0], %6           \n"
+    MEMACCESS(0)
     "vst1.32     {d23[1]},  [%0]               \n"
 
     "add         %1, #4*2                      \n"  // src   += 4 * 2
@@ -345,13 +446,21 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     // 2x8 block
     "2:                                        \n"
     "mov         %0, %1                        \n"
+    MEMACCESS(0)
     "vld2.16     {d0[0], d2[0]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d1[0], d3[0]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d0[1], d2[1]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d1[1], d3[1]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d0[2], d2[2]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d1[2], d3[2]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d0[3], d2[3]}, [%0], %2      \n"
+    MEMACCESS(0)
     "vld2.16     {d1[3], d3[3]}, [%0]          \n"
 
     "vtrn.8      d0, d1                        \n"
@@ -359,12 +468,16 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     "mov         %0, %3                        \n"
 
+    MEMACCESS(0)
     "vst1.64     {d0}, [%0], %4                \n"
+    MEMACCESS(0)
     "vst1.64     {d2}, [%0]                    \n"
 
     "mov         %0, %5                        \n"
 
+    MEMACCESS(0)
     "vst1.64     {d1}, [%0], %6                \n"
+    MEMACCESS(0)
     "vst1.64     {d3}, [%0]                    \n"
 
     "add         %1, #2*2                      \n"  // src   += 2 * 2
@@ -375,16 +488,26 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
 
     // 1x8 block
     "3:                                        \n"
+    MEMACCESS(1)
     "vld2.8      {d0[0], d1[0]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[1], d1[1]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[2], d1[2]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[3], d1[3]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[4], d1[4]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[5], d1[5]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[6], d1[6]}, [%1], %2      \n"
+    MEMACCESS(1)
     "vld2.8      {d0[7], d1[7]}, [%1]          \n"
 
+    MEMACCESS(3)
     "vst1.64     {d0}, [%3]                    \n"
+    MEMACCESS(5)
     "vst1.64     {d1}, [%5]                    \n"
 
     "4:                                        \n"
