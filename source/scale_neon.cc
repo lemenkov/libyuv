@@ -302,8 +302,11 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
   const uint8* src_ptr1 = src_ptr + src_stride * 2;
 
   asm volatile (
+    MEMACCESS(5)
     "vld1.16    {q13}, [%5]                    \n"
+    MEMACCESS(6)
     "vld1.8     {q14}, [%6]                    \n"
+    MEMACCESS(7)
     "vld1.8     {q15}, [%7]                    \n"
     "add        %3, %0                         \n"
     ".p2align   2                              \n"
@@ -317,6 +320,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "vld4.8       {d0, d1, d2, d3}, [%0]!      \n"
     MEMACCESS(3)
     "vld4.8       {d4, d5, d6, d7}, [%3]!      \n"
+    MEMACCESS(4)
     "vld4.8       {d16, d17, d18, d19}, [%4]!  \n"
     "subs         %2, %2, #12                  \n"
 
