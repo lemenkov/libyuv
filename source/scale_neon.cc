@@ -16,8 +16,7 @@ extern "C" {
 #endif
 
 // This module is for GCC Neon.
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
-  !defined(__native_client__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
 
 // NEON downscalers with interpolation.
 // Provided by Fritz Koenig
@@ -95,18 +94,20 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
-  asm volatile (
-    "add        r4, %0, %3                     \n"
-    "add        r5, r4, %3                     \n"
-    "add        %3, r5, %3                     \n"
+  const uint8* src_ptr1 = src_ptr + src_stride;
+  const uint8* src_ptr2 = src_ptr + src_stride * 2;
+  const uint8* src_ptr3 = src_ptr + src_stride * 3;
+asm volatile (
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {q0}, [%0]!                    \n"   // load up 16x4
-    "vld1.8     {q1}, [r4]!                    \n"
-    "vld1.8     {q2}, [r5]!                    \n"
     MEMACCESS(3)
-    "vld1.8     {q3}, [%3]!                    \n"
+    "vld1.8     {q1}, [%3]!                    \n"
+    MEMACCESS(4)
+    "vld1.8     {q2}, [%4]!                    \n"
+    MEMACCESS(5)
+    "vld1.8     {q3}, [%5]!                    \n"
     "subs       %2, %2, #4                     \n"
     "vpaddl.u8  q0, q0                         \n"
     "vpadal.u8  q0, q1                         \n"
@@ -118,11 +119,14 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     MEMACCESS(1)
     "vst1.32    {d0[0]}, [%1]!                 \n"
     "bgt        1b                             \n"
-  : "+r"(src_ptr),          // %0
-    "+r"(dst_ptr),          // %1
-    "+r"(dst_width)         // %2
-  : "r"(src_stride)         // %3
-  : "r4", "r5", "q0", "q1", "q2", "q3", "memory", "cc"
+  : "+r"(src_ptr),   // %0
+    "+r"(dst_ptr),   // %1
+    "+r"(dst_width), // %2
+    "+r"(src_ptr1),  // %3
+    "+r"(src_ptr2),  // %4
+    "+r"(src_ptr3)   // %5
+  :
+  : "q0", "q1", "q2", "q3", "memory", "cc"
   );
 }
 
@@ -295,11 +299,12 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
 void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
+  const uint8* src_ptr1 = src_ptr + src_stride * 2;
+
   asm volatile (
-    "vld1.16    {q13}, [%4]                    \n"
-    "vld1.8     {q14}, [%5]                    \n"
-    "vld1.8     {q15}, [%6]                    \n"
-    "add        r4, %0, %3, lsl #1             \n"
+    "vld1.16    {q13}, [%5]                    \n"
+    "vld1.8     {q14}, [%6]                    \n"
+    "vld1.8     {q15}, [%7]                    \n"
     "add        %3, %0                         \n"
     ".p2align   2                              \n"
   "1:                                          \n"
@@ -312,7 +317,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "vld4.8       {d0, d1, d2, d3}, [%0]!      \n"
     MEMACCESS(3)
     "vld4.8       {d4, d5, d6, d7}, [%3]!      \n"
-    "vld4.8       {d16, d17, d18, d19}, [r4]!  \n"
+    "vld4.8       {d16, d17, d18, d19}, [%4]!  \n"
     "subs         %2, %2, #12                  \n"
 
     // Shuffle the input data around to get align the data
@@ -397,12 +402,12 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
-    "+r"(src_stride)        // %3
-  : "r"(&kMult38_Div6),     // %4
-    "r"(&kShuf38_2),        // %5
-    "r"(&kMult38_Div9)      // %6
-  : "r4", "q0", "q1", "q2", "q3", "q8", "q9",
-    "q13", "q14", "q15", "memory", "cc"
+    "+r"(src_stride),       // %3
+    "+r"(src_ptr1)          // %4
+  : "r"(&kMult38_Div6),     // %5
+    "r"(&kShuf38_2),        // %6
+    "r"(&kMult38_Div9)      // %7
+  : "q0", "q1", "q2", "q3", "q8", "q9", "q13", "q14", "q15", "memory", "cc"
   );
 }
 
