@@ -15,6 +15,10 @@
 
 #include "libyuv/basic_types.h"
 
+#if defined(__native_client__)
+#include "ppapi/c/pp_macros.h"  // For PPAPI_RELEASE
+#endif
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -47,7 +51,12 @@ extern "C" {
 #endif
 
 // Enable for NaCL pepper 33 for bundle and AVX2 support.
-//  #define NEW_BINUTILS
+#if defined(__native_client__) && PPAPI_RELEASE >= 33
+#define NEW_BINUTILS
+#endif
+#if defined(__native_client__) && defined(__arm__) && PPAPI_RELEASE < 37
+#define LIBYUV_DISABLE_NEON
+#endif
 
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
@@ -242,8 +251,7 @@ extern "C" {
 
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
-    (defined(__ARM_NEON__) || defined(LIBYUV_NEON)) && \
-    !defined(__native_client__)
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
 #define HAS_ABGRTOUVROW_NEON
 #define HAS_ABGRTOYROW_NEON
 #define HAS_ARGB1555TOARGBROW_NEON

@@ -16,8 +16,7 @@ extern "C" {
 #endif
 
 // This module is for GCC Neon
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
-  !defined(__native_client__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
 
 // Read 8 Y, 4 U and 4 V from 422
 #define READYUV422                                                             \
