@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_MIPS) && \
-    defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+    defined(__mips_dsp) && (__mips_dsp_rev >= 2) && \
+    (_MIPS_SIM == _MIPS_SIM_ABI32)
 
 void TransposeWx8_MIPS_DSPR2(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride,
@@ -303,10 +304,8 @@ void TransposeWx8_FAST_MIPS_DSPR2(const uint8* src, int src_stride,
        [width] "+r" (width)
       :[src_stride] "r" (src_stride),
        [dst_stride] "r" (dst_stride)
-      : "t0", "t1",  "t2", "t3",  "t4", "t5",
-        "t6", "t7", "t8", "t9",
-        "s0", "s1", "s2", "s3", "s4",
-        "s5", "s6", "s7"
+      : "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9",
+        "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7"
   );
 }
 
