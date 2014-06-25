@@ -116,7 +116,15 @@
             'LIBYUV_DISABLE_NEON'
           ],
         }],
+        [ 'OS != "ios"', {
+          'defines': [
+            'HAVE_JPEG',
+          ],
+        }],
       ], # conditions
+      'dependencies': [
+        'libyuv.gyp:libyuv',
+      ],
     },
     {
       'target_name': 'cpuid',
