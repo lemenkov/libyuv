@@ -243,9 +243,12 @@ bool UpdateMetrics(uint8* ch_org, uint8* ch_rec,
   const uint8* const v_rec = ch_rec + y_size + uv_size;
   if (do_psnr) {
 #ifdef HAVE_JPEG
-    double y_err = (double)libyuv::ComputeSumSquareError(ch_org, ch_rec, y_size);
-    double u_err = (double)libyuv::ComputeSumSquareError(u_org, u_rec, uv_size);
-    double v_err = (double)libyuv::ComputeSumSquareError(v_org, v_rec, uv_size);
+    double y_err = static_cast<double>(
+      libyuv::ComputeSumSquareError(ch_org, ch_rec, y_size));
+    double u_err = static_cast<double>(
+      libyuv::ComputeSumSquareError(u_org, u_rec, uv_size));
+    double v_err = static_cast<double>(
+      libyuv::ComputeSumSquareError(v_org, v_rec, uv_size));
 #else
     double y_err = ComputeSumSquareError(ch_org, ch_rec, y_size);
     double u_err = ComputeSumSquareError(u_org, u_rec, uv_size);
@@ -427,11 +430,16 @@ int main(int argc, const char* argv[]) {
       memset(ch_org, 0, total_size);
 
       if (0 != libyuv::MJPGToI420(ch_jpeg, bytes_org,
-                                  ch_org, image_width,
-                                  ch_org + y_size, (image_width + 1) / 2,
-                                  ch_org + y_size + uv_size, (image_width + 1) / 2,
-                                  image_width, image_height,
-                                  image_width, image_height)) {
+                                  ch_org,
+                                  image_width,
+                                  ch_org + y_size,
+                                  (image_width + 1) / 2,
+                                  ch_org + y_size + uv_size,
+                                  (image_width + 1) / 2,
+                                  image_width,
+                                  image_height,
+                                  image_width,
+                                  image_height)) {
         delete[] ch_jpeg;
         break;
       }
@@ -452,11 +460,16 @@ int main(int argc, const char* argv[]) {
         memset(ch_rec, 0, total_size);
 
         if (0 != libyuv::MJPGToI420(ch_jpeg, bytes_rec,
-                                    ch_rec, image_width,
-                                    ch_rec + y_size, (image_width + 1) / 2,
-                                    ch_rec + y_size + uv_size, (image_width + 1) / 2,
-                                    image_width, image_height,
-                                    image_width, image_height)) {
+                                    ch_rec,
+                                    image_width,
+                                    ch_rec + y_size,
+                                    (image_width + 1) / 2,
+                                    ch_rec + y_size + uv_size,
+                                    (image_width + 1) / 2,
+                                    image_width,
+                                    image_height,
+                                    image_width,
+                                    image_height)) {
           delete[] ch_jpeg;
           break;
         }
