@@ -10,7 +10,6 @@
 
 #include "../util/ssim.h"  // NOLINT
 
-#include <math.h>
 #include <string.h>
 
 #ifdef __cplusplus
@@ -325,10 +324,6 @@ double CalcSSIM(const uint8 *org, const uint8 *rec,
     }
   }
   return SSIM;
-}
-
-double CalcLSSIM(double ssim) {
-  return -10.0 * log10(1.0 - ssim);
 }
 
 #ifdef __cplusplus

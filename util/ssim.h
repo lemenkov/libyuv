@@ -13,6 +13,8 @@
 #ifndef UTIL_SSIM_H_  // NOLINT
 #define UTIL_SSIM_H_
 
+#include <math.h>  // For log10()
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,8 +27,9 @@ typedef unsigned char uint8;
 double CalcSSIM(const uint8* org, const uint8* rec,
                 const int image_width, const int image_height);
 
-// does -10.0 * log10(1.0 - ssim)
-double CalcLSSIM(double ssim);
+static double CalcLSSIM(double ssim) {
+  return -10.0 * log10(1.0 - ssim);
+}
 
 #ifdef __cplusplus
 }  // extern "C"

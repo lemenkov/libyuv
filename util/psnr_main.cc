@@ -256,10 +256,10 @@ bool UpdateMetrics(uint8* ch_org, uint8* ch_rec,
                                        static_cast<double>(total_size));
   } else {
     distorted_frame->y = CalcSSIM(ch_org, ch_rec, image_width, image_height);
-    distorted_frame->u = CalcSSIM(u_org, u_rec, image_width / 2,
-                                 image_height / 2);
-    distorted_frame->v = CalcSSIM(v_org, v_rec, image_width / 2,
-                                 image_height / 2);
+    distorted_frame->u = CalcSSIM(u_org, u_rec, (image_width + 1) / 2,
+                                 (image_height + 1) / 2);
+    distorted_frame->v = CalcSSIM(v_org, v_rec, (image_width + 1) / 2,
+                                 (image_height + 1) / 2);
     distorted_frame->all =
       (distorted_frame->y + distorted_frame->u + distorted_frame->v)
         / total_size;
@@ -417,11 +417,12 @@ int main(int argc, const char* argv[]) {
       // Try parsing file as a jpeg.
       uint8* const ch_jpeg = new uint8[bytes_org];
       memcpy(ch_jpeg, ch_org, bytes_org);
+      memset(ch_org, 0, total_size);
 
       if (0 != libyuv::MJPGToI420(ch_jpeg, bytes_org,
                                   ch_org, image_width,
-                                  ch_org + y_size, image_width / 2,
-                                  ch_org + y_size + uv_size, image_width / 2,
+                                  ch_org + y_size, (image_width + 1) / 2,
+                                  ch_org + y_size + uv_size, (image_width + 1) / 2,
                                   image_width, image_height,
                                   image_width, image_height)) {
         delete[] ch_jpeg;
@@ -441,11 +442,12 @@ int main(int argc, const char* argv[]) {
         // Try parsing file as a jpeg.
         uint8* const ch_jpeg = new uint8[bytes_rec];
         memcpy(ch_jpeg, ch_rec, bytes_rec);
+        memset(ch_rec, 0, total_size);
 
         if (0 != libyuv::MJPGToI420(ch_jpeg, bytes_rec,
                                     ch_rec, image_width,
-                                    ch_rec + y_size, image_width / 2,
-                                    ch_rec + y_size + uv_size, image_width / 2,
+                                    ch_rec + y_size, (image_width + 1) / 2,
+                                    ch_rec + y_size + uv_size, (image_width + 1) / 2,
                                     image_width, image_height,
                                     image_width, image_height)) {
           delete[] ch_jpeg;

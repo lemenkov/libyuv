@@ -10,8 +10,6 @@
 
 #include "./psnr.h"  // NOLINT
 
-#include <math.h>
-
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -33,14 +31,6 @@ typedef unsigned long uint64;  // NOLINT
 typedef unsigned long long uint64;  // NOLINT
 #endif  // __LP64__
 #endif  // _MSC_VER
-
-// PSNR formula: psnr = 10 * log10 (Peak Signal^2 * size / sse)
-double ComputePSNR(double sse, double size) {
-  const double kMINSSE = 255.0 * 255.0 * size / pow(10., kMaxPSNR / 10.);
-  if (sse <= kMINSSE)
-    sse = kMINSSE;  // Produces max PSNR of 128
-  return 10.0 * log10(65025.0 * size / sse);
-}
 
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
 #define HAS_SUMSQUAREERROR_NEON
