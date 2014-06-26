@@ -326,6 +326,10 @@ double CalcSSIM(const uint8 *org, const uint8 *rec,
   return SSIM;
 }
 
+double CalcLSSIM(double ssim) {
+  return -10.0 * log10(1.0 - ssim);
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

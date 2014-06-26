@@ -33,6 +33,7 @@
 #include "./psnr.h"
 #include "./ssim.h"
 #ifdef HAVE_JPEG
+#include "libyuv/compare.h"
 #include "libyuv/convert.h"
 #endif
 
@@ -241,9 +242,15 @@ bool UpdateMetrics(uint8* ch_org, uint8* ch_rec,
   const uint8* const v_org = ch_org + y_size + (uv_size - uv_offset);
   const uint8* const v_rec = ch_rec + y_size + uv_size;
   if (do_psnr) {
+#ifdef HAVE_JPEG
+    double y_err = (double)libyuv::ComputeSumSquareError(ch_org, ch_rec, y_size);
+    double u_err = (double)libyuv::ComputeSumSquareError(u_org, u_rec, uv_size);
+    double v_err = (double)libyuv::ComputeSumSquareError(v_org, v_rec, uv_size);
+#else
     double y_err = ComputeSumSquareError(ch_org, ch_rec, y_size);
     double u_err = ComputeSumSquareError(u_org, u_rec, uv_size);
     double v_err = ComputeSumSquareError(v_org, v_rec, uv_size);
+#endif
     const double total_err = y_err + u_err + v_err;
     cur_distortion_psnr->global_y += y_err;
     cur_distortion_psnr->global_u += u_err;

@@ -32,6 +32,9 @@ typedef unsigned long long uint64;  // NOLINT
 #endif  // __LP64__
 #endif  // _MSC_VER
 
+// libyuv provides this function when linking library for jpeg support.
+#if !defined(HAVE_JPEG)
+
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
 #define HAS_SUMSQUAREERROR_NEON
 static uint32 SumSquareError_NEON(const uint8* src_a,
@@ -230,6 +233,16 @@ double ComputeSumSquareError(const uint8* src_a,
     sse += SumSquareError_C(src_a, src_b, remainder);
   }
   return static_cast<double>(sse);
+}
+#endif
+
+// PSNR formula: psnr = 10 * log10 (Peak Signal^2 * size / sse)
+// Returns 128.0 (kMaxPSNR) if sse is 0 (perfect match).
+double ComputePSNR(double sse, double size) {
+  const double kMINSSE = 255.0 * 255.0 * size / pow(10.0, kMaxPSNR / 10.0);
+  if (sse <= kMINSSE)
+    sse = kMINSSE;  // Produces max PSNR of 128
+  return 10.0 * log10(255.0 * 255.0 * size / sse);
 }
 
 #ifdef __cplusplus
