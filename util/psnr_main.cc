@@ -121,6 +121,9 @@ double GetMSE(double sse, double size) {
 
 void PrintHelp(const char * program) {
   printf("%s [-options] org_seq rec_seq [rec_seq2.. etc]\n", program);
+#ifdef HAVE_JPEG
+  printf("jpeg or raw YUV 420 supported.\n");
+#endif
   printf("options:\n");
   printf(" -s <width> <height> .... specify YUV size, mandatory if none of the "
          "sequences have the\n");
