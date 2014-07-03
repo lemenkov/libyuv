@@ -14,7 +14,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "274825",
+  "chromium_revision": "280149",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -28,6 +28,9 @@ deps = {
 
   "build":
     Var("chromium_trunk") + "/src/build@" + Var("chromium_revision"),
+
+  "buildtools":
+    From("chromium_deps", "src/buildtools"),
 
   # Needed by common.gypi.
   "google_apis/build":
@@ -48,8 +51,17 @@ deps = {
   "tools/gyp":
     From("chromium_deps", "src/tools/gyp"),
 
+  "tools/memory":
+    Var("chromium_trunk") + "/src/tools/memory@" + Var("chromium_revision"),
+
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
+
+  "tools/sanitizer_options":
+    File(Var("chromium_trunk") + "/src/base/debug/sanitizer_options.cc@" + Var("chromium_revision")),
+
+  "tools/tsan_suppressions":
+    File(Var("chromium_trunk") + "/src/base/debug/tsan_suppressions.cc@" + Var("chromium_revision")),
 
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
@@ -60,6 +72,18 @@ deps = {
 
   "third_party/binutils":
     Var("chromium_trunk") + "/src/third_party/binutils@" + Var("chromium_revision"),
+
+  "third_party/libc++":
+    Var("chromium_trunk") + "/src/third_party/libc++@" + Var("chromium_revision"),
+
+  "third_party/libc++/trunk":
+    From("chromium_deps", "src/third_party/libc++/trunk"),
+
+  "third_party/libc++abi":
+    Var("chromium_trunk") + "/src/third_party/libc++abi@" + Var("chromium_revision"),
+
+  "third_party/libc++abi/trunk":
+    From("chromium_deps", "src/third_party/libc++abi/trunk"),
 
   "third_party/libjpeg_turbo":
     From("chromium_deps", "src/third_party/libjpeg_turbo"),
@@ -130,7 +154,7 @@ hooks = [
                 "--platform=win32",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/win/gn.exe.sha1",
+                "-s", Var("root_dir") + "/buildtools/win/gn.exe.sha1",
     ],
   },
   {
@@ -141,7 +165,7 @@ hooks = [
                 "--platform=darwin",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/mac/gn.sha1",
+                "-s", Var("root_dir") + "/buildtools/mac/gn.sha1",
     ],
   },
   {
@@ -152,7 +176,7 @@ hooks = [
                 "--platform=linux*",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn.sha1",
+                "-s", Var("root_dir") + "/buildtools/linux64/gn.sha1",
     ],
   },
   {
@@ -163,8 +187,15 @@ hooks = [
                 "--platform=linux*",
                 "--no_auth",
                 "--bucket", "chromium-gn",
-                "-s", Var("root_dir") + "/tools/gn/bin/linux/gn32.sha1",
+                "-s", Var("root_dir") + "/buildtools/linux32/gn.sha1",
     ],
+  },
+  {
+    # Remove GN binaries from tools/gn/bin that aren't used anymore.
+    # TODO(kjellander) remove after the end of July, 2014.
+    "name": "remove_old_gn_binaries",
+    "pattern": ".",
+    "action": ["python", Var("root_dir") + "/tools/gn/bin/rm_binaries.py"],
   },
   {
     # Pull clang on mac. If nothing changed, or on non-mac platforms, this takes
