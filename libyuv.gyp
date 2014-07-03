@@ -104,6 +104,13 @@
             'LIBYUV_NEON',
           ]
         }],
+        # MemorySanitizer does not support assembly code yet.
+        # http://crbug.com/344505
+        [ 'msan == 1', {
+          'defines': [
+            'LIBYUV_DISABLE_X86',
+          ],
+        }],
       ],
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.

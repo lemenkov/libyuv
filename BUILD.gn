@@ -77,6 +77,12 @@ source_set("libyuv") {
     defines += [ "HAVE_JPEG" ]
   }
 
+  if (is_msan) {
+    # MemorySanitizer does not support assembly code yet.
+    # http://crbug.com/344505
+    defines += [ "LIBYUV_DISABLE_X86" ]
+  }
+
   deps = [
     "//third_party:jpeg",
   ]
