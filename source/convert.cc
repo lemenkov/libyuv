@@ -519,9 +519,9 @@ int YUY2ToI420(const uint8* src_yuy2, int src_stride_yuy2,
                int width, int height) {
   int y;
   void (*YUY2ToUVRow)(const uint8* src_yuy2, int src_stride_yuy2,
-                      uint8* dst_u, uint8* dst_v, int pix) = YUY2ToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int pix) = YUY2ToUVRow_C;
   void (*YUY2ToYRow)(const uint8* src_yuy2,
-                     uint8* dst_y, int pix) = YUY2ToYRow_C;
+      uint8* dst_y, int pix) = YUY2ToYRow_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -592,9 +592,9 @@ int UYVYToI420(const uint8* src_uyvy, int src_stride_uyvy,
                int width, int height) {
   int y;
   void (*UYVYToUVRow)(const uint8* src_uyvy, int src_stride_uyvy,
-                      uint8* dst_u, uint8* dst_v, int pix) = UYVYToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int pix) = UYVYToUVRow_C;
   void (*UYVYToYRow)(const uint8* src_uyvy,
-                     uint8* dst_y, int pix) = UYVYToYRow_C;
+      uint8* dst_y, int pix) = UYVYToYRow_C;
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -665,7 +665,7 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   if (!src_argb ||
@@ -745,7 +745,7 @@ int BGRAToI420(const uint8* src_bgra, int src_stride_bgra,
                int width, int height) {
   int y;
   void (*BGRAToUVRow)(const uint8* src_bgra0, int src_stride_bgra,
-                      uint8* dst_u, uint8* dst_v, int width) = BGRAToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = BGRAToUVRow_C;
   void (*BGRAToYRow)(const uint8* src_bgra, uint8* dst_y, int pix) =
       BGRAToYRow_C;
   if (!src_bgra ||
@@ -814,7 +814,7 @@ int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
                int width, int height) {
   int y;
   void (*ABGRToUVRow)(const uint8* src_abgr0, int src_stride_abgr,
-                      uint8* dst_u, uint8* dst_v, int width) = ABGRToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ABGRToUVRow_C;
   void (*ABGRToYRow)(const uint8* src_abgr, uint8* dst_y, int pix) =
       ABGRToYRow_C;
   if (!src_abgr ||
@@ -883,7 +883,7 @@ int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
                int width, int height) {
   int y;
   void (*RGBAToUVRow)(const uint8* src_rgba0, int src_stride_rgba,
-                      uint8* dst_u, uint8* dst_v, int width) = RGBAToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = RGBAToUVRow_C;
   void (*RGBAToYRow)(const uint8* src_rgba, uint8* dst_y, int pix) =
       RGBAToYRow_C;
   if (!src_rgba ||
@@ -960,7 +960,7 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
   void (*RGB24ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       RGB24ToARGBRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   // Allocate 2 rows of ARGB.
@@ -1072,7 +1072,7 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
   void (*RAWToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       RAWToARGBRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   // Allocate 2 rows of ARGB.
@@ -1184,7 +1184,7 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
   void (*RGB565ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       RGB565ToARGBRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   // Allocate 2 rows of ARGB.
@@ -1282,10 +1282,10 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
 // Convert ARGB1555 to I420.
 LIBYUV_API
 int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
-                uint8* dst_y, int dst_stride_y,
-                uint8* dst_u, int dst_stride_u,
-                uint8* dst_v, int dst_stride_v,
-                int width, int height) {
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
   int y;
 #if defined(HAS_ARGB1555TOYROW_NEON)
   void (*ARGB1555ToUVRow)(const uint8* src_argb1555, int src_stride_argb1555,
@@ -1296,7 +1296,7 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
   void (*ARGB1555ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       ARGB1555ToARGBRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   // Allocate 2 rows of ARGB.
@@ -1396,10 +1396,10 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
 // Convert ARGB4444 to I420.
 LIBYUV_API
 int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
-                uint8* dst_y, int dst_stride_y,
-                uint8* dst_u, int dst_stride_u,
-                uint8* dst_v, int dst_stride_v,
-                int width, int height) {
+                   uint8* dst_y, int dst_stride_y,
+                   uint8* dst_u, int dst_stride_u,
+                   uint8* dst_v, int dst_stride_v,
+                   int width, int height) {
   int y;
 #if defined(HAS_ARGB4444TOYROW_NEON)
   void (*ARGB4444ToUVRow)(const uint8* src_argb4444, int src_stride_argb4444,
@@ -1410,7 +1410,7 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
   void (*ARGB4444ToARGBRow)(const uint8* src_rgb, uint8* dst_argb, int pix) =
       ARGB4444ToARGBRow_C;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
+      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
   void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
       ARGBToYRow_C;
   // Allocate 2 rows of ARGB.
