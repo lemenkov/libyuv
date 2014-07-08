@@ -388,10 +388,10 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)
 #define HAS_TRANSPOSE_UVWX8_SSE2
-extern "C" void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
-                                    uint8* dst_a, int dst_stride_a,
-                                    uint8* dst_b, int dst_stride_b,
-                                    int w);
+void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
+                         uint8* dst_a, int dst_stride_a,
+                         uint8* dst_b, int dst_stride_b,
+                         int w);
   asm (
     DECLARE_FUNCTION(TransposeUVWx8_SSE2)
     "push   %ebx                               \n"
