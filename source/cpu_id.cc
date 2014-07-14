@@ -188,10 +188,14 @@ LIBYUV_API SAFEBUFFERS
 int InitCpuFlags(void) {
 #if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
 
+  uint32 cpu_info0[4] = { 0, 0, 0, 0 };
   uint32 cpu_info1[4] = { 0, 0, 0, 0 };
   uint32 cpu_info7[4] = { 0, 0, 0, 0 };
+  CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
-  CpuId(7, 0, cpu_info7);
+  if (cpu_info0[0] >= 7) {
+    CpuId(7, 0, cpu_info7);
+  }
   cpu_info_ = ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
               ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
               ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
@@ -199,6 +203,7 @@ int InitCpuFlags(void) {
               ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
               ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
               kCpuHasX86;
+
 #ifdef HAS_XGETBV
   if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
       TestOsSaveYmm()) {  // Saves YMM.
