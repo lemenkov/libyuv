@@ -118,7 +118,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
       }                                                                        \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, 0);                                                      \
+  EXPECT_EQ(0, max_diff);                                                      \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -1167,8 +1167,8 @@ TEST_F(libyuvTest, CropNV12) {
   const int kDestWidth = benchmark_width_;
   const int kDestHeight = benchmark_height_ - crop_y * 2;;
   const int sample_size = kWidth * kHeight +
-                  SUBSAMPLE(kWidth, SUBSAMP_X) *
-                  SUBSAMPLE(kHeight, SUBSAMP_Y) * 2;
+    SUBSAMPLE(kWidth, SUBSAMP_X) *
+    SUBSAMPLE(kHeight, SUBSAMP_Y) * 2;
   align_buffer_64(src_y, sample_size);
   uint8* src_uv = src_y + kWidth * kHeight;
 
@@ -1192,7 +1192,7 @@ TEST_F(libyuvTest, CropNV12) {
   for (int i = 0; i < kHeight; ++i)
     for (int j = 0; j < kWidth; ++j)
       src_y[(i * kWidth) + j] = (random() & 0xff);
-  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_X); ++i) {
+  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {
       src_uv[(i * SUBSAMPLE(kWidth, SUBSAMP_X)) + j * 2 + 0] =
           (random() & 0xff);
@@ -1227,44 +1227,23 @@ TEST_F(libyuvTest, CropNV12) {
                 kDestWidth, kDestHeight,
                 libyuv::kRotate0, libyuv::FOURCC_NV12);
 
-  int max_diff = 0;
   for (int i = 0; i < kDestHeight; ++i) {
     for (int j = 0; j < kDestWidth; ++j) {
-      int abs_diff =
-          abs(static_cast<int>(dst_y[i * kWidth + j]) -
-              static_cast<int>(dst_y_2[i * kWidth + j]));
-      if (abs_diff > max_diff) {
-        max_diff = abs_diff;
-      }
+      EXPECT_EQ(dst_y[i * kWidth + j], dst_y_2[i * kWidth + j]);
     }
   }
-  EXPECT_LE(max_diff, 0);
   for (int i = 0; i < SUBSAMPLE(kDestHeight, SUBSAMP_Y); ++i) {
     for (int j = 0; j < SUBSAMPLE(kDestWidth, SUBSAMP_X); ++j) {
-      int abs_diff =
-          abs(static_cast<int>(dst_u[i *
-                               SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]) -
-              static_cast<int>(dst_u_2[i *
-                               SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]));
-      if (abs_diff > max_diff) {
-        max_diff = abs_diff;
-      }
+      EXPECT_EQ(dst_u[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j],
+                dst_u_2[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]);
     }
   }
-  EXPECT_LE(max_diff, 0);
   for (int i = 0; i < SUBSAMPLE(kDestHeight, SUBSAMP_Y); ++i) {
     for (int j = 0; j < SUBSAMPLE(kDestWidth, SUBSAMP_X); ++j) {
-      int abs_diff =
-          abs(static_cast<int>(dst_v[i *
-                               SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]) -
-              static_cast<int>(dst_v_2[i *
-                               SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]));
-      if (abs_diff > max_diff) {
-        max_diff = abs_diff;
-      }
+      EXPECT_EQ(dst_v[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j],
+                dst_v_2[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]);
     }
   }
-  EXPECT_LE(max_diff, 0);
   free_aligned_buffer_64(dst_y);
   free_aligned_buffer_64(dst_u);
   free_aligned_buffer_64(dst_v);
