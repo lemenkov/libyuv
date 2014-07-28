@@ -7,6 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 {
+  'variables': {
+    'libyuv_disable_jpeg%': 0,
+  },
   'targets': [
     {
       'target_name': 'libyuv_unittest',
@@ -62,7 +65,7 @@
             'DEBUG_INFORMATION_FORMAT' : 'dwarf-with-dsym',
           },
         }],
-        [ 'OS != "ios"', {
+        [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG',
           ],
@@ -116,22 +119,24 @@
         'util/psnr.cc',
         'util/ssim.cc',
       ],
+      'dependencies': [
+        'libyuv.gyp:libyuv',
+      ],
       'conditions': [
         [ 'OS == "ios" and target_subarch == 64', {
           'defines': [
             'LIBYUV_DISABLE_NEON'
           ],
         }],
-        [ 'OS != "ios"', {
+
+        [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG',
           ],
         }],
       ], # conditions
-      'dependencies': [
-        'libyuv.gyp:libyuv',
-      ],
     },
+
     {
       'target_name': 'cpuid',
       'type': 'executable',

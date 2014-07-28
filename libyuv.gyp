@@ -12,6 +12,7 @@
   ],
   'variables': {
     'use_system_libjpeg%': 0,
+    'libyuv_disable_jpeg%': 0,
     'build_neon': 0,
     'conditions': [
        [ '(target_arch == "armv7" or target_arch == "armv7s" or (target_arch == "arm" and arm_version >= 7)) and target_subarch != 64 and (arm_neon == 1 or arm_neon_optional == 1)', {
@@ -71,8 +72,7 @@
             'LIBYUV_DISABLE_NEON'
           ],
         }],
-        # TODO(fbarchard): Use gyp define to enable jpeg.
-        [ 'OS != "ios"', {
+        [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG'
           ],

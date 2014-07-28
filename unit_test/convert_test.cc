@@ -1253,4 +1253,12 @@ TEST_F(libyuvTest, CropNV12) {
   free_aligned_buffer_64(src_y);
 }
 
+TEST_F(libyuvTest, HaveJPEG) {
+#ifdef HAVE_JPEG
+  printf("JPEG enabled\n.");
+#else
+  printf("JPEG disabled\n.");
+#endif
+}
+
 }  // namespace libyuv
