@@ -542,7 +542,6 @@ void YToARGBRow_NEON(const uint8* src_y,
                      int width) {
   asm volatile (
     MEMACCESS(3)
-    MEMACCESS(3)
     "vld1.8     {d24}, [%3]                    \n"
     MEMACCESS(4)
     "vld1.8     {d25}, [%4]                    \n"
