@@ -53,6 +53,7 @@
             'source/compare_neon.cc',
             'source/rotate_neon.cc',
             'source/row_neon.cc',
+            'source/row_neon64.cc',
             'source/scale_neon.cc',
           ],
         },

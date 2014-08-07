@@ -250,6 +250,10 @@ extern "C" {
 #define HAS_MIRRORROW_SSE2
 #endif
 
+// The following are available on arm64 platforms:
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#endif
+
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
