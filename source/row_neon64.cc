@@ -3141,27 +3141,27 @@ void ARGBSubtractRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
 void SobelRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) {
   asm volatile (
-    "vmov.u8    d3, #255                       \n"  // alpha
+    "movi       v3.8b, #255                    \n"  // alpha
     // 8 pixel loop.
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d0}, [%0]!                    \n"  // load 8 sobelx.
+    "ld1        {v0.8b}, [%0], #8              \n"  // load 8 sobelx.
     MEMACCESS(1)
-    "vld1.8     {d1}, [%1]!                    \n"  // load 8 sobely.
+    "ld1        {v1.8b}, [%1], #8              \n"  // load 8 sobely.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vqadd.u8   d0, d0, d1                     \n"  // add
-    "vmov.u8    d1, d0                         \n"
-    "vmov.u8    d2, d0                         \n"
+    "uqadd      v0.8b, v0.8b, v1.8b            \n"  // add
+    "mov        v1.8b, v0.8b                   \n"
+    "mov        v2.8b, v0.8b                   \n"
     MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "st4        {v0.8b-v3.8b}, [%2], #32       \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "cc", "memory", "q0", "q1"
+  : "cc", "memory", "v0", "v1", "v2", "v3"
   );
 }
 #endif  // HAS_SOBELROW_NEON
@@ -3175,20 +3175,20 @@ void SobelToPlaneRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0]!                    \n"  // load 16 sobelx.
+    "ld1        {v0.16b}, [%0], #16            \n"  // load 16 sobelx.
     MEMACCESS(1)
-    "vld1.8     {q1}, [%1]!                    \n"  // load 16 sobely.
+    "ld1        {v1.16b}, [%1], #16            \n"  // load 16 sobely.
     "subs       %3, %3, #16                    \n"  // 16 processed per loop.
-    "vqadd.u8   q0, q0, q1                     \n"  // add
+    "uqadd      v0.16b, v0.16b, v1.16b         \n"  // add
     MEMACCESS(2)
-    "vst1.8     {q0}, [%2]!                    \n"  // store 16 pixels.
+    "st1        {v0.16b}, [%2], #16            \n"  // store 16 pixels.
     "bgt        1b                             \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
     "+r"(dst_y),       // %2
     "+r"(width)        // %3
   :
-  : "cc", "memory", "q0", "q1"
+  : "cc", "memory", "v0", "v1"
   );
 }
 #endif  // HAS_SOBELTOPLANEROW_NEON
@@ -3202,25 +3202,25 @@ void SobelToPlaneRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
 void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) {
   asm volatile (
-    "vmov.u8    d3, #255                       \n"  // alpha
+    "movi       v3.8b, #255                    \n"  // alpha
     // 8 pixel loop.
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d2}, [%0]!                    \n"  // load 8 sobelx.
+    "ld1        {v2.8b}, [%0], #8              \n"  // load 8 sobelx.
     MEMACCESS(1)
-    "vld1.8     {d0}, [%1]!                    \n"  // load 8 sobely.
+    "ld1        {v0.8b}, [%1], #8              \n"  // load 8 sobely.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vqadd.u8   d1, d0, d2                     \n"  // add
+    "uqadd      v1.8b, v0.8b, v2.8b            \n"  // add
     MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "st4        {v0.8b-v3.8b}, [%2], #32       \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
   : "+r"(src_sobelx),  // %0
     "+r"(src_sobely),  // %1
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "cc", "memory", "q0", "q1"
+  : "cc", "memory", "v0", "v1", "v2", "v3"
   );
 }
 #endif  // HAS_SOBELXYROW_NEON
@@ -3236,28 +3236,28 @@ void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d0}, [%0],%5                  \n"  // top
+    "ld1        {v0.8b}, [%0],%5               \n"  // top
     MEMACCESS(0)
-    "vld1.8     {d1}, [%0],%6                  \n"
-    "vsubl.u8   q0, d0, d1                     \n"
+    "ld1        {v1.8b}, [%0],%6               \n"
+    "usubl      v0.8h, v0.8b, v1.8b            \n"
     MEMACCESS(1)
-    "vld1.8     {d2}, [%1],%5                  \n"  // center * 2
+    "ld1        {v2.8b}, [%1],%5               \n"  // center * 2
     MEMACCESS(1)
-    "vld1.8     {d3}, [%1],%6                  \n"
-    "vsubl.u8   q1, d2, d3                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
+    "ld1        {v3.8b}, [%1],%6               \n"
+    "usubl      v1.8h, v2.8b, v3.8b            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
     MEMACCESS(2)
-    "vld1.8     {d2}, [%2],%5                  \n"  // bottom
+    "ld1        {v2.8b}, [%2],%5               \n"  // bottom
     MEMACCESS(2)
-    "vld1.8     {d3}, [%2],%6                  \n"
+    "ld1        {v3.8b}, [%2],%6               \n"
     "subs       %4, %4, #8                     \n"  // 8 pixels
-    "vsubl.u8   q1, d2, d3                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
-    "vabs.s16   q0, q0                         \n"
-    "vqmovn.u16 d0, q0                         \n"
+    "usubl      v1.8h, v2.8b, v3.8b            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
+    "abs        v0.8h, v0.8h                   \n"
+    "uqxtn      v0.8b, v0.8h                   \n"
     MEMACCESS(3)
-    "vst1.8     {d0}, [%3]!                    \n"  // store 8 sobelx
+    "st1        {v0.8b}, [%3], #8              \n"  // store 8 sobelx
     "bgt        1b                             \n"
   : "+r"(src_y0),      // %0
     "+r"(src_y1),      // %1
@@ -3266,7 +3266,7 @@ void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
     "+r"(width)        // %4
   : "r"(2),            // %5
     "r"(6)             // %6
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_SOBELXROW_NEON
@@ -3282,28 +3282,28 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d0}, [%0],%4                  \n"  // left
+    "ld1        {v0.8b}, [%0],%4               \n"  // left
     MEMACCESS(1)
-    "vld1.8     {d1}, [%1],%4                  \n"
-    "vsubl.u8   q0, d0, d1                     \n"
+    "ld1        {v1.8b}, [%1],%4               \n"
+    "usubl      v0.8h, v0.8b, v1.8b            \n"
     MEMACCESS(0)
-    "vld1.8     {d2}, [%0],%4                  \n"  // center * 2
+    "ld1        {v2.8b}, [%0],%4               \n"  // center * 2
     MEMACCESS(1)
-    "vld1.8     {d3}, [%1],%4                  \n"
-    "vsubl.u8   q1, d2, d3                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
+    "ld1        {v3.8b}, [%1],%4               \n"
+    "usubl      v1.8h, v2.8b, v3.8b            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
     MEMACCESS(0)
-    "vld1.8     {d2}, [%0],%5                  \n"  // right
+    "ld1        {v2.8b}, [%0],%5               \n"  // right
     MEMACCESS(1)
-    "vld1.8     {d3}, [%1],%5                  \n"
+    "ld1        {v3.8b}, [%1],%5               \n"
     "subs       %3, %3, #8                     \n"  // 8 pixels
-    "vsubl.u8   q1, d2, d3                     \n"
-    "vadd.s16   q0, q0, q1                     \n"
-    "vabs.s16   q0, q0                         \n"
-    "vqmovn.u16 d0, q0                         \n"
+    "usubl      v1.8h, v2.8b, v3.8b            \n"
+    "add        v0.8h, v0.8h, v1.8h            \n"
+    "abs        v0.8h, v0.8h                   \n"
+    "uqxtn      v0.8b, v0.8h                   \n"
     MEMACCESS(2)
-    "vst1.8     {d0}, [%2]!                    \n"  // store 8 sobely
+    "st1        {v0.8b}, [%2], #8              \n"  // store 8 sobely
     "bgt        1b                             \n"
   : "+r"(src_y0),      // %0
     "+r"(src_y1),      // %1
@@ -3311,7 +3311,7 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
     "+r"(width)        // %3
   : "r"(1),            // %4
     "r"(6)             // %5
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_SOBELYROW_NEON
