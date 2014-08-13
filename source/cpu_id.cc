@@ -256,11 +256,16 @@ int InitCpuFlags(void) {
   if (getenv("LIBYUV_DISABLE_MIPS_DSPR2")) {
     cpu_info_ &= ~kCpuHasMIPS_DSPR2;
   }
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 // gcc -mfpu=neon defines __ARM_NEON__
 // __ARM_NEON__ generates code that requires Neon.  NaCL also requires Neon.
 // For Linux, /proc/cpuinfo can be tested but without that assume Neon.
 #if defined(__ARM_NEON__) || defined(__native_client__) || !defined(__linux__)
+  cpu_info_ = kCpuHasNEON;
+// For aarch64(arm64), /proc/cpuinfo's feature is not complete, e.g. no neon
+// flag in it.
+// So for aarch64, neon enabling is hard coded here.
+#elif defined(__aarch64__)
   cpu_info_ = kCpuHasNEON;
 #else
   // Linux arm parse text file for neon detect.

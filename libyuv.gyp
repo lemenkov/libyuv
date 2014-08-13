@@ -15,7 +15,10 @@
     'libyuv_disable_jpeg%': 0,
     'build_neon': 0,
     'conditions': [
-       [ '(target_arch == "armv7" or target_arch == "armv7s" or (target_arch == "arm" and arm_version >= 7)) and target_subarch != 64 and (arm_neon == 1 or arm_neon_optional == 1)', {
+       [ '(target_arch == "armv7" or target_arch == "armv7s" or \
+       (target_arch == "arm" and arm_version >= 7) or target_arch == "arm64")\
+       and target_subarch != 64 and (arm_neon == 1 or arm_neon_optional == 1)',
+       {
          'build_neon': 1,
        }],
     ],
@@ -35,8 +38,12 @@
             '-mfpu=vfpv3',
             '-mfpu=vfpv3-d16',
           ],
-          'cflags': [
+          'conditions': [
+          ['target_arch != "arm64"', {
+           'cflags': [
             '-mfpu=neon',
+            ],
+           }],
           ],
           'include_dirs': [
             'include',
@@ -101,9 +108,15 @@
           'dependencies': [
             'libyuv_neon',
           ],
+          'conditions': [
+          #TODO LIBYUV_NEON is temporary disabled. When all arm64 port has
+          # been done, enable it.
+          ['target_arch !="arm64"', {
           'defines': [
             'LIBYUV_NEON',
           ]
+          }],
+          ],
         }],
         # MemorySanitizer does not support assembly code yet.
         # http://crbug.com/344505

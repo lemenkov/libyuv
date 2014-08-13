@@ -465,7 +465,7 @@ typedef uint8 uvec8[16];
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%" #arg "\n"
 #endif  // defined(__native_client__) && defined(__x86_64__)
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__aarch64__)
 #undef MEMACCESS
 #if defined(__native_client__)
 #define MEMACCESS(base) ".p2align   3\nbic %" #base ", #0xc0000000\n"
