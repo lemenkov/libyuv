@@ -78,7 +78,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* v_buf,
                          uint8* dst_argb,
                          int width) {
-
   __m128i xmm0, xmm1, xmm2, xmm3;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const __m128i xmm4 = _mm_setzero_si128();
@@ -132,7 +131,6 @@ void I422ToARGBRow_Unaligned_SSSE3(const uint8* y_buf,
                                    const uint8* v_buf,
                                    uint8* dst_argb,
                                    int width) {
-
   __m128i xmm0, xmm1, xmm2, xmm3;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const __m128i xmm4 = _mm_setzero_si128();
