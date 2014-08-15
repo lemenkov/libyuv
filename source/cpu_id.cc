@@ -14,7 +14,7 @@
 #include <intrin.h>  // For __cpuidex()
 #endif
 #if !defined(__pnacl__) && !defined(__CLR_VER) && \
-    !defined(__native_client__) && defined(_M_X64) && \
+    !defined(__native_client__)  && \
     defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
 #include <immintrin.h>  // For _xgetbv()
 #endif
