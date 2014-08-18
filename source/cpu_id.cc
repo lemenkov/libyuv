@@ -97,7 +97,7 @@ int TestOsSaveYmm() {
   uint32 xcr0 = 0u;
 #if defined(_MSC_VER) && (_MSC_FULL_VER >= 160040219)
   xcr0 = (uint32)(_xgetbv(0));  // VS2010 SP1 required.
-#elif defined(_M_IX86)
+#elif defined(_M_IX86) && defined(_MSC_VER)
   __asm {
     xor        ecx, ecx    // xcr 0
     _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // For VS2010 and earlier.
