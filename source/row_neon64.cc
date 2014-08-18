@@ -3048,20 +3048,20 @@ void ARGBMultiplyRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     MEMACCESS(1)
-    "vld4.8     {d1, d3, d5, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "ld4        {v4.8b-v7.8b}, [%1], #32       \n"  // load 8 more ARGB pixels.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vmull.u8   q0, d0, d1                     \n"  // multiply B
-    "vmull.u8   q1, d2, d3                     \n"  // multiply G
-    "vmull.u8   q2, d4, d5                     \n"  // multiply R
-    "vmull.u8   q3, d6, d7                     \n"  // multiply A
-    "vrshrn.u16 d0, q0, #8                     \n"  // 16 bit to 8 bit B
-    "vrshrn.u16 d1, q1, #8                     \n"  // 16 bit to 8 bit G
-    "vrshrn.u16 d2, q2, #8                     \n"  // 16 bit to 8 bit R
-    "vrshrn.u16 d3, q3, #8                     \n"  // 16 bit to 8 bit A
+    "umull      v0.8h, v0.8b, v4.8b            \n"  // multiply B
+    "umull      v1.8h, v1.8b, v5.8b            \n"  // multiply G
+    "umull      v2.8h, v2.8b, v6.8b            \n"  // multiply R
+    "umull      v3.8h, v3.8b, v7.8b            \n"  // multiply A
+    "rshrn      v0.8b, v0.8h, #8               \n"  // 16 bit to 8 bit B
+    "rshrn      v1.8b, v1.8h, #8               \n"  // 16 bit to 8 bit G
+    "rshrn      v2.8b, v2.8h, #8               \n"  // 16 bit to 8 bit R
+    "rshrn      v3.8b, v3.8h, #8               \n"  // 16 bit to 8 bit A
     MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "st4        {v0.8b-v3.8b}, [%2], #32       \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
 
   : "+r"(src_argb0),  // %0
@@ -3069,7 +3069,7 @@ void ARGBMultiplyRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(dst_argb),   // %2
     "+r"(width)       // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
   );
 }
 #endif  // HAS_ARGBMULTIPLYROW_NEON
@@ -3083,14 +3083,16 @@ void ARGBAddRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     MEMACCESS(1)
-    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "ld4        {v4.8b-v7.8b}, [%1], #32       \n"  // load 8 more ARGB pixels.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vqadd.u8   q0, q0, q2                     \n"  // add B, G
-    "vqadd.u8   q1, q1, q3                     \n"  // add R, A
+    "uqadd      v0.8b, v0.8b, v4.8b            \n"
+    "uqadd      v1.8b, v1.8b, v5.8b            \n"
+    "uqadd      v2.8b, v2.8b, v6.8b            \n"
+    "uqadd      v3.8b, v3.8b, v7.8b            \n"
     MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "st4        {v0.8b-v3.8b}, [%2], #32       \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
 
   : "+r"(src_argb0),  // %0
@@ -3098,7 +3100,7 @@ void ARGBAddRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(dst_argb),   // %2
     "+r"(width)       // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
   );
 }
 #endif  // HAS_ARGBADDROW_NEON
@@ -3112,14 +3114,16 @@ void ARGBSubtractRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     MEMACCESS(1)
-    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load 8 more ARGB pixels.
+    "ld4        {v4.8b-v7.8b}, [%1], #32       \n"  // load 8 more ARGB pixels.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vqsub.u8   q0, q0, q2                     \n"  // subtract B, G
-    "vqsub.u8   q1, q1, q3                     \n"  // subtract R, A
+    "uqsub      v0.8b, v0.8b, v4.8b            \n"
+    "uqsub      v1.8b, v1.8b, v5.8b            \n"
+    "uqsub      v2.8b, v2.8b, v6.8b            \n"
+    "uqsub      v3.8b, v3.8b, v7.8b            \n"
     MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"  // store 8 ARGB pixels.
+    "st4        {v0.8b-v3.8b}, [%2], #32       \n"  // store 8 ARGB pixels.
     "bgt        1b                             \n"
 
   : "+r"(src_argb0),  // %0
@@ -3127,7 +3131,7 @@ void ARGBSubtractRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(dst_argb),   // %2
     "+r"(width)       // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
   );
 }
 #endif  // HAS_ARGBSUBTRACTROW_NEON
