@@ -62,6 +62,7 @@
             'source/row_neon.cc',
             'source/row_neon64.cc',
             'source/scale_neon.cc',
+            'source/scale_neon64.cc',
           ],
         },
       ],
