@@ -10,7 +10,7 @@
 
 #include "libyuv/row.h"
 
-#if defined (_M_X64)
+#if defined (_M_X64) && !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER)
 #include <emmintrin.h>
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
 #endif
