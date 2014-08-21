@@ -10,6 +10,12 @@
   'includes': [
     'libyuv.gypi',
   ],
+  # Make sure that if we are being compiled to an xcodeproj, nothing tries to
+  # include a .pch.
+  'xcode_settings': {
+    'GCC_PREFIX_HEADER': '',
+    'GCC_PRECOMPILE_PREFIX_HEADER': 'NO',
+  },
   'variables': {
     'use_system_libjpeg%': 0,
     'libyuv_disable_jpeg%': 0,
