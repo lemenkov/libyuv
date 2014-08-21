@@ -1007,20 +1007,20 @@ void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_RGB24TOARGBROW_NEON
 void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix) {
   asm volatile (
-    "vmov.u8    d4, #255                       \n"  // Alpha
+    "movi       v4.8b, #255                    \n"  // Alpha
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld3.8     {d1, d2, d3}, [%0]!            \n"  // load 8 pixels of RGB24.
+    "ld3        {v1.8b-v3.8b}, [%0], #24       \n"  // load 8 pixels of RGB24.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     MEMACCESS(1)
-    "vst4.8     {d1, d2, d3, d4}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "st4        {v1.8b-v4.8b}, [%1], #32       \n"  // store 8 pixels of ARGB.
     "bgt        1b                             \n"
   : "+r"(src_rgb24),  // %0
     "+r"(dst_argb),   // %1
     "+r"(pix)         // %2
   :
-  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "v1", "v2", "v3", "v4"  // Clobber List
   );
 }
 #endif  // HAS_RGB24TOARGBROW_NEON
@@ -1028,21 +1028,22 @@ void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix) {
 #ifdef HAS_RAWTOARGBROW_NEON
 void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int pix) {
   asm volatile (
-    "vmov.u8    d4, #255                       \n"  // Alpha
+    "movi       v5.8b, #255                    \n"  // Alpha
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld3.8     {d1, d2, d3}, [%0]!            \n"  // load 8 pixels of RAW.
+    "ld3        {v0.8b-v2.8b}, [%0], #24       \n"  // read r g b
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vswp.u8    d1, d3                         \n"  // swap R, B
+    "mov        v3.8b, v1.8b                   \n"  // move g
+    "mov        v4.8b, v0.8b                   \n"  // move r
     MEMACCESS(1)
-    "vst4.8     {d1, d2, d3, d4}, [%1]!        \n"  // store 8 pixels of ARGB.
+    "st4        {v2.8b-v5.8b}, [%1], #32       \n"  // store b g r a
     "bgt        1b                             \n"
   : "+r"(src_raw),   // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5"  // Clobber List
   );
 }
 #endif  // HAS_RAWTOARGBROW_NEON
@@ -1170,16 +1171,16 @@ void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb24, int pix) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d1, d2, d3, d4}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "ld4        {v1.8b-v4.8b}, [%0], #32       \n"  // load 8 pixels of ARGB.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     MEMACCESS(1)
-    "vst3.8     {d1, d2, d3}, [%1]!            \n"  // store 8 pixels of RGB24.
+    "st3        {v1.8b-v3.8b}, [%1], #24       \n"  // store 8 pixels of RGB24.
     "bgt        1b                             \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_rgb24),  // %1
     "+r"(pix)         // %2
   :
-  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "v1", "v2", "v3", "v4"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTORGB24ROW_NEON
@@ -1190,17 +1191,18 @@ void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_raw, int pix) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d1, d2, d3, d4}, [%0]!        \n"  // load 8 pixels of ARGB.
+    "ld4        {v1.8b-v4.8b}, [%0], #32       \n"  // load b g r a
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vswp.u8    d1, d3                         \n"  // swap R, B
+    "mov        v4.8b, v2.8b                   \n"  // mov g
+    "mov        v5.8b, v1.8b                   \n"  // mov b
     MEMACCESS(1)
-    "vst3.8     {d1, d2, d3}, [%1]!            \n"  // store 8 pixels of RAW.
+    "st3        {v3.8b-v5.8b}, [%1], #24       \n"  // store r g b
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_raw),   // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "d1", "d2", "d3", "d4"  // Clobber List
+  : "cc", "memory", "v1", "v2", "v3", "v4", "v5"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTORAWROW_NEON
@@ -1211,16 +1213,16 @@ void YUY2ToYRow_NEON(const uint8* src_yuy2, uint8* dst_y, int pix) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {q0, q1}, [%0]!                \n"  // load 16 pixels of YUY2.
+    "ld2        {v0.16b, v1.16b}, [%0], #32    \n"  // load 16 pixels of YUY2.
     "subs       %2, %2, #16                    \n"  // 16 processed per loop.
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"  // store 16 pixels of Y.
+    "st1        {v0.16b}, [%1], #16            \n"  // store 16 pixels of Y.
     "bgt        1b                             \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOYROW_NEON
@@ -1231,16 +1233,16 @@ void UYVYToYRow_NEON(const uint8* src_uyvy, uint8* dst_y, int pix) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {q0, q1}, [%0]!                \n"  // load 16 pixels of UYVY.
+    "ld2        {v0.16b, v1.16b}, [%0], #32    \n"  // load 16 pixels of UYVY.
     "subs       %2, %2, #16                    \n"  // 16 processed per loop.
     MEMACCESS(1)
-    "vst1.8     {q1}, [%1]!                    \n"  // store 16 pixels of Y.
+    "st1        {v1.16b}, [%1], #16            \n"  // store 16 pixels of Y.
     "bgt        1b                             \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOYROW_NEON
@@ -1252,19 +1254,19 @@ void YUY2ToUV422Row_NEON(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of YUY2.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 16 pixels of YUY2.
     "subs       %3, %3, #16                    \n"  // 16 pixels = 8 UVs.
     MEMACCESS(1)
-    "vst1.8     {d1}, [%1]!                    \n"  // store 8 U.
+    "st1        {v1.8b}, [%1], #8              \n"  // store 8 U.
     MEMACCESS(2)
-    "vst1.8     {d3}, [%2]!                    \n"  // store 8 V.
+    "st1        {v3.8b}, [%2], #8              \n"  // store 8 V.
     "bgt        1b                             \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_u),     // %1
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOUV422ROW_NEON
@@ -1276,19 +1278,19 @@ void UYVYToUV422Row_NEON(const uint8* src_uyvy, uint8* dst_u, uint8* dst_v,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of UYVY.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 16 pixels of UYVY.
     "subs       %3, %3, #16                    \n"  // 16 pixels = 8 UVs.
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 U.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 U.
     MEMACCESS(2)
-    "vst1.8     {d2}, [%2]!                    \n"  // store 8 V.
+    "st1        {v2.8b}, [%2], #8              \n"  // store 8 V.
     "bgt        1b                             \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_u),     // %1
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOUV422ROW_NEON
@@ -1297,20 +1299,20 @@ void UYVYToUV422Row_NEON(const uint8* src_uyvy, uint8* dst_u, uint8* dst_v,
 void YUY2ToUVRow_NEON(const uint8* src_yuy2, int stride_yuy2,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
-    "add        %1, %0, %1                     \n"  // stride + src_yuy2
+    "add        %x1, %x0, %w1, sxtw            \n"  // stride + src_yuy2
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of YUY2.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 16 pixels of YUY2.
     "subs       %4, %4, #16                    \n"  // 16 pixels = 8 UVs.
     MEMACCESS(1)
-    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load next row YUY2.
-    "vrhadd.u8  d1, d1, d5                     \n"  // average rows of U
-    "vrhadd.u8  d3, d3, d7                     \n"  // average rows of V
+    "ld4        {v4.8b-v7.8b}, [%1], #32       \n"  // load next row YUY2.
+    "urhadd     v1.8b, v1.8b, v5.8b            \n"  // average rows of U
+    "urhadd     v3.8b, v3.8b, v7.8b            \n"  // average rows of V
     MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"  // store 8 U.
+    "st1        {v1.8b}, [%2], #8              \n"  // store 8 U.
     MEMACCESS(3)
-    "vst1.8     {d3}, [%3]!                    \n"  // store 8 V.
+    "st1        {v3.8b}, [%3], #8              \n"  // store 8 V.
     "bgt        1b                             \n"
   : "+r"(src_yuy2),     // %0
     "+r"(stride_yuy2),  // %1
@@ -1318,7 +1320,7 @@ void YUY2ToUVRow_NEON(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_v),        // %3
     "+r"(pix)           // %4
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"  // Clobber List
   );
 }
 #endif  // HAS_YUY2TOUVROW_NEON
@@ -1327,20 +1329,20 @@ void YUY2ToUVRow_NEON(const uint8* src_yuy2, int stride_yuy2,
 void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
                       uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
-    "add        %1, %0, %1                     \n"  // stride + src_uyvy
+    "add        %x1, %x0, %w1, sxtw            \n"  // stride + src_uyvy
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 16 pixels of UYVY.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 16 pixels of UYVY.
     "subs       %4, %4, #16                    \n"  // 16 pixels = 8 UVs.
     MEMACCESS(1)
-    "vld4.8     {d4, d5, d6, d7}, [%1]!        \n"  // load next row UYVY.
-    "vrhadd.u8  d0, d0, d4                     \n"  // average rows of U
-    "vrhadd.u8  d2, d2, d6                     \n"  // average rows of V
+    "ld4        {v4.8b-v7.8b}, [%1], #32       \n"  // load next row UYVY.
+    "urhadd     v0.8b, v0.8b, v4.8b            \n"  // average rows of U
+    "urhadd     v2.8b, v2.8b, v6.8b            \n"  // average rows of V
     MEMACCESS(2)
-    "vst1.8     {d0}, [%2]!                    \n"  // store 8 U.
+    "st1        {v0.8b}, [%2], #8              \n"  // store 8 U.
     MEMACCESS(3)
-    "vst1.8     {d2}, [%3]!                    \n"  // store 8 V.
+    "st1        {v2.8b}, [%3], #8              \n"  // store 8 V.
     "bgt        1b                             \n"
   : "+r"(src_uyvy),     // %0
     "+r"(stride_uyvy),  // %1
@@ -1348,7 +1350,7 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_v),        // %3
     "+r"(pix)           // %4
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"  // Clobber List
   );
 }
 #endif  // HAS_UYVYTOUVROW_NEON
@@ -1358,23 +1360,23 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
                   uint8* dst_uv, int pix) {
   asm volatile (
     // change the stride to row 2 pointer
-    "add        %1, %0                         \n"
+    "add        %x1, %x0, %w1, sxtw            \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0]!                    \n"  // load row 1 16 pixels.
+    "ld1        {v0.16b}, [%0], #16            \n"  // load row 1 16 pixels.
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     MEMACCESS(1)
-    "vld1.8     {q1}, [%1]!                    \n"  // load row 2 16 pixels.
-    "vrhadd.u8  q0, q1                         \n"  // average row 1 and 2
+    "ld1        {v1.16b}, [%1], #16            \n"  // load row 2 16 pixels.
+    "urhadd     v0.16b, v0.16b, v1.16b         \n"  // average row 1 and 2
     MEMACCESS(2)
-    "vst1.8     {q0}, [%2]!                    \n"
+    "st1        {v0.16b}, [%2], #16            \n"
     "bgt        1b                             \n"
   : "+r"(src_uv),         // %0
     "+r"(src_uv_stride),  // %1
     "+r"(dst_uv),         // %2
     "+r"(pix)             // %3
   :
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1"  // Clobber List
   );
 }
 #endif  // HAS_HALFROW_NEON
@@ -1384,22 +1386,22 @@ void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
 void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
                          uint32 selector, int pix) {
   asm volatile (
-    "vmov.u32   d6[0], %3                      \n"  // selector
+    "mov        v2.s[0], %w3                   \n"  // selector
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0, q1}, [%0]!                \n"  // load row 8 pixels.
+    "ld1        {v0.16b, v1.16b}, [%0], 32     \n"  // load row 8 pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
-    "vtbl.8     d4, {d0, d1}, d6               \n"  // look up 4 pixels
-    "vtbl.8     d5, {d2, d3}, d6               \n"  // look up 4 pixels
-    "vtrn.u32   d4, d5                         \n"  // combine 8 pixels
+    "tbl        v4.8b, {v0.16b}, v2.8b         \n"  // look up 4 pixels
+    "tbl        v5.8b, {v1.16b}, v2.8b         \n"  // look up 4 pixels
+    "trn1       v4.4s, v4.4s, v5.4s            \n"  // combine 8 pixels
     MEMACCESS(1)
-    "vst1.8     {d4}, [%1]!                    \n"  // store 8.
+    "st1        {v4.8b}, [%1], #8              \n"  // store 8.
     "bgt        1b                             \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_bayer),  // %1
     "+r"(pix)         // %2
   : "r"(selector)     // %3
-  : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v4", "v5"   // Clobber List
   );
 }
 #endif  // HAS_ARGBTOBAYERROW_NEON
@@ -1411,16 +1413,16 @@ void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
   asm volatile (
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load row 8 pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load row 8 pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
     MEMACCESS(1)
-    "vst1.8     {d1}, [%1]!                    \n"  // store 8 G's.
+    "st1        {v1.8b}, [%1], #8              \n"  // store 8 G's.
     "bgt        1b                             \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_bayer),  // %1
     "+r"(pix)         // %2
   :
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_ARGBTOBAYERGGROW_NEON
@@ -1431,21 +1433,20 @@ void ARGBShuffleRow_NEON(const uint8* src_argb, uint8* dst_argb,
                          const uint8* shuffler, int pix) {
   asm volatile (
     MEMACCESS(3)
-    "vld1.8     {q2}, [%3]                     \n"  // shuffler
+    "ld1        {v2.16b}, [%3]                 \n"  // shuffler
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0]!                    \n"  // load 4 pixels.
+    "ld1        {v0.16b}, [%0], #16            \n"  // load 4 pixels.
     "subs       %2, %2, #4                     \n"  // 4 processed per loop
-    "vtbl.8     d2, {d0, d1}, d4               \n"  // look up 2 first pixels
-    "vtbl.8     d3, {d0, d1}, d5               \n"  // look up 2 next pixels
+    "tbl        v1.16b, {v0.16b}, v2.16b       \n"  // look up 4 pixels
     MEMACCESS(1)
-    "vst1.8     {q1}, [%1]!                    \n"  // store 4.
+    "st1        {v1.16b}, [%1], #16            \n"  // store 4.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   : "r"(shuffler)    // %3
-  : "cc", "memory", "q0", "q1", "q2"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2"  // Clobber List
   );
 }
 #endif  // HAS_ARGBSHUFFLEROW_NEON
@@ -1459,14 +1460,15 @@ void I422ToYUY2Row_NEON(const uint8* src_y,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {d0, d2}, [%0]!                \n"  // load 16 Ys
+    "ld2        {v0.8b, v1.8b}, [%0], #16      \n"  // load 16 Ys
+    "mov        v2.8b, v1.8b                   \n"
     MEMACCESS(1)
-    "vld1.8     {d1}, [%1]!                    \n"  // load 8 Us
+    "ld1        {v1.8b}, [%1], #8              \n"  // load 8 Us
     MEMACCESS(2)
-    "vld1.8     {d3}, [%2]!                    \n"  // load 8 Vs
+    "ld1        {v3.8b}, [%2], #8              \n"  // load 8 Vs
     "subs       %4, %4, #16                    \n"  // 16 pixels
     MEMACCESS(3)
-    "vst4.8     {d0, d1, d2, d3}, [%3]!        \n"  // Store 8 YUY2/16 pixels.
+    "st4        {v0.8b-v3.8b}, [%3], #32       \n"  // Store 8 YUY2/16 pixels.
     "bgt        1b                             \n"
   : "+r"(src_y),     // %0
     "+r"(src_u),     // %1
@@ -1474,7 +1476,7 @@ void I422ToYUY2Row_NEON(const uint8* src_y,
     "+r"(dst_yuy2),  // %3
     "+r"(width)      // %4
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3"
+  : "cc", "memory", "v0", "v1", "v2", "v3"
   );
 }
 #endif  // HAS_I422TOYUY2ROW_NEON
@@ -1488,14 +1490,15 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {d1, d3}, [%0]!                \n"  // load 16 Ys
+    "ld2        {v1.8b, v2.8b}, [%0], #16      \n"  // load 16 Ys
+    "mov        v3.8b, v2.8b                   \n"
     MEMACCESS(1)
-    "vld1.8     {d0}, [%1]!                    \n"  // load 8 Us
+    "ld1        {v0.8b}, [%1], #8              \n"  // load 8 Us
     MEMACCESS(2)
-    "vld1.8     {d2}, [%2]!                    \n"  // load 8 Vs
+    "ld1        {v2.8b}, [%2], #8              \n"  // load 8 Vs
     "subs       %4, %4, #16                    \n"  // 16 pixels
     MEMACCESS(3)
-    "vst4.8     {d0, d1, d2, d3}, [%3]!        \n"  // Store 8 UYVY/16 pixels.
+    "st4        {v0.8b-v3.8b}, [%3], #32       \n"  // Store 8 UYVY/16 pixels.
     "bgt        1b                             \n"
   : "+r"(src_y),     // %0
     "+r"(src_u),     // %1
@@ -1503,7 +1506,7 @@ void I422ToUYVYRow_NEON(const uint8* src_y,
     "+r"(dst_uyvy),  // %3
     "+r"(width)      // %4
   :
-  : "cc", "memory", "d0", "d1", "d2", "d3"
+  : "cc", "memory", "v0", "v1", "v2", "v3"
   );
 }
 #endif  // HAS_I422TOUYVYROW_NEON
