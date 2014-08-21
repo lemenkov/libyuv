@@ -711,11 +711,13 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
     }
-    if (width >= 16) {
-      ARGBToUVRow = ARGBToUVRow_Any_NEON;
-      if (IS_ALIGNED(width, 16)) {
-        ARGBToUVRow = ARGBToUVRow_NEON;
-      }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 16) {
+    ARGBToUVRow = ARGBToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_NEON;
     }
   }
 #endif

@@ -1580,28 +1580,28 @@ void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
 #ifdef HAS_ARGBTOYROW_NEON
 void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
-    "vmov.u8    d24, #13                       \n"  // B * 0.1016 coefficient
-    "vmov.u8    d25, #65                       \n"  // G * 0.5078 coefficient
-    "vmov.u8    d26, #33                       \n"  // R * 0.2578 coefficient
-    "vmov.u8    d27, #16                       \n"  // Add 16 constant
+    "movi       v4.8b, #13                     \n"  // B * 0.1016 coefficient
+    "movi       v5.8b, #65                     \n"  // G * 0.5078 coefficient
+    "movi       v6.8b, #33                     \n"  // R * 0.2578 coefficient
+    "movi       v7.8b, #16                     \n"  // Add 16 constant
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vmull.u8   q2, d0, d24                    \n"  // B
-    "vmlal.u8   q2, d1, d25                    \n"  // G
-    "vmlal.u8   q2, d2, d26                    \n"  // R
-    "vqrshrun.s16 d0, q2, #7                   \n"  // 16 bit to 8 bit Y
-    "vqadd.u8   d0, d27                        \n"
+    "umull      v3.8h, v0.8b, v4.8b            \n"  // B
+    "umlal      v3.8h, v1.8b, v5.8b            \n"  // G
+    "umlal      v3.8h, v2.8b, v6.8b            \n"  // R
+    "sqrshrun   v0.8b, v3.8h, #7               \n"  // 16 bit to 8 bit Y
+    "uqadd      v0.8b, v0.8b, v7.8b            \n"
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels Y.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q1", "q2", "q12", "q13"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
   );
 }
 #endif  // HAS_ARGBTOYROW_NEON
@@ -1609,26 +1609,26 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
 #ifdef HAS_ARGBTOYJROW_NEON
 void ARGBToYJRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
-    "vmov.u8    d24, #15                       \n"  // B * 0.11400 coefficient
-    "vmov.u8    d25, #75                       \n"  // G * 0.58700 coefficient
-    "vmov.u8    d26, #38                       \n"  // R * 0.29900 coefficient
+    "movi       v4.8b, #15                     \n"  // B * 0.11400 coefficient
+    "movi       v5.8b, #75                     \n"  // G * 0.58700 coefficient
+    "movi       v6.8b, #38                     \n"  // R * 0.29900 coefficient
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
-    "vmull.u8   q2, d0, d24                    \n"  // B
-    "vmlal.u8   q2, d1, d25                    \n"  // G
-    "vmlal.u8   q2, d2, d26                    \n"  // R
-    "vqrshrun.s16 d0, q2, #7                   \n"  // 15 bit to 8 bit Y
+    "umull      v3.8h, v0.8b, v4.8b            \n"  // B
+    "umlal      v3.8h, v1.8b, v5.8b            \n"  // G
+    "umlal      v3.8h, v2.8b, v6.8b            \n"  // R
+    "sqrshrun   v0.8b, v3.8h, #7               \n"  // 15 bit to 8 bit Y
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels Y.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q1", "q2", "q12", "q13"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6"
   );
 }
 #endif  // HAS_ARGBTOYJROW_NEON
