@@ -401,7 +401,7 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
   int y;
-  int halfheight = (height + 1) >> 1;
+  int halfheight;
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
   void (*YUY2ToUV422Row)(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
       int pix) = YUY2ToUV422Row_C;
