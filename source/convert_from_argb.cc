@@ -269,9 +269,6 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
       ARGBToYRow_C;
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
-  // Allocate a rows of uv.
-  align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
-  uint8* row_v = row_u + ((halfwidth + 15) & ~15);
   if (!src_argb ||
       !dst_y || !dst_uv ||
       width <= 0 || height == 0) {
@@ -341,22 +338,27 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+  {
+    // Allocate a rows of uv.
+    align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
+    uint8* row_v = row_u + ((halfwidth + 15) & ~15);
 
-  for (y = 0; y < height - 1; y += 2) {
-    ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
-    MergeUVRow_(row_u, row_v, dst_uv, halfwidth);
-    ARGBToYRow(src_argb, dst_y, width);
-    ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
-    src_argb += src_stride_argb * 2;
-    dst_y += dst_stride_y * 2;
-    dst_uv += dst_stride_uv;
+    for (y = 0; y < height - 1; y += 2) {
+      ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
+      MergeUVRow_(row_u, row_v, dst_uv, halfwidth);
+      ARGBToYRow(src_argb, dst_y, width);
+      ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
+      src_argb += src_stride_argb * 2;
+      dst_y += dst_stride_y * 2;
+      dst_uv += dst_stride_uv;
+    }
+    if (height & 1) {
+      ARGBToUVRow(src_argb, 0, row_u, row_v, width);
+      MergeUVRow_(row_u, row_v, dst_uv, halfwidth);
+      ARGBToYRow(src_argb, dst_y, width);
+    }
+    free_aligned_buffer_64(row_u);
   }
-  if (height & 1) {
-    ARGBToUVRow(src_argb, 0, row_u, row_v, width);
-    MergeUVRow_(row_u, row_v, dst_uv, halfwidth);
-    ARGBToYRow(src_argb, dst_y, width);
-  }
-  free_aligned_buffer_64(row_u);
   return 0;
 }
 
@@ -374,9 +376,6 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
       ARGBToYRow_C;
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
-  // Allocate a rows of uv.
-  align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
-  uint8* row_v = row_u + ((halfwidth + 15) & ~15);
   if (!src_argb ||
       !dst_y || !dst_uv ||
       width <= 0 || height == 0) {
@@ -446,22 +445,27 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+  {
+    // Allocate a rows of uv.
+    align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
+    uint8* row_v = row_u + ((halfwidth + 15) & ~15);
 
-  for (y = 0; y < height - 1; y += 2) {
-    ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
-    MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
-    ARGBToYRow(src_argb, dst_y, width);
-    ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
-    src_argb += src_stride_argb * 2;
-    dst_y += dst_stride_y * 2;
-    dst_uv += dst_stride_uv;
+    for (y = 0; y < height - 1; y += 2) {
+      ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
+      MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
+      ARGBToYRow(src_argb, dst_y, width);
+      ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
+      src_argb += src_stride_argb * 2;
+      dst_y += dst_stride_y * 2;
+      dst_uv += dst_stride_uv;
+    }
+    if (height & 1) {
+      ARGBToUVRow(src_argb, 0, row_u, row_v, width);
+      MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
+      ARGBToYRow(src_argb, dst_y, width);
+    }
+    free_aligned_buffer_64(row_u);
   }
-  if (height & 1) {
-    ARGBToUVRow(src_argb, 0, row_u, row_v, width);
-    MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
-    ARGBToYRow(src_argb, dst_y, width);
-  }
-  free_aligned_buffer_64(row_u);
   return 0;
 }
 
