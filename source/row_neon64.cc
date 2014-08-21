@@ -824,19 +824,19 @@ void SplitUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {q0, q1}, [%0]!                \n"  // load 16 pairs of UV
+    "ld2        {v0.16b, v1.16b}, [%0], #32    \n"  // load 16 pairs of UV
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"  // store U
+    "st1        {v0.16b}, [%1], #16            \n"  // store U
     MEMACCESS(2)
-    "vst1.8     {q1}, [%2]!                    \n"  // store V
+    "st1        {v1.16b}, [%2], #16            \n"  // store V
     "bgt        1b                             \n"
     : "+r"(src_uv),  // %0
       "+r"(dst_u),   // %1
       "+r"(dst_v),   // %2
       "+r"(width)    // %3  // Output registers
     :                       // Input registers
-    : "cc", "memory", "q0", "q1"  // Clobber List
+    : "cc", "memory", "v0", "v1"  // Clobber List
   );
 }
 #endif  // HAS_SPLITUVROW_NEON
@@ -849,12 +849,12 @@ void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0]!                    \n"  // load U
+    "ld1        {v0.16b}, [%0], #16            \n"  // load U
     MEMACCESS(1)
-    "vld1.8     {q1}, [%1]!                    \n"  // load V
+    "ld1        {v1.16b}, [%1], #16            \n"  // load V
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
     MEMACCESS(2)
-    "vst2.u8    {q0, q1}, [%2]!                \n"  // store 16 pairs of UV
+    "st2        {v0.16b, v1.16b}, [%2], #32    \n"  // store 16 pairs of UV
     "bgt        1b                             \n"
     :
       "+r"(src_u),   // %0
@@ -862,7 +862,7 @@ void MergeUVRow_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
       "+r"(dst_uv),  // %2
       "+r"(width)    // %3  // Output registers
     :                       // Input registers
-    : "cc", "memory", "q0", "q1"  // Clobber List
+    : "cc", "memory", "v0", "v1"  // Clobber List
   );
 }
 #endif  // HAS_MERGEUVROW_NEON
@@ -874,16 +874,16 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 32
+    "ld1        {v0.8b-v3.8b}, [%0], #32       \n"  // load 32
     "subs       %2, %2, #32                    \n"  // 32 processed per loop
     MEMACCESS(1)
-    "vst1.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 32
+    "st1        {v0.8b-v3.8b}, [%1], #32       \n"  // store 32
     "bgt        1b                             \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(count)  // %2  // Output registers
   :                     // Input registers
-  : "cc", "memory", "q0", "q1"  // Clobber List
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif  // HAS_COPYROW_NEON
@@ -892,16 +892,16 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 #ifdef HAS_SETROW_NEON
 void SetRow_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
-    "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
+    "dup        v0.4s, %w2                     \n"  // duplicate 4 ints
     "1:                                        \n"
     "subs      %1, %1, #16                     \n"  // 16 bytes per loop
     MEMACCESS(0)
-    "vst1.8    {q0}, [%0]!                     \n"  // store
+    "st1        {v0.16b}, [%0], #16            \n"  // store
     "bgt       1b                              \n"
   : "+r"(dst),   // %0
     "+r"(count)  // %1
   : "r"(v32)     // %2
-  : "cc", "memory", "q0"
+  : "cc", "memory", "v0"
   );
 }
 #endif  // HAS_SETROW_NEON
@@ -922,26 +922,25 @@ void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // Start at end of source row.
-    "mov        r3, #-16                       \n"
     "add        %0, %0, %2                     \n"
-    "sub        %0, #16                        \n"
+    "sub        %0, %0, #16                    \n"
 
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
-    "subs       %2, #16                        \n"  // 16 pixels per loop.
-    "vrev64.8   q0, q0                         \n"
+    "ld1        {v0.16b}, [%0], %3             \n"  // src -= 16
+    "subs       %2, %2, #16                    \n"  // 16 pixels per loop.
+    "rev64      v0.16b, v0.16b                 \n"
     MEMACCESS(1)
-    "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
+    "st1        {v0.D}[1], [%1], #8            \n"  // dst += 16
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"
+    "st1        {v0.D}[0], [%1], #8            \n"
     "bgt        1b                             \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(width)  // %2
-  :
-  : "cc", "memory", "r3", "q0"
+  : "r"((ptrdiff_t)-16)    // %3
+  : "cc", "memory", "v0"
   );
 }
 #endif  // HAS_MIRRORROW_NEON
@@ -951,27 +950,27 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                       int width) {
   asm volatile (
     // Start at end of source row.
-    "mov        r12, #-16                      \n"
     "add        %0, %0, %3, lsl #1             \n"
-    "sub        %0, #16                        \n"
+    "sub        %0, %0, #16                    \n"
 
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld2.8     {d0, d1}, [%0], r12            \n"  // src -= 16
-    "subs       %3, #8                         \n"  // 8 pixels per loop.
-    "vrev64.8   q0, q0                         \n"
+    "ld2        {v0.8b, v1.8b}, [%0], %4       \n"  // src -= 16
+    "subs       %3, %3, #8                     \n"  // 8 pixels per loop.
+    "rev64      v0.8b, v0.8b                   \n"
+    "rev64      v1.8b, v1.8b                   \n"
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // dst += 8
+    "st1        {v0.8b}, [%1], #8               \n"  // dst += 8
     MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"
+    "st1        {v1.8b}, [%2], #8               \n"
     "bgt        1b                             \n"
   : "+r"(src_uv),  // %0
     "+r"(dst_u),   // %1
     "+r"(dst_v),   // %2
     "+r"(width)    // %3
-  :
-  : "cc", "memory", "r12", "q0"
+  : "r"((ptrdiff_t)-16)      // %4
+  : "cc", "memory", "v0", "v1"
   );
 }
 #endif  // HAS_MIRRORUVROW_NEON
@@ -980,26 +979,25 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // Start at end of source row.
-    "mov        r3, #-16                       \n"
     "add        %0, %0, %2, lsl #2             \n"
-    "sub        %0, #16                        \n"
+    "sub        %0, %0, #16                    \n"
 
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
-    "subs       %2, #4                         \n"  // 4 pixels per loop.
-    "vrev64.32  q0, q0                         \n"
+    "ld1        {v0.16b}, [%0], %3             \n"  // src -= 16
+    "subs       %2, %2, #4                     \n"  // 4 pixels per loop.
+    "rev64      v0.4s, v0.4s                   \n"
     MEMACCESS(1)
-    "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
+    "st1        {v0.D}[1], [%1], #8            \n"  // dst += 16
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"
+    "st1        {v0.D}[0], [%1], #8            \n"
     "bgt        1b                             \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(width)  // %2
-  :
-  : "cc", "memory", "r3", "q0"
+  : "r"((ptrdiff_t)-16)    // %3
+  : "cc", "memory", "v0"
   );
 }
 #endif  // HAS_ARGBMIRRORROW_NEON
