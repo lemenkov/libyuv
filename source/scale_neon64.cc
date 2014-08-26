@@ -22,20 +22,19 @@ extern "C" {
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
-    // load even pixels into q0, odd into q1
+    // load even pixels into v0, odd into v1
     MEMACCESS(0)
-    "vld2.8     {q0, q1}, [%0]!                \n"
+    "ld2        {v0.16b, v1.16b}, [%0], #32    \n"
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
     MEMACCESS(1)
-    "vst1.8     {q1}, [%1]!                    \n"  // store odd pixels
+    "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst),              // %1
     "+r"(dst_width)         // %2
   :
-  : "q0", "q1"              // Clobber List
+  : "v0", "v1"              // Clobber List
   );
 }
 #endif //HAS_SCALEROWDOWN2_NEON
@@ -46,29 +45,28 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (
     // change the stride to row 2 pointer
-    "add        %1, %0                         \n"
-    ".p2align   2                              \n"
+    "add        %1, %1, %0                     \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0, q1}, [%0]!                \n"  // load row 1 and post inc
+    "ld1        {v0.16b, v1.16b}, [%0], #32    \n"  // load row 1 and post inc
     MEMACCESS(1)
-    "vld1.8     {q2, q3}, [%1]!                \n"  // load row 2 and post inc
+    "ld1        {v2.16b, v3.16b}, [%1], #32    \n"  // load row 2 and post inc
     "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    "vpaddl.u8  q0, q0                         \n"  // row 1 add adjacent
-    "vpaddl.u8  q1, q1                         \n"
-    "vpadal.u8  q0, q2                         \n"  // row 2 add adjacent + row1
-    "vpadal.u8  q1, q3                         \n"
-    "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
-    "vrshrn.u16 d1, q1, #2                     \n"
+    "uaddlp     v0.8h, v0.16b                  \n"  // row 1 add adjacent
+    "uaddlp     v1.8h, v1.16b                  \n"
+    "uadalp     v0.8h, v2.16b                  \n"  // row 2 add adjacent + row1
+    "uadalp     v1.8h, v3.16b                  \n"
+    "rshrn      v0.8b, v0.8h, #2               \n"  // downshift, round and pack
+    "rshrn2     v0.16b, v1.8h, #2              \n"
     MEMACCESS(2)
-    "vst1.8     {q0}, [%2]!                    \n"
+    "st1        {v0.16b}, [%2], #16            \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(src_stride),       // %1
     "+r"(dst),              // %2
     "+r"(dst_width)         // %3
   :
-  : "q0", "q1", "q2", "q3"     // Clobber List
+  : "v0", "v1", "v2", "v3"     // Clobber List
   );
 }
 #endif //HAS_SCALEROWDOWN2_NEON
