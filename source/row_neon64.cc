@@ -1636,41 +1636,42 @@ void ARGBToYJRow_NEON(const uint8* src_argb, uint8* dst_y, int pix) {
 void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix) {
   asm volatile (
-    "vmov.u8    d24, #112                      \n"  // UB / VR 0.875 coefficient
-    "vmov.u8    d25, #74                       \n"  // UG -0.5781 coefficient
-    "vmov.u8    d26, #38                       \n"  // UR -0.2969 coefficient
-    "vmov.u8    d27, #18                       \n"  // VB -0.1406 coefficient
-    "vmov.u8    d28, #94                       \n"  // VG -0.7344 coefficient
-    "vmov.u16   q15, #0x8080                   \n"  // 128.5
+    "movi       v24.8b, #112                   \n"  // UB / VR 0.875 coefficient
+    "movi       v25.8b, #74                    \n"  // UG -0.5781 coefficient
+    "movi       v26.8b, #38                    \n"  // UR -0.2969 coefficient
+    "movi       v27.8b, #18                    \n"  // VB -0.1406 coefficient
+    "movi       v28.8b, #94                    \n"  // VG -0.7344 coefficient
+    "movi       v29.16b,#0x80                  \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.8b-v3.8b}, [%0], #32       \n"  // load 8 ARGB pixels.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vmull.u8   q2, d0, d24                    \n"  // B
-    "vmlsl.u8   q2, d1, d25                    \n"  // G
-    "vmlsl.u8   q2, d2, d26                    \n"  // R
-    "vadd.u16   q2, q2, q15                    \n"  // +128 -> unsigned
+    "umull      v4.8h, v0.8b, v24.8b           \n"  // B
+    "umlsl      v4.8h, v1.8b, v25.8b           \n"  // G
+    "umlsl      v4.8h, v2.8b, v26.8b           \n"  // R
+    "add        v4.8h, v4.8h, v29.8h           \n"  // +128 -> unsigned
 
-    "vmull.u8   q3, d2, d24                    \n"  // R
-    "vmlsl.u8   q3, d1, d28                    \n"  // G
-    "vmlsl.u8   q3, d0, d27                    \n"  // B
-    "vadd.u16   q3, q3, q15                    \n"  // +128 -> unsigned
+    "umull      v3.8h, v2.8b, v24.8b           \n"  // R
+    "umlsl      v3.8h, v1.8b, v28.8b           \n"  // G
+    "umlsl      v3.8h, v0.8b, v27.8b           \n"  // B
+    "add        v3.8h, v3.8h, v29.8h           \n"  // +128 -> unsigned
 
-    "vqshrn.u16  d0, q2, #8                    \n"  // 16 bit to 8 bit U
-    "vqshrn.u16  d1, q3, #8                    \n"  // 16 bit to 8 bit V
+    "uqshrn     v0.8b, v4.8h, #8               \n"  // 16 bit to 8 bit U
+    "uqshrn     v1.8b, v3.8h, #8               \n"  // 16 bit to 8 bit V
 
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels U.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels U.
     MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"  // store 8 pixels V.
+    "st1        {v1.8b}, [%2], #8              \n"  // store 8 pixels V.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_u),     // %1
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14", "q15"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4",
+    "v24", "v25", "v26", "v27", "v28", "v29"
   );
 }
 #endif  // HAS_ARGBTOUV444ROW_NEON
@@ -1680,49 +1681,47 @@ void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix) {
   asm volatile (
-    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
-    "vmov.u16   q15, #0x8080                   \n"  // 128.5
+    "movi       v20.8h, #112 / 2               \n"  // UB / VR 0.875 coefficient
+    "movi       v21.8h, #74 / 2                \n"  // UG -0.5781 coefficient
+    "movi       v22.8h, #38 / 2                \n"  // UR -0.2969 coefficient
+    "movi       v23.8h, #18 / 2                \n"  // VB -0.1406 coefficient
+    "movi       v24.8h, #94 / 2                \n"  // VG -0.7344 coefficient
+    "movi       v25.16b, #0x80                 \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
-    MEMACCESS(0)
-    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB pixels.
+    "ld4        {v0.16b-v3.16b}, [%0], #64     \n"  // load 16 ARGB pixels.
 
-    "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
+    "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
+    "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
+    "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
 
     "subs       %3, %3, #16                    \n"  // 16 processed per loop.
-    "vmul.s16   q8, q0, q10                    \n"  // B
-    "vmls.s16   q8, q1, q11                    \n"  // G
-    "vmls.s16   q8, q2, q12                    \n"  // R
-    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
+    "mul        v3.8h, v0.8h, v20.8h           \n"  // B
+    "mls        v3.8h, v1.8h, v21.8h           \n"  // G
+    "mls        v3.8h, v2.8h, v22.8h           \n"  // R
+    "add        v3.8h, v3.8h, v25.8h           \n"  // +128 -> unsigned
 
-    "vmul.s16   q9, q2, q10                    \n"  // R
-    "vmls.s16   q9, q1, q14                    \n"  // G
-    "vmls.s16   q9, q0, q13                    \n"  // B
-    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
+    "mul        v4.8h, v2.8h, v20.8h           \n"  // R
+    "mls        v4.8h, v1.8h, v24.8h           \n"  // G
+    "mls        v4.8h, v0.8h, v23.8h           \n"  // B
+    "add        v4.8h, v4.8h, v25.8h           \n"  // +128 -> unsigned
 
-    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
-    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+    "uqshrn     v0.8b, v3.8h, #8               \n"  // 16 bit to 8 bit U
+    "uqshrn     v1.8b, v4.8h, #8               \n"  // 16 bit to 8 bit V
 
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels U.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels U.
     MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"  // store 8 pixels V.
+    "st1        {v1.8b}, [%2], #8              \n"  // store 8 pixels V.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_u),     // %1
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3",
-    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+    "v20", "v21", "v22", "v23", "v24", "v25"
   );
 }
 #endif  // HAS_ARGBTOUV422ROW_NEON
@@ -1732,63 +1731,56 @@ void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                          int pix) {
   asm volatile (
-    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
-    "vmov.u16   q15, #0x8080                   \n"  // 128.5
+    "movi       v20.8h, #112 / 2               \n"  // UB / VR 0.875 coefficient
+    "movi       v21.8h, #74 / 2                \n"  // UG -0.5781 coefficient
+    "movi       v22.8h, #38 / 2                \n"  // UR -0.2969 coefficient
+    "movi       v23.8h, #18 / 2                \n"  // VB -0.1406 coefficient
+    "movi       v24.8h, #94 / 2                \n"  // VG -0.7344 coefficient
+    "movi       v25.16b, #0x80                 \n"  // 128.5
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+    "ld4        {v0.16b-v3.16b}, [%0], #64     \n"  // load 16 ARGB pixels.
+    "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
+    "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
+    "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
     MEMACCESS(0)
-    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB pixels.
-    "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
-    MEMACCESS(0)
-    "vld4.8     {d8, d10, d12, d14}, [%0]!     \n"  // load 8 more ARGB pixels.
-    MEMACCESS(0)
-    "vld4.8     {d9, d11, d13, d15}, [%0]!     \n"  // load last 8 ARGB pixels.
-    "vpaddl.u8  q4, q4                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q5, q5                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q6, q6                         \n"  // R 16 bytes -> 8 shorts.
+    "ld4        {v4.16b-v7.16b}, [%0], #64     \n"  // load next 16 ARGB pixels.
+    "uaddlp     v4.8h, v4.16b                  \n"  // B 16 bytes -> 8 shorts.
+    "uaddlp     v5.8h, v5.16b                  \n"  // G 16 bytes -> 8 shorts.
+    "uaddlp     v6.8h, v6.16b                  \n"  // R 16 bytes -> 8 shorts.
 
-    "vpadd.u16  d0, d0, d1                     \n"  // B 16 shorts -> 8 shorts.
-    "vpadd.u16  d1, d8, d9                     \n"  // B
-    "vpadd.u16  d2, d2, d3                     \n"  // G 16 shorts -> 8 shorts.
-    "vpadd.u16  d3, d10, d11                   \n"  // G
-    "vpadd.u16  d4, d4, d5                     \n"  // R 16 shorts -> 8 shorts.
-    "vpadd.u16  d5, d12, d13                   \n"  // R
+    "addp       v0.8h, v0.8h, v4.8h            \n"  // B 16 shorts -> 8 shorts.
+    "addp       v1.8h, v1.8h, v5.8h            \n"  // G 16 shorts -> 8 shorts.
+    "addp       v2.8h, v2.8h, v6.8h            \n"  // R 16 shorts -> 8 shorts.
 
-    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
-    "vrshr.u16  q1, q1, #1                     \n"
-    "vrshr.u16  q2, q2, #1                     \n"
+    "urshr      v0.8h, v0.8h, #1               \n"  // 2x average
+    "urshr      v1.8h, v1.8h, #1               \n"
+    "urshr      v2.8h, v2.8h, #1               \n"
 
     "subs       %3, %3, #32                    \n"  // 32 processed per loop.
-    "vmul.s16   q8, q0, q10                    \n"  // B
-    "vmls.s16   q8, q1, q11                    \n"  // G
-    "vmls.s16   q8, q2, q12                    \n"  // R
-    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
-    "vmul.s16   q9, q2, q10                    \n"  // R
-    "vmls.s16   q9, q1, q14                    \n"  // G
-    "vmls.s16   q9, q0, q13                    \n"  // B
-    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
-    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
-    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+    "mul        v3.8h, v0.8h, v20.8h           \n"  // B
+    "mls        v3.8h, v1.8h, v21.8h           \n"  // G
+    "mls        v3.8h, v2.8h, v22.8h           \n"  // R
+    "add        v3.8h, v3.8h, v25.8h           \n"  // +128 -> unsigned
+    "mul        v4.8h, v2.8h, v20.8h           \n"  // R
+    "mls        v4.8h, v1.8h, v24.8h           \n"  // G
+    "mls        v4.8h, v0.8h, v23.8h           \n"  // B
+    "add        v4.8h, v4.8h, v25.8h           \n"  // +128 -> unsigned
+    "uqshrn     v0.8b, v3.8h, #8               \n"  // 16 bit to 8 bit U
+    "uqshrn     v1.8b, v4.8h, #8               \n"  // 16 bit to 8 bit V
     MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels U.
+    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels U.
     MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"  // store 8 pixels V.
+    "st1        {v1.8b}, [%2], #8              \n"  // store 8 pixels V.
     "bgt        1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_u),     // %1
     "+r"(dst_v),     // %2
     "+r"(pix)        // %3
   :
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+    "v20", "v21", "v22", "v23", "v24", "v25"
   );
 }
 #endif  // HAS_ARGBTOUV411ROW_NEON
