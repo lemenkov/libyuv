@@ -58,7 +58,7 @@ extern "C" {
 /* #define HAS_SCALEROWDOWN34_NEON */
 /* #define HAS_SCALEROWDOWN38_NEON */
 /* #define HAS_SCALEARGBROWDOWNEVEN_NEON */
-/* #define HAS_SCALEARGBROWDOWN2_NEON */
+#define HAS_SCALEARGBROWDOWN2_NEON
 #endif
 
 // The following are available on Mips platforms:

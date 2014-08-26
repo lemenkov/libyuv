@@ -638,24 +638,23 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     // load even pixels into q0, odd into q1
-    MEMACCESS(0)
-    "vld2.32    {q0, q1}, [%0]!                \n"
-    MEMACCESS(0)
-    "vld2.32    {q2, q3}, [%0]!                \n"
+    MEMACCESS (0)
+    "ld2        {v0.4s, v1.4s}, [%0], #32      \n"
+    MEMACCESS (0)
+    "ld2        {v2.4s, v3.4s}, [%0], #32      \n"
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
-    MEMACCESS(1)
-    "vst1.8     {q1}, [%1]!                    \n"  // store odd pixels
-    MEMACCESS(1)
-    "vst1.8     {q3}, [%1]!                    \n"
+    MEMACCESS (1)
+    "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
+    MEMACCESS (1)
+    "st1        {v3.16b}, [%1], #16            \n"
     "bgt        1b                             \n"
-  : "+r"(src_ptr),          // %0
-    "+r"(dst),              // %1
-    "+r"(dst_width)         // %2
+  : "+r" (src_ptr),          // %0
+    "+r" (dst),              // %1
+    "+r" (dst_width)         // %2
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
+  : "memory", "cc", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 #endif //HAS_SCALEARGBROWDOWN2_NEON
@@ -666,38 +665,33 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     // change the stride to row 2 pointer
     "add        %1, %1, %0                     \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
-    MEMACCESS(0)
-    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
-    MEMACCESS(0)
-    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB pixels.
+    MEMACCESS (0)
+    "ld4        {v0.16b - v3.16b}, [%0], #64   \n"  // load 8 ARGB pixels.
     "subs       %3, %3, #8                     \n"  // 8 processed per loop.
-    "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
-    "vpaddl.u8  q3, q3                         \n"  // A 16 bytes -> 8 shorts.
-    MEMACCESS(1)
-    "vld4.8     {d16, d18, d20, d22}, [%1]!    \n"  // load 8 more ARGB pixels.
-    MEMACCESS(1)
-    "vld4.8     {d17, d19, d21, d23}, [%1]!    \n"  // load last 8 ARGB pixels.
-    "vpadal.u8  q0, q8                         \n"  // B 16 bytes -> 8 shorts.
-    "vpadal.u8  q1, q9                         \n"  // G 16 bytes -> 8 shorts.
-    "vpadal.u8  q2, q10                        \n"  // R 16 bytes -> 8 shorts.
-    "vpadal.u8  q3, q11                        \n"  // A 16 bytes -> 8 shorts.
-    "vrshrn.u16 d0, q0, #2                     \n"  // downshift, round and pack
-    "vrshrn.u16 d1, q1, #2                     \n"
-    "vrshrn.u16 d2, q2, #2                     \n"
-    "vrshrn.u16 d3, q3, #2                     \n"
-    MEMACCESS(2)
-    "vst4.8     {d0, d1, d2, d3}, [%2]!        \n"
+    "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
+    "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
+    "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
+    "uaddlp     v3.8h, v3.16b                  \n"  // A 16 bytes -> 8 shorts.
+    MEMACCESS (1)
+    "ld4        {v16.16b - v19.16b}, [%1], #64 \n"  // load 8 more ARGB pixels.
+    "uadalp     v0.8h, v16.16b                 \n"  // B 16 bytes -> 8 shorts.
+    "uadalp     v1.8h, v17.16b                 \n"  // G 16 bytes -> 8 shorts.
+    "uadalp     v2.8h, v18.16b                 \n"  // R 16 bytes -> 8 shorts.
+    "uadalp     v3.8h, v19.16b                 \n"  // A 16 bytes -> 8 shorts.
+    "rshrn      v0.8b, v0.8h, #2               \n"  // downshift, round and pack
+    "rshrn      v1.8b, v1.8h, #2               \n"
+    "rshrn      v2.8b, v2.8h, #2               \n"
+    "rshrn      v3.8b, v3.8h, #2               \n"
+    MEMACCESS (2)
+    "st4        {v0.8b - v3.8b}, [%2], #32     \n"
     "bgt        1b                             \n"
-  : "+r"(src_ptr),          // %0
-    "+r"(src_stride),       // %1
-    "+r"(dst),              // %2
-    "+r"(dst_width)         // %3
+  : "+r" (src_ptr),          // %0
+    "+r" (src_stride),       // %1
+    "+r" (dst),              // %2
+    "+r" (dst_width)         // %3
   :
-  : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
+  : "memory", "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19"
   );
 }
 #endif //HAS_SCALEARGBROWDOWN2_NEON
