@@ -531,15 +531,15 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
 }
 #endif //HAS_SCALEROWDOWN38_NEON
 
-#if 0
 // 16x2 -> 16x1
 void ScaleFilterRows_NEON(uint8* dst_ptr,
                           const uint8* src_ptr, ptrdiff_t src_stride,
                           int dst_width, int source_y_fraction) {
+    int y_fraction = 256 - source_y_fraction;
   asm volatile (
     "cmp          %4, #0                       \n"
     "beq          100f                         \n"
-    "add          %2, %1                       \n"
+    "add          %2, %2, %1                   \n"
     "cmp          %4, #64                      \n"
     "beq          75f                          \n"
     "cmp          %4, #128                     \n"
@@ -547,90 +547,89 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "cmp          %4, #192                     \n"
     "beq          25f                          \n"
 
-    "vdup.8       d5, %4                       \n"
-    "rsb          %4, #256                     \n"
-    "vdup.8       d4, %4                       \n"
+    "dup          v5.8b, %w4                   \n"
+    "dup          v4.8b, %w5                   \n"
     // General purpose row blend.
   "1:                                          \n"
     MEMACCESS(1)
-    "vld1.8       {q0}, [%1]!                  \n"
+    "ld1          {v0.16b}, [%1], #16          \n"
     MEMACCESS(2)
-    "vld1.8       {q1}, [%2]!                  \n"
+    "ld1          {v1.16b}, [%2], #16          \n"
     "subs         %3, %3, #16                  \n"
-    "vmull.u8     q13, d0, d4                  \n"
-    "vmull.u8     q14, d1, d4                  \n"
-    "vmlal.u8     q13, d2, d5                  \n"
-    "vmlal.u8     q14, d3, d5                  \n"
-    "vrshrn.u16   d0, q13, #8                  \n"
-    "vrshrn.u16   d1, q14, #8                  \n"
+    "umull        v6.8h, v0.8b, v4.8b          \n"
+    "umull2       v7.8h, v0.16b, v4.16b        \n"
+    "umlal        v6.8h, v1.8b, v5.8b          \n"
+    "umlal2       v7.8h, v1.16b, v5.16b        \n"
+    "rshrn        v0.8b, v6.8h, #8             \n"
+    "rshrn2       v0.16b, v7.8h, #8            \n"
     MEMACCESS(0)
-    "vst1.8       {q0}, [%0]!                  \n"
+    "st1          {v0.16b}, [%0], #16          \n"
     "bgt          1b                           \n"
     "b            99f                          \n"
 
     // Blend 25 / 75.
   "25:                                         \n"
     MEMACCESS(1)
-    "vld1.8       {q0}, [%1]!                  \n"
+    "ld1          {v0.16b}, [%1], #16          \n"
     MEMACCESS(2)
-    "vld1.8       {q1}, [%2]!                  \n"
+    "ld1          {v1.16b}, [%2], #16          \n"
     "subs         %3, %3, #16                  \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vrhadd.u8    q0, q1                       \n"
+    "urhadd       v0.16b, v0.16b, v1.16b       \n"
+    "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
-    "vst1.8       {q0}, [%0]!                  \n"
+    "st1          {v0.16b}, [%0], #16          \n"
     "bgt          25b                          \n"
     "b            99f                          \n"
 
     // Blend 50 / 50.
   "50:                                         \n"
     MEMACCESS(1)
-    "vld1.8       {q0}, [%1]!                  \n"
+    "ld1          {v0.16b}, [%1], #16          \n"
     MEMACCESS(2)
-    "vld1.8       {q1}, [%2]!                  \n"
+    "ld1          {v1.16b}, [%2], #16          \n"
     "subs         %3, %3, #16                  \n"
-    "vrhadd.u8    q0, q1                       \n"
+    "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
-    "vst1.8       {q0}, [%0]!                  \n"
+    "st1          {v0.16b}, [%0], #16          \n"
     "bgt          50b                          \n"
     "b            99f                          \n"
 
     // Blend 75 / 25.
   "75:                                         \n"
     MEMACCESS(1)
-    "vld1.8       {q1}, [%1]!                  \n"
+    "ld1          {v1.16b}, [%1], #16          \n"
     MEMACCESS(2)
-    "vld1.8       {q0}, [%2]!                  \n"
+    "ld1          {v0.16b}, [%2], #16          \n"
     "subs         %3, %3, #16                  \n"
-    "vrhadd.u8    q0, q1                       \n"
-    "vrhadd.u8    q0, q1                       \n"
+    "urhadd       v0.16b, v0.16b, v1.16b       \n"
+    "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
-    "vst1.8       {q0}, [%0]!                  \n"
+    "st1          {v0.16b}, [%0], #16          \n"
     "bgt          75b                          \n"
     "b            99f                          \n"
 
     // Blend 100 / 0 - Copy row unchanged.
   "100:                                        \n"
     MEMACCESS(1)
-    "vld1.8       {q0}, [%1]!                  \n"
+    "ld1          {v0.16b}, [%1], #16          \n"
     "subs         %3, %3, #16                  \n"
     MEMACCESS(0)
-    "vst1.8       {q0}, [%0]!                  \n"
+    "st1          {v0.16b}, [%0], #16          \n"
     "bgt          100b                         \n"
 
   "99:                                         \n"
     MEMACCESS(0)
-    "vst1.8       {d1[7]}, [%0]                \n"
+    "st1          {v0.b}[15], [%0]             \n"
   : "+r"(dst_ptr),          // %0
     "+r"(src_ptr),          // %1
     "+r"(src_stride),       // %2
     "+r"(dst_width),        // %3
-    "+r"(source_y_fraction) // %4
+    "+r"(source_y_fraction),// %4
+    "+r"(y_fraction)        // %5
   :
-  : "q0", "q1", "d4", "d5", "q13", "q14", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "memory", "cc"
   );
 }
-#endif //0
 
 #ifdef HAS_SCALEARGBROWDOWN2_NEON
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
