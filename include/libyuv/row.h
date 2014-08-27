@@ -438,7 +438,7 @@ extern "C" {
 
 // The following are available on Mips platforms:
 #if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__) && \
-    (_MIPS_SIM == _MIPS_SIM_ABI32)
+    (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
 #define HAS_COPYROW_MIPS
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_I422TOABGRROW_MIPS_DSPR2
