@@ -75,19 +75,18 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n" // src line 0
-    "subs       %2, %2, #8                     \n" // 8 processed per loop
+    "ld4     {v0.8b-3.8b}, [%0], #32           \n"  // src line 0
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
     MEMACCESS(1)
-    "vst1.8     {d2}, [%1]!                    \n"
+    "st1     {v2.8b}, [%1], #8                 \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width)         // %2
   :
-  : "q0", "q1", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
 #endif //HAS_SCALEROWDOWN4_NEON
@@ -99,26 +98,24 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   const uint8* src_ptr2 = src_ptr + src_stride * 2;
   const uint8* src_ptr3 = src_ptr + src_stride * 3;
 asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {q0}, [%0]!                    \n"   // load up 16x4
+    "ld1     {v0.16b}, [%0], #16               \n"   // load up 16x4
     MEMACCESS(3)
-    "vld1.8     {q1}, [%3]!                    \n"
+    "ld1     {v1.16b}, [%3], #16               \n"
     MEMACCESS(4)
-    "vld1.8     {q2}, [%4]!                    \n"
+    "ld1     {v2.16b}, [%4], #16               \n"
     MEMACCESS(5)
-    "vld1.8     {q3}, [%5]!                    \n"
+    "ld1     {v3.16b}, [%5], #16               \n"
     "subs       %2, %2, #4                     \n"
-    "vpaddl.u8  q0, q0                         \n"
-    "vpadal.u8  q0, q1                         \n"
-    "vpadal.u8  q0, q2                         \n"
-    "vpadal.u8  q0, q3                         \n"
-    "vpaddl.u16 q0, q0                         \n"
-    "vrshrn.u32 d0, q0, #4                     \n"   // divide by 16 w/rounding
-    "vmovn.u16  d0, q0                         \n"
+    "uaddlp  v0.8h, v0.16b                     \n"
+    "uadalp  v0.8h, v1.16b                     \n"
+    "uadalp  v0.8h, v2.16b                     \n"
+    "uadalp  v0.8h, v3.16b                     \n"
+    "addp    v0.8h, v0.8h, v0.8h               \n"
+    "rshrn   v0.8b, v0.8h, #4                  \n"   // divide by 16 w/rounding
     MEMACCESS(1)
-    "vst1.32    {d0[0]}, [%1]!                 \n"
+    "st1    {v0.s}[0], [%1], #4                \n"
     "bgt        1b                             \n"
   : "+r"(src_ptr),   // %0
     "+r"(dst_ptr),   // %1
@@ -127,7 +124,7 @@ asm volatile (
     "+r"(src_ptr2),  // %4
     "+r"(src_ptr3)   // %5
   :
-  : "q0", "q1", "q2", "q3", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
 #endif //HAS_SCALEROWDOWN4_NEON
