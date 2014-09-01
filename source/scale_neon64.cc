@@ -137,20 +137,19 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
                          ptrdiff_t src_stride,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
-  "1:                                          \n"
+  "1:                                                  \n"
     MEMACCESS(0)
-    "vld4.8     {d0, d1, d2, d3}, [%0]!      \n" // src line 0
-    "subs       %2, %2, #24                  \n"
-    "vmov       d2, d3                       \n" // order d0, d1, d2
+    "ld4       {v0.8b-v3.8b}, [%0], #32                \n"  // src line 0
+    "subs      %2, %2, #24                             \n"
+    "mov       v2.8b, v3.8b                            \n"  // order v0, v1, v2
     MEMACCESS(1)
-    "vst3.8     {d0, d1, d2}, [%1]!          \n"
-    "bgt        1b                           \n"
+    "st3       {v0.8b-v2.8b}, [%1], #24                \n"
+    "bgt       1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width)         // %2
   :
-  : "d0", "d1", "d2", "d3", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
 #endif //HAS_SCALEROWDOWN34_NEON
@@ -160,59 +159,59 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "vmov.u8    d24, #3                        \n"
-    "add        %3, %0                         \n"
-    ".p2align   2                              \n"
-  "1:                                          \n"
+    "movi      v20.8b, #3                              \n"
+    "add       %3, %3, %0                              \n"
+  "1:                                                  \n"
     MEMACCESS(0)
-    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "ld4       {v0.8b-v3.8b}, [%0], #32                \n"  // src line 0
     MEMACCESS(3)
-    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n" // src line 1
-    "subs         %2, %2, #24                  \n"
+    "ld4       {v4.8b-v7.8b}, [%3], #32                \n"  // src line 1
+    "subs         %2, %2, #24                          \n"
 
     // filter src line 0 with src line 1
     // expand chars to shorts to allow for room
     // when adding lines together
-    "vmovl.u8     q8, d4                       \n"
-    "vmovl.u8     q9, d5                       \n"
-    "vmovl.u8     q10, d6                      \n"
-    "vmovl.u8     q11, d7                      \n"
+    "ushll     v16.8h, v4.8b, #0                       \n"
+    "ushll     v17.8h, v5.8b, #0                       \n"
+    "ushll     v18.8h, v6.8b, #0                       \n"
+    "ushll     v19.8h, v7.8b, #0                       \n"
 
     // 3 * line_0 + line_1
-    "vmlal.u8     q8, d0, d24                  \n"
-    "vmlal.u8     q9, d1, d24                  \n"
-    "vmlal.u8     q10, d2, d24                 \n"
-    "vmlal.u8     q11, d3, d24                 \n"
+    "umlal     v16.8h, v0.8b, v20.8b                   \n"
+    "umlal     v17.8h, v1.8b, v20.8b                   \n"
+    "umlal     v18.8h, v2.8b, v20.8b                   \n"
+    "umlal     v19.8h, v3.8b, v20.8b                   \n"
 
     // (3 * line_0 + line_1) >> 2
-    "vqrshrn.u16  d0, q8, #2                   \n"
-    "vqrshrn.u16  d1, q9, #2                   \n"
-    "vqrshrn.u16  d2, q10, #2                  \n"
-    "vqrshrn.u16  d3, q11, #2                  \n"
+    "uqrshrn   v0.8b, v16.8h, #2                       \n"
+    "uqrshrn   v1.8b, v17.8h, #2                       \n"
+    "uqrshrn   v2.8b, v18.8h, #2                       \n"
+    "uqrshrn   v3.8b, v19.8h, #2                       \n"
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
-    "vmovl.u8     q8, d1                       \n"
-    "vmlal.u8     q8, d0, d24                  \n"
-    "vqrshrn.u16  d0, q8, #2                   \n"
+    "ushll     v16.8h, v1.8b, #0                       \n"
+    "umlal     v16.8h, v0.8b, v20.8b                   \n"
+    "uqrshrn   v0.8b, v16.8h, #2                       \n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
-    "vrhadd.u8    d1, d1, d2                   \n"
+    "urhadd    v1.8b, v1.8b, v2.8b                     \n"
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
-    "vmovl.u8     q8, d2                       \n"
-    "vmlal.u8     q8, d3, d24                  \n"
-    "vqrshrn.u16  d2, q8, #2                   \n"
+    "ushll     v16.8h, v2.8b, #0                       \n"
+    "umlal     v16.8h, v3.8b, v20.8b                   \n"
+    "uqrshrn   v2.8b, v16.8h, #2                       \n"
 
     MEMACCESS(1)
-    "vst3.8       {d0, d1, d2}, [%1]!          \n"
+    "st3       {v0.8b-v2.8b}, [%1], #24                \n"
 
-    "bgt          1b                           \n"
+    "bgt       1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
     "+r"(src_stride)        // %3
   :
-  : "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11", "d24", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18", "v19",
+    "v20", "memory", "cc"
   );
 }
 #endif //ScaleRowDown34_0_Box_NEON
@@ -222,41 +221,42 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "vmov.u8    d24, #3                        \n"
-    "add        %3, %0                         \n"
-    ".p2align   2                              \n"
-  "1:                                          \n"
+    "movi      v20.8b, #3                              \n"
+    "add       %3, %3, %0                              \n"
+  "1:                                                  \n"
     MEMACCESS(0)
-    "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
+    "ld4       {v0.8b-v3.8b}, [%0], #32                \n"  // src line 0
     MEMACCESS(3)
-    "vld4.8       {d4, d5, d6, d7}, [%3]!      \n" // src line 1
-    "subs         %2, %2, #24                  \n"
+    "ld4       {v4.8b-v7.8b}, [%3], #32                \n"  // src line 1
+    "subs         %2, %2, #24                          \n"
     // average src line 0 with src line 1
-    "vrhadd.u8    q0, q0, q2                   \n"
-    "vrhadd.u8    q1, q1, q3                   \n"
+    "urhadd    v0.8b, v0.8b, v4.8b                     \n"
+    "urhadd    v1.8b, v1.8b, v5.8b                     \n"
+    "urhadd    v2.8b, v2.8b, v6.8b                     \n"
+    "urhadd    v3.8b, v3.8b, v7.8b                     \n"
 
     // a0 = (src[0] * 3 + s[1] * 1) >> 2
-    "vmovl.u8     q3, d1                       \n"
-    "vmlal.u8     q3, d0, d24                  \n"
-    "vqrshrn.u16  d0, q3, #2                   \n"
+    "ushll     v4.8h, v1.8b, #0                        \n"
+    "umlal     v4.8h, v0.8b, v20.8b                    \n"
+    "uqrshrn   v0.8b, v4.8h, #2                        \n"
 
     // a1 = (src[1] * 1 + s[2] * 1) >> 1
-    "vrhadd.u8    d1, d1, d2                   \n"
+    "urhadd    v1.8b, v1.8b, v2.8b                     \n"
 
     // a2 = (src[2] * 1 + s[3] * 3) >> 2
-    "vmovl.u8     q3, d2                       \n"
-    "vmlal.u8     q3, d3, d24                  \n"
-    "vqrshrn.u16  d2, q3, #2                   \n"
+    "ushll     v4.8h, v2.8b, #0                        \n"
+    "umlal     v4.8h, v3.8b, v20.8b                    \n"
+    "uqrshrn   v2.8b, v4.8h, #2                        \n"
 
     MEMACCESS(1)
-    "vst3.8       {d0, d1, d2}, [%1]!          \n"
-    "bgt          1b                           \n"
+    "st3       {v0.8b-v2.8b}, [%1], #24                \n"
+    "bgt       1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
     "+r"(src_stride)        // %3
   :
-  : "r4", "q0", "q1", "q2", "q3", "d24", "memory", "cc"
+  : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20", "memory", "cc"
   );
 }
 #endif //HAS_SCALEROWDOWN34_NEON
