@@ -705,26 +705,24 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
                                int src_stepx, uint8* dst_argb, int dst_width) {
   asm volatile (
-    "mov        r12, %3, lsl #2                \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.32    {d0[0]}, [%0], r12             \n"
+    "ld1        {v0.s}[0], [%0], %3            \n"
     MEMACCESS(0)
-    "vld1.32    {d0[1]}, [%0], r12             \n"
+    "ld1        {v0.s}[1], [%0], %3            \n"
     MEMACCESS(0)
-    "vld1.32    {d1[0]}, [%0], r12             \n"
+    "ld1        {v0.s}[2], [%0], %3            \n"
     MEMACCESS(0)
-    "vld1.32    {d1[1]}, [%0], r12             \n"
+    "ld1        {v0.s}[3], [%0], %3            \n"
     "subs       %2, %2, #4                     \n"  // 4 pixels per loop.
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"
+    "st1        {v0.16b}, [%1], #16            \n"
     "bgt        1b                             \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
     "+r"(dst_width)    // %2
-  : "r"(src_stepx)     // %3
-  : "memory", "cc", "r12", "q0"
+  : "r"(src_stepx * 4) // %3
+  : "memory", "cc", "v0"
   );
 }
 #endif //HAS_SCALEARGBROWDOWNEVEN_NEON
@@ -732,50 +730,54 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
 #ifdef HAS_SCALEARGBROWDOWNEVEN_NEON
 // Reads 4 pixels at a time.
 // Alignment requirement: src_argb 4 byte aligned.
+// TODO, might be worth another optimization pass in future.
+// It could be upgraded to 8 pixels at a time to start with.
 void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width) {
   asm volatile (
-    "mov        r12, %4, lsl #2                \n"
     "add        %1, %1, %0                     \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d0}, [%0], r12                \n"  // Read 4 2x2 blocks -> 2x1
+    "ld1     {v0.8b}, [%0], %4                 \n"  // Read 4 2x2 blocks -> 2x1
     MEMACCESS(1)
-    "vld1.8     {d1}, [%1], r12                \n"
+    "ld1     {v1.8b}, [%1], %4                 \n"
     MEMACCESS(0)
-    "vld1.8     {d2}, [%0], r12                \n"
+    "ld1     {v2.8b}, [%0], %4                 \n"
     MEMACCESS(1)
-    "vld1.8     {d3}, [%1], r12                \n"
+    "ld1     {v3.8b}, [%1], %4                 \n"
     MEMACCESS(0)
-    "vld1.8     {d4}, [%0], r12                \n"
+    "ld1     {v4.8b}, [%0], %4                 \n"
     MEMACCESS(1)
-    "vld1.8     {d5}, [%1], r12                \n"
+    "ld1     {v5.8b}, [%1], %4                 \n"
     MEMACCESS(0)
-    "vld1.8     {d6}, [%0], r12                \n"
+    "ld1     {v6.8b}, [%0], %4                 \n"
     MEMACCESS(1)
-    "vld1.8     {d7}, [%1], r12                \n"
-    "vaddl.u8   q0, d0, d1                     \n"
-    "vaddl.u8   q1, d2, d3                     \n"
-    "vaddl.u8   q2, d4, d5                     \n"
-    "vaddl.u8   q3, d6, d7                     \n"
-    "vswp.8     d1, d2                         \n"  // ab_cd -> ac_bd
-    "vswp.8     d5, d6                         \n"  // ef_gh -> eg_fh
-    "vadd.u16   q0, q0, q1                     \n"  // (a+b)_(c+d)
-    "vadd.u16   q2, q2, q3                     \n"  // (e+f)_(g+h)
-    "vrshrn.u16 d0, q0, #2                     \n"  // first 2 pixels.
-    "vrshrn.u16 d1, q2, #2                     \n"  // next 2 pixels.
+    "ld1     {v7.8b}, [%1], %4                 \n"
+    "uaddl   v0.8h, v0.8b, v1.8b               \n"
+    "uaddl   v2.8h, v2.8b, v3.8b               \n"
+    "uaddl   v4.8h, v4.8b, v5.8b               \n"
+    "uaddl   v6.8h, v6.8b, v7.8b               \n"
+    "mov     v16.d[1], v0.d[1]                 \n"  // ab_cd -> ac_bd
+    "mov     v0.d[1], v2.d[0]                  \n"
+    "mov     v2.d[0], v16.d[1]                 \n"
+    "mov     v16.d[1], v4.d[1]                 \n"  // ef_gh -> eg_fh
+    "mov     v4.d[1], v6.d[0]                  \n"
+    "mov     v6.d[0], v16.d[1]                 \n"
+    "add     v0.8h, v0.8h, v2.8h               \n"  // (a+b)_(c+d)
+    "add     v4.8h, v4.8h, v6.8h               \n"  // (e+f)_(g+h)
+    "rshrn   v0.8b, v0.8h, #2                  \n"  // first 2 pixels.
+    "rshrn2  v0.16b, v4.8h, #2                 \n"  // next 2 pixels.
     "subs       %3, %3, #4                     \n"  // 4 pixels per loop.
     MEMACCESS(2)
-    "vst1.8     {q0}, [%2]!                    \n"
+    "st1     {v0.16b}, [%2], #16               \n"
     "bgt        1b                             \n"
   : "+r"(src_argb),    // %0
     "+r"(src_stride),  // %1
     "+r"(dst_argb),    // %2
     "+r"(dst_width)    // %3
-  : "r"(src_stepx)     // %4
-  : "memory", "cc", "r12", "q0", "q1", "q2", "q3"
+  : "r"(src_stepx * 4) // %4
+  : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16"
   );
 }
 #endif  // HAS_SCALEARGBROWDOWNEVEN_NEON

@@ -57,8 +57,8 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_NEON
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
-/* #define HAS_SCALEARGBROWDOWNEVEN_NEON */
 #define HAS_SCALEARGBROWDOWN2_NEON
+#define HAS_SCALEARGBROWDOWNEVEN_NEON
 #endif
 
 // The following are available on Mips platforms:
@@ -267,10 +267,10 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx);
 // Row functions.
-void ScaleARGBRowDownEven_NEON(const uint8* src_argb, int src_stride,
+void ScaleARGBRowDownEven_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_stepx,
                                uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, int src_stride,
+void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
