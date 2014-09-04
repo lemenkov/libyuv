@@ -51,6 +51,15 @@ TEST_F(libyuvTest, TestCpuHas) {
   printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
 }
 
+TEST_F(libyuvTest, TestCompilerHasAVX2) {
+#if defined(GCC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
+    defined(VISUALC_HAS_AVX2)
+  printf("Has AVX2 1\n");
+#else
+  printf("Has AVX2 0\n");
+#endif
+}
+
 #if defined(__i386__) || defined(__x86_64__) || \
     defined(_M_IX86) || defined(_M_X64)
 TEST_F(libyuvTest, TestCpuId) {
