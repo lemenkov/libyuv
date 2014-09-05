@@ -9,6 +9,7 @@
 {
   'variables': {
     'libyuv_disable_jpeg%': 0,
+    'libyuv_enable_svn%': 0,
   },
   'targets': [
     {
@@ -21,7 +22,6 @@
         'testing/gtest.gyp:gtest_main',
       ],
       'defines': [
-        'LIBYUV_SVNREVISION="<!(svnversion -n)"',
         # Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
         # 'LIBYUV_DISABLE_NEON',
@@ -49,6 +49,11 @@
         'unit_test/version_test.cc',
       ],
       'conditions': [
+        [ 'libyuv_enable_svn == 1', {
+          'defines': [
+            'LIBYUV_SVNREVISION="<!(svnversion -n)"',
+          ],
+        }],
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',

@@ -36,6 +36,8 @@ TEST_F(libyuvTest, TestVersion) {
   if (LIBYUV_VERSION != svn_revision) {
     printf("WARNING - Versions do not match.\n");
   }
+#else
+  printf("WARNING - SVN Version unavailable.  Test not run.\n");
 #endif
 }
 
