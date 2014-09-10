@@ -245,8 +245,9 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 //this ifdef should be removed if TransposeUVWx8_NEON's aarch64 has
 //been done
 #ifdef HAS_TRANSPOSE_UVWX8_NEON
-static uvec8 kVTbl4x4TransposeDi =
-  { 0,  8,  1,  9,  2, 10,  3, 11,  4, 12,  5, 13,  6, 14,  7, 15 };
+static uint8 kVTbl4x4TransposeDi[32] =
+  { 0,  16, 32, 48,  2, 18, 34, 50,  4, 20, 36, 52,  6, 22, 38, 54,
+    1,  17, 33, 49,  3, 19, 35, 51,  5, 21, 37, 53,  7, 23, 39, 55};
 
 void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
@@ -257,281 +258,280 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     // loops are on blocks of 8. loop will stop when
     // counter gets to or below 0. starting the counter
     // at w-8 allow for this
-    "sub         %7, #8                        \n"
+    "sub       %4, %4, #8                      \n"
 
     // handle 8x8 blocks. this should be the majority of the plane
-    ".p2align  2                               \n"
     "1:                                        \n"
-      "mov         %0, %1                      \n"
-
-      MEMACCESS(0)
-      "vld2.8      {d0,  d1},  [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d2,  d3},  [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d4,  d5},  [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d6,  d7},  [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d16, d17}, [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d18, d19}, [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d20, d21}, [%0], %2        \n"
-      MEMACCESS(0)
-      "vld2.8      {d22, d23}, [%0]            \n"
-
-      "vtrn.8      q1, q0                      \n"
-      "vtrn.8      q3, q2                      \n"
-      "vtrn.8      q9, q8                      \n"
-      "vtrn.8      q11, q10                    \n"
-
-      "vtrn.16     q1, q3                      \n"
-      "vtrn.16     q0, q2                      \n"
-      "vtrn.16     q9, q11                     \n"
-      "vtrn.16     q8, q10                     \n"
-
-      "vtrn.32     q1, q9                      \n"
-      "vtrn.32     q0, q8                      \n"
-      "vtrn.32     q3, q11                     \n"
-      "vtrn.32     q2, q10                     \n"
-
-      "vrev16.8    q0, q0                      \n"
-      "vrev16.8    q1, q1                      \n"
-      "vrev16.8    q2, q2                      \n"
-      "vrev16.8    q3, q3                      \n"
-      "vrev16.8    q8, q8                      \n"
-      "vrev16.8    q9, q9                      \n"
-      "vrev16.8    q10, q10                    \n"
-      "vrev16.8    q11, q11                    \n"
-
-      "mov         %0, %3                      \n"
+    "mov       %0, %1                          \n"
 
     MEMACCESS(0)
-      "vst1.8      {d2},  [%0], %4             \n"
+    "ld1       {v0.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d0},  [%0], %4             \n"
+    "ld1       {v1.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d6},  [%0], %4             \n"
+    "ld1       {v2.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d4},  [%0], %4             \n"
+    "ld1       {v3.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d18}, [%0], %4             \n"
+    "ld1       {v4.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d16}, [%0], %4             \n"
+    "ld1       {v5.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d22}, [%0], %4             \n"
+    "ld1       {v6.16b}, [%0], %5              \n"
     MEMACCESS(0)
-      "vst1.8      {d20}, [%0]                 \n"
+    "ld1       {v7.16b}, [%0]                  \n"
 
-      "mov         %0, %5                      \n"
+    "trn1      v16.16b, v0.16b, v1.16b         \n"
+    "trn2      v17.16b, v0.16b, v1.16b         \n"
+    "trn1      v18.16b, v2.16b, v3.16b         \n"
+    "trn2      v19.16b, v2.16b, v3.16b         \n"
+    "trn1      v20.16b, v4.16b, v5.16b         \n"
+    "trn2      v21.16b, v4.16b, v5.16b         \n"
+    "trn1      v22.16b, v6.16b, v7.16b         \n"
+    "trn2      v23.16b, v6.16b, v7.16b         \n"
+
+    "trn1      v0.8h, v16.8h, v18.8h           \n"
+    "trn2      v1.8h, v16.8h, v18.8h           \n"
+    "trn1      v2.8h, v20.8h, v22.8h           \n"
+    "trn2      v3.8h, v20.8h, v22.8h           \n"
+    "trn1      v4.8h, v17.8h, v19.8h           \n"
+    "trn2      v5.8h, v17.8h, v19.8h           \n"
+    "trn1      v6.8h, v21.8h, v23.8h           \n"
+    "trn2      v7.8h, v21.8h, v23.8h           \n"
+
+    "trn1      v16.4s, v0.4s, v2.4s            \n"
+    "trn2      v17.4s, v0.4s, v2.4s            \n"
+    "trn1      v18.4s, v1.4s, v3.4s            \n"
+    "trn2      v19.4s, v1.4s, v3.4s            \n"
+    "trn1      v20.4s, v4.4s, v6.4s            \n"
+    "trn2      v21.4s, v4.4s, v6.4s            \n"
+    "trn1      v22.4s, v5.4s, v7.4s            \n"
+    "trn2      v23.4s, v5.4s, v7.4s            \n"
+
+    "mov       %0, %2                          \n"
 
     MEMACCESS(0)
-      "vst1.8      {d3},  [%0], %6             \n"
+    "st1       {v16.d}[0], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d1},  [%0], %6             \n"
+    "st1       {v18.d}[0], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d7},  [%0], %6             \n"
+    "st1       {v17.d}[0], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d5},  [%0], %6             \n"
+    "st1       {v19.d}[0], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d19}, [%0], %6             \n"
+    "st1       {v16.d}[1], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d17}, [%0], %6             \n"
+    "st1       {v18.d}[1], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d23}, [%0], %6             \n"
+    "st1       {v17.d}[1], [%0], %6            \n"
     MEMACCESS(0)
-      "vst1.8      {d21}, [%0]                 \n"
+    "st1       {v19.d}[1], [%0]                \n"
 
-      "add         %1, #8*2                    \n"  // src   += 8*2
-      "add         %3, %3, %4, lsl #3          \n"  // dst_a += 8 * dst_stride_a
-      "add         %5, %5, %6, lsl #3          \n"  // dst_b += 8 * dst_stride_b
-      "subs        %7,  #8                     \n"  // w     -= 8
-      "bge         1b                          \n"
+    "mov       %0, %3                          \n"
+
+    MEMACCESS(0)
+    "st1       {v20.d}[0], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v22.d}[0], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v21.d}[0], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v23.d}[0], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v20.d}[1], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v22.d}[1], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v21.d}[1], [%0], %7            \n"
+    MEMACCESS(0)
+    "st1       {v23.d}[1], [%0]                \n"
+
+    "add       %1, %1, #16                     \n"  // src   += 8*2
+    "add       %2, %2, %6, lsl #3              \n"  // dst_a += 8 * dst_stride_a
+    "add       %3, %3, %7, lsl #3              \n"  // dst_b += 8 * dst_stride_b
+    "subs      %4, %4,  #8                     \n"  // w     -= 8
+    "bge       1b                              \n"
 
     // add 8 back to counter. if the result is 0 there are
     // no residuals.
-    "adds        %7, #8                        \n"
-    "beq         4f                            \n"
+    "adds      %4, %4, #8                      \n"
+    "beq       4f                              \n"
 
     // some residual, so between 1 and 7 lines left to transpose
-    "cmp         %7, #2                        \n"
-    "blt         3f                            \n"
+    "cmp       %4, #2                          \n"
+    "blt       3f                              \n"
 
-    "cmp         %7, #4                        \n"
-    "blt         2f                            \n"
+    "cmp       %4, #4                          \n"
+    "blt       2f                              \n"
 
     // TODO(frkoenig): Clean this up
     // 4x8 block
-    "mov         %0, %1                        \n"
+    "mov       %0, %1                          \n"
     MEMACCESS(0)
-    "vld1.64     {d0}, [%0], %2                \n"
+    "ld1       {v0.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d1}, [%0], %2                \n"
+    "ld1       {v1.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d2}, [%0], %2                \n"
+    "ld1       {v2.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d3}, [%0], %2                \n"
+    "ld1       {v3.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d4}, [%0], %2                \n"
+    "ld1       {v4.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d5}, [%0], %2                \n"
+    "ld1       {v5.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d6}, [%0], %2                \n"
+    "ld1       {v6.8b}, [%0], %5               \n"
     MEMACCESS(0)
-    "vld1.64     {d7}, [%0]                    \n"
+    "ld1       {v7.8b}, [%0]                   \n"
 
     MEMACCESS(8)
-    "vld1.8      {q15}, [%8]                   \n"
+    "ld1       {v30.16b}, [%8], #16            \n"
+    "ld1       {v31.16b}, [%8]                 \n"
 
-    "vtrn.8      q0, q1                        \n"
-    "vtrn.8      q2, q3                        \n"
+    "tbl       v16.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v30.16b  \n"
+    "tbl       v17.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v31.16b  \n"
+    "tbl       v18.16b, {v4.16b, v5.16b, v6.16b, v7.16b}, v30.16b  \n"
+    "tbl       v19.16b, {v4.16b, v5.16b, v6.16b, v7.16b}, v31.16b  \n"
 
-    "vtbl.8      d16, {d0, d1}, d30            \n"
-    "vtbl.8      d17, {d0, d1}, d31            \n"
-    "vtbl.8      d18, {d2, d3}, d30            \n"
-    "vtbl.8      d19, {d2, d3}, d31            \n"
-    "vtbl.8      d20, {d4, d5}, d30            \n"
-    "vtbl.8      d21, {d4, d5}, d31            \n"
-    "vtbl.8      d22, {d6, d7}, d30            \n"
-    "vtbl.8      d23, {d6, d7}, d31            \n"
-
-    "mov         %0, %3                        \n"
+    "mov       %0, %2                          \n"
 
     MEMACCESS(0)
-    "vst1.32     {d16[0]},  [%0], %4           \n"
+    "st1       {v16.s}[0],  [%0], %6           \n"
     MEMACCESS(0)
-    "vst1.32     {d16[1]},  [%0], %4           \n"
+    "st1       {v16.s}[1],  [%0], %6           \n"
     MEMACCESS(0)
-    "vst1.32     {d17[0]},  [%0], %4           \n"
+    "st1       {v16.s}[2],  [%0], %6           \n"
     MEMACCESS(0)
-    "vst1.32     {d17[1]},  [%0], %4           \n"
+    "st1       {v16.s}[3],  [%0], %6           \n"
 
-    "add         %0, %3, #4                    \n"
+    "add       %0, %2, #4                      \n"
     MEMACCESS(0)
-    "vst1.32     {d20[0]}, [%0], %4            \n"
+    "st1       {v18.s}[0], [%0], %6            \n"
     MEMACCESS(0)
-    "vst1.32     {d20[1]}, [%0], %4            \n"
+    "st1       {v18.s}[1], [%0], %6            \n"
     MEMACCESS(0)
-    "vst1.32     {d21[0]}, [%0], %4            \n"
+    "st1       {v18.s}[2], [%0], %6            \n"
     MEMACCESS(0)
-    "vst1.32     {d21[1]}, [%0]                \n"
+    "st1       {v18.s}[3], [%0]                \n"
 
-    "mov         %0, %5                        \n"
+    "mov       %0, %3                          \n"
 
     MEMACCESS(0)
-    "vst1.32     {d18[0]}, [%0], %6            \n"
+    "st1       {v17.s}[0], [%0], %7            \n"
     MEMACCESS(0)
-    "vst1.32     {d18[1]}, [%0], %6            \n"
+    "st1       {v17.s}[1], [%0], %7            \n"
     MEMACCESS(0)
-    "vst1.32     {d19[0]}, [%0], %6            \n"
+    "st1       {v17.s}[2], [%0], %7            \n"
     MEMACCESS(0)
-    "vst1.32     {d19[1]}, [%0], %6            \n"
+    "st1       {v17.s}[3], [%0], %7            \n"
 
-    "add         %0, %5, #4                    \n"
+    "add       %0, %3, #4                      \n"
     MEMACCESS(0)
-    "vst1.32     {d22[0]},  [%0], %6           \n"
+    "st1       {v19.s}[0],  [%0], %7           \n"
     MEMACCESS(0)
-    "vst1.32     {d22[1]},  [%0], %6           \n"
+    "st1       {v19.s}[1],  [%0], %7           \n"
     MEMACCESS(0)
-    "vst1.32     {d23[0]},  [%0], %6           \n"
+    "st1       {v19.s}[2],  [%0], %7           \n"
     MEMACCESS(0)
-    "vst1.32     {d23[1]},  [%0]               \n"
+    "st1       {v19.s}[3],  [%0]               \n"
 
-    "add         %1, #4*2                      \n"  // src   += 4 * 2
-    "add         %3, %3, %4, lsl #2            \n"  // dst_a += 4 * dst_stride_a
-    "add         %5, %5, %6, lsl #2            \n"  // dst_b += 4 * dst_stride_b
-    "subs        %7,  #4                       \n"  // w     -= 4
-    "beq         4f                            \n"
+    "add       %1, %1, #8                      \n"  // src   += 4 * 2
+    "add       %2, %2, %6, lsl #2              \n"  // dst_a += 4 * dst_stride_a
+    "add       %3, %3, %7, lsl #2              \n"  // dst_b += 4 * dst_stride_b
+    "subs      %4,  %4,  #4                    \n"  // w     -= 4
+    "beq       4f                              \n"
 
     // some residual, check to see if it includes a 2x8 block,
     // or less
-    "cmp         %7, #2                        \n"
-    "blt         3f                            \n"
+    "cmp       %4, #2                          \n"
+    "blt       3f                              \n"
 
     // 2x8 block
     "2:                                        \n"
-    "mov         %0, %1                        \n"
+    "mov       %0, %1                          \n"
     MEMACCESS(0)
-    "vld2.16     {d0[0], d2[0]}, [%0], %2      \n"
+    "ld2       {v0.h, v1.h}[0], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d1[0], d3[0]}, [%0], %2      \n"
+    "ld2       {v2.h, v3.h}[0], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d0[1], d2[1]}, [%0], %2      \n"
+    "ld2       {v0.h, v1.h}[1], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d1[1], d3[1]}, [%0], %2      \n"
+    "ld2       {v2.h, v3.h}[1], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d0[2], d2[2]}, [%0], %2      \n"
+    "ld2       {v0.h, v1.h}[2], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d1[2], d3[2]}, [%0], %2      \n"
+    "ld2       {v2.h, v3.h}[2], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d0[3], d2[3]}, [%0], %2      \n"
+    "ld2       {v0.h, v1.h}[3], [%0], %5       \n"
     MEMACCESS(0)
-    "vld2.16     {d1[3], d3[3]}, [%0]          \n"
+    "ld2       {v2.h, v3.h}[3], [%0]           \n"
 
-    "vtrn.8      d0, d1                        \n"
-    "vtrn.8      d2, d3                        \n"
+    "trn1      v4.8b, v0.8b, v2.8b             \n"
+    "trn2      v5.8b, v0.8b, v2.8b             \n"
+    "trn1      v6.8b, v1.8b, v3.8b             \n"
+    "trn2      v7.8b, v1.8b, v3.8b             \n"
 
-    "mov         %0, %3                        \n"
-
-    MEMACCESS(0)
-    "vst1.64     {d0}, [%0], %4                \n"
-    MEMACCESS(0)
-    "vst1.64     {d2}, [%0]                    \n"
-
-    "mov         %0, %5                        \n"
+    "mov       %0, %2                          \n"
 
     MEMACCESS(0)
-    "vst1.64     {d1}, [%0], %6                \n"
+    "st1       {v4.d}[0], [%0], %6             \n"
     MEMACCESS(0)
-    "vst1.64     {d3}, [%0]                    \n"
+    "st1       {v6.d}[0], [%0]                 \n"
 
-    "add         %1, #2*2                      \n"  // src   += 2 * 2
-    "add         %3, %3, %4, lsl #1            \n"  // dst_a += 2 * dst_stride_a
-    "add         %5, %5, %6, lsl #1            \n"  // dst_b += 2 * dst_stride_b
-    "subs        %7,  #2                       \n"  // w     -= 2
-    "beq         4f                            \n"
+    "mov       %0, %3                          \n"
+
+    MEMACCESS(0)
+    "st1       {v5.d}[0], [%0], %7             \n"
+    MEMACCESS(0)
+    "st1       {v7.d}[0], [%0]                 \n"
+
+    "add       %1, %1, #4                      \n"  // src   += 2 * 2
+    "add       %2, %2, %6, lsl #1              \n"  // dst_a += 2 * dst_stride_a
+    "add       %3, %3, %7, lsl #1              \n"  // dst_b += 2 * dst_stride_b
+    "subs      %4,  %4,  #2                    \n"  // w     -= 2
+    "beq       4f                              \n"
 
     // 1x8 block
     "3:                                        \n"
     MEMACCESS(1)
-    "vld2.8      {d0[0], d1[0]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[0], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[1], d1[1]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[1], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[2], d1[2]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[2], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[3], d1[3]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[3], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[4], d1[4]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[4], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[5], d1[5]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[5], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[6], d1[6]}, [%1], %2      \n"
+    "ld2       {v0.b, v1.b}[6], [%1], %5       \n"
     MEMACCESS(1)
-    "vld2.8      {d0[7], d1[7]}, [%1]          \n"
+    "ld2       {v0.b, v1.b}[7], [%1]           \n"
 
+    MEMACCESS(2)
+    "st1       {v0.d}[0], [%2]                 \n"
     MEMACCESS(3)
-    "vst1.64     {d0}, [%3]                    \n"
-    MEMACCESS(5)
-    "vst1.64     {d1}, [%5]                    \n"
+    "st1       {v1.d}[0], [%3]                 \n"
 
     "4:                                        \n"
 
-    : "+r"(src_temp),            // %0
-      "+r"(src),                 // %1
-      "+r"(src_stride),          // %2
-      "+r"(dst_a),               // %3
-      "+r"(dst_stride_a),        // %4
-      "+r"(dst_b),               // %5
-      "+r"(dst_stride_b),        // %6
-      "+r"(width)                // %7
-    : "r"(&kVTbl4x4TransposeDi)  // %8
+    : "+r"(src_temp),                             // %0
+      "+r"(src),                                  // %1
+      "+r"(dst_a),                                // %2
+      "+r"(dst_b),                                // %3
+      "+r"(width)                                 // %4
+    : "r"(static_cast<ptrdiff_t>(src_stride)),    // %5
+      "r"(static_cast<ptrdiff_t>(dst_stride_a)),  // %6
+      "r"(static_cast<ptrdiff_t>(dst_stride_b)),  // %7
+      "r"(&kVTbl4x4TransposeDi)                   // %8
     : "memory", "cc",
-      "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11"
+      "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",
+      "v30", "v31"
   );
 }
-#endif // HAS_TRANSPOSE_UVWX8_NEON
 #endif // __aarch64__
 
 #ifdef __cplusplus
