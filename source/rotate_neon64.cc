@@ -242,9 +242,6 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
 }
 #endif //HAS_TRANSPOSE_WX8_NEON
 
-//this ifdef should be removed if TransposeUVWx8_NEON's aarch64 has
-//been done
-#ifdef HAS_TRANSPOSE_UVWX8_NEON
 static uint8 kVTbl4x4TransposeDi[32] =
   { 0,  16, 32, 48,  2, 18, 34, 50,  4, 20, 36, 52,  6, 22, 38, 54,
     1,  17, 33, 49,  3, 19, 35, 51,  5, 21, 37, 53,  7, 23, 39, 55};
