@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "libyuv/scale.h"
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -77,7 +79,7 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
   "1:                                          \n"
     MEMACCESS(0)
-    "ld4     {v0.8b-3.8b}, [%0], #32           \n"  // src line 0
+    "ld4     {v0.8b-v3.8b}, [%0], #32          \n"  // src line 0
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
     MEMACCESS(1)
     "st1     {v2.8b}, [%1], #8                 \n"
