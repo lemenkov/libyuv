@@ -55,15 +55,17 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width);
+//following symbol is temporally enable for aarch64, until all neon optimized
+//functions have been ported to aarch64
 #elif !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
     (defined(__aarch64__) || defined(LIBYUV_NEON))
 // #define HAS_MIRRORROW_NEON
 // void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 // #define HAS_MIRRORROW_UV_NEON
 // void MirrorUVRow_NEON(const uint8* src, uint8* dst_a, uint8* dst_b, int width);
-// #define HAS_TRANSPOSE_WX8_NEON
-// void TransposeWx8_NEON(const uint8* src, int src_stride,
-//                        uint8* dst, int dst_stride, int width);
+#define HAS_TRANSPOSE_WX8_NEON
+void TransposeWx8_NEON(const uint8* src, int src_stride,
+                       uint8* dst, int dst_stride, int width);
 #define HAS_TRANSPOSE_UVWX8_NEON
 void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
