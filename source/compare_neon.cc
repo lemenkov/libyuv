@@ -80,7 +80,7 @@ uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count) {
     "smlal      v17.4s, v3.4h, v3.4h           \n"
     "smlal2     v18.4s, v2.8h, v2.8h           \n"
     "smlal2     v19.4s, v3.8h, v3.8h           \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
 
     "add        v16.4s, v16.4s, v17.4s         \n"
     "add        v18.4s, v18.4s, v19.4s         \n"

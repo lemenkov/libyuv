@@ -32,7 +32,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "subs       %2, %2, #16                    \n"  // 16 processed per loop
     MEMACCESS(1)
     "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst),              // %1
     "+r"(dst_width)         // %2
@@ -63,7 +63,7 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "rshrn2     v0.16b, v1.8h, #2              \n"
     MEMACCESS(2)
     "st1        {v0.16b}, [%2], #16            \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(src_stride),       // %1
     "+r"(dst),              // %2
@@ -84,7 +84,7 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
     MEMACCESS(1)
     "st1     {v2.8b}, [%1], #8                 \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width)         // %2
@@ -119,7 +119,7 @@ asm volatile (
     "rshrn   v0.8b, v0.8h, #4                  \n"   // divide by 16 w/rounding
     MEMACCESS(1)
     "st1    {v0.s}[0], [%1], #4                \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_ptr),   // %0
     "+r"(dst_ptr),   // %1
     "+r"(dst_width), // %2
@@ -147,7 +147,7 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
     "mov       v2.8b, v3.8b                            \n"  // order v0, v1, v2
     MEMACCESS(1)
     "st3       {v0.8b-v2.8b}, [%1], #24                \n"
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width)         // %2
@@ -207,7 +207,7 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
     MEMACCESS(1)
     "st3       {v0.8b-v2.8b}, [%1], #24                \n"
 
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
@@ -253,7 +253,7 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
 
     MEMACCESS(1)
     "st3       {v0.8b-v2.8b}, [%1], #24                \n"
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
@@ -292,7 +292,7 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
     "st1       {v2.8b}, [%1], #8                       \n"
     MEMACCESS(1)
     "st1       {v2.s}[2], [%1], #4                     \n"
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width)         // %2
@@ -417,7 +417,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "st1       {v3.8b}, [%1], #8                       \n"
     MEMACCESS(1)
     "st1       {v3.s}[2], [%1], #4                     \n"
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
     "+r"(dst_width),        // %2
@@ -527,7 +527,7 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     "st1       {v3.8b}, [%1], #8                       \n"
     MEMACCESS(1)
     "st1       {v3.s}[2], [%1], #4                     \n"
-    "bgt       1b                                      \n"
+    "b.gt      1b                                      \n"
   : "+r"(src_ptr),       // %0
     "+r"(dst_ptr),       // %1
     "+r"(dst_width),     // %2
@@ -547,14 +547,14 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     int y_fraction = 256 - source_y_fraction;
   asm volatile (
     "cmp          %4, #0                       \n"
-    "beq          100f                         \n"
+    "b.eq         100f                         \n"
     "add          %2, %2, %1                   \n"
     "cmp          %4, #64                      \n"
-    "beq          75f                          \n"
+    "b.eq         75f                          \n"
     "cmp          %4, #128                     \n"
-    "beq          50f                          \n"
+    "b.eq         50f                          \n"
     "cmp          %4, #192                     \n"
-    "beq          25f                          \n"
+    "b.eq         25f                          \n"
 
     "dup          v5.8b, %w4                   \n"
     "dup          v4.8b, %w5                   \n"
@@ -573,7 +573,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "rshrn2       v0.16b, v7.8h, #8            \n"
     MEMACCESS(0)
     "st1          {v0.16b}, [%0], #16          \n"
-    "bgt          1b                           \n"
+    "b.gt         1b                           \n"
     "b            99f                          \n"
 
     // Blend 25 / 75.
@@ -587,7 +587,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
     "st1          {v0.16b}, [%0], #16          \n"
-    "bgt          25b                          \n"
+    "b.gt         25b                          \n"
     "b            99f                          \n"
 
     // Blend 50 / 50.
@@ -600,7 +600,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
     "st1          {v0.16b}, [%0], #16          \n"
-    "bgt          50b                          \n"
+    "b.gt         50b                          \n"
     "b            99f                          \n"
 
     // Blend 75 / 25.
@@ -614,7 +614,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "urhadd       v0.16b, v0.16b, v1.16b       \n"
     MEMACCESS(0)
     "st1          {v0.16b}, [%0], #16          \n"
-    "bgt          75b                          \n"
+    "b.gt         75b                          \n"
     "b            99f                          \n"
 
     // Blend 100 / 0 - Copy row unchanged.
@@ -624,7 +624,7 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
     "subs         %3, %3, #16                  \n"
     MEMACCESS(0)
     "st1          {v0.16b}, [%0], #16          \n"
-    "bgt          100b                         \n"
+    "b.gt         100b                         \n"
 
   "99:                                         \n"
     MEMACCESS(0)
@@ -655,7 +655,7 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
     MEMACCESS (1)
     "st1        {v3.16b}, [%1], #16            \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r" (src_ptr),          // %0
     "+r" (dst),              // %1
     "+r" (dst_width)         // %2
@@ -691,7 +691,7 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "rshrn      v3.8b, v3.8h, #2               \n"
     MEMACCESS (2)
     "st4        {v0.8b - v3.8b}, [%2], #32     \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r" (src_ptr),          // %0
     "+r" (src_stride),       // %1
     "+r" (dst),              // %2
@@ -720,7 +720,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
     "subs       %2, %2, #4                     \n"  // 4 pixels per loop.
     MEMACCESS(1)
     "st1        {v0.16b}, [%1], #16            \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
     "+r"(dst_width)    // %2
@@ -774,7 +774,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
     "subs       %3, %3, #4                     \n"  // 4 pixels per loop.
     MEMACCESS(2)
     "st1     {v0.16b}, [%2], #16               \n"
-    "bgt        1b                             \n"
+    "b.gt       1b                             \n"
   : "+r"(src_argb),    // %0
     "+r"(src_stride),  // %1
     "+r"(dst_argb),    // %2

@@ -104,19 +104,19 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
       "add         %1, %1, #8                    \n"  // src += 8
       "add         %2, %2, %6, lsl #3            \n"  // dst += 8 * dst_stride
       "subs        %3, %3, #8                    \n"  // w   -= 8
-      "bge         1b                            \n"
+      "b.ge        1b                            \n"
 
     // add 8 back to counter. if the result is 0 there are
     // no residuals.
     "adds        %3, %3, #8                      \n"
-    "beq         4f                              \n"
+    "b.eq        4f                              \n"
 
     // some residual, so between 1 and 7 lines left to transpose
     "cmp         %3, #2                          \n"
-    "blt         3f                              \n"
+    "b.lt        3f                              \n"
 
     "cmp         %3, #4                          \n"
-    "blt         2f                              \n"
+    "b.lt        2f                              \n"
 
     // 4x8 block
     "mov         %0, %1                          \n"
@@ -169,12 +169,12 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "add         %1, %1, #4                      \n"  // src += 4
     "add         %2, %2, %6, lsl #2              \n"  // dst += 4 * dst_stride
     "subs        %3, %3, #4                      \n"  // w   -= 4
-    "beq         4f                              \n"
+    "b.eq        4f                              \n"
 
     // some residual, check to see if it includes a 2x8 block,
     // or less
     "cmp         %3, #2                          \n"
-    "blt         3f                              \n"
+    "b.lt        3f                              \n"
 
     // 2x8 block
     "2:                                          \n"
@@ -209,7 +209,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     "add         %1, %1, #2                      \n"  // src += 2
     "add         %2, %2, %6, lsl #1              \n"  // dst += 2 * dst_stride
     "subs        %3, %3,  #2                     \n"  // w   -= 2
-    "beq         4f                              \n"
+    "b.eq        4f                              \n"
 
     // 1x8 block
     "3:                                          \n"
@@ -352,19 +352,19 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "add       %2, %2, %6, lsl #3              \n"  // dst_a += 8 * dst_stride_a
     "add       %3, %3, %7, lsl #3              \n"  // dst_b += 8 * dst_stride_b
     "subs      %4, %4,  #8                     \n"  // w     -= 8
-    "bge       1b                              \n"
+    "b.ge      1b                              \n"
 
     // add 8 back to counter. if the result is 0 there are
     // no residuals.
     "adds      %4, %4, #8                      \n"
-    "beq       4f                              \n"
+    "b.eq      4f                              \n"
 
     // some residual, so between 1 and 7 lines left to transpose
     "cmp       %4, #2                          \n"
-    "blt       3f                              \n"
+    "b.lt      3f                              \n"
 
     "cmp       %4, #4                          \n"
-    "blt       2f                              \n"
+    "b.lt      2f                              \n"
 
     // TODO(frkoenig): Clean this up
     // 4x8 block
@@ -441,12 +441,12 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "add       %2, %2, %6, lsl #2              \n"  // dst_a += 4 * dst_stride_a
     "add       %3, %3, %7, lsl #2              \n"  // dst_b += 4 * dst_stride_b
     "subs      %4,  %4,  #4                    \n"  // w     -= 4
-    "beq       4f                              \n"
+    "b.eq      4f                              \n"
 
     // some residual, check to see if it includes a 2x8 block,
     // or less
     "cmp       %4, #2                          \n"
-    "blt       3f                              \n"
+    "b.lt      3f                              \n"
 
     // 2x8 block
     "2:                                        \n"
@@ -491,7 +491,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
     "add       %2, %2, %6, lsl #1              \n"  // dst_a += 2 * dst_stride_a
     "add       %3, %3, %7, lsl #1              \n"  // dst_b += 2 * dst_stride_b
     "subs      %4,  %4,  #2                    \n"  // w     -= 2
-    "beq       4f                              \n"
+    "b.eq      4f                              \n"
 
     // 1x8 block
     "3:                                        \n"
