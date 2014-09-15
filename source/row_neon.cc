@@ -16,7 +16,8 @@ extern "C" {
 #endif
 
 // This module is for GCC Neon
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
+    !defined(__aarch64__)
 
 // Read 8 Y, 4 U and 4 V from 422
 #define READYUV422                                                             \
@@ -3140,7 +3141,7 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
   : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
-#endif  // __ARM_NEON__
+#endif  // defined(__ARM_NEON__) && !defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"

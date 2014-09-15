@@ -17,8 +17,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for GCC Neon.
+// This module is for GCC Neon armv8 64 bit.
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+
 #ifdef HAS_SCALEROWDOWN2_NEON
 // Read 32x1 throw away even pixels, and write 16x1.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -783,7 +784,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   );
 }
 #endif  // HAS_SCALEARGBROWDOWNEVEN_NEON
-#endif  // __aarch64__
+#endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus
 }  // extern "C"
