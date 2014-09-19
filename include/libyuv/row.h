@@ -58,6 +58,13 @@ extern "C" {
 #if defined(__native_client__) && defined(__arm__) && PPAPI_RELEASE < 37
 #define LIBYUV_DISABLE_NEON
 #endif
+// clang >= 3.5.0 required for Arm64.
+#if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)
+#if (__clang_major__ < 3) || (__clang_major__ == 3 && (__clang_minor__ < 5))
+#define LIBYUV_DISABLE_NEON
+#endif  // clang >= 3.5
+#endif  // __clang__
+
 
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \

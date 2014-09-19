@@ -25,7 +25,7 @@
     'conditions': [
        ['(target_arch == "armv7" or target_arch == "armv7s" or \
        (target_arch == "arm" and arm_version >= 7) or target_arch == "arm64")\
-       and target_subarch != 64 and (arm_neon == 1 or arm_neon_optional == 1)',
+       and (arm_neon == 1 or arm_neon_optional == 1)',
        {
          'build_neon': 1,
        }],
@@ -47,11 +47,6 @@
             '-mfpu=vfpv3-d16',
           ],
           'conditions': [
-            ['target_arch != "arm64"', {
-              'cflags': [
-                '-mfpu=neon',
-               ],
-            }],
             # Disable LTO in libyuv_neon target due to gcc 4.9 compiler bug.
             ['use_lto == 1', {
               'cflags!': [
@@ -59,6 +54,9 @@
                 '-ffat-lto-objects',
               ],
             }],
+          ],
+          'cflags': [
+            '-mfpu=neon',
           ],
           'include_dirs': [
             'include',
@@ -93,11 +91,6 @@
       # Allows libyuv.a redistributable library without external dependencies.
       'standalone_static_library': 1,
       'conditions': [
-        ['OS == "ios" and target_subarch == 64', {
-          'defines': [
-            'LIBYUV_DISABLE_NEON'
-          ],
-        }],
         ['OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG'
@@ -126,15 +119,6 @@
           'dependencies': [
             'libyuv_neon',
           ],
-          'conditions': [
-          # TODO LIBYUV_NEON is temporary disabled. When all arm64 port has
-          # been done, enable it.
-          ['target_arch !="arm64"', {
-          'defines': [
-            'LIBYUV_NEON',
-          ]
-          }],
-          ],
         }],
         # MemorySanitizer does not support assembly code yet.
         # http://crbug.com/344505
@@ -151,6 +135,7 @@
         # 'LIBYUV_DISABLE_MIPS',
         # Enable the following macro to build libyuv as a shared library (dll).
         # 'LIBYUV_USING_SHARED_LIBRARY',
+	# TODO(fbarchard): Make these into gyp defines.
       ],
       'include_dirs': [
         'include',

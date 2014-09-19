@@ -105,12 +105,12 @@ asm volatile (
     MEMACCESS(0)
     "ld1     {v0.16b}, [%0], #16               \n"   // load up 16x4
     MEMACCESS(3)
-    "ld1     {v1.16b}, [%3], #16               \n"
+    "ld1     {v1.16b}, [%2], #16               \n"
     MEMACCESS(4)
-    "ld1     {v2.16b}, [%4], #16               \n"
+    "ld1     {v2.16b}, [%3], #16               \n"
     MEMACCESS(5)
-    "ld1     {v3.16b}, [%5], #16               \n"
-    "subs       %2, %2, #4                     \n"
+    "ld1     {v3.16b}, [%4], #16               \n"
+    "subs    %5, %5, #4                        \n"
     "uaddlp  v0.8h, v0.16b                     \n"
     "uadalp  v0.8h, v1.16b                     \n"
     "uadalp  v0.8h, v2.16b                     \n"
@@ -122,10 +122,10 @@ asm volatile (
     "b.gt       1b                             \n"
   : "+r"(src_ptr),   // %0
     "+r"(dst_ptr),   // %1
-    "+r"(dst_width), // %2
-    "+r"(src_ptr1),  // %3
-    "+r"(src_ptr2),  // %4
-    "+r"(src_ptr3)   // %5
+    "+r"(src_ptr1),  // %2
+    "+r"(src_ptr2),  // %3
+    "+r"(src_ptr3),  // %4
+    "+r"(dst_width)  // %5
   :
   : "v0", "v1", "v2", "v3", "memory", "cc"
   );
@@ -144,7 +144,7 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
     MEMACCESS(0)
     "ld4       {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32                \n"  // src line 0
     "subs      %2, %2, #24                             \n"
-    "mov       v2.8b, v3.8b                            \n"  // order v0, v1, v2
+    "orr       v2.16b, v3.16b, v3.16b                  \n"  // order v0, v1, v2
     MEMACCESS(1)
     "st3       {v0.8b,v1.8b,v2.8b}, [%1], #24                \n"
     "b.gt      1b                                      \n"
@@ -309,6 +309,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
                                       uint8* dst_ptr, int dst_width) {
   const uint8* src_ptr1 = src_ptr + src_stride * 2;
+  ptrdiff_t tmp_src_stride = src_stride;
 
   asm volatile (
     MEMACCESS(5)
@@ -317,7 +318,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "ld1       {v30.16b}, [%6]                         \n"
     MEMACCESS(7)
     "ld1       {v31.8h}, [%7]                          \n"
-    "add       %3, %3, %0                              \n"
+    "add       %2, %2, %0                              \n"
   "1:                                                  \n"
 
     // 00 40 01 41 02 42 03 43
@@ -327,10 +328,10 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     MEMACCESS(0)
     "ld4       {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32                \n"
     MEMACCESS(3)
-    "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32                \n"
+    "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%2], #32                \n"
     MEMACCESS(4)
-    "ld4       {v16.8b,v17.8b,v18.8b,v19.8b}, [%4], #32              \n"
-    "subs      %2, %2, #12                             \n"
+    "ld4       {v16.8b,v17.8b,v18.8b,v19.8b}, [%3], #32              \n"
+    "subs      %4, %4, #12                             \n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added. 0,1 - 2,3 - 4,5 - 6,7
@@ -420,9 +421,9 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "b.gt      1b                                      \n"
   : "+r"(src_ptr),          // %0
     "+r"(dst_ptr),          // %1
-    "+r"(dst_width),        // %2
-    "+r"(src_stride),       // %3
-    "+r"(src_ptr1)          // %4
+    "+r"(tmp_src_stride),   // %2
+    "+r"(src_ptr1),         // %3
+    "+r"(dst_width)         // %4
   : "r"(&kMult38_Div6),     // %5
     "r"(&kShuf38_2),        // %6
     "r"(&kMult38_Div9)      // %7
@@ -438,12 +439,14 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
 void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
+  // TODO(fbarchard): use src_stride directly for clang 3.5+.
+  ptrdiff_t tmp_src_stride = src_stride;
   asm volatile (
     MEMACCESS(4)
     "ld1       {v30.8h}, [%4]                          \n"
     MEMACCESS(5)
     "ld1       {v31.16b}, [%5]                         \n"
-    "add       %3, %3, %0                              \n"
+    "add       %2, %2, %0                              \n"
   "1:                                                  \n"
 
     // 00 40 01 41 02 42 03 43
@@ -454,7 +457,7 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     "ld4       {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32                \n"
     MEMACCESS(3)
     "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32                \n"
-    "subs      %2, %2, #12                             \n"
+    "subs      %3, %3, #12                             \n"
 
     // Shuffle the input data around to get align the data
     //  so adjacent data can be added. 0,1 - 2,3 - 4,5 - 6,7
@@ -528,12 +531,12 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     MEMACCESS(1)
     "st1       {v3.s}[2], [%1], #4                     \n"
     "b.gt      1b                                      \n"
-  : "+r"(src_ptr),       // %0
-    "+r"(dst_ptr),       // %1
-    "+r"(dst_width),     // %2
-    "+r"(src_stride)     // %3
-  : "r"(&kMult38_Div6),  // %4
-    "r"(&kShuf38_2)      // %5
+  : "+r"(src_ptr),         // %0
+    "+r"(dst_ptr),         // %1
+    "+r"(tmp_src_stride),  // %2
+    "+r"(dst_width)        // %3
+  : "r"(&kMult38_Div6),    // %4
+    "r"(&kShuf38_2)        // %5
   : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17",
     "v18", "v19", "v30", "v31", "memory", "cc"
   );
