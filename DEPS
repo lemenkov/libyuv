@@ -14,7 +14,7 @@ vars = {
   "chromium_trunk" : "http://src.chromium.org/svn/trunk",
   # chrome://version/ for revision of canary Chrome.
   # http://chromium-status.appspot.com/lkgr is a last known good revision.
-  "chromium_revision": "280149",
+  "chromium_revision": "291168",
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
@@ -56,12 +56,6 @@ deps = {
 
   "tools/python":
     Var("chromium_trunk") + "/src/tools/python@" + Var("chromium_revision"),
-
-  "tools/sanitizer_options":
-    File(Var("chromium_trunk") + "/src/base/debug/sanitizer_options.cc@" + Var("chromium_revision")),
-
-  "tools/tsan_suppressions":
-    File(Var("chromium_trunk") + "/src/base/debug/tsan_suppressions.cc@" + Var("chromium_revision")),
 
   "tools/valgrind":
     Var("chromium_trunk") + "/src/tools/valgrind@" + Var("chromium_revision"),
