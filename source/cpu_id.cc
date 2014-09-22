@@ -135,6 +135,12 @@ int ArmCpuCaps(const char* cpuinfo_name) {
         fclose(f);
         return kCpuHasNEON;
       }
+      // aarch64 uses asimd for Neon.
+      p = strstr(cpuinfo_line, " asimd");
+      if (p && (p[6] == ' ' || p[6] == '\n')) {
+        fclose(f);
+        return kCpuHasNEON;
+      }
     }
   }
   fclose(f);
