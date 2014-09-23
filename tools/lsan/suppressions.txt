@@ -1,0 +1,10 @@
+# This is a suppressions file that must exist in order for the Leak Sanitizer
+# tool that runs on the ASan bot to be able to run with the default
+# configuration. More info about LSan on
+# http://www.chromium.org/developers/testing/leaksanitizer
+
+#### Third-party leaks ####
+
+#### Actual bugs in Libyuv code ####
+
+
