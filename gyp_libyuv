@@ -19,13 +19,19 @@ import sys
 checkout_root = os.path.dirname(os.path.realpath(__file__))
 
 sys.path.insert(0, os.path.join(checkout_root, 'build'))
-sys.path.insert(0, os.path.join(checkout_root, 'tools', 'find_depot_tools'))
 import gyp_chromium
 import gyp_helper
 import vs_toolchain
 
 sys.path.insert(0, os.path.join(checkout_root, 'tools', 'gyp', 'pylib'))
 import gyp
+
+def GetSupplementalFiles():
+  """Returns a list of the supplemental files that are included in all GYP
+  sources."""
+  # Can't use the one in gyp_chromium since the directory location of the root
+  # is different.
+  return glob.glob(os.path.join(checkout_root, '*', 'supplement.gypi'))
 
 
 if __name__ == '__main__':
@@ -41,7 +47,10 @@ if __name__ == '__main__':
 
   # If we didn't get a file, assume 'all.gyp' in the root of the checkout.
   if not gyp_file_specified:
-    args.append(os.path.join(checkout_root, 'all.gyp'))
+    # Because of a bug in gyp, simply adding the abspath to all.gyp doesn't
+    # work, but chdir'ing and adding the relative path does. Spooky :/
+    os.chdir(checkout_root)
+    args.append('all.gyp')
 
   # There shouldn't be a circular dependency relationship between .gyp files,
   args.append('--no-circular-check')
@@ -50,7 +59,9 @@ if __name__ == '__main__':
   if not os.environ.get('GYP_GENERATORS'):
     os.environ['GYP_GENERATORS'] = 'ninja'
 
-  vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
+  vs2013_runtime_dll_dirs = None
+  if int(os.environ.get('DEPOT_TOOLS_WIN_TOOLCHAIN', '1')):
+    vs2013_runtime_dll_dirs = vs_toolchain.SetEnvironmentAndGetRuntimeDllDirs()
 
   # Enforce gyp syntax checking. This adds about 20% execution time.
   args.append('--check')
