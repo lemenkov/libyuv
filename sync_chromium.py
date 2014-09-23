@@ -59,6 +59,12 @@ def main():
         return 0
     os.unlink(flag_file)
 
+  # To avoid gclient sync problems when DEPS entries have been removed we must
+  # wipe the .gclient_entries file that contains cached URLs for all DEPS.
+  entries_file = os.path.join(opts.chromium_dir, '.gclient_entries')
+  if os.path.exists(entries_file):
+    os.unlink(entries_file)
+
   env = os.environ.copy()
   env['GYP_CHROMIUM_NO_ACTION'] = '1'
   gclient_cmd = 'gclient.bat' if sys.platform.startswith('win') else 'gclient'

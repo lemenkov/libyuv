@@ -64,6 +64,7 @@ FILES = {
   'third_party/BUILD.gn': None,
 }
 
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROMIUM_CHECKOUT = os.path.join('chromium', 'src')
 LINKS_DB = 'links'
 
@@ -239,6 +240,14 @@ class LibyuvLinkSetup():
       actions += self._ActionForPath(
           source_dir, None, check_fn=os.path.isdir,
           check_msg='directories')
+
+    if not on_bot and self._force:
+      # When making the manual switch from legacy SVN checkouts to the new
+      # Git-based Chromium DEPS, the .gclient_entries file that contains cached
+      # URLs for all DEPS entries must be removed to avoid future sync problems.
+      entries_file = os.path.join(os.path.dirname(ROOT_DIR), '.gclient_entries')
+      if os.path.exists(entries_file):
+        actions.append(Remove(entries_file, dangerous=True))
 
     actions.sort()
 
