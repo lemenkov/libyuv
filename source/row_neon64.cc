@@ -414,16 +414,11 @@ void I422ToRAWRow_NEON(const uint8* src_y,
 #endif  // HAS_I422TORAWROW_NEON
 
 #define ARGBTORGB565                                                           \
-    "vshr.u8    d20, d20, #3                   \n"  /* B                    */ \
-    "vshr.u8    d21, d21, #2                   \n"  /* G                    */ \
-    "vshr.u8    d22, d22, #3                   \n"  /* R                    */ \
-    "vmovl.u8   q8, d20                        \n"  /* B                    */ \
-    "vmovl.u8   q9, d21                        \n"  /* G                    */ \
-    "vmovl.u8   q10, d22                       \n"  /* R                    */ \
-    "vshl.u16   q9, q9, #5                     \n"  /* G                    */ \
-    "vshl.u16   q10, q10, #11                  \n"  /* R                    */ \
-    "vorr       q0, q8, q9                     \n"  /* BG                   */ \
-    "vorr       q0, q0, q10                    \n"  /* BGR                  */
+    "shll       v0.8h,  v22.8b, #8             \n"  /* R                    */ \
+    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
+    "shll       v21.8h, v21.8b, #8             \n"  /* G                    */ \
+    "sri        v0.8h,  v21.8h, #5             \n"  /* RG                   */ \
+    "sri        v0.8h,  v20.8h, #11            \n"  /* RGB                  */
 
 #ifdef HAS_I422TORGB565ROW_NEON
 void I422ToRGB565Row_NEON(const uint8* src_y,
@@ -462,19 +457,13 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
 #endif  // HAS_I422TORGB565ROW_NEON
 
 #define ARGBTOARGB1555                                                         \
-    "vshr.u8    q10, q10, #3                   \n"  /* B                    */ \
-    "vshr.u8    d22, d22, #3                   \n"  /* R                    */ \
-    "vshr.u8    d23, d23, #7                   \n"  /* A                    */ \
-    "vmovl.u8   q8, d20                        \n"  /* B                    */ \
-    "vmovl.u8   q9, d21                        \n"  /* G                    */ \
-    "vmovl.u8   q10, d22                       \n"  /* R                    */ \
-    "vmovl.u8   q11, d23                       \n"  /* A                    */ \
-    "vshl.u16   q9, q9, #5                     \n"  /* G                    */ \
-    "vshl.u16   q10, q10, #10                  \n"  /* R                    */ \
-    "vshl.u16   q11, q11, #15                  \n"  /* A                    */ \
-    "vorr       q0, q8, q9                     \n"  /* BG                   */ \
-    "vorr       q1, q10, q11                   \n"  /* RA                   */ \
-    "vorr       q0, q0, q1                     \n"  /* BGRA                 */
+    "shll       v0.8h,  v23.8b, #8             \n"  /* A                    */ \
+    "shll       v22.8h, v22.8b, #8             \n"  /* R                    */ \
+    "shll       v20.8h, v20.8b, #8             \n"  /* B                    */ \
+    "shll       v21.8h, v21.8b, #8             \n"  /* G                    */ \
+    "sri        v0.8h,  v22.8h, #1             \n"  /* AR                   */ \
+    "sri        v0.8h,  v21.8h, #6             \n"  /* ARG                  */ \
+    "sri        v0.8h,  v20.8h, #11            \n"  /* ARGB                 */
 
 #ifdef HAS_I422TOARGB1555ROW_NEON
 void I422ToARGB1555Row_NEON(const uint8* src_y,
@@ -514,13 +503,14 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
 #endif  // HAS_I422TOARGB1555ROW_NEON
 
 #define ARGBTOARGB4444                                                         \
-    "vshr.u8    d20, d20, #4                   \n"  /* B                    */ \
-    "vbic.32    d21, d21, d4                   \n"  /* G                    */ \
-    "vshr.u8    d22, d22, #4                   \n"  /* R                    */ \
-    "vbic.32    d23, d23, d4                   \n"  /* A                    */ \
-    "vorr       d0, d20, d21                   \n"  /* BG                   */ \
-    "vorr       d1, d22, d23                   \n"  /* RA                   */ \
-    "vzip.u8    d0, d1                         \n"  /* BGRA                 */
+    /* Input v20.8b<=B, v21.8b<=G, v22.8b<=R, v23.8b<=A, v4.8b<=0x0f        */ \
+    "ushr       v20.8b, v20.8b, #4             \n"  /* B                    */ \
+    "bic        v21.8b, v21.8b, v4.8b          \n"  /* G                    */ \
+    "ushr       v22.8b, v22.8b, #4             \n"  /* R                    */ \
+    "bic        v23.8b, v23.8b, v4.8b          \n"  /* A                    */ \
+    "orr        v0.8b,  v20.8b, v21.8b         \n"  /* BG                   */ \
+    "orr        v1.8b,  v22.8b, v23.8b         \n"  /* RA                   */ \
+    "zip1       v0.16b, v0.16b, v1.16b         \n"  /* BGRA                 */
 
 #ifdef HAS_I422TOARGB4444ROW_NEON
 void I422ToARGB4444Row_NEON(const uint8* src_y,
@@ -1516,17 +1506,17 @@ void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb565, int pix) {
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d20, d21, d22, d23}, [%0]!    \n"  // load 8 pixels of ARGB.
+    "ld4        {v20.8b-v23.8b}, [%0], #32     \n"  // load 8 pixels of ARGB.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     ARGBTORGB565
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels RGB565.
+    "st1        {v0.16b}, [%1], #16            \n"  // store 8 pixels RGB565.
     "b.gt       1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_rgb565),  // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "v0", "v20", "v21", "v22", "v23"
   );
 }
 #endif  // HAS_ARGBTORGB565ROW_NEON
@@ -1538,17 +1528,17 @@ void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_argb1555,
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d20, d21, d22, d23}, [%0]!    \n"  // load 8 pixels of ARGB.
+    "ld4        {v20.8b-v23.8b}, [%0], #32     \n"  // load 8 pixels of ARGB.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     ARGBTOARGB1555
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels ARGB1555.
+    "st1        {v0.16b}, [%1], #16            \n"  // store 8 pixels ARGB1555.
     "b.gt       1b                             \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb1555),  // %1
     "+r"(pix)        // %2
   :
-  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "v0", "v20", "v21", "v22", "v23"
   );
 }
 #endif  // HAS_ARGBTOARGB1555ROW_NEON
@@ -1557,21 +1547,21 @@ void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_argb1555,
 void ARGBToARGB4444Row_NEON(const uint8* src_argb, uint8* dst_argb4444,
                             int pix) {
   asm volatile (
-    "vmov.u8    d4, #0x0f                      \n"  // bits to clear with vbic.
+    "movi       v4.16b, #0x0f                  \n"  // bits to clear with vbic.
     ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld4.8     {d20, d21, d22, d23}, [%0]!    \n"  // load 8 pixels of ARGB.
+    "ld4        {v20.8b-v23.8b}, [%0], #32     \n"  // load 8 pixels of ARGB.
     "subs       %2, %2, #8                     \n"  // 8 processed per loop.
     ARGBTOARGB4444
     MEMACCESS(1)
-    "vst1.8     {q0}, [%1]!                    \n"  // store 8 pixels ARGB4444.
+    "st1        {v0.16b}, [%1], #16            \n"  // store 8 pixels ARGB4444.
     "b.gt       1b                             \n"
   : "+r"(src_argb),      // %0
     "+r"(dst_argb4444),  // %1
     "+r"(pix)            // %2
   :
-  : "cc", "memory", "q0", "q8", "q9", "q10", "q11"
+  : "cc", "memory", "v0", "v1", "v4", "v20", "v21", "v22", "v23"
   );
 }
 #endif  // HAS_ARGBTOARGB4444ROW_NEON
