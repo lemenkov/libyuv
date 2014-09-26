@@ -69,7 +69,7 @@ source_set("libyuv") {
     "source/video_common.cc",
   ]
 
-  direct_dependent_configs = [ ":libyuv_config" ]
+  public_configs = [ ":libyuv_config" ]
 
   defines = []
 
