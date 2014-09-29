@@ -18,8 +18,7 @@ extern "C" {
 #endif
 
 // This module is for GCC Neon armv8 64 bit.
-#if !defined(LIBYUV_DISABLE_NEON) && \
-    defined(__ARM_NEON__) && defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 static uvec8 kVTbl4x4Transpose =
   { 0,  4,  8, 12,  1,  5,  9, 13,  2,  6, 10, 14,  3,  7, 11, 15 };
