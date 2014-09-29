@@ -3266,6 +3266,31 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_SSE2
 
+#ifdef HAS_COPYROW_AVX
+void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
+  asm volatile (
+    LABELALIGN
+  "1:                                          \n"
+    "movdqa    " MEMACCESS(0) ",%%ymm0         \n"
+    "movdqa    " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "movdqa    %%ymm0," MEMACCESS(1) "         \n"
+    "movdqa    %%ymm1," MEMACCESS2(0x20,1) "   \n"
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
+    "sub       $0x40,%2                        \n"
+    "jg        1b                              \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(count)  // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "ymm0", "ymm1"
+#endif
+  );
+}
+#endif  // HAS_COPYROW_AVX
+
 #ifdef HAS_COPYROW_X86
 void CopyRow_X86(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = (size_t)(width);

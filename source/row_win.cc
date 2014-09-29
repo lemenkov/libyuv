@@ -3687,6 +3687,32 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_SSE2
 
+#ifdef HAS_COPYROW_AVX
+// CopyRow copys 'count' bytes using a 32 byte load/store, 64 bytes at time.
+__declspec(naked) __declspec(align(16))
+void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
+  __asm {
+    mov        eax, [esp + 4]   // src
+    mov        edx, [esp + 8]   // dst
+    mov        ecx, [esp + 12]  // count
+
+    align      4
+  convertloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    lea        eax, [eax + 64]
+    vmovdqu    [edx], ymm0
+    vmovdqu    [edx + 32], ymm1
+    lea        edx, [edx + 64]
+    sub        ecx, 64
+    jg         convertloop
+
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_COPYROW_AVX
+
 // Unaligned Multiple of 1.
 __declspec(naked) __declspec(align(16))
 void CopyRow_ERMS(const uint8* src, uint8* dst, int count) {
@@ -3704,6 +3730,7 @@ void CopyRow_ERMS(const uint8* src, uint8* dst, int count) {
 }
 
 #ifdef HAS_COPYROW_X86
+// Unaligned Multiple of 4.
 __declspec(naked) __declspec(align(16))
 void CopyRow_X86(const uint8* src, uint8* dst, int count) {
   __asm {

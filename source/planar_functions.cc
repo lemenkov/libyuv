@@ -53,6 +53,11 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
     CopyRow = CopyRow_SSE2;
   }
 #endif
+#if defined(HAS_COPYROW_AVX)
+  if (TestCpuFlag(kCpuHasAVX) && IS_ALIGNED(width, 64)) {
+    CopyRow = CopyRow_AVX;
+  }
+#endif
 #if defined(HAS_COPYROW_ERMS)
   if (TestCpuFlag(kCpuHasERMS)) {
     CopyRow = CopyRow_ERMS;
