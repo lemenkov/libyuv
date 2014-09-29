@@ -964,7 +964,7 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 }
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
-    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+    (defined(__ARM_NEON__) || defined(__aarch64__) || defined(LIBYUV_NEON))
 // C mimic assembly.
 // TODO(fbarchard): Remove subsampling from Neon.
 void I444ToARGBRow_C(const uint8* src_y,

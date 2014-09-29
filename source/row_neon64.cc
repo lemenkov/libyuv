@@ -21,107 +21,106 @@ extern "C" {
 // Read 8 Y, 4 U and 4 V from 422
 #define READYUV422                                                             \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
     MEMACCESS(1)                                                               \
-    "vld1.32    {d2[0]}, [%1]!                 \n"                             \
+    "ld1        {v1.s}[0], [%1], #4            \n"                             \
     MEMACCESS(2)                                                               \
-    "vld1.32    {d2[1]}, [%2]!                 \n"
+    "ld1        {v1.s}[1], [%2], #4            \n"
 
 // Read 8 Y, 2 U and 2 V from 422
 #define READYUV411                                                             \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
     MEMACCESS(1)                                                               \
-    "vld1.16    {d2[0]}, [%1]!                 \n"                             \
+    "ld1        {v2.h}[0], [%1], #2            \n"                             \
     MEMACCESS(2)                                                               \
-    "vld1.16    {d2[1]}, [%2]!                 \n"                             \
-    "vmov.u8    d3, d2                         \n"                             \
-    "vzip.u8    d2, d3                         \n"
+    "ld1        {v2.h}[1], [%2], #2            \n"                             \
+    "zip1       v1.8b, v2.8b, v2.8b            \n"
 
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                                                             \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
     MEMACCESS(1)                                                               \
-    "vld1.8     {d2}, [%1]!                    \n"                             \
+    "ld1        {v1.d}[0], [%1], #8            \n"                             \
     MEMACCESS(2)                                                               \
-    "vld1.8     {d3}, [%2]!                    \n"                             \
-    "vpaddl.u8  q1, q1                         \n"                             \
-    "vrshrn.u16 d2, q1, #1                     \n"
+    "ld1        {v1.d}[1], [%2], #8            \n"                             \
+    "uaddlp     v1.8h, v1.16b                  \n"                             \
+    "rshrn      v1.8b, v1.8h, #1               \n"
 
 // Read 8 Y, and set 4 U and 4 V to 128
 #define READYUV400                                                             \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
-    "vmov.u8    d2, #128                       \n"
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
+    "movi       v1.8b , #128                   \n"
 
 // Read 8 Y and 4 UV from NV12
 #define READNV12                                                               \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
     MEMACCESS(1)                                                               \
-    "vld1.8     {d2}, [%1]!                    \n"                             \
-    "vmov.u8    d3, d2                         \n"/* split odd/even uv apart */\
-    "vuzp.u8    d2, d3                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"
+    "ld1        {v2.8b}, [%1], #8              \n"                             \
+    "uzp1       v1.8b, v2.8b, v2.8b            \n"                             \
+    "uzp2       v3.8b, v2.8b, v2.8b            \n"                             \
+    "ins        v1.s[1], v3.s[0]               \n"
 
 // Read 8 Y and 4 VU from NV21
 #define READNV21                                                               \
     MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
+    "ld1        {v0.8b}, [%0], #8              \n"                             \
     MEMACCESS(1)                                                               \
-    "vld1.8     {d2}, [%1]!                    \n"                             \
-    "vmov.u8    d3, d2                         \n"/* split odd/even uv apart */\
-    "vuzp.u8    d3, d2                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"
+    "ld1        {v2.8b}, [%1], #8              \n"                             \
+    "uzp1       v3.8b, v2.8b, v2.8b            \n"                             \
+    "uzp2       v1.8b, v2.8b, v2.8b            \n"                             \
+    "ins        v1.s[1], v3.s[0]               \n"
 
 // Read 8 YUY2
 #define READYUY2                                                               \
     MEMACCESS(0)                                                               \
-    "vld2.8     {d0, d2}, [%0]!                \n"                             \
-    "vmov.u8    d3, d2                         \n"                             \
-    "vuzp.u8    d2, d3                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"
+    "ld2        {v0.8b, v1.8b}, [%0], #16      \n"                             \
+    "uzp2       v3.8b, v1.8b, v1.8b            \n"                             \
+    "uzp1       v1.8b, v1.8b, v1.8b            \n"                             \
+    "ins        v1.s[1], v3.s[0]               \n"
 
 // Read 8 UYVY
 #define READUYVY                                                               \
     MEMACCESS(0)                                                               \
-    "vld2.8     {d2, d3}, [%0]!                \n"                             \
-    "vmov.u8    d0, d3                         \n"                             \
-    "vmov.u8    d3, d2                         \n"                             \
-    "vuzp.u8    d2, d3                         \n"                             \
-    "vtrn.u32   d2, d3                         \n"
+    "ld2        {v2.8b, v3.8b}, [%0], #16      \n"                             \
+    "mov        v0.8b, v3.8b                   \n"                             \
+    "uzp1       v1.8b, v2.8b, v2.8b            \n"                             \
+    "uzp2       v3.8b, v2.8b, v2.8b            \n"                             \
+    "ins        v1.s[1], v3.s[0]               \n"
 
-#define YUV422TORGB                                                            \
-    "veor.u8    d2, d26                        \n"/*subtract 128 from u and v*/\
-    "vmull.s8   q8, d2, d24                    \n"/*  u/v B/R component      */\
-    "vmull.s8   q9, d2, d25                    \n"/*  u/v G component        */\
-    "vmov.u8    d1, #0                         \n"/*  split odd/even y apart */\
-    "vtrn.u8    d0, d1                         \n"                             \
-    "vsub.s16   q0, q0, q15                    \n"/*  offset y               */\
-    "vmul.s16   q0, q0, q14                    \n"                             \
-    "vadd.s16   d18, d19                       \n"                             \
-    "vqadd.s16  d20, d0, d16                   \n" /* B */                     \
-    "vqadd.s16  d21, d1, d16                   \n"                             \
-    "vqadd.s16  d22, d0, d17                   \n" /* R */                     \
-    "vqadd.s16  d23, d1, d17                   \n"                             \
-    "vqadd.s16  d16, d0, d18                   \n" /* G */                     \
-    "vqadd.s16  d17, d1, d18                   \n"                             \
-    "vqshrun.s16 d0, q10, #6                   \n" /* B */                     \
-    "vqshrun.s16 d1, q11, #6                   \n" /* G */                     \
-    "vqshrun.s16 d2, q8, #6                    \n" /* R */                     \
-    "vmovl.u8   q10, d0                        \n"/*  set up for reinterleave*/\
-    "vmovl.u8   q11, d1                        \n"                             \
-    "vmovl.u8   q8, d2                         \n"                             \
-    "vtrn.u8    d20, d21                       \n"                             \
-    "vtrn.u8    d22, d23                       \n"                             \
-    "vtrn.u8    d16, d17                       \n"                             \
-    "vmov.u8    d21, d16                       \n"
+#define YUV422TORGB_SETUP_REG                                                  \
+    "movi       v24.8b, #128                   \n"                             \
+    "movi       v25.8h, #74                    \n" /* YG                     */\
+    "movi       v26.8h, #16                    \n"                             \
+    "movi       v27.8h, #127                   \n" /* UB                     */\
+    "movi       v28.8h, #102                   \n" /* VR                     */\
+    "mvni       v29.8h, #0x18                  \n" /* UG  -25                */\
+    "mvni       v30.8h, #0x33                  \n" /* VG  -52                */
 
-static vec8 kUVToRB  = { 127, 127, 127, 127, 102, 102, 102, 102,
-                         0, 0, 0, 0, 0, 0, 0, 0 };
-static vec8 kUVToG = { -25, -25, -25, -25, -52, -52, -52, -52,
-                       0, 0, 0, 0, 0, 0, 0, 0 };
+#define YUV422TORGB(vR, vG, vB)                                                \
+    "eor        v1.8b, v1.8b, v24.8b           \n" /* Subtract 128 from U&V */ \
+    "uxtl       v0.8h, v0.8b                   \n" /* Extract Y             */ \
+    "shll       v2.8h, v1.8b, #8               \n" /* Replicate UV */          \
+    "sub        v0.8h, v0.8h, v26.8h           \n" /* offset y */              \
+    "uaddw      v1.8h, v2.8h, v1.8b            \n"                             \
+    "mul        v0.8h, v0.8h, v25.8h           \n" /* Y x 74 */                \
+    "mov        v2.d[0], v1.d[1]               \n" /* Extract V */             \
+    "sxtl       v2.8h, v2.8b                   \n"                             \
+    "sxtl       v1.8h, v1.8b                   \n" /* Extract U */             \
+    "mul        " #vR ".8h, v2.8h, v28.8h      \n" /* R  = (V - 128) x VR */   \
+    "mul        " #vB ".8h, v1.8h, v27.8h      \n" /* B  = (U - 128) x UB */   \
+    "mul        " #vG ".8h, v1.8h, v29.8h      \n" /* G1 = (U - 128) x UG */   \
+    "mul        v2.8h, v2.8h, v30.8h           \n" /* G2 = (V - 128) x VG */   \
+    "sqadd      " #vR ".8h, " #vR ".8h, v0.8h  \n" /* R += (Y - 16) YG    */   \
+    "sqadd      " #vB ".8h, " #vB ".8h, v0.8h  \n" /* B += (Y - 16) YG    */   \
+    "sqadd      " #vG ".8h, " #vG ".8h, v2.8h  \n" /* G  = G1 + G2        */   \
+    "sqadd      " #vG ".8h, " #vG ".8h, v0.8h  \n" /* G += (Y - 16) YG    */   \
+    "sqshrun    " #vR ".8b, " #vR ".8h, #6     \n" /* R */                     \
+    "sqshrun    " #vB ".8b, " #vB ".8h, #6     \n" /* B */                     \
+    "sqshrun    " #vG ".8b, " #vG ".8h, #6     \n" /* G */
 
 #ifdef HAS_I444TOARGBROW_NEON
 void I444ToARGBRow_NEON(const uint8* src_y,
@@ -130,31 +129,24 @@ void I444ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV444
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %4, %4, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I444TOARGBROW_NEON
@@ -166,31 +158,24 @@ void I422ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %4, %4, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TOARGBROW_NEON
@@ -202,31 +187,24 @@ void I411ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV411
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %4, %4, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I411TOARGBROW_NEON
@@ -238,32 +216,24 @@ void I422ToBGRARow_NEON(const uint8* src_y,
                         uint8* dst_bgra,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v21, v22, v23)
     "subs       %4, %4, #8                     \n"
-    "vswp.u8    d20, d22                       \n"
-    "vmov.u8    d19, #255                      \n"
+    "movi       v20.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d19, d20, d21, d22}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_bgra),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TOBGRAROW_NEON
@@ -275,32 +245,24 @@ void I422ToABGRRow_NEON(const uint8* src_y,
                         uint8* dst_abgr,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v20, v21, v22)
     "subs       %4, %4, #8                     \n"
-    "vswp.u8    d20, d22                       \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_abgr),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TOABGRROW_NEON
@@ -312,31 +274,24 @@ void I422ToRGBARow_NEON(const uint8* src_y,
                         uint8* dst_rgba,
                         int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v23, v22, v21)
     "subs       %4, %4, #8                     \n"
-    "vmov.u8    d19, #255                      \n"
+    "movi       v20.8b, #255                   \n" /* A */
     MEMACCESS(3)
-    "vst4.8     {d19, d20, d21, d22}, [%3]!    \n"
+    "st4        {v20.8b-v23.8b}, [%3], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_u),     // %1
       "+r"(src_v),     // %2
       "+r"(dst_rgba),  // %3
       "+r"(width)      // %4
-    : "r"(&kUVToRB),   // %5
-      "r"(&kUVToG)     // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TORGBAROW_NEON
@@ -348,30 +303,23 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
                          uint8* dst_rgb24,
                          int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %4, %4, #8                     \n"
     MEMACCESS(3)
-    "vst3.8     {d20, d21, d22}, [%3]!         \n"
+    "st3        {v20.8b-v22.8b}, [%3], #24     \n"
     "b.gt       1b                             \n"
-    : "+r"(src_y),      // %0
-      "+r"(src_u),      // %1
-      "+r"(src_v),      // %2
-      "+r"(dst_rgb24),  // %3
-      "+r"(width)       // %4
-    : "r"(&kUVToRB),    // %5
-      "r"(&kUVToG)      // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    : "+r"(src_y),     // %0
+      "+r"(src_u),     // %1
+      "+r"(src_v),     // %2
+      "+r"(dst_rgb24), // %3
+      "+r"(width)      // %4
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TORGB24ROW_NEON
@@ -383,31 +331,23 @@ void I422ToRAWRow_NEON(const uint8* src_y,
                        uint8* dst_raw,
                        int width) {
   asm volatile (
-    MEMACCESS(5)
-    "vld1.8     {d24}, [%5]                    \n"
-    MEMACCESS(6)
-    "vld1.8     {d25}, [%6]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUV422TORGB(v20, v21, v22)
     "subs       %4, %4, #8                     \n"
-    "vswp.u8    d20, d22                       \n"
     MEMACCESS(3)
-    "vst3.8     {d20, d21, d22}, [%3]!         \n"
+    "st3        {v20.8b-v22.8b}, [%3], #24     \n"
     "b.gt       1b                             \n"
-    : "+r"(src_y),    // %0
-      "+r"(src_u),    // %1
-      "+r"(src_v),    // %2
-      "+r"(dst_raw),  // %3
-      "+r"(width)     // %4
-    : "r"(&kUVToRB),  // %5
-      "r"(&kUVToG)    // %6
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    : "+r"(src_y),     // %0
+      "+r"(src_u),     // %1
+      "+r"(src_v),     // %2
+      "+r"(dst_raw),   // %3
+      "+r"(width)      // %4
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_I422TORAWROW_NEON
@@ -554,29 +494,22 @@ void YToARGBRow_NEON(const uint8* src_y,
                      uint8* dst_argb,
                      int width) {
   asm volatile (
-    MEMACCESS(3)
-    "vld1.8     {d24}, [%3]                    \n"
-    MEMACCESS(4)
-    "vld1.8     {d25}, [%4]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUV400
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %2, %2, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
     MEMACCESS(1)
-    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "st4        {v20.8b-v23.8b}, [%1], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : "r"(&kUVToRB),   // %3
-      "r"(&kUVToG)     // %4
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_YTOARGBROW_NEON
@@ -587,21 +520,21 @@ void I400ToARGBRow_NEON(const uint8* src_y,
                         int width) {
   asm volatile (
     ".p2align   2                              \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "vld1.8     {d20}, [%0]!                   \n"
-    "vmov       d21, d20                       \n"
-    "vmov       d22, d20                       \n"
+    "ld1        {v20.8b}, [%0], #8             \n"
+    "mov        v21.8b, v20.8b                 \n"
+    "mov        v22.8b, v20.8b                 \n"
     "subs       %2, %2, #8                     \n"
     MEMACCESS(1)
-    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "st4        {v20.8b-v23.8b}, [%1], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
     :
-    : "cc", "memory", "d20", "d21", "d22", "d23"
+    : "cc", "memory", "v20", "v21", "v22", "v23"
   );
 }
 #endif  // HAS_I400TOARGBROW_NEON
@@ -612,30 +545,23 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(4)
-    "vld1.8     {d24}, [%4]                    \n"
-    MEMACCESS(5)
-    "vld1.8     {d25}, [%5]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READNV12
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %3, %3, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
     MEMACCESS(2)
-    "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
+    "st4        {v20.8b-v23.8b}, [%2], #32     \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : "r"(&kUVToRB),   // %4
-      "r"(&kUVToG)     // %5
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_NV12TOARGBROW_NEON
@@ -646,30 +572,23 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(4)
-    "vld1.8     {d24}, [%4]                    \n"
-    MEMACCESS(5)
-    "vld1.8     {d25}, [%5]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READNV21
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %3, %3, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
     MEMACCESS(2)
-    "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
+    "st4        {v20.8b-v23.8b}, [%2], #32      \n"
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : "r"(&kUVToRB),   // %4
-      "r"(&kUVToG)     // %5
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
+      "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_NV21TOARGBROW_NEON
@@ -747,29 +666,22 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(3)
-    "vld1.8     {d24}, [%3]                    \n"
-    MEMACCESS(4)
-    "vld1.8     {d25}, [%4]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READYUY2
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %2, %2, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
     MEMACCESS(1)
-    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "st4        {v20.8b-v23.8b}, [%1], #32      \n"
     "b.gt       1b                             \n"
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : "r"(&kUVToRB),   // %3
-      "r"(&kUVToG)     // %4
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_YUY2TOARGBROW_NEON
@@ -779,29 +691,22 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    MEMACCESS(3)
-    "vld1.8     {d24}, [%3]                    \n"
-    MEMACCESS(4)
-    "vld1.8     {d25}, [%4]                    \n"
-    "vmov.u8    d26, #128                      \n"
-    "vmov.u16   q14, #74                       \n"
-    "vmov.u16   q15, #16                       \n"
+    YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
   "1:                                          \n"
     READUYVY
-    YUV422TORGB
+    YUV422TORGB(v22, v21, v20)
     "subs       %2, %2, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
+    "movi       v23.8b, #255                   \n"
     MEMACCESS(1)
-    "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+    "st4        {v20.8b-v23.8b}, [%1], 32      \n"
     "b.gt       1b                             \n"
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : "r"(&kUVToRB),   // %3
-      "r"(&kUVToG)     // %4
-    : "cc", "memory", "q0", "q1", "q2", "q3",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
 #endif  // HAS_UYVYTOARGBROW_NEON
