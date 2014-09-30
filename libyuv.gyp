@@ -54,9 +54,12 @@
                 '-ffat-lto-objects',
               ],
             }],
-          ],
-          'cflags': [
-            '-mfpu=neon',
+            # arm64 does not need -mfpu=neon option as neon is not optional
+            ['target_arch != "arm64"', {
+              'cflags': [
+                '-mfpu=neon',
+              ],
+            }],
           ],
           'include_dirs': [
             'include',
@@ -127,7 +130,17 @@
             'LIBYUV_DISABLE_X86',
           ],
         }],
-      ],
+        ['OS == "android" and target_arch == "arm64"', {
+          'ldflags': [
+            '-Wl,--dynamic-linker,/system/bin/linker64',
+          ],
+        }],
+        ['OS == "android" and target_arch != "arm64"', {
+          'ldflags': [
+            '-Wl,--dynamic-linker,/system/bin/linker',
+          ],
+        }],
+      ], #conditions
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.
         # 'LIBYUV_DISABLE_X86',
