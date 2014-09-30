@@ -114,8 +114,7 @@ uint64 ComputeSumSquareError(const uint8* src_a, const uint8* src_b,
   }
 #endif
 #if defined(HAS_SUMSQUAREERROR_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(src_a, 16) && IS_ALIGNED(src_b, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2)) {
     // Note only used for multiples of 16 so count is not checked.
     SumSquareError = SumSquareError_SSE2;
   }

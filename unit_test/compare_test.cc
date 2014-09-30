@@ -244,6 +244,32 @@ TEST_F(libyuvTest, BenchmarkPsnr_Opt) {
   free_aligned_buffer_64(src_b);
 }
 
+
+TEST_F(libyuvTest, BenchmarkPsnr_Unaligned) {
+  align_buffer_64(src_a, benchmark_width_ * benchmark_height_ + 1);
+  align_buffer_64(src_b, benchmark_width_ * benchmark_height_);
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    src_a[i + 1] = i;
+    src_b[i] = i;
+  }
+
+  MaskCpuFlags(-1);
+
+  double opt_time = get_time();
+  for (int i = 0; i < benchmark_iterations_; ++i)
+    CalcFramePsnr(src_a + 1, benchmark_width_,
+                  src_b, benchmark_width_,
+                  benchmark_width_, benchmark_height_);
+
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  printf("BenchmarkPsnr_Opt - %8.2f us opt\n", opt_time * 1e6);
+
+  EXPECT_EQ(0, 0);
+
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(src_b);
+}
+
 TEST_F(libyuvTest, Psnr) {
   const int kSrcWidth = benchmark_width_;
   const int kSrcHeight = benchmark_height_;

@@ -29,9 +29,9 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
 
     align      4
   wloop:
-    movdqa     xmm1, [eax]
+    movdqu     xmm1, [eax]
     lea        eax,  [eax + 16]
-    movdqa     xmm2, [edx]
+    movdqu     xmm2, [edx]
     lea        edx,  [edx + 16]
     sub        ecx, 16
     movdqa     xmm3, xmm1  // abs trick

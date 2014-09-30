@@ -25,9 +25,9 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     "pxor      %%xmm5,%%xmm5                   \n"
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm1         \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
     "lea       " MEMLEA(0x10, 0) ",%0          \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm2         \n"
+    "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
     "lea       " MEMLEA(0x10, 1) ",%1          \n"
     "sub       $0x10,%2                        \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
