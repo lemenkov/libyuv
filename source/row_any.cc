@@ -579,11 +579,11 @@ NANY(InterpolateRow_Any_AVX2, InterpolateRow_AVX2,
      InterpolateRow_C, 1, 1, 32)
 #endif
 #ifdef HAS_INTERPOLATEROW_SSSE3
-NANY(InterpolateRow_Any_SSSE3, InterpolateRow_Unaligned_SSSE3,
+NANY(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3,
      InterpolateRow_C, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_SSE2
-NANY(InterpolateRow_Any_SSE2, InterpolateRow_Unaligned_SSE2,
+NANY(InterpolateRow_Any_SSE2, InterpolateRow_SSE2,
      InterpolateRow_C, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_NEON

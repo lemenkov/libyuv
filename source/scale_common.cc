@@ -888,11 +888,7 @@ void ScalePlaneVertical(int src_height,
   if (TestCpuFlag(kCpuHasSSE2) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(dst_width_bytes, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSE2;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSE2;
-      }
+      InterpolateRow = InterpolateRow_SSE2;
     }
   }
 #endif
@@ -900,11 +896,7 @@ void ScalePlaneVertical(int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(dst_width_bytes, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSSE3;
-      }
+      InterpolateRow = InterpolateRow_SSSE3;
     }
   }
 #endif
@@ -970,11 +962,7 @@ void ScalePlaneVertical_16(int src_height,
   if (TestCpuFlag(kCpuHasSSE2) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_16_SSE2;
     if (IS_ALIGNED(dst_width_bytes, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_16_SSE2;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_16_SSE2;
-      }
+      InterpolateRow = InterpolateRow_16_SSE2;
     }
   }
 #endif
@@ -982,11 +970,7 @@ void ScalePlaneVertical_16(int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && dst_width_bytes >= 16) {
     InterpolateRow = InterpolateRow_Any_16_SSSE3;
     if (IS_ALIGNED(dst_width_bytes, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_16_SSSE3;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16) &&
-          IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_16_SSSE3;
-      }
+      InterpolateRow = InterpolateRow_16_SSSE3;
     }
   }
 #endif

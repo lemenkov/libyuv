@@ -193,10 +193,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSE2) && clip_src_width >= 16) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(clip_src_width, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSE2;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSE2;
-      }
+      InterpolateRow = InterpolateRow_SSE2;
     }
   }
 #endif
@@ -204,10 +201,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && clip_src_width >= 16) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(clip_src_width, 16)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(src_argb, 16) && IS_ALIGNED(src_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSSE3;
-      }
+      InterpolateRow = InterpolateRow_SSSE3;
     }
   }
 #endif
@@ -289,10 +283,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 4) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(dst_width, 4)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSE2;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSE2;
-      }
+      InterpolateRow = InterpolateRow_SSE2;
     }
   }
 #endif
@@ -300,10 +291,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 4) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 4)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride, 16)) {
-        InterpolateRow = InterpolateRow_SSSE3;
-      }
+      InterpolateRow = InterpolateRow_SSSE3;
     }
   }
 #endif
@@ -430,10 +418,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && src_width >= 8) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(src_width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        I422ToARGBRow = I422ToARGBRow_SSSE3;
-      }
+      I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
   }
 #endif
@@ -470,10 +455,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 4) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(dst_width, 4)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSE2;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        InterpolateRow = InterpolateRow_SSE2;
-      }
+      InterpolateRow = InterpolateRow_SSE2;
     }
   }
 #endif
@@ -481,10 +463,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 4) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 4)) {
-      InterpolateRow = InterpolateRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        InterpolateRow = InterpolateRow_SSSE3;
-      }
+      InterpolateRow = InterpolateRow_SSSE3;
     }
   }
 #endif
