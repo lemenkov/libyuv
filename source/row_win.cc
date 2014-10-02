@@ -3288,10 +3288,10 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax + ecx]
+    movdqu    xmm0, [eax + ecx]
     pshufb    xmm0, xmm5
     sub       ecx, 16
-    movdqa    [edx], xmm0
+    movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     jg        convertloop
     ret
@@ -3381,7 +3381,7 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax]
+    movdqu    xmm0, [eax]
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm1
     sub       ecx, 8
@@ -3413,11 +3413,11 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax]
+    movdqu    xmm0, [eax]
     lea       eax, [eax - 16]
     pshufb    xmm0, xmm5
     sub       ecx, 4
-    movdqa    [edx], xmm0
+    movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     jg        convertloop
     ret

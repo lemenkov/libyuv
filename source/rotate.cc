@@ -210,31 +210,31 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
  convertloop:
     // Read in the data from the source pointer.
     // First round of bit swap.
-    movdqa    xmm0, [eax]
-    movdqa    xmm1, [eax + edi]
+    movdqu    xmm0, [eax]
+    movdqu    xmm1, [eax + edi]
     lea       eax, [eax + 2 * edi]
     movdqa    xmm7, xmm0  // use xmm7 as temp register.
     punpcklbw xmm0, xmm1
     punpckhbw xmm7, xmm1
     movdqa    xmm1, xmm7
-    movdqa    xmm2, [eax]
-    movdqa    xmm3, [eax + edi]
+    movdqu    xmm2, [eax]
+    movdqu    xmm3, [eax + edi]
     lea       eax, [eax + 2 * edi]
     movdqa    xmm7, xmm2
     punpcklbw xmm2, xmm3
     punpckhbw xmm7, xmm3
     movdqa    xmm3, xmm7
-    movdqa    xmm4, [eax]
-    movdqa    xmm5, [eax + edi]
+    movdqu    xmm4, [eax]
+    movdqu    xmm5, [eax + edi]
     lea       eax, [eax + 2 * edi]
     movdqa    xmm7, xmm4
     punpcklbw xmm4, xmm5
     punpckhbw xmm7, xmm5
     movdqa    xmm5, xmm7
-    movdqa    xmm6, [eax]
-    movdqa    xmm7, [eax + edi]
+    movdqu    xmm6, [eax]
+    movdqu    xmm7, [eax + edi]
     lea       eax, [eax + 2 * edi]
-    movdqa    [esp], xmm5  // backup xmm5
+    movdqu    [esp], xmm5  // backup xmm5
     neg       edi
     movdqa    xmm5, xmm6   // use xmm5 as temp register.
     punpcklbw xmm6, xmm7
@@ -255,8 +255,8 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     punpcklwd xmm4, xmm6
     punpckhwd xmm5, xmm6
     movdqa    xmm6, xmm5
-    movdqa    xmm5, [esp]  // restore xmm5
-    movdqa    [esp], xmm6  // backup xmm6
+    movdqu    xmm5, [esp]  // restore xmm5
+    movdqu    [esp], xmm6  // backup xmm6
     movdqa    xmm6, xmm5    // use xmm6 as temp register.
     punpcklwd xmm5, xmm7
     punpckhwd xmm6, xmm7
@@ -267,7 +267,7 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     punpckldq xmm0, xmm4
     punpckhdq xmm6, xmm4
     movdqa    xmm4, xmm6
-    movdqa    xmm6, [esp]  // restore xmm6
+    movdqu    xmm6, [esp]  // restore xmm6
     movlpd    qword ptr [edx], xmm0
     movhpd    qword ptr [ebx], xmm0
     movlpd    qword ptr [edx + esi], xmm4
@@ -427,31 +427,31 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "mov    0x2c(%ecx),%ecx                    \n"
 
 "1:                                            \n"
-    "movdqa (%eax),%xmm0                       \n"
-    "movdqa (%eax,%edi,1),%xmm1                \n"
+    "movdqu (%eax),%xmm0                       \n"
+    "movdqu (%eax,%edi,1),%xmm1                \n"
     "lea    (%eax,%edi,2),%eax                 \n"
     "movdqa %xmm0,%xmm7                        \n"
     "punpcklbw %xmm1,%xmm0                     \n"
     "punpckhbw %xmm1,%xmm7                     \n"
     "movdqa %xmm7,%xmm1                        \n"
-    "movdqa (%eax),%xmm2                       \n"
-    "movdqa (%eax,%edi,1),%xmm3                \n"
+    "movdqu (%eax),%xmm2                       \n"
+    "movdqu (%eax,%edi,1),%xmm3                \n"
     "lea    (%eax,%edi,2),%eax                 \n"
     "movdqa %xmm2,%xmm7                        \n"
     "punpcklbw %xmm3,%xmm2                     \n"
     "punpckhbw %xmm3,%xmm7                     \n"
     "movdqa %xmm7,%xmm3                        \n"
-    "movdqa (%eax),%xmm4                       \n"
-    "movdqa (%eax,%edi,1),%xmm5                \n"
+    "movdqu (%eax),%xmm4                       \n"
+    "movdqu (%eax,%edi,1),%xmm5                \n"
     "lea    (%eax,%edi,2),%eax                 \n"
     "movdqa %xmm4,%xmm7                        \n"
     "punpcklbw %xmm5,%xmm4                     \n"
     "punpckhbw %xmm5,%xmm7                     \n"
     "movdqa %xmm7,%xmm5                        \n"
-    "movdqa (%eax),%xmm6                       \n"
-    "movdqa (%eax,%edi,1),%xmm7                \n"
+    "movdqu (%eax),%xmm6                       \n"
+    "movdqu (%eax,%edi,1),%xmm7                \n"
     "lea    (%eax,%edi,2),%eax                 \n"
-    "movdqa %xmm5,(%esp)                       \n"
+    "movdqu %xmm5,(%esp)                       \n"
     "neg    %edi                               \n"
     "movdqa %xmm6,%xmm5                        \n"
     "punpcklbw %xmm7,%xmm6                     \n"
@@ -471,8 +471,8 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "punpcklwd %xmm6,%xmm4                     \n"
     "punpckhwd %xmm6,%xmm5                     \n"
     "movdqa %xmm5,%xmm6                        \n"
-    "movdqa (%esp),%xmm5                       \n"
-    "movdqa %xmm6,(%esp)                       \n"
+    "movdqu (%esp),%xmm5                       \n"
+    "movdqu %xmm6,(%esp)                       \n"
     "movdqa %xmm5,%xmm6                        \n"
     "punpcklwd %xmm7,%xmm5                     \n"
     "punpckhwd %xmm7,%xmm6                     \n"
@@ -481,7 +481,7 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "punpckldq %xmm4,%xmm0                     \n"
     "punpckhdq %xmm4,%xmm6                     \n"
     "movdqa %xmm6,%xmm4                        \n"
-    "movdqa (%esp),%xmm6                       \n"
+    "movdqu (%esp),%xmm6                       \n"
     "movlpd %xmm0,(%edx)                       \n"
     "movhpd %xmm0,(%ebx)                       \n"
     "movlpd %xmm4,(%edx,%esi,1)                \n"
@@ -541,38 +541,38 @@ static void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
   // First round of bit swap.
   ".p2align  2                                 \n"
 "1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "movdqa     (%0,%3),%%xmm1                   \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     (%0,%3),%%xmm1                   \n"
   "lea        (%0,%3,2),%0                     \n"
   "movdqa     %%xmm0,%%xmm8                    \n"
   "punpcklbw  %%xmm1,%%xmm0                    \n"
   "punpckhbw  %%xmm1,%%xmm8                    \n"
-  "movdqa     (%0),%%xmm2                      \n"
+  "movdqu     (%0),%%xmm2                      \n"
   "movdqa     %%xmm0,%%xmm1                    \n"
   "movdqa     %%xmm8,%%xmm9                    \n"
   "palignr    $0x8,%%xmm1,%%xmm1               \n"
   "palignr    $0x8,%%xmm9,%%xmm9               \n"
-  "movdqa     (%0,%3),%%xmm3                   \n"
+  "movdqu     (%0,%3),%%xmm3                   \n"
   "lea        (%0,%3,2),%0                     \n"
   "movdqa     %%xmm2,%%xmm10                   \n"
   "punpcklbw  %%xmm3,%%xmm2                    \n"
   "punpckhbw  %%xmm3,%%xmm10                   \n"
   "movdqa     %%xmm2,%%xmm3                    \n"
   "movdqa     %%xmm10,%%xmm11                  \n"
-  "movdqa     (%0),%%xmm4                      \n"
+  "movdqu     (%0),%%xmm4                      \n"
   "palignr    $0x8,%%xmm3,%%xmm3               \n"
   "palignr    $0x8,%%xmm11,%%xmm11             \n"
-  "movdqa     (%0,%3),%%xmm5                   \n"
+  "movdqu     (%0,%3),%%xmm5                   \n"
   "lea        (%0,%3,2),%0                     \n"
   "movdqa     %%xmm4,%%xmm12                   \n"
   "punpcklbw  %%xmm5,%%xmm4                    \n"
   "punpckhbw  %%xmm5,%%xmm12                   \n"
   "movdqa     %%xmm4,%%xmm5                    \n"
   "movdqa     %%xmm12,%%xmm13                  \n"
-  "movdqa     (%0),%%xmm6                      \n"
+  "movdqu     (%0),%%xmm6                      \n"
   "palignr    $0x8,%%xmm5,%%xmm5               \n"
   "palignr    $0x8,%%xmm13,%%xmm13             \n"
-  "movdqa     (%0,%3),%%xmm7                   \n"
+  "movdqu     (%0,%3),%%xmm7                   \n"
   "lea        (%0,%3,2),%0                     \n"
   "movdqa     %%xmm6,%%xmm14                   \n"
   "punpcklbw  %%xmm7,%%xmm6                    \n"
@@ -682,29 +682,29 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   // First round of bit swap.
   ".p2align  2                                 \n"
 "1:                                            \n"
-  "movdqa     (%0),%%xmm0                      \n"
-  "movdqa     (%0,%4),%%xmm1                   \n"
+  "movdqu     (%0),%%xmm0                      \n"
+  "movdqu     (%0,%4),%%xmm1                   \n"
   "lea        (%0,%4,2),%0                     \n"
   "movdqa     %%xmm0,%%xmm8                    \n"
   "punpcklbw  %%xmm1,%%xmm0                    \n"
   "punpckhbw  %%xmm1,%%xmm8                    \n"
   "movdqa     %%xmm8,%%xmm1                    \n"
-  "movdqa     (%0),%%xmm2                      \n"
-  "movdqa     (%0,%4),%%xmm3                   \n"
+  "movdqu     (%0),%%xmm2                      \n"
+  "movdqu     (%0,%4),%%xmm3                   \n"
   "lea        (%0,%4,2),%0                     \n"
   "movdqa     %%xmm2,%%xmm8                    \n"
   "punpcklbw  %%xmm3,%%xmm2                    \n"
   "punpckhbw  %%xmm3,%%xmm8                    \n"
   "movdqa     %%xmm8,%%xmm3                    \n"
-  "movdqa     (%0),%%xmm4                      \n"
-  "movdqa     (%0,%4),%%xmm5                   \n"
+  "movdqu     (%0),%%xmm4                      \n"
+  "movdqu     (%0,%4),%%xmm5                   \n"
   "lea        (%0,%4,2),%0                     \n"
   "movdqa     %%xmm4,%%xmm8                    \n"
   "punpcklbw  %%xmm5,%%xmm4                    \n"
   "punpckhbw  %%xmm5,%%xmm8                    \n"
   "movdqa     %%xmm8,%%xmm5                    \n"
-  "movdqa     (%0),%%xmm6                      \n"
-  "movdqa     (%0,%4),%%xmm7                   \n"
+  "movdqu     (%0),%%xmm6                      \n"
+  "movdqu     (%0,%4),%%xmm7                   \n"
   "lea        (%0,%4,2),%0                     \n"
   "movdqa     %%xmm6,%%xmm8                    \n"
   "punpcklbw  %%xmm7,%%xmm6                    \n"
@@ -834,9 +834,7 @@ void TransposePlane(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_TRANSPOSE_WX8_FAST_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) &&
-      IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
     TransposeWx8 = TransposeWx8_FAST_SSSE3;
   }
 #endif
@@ -904,16 +902,12 @@ void RotatePlane180(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_MIRRORROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_SSE2;
   }
 #endif
 #if defined(HAS_MIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
     MirrorRow = MirrorRow_SSSE3;
   }
 #endif
@@ -922,6 +916,7 @@ void RotatePlane180(const uint8* src, int src_stride,
     MirrorRow = MirrorRow_AVX2;
   }
 #endif
+// TODO(fbarchard): Mirror on mips handle unaligned memory.
 #if defined(HAS_MIRRORROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4) &&
@@ -940,9 +935,7 @@ void RotatePlane180(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16) &&
-      IS_ALIGNED(dst, 16) && IS_ALIGNED(dst_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_SSE2;
   }
 #endif
@@ -1032,9 +1025,7 @@ void TransposeUV(const uint8* src, int src_stride,
     TransposeUVWx8 = TransposeUVWx8_NEON;
   }
 #elif defined(HAS_TRANSPOSE_UVWX8_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) &&
-      IS_ALIGNED(width, 8) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
     TransposeUVWx8 = TransposeUVWx8_SSE2;
   }
 #elif defined(HAS_TRANSPOSE_UVWx8_MIPS_DSPR2)
@@ -1106,8 +1097,7 @@ void RotateUV180(const uint8* src, int src_stride,
     MirrorRowUV = MirrorUVRow_NEON;
   }
 #elif defined(HAS_MIRRORROW_UV_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16) &&
-      IS_ALIGNED(src, 16) && IS_ALIGNED(src_stride, 16)) {
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
     MirrorRowUV = MirrorUVRow_SSSE3;
   }
 #elif defined(HAS_MIRRORUVROW_MIPS_DSPR2)

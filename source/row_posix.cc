@@ -2970,10 +2970,10 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "lea       " MEMLEA(-0x10,0) ",%0          \n"
     LABELALIGN
   "1:                                          \n"
-    MEMOPREG(movdqa,0x00,0,2,1,xmm0)           //  movdqa  (%0,%2),%%xmm0
+    MEMOPREG(movdqu,0x00,0,2,1,xmm0)           //  movdqa  (%0,%2),%%xmm0
     "pshufb    %%xmm5,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
-    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        1b                              \n"
   : "+r"(src),  // %0
@@ -3039,7 +3039,7 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "lea       " MEMLEA(-0x10,0) ",%0            \n"
     "pshufb    %%xmm1,%%xmm0                   \n"
     "sub       $8,%3                           \n"
@@ -3077,11 +3077,11 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "movdqa    %3,%%xmm5                       \n"
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "pshufb    %%xmm5,%%xmm0                   \n"
     "lea       " MEMLEA(-0x10,0) ",%0          \n"
     "sub       $0x4,%2                         \n"
-    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        1b                              \n"
   : "+r"(src),  // %0
