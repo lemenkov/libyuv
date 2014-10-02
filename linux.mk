@@ -38,7 +38,7 @@ LOCAL_OBJ_FILES := \
 all: libyuv.a convert
 
 libyuv.a: $(LOCAL_OBJ_FILES)
-	$(AR) $(ARFLAGS) -o $@ $(LOCAL_OBJ_FILES)
+	$(AR) $(ARFLAGS) $@ $(LOCAL_OBJ_FILES)
 
 # A test utility that uses libyuv conversion.
 convert: util/convert.cc libyuv.a
