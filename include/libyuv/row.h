@@ -122,7 +122,6 @@ extern "C" {
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_ERMS
-#define HAS_COPYROW_AVX
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
 #define HAS_HALFROW_SSE2
@@ -200,6 +199,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && (defined(VISUALC_HAS_AVX2) || \
     defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 // Effects:
+#define HAS_COPYROW_AVX
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBCOPYALPHAROW_AVX2
