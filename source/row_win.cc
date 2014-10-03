@@ -326,8 +326,8 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     punpckhwd  xmm1, xmm1
     por        xmm0, xmm5
     por        xmm1, xmm5
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -386,17 +386,17 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     por       xmm2, xmm5
     palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
     pshufb    xmm0, xmm4
-    movdqa    [edx + 32], xmm2
+    movdqu    [edx + 32], xmm2
     por       xmm0, xmm5
     pshufb    xmm1, xmm4
-    movdqa    [edx], xmm0
+    movdqu    [edx], xmm0
     por       xmm1, xmm5
     palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
     pshufb    xmm3, xmm4
-    movdqa    [edx + 16], xmm1
+    movdqu    [edx + 16], xmm1
     por       xmm3, xmm5
     sub       ecx, 16
-    movdqa    [edx + 48], xmm3
+    movdqu    [edx + 48], xmm3
     lea       edx, [edx + 64]
     jg        convertloop
     ret
@@ -426,17 +426,17 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
     por       xmm2, xmm5
     palignr   xmm1, xmm0, 12   // xmm1 = { xmm3[0:7] xmm0[12:15]}
     pshufb    xmm0, xmm4
-    movdqa    [edx + 32], xmm2
+    movdqu    [edx + 32], xmm2
     por       xmm0, xmm5
     pshufb    xmm1, xmm4
-    movdqa    [edx], xmm0
+    movdqu    [edx], xmm0
     por       xmm1, xmm5
     palignr   xmm3, xmm3, 4    // xmm3 = { xmm3[4:15]}
     pshufb    xmm3, xmm4
-    movdqa    [edx + 16], xmm1
+    movdqu    [edx + 16], xmm1
     por       xmm3, xmm5
     sub       ecx, 16
-    movdqa    [edx + 48], xmm3
+    movdqu    [edx + 48], xmm3
     lea       edx, [edx + 64]
     jg        convertloop
     ret
@@ -491,8 +491,8 @@ void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb,
     movdqa    xmm2, xmm1
     punpcklbw xmm1, xmm0
     punpckhbw xmm2, xmm0
-    movdqa    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
-    movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
+    movdqu    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
+    movdqu    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
     jg        convertloop
@@ -545,8 +545,8 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
     movdqa    xmm2, xmm1
     punpcklbw xmm1, xmm0
     punpckhbw xmm2, xmm0
-    movdqa    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
-    movdqa    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
+    movdqu    [eax * 2 + edx], xmm1  // store 4 pixels of ARGB
+    movdqu    [eax * 2 + edx + 16], xmm2  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
     jg        convertloop
@@ -585,8 +585,8 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
     movdqa    xmm1, xmm0
     punpcklbw xmm0, xmm2
     punpckhbw xmm1, xmm2
-    movdqa    [eax * 2 + edx], xmm0  // store 4 pixels of ARGB
-    movdqa    [eax * 2 + edx + 16], xmm1  // store next 4 pixels of ARGB
+    movdqu    [eax * 2 + edx], xmm0  // store 4 pixels of ARGB
+    movdqu    [eax * 2 + edx + 16], xmm1  // store next 4 pixels of ARGB
     lea       eax, [eax + 16]
     sub       ecx, 8
     jg        convertloop
@@ -688,7 +688,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    movdqu    xmm0, [eax]   // fetch 4 pixels of argb
     movdqa    xmm1, xmm0    // B
     movdqa    xmm2, xmm0    // G
     pslld     xmm0, 8       // R
@@ -728,7 +728,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    movdqu    xmm0, [eax]   // fetch 4 pixels of argb
     movdqa    xmm1, xmm0    // B
     movdqa    xmm2, xmm0    // G
     movdqa    xmm3, xmm0    // R
@@ -766,7 +766,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 
     align      4
  convertloop:
-    movdqa    xmm0, [eax]   // fetch 4 pixels of argb
+    movdqu    xmm0, [eax]   // fetch 4 pixels of argb
     movdqa    xmm1, xmm0
     pand      xmm0, xmm3    // low nibble
     pand      xmm1, xmm4    // high nibble
@@ -795,10 +795,10 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm2, xmm4
@@ -811,7 +811,7 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -830,10 +830,10 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm2, xmm4
@@ -847,7 +847,7 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     psrlw      xmm2, 7
     packuswb   xmm0, xmm2
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -1016,10 +1016,10 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm2, xmm4
@@ -1032,7 +1032,7 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -1084,10 +1084,10 @@ void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm2, xmm4
@@ -1100,7 +1100,7 @@ void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -1152,10 +1152,10 @@ void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm2, xmm4
@@ -1168,7 +1168,7 @@ void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     packuswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -1228,10 +1228,10 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pavgb      xmm0, [eax + esi]
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
@@ -1294,10 +1294,10 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pavgb      xmm0, [eax + esi]
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
@@ -1567,10 +1567,10 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     align      4
  convertloop:
     /* convert to U and V */
-    movdqa     xmm0, [eax]          // U
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]          // U
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm7
     pmaddubsw  xmm1, xmm7
     pmaddubsw  xmm2, xmm7
@@ -1582,12 +1582,12 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     sub        ecx,  16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
 
-    movdqa     xmm0, [eax]          // V
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]          // V
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pmaddubsw  xmm0, xmm6
     pmaddubsw  xmm1, xmm6
     pmaddubsw  xmm2, xmm6
@@ -1599,7 +1599,7 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     packsswb   xmm0, xmm2
     paddb      xmm0, xmm5
     lea        eax,  [eax + 64]
-    movdqa     [edx + edi], xmm0
+    movdqu     [edx + edi], xmm0
     lea        edx,  [edx + 16]
     jg         convertloop
 
@@ -1683,10 +1683,10 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -1803,10 +1803,10 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pavgb      xmm0, [eax + esi]
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
@@ -1939,10 +1939,10 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pavgb      xmm0, [eax + esi]
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
@@ -2075,10 +2075,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     align      4
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
     pavgb      xmm0, [eax + esi]
     pavgb      xmm1, [eax + esi + 16]
     pavgb      xmm2, [eax + esi + 32]
@@ -2423,8 +2423,8 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -2633,8 +2633,8 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -2678,8 +2678,8 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -2718,8 +2718,8 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -2756,8 +2756,8 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm0
     punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
     punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3004,8 +3004,8 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
     movdqa     xmm0, xmm5
     punpcklwd  xmm5, xmm1           // BGRA first 4 pixels
     punpckhwd  xmm0, xmm1           // BGRA next 4 pixels
-    movdqa     [edx], xmm5
-    movdqa     [edx + 16], xmm0
+    movdqu     [edx], xmm5
+    movdqu     [edx + 16], xmm0
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3086,8 +3086,8 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
     movdqa     xmm1, xmm2
     punpcklwd  xmm2, xmm0           // RGBA first 4 pixels
     punpckhwd  xmm1, xmm0           // RGBA next 4 pixels
-    movdqa     [edx], xmm2
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm2
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3168,8 +3168,8 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
     movdqa     xmm0, xmm5
     punpcklwd  xmm5, xmm1           // RGBA first 4 pixels
     punpckhwd  xmm0, xmm1           // RGBA next 4 pixels
-    movdqa     [edx], xmm5
-    movdqa     [edx + 16], xmm0
+    movdqu     [edx], xmm5
+    movdqu     [edx + 16], xmm0
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3260,8 +3260,8 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     punpckhwd  xmm1, xmm1           // BGRA next 4 pixels
     por        xmm0, xmm4
     por        xmm1, xmm4
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3468,8 +3468,8 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     movdqa     xmm2, xmm0
     movdqa     xmm3, xmm1
@@ -3479,8 +3479,8 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     psrlw      xmm2, 8      // odd bytes
     psrlw      xmm3, 8
     packuswb   xmm2, xmm3
-    movdqa     [edx], xmm0
-    movdqa     [edx + edi], xmm2
+    movdqu     [edx], xmm0
+    movdqu     [edx + edi], xmm2
     lea        edx, [edx + 16]
     sub        ecx, 16
     jg         convertloop
@@ -3581,14 +3581,14 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]      // read 16 U's
-    movdqa     xmm1, [eax + edx]  // and 16 V's
+    movdqu     xmm0, [eax]      // read 16 U's
+    movdqu     xmm1, [eax + edx]  // and 16 V's
     lea        eax,  [eax + 16]
     movdqa     xmm2, xmm0
     punpcklbw  xmm0, xmm1       // first 8 UV pairs
     punpckhbw  xmm2, xmm1       // next 8 UV pairs
-    movdqa     [edi], xmm0
-    movdqa     [edi + 16], xmm2
+    movdqu     [edi], xmm0
+    movdqu     [edi + 16], xmm2
     lea        edi, [edi + 32]
     sub        ecx, 16
     jg         convertloop
@@ -3763,19 +3763,19 @@ void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     align      4
   convertloop:
-    movdqa     xmm2, [eax]
-    movdqa     xmm3, [eax + 16]
+    movdqu     xmm2, [eax]
+    movdqu     xmm3, [eax + 16]
     lea        eax, [eax + 32]
-    movdqa     xmm4, [edx]
-    movdqa     xmm5, [edx + 16]
+    movdqu     xmm4, [edx]
+    movdqu     xmm5, [edx + 16]
     pand       xmm2, xmm0
     pand       xmm3, xmm0
     pand       xmm4, xmm1
     pand       xmm5, xmm1
     por        xmm2, xmm4
     por        xmm3, xmm5
-    movdqa     [edx], xmm2
-    movdqa     [edx + 16], xmm3
+    movdqu     [edx], xmm2
+    movdqu     [edx + 16], xmm3
     lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -3835,16 +3835,16 @@ void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
     punpcklbw  xmm2, xmm2
     punpckhwd  xmm3, xmm2
     punpcklwd  xmm2, xmm2
-    movdqa     xmm4, [edx]
-    movdqa     xmm5, [edx + 16]
+    movdqu     xmm4, [edx]
+    movdqu     xmm5, [edx + 16]
     pand       xmm2, xmm0
     pand       xmm3, xmm0
     pand       xmm4, xmm1
     pand       xmm5, xmm1
     por        xmm2, xmm4
     por        xmm3, xmm5
-    movdqa     [edx], xmm2
-    movdqa     [edx + 16], xmm3
+    movdqu     [edx], xmm2
+    movdqu     [edx + 16], xmm3
     lea        edx, [edx + 32]
     sub        ecx, 8
     jg         convertloop
@@ -4173,14 +4173,14 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     pand       xmm0, xmm5   // even bytes are Y
     pand       xmm1, xmm5
     packuswb   xmm0, xmm1
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -4204,10 +4204,10 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + esi]
-    movdqa     xmm3, [eax + esi + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
     lea        eax,  [eax + 32]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
@@ -4246,8 +4246,8 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     psrlw      xmm0, 8      // YUYV -> UVUV
     psrlw      xmm1, 8
@@ -4385,14 +4385,14 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     psrlw      xmm0, 8    // odd bytes are Y
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
     ret
@@ -4416,10 +4416,10 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + esi]
-    movdqa     xmm3, [eax + esi + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + esi]
+    movdqu     xmm3, [eax + esi + 16]
     lea        eax,  [eax + 32]
     pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
@@ -4458,8 +4458,8 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     pand       xmm0, xmm5   // UYVY -> UVUV
     pand       xmm1, xmm5
@@ -4666,7 +4666,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     pand       xmm1, xmm5       // a_g_ convert to 8 bits again
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jge        convertloop4
 
@@ -4782,16 +4782,16 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
     // 4 pixel loop.
   convertloop4:
-    movdqa     xmm3, [eax]      // src argb
+    movdqu     xmm3, [eax]      // src argb
     lea        eax, [eax + 16]
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
-    movdqa     xmm2, [esi]      // _r_b
+    movdqu     xmm2, [esi]      // _r_b
     pshufb     xmm3, kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqa     xmm1, [esi]      // _a_g
+    movdqu     xmm1, [esi]      // _a_g
     lea        esi, [esi + 16]
     psrlw      xmm1, 8          // _a_g
     por        xmm0, xmm4       // set alpha to 255
@@ -4801,7 +4801,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     pand       xmm1, xmm5       // a_g_ convert to 8 bits again
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jge        convertloop4
     jmp        convertloop4b
@@ -4827,7 +4827,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     pand       xmm1, xmm5       // a_g_ convert to 8 bits again
     paddusb    xmm0, xmm1       // + src argb
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jge        convertuloop4
 
@@ -4883,17 +4883,17 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqu     xmm0, [eax]      // read 4 pixels
     punpcklbw  xmm0, xmm0       // first 2
     pshufhw    xmm2, xmm0, 0FFh // 8 alpha words
     pshuflw    xmm2, xmm2, 0FFh
     pmulhuw    xmm0, xmm2       // rgb * a
-    movdqa     xmm1, [eax]      // read 4 pixels
+    movdqu     xmm1, [eax]      // read 4 pixels
     punpckhbw  xmm1, xmm1       // next 2 pixels
     pshufhw    xmm2, xmm1, 0FFh // 8 alpha words
     pshuflw    xmm2, xmm2, 0FFh
     pmulhuw    xmm1, xmm2       // rgb * a
-    movdqa     xmm2, [eax]      // alphas
+    movdqu     xmm2, [eax]      // alphas
     lea        eax, [eax + 16]
     psrlw      xmm0, 8
     pand       xmm2, xmm4
@@ -4902,7 +4902,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     pand       xmm0, xmm5       // keep original alphas
     por        xmm0, xmm2
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
 
@@ -5177,16 +5177,16 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]  // G
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]  // G
+    movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm0, xmm4
     pmaddubsw  xmm1, xmm4
     phaddw     xmm0, xmm1
     paddw      xmm0, xmm5  // Add .5 for rounding.
     psrlw      xmm0, 7
     packuswb   xmm0, xmm0   // 8 G bytes
-    movdqa     xmm2, [eax]  // A
-    movdqa     xmm3, [eax + 16]
+    movdqu     xmm2, [eax]  // A
+    movdqu     xmm3, [eax + 16]
     lea        eax, [eax + 32]
     psrld      xmm2, 24
     psrld      xmm3, 24
@@ -5199,8 +5199,8 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     punpcklwd  xmm0, xmm3   // GGGA first 4
     punpckhwd  xmm1, xmm3   // GGGA next 4
     sub        ecx, 8
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     jg         convertloop
     ret
@@ -5237,30 +5237,30 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]  // B
-    movdqa     xmm6, [eax + 16]
+    movdqu     xmm0, [eax]  // B
+    movdqu     xmm6, [eax + 16]
     pmaddubsw  xmm0, xmm2
     pmaddubsw  xmm6, xmm2
     phaddw     xmm0, xmm6
     psrlw      xmm0, 7
     packuswb   xmm0, xmm0   // 8 B values
-    movdqa     xmm5, [eax]  // G
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm5, [eax]  // G
+    movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm3
     pmaddubsw  xmm1, xmm3
     phaddw     xmm5, xmm1
     psrlw      xmm5, 7
     packuswb   xmm5, xmm5   // 8 G values
     punpcklbw  xmm0, xmm5   // 8 BG values
-    movdqa     xmm5, [eax]  // R
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm5, [eax]  // R
+    movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm5, xmm4
     pmaddubsw  xmm1, xmm4
     phaddw     xmm5, xmm1
     psrlw      xmm5, 7
     packuswb   xmm5, xmm5   // 8 R values
-    movdqa     xmm6, [eax]  // A
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm6, [eax]  // A
+    movdqu     xmm1, [eax + 16]
     psrld      xmm6, 24
     psrld      xmm1, 24
     packuswb   xmm6, xmm1
@@ -5270,8 +5270,8 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     punpcklwd  xmm0, xmm5   // BGRA first 4
     punpckhwd  xmm1, xmm5   // BGRA next 4
     sub        ecx, 8
-    movdqa     [eax], xmm0
-    movdqa     [eax + 16], xmm1
+    movdqu     [eax], xmm0
+    movdqu     [eax + 16], xmm1
     lea        eax, [eax + 32]
     jg         convertloop
     ret
@@ -5300,12 +5300,12 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]  // B
-    movdqa     xmm7, [eax + 16]
+    movdqu     xmm0, [eax]  // B
+    movdqu     xmm7, [eax + 16]
     pmaddubsw  xmm0, xmm2
     pmaddubsw  xmm7, xmm2
-    movdqa     xmm6, [eax]  // G
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm6, [eax]  // G
+    movdqu     xmm1, [eax + 16]
     pmaddubsw  xmm6, xmm3
     pmaddubsw  xmm1, xmm3
     phaddsw    xmm0, xmm7   // B
@@ -5315,13 +5315,13 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     packuswb   xmm0, xmm0   // 8 B values
     packuswb   xmm6, xmm6   // 8 G values
     punpcklbw  xmm0, xmm6   // 8 BG values
-    movdqa     xmm1, [eax]  // R
-    movdqa     xmm7, [eax + 16]
+    movdqu     xmm1, [eax]  // R
+    movdqu     xmm7, [eax + 16]
     pmaddubsw  xmm1, xmm4
     pmaddubsw  xmm7, xmm4
     phaddsw    xmm1, xmm7   // R
-    movdqa     xmm6, [eax]  // A
-    movdqa     xmm7, [eax + 16]
+    movdqu     xmm6, [eax]  // A
+    movdqu     xmm7, [eax + 16]
     pmaddubsw  xmm6, xmm5
     pmaddubsw  xmm7, xmm5
     phaddsw    xmm6, xmm7   // A
@@ -5334,8 +5334,8 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     punpcklwd  xmm0, xmm1   // BGRA first 4
     punpckhwd  xmm6, xmm1   // BGRA next 4
     sub        ecx, 8
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm6
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm6
     lea        eax, [eax + 32]
     lea        edx, [edx + 32]
     jg         convertloop
@@ -5368,14 +5368,14 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]  // read 4 pixels
+    movdqu     xmm0, [eax]  // read 4 pixels
     punpcklbw  xmm0, xmm5   // first 2 pixels
     pmulhuw    xmm0, xmm2   // pixel * scale >> 16
-    movdqa     xmm1, [eax]  // read 4 pixels
+    movdqu     xmm1, [eax]  // read 4 pixels
     punpckhbw  xmm1, xmm5   // next 2 pixels
     pmulhuw    xmm1, xmm2
     pmullw     xmm0, xmm3   // * interval_size
-    movdqa     xmm7, [eax]  // read 4 pixels
+    movdqu     xmm7, [eax]  // read 4 pixels
     pmullw     xmm1, xmm3
     pand       xmm7, xmm6   // mask alpha
     paddw      xmm0, xmm4   // + interval_size / 2
@@ -5383,7 +5383,7 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
     packuswb   xmm0, xmm1
     por        xmm0, xmm7
     sub        ecx, 4
-    movdqa     [eax], xmm0
+    movdqu     [eax], xmm0
     lea        eax, [eax + 16]
     jg         convertloop
     ret
@@ -5407,7 +5407,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]      // read 4 pixels
+    movdqu     xmm0, [eax]      // read 4 pixels
     lea        eax, [eax + 16]
     movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm0       // first 2
@@ -5418,7 +5418,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
     sub        ecx, 4
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
 
@@ -5775,8 +5775,8 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
-    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    movdqu     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqu     xmm1, [eax + esi]      // read 16 pixels src_sobely
     lea        eax, [eax + 16]
     paddusb    xmm0, xmm1             // sobel = sobelx + sobely
     movdqa     xmm2, xmm0             // GG
@@ -5793,10 +5793,10 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     por        xmm3, xmm5             // GGGA
     por        xmm0, xmm5
     sub        ecx, 16
-    movdqa     [edx], xmm1
-    movdqa     [edx + 16], xmm2
-    movdqa     [edx + 32], xmm3
-    movdqa     [edx + 48], xmm0
+    movdqu     [edx], xmm1
+    movdqu     [edx + 16], xmm2
+    movdqu     [edx + 32], xmm3
+    movdqu     [edx + 48], xmm0
     lea        edx, [edx + 64]
     jg         convertloop
 
@@ -5821,12 +5821,12 @@ void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
-    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    movdqu     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqu     xmm1, [eax + esi]      // read 16 pixels src_sobely
     lea        eax, [eax + 16]
     paddusb    xmm0, xmm1             // sobel = sobelx + sobely
     sub        ecx, 16
-    movdqa     [edx], xmm0
+    movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jg         convertloop
 
@@ -5856,8 +5856,8 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 
     align      4
  convertloop:
-    movdqa     xmm0, [eax]            // read 16 pixels src_sobelx
-    movdqa     xmm1, [eax + esi]      // read 16 pixels src_sobely
+    movdqu     xmm0, [eax]            // read 16 pixels src_sobelx
+    movdqu     xmm1, [eax + esi]      // read 16 pixels src_sobely
     lea        eax, [eax + 16]
     movdqa     xmm2, xmm0
     paddusb    xmm2, xmm1             // sobel = sobelx + sobely
@@ -5874,10 +5874,10 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     punpcklwd  xmm7, xmm0             // Next 4
     punpckhwd  xmm1, xmm0             // Last 4
     sub        ecx, 16
-    movdqa     [edx], xmm6
-    movdqa     [edx + 16], xmm4
-    movdqa     [edx + 32], xmm7
-    movdqa     [edx + 48], xmm1
+    movdqu     [edx], xmm6
+    movdqu     [edx + 16], xmm4
+    movdqu     [edx + 32], xmm7
+    movdqu     [edx + 48], xmm1
     lea        edx, [edx + 64]
     jg         convertloop
 
@@ -5933,10 +5933,10 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     align      4
   s4:
     // top left
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
 
     // - top right
     psubd      xmm0, [eax + edx * 4]
@@ -5976,10 +5976,10 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     align      4
   l4:
     // top left
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
-    movdqa     xmm2, [eax + 32]
-    movdqa     xmm3, [eax + 48]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
+    movdqu     xmm2, [eax + 32]
+    movdqu     xmm3, [eax + 48]
 
     // - top right
     psubd      xmm0, [eax + edx * 4]
@@ -6028,7 +6028,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     // 1 pixel loop
     align      4
   l1:
-    movdqa     xmm0, [eax]
+    movdqu     xmm0, [eax]
     psubd      xmm0, [eax + edx * 4]
     lea        eax, [eax + 16]
     psubd      xmm0, [esi]
@@ -6084,26 +6084,26 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     punpckhwd  xmm5, xmm1
 
     paddd      xmm0, xmm2
-    movdqa     xmm2, [esi]  // previous row above.
+    movdqu     xmm2, [esi]  // previous row above.
     paddd      xmm2, xmm0
 
     paddd      xmm0, xmm3
-    movdqa     xmm3, [esi + 16]
+    movdqu     xmm3, [esi + 16]
     paddd      xmm3, xmm0
 
     paddd      xmm0, xmm4
-    movdqa     xmm4, [esi + 32]
+    movdqu     xmm4, [esi + 32]
     paddd      xmm4, xmm0
 
     paddd      xmm0, xmm5
-    movdqa     xmm5, [esi + 48]
+    movdqu     xmm5, [esi + 48]
     lea        esi, [esi + 64]
     paddd      xmm5, xmm0
 
-    movdqa     [edx], xmm2
-    movdqa     [edx + 16], xmm3
-    movdqa     [edx + 32], xmm4
-    movdqa     [edx + 48], xmm5
+    movdqu     [edx], xmm2
+    movdqu     [edx + 16], xmm3
+    movdqu     [edx + 32], xmm4
+    movdqu     [edx + 48], xmm5
 
     lea        edx, [edx + 64]
     sub        ecx, 4
@@ -6552,8 +6552,8 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
 
     align      4
   wloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax, [eax + 32]
     pshufb     xmm0, xmm5
     pshufb     xmm1, xmm5
@@ -6580,8 +6580,8 @@ void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
 
     align      4
   wloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax, [eax + 32]
     psrld      xmm0, 8  // Move green to bottom.
     psrld      xmm1, 8
@@ -6605,19 +6605,19 @@ void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 4]    // src_argb
     mov        edx, [esp + 8]    // dst_argb
     mov        ecx, [esp + 12]   // shuffler
-    movdqa     xmm5, [ecx]
+    movdqu     xmm5, [ecx]
     mov        ecx, [esp + 16]   // pix
 
     align      4
   wloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax, [eax + 32]
     pshufb     xmm0, xmm5
     pshufb     xmm1, xmm5
     sub        ecx, 8
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     jg         wloop
     ret
@@ -6631,7 +6631,7 @@ void ARGBShuffleRow_Unaligned_SSSE3(const uint8* src_argb, uint8* dst_argb,
     mov        eax, [esp + 4]    // src_argb
     mov        edx, [esp + 8]    // dst_argb
     mov        ecx, [esp + 12]   // shuffler
-    movdqa     xmm5, [ecx]
+    movdqu     xmm5, [ecx]
     mov        ecx, [esp + 16]   // pix
 
     align      4
