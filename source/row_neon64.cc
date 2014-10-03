@@ -1260,32 +1260,6 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
 }
 #endif  // HAS_UYVYTOUVROW_NEON
 
-#ifdef HAS_HALFROW_NEON
-void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix) {
-  const uint8* src_uvb = src_uv + src_uv_stride;
-  asm volatile (
-    // change the stride to row 2 pointer
-  "1:                                          \n"
-    MEMACCESS(0)
-    "ld1        {v0.16b}, [%0], #16            \n"  // load row 1 16 pixels.
-    "subs       %3, %3, #16                    \n"  // 16 processed per loop
-    MEMACCESS(1)
-    "ld1        {v1.16b}, [%1], #16            \n"  // load row 2 16 pixels.
-    "urhadd     v0.16b, v0.16b, v1.16b         \n"  // average row 1 and 2
-    MEMACCESS(2)
-    "st1        {v0.16b}, [%2], #16            \n"
-    "b.gt       1b                             \n"
-  : "+r"(src_uv),         // %0
-    "+r"(src_uvb),        // %1
-    "+r"(dst_uv),         // %2
-    "+r"(pix)             // %3
-  :
-  : "cc", "memory", "v0", "v1"  // Clobber List
-  );
-}
-#endif  // HAS_HALFROW_NEON
-
 // Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
 #ifdef HAS_ARGBTOBAYERROW_NEON
 void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,

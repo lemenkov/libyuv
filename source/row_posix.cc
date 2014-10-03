@@ -3182,14 +3182,14 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     "sub       %0,%1                             \n"
     LABELALIGN
   "1:                                            \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0           \n"
-    MEMOPREG(movdqa,0x00,0,1,1,xmm1)             //  movdqa    (%0,%1,1),%%xmm1
+    "movdqu    " MEMACCESS(0) ",%%xmm0           \n"
+    MEMOPREG(movdqu,0x00,0,1,1,xmm1)             //  movdqa    (%0,%1,1),%%xmm1
     "lea       " MEMLEA(0x10,0) ",%0             \n"
     "movdqa    %%xmm0,%%xmm2                     \n"
     "punpcklbw %%xmm1,%%xmm0                     \n"
     "punpckhbw %%xmm1,%%xmm2                     \n"
-    "movdqa    %%xmm0," MEMACCESS(2) "           \n"
-    "movdqa    %%xmm2," MEMACCESS2(0x10,2) "     \n"
+    "movdqu    %%xmm0," MEMACCESS(2) "           \n"
+    "movdqu    %%xmm2," MEMACCESS2(0x10,2) "     \n"
     "lea       " MEMLEA(0x20,2) ",%2             \n"
     "sub       $0x10,%3                          \n"
     "jg        1b                                \n"
@@ -3246,11 +3246,11 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqa    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -3331,19 +3331,19 @@ void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
     "psrld     $0x8,%%xmm1                     \n"
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm2         \n"
-    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm3   \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
+    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm3   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm4         \n"
-    "movdqa    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
+    "movdqu    " MEMACCESS(1) ",%%xmm4         \n"
+    "movdqu    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
     "pand      %%xmm0,%%xmm2                   \n"
     "pand      %%xmm0,%%xmm3                   \n"
     "pand      %%xmm1,%%xmm4                   \n"
     "pand      %%xmm1,%%xmm5                   \n"
     "por       %%xmm4,%%xmm2                   \n"
     "por       %%xmm5,%%xmm3                   \n"
-    "movdqa    %%xmm2," MEMACCESS(1) "         \n"
-    "movdqa    %%xmm3," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm2," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm3," MEMACCESS2(0x10,1) "   \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -5377,8 +5377,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // General purpose row blend.
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm2)
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm2)
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm0                   \n"
     "punpckhbw %%xmm2,%%xmm1                   \n"
@@ -5389,7 +5389,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        1b                              \n"
     "jmp       99f                             \n"
@@ -5397,13 +5397,13 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 25 / 75.
     LABELALIGN
   "25:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm1)
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        25b                             \n"
     "jmp       99f                             \n"
@@ -5411,12 +5411,12 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 50 / 50.
     LABELALIGN
   "50:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm1)
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        50b                             \n"
     "jmp       99f                             \n"
@@ -5424,13 +5424,13 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 75 / 25.
     LABELALIGN
   "75:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm1         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm0)
+    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm0)
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        75b                             \n"
     "jmp       99f                             \n"
@@ -5438,9 +5438,9 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 100 / 0 - Copy row unchanged.
     LABELALIGN
   "100:                                        \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
     "sub       $0x10,%2                        \n"
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        100b                            \n"
 
@@ -5490,8 +5490,8 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     // General purpose row blend.
     LABELALIGN
   "1:                                          \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm2)           //  movdqa    (%1,%4,1),%%xmm2
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm2)           //  movdqu    (%1,%4,1),%%xmm2
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm2,%%xmm3                   \n"
     "punpcklbw %%xmm4,%%xmm2                   \n"
@@ -5509,7 +5509,7 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "packuswb  %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        1b                              \n"
     "jmp       99f                             \n"
@@ -5517,13 +5517,13 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 25 / 75.
     LABELALIGN
   "25:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm1)           //  movdqa    (%1,%4,1),%%xmm1
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        25b                             \n"
     "jmp       99f                             \n"
@@ -5531,12 +5531,12 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 50 / 50.
     LABELALIGN
   "50:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm1)           //  movdqa    (%1,%4,1),%%xmm1
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        50b                             \n"
     "jmp       99f                             \n"
@@ -5544,13 +5544,13 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 75 / 25.
     LABELALIGN
   "75:                                         \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm1         \n"
-    MEMOPREG(movdqa,0x00,1,4,1,xmm0)           //  movdqa    (%1,%4,1),%%xmm0
+    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
+    MEMOPREG(movdqu,0x00,1,4,1,xmm0)           //  movdqu    (%1,%4,1),%%xmm0
     "pavgb     %%xmm1,%%xmm0                   \n"
     "pavgb     %%xmm1,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     BUNDLEALIGN
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        75b                             \n"
     "jmp       99f                             \n"
@@ -5558,9 +5558,9 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     // Blend 100 / 0 - Copy row unchanged.
     LABELALIGN
   "100:                                        \n"
-    "movdqa    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
     "sub       $0x10,%2                        \n"
-    MEMOPMEM(movdqa,xmm0,0x00,1,0,1)           //  movdqa    %%xmm0,(%1,%0,1)
+    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "jg        100b                            \n"
 
@@ -5812,31 +5812,6 @@ void InterpolateRow_Unaligned_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
-
-#ifdef HAS_HALFROW_SSE2
-void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix) {
-  asm volatile (
-    "sub       %0,%1                           \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
-    MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb     (%0,%3),%%xmm0
-    "sub       $0x10,%2                        \n"
-    MEMOPMEM(movdqa,xmm0,0x00,0,1,1)           //  movdqa    %%xmm0,(%0,%1)
-    "lea       " MEMLEA(0x10,0) ",%0           \n"
-    "jg        1b                              \n"
-  : "+r"(src_uv),  // %0
-    "+r"(dst_uv),  // %1
-    "+r"(pix)      // %2
-  : "r"((intptr_t)(src_uv_stride))  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-      , "xmm0"
-#endif
-  );
-}
-#endif  // HAS_HALFROW_SSE2
 
 #ifdef HAS_ARGBTOBAYERROW_SSSE3
 void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,

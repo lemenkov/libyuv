@@ -124,7 +124,6 @@ extern "C" {
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_COPYROW_X86
-#define HAS_HALFROW_SSE2
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
@@ -212,7 +211,6 @@ extern "C" {
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
-#define HAS_HALFROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
@@ -300,7 +298,6 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_UYVYTOUVROW_NEON
-#define HAS_HALFROW_NEON
 #define HAS_ARGBTOBAYERROW_NEON
 #define HAS_ARGBTOBAYERGGROW_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
@@ -378,7 +375,6 @@ extern "C" {
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_COPYROW_NEON
-#define HAS_HALFROW_NEON
 #define HAS_I400TOARGBROW_NEON
 #define HAS_I411TOARGBROW_NEON
 #define HAS_I422TOABGRROW_NEON
@@ -1576,18 +1572,6 @@ void UYVYToUVRow_Any_NEON(const uint8* src_uyvy, int stride_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToUV422Row_Any_NEON(const uint8* src_uyvy,
                              uint8* dst_u, uint8* dst_v, int pix);
-
-void HalfRow_C(const uint8* src_uv, int src_uv_stride,
-               uint8* dst_uv, int pix);
-void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix);
-void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix);
-void HalfRow_NEON(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix);
-
-void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
-                  uint16* dst_uv, int pix);
 
 void ARGBToBayerRow_C(const uint8* src_argb, uint8* dst_bayer,
                       uint32 selector, int pix);

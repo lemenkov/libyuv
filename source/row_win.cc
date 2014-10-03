@@ -3674,11 +3674,11 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 
     align      4
   convertloop:
-    movdqa     xmm0, [eax]
-    movdqa     xmm1, [eax + 16]
+    movdqu     xmm0, [eax]
+    movdqu     xmm1, [eax + 16]
     lea        eax, [eax + 32]
-    movdqa     [edx], xmm0
-    movdqa     [edx + 16], xmm1
+    movdqu     [edx], xmm0
+    movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 32
     jg         convertloop
@@ -6539,58 +6539,6 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   }
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
-
-__declspec(naked) __declspec(align(16))
-void HalfRow_SSE2(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix) {
-  __asm {
-    push       edi
-    mov        eax, [esp + 4 + 4]    // src_uv
-    mov        edx, [esp + 4 + 8]    // src_uv_stride
-    mov        edi, [esp + 4 + 12]   // dst_v
-    mov        ecx, [esp + 4 + 16]   // pix
-    sub        edi, eax
-
-    align      4
-  convertloop:
-    movdqa     xmm0, [eax]
-    pavgb      xmm0, [eax + edx]
-    sub        ecx, 16
-    movdqa     [eax + edi], xmm0
-    lea        eax,  [eax + 16]
-    jg         convertloop
-    pop        edi
-    ret
-  }
-}
-
-#ifdef HAS_HALFROW_AVX2
-__declspec(naked) __declspec(align(16))
-void HalfRow_AVX2(const uint8* src_uv, int src_uv_stride,
-                  uint8* dst_uv, int pix) {
-  __asm {
-    push       edi
-    mov        eax, [esp + 4 + 4]    // src_uv
-    mov        edx, [esp + 4 + 8]    // src_uv_stride
-    mov        edi, [esp + 4 + 12]   // dst_v
-    mov        ecx, [esp + 4 + 16]   // pix
-    sub        edi, eax
-
-    align      4
-  convertloop:
-    vmovdqu    ymm0, [eax]
-    vpavgb     ymm0, ymm0, [eax + edx]
-    sub        ecx, 32
-    vmovdqu    [eax + edi], ymm0
-    lea        eax,  [eax + 32]
-    jg         convertloop
-
-    pop        edi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_HALFROW_AVX2
 
 __declspec(naked) __declspec(align(16))
 void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,

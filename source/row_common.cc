@@ -1885,17 +1885,17 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
   }
 }
 
-// Blend 2 rows into 1 for conversions such as I422ToI420.
-void HalfRow_C(const uint8* src_uv, int src_uv_stride,
-               uint8* dst_uv, int pix) {
+// Blend 2 rows into 1.
+static void HalfRow_C(const uint8* src_uv, int src_uv_stride,
+                      uint8* dst_uv, int pix) {
   int x;
   for (x = 0; x < pix; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
   }
 }
 
-void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
-                  uint16* dst_uv, int pix) {
+static void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
+                         uint16* dst_uv, int pix) {
   int x;
   for (x = 0; x < pix; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
