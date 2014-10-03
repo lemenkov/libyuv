@@ -167,9 +167,9 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    MEMOPREG(movdqa,0x00,0,3,1,xmm2)           //  movdqa  (%0,%3,1),%%xmm2
+    MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu  (%0,%3,1),%%xmm2
     BUNDLEALIGN
-    MEMOPREG(movdqa,0x10,0,3,1,xmm3)           //  movdqa  0x10(%0,%3,1),%%xmm3
+    MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu  0x10(%0,%3,1),%%xmm3
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
@@ -244,16 +244,16 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    MEMOPREG(movdqa,0x00,0,4,1,xmm2)           //  movdqa  (%0,%4,1),%%xmm2
+    MEMOPREG(movdqu,0x00,0,4,1,xmm2)           //  movdqu  (%0,%4,1),%%xmm2
     BUNDLEALIGN
-    MEMOPREG(movdqa,0x10,0,4,1,xmm3)           //  movdqa  0x10(%0,%4,1),%%xmm3
+    MEMOPREG(movdqu,0x10,0,4,1,xmm3)           //  movdqu  0x10(%0,%4,1),%%xmm3
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
-    MEMOPREG(movdqa,0x00,0,4,2,xmm2)           //  movdqa  (%0,%4,2),%%xmm2
+    MEMOPREG(movdqu,0x00,0,4,2,xmm2)           //  movdqu  (%0,%4,2),%%xmm2
     BUNDLEALIGN
-    MEMOPREG(movdqa,0x10,0,4,2,xmm3)           //  movdqa  0x10(%0,%4,2),%%xmm3
-    MEMOPREG(movdqa,0x00,0,3,1,xmm4)           //  movdqa  (%0,%3,1),%%xmm4
-    MEMOPREG(movdqa,0x10,0,3,1,xmm5)           //  movdqa  0x10(%0,%3,1),%%xmm5
+    MEMOPREG(movdqu,0x10,0,4,2,xmm3)           //  movdqu  0x10(%0,%4,2),%%xmm3
+    MEMOPREG(movdqu,0x00,0,3,1,xmm4)           //  movdqu  (%0,%3,1),%%xmm4
+    MEMOPREG(movdqu,0x10,0,3,1,xmm5)           //  movdqu  0x10(%0,%3,1),%%xmm5
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm4,%%xmm2                   \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
@@ -356,7 +356,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm6         \n"
-    MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3),%%xmm7
+    MEMOPREG(movdqu,0x00,0,3,1,xmm7)           //  movdqu  (%0,%3),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm2,%%xmm6                   \n"
     "pmaddubsw %%xmm5,%%xmm6                   \n"
@@ -375,7 +375,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     "movq      %%xmm6," MEMACCESS2(0x8,1) "    \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
     BUNDLEALIGN
-    MEMOPREG(movdqa,0x10,0,3,1,xmm7)           //  movdqa  0x10(%0,%3),%%xmm7
+    MEMOPREG(movdqu,0x10,0,3,1,xmm7)           //  movdqu  0x10(%0,%3),%%xmm7
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm4,%%xmm6                   \n"
@@ -428,7 +428,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm6         \n"
-    MEMOPREG(movdqa,0x00,0,3,1,xmm7)           //  movdqa  (%0,%3,1),%%xmm7
+    MEMOPREG(movdqu,0x00,0,3,1,xmm7)           //  movdqu  (%0,%3,1),%%xmm7
     "pavgb     %%xmm6,%%xmm7                   \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
     "pshufb    %%xmm2,%%xmm6                   \n"
@@ -448,7 +448,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     "packuswb  %%xmm6,%%xmm6                   \n"
     "movq      %%xmm6," MEMACCESS2(0x8,1) "    \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
-    MEMOPREG(movdqa,0x10,0,3,1,xmm7)           //  movdqa  0x10(%0,%3,1),%%xmm7
+    MEMOPREG(movdqu,0x10,0,3,1,xmm7)           //  movdqu  0x10(%0,%3,1),%%xmm7
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm6,%%xmm7                   \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
@@ -574,7 +574,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    MEMOPREG(movdqa,0x00,0,3,1,xmm6)           //  movdqa  (%0,%3,1),%%xmm6
+    MEMOPREG(movdqu,0x00,0,3,1,xmm6)           //  movdqu  (%0,%3,1),%%xmm6
     "movhlps   %%xmm0,%%xmm1                   \n"
     "movhlps   %%xmm6,%%xmm7                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
@@ -583,7 +583,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "punpcklbw %%xmm5,%%xmm7                   \n"
     "paddusw   %%xmm6,%%xmm0                   \n"
     "paddusw   %%xmm7,%%xmm1                   \n"
-    MEMOPREG(movdqa,0x00,0,3,2,xmm6)           //  movdqa  (%0,%3,2),%%xmm6
+    MEMOPREG(movdqu,0x00,0,3,2,xmm6)           //  movdqu  (%0,%3,2),%%xmm6
     "lea       " MEMLEA(0x10,0) ",%0           \n"
     "movhlps   %%xmm6,%%xmm7                   \n"
     "punpcklbw %%xmm5,%%xmm6                   \n"
@@ -848,8 +848,8 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     BUNDLEALIGN
-    MEMOPREG(movdqa,0x00,0,3,1,xmm2)           //  movdqa   (%0,%3,1),%%xmm2
-    MEMOPREG(movdqa,0x10,0,3,1,xmm3)           //  movdqa   0x10(%0,%3,1),%%xmm3
+    MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu   (%0,%3,1),%%xmm2
+    MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu   0x10(%0,%3,1),%%xmm3
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"

@@ -208,15 +208,6 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
-void ScaleRowDown2_Unaligned_SSE2(const uint8* src_ptr,
-                                  ptrdiff_t src_stride,
-                                  uint8* dst_ptr, int dst_width);
-void ScaleRowDown2Linear_Unaligned_SSE2(const uint8* src_ptr,
-                                        ptrdiff_t src_stride,
-                                        uint8* dst_ptr, int dst_width);
-void ScaleRowDown2Box_Unaligned_SSE2(const uint8* src_ptr,
-                                     ptrdiff_t src_stride,
-                                     uint8* dst_ptr, int dst_width);
 void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
