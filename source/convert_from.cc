@@ -400,12 +400,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSE2) && halfwidth >= 16) {
     MergeUVRow_ = MergeUVRow_Any_SSE2;
     if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow_ = MergeUVRow_Unaligned_SSE2;
-      if (IS_ALIGNED(src_u, 16) && IS_ALIGNED(src_stride_u, 16) &&
-          IS_ALIGNED(src_v, 16) && IS_ALIGNED(src_stride_v, 16) &&
-          IS_ALIGNED(dst_uv, 16) && IS_ALIGNED(dst_stride_uv, 16)) {
-        MergeUVRow_ = MergeUVRow_SSE2;
-      }
+      MergeUVRow_ = MergeUVRow_SSE2;
     }
   }
 #endif
@@ -479,10 +474,7 @@ int I420ToARGB(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_argb, 16) && IS_ALIGNED(dst_stride_argb, 16)) {
-        I422ToARGBRow = I422ToARGBRow_SSSE3;
-      }
+      I422ToARGBRow = I422ToARGBRow_SSSE3;
     }
   }
 #endif
@@ -551,10 +543,7 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToBGRARow = I422ToBGRARow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToBGRARow = I422ToBGRARow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_bgra, 16) && IS_ALIGNED(dst_stride_bgra, 16)) {
-        I422ToBGRARow = I422ToBGRARow_SSSE3;
-      }
+      I422ToBGRARow = I422ToBGRARow_SSSE3;
     }
   }
 #elif defined(HAS_I422TOBGRAROW_NEON)
@@ -613,10 +602,7 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToABGRRow = I422ToABGRRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToABGRRow = I422ToABGRRow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_abgr, 16) && IS_ALIGNED(dst_stride_abgr, 16)) {
-        I422ToABGRRow = I422ToABGRRow_SSSE3;
-      }
+      I422ToABGRRow = I422ToABGRRow_SSSE3;
     }
   }
 #elif defined(HAS_I422TOABGRROW_NEON)
@@ -667,10 +653,7 @@ int I420ToRGBA(const uint8* src_y, int src_stride_y,
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToRGBARow = I422ToRGBARow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToRGBARow = I422ToRGBARow_Unaligned_SSSE3;
-      if (IS_ALIGNED(dst_rgba, 16) && IS_ALIGNED(dst_stride_rgba, 16)) {
-        I422ToRGBARow = I422ToRGBARow_SSSE3;
-      }
+      I422ToRGBARow = I422ToRGBARow_SSSE3;
     }
   }
 #elif defined(HAS_I422TORGBAROW_NEON)

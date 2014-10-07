@@ -2137,19 +2137,6 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
   free_aligned_buffer_64(row_y);
 }
 
-void YUY2ToARGBRow_Unaligned_SSSE3(const uint8* src_yuy2,
-                                   uint8* dst_argb,
-                                   int width) {
-  // Allocate a rows of yuv.
-  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-  uint8* row_u = row_y + ((width + 63) & ~63);
-  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
-  YUY2ToUV422Row_Unaligned_SSE2(src_yuy2, row_u, row_v, width);
-  YUY2ToYRow_Unaligned_SSE2(src_yuy2, row_y, width);
-  I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
-  free_aligned_buffer_64(row_y);
-}
-
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          uint8* dst_argb,
                          int width) {
@@ -2160,19 +2147,6 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
   UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, width);
   UYVYToYRow_SSE2(src_uyvy, row_y, width);
   I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, width);
-  free_aligned_buffer_64(row_y);
-}
-
-void UYVYToARGBRow_Unaligned_SSSE3(const uint8* src_uyvy,
-                                   uint8* dst_argb,
-                                   int width) {
-  // Allocate a rows of yuv.
-  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-  uint8* row_u = row_y + ((width + 63) & ~63);
-  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
-  UYVYToUV422Row_Unaligned_SSE2(src_uyvy, row_u, row_v, width);
-  UYVYToYRow_Unaligned_SSE2(src_uyvy, row_y, width);
-  I422ToARGBRow_Unaligned_SSSE3(row_y, row_u, row_v, dst_argb, width);
   free_aligned_buffer_64(row_y);
 }
 
