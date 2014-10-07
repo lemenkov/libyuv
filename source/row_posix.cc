@@ -743,43 +743,6 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 #endif
   );
 }
-
-void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
-  asm volatile (
-    "movdqa    %4,%%xmm5                       \n"
-    "movdqa    %3,%%xmm4                       \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
-    "pmaddubsw %%xmm4,%%xmm0                   \n"
-    "pmaddubsw %%xmm4,%%xmm1                   \n"
-    "pmaddubsw %%xmm4,%%xmm2                   \n"
-    "pmaddubsw %%xmm4,%%xmm3                   \n"
-    "lea       " MEMLEA(0x40,0) ",%0           \n"
-    "phaddw    %%xmm1,%%xmm0                   \n"
-    "phaddw    %%xmm3,%%xmm2                   \n"
-    "psrlw     $0x7,%%xmm0                     \n"
-    "psrlw     $0x7,%%xmm2                     \n"
-    "packuswb  %%xmm2,%%xmm0                   \n"
-    "paddb     %%xmm5,%%xmm0                   \n"
-    "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_y),     // %1
-    "+r"(pix)        // %2
-  : "m"(kARGBToY),   // %3
-    "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
-  );
-}
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 #ifdef HAS_ARGBTOYJROW_SSSE3
@@ -964,71 +927,6 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                           int width) {
-  asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kARGBToU),  // %0
-    "m"(kARGBToV),  // %1
-    "m"(kAddUV128)  // %2
-  );
-  asm volatile (
-    "sub       %1,%2                           \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    "pmaddubsw %%xmm4,%%xmm0                   \n"
-    "pmaddubsw %%xmm4,%%xmm1                   \n"
-    "pmaddubsw %%xmm4,%%xmm2                   \n"
-    "pmaddubsw %%xmm4,%%xmm6                   \n"
-    "phaddw    %%xmm1,%%xmm0                   \n"
-    "phaddw    %%xmm6,%%xmm2                   \n"
-    "psraw     $0x8,%%xmm0                     \n"
-    "psraw     $0x8,%%xmm2                     \n"
-    "packsswb  %%xmm2,%%xmm0                   \n"
-    "paddb     %%xmm5,%%xmm0                   \n"
-    "sub       $0x10,%3                        \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    "pmaddubsw %%xmm3,%%xmm0                   \n"
-    "pmaddubsw %%xmm3,%%xmm1                   \n"
-    "pmaddubsw %%xmm3,%%xmm2                   \n"
-    "pmaddubsw %%xmm3,%%xmm6                   \n"
-    "phaddw    %%xmm1,%%xmm0                   \n"
-    "phaddw    %%xmm6,%%xmm2                   \n"
-    "psraw     $0x8,%%xmm0                     \n"
-    "psraw     $0x8,%%xmm2                     \n"
-    "packsswb  %%xmm2,%%xmm0                   \n"
-    "paddb     %%xmm5,%%xmm0                   \n"
-    "lea       " MEMLEA(0x40,0) ",%0           \n"
-    BUNDLEALIGN
-    MEMOPMEM(movdqu,xmm0,0x00,1,2,1)           //  movdqu  %%xmm0,(%1,%2,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),        // %0
-    "+r"(dst_u),           // %1
-    "+r"(dst_v),           // %2
-    "+rm"(width)           // %3
-  :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6"
-#endif
-  );
-}
-
-void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u,
-                                    uint8* dst_v, int width) {
   asm volatile (
     "movdqa    %0,%%xmm4                       \n"
     "movdqa    %1,%%xmm3                       \n"
@@ -1285,43 +1183,6 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   : "m"(kABGRToY),   // %3
-    "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
-  );
-}
-
-void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int pix) {
-  asm volatile (
-    "movdqa    %4,%%xmm5                       \n"
-    "movdqa    %3,%%xmm4                       \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
-    "pmaddubsw %%xmm4,%%xmm0                   \n"
-    "pmaddubsw %%xmm4,%%xmm1                   \n"
-    "pmaddubsw %%xmm4,%%xmm2                   \n"
-    "pmaddubsw %%xmm4,%%xmm3                   \n"
-    "lea       " MEMLEA(0x40,0) ",%0           \n"
-    "phaddw    %%xmm1,%%xmm0                   \n"
-    "phaddw    %%xmm3,%%xmm2                   \n"
-    "psrlw     $0x7,%%xmm0                     \n"
-    "psrlw     $0x7,%%xmm2                     \n"
-    "packuswb  %%xmm2,%%xmm0                   \n"
-    "paddb     %%xmm5,%%xmm0                   \n"
-    "sub       $0x10,%2                        \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "jg        1b                              \n"
-  : "+r"(src_rgba),  // %0
-    "+r"(dst_y),     // %1
-    "+r"(pix)        // %2
-  : "m"(kRGBAToY),   // %3
     "m"(kAddY16)     // %4
   : "memory", "cc"
 #if defined(__SSE2__)

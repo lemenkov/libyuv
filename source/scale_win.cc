@@ -589,8 +589,9 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     align      4
   xloop:
     movdqu     xmm0, [eax]           // average 2 rows into xmm0
-    pavgb      xmm0, [eax + esi]
+    movdqu     xmm1, [eax + esi]
     lea        eax, [eax + 16]
+    pavgb      xmm0, xmm1
 
     movdqa     xmm1, xmm0            // 16 pixels -> 0,1,2,3,4,5 of xmm1
     pshufb     xmm1, xmm2

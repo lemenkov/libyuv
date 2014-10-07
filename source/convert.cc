@@ -735,7 +735,7 @@ int BGRAToI420(const uint8* src_bgra, int src_stride_bgra,
     src_bgra = src_bgra + (height - 1) * src_stride_bgra;
     src_stride_bgra = -src_stride_bgra;
   }
-#if defined(HAS_BGRATOYROW_SSSE3)
+#if defined(HAS_BGRATOYROW_SSSE3) && defined(HAS_BGRATOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     BGRAToUVRow = BGRAToUVRow_Any_SSSE3;
     BGRAToYRow = BGRAToYRow_Any_SSSE3;
@@ -800,7 +800,7 @@ int ABGRToI420(const uint8* src_abgr, int src_stride_abgr,
     src_abgr = src_abgr + (height - 1) * src_stride_abgr;
     src_stride_abgr = -src_stride_abgr;
   }
-#if defined(HAS_ABGRTOYROW_SSSE3)
+#if defined(HAS_ABGRTOYROW_SSSE3) && defined(HAS_ABGRTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     ABGRToUVRow = ABGRToUVRow_Any_SSSE3;
     ABGRToYRow = ABGRToYRow_Any_SSSE3;
@@ -865,7 +865,7 @@ int RGBAToI420(const uint8* src_rgba, int src_stride_rgba,
     src_rgba = src_rgba + (height - 1) * src_stride_rgba;
     src_stride_rgba = -src_stride_rgba;
   }
-#if defined(HAS_RGBATOYROW_SSSE3)
+#if defined(HAS_RGBATOYROW_SSSE3) && defined(HAS_RGBATOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
     RGBAToUVRow = RGBAToUVRow_Any_SSSE3;
     RGBAToYRow = RGBAToYRow_Any_SSSE3;

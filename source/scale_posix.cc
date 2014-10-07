@@ -526,8 +526,9 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    MEMOPREG(pavgb,0x00,0,3,1,xmm0)            //  pavgb   (%0,%3,1),%%xmm0
+    MEMOPREG(movdqu,0x00,0,3,1,xmm1)           //  movdqu  (%0,%3,1),%%xmm1
     "lea       " MEMLEA(0x10,0) ",%0           \n"
+    "pavgb     %%xmm1,%%xmm0                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "pshufb    %%xmm2,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm6                   \n"
