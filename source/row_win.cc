@@ -977,13 +977,18 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
+    movdqu     xmm4, [eax + esi]      
+    pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
+    movdqu     xmm4, [eax + esi + 16] 
+    pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
+    movdqu     xmm4, [eax + esi + 32] 
+    pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    pavgb      xmm0, [eax + esi]
-    pavgb      xmm1, [eax + esi + 16]
-    pavgb      xmm2, [eax + esi + 32]
-    pavgb      xmm3, [eax + esi + 48]
+    movdqu     xmm4, [eax + esi + 48] 
+    pavgb      xmm3, xmm4
+
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -1043,13 +1048,18 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
+    movdqu     xmm4, [eax + esi]      
+    pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
+    movdqu     xmm4, [eax + esi + 16] 
+    pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
+    movdqu     xmm4, [eax + esi + 32] 
+    pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    pavgb      xmm0, [eax + esi]
-    pavgb      xmm1, [eax + esi + 16]
-    pavgb      xmm2, [eax + esi + 32]
-    pavgb      xmm3, [eax + esi + 48]
+    movdqu     xmm4, [eax + esi + 48] 
+    pavgb      xmm3, xmm4
+
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -1294,13 +1304,18 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
+    movdqu     xmm4, [eax + esi]      
+    pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
+    movdqu     xmm4, [eax + esi + 16] 
+    pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
+    movdqu     xmm4, [eax + esi + 32] 
+    pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    pavgb      xmm0, [eax + esi]
-    pavgb      xmm1, [eax + esi + 16]
-    pavgb      xmm2, [eax + esi + 32]
-    pavgb      xmm3, [eax + esi + 48]
+    movdqu     xmm4, [eax + esi + 48] 
+    pavgb      xmm3, xmm4
+
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -1360,13 +1375,18 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
+    movdqu     xmm4, [eax + esi]      
+    pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
+    movdqu     xmm4, [eax + esi + 16] 
+    pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
+    movdqu     xmm4, [eax + esi + 32] 
+    pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    pavgb      xmm0, [eax + esi]
-    pavgb      xmm1, [eax + esi + 16]
-    pavgb      xmm2, [eax + esi + 32]
-    pavgb      xmm3, [eax + esi + 48]
+    movdqu     xmm4, [eax + esi + 48] 
+    pavgb      xmm3, xmm4
+
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88
@@ -1426,13 +1446,18 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
+    movdqu     xmm4, [eax + esi]      
+    pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
+    movdqu     xmm4, [eax + esi + 16] 
+    pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
+    movdqu     xmm4, [eax + esi + 32] 
+    pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    pavgb      xmm0, [eax + esi]
-    pavgb      xmm1, [eax + esi + 16]
-    pavgb      xmm2, [eax + esi + 32]
-    pavgb      xmm3, [eax + esi + 48]
+    movdqu     xmm4, [eax + esi + 48] 
+    pavgb      xmm3, xmm4
+
     lea        eax,  [eax + 64]
     movdqa     xmm4, xmm0
     shufps     xmm0, xmm1, 0x88

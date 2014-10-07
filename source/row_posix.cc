@@ -807,14 +807,18 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm0                   \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm1                   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm2                   \n"
     "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    BUNDLEALIGN
-    MEMOPREG(pavgb,0x00,0,4,1,xmm0)            //  pavgb   (%0,%4,1),%%xmm0
-    MEMOPREG(pavgb,0x10,0,4,1,xmm1)            //  pavgb   0x10(%0,%4,1),%%xmm1
-    MEMOPREG(pavgb,0x20,0,4,1,xmm2)            //  pavgb   0x20(%0,%4,1),%%xmm2
-    MEMOPREG(pavgb,0x30,0,4,1,xmm6)            //  pavgb   0x30(%0,%4,1),%%xmm6
+    MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm6                   \n"
+
     "lea       " MEMLEA(0x40,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm7                   \n"
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
@@ -876,14 +880,18 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm0                   \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm1                   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm2                   \n"
     "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    BUNDLEALIGN
-    MEMOPREG(pavgb,0x00,0,4,1,xmm0)            //  pavgb   (%0,%4,1),%%xmm0
-    MEMOPREG(pavgb,0x10,0,4,1,xmm1)            //  pavgb   0x10(%0,%4,1),%%xmm1
-    MEMOPREG(pavgb,0x20,0,4,1,xmm2)            //  pavgb   0x20(%0,%4,1),%%xmm2
-    MEMOPREG(pavgb,0x30,0,4,1,xmm6)            //  pavgb   0x30(%0,%4,1),%%xmm6
+    MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm6                   \n"
+
     "lea       " MEMLEA(0x40,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm7                   \n"
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
@@ -1111,14 +1119,18 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm0                   \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm1                   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm2                   \n"
     "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    BUNDLEALIGN
-    MEMOPREG(pavgb,0x00,0,4,1,xmm0)            //  pavgb   (%0,%4,1),%%xmm0
-    MEMOPREG(pavgb,0x10,0,4,1,xmm1)            //  pavgb   0x10(%0,%4,1),%%xmm1
-    MEMOPREG(pavgb,0x20,0,4,1,xmm2)            //  pavgb   0x20(%0,%4,1),%%xmm2
-    MEMOPREG(pavgb,0x30,0,4,1,xmm6)            //  pavgb   0x30(%0,%4,1),%%xmm6
+    MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm6                   \n"
+
     "lea       " MEMLEA(0x40,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm7                   \n"
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
@@ -1251,14 +1263,18 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm0                   \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm1                   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm2                   \n"
     "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    BUNDLEALIGN
-    MEMOPREG(pavgb,0x00,0,4,1,xmm0)            //  pavgb   (%0,%4,1),%%xmm0
-    MEMOPREG(pavgb,0x10,0,4,1,xmm1)            //  pavgb   0x10(%0,%4,1),%%xmm1
-    MEMOPREG(pavgb,0x20,0,4,1,xmm2)            //  pavgb   0x20(%0,%4,1),%%xmm2
-    MEMOPREG(pavgb,0x30,0,4,1,xmm6)            //  pavgb   0x30(%0,%4,1),%%xmm6
+    MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm6                   \n"
+
     "lea       " MEMLEA(0x40,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm7                   \n"
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
@@ -1317,14 +1333,18 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm0                   \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm1                   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm2                   \n"
     "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    BUNDLEALIGN
-    MEMOPREG(pavgb,0x00,0,4,1,xmm0)            //  pavgb   (%0,%4,1),%%xmm0
-    MEMOPREG(pavgb,0x10,0,4,1,xmm1)            //  pavgb   0x10(%0,%4,1),%%xmm1
-    MEMOPREG(pavgb,0x20,0,4,1,xmm2)            //  pavgb   0x20(%0,%4,1),%%xmm2
-    MEMOPREG(pavgb,0x30,0,4,1,xmm6)            //  pavgb   0x30(%0,%4,1),%%xmm6
+    MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
+    "pavgb     %%xmm7,%%xmm6                   \n"
+
     "lea       " MEMLEA(0x40,0) ",%0           \n"
     "movdqa    %%xmm0,%%xmm7                   \n"
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
