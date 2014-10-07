@@ -856,7 +856,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif
   );
 }
+#endif  // HAS_ARGBTOUVROW_SSSE3
 
+#ifdef HAS_ARGBTOUVJROW_SSSE3
 // TODO(fbarchard): Share code with ARGBToUVRow_SSSE3.
 void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                         uint8* dst_u, uint8* dst_v, int width) {
@@ -924,7 +926,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif
   );
 }
+#endif  // HAS_ARGBTOUVJROW_SSSE3
 
+#ifdef HAS_ARGBTOUV444ROW_SSSE3
 void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                           int width) {
   asm volatile (
@@ -989,7 +993,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 #endif
   );
 }
+#endif  // HAS_ARGBTOUV444ROW_SSSE3
 
+#ifdef HAS_ARGBTOUV422ROW_SSSE3
 void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
@@ -1050,6 +1056,7 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
 #endif
   );
 }
+#endif  // HAS_ARGBTOUV422ROW_SSSE3
 
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
   asm volatile (
@@ -1359,7 +1366,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #endif
   );
 }
-#endif  // HAS_ARGBTOUVROW_SSSE3
 
 #ifdef HAS_I422TOARGBROW_SSSE3
 #define UB 127 /* min(63,(int8)(2.018 * 64)) */
