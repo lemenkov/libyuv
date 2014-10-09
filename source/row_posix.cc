@@ -2242,7 +2242,7 @@ void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
   :
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "ymm0", "ymm1"
+    , "xmm0", "xmm1"
 #endif
   );
 }
