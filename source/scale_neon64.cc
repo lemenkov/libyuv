@@ -20,7 +20,6 @@ extern "C" {
 // This module is for GCC Neon armv8 64 bit.
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
-#ifdef HAS_SCALEROWDOWN2_NEON
 // Read 32x1 throw away even pixels, and write 16x1.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
@@ -40,9 +39,7 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   : "v0", "v1"              // Clobber List
   );
 }
-#endif //HAS_SCALEROWDOWN2_NEON
 
-#ifdef HAS_SCALEROWDOWN2_NEON
 // Read 32x2 average down and write 16x1.
 void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
@@ -72,9 +69,7 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   : "v0", "v1", "v2", "v3"     // Clobber List
   );
 }
-#endif //HAS_SCALEROWDOWN2_NEON
 
-#ifdef HAS_SCALEROWDOWN4_NEON
 void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
@@ -92,9 +87,7 @@ void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN4_NEON
 
-#ifdef HAS_SCALEROWDOWN4_NEON
 void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   const uint8* src_ptr1 = src_ptr + src_stride;
@@ -130,9 +123,7 @@ asm volatile (
   : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN4_NEON
 
-#ifdef HAS_SCALEROWDOWN34_NEON
 // Down scale from 4 to 3 pixels. Use the neon multilane read/write
 // to load up the every 4th pixel into a 4 different registers.
 // Point samples 32 pixels to 24 pixels.
@@ -155,9 +146,7 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
   : "v0", "v1", "v2", "v3", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN34_NEON
 
-#ifdef HAS_SCALEROWDOWN34_NEON
 void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
@@ -217,9 +206,7 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
     "v20", "memory", "cc"
   );
 }
-#endif //ScaleRowDown34_0_Box_NEON
 
-#ifdef HAS_SCALEROWDOWN34_NEON
 void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width) {
@@ -262,9 +249,7 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
   : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN34_NEON
 
-#ifdef HAS_SCALEROWDOWN38_NEON
 static uvec8 kShuf38 =
   { 0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0 };
 static uvec8 kShuf38_2 =
@@ -301,9 +286,6 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
   );
 }
 
-#endif //HAS_SCALEROWDOWN38_NEON
-
-#ifdef HAS_SCALEROWDOWN38_NEON
 // 32x3 -> 12x1
 void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
                                       ptrdiff_t src_stride,
@@ -432,9 +414,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     "v30", "v31", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN38_NEON
 
-#ifdef HAS_SCALEROWDOWN38_NEON
 // 32x2 -> 12x1
 void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
@@ -456,7 +436,7 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     MEMACCESS(0)
     "ld4       {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32                \n"
     MEMACCESS(3)
-    "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32                \n"
+    "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%2], #32                \n"
     "subs      %3, %3, #12                             \n"
 
     // Shuffle the input data around to get align the data
@@ -541,7 +521,6 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     "v18", "v19", "v30", "v31", "memory", "cc"
   );
 }
-#endif //HAS_SCALEROWDOWN38_NEON
 
 // 16x2 -> 16x1
 void ScaleFilterRows_NEON(uint8* dst_ptr,
@@ -643,7 +622,6 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
   );
 }
 
-#ifdef HAS_SCALEARGBROWDOWN2_NEON
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst, int dst_width) {
   asm volatile (
@@ -666,9 +644,7 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   : "memory", "cc", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
-#endif //HAS_SCALEARGBROWDOWN2_NEON
 
-#ifdef HAS_SCALEARGBROWDOWN2_NEON
 void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
   asm volatile (
@@ -703,9 +679,7 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   : "memory", "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19"
   );
 }
-#endif //HAS_SCALEARGBROWDOWN2_NEON
 
-#ifdef HAS_SCALEARGBROWDOWNEVEN_NEON
 // Reads 4 pixels at a time.
 // Alignment requirement: src_argb 4 byte aligned.
 void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
@@ -731,9 +705,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
   : "memory", "cc", "v0"
   );
 }
-#endif //HAS_SCALEARGBROWDOWNEVEN_NEON
 
-#ifdef HAS_SCALEARGBROWDOWNEVEN_NEON
 // Reads 4 pixels at a time.
 // Alignment requirement: src_argb 4 byte aligned.
 // TODO, might be worth another optimization pass in future.
@@ -786,7 +758,6 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16"
   );
 }
-#endif  // HAS_SCALEARGBROWDOWNEVEN_NEON
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

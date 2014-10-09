@@ -130,16 +130,6 @@
             'LIBYUV_DISABLE_X86',
           ],
         }],
-        ['OS == "android" and target_arch == "arm64"', {
-          'ldflags': [
-            '-Wl,--dynamic-linker,/system/bin/linker64',
-          ],
-        }],
-        ['OS == "android" and target_arch != "arm64"', {
-          'ldflags': [
-            '-Wl,--dynamic-linker,/system/bin/linker',
-          ],
-        }],
       ], #conditions
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.
@@ -159,6 +149,18 @@
           'include',
           '.',
         ],
+        'conditions': [
+          ['OS == "android" and target_arch == "arm64"', {
+            'ldflags': [
+              '-Wl,--dynamic-linker,/system/bin/linker64',
+            ],
+          }],
+          ['OS == "android" and target_arch != "arm64"', {
+            'ldflags': [
+              '-Wl,--dynamic-linker,/system/bin/linker',
+            ],
+          }],
+        ], #conditions
       },
       'sources': [
         '<@(libyuv_sources)',

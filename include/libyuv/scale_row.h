@@ -44,21 +44,13 @@ extern "C" {
 
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
-    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_SCALEROWDOWN2_NEON
 #define HAS_SCALEROWDOWN4_NEON
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 #define HAS_SCALEARGBROWDOWN2_NEON
-#elif !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
-    (defined(__aarch64__) || defined(LIBYUV_NEON))
-#define HAS_SCALEROWDOWN2_NEON
-#define HAS_SCALEROWDOWN4_NEON
-#define HAS_SCALEROWDOWN34_NEON
-#define HAS_SCALEROWDOWN38_NEON
-#define HAS_SCALEARGBROWDOWN2_NEON
-#define HAS_SCALEARGBROWDOWNEVEN_NEON
 #endif
 
 // The following are available on Mips platforms:
