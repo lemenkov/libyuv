@@ -27,6 +27,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride,
                        int width) {
   const uint8* src_temp = NULL;
+  int64 width64 = (int64) width;  // Work around clang 3.4 warning.
   asm volatile (
     // loops are on blocks of 8. loop will stop when
     // counter gets to or below 0. starting the counter
@@ -237,10 +238,10 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
     : "+r"(src_temp),                             // %0
       "+r"(src),                                  // %1
       "+r"(dst),                                  // %2
-      "+r"(width)                                 // %3
+      "+r"(width64)                               // %3
     : "r"(&kVTbl4x4Transpose),                    // %4
-      "r"((ptrdiff_t)src_stride),                 // %5
-      "r"((ptrdiff_t)dst_stride)                  // %6
+      "r"(static_cast<ptrdiff_t>(src_stride)),    // %5
+      "r"(static_cast<ptrdiff_t>(dst_stride))     // %6
     : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16",
       "v17", "v18", "v19", "v20", "v21", "v22", "v23"
   );
@@ -255,6 +256,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
                          uint8* dst_b, int dst_stride_b,
                          int width) {
   const uint8* src_temp = NULL;
+  int64 width64 = (int64) width;  // Work around clang 3.4 warning.
   asm volatile (
     // loops are on blocks of 8. loop will stop when
     // counter gets to or below 0. starting the counter
@@ -522,7 +524,7 @@ void TransposeUVWx8_NEON(const uint8* src, int src_stride,
       "+r"(src),                                  // %1
       "+r"(dst_a),                                // %2
       "+r"(dst_b),                                // %3
-      "+r"(width)                                 // %4
+      "+r"(width64)                               // %4
     : "r"(static_cast<ptrdiff_t>(src_stride)),    // %5
       "r"(static_cast<ptrdiff_t>(dst_stride_a)),  // %6
       "r"(static_cast<ptrdiff_t>(dst_stride_b)),  // %7
