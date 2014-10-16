@@ -89,8 +89,8 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));
     xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
     xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);
-    xmm1 = _mm_load_si128(&xmm0);
-    xmm2 = _mm_load_si128(&xmm0);
+    xmm1 = _mm_loadu_si128(&xmm0);
+    xmm2 = _mm_loadu_si128(&xmm0);
     xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)kUVToB);
     xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)kUVToG);
     xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)kUVToR);
@@ -112,12 +112,12 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm2 = _mm_packus_epi16(xmm2, xmm2);
     xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
     xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);
-    xmm1 = _mm_load_si128(&xmm0);
+    xmm1 = _mm_loadu_si128(&xmm0);
     xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);
     xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);
 
-    _mm_store_si128((__m128i *)dst_argb, xmm0);
-    _mm_store_si128((__m128i *)(dst_argb + 16), xmm1);
+    _mm_storeu_si128((__m128i *)dst_argb, xmm0);
+    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);
 
     y_buf += 8;
     u_buf += 4;
