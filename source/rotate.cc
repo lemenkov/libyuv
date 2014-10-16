@@ -28,8 +28,7 @@ extern "C" {
     ".private_extern _" #name "                \n"                             \
     ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
-#endif
-#if defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
+#elif defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
     ".align 4,0x90                             \n"                             \
