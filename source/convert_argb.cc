@@ -85,7 +85,8 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
       I444ToARGBRow = I444ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_I444TOARGBROW_NEON)
+#endif
+#if defined(HAS_I444TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I444ToARGBRow = I444ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -221,7 +222,8 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
       I411ToARGBRow = I411ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_I411TOARGBROW_NEON)
+#endif
+#if defined(HAS_I411TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I411ToARGBRow = I411ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -273,7 +275,8 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
       YToARGBRow = YToARGBRow_SSE2;
     }
   }
-#elif defined(HAS_YTOARGBROW_NEON)
+#endif
+#if defined(HAS_YTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     YToARGBRow = YToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -322,7 +325,8 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
       I400ToARGBRow = I400ToARGBRow_SSE2;
     }
   }
-#elif defined(HAS_I400TOARGBROW_NEON)
+#endif
+#if defined(HAS_I400TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I400ToARGBRow = I400ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -440,7 +444,8 @@ int RGB24ToARGB(const uint8* src_rgb24, int src_stride_rgb24,
       RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_RGB24TOARGBROW_NEON)
+#endif
+#if defined(HAS_RGB24TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     RGB24ToARGBRow = RGB24ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -489,7 +494,8 @@ int RAWToARGB(const uint8* src_raw, int src_stride_raw,
       RAWToARGBRow = RAWToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_RAWTOARGBROW_NEON)
+#endif
+#if defined(HAS_RAWTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     RAWToARGBRow = RAWToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -538,7 +544,8 @@ int RGB565ToARGB(const uint8* src_rgb565, int src_stride_rgb565,
       RGB565ToARGBRow = RGB565ToARGBRow_SSE2;
     }
   }
-#elif defined(HAS_RGB565TOARGBROW_NEON)
+#endif
+#if defined(HAS_RGB565TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     RGB565ToARGBRow = RGB565ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -587,7 +594,8 @@ int ARGB1555ToARGB(const uint8* src_argb1555, int src_stride_argb1555,
       ARGB1555ToARGBRow = ARGB1555ToARGBRow_SSE2;
     }
   }
-#elif defined(HAS_ARGB1555TOARGBROW_NEON)
+#endif
+#if defined(HAS_ARGB1555TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -636,7 +644,8 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
       ARGB4444ToARGBRow = ARGB4444ToARGBRow_SSE2;
     }
   }
-#elif defined(HAS_ARGB4444TOARGBROW_NEON)
+#endif
+#if defined(HAS_ARGB4444TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -681,7 +690,8 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
       NV12ToARGBRow = NV12ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_NV12TOARGBROW_NEON)
+#endif
+#if defined(HAS_NV12TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -777,7 +787,8 @@ int M420ToARGB(const uint8* src_m420, int src_stride_m420,
       NV12ToARGBRow = NV12ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_NV12TOARGBROW_NEON)
+#endif
+#if defined(HAS_NV12TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -832,7 +843,8 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
       YUY2ToARGBRow = YUY2ToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_YUY2TOARGBROW_NEON)
+#endif
+#if defined(HAS_YUY2TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     YUY2ToARGBRow = YUY2ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -881,7 +893,8 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
       UYVYToARGBRow = UYVYToARGBRow_SSSE3;
     }
   }
-#elif defined(HAS_UYVYTOARGBROW_NEON)
+#endif
+#if defined(HAS_UYVYTOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     UYVYToARGBRow = UYVYToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {

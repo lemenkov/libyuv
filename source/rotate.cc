@@ -28,7 +28,8 @@ extern "C" {
     ".private_extern _" #name "                \n"                             \
     ".align 4,0x90                             \n"                             \
 "_" #name ":                                   \n"
-#elif defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
+#endif
+#if defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
 #define DECLARE_FUNCTION(name)                                                 \
     ".text                                     \n"                             \
     ".align 4,0x90                             \n"                             \
@@ -292,7 +293,8 @@ static void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     ret
   }
 }
-#elif !defined(LIBYUV_DISABLE_X86) && \
+#endif
+#if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__i386__) || (defined(__x86_64__) && !defined(__native_client__)))
 #define HAS_TRANSPOSE_WX8_SSSE3
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
@@ -510,7 +512,8 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "ret                                       \n"
 #endif
 );
-#elif !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
+#endif
+#if !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
     defined(__x86_64__)
 // 64 bit version has enough registers to do 16x8 to 8x16 at a time.
 #define HAS_TRANSPOSE_WX8_FAST_SSSE3
@@ -1004,11 +1007,13 @@ void TransposeUV(const uint8* src, int src_stride,
   if (TestCpuFlag(kCpuHasNEON)) {
     TransposeUVWx8 = TransposeUVWx8_NEON;
   }
-#elif defined(HAS_TRANSPOSE_UVWX8_SSE2)
+#endif
+#if defined(HAS_TRANSPOSE_UVWX8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
     TransposeUVWx8 = TransposeUVWx8_SSE2;
   }
-#elif defined(HAS_TRANSPOSE_UVWx8_MIPS_DSPR2)
+#endif
+#if defined(HAS_TRANSPOSE_UVWx8_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
     TransposeUVWx8 = TransposeUVWx8_MIPS_DSPR2;
@@ -1076,11 +1081,13 @@ void RotateUV180(const uint8* src, int src_stride,
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     MirrorRowUV = MirrorUVRow_NEON;
   }
-#elif defined(HAS_MIRRORROW_UV_SSSE3)
+#endif
+#if defined(HAS_MIRRORROW_UV_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
     MirrorRowUV = MirrorUVRow_SSSE3;
   }
-#elif defined(HAS_MIRRORUVROW_MIPS_DSPR2)
+#endif
+#if defined(HAS_MIRRORUVROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
     MirrorRowUV = MirrorUVRow_MIPS_DSPR2;

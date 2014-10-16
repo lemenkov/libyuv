@@ -800,14 +800,16 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
       I422ToBGRARow = I422ToBGRARow_NEON;
     }
   }
-#elif defined(HAS_I422TOBGRAROW_SSSE3)
+#endif
+#if defined(HAS_I422TOBGRAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToBGRARow = I422ToBGRARow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       I422ToBGRARow = I422ToBGRARow_SSSE3;
     }
   }
-#elif defined(HAS_I422TOBGRAROW_MIPS_DSPR2)
+#endif
+#if defined(HAS_I422TOBGRAROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
@@ -867,7 +869,8 @@ int I422ToABGR(const uint8* src_y, int src_stride_y,
       I422ToABGRRow = I422ToABGRRow_NEON;
     }
   }
-#elif defined(HAS_I422TOABGRROW_SSSE3)
+#endif
+#if defined(HAS_I422TOABGRROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToABGRRow = I422ToABGRRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
@@ -926,7 +929,8 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
       I422ToRGBARow = I422ToRGBARow_NEON;
     }
   }
-#elif defined(HAS_I422TORGBAROW_SSSE3)
+#endif
+#if defined(HAS_I422TORGBAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToRGBARow = I422ToRGBARow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
@@ -973,7 +977,8 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
       NV12ToRGB565Row = NV12ToRGB565Row_SSSE3;
     }
   }
-#elif defined(HAS_NV12TORGB565ROW_NEON)
+#endif
+#if defined(HAS_NV12TORGB565ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     NV12ToRGB565Row = NV12ToRGB565Row_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -1021,7 +1026,8 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
       NV21ToRGB565Row = NV21ToRGB565Row_SSSE3;
     }
   }
-#elif defined(HAS_NV21TORGB565ROW_NEON)
+#endif
+#if defined(HAS_NV21TORGB565ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     NV21ToRGB565Row = NV21ToRGB565Row_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -1286,7 +1292,8 @@ int ARGBGrayTo(const uint8* src_argb, int src_stride_argb,
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_SSSE3;
   }
-#elif defined(HAS_ARGBGRAYROW_NEON)
+#endif
+#if defined(HAS_ARGBGRAYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
@@ -1322,7 +1329,8 @@ int ARGBGray(uint8* dst_argb, int dst_stride_argb,
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_SSSE3;
   }
-#elif defined(HAS_ARGBGRAYROW_NEON)
+#endif
+#if defined(HAS_ARGBGRAYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
@@ -1354,7 +1362,8 @@ int ARGBSepia(uint8* dst_argb, int dst_stride_argb,
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     ARGBSepiaRow = ARGBSepiaRow_SSSE3;
   }
-#elif defined(HAS_ARGBSEPIAROW_NEON)
+#endif
+#if defined(HAS_ARGBSEPIAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBSepiaRow = ARGBSepiaRow_NEON;
   }
@@ -1395,7 +1404,8 @@ int ARGBColorMatrix(const uint8* src_argb, int src_stride_argb,
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     ARGBColorMatrixRow = ARGBColorMatrixRow_SSSE3;
   }
-#elif defined(HAS_ARGBCOLORMATRIXROW_NEON)
+#endif
+#if defined(HAS_ARGBCOLORMATRIXROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBColorMatrixRow = ARGBColorMatrixRow_NEON;
   }
@@ -1537,7 +1547,8 @@ int ARGBQuantize(uint8* dst_argb, int dst_stride_argb,
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4)) {
     ARGBQuantizeRow = ARGBQuantizeRow_SSE2;
   }
-#elif defined(HAS_ARGBQUANTIZEROW_NEON)
+#endif
+#if defined(HAS_ARGBQUANTIZEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBQuantizeRow = ARGBQuantizeRow_NEON;
   }
@@ -1711,7 +1722,8 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 4)) {
     ARGBShadeRow = ARGBShadeRow_SSE2;
   }
-#elif defined(HAS_ARGBSHADEROW_NEON)
+#endif
+#if defined(HAS_ARGBSHADEROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
     ARGBShadeRow = ARGBShadeRow_NEON;
   }

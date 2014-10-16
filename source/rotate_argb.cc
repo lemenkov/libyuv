@@ -53,7 +53,8 @@ static void ARGBTranspose(const uint8* src, int src_stride,
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(height, 4)) {  // Width of dest.
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_SSE2;
   }
-#elif defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
+#endif
+#if defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(height, 4)) {  // Width of dest.
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_NEON;
   }

@@ -83,7 +83,8 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
     }
   }
-#elif defined(HAS_ARGBTOBAYERROW_NEON)
+#endif
+#if defined(HAS_ARGBTOBAYERROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -322,7 +323,8 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
       ARGBToUVRow = ARGBToUVRow_SSSE3;
     }
   }
-#elif defined(HAS_ARGBTOYROW_NEON)
+#endif
+#if defined(HAS_ARGBTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
@@ -458,7 +460,8 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
     }
   }
-#elif defined(HAS_ARGBTOBAYERROW_NEON)
+#endif
+#if defined(HAS_ARGBTOBAYERROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {

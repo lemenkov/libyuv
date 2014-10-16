@@ -57,13 +57,15 @@ static void ScalePlaneDown2(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16)) {
     ScaleRowDown2 = filtering ? ScaleRowDown2Box_NEON : ScaleRowDown2_NEON;
   }
-#elif defined(HAS_SCALEROWDOWN2_SSE2)
+#endif
+#if defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
     ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSE2 :
         (filtering == kFilterLinear ? ScaleRowDown2Linear_SSE2 :
         ScaleRowDown2Box_SSE2);
   }
-#elif defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_ptr, 4) &&
       IS_ALIGNED(src_stride, 4) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
@@ -105,13 +107,15 @@ static void ScalePlaneDown2_16(int src_width, int src_height,
     ScaleRowDown2 = filtering ? ScaleRowDown2Box_16_NEON :
         ScaleRowDown2_16_NEON;
   }
-#elif defined(HAS_SCALEROWDOWN2_16_SSE2)
+#endif
+#if defined(HAS_SCALEROWDOWN2_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
     ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_16_SSE2 :
         (filtering == kFilterLinear ? ScaleRowDown2Linear_16_SSE2 :
         ScaleRowDown2Box_16_SSE2);
   }
-#elif defined(HAS_SCALEROWDOWN2_16_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN2_16_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_ptr, 4) &&
       IS_ALIGNED(src_stride, 4) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
@@ -153,11 +157,13 @@ static void ScalePlaneDown4(int src_width, int src_height,
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_NEON : ScaleRowDown4_NEON;
   }
-#elif defined(HAS_SCALEROWDOWN4_SSE2)
+#endif
+#if defined(HAS_SCALEROWDOWN4_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSE2 : ScaleRowDown4_SSE2;
   }
-#elif defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
@@ -195,12 +201,14 @@ static void ScalePlaneDown4_16(int src_width, int src_height,
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_16_NEON :
         ScaleRowDown4_16_NEON;
   }
-#elif defined(HAS_SCALEROWDOWN4_16_SSE2)
+#endif
+#if defined(HAS_SCALEROWDOWN4_16_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_16_SSE2 :
         ScaleRowDown4_16_SSE2;
   }
-#elif defined(HAS_SCALEROWDOWN4_16_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN4_16_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
@@ -424,7 +432,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
       ScaleRowDown38_2 = ScaleRowDown38_2_Box_NEON;
     }
   }
-#elif defined(HAS_SCALEROWDOWN38_SSSE3)
+#endif
+#if defined(HAS_SCALEROWDOWN38_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0)) {
     if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_SSSE3;
@@ -434,7 +443,8 @@ static void ScalePlaneDown38(int src_width, int src_height,
       ScaleRowDown38_2 = ScaleRowDown38_2_Box_SSSE3;
     }
   }
-#elif defined(HAS_SCALEROWDOWN38_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN38_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && (dst_width % 12 == 0) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
@@ -500,7 +510,8 @@ static void ScalePlaneDown38_16(int src_width, int src_height,
       ScaleRowDown38_2 = ScaleRowDown38_2_Box_16_NEON;
     }
   }
-#elif defined(HAS_SCALEROWDOWN38_16_SSSE3)
+#endif
+#if defined(HAS_SCALEROWDOWN38_16_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0)) {
     if (!filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_16_SSSE3;
@@ -510,7 +521,8 @@ static void ScalePlaneDown38_16(int src_width, int src_height,
       ScaleRowDown38_2 = ScaleRowDown38_2_Box_16_SSSE3;
     }
   }
-#elif defined(HAS_SCALEROWDOWN38_16_MIPS_DSPR2)
+#endif
+#if defined(HAS_SCALEROWDOWN38_16_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && (dst_width % 12 == 0) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
