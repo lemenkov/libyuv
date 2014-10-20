@@ -794,9 +794,9 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
     src_stride_y = src_stride_u = src_stride_v = dst_stride_bgra = 0;
   }
 #if defined(HAS_I422TOBGRAROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I422ToBGRARow = I422ToBGRARow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 8)) {
       I422ToBGRARow = I422ToBGRARow_NEON;
     }
   }
