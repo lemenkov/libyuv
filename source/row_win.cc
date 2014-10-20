@@ -1600,6 +1600,80 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
     ret
   }
 }
+
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 BGRA (64 bytes).
+// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
+__declspec(naked) __declspec(align(16))
+void I422ToBGRARow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+    vpxor      ymm4, ymm4, ymm4
+
+    align      4
+ convertloop:
+    vmovq      xmm0, qword ptr [esi]          //  U
+    vmovq      xmm1, qword ptr [esi + edi]    //  V
+    lea        esi,  [esi + 8]
+    vpunpcklbw ymm0, ymm0, ymm1               // UV
+    vpermq     ymm0, ymm0, 0xd8
+    vpunpcklwd ymm0, ymm0, ymm0              // UVUV
+    vpmaddubsw ymm2, ymm0, kUVToB_AVX        // scale B UV
+    vpmaddubsw ymm1, ymm0, kUVToG_AVX        // scale G UV
+    vpmaddubsw ymm0, ymm0, kUVToR_AVX        // scale R UV
+    vpsubw     ymm2, ymm2, kUVBiasB_AVX      // unbias back to signed
+    vpsubw     ymm1, ymm1, kUVBiasG_AVX
+    vpsubw     ymm0, ymm0, kUVBiasR_AVX
+
+    // Step 2: Find Y contribution to 16 R,G,B values
+    vmovdqu    xmm3, [eax]                  // NOLINT
+    lea        eax, [eax + 16]
+    vpermq     ymm3, ymm3, 0xd8
+    vpunpcklbw ymm3, ymm3, ymm4
+    vpsubsw    ymm3, ymm3, kYSub16_AVX
+    vpmullw    ymm3, ymm3, kYToRgb_AVX
+    vpaddsw    ymm2, ymm2, ymm3           // B += Y
+    vpaddsw    ymm1, ymm1, ymm3           // G += Y
+    vpaddsw    ymm0, ymm0, ymm3           // R += Y
+    vpsraw     ymm2, ymm2, 6
+    vpsraw     ymm1, ymm1, 6
+    vpsraw     ymm0, ymm0, 6
+// TODO(fbarchard): Switch register order to match SSSE3.
+    vpackuswb  ymm2, ymm2, ymm2           // B
+    vpackuswb  ymm1, ymm1, ymm1           // G
+    vpackuswb  ymm0, ymm0, ymm0           // R
+
+    // Step 3: Weave into BGRA
+    vpunpcklbw ymm1, ymm1, ymm2           // GB
+    vpermq     ymm1, ymm1, 0xd8
+    vpunpcklbw ymm0, ymm5, ymm0           // AR
+    vpermq     ymm0, ymm0, 0xd8
+    vpunpcklwd ymm2, ymm0, ymm1           // ARGB first 8 pixels
+    vpunpckhwd ymm0, ymm0, ymm1           // ARGB next 8 pixels
+    vmovdqu    [edx], ymm2
+    vmovdqu    [edx + 32], ymm0
+    lea        edx,  [edx + 64]
+    sub        ecx, 16
+    jg         convertloop
+    vzeroupper
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
 #endif  // HAS_I422TOARGBROW_AVX2
 
 #ifdef HAS_I422TOARGBROW_SSSE3

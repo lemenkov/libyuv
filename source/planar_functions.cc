@@ -793,19 +793,27 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
     height = 1;
     src_stride_y = src_stride_u = src_stride_v = dst_stride_bgra = 0;
   }
-#if defined(HAS_I422TOBGRAROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
-    I422ToBGRARow = I422ToBGRARow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      I422ToBGRARow = I422ToBGRARow_NEON;
-    }
-  }
-#endif
 #if defined(HAS_I422TOBGRAROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
     I422ToBGRARow = I422ToBGRARow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       I422ToBGRARow = I422ToBGRARow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I422TOBGRAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+    I422ToBGRARow = I422ToBGRARow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToBGRARow = I422ToBGRARow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOBGRAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+    I422ToBGRARow = I422ToBGRARow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToBGRARow = I422ToBGRARow_NEON;
     }
   }
 #endif
