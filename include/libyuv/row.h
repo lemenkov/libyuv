@@ -15,10 +15,6 @@
 
 #include "libyuv/basic_types.h"
 
-#if defined(__native_client__)
-#include "ppapi/c/pp_macros.h"  // For PPAPI_RELEASE
-#endif
-
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
@@ -51,20 +47,12 @@ extern "C" {
 #define LIBYUV_SSSE3_ONLY
 #endif
 
-// Enable for NaCL pepper 33 for bundle and AVX2 support.
-#if defined(__native_client__) && PPAPI_RELEASE >= 33
-#define NEW_BINUTILS
-#endif
-#if defined(__native_client__) && defined(__arm__) && PPAPI_RELEASE < 37
-#define LIBYUV_DISABLE_NEON
-#endif
 // clang >= 3.5.0 required for Arm64.
 #if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)
 #if (__clang_major__ < 3) || (__clang_major__ == 3 && (__clang_minor__ < 5))
 #define LIBYUV_DISABLE_NEON
 #endif  // clang >= 3.5
 #endif  // __clang__
-
 
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
@@ -497,24 +485,15 @@ typedef uint8 uvec8[16];
 #endif
 
 // NaCL macros for GCC x86 and x64.
-
-// TODO(nfullagar): When pepper_33 toolchain is distributed, default to
-// NEW_BINUTILS and remove all BUNDLEALIGN occurances.
 #if defined(__native_client__)
 #define LABELALIGN ".p2align 5\n"
 #else
 #define LABELALIGN ".p2align 2\n"
 #endif
 #if defined(__native_client__) && defined(__x86_64__)
-#if defined(NEW_BINUTILS)
 #define BUNDLELOCK ".bundle_lock\n"
 #define BUNDLEUNLOCK ".bundle_unlock\n"
 #define BUNDLEALIGN "\n"
-#else
-#define BUNDLELOCK "\n"
-#define BUNDLEUNLOCK "\n"
-#define BUNDLEALIGN ".p2align 5\n"
-#endif
 #define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
 #define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
 #define MEMLEA(offset, base) #offset "(%q" #base ")"

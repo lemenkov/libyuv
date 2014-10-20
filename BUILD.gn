@@ -84,7 +84,6 @@ source_set("libyuv") {
   }
 
   deps = [
-    "//ppapi:ppapi_macros",  # Allow include of pp_macros.h.
     "//third_party:jpeg",
   ]
 
