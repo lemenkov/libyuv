@@ -1935,6 +1935,208 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
+#if defined(HAS_I422TOBGRAROW_AVX2)
+struct {
+  lvec8 kUVToB_AVX;     // 0
+  lvec8 kUVToG_AVX;     // 32
+  lvec8 kUVToR_AVX;     // 64
+  lvec16 kUVBiasB_AVX;  // 96
+  lvec16 kUVBiasG_AVX;  // 128
+  lvec16 kUVBiasR_AVX;  // 160
+  lvec16 kYSub16_AVX;   // 192
+  lvec16 kYToRgb_AVX;   // 224
+} static SIMD_ALIGNED(kYuvConstants_AVX) = {
+  { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB,
+    UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
+    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR,
+    UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB,
+    BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG,
+    BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR,
+    BR, BR, BR, BR, BR, BR, BR, BR },
+  { 16, 16, 16, 16, 16, 16, 16, 16,
+    16, 16, 16, 16, 16, 16, 16, 16 },
+  { YG, YG, YG, YG, YG, YG, YG, YG,
+    YG, YG, YG, YG, YG, YG, YG, YG }
+};
+
+void I422ToBGRARow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_bgra,
+                        int width) {
+  // Note: vpermq shuffles quad words (64 bit). 0xd8 = 0%11 01 10 00 in binary.
+  // "vpermq 0xd8 ABCD dst" results in dst = ACBD. This is useful because
+  // vpunpck l/h works on the low/high quad words respectively.
+  asm volatile (
+    "sub       %[u_buf], %[v_buf]                      \n"
+    LABELALIGN
+    // Compute 32 BGRA pixels each iteration in the following loop.
+    "1:                                                 \n"
+    /*
+     * Prepare UV contribution to RGB.
+     */
+    "vmovdqu    " MEMACCESS([u_buf]) ",%%xmm0          \n"
+    // ymm0 = xxxxxxxxxxxxxxxxUUUUUUUUUUUUUUUU, uint8
+    BUNDLEALIGN
+    MEMOPREG(vmovdqu, 0x00, [u_buf], [v_buf], 1, xmm1)
+    // ymm1 = xxxxxxxxxxxxxxxxVVVVVVVVVVVVVVVV, uint8
+    "lea        " MEMLEA(0x10, [u_buf]) ", %[u_buf]    \n"  // u_buf += 16
+    "vpermq  $0xd8,  %%ymm0, %%ymm0                    \n"
+    // ymm0 = xxxxxxxxUUUUUUUUxxxxxxxxUUUUUUUU
+    "vpermq  $0xd8,  %%ymm1, %%ymm1                    \n"
+    // ymm1 = xxxxxxxxVVVVVVVVxxxxxxxxVVVVVVVV
+    "vpunpcklbw  %%ymm1, %%ymm0, %%ymm0                \n"
+    // ymm0 = UVUVUVUVUVUVUVUVUVUVUVUVUVUVUVUV
+
+    "vpmaddubsw " MEMACCESS([kYuvConstants])      ", %%ymm0, %%ymm2   \n"
+    // ymm2 (B) = int16(UB * U + VB * V), for each int16.
+    "vpmaddubsw " MEMACCESS2(32, [kYuvConstants]) ", %%ymm0, %%ymm1   \n"
+    // ymm1 (G) = int16(UG * U + VG * V), for each int16.
+    "vpmaddubsw " MEMACCESS2(64, [kYuvConstants]) ", %%ymm0, %%ymm0   \n"
+    // ymm0 (R) = int16(UR * U + VR * V), for each int16.
+
+    "vpsubw     " MEMACCESS2(96, [kYuvConstants])  ", %%ymm2, %%ymm2  \n"
+    // ymm2 -= BB, each int16
+    "vpsubw     " MEMACCESS2(128, [kYuvConstants]) ", %%ymm1, %%ymm1  \n"
+    // ymm1 -= BG, each int16
+    "vpsubw     " MEMACCESS2(160, [kYuvConstants]) ", %%ymm0, %%ymm0  \n"
+    // ymm0 -= BR, each int16
+
+    // Shuffle order so that we can upsample with vpunpck l/h wd later.
+    "vpermq  $0xd8, %%ymm0, %%ymm0                    \n"
+    "vpermq  $0xd8, %%ymm1, %%ymm1                    \n"
+    "vpermq  $0xd8, %%ymm2, %%ymm2                    \n"
+
+    /*
+     * Prepare Y contribution to RGB.
+     */
+    // Use ymm3 and ymm4 as temporary variables in this block.
+    "vmovdqu    " MEMACCESS([y_buf]) ", %%ymm3         \n"
+    // ymm3 = YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY
+    "lea        " MEMLEA(0x20, [y_buf]) ",%[y_buf]     \n"  // y_buf += 32
+    "vpermq  $0xd8,  %%ymm3, %%ymm3                    \n"
+    "vpxor      %%ymm4, %%ymm4, %%ymm4                 \n"  // ymm4 = 0x00...
+    "vpunpcklbw %%ymm4, %%ymm3, %%ymm6                 \n"
+    "vpunpckhbw %%ymm4, %%ymm3, %%ymm7                 \n"
+    // ymm6 = 0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y (int16), pixels 0-15.
+    // ymm7 = 0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y0Y (int16), pixels 16-31.
+
+    // Upsample UV_RGB pixels 16-31.
+    "vpunpckhwd %%ymm2, %%ymm2, %%ymm5                 \n"
+    "vpunpckhwd %%ymm1, %%ymm1, %%ymm4                 \n"
+    "vpunpckhwd %%ymm0, %%ymm0, %%ymm3                 \n"
+
+    // Upsample UV_RGB pixels 0-15.
+    "vpunpcklwd %%ymm2, %%ymm2, %%ymm2                 \n"
+    "vpunpcklwd %%ymm1, %%ymm1, %%ymm1                 \n"
+    "vpunpcklwd %%ymm0, %%ymm0, %%ymm0                 \n"
+
+    // ymm6/7 -= BY, for each int16.
+    "vpsubsw   " MEMACCESS2(192, [kYuvConstants]) ", %%ymm6, %%ymm6  \n"
+    "vpsubsw   " MEMACCESS2(192, [kYuvConstants]) ", %%ymm7, %%ymm7  \n"
+
+    // ymm6/7 *= YG, for each int16.
+    "vpmullw   " MEMACCESS2(224, [kYuvConstants]) ", %%ymm6, %%ymm6  \n"
+    "vpmullw   " MEMACCESS2(224, [kYuvConstants]) ", %%ymm7, %%ymm7  \n"
+
+    /*
+     * Pixels 0-15.
+     */
+    "vpaddsw  %%ymm2, %%ymm6, %%ymm2      \n"  // ymm2 (B) += ymm6 (each int16)
+    "vpaddsw  %%ymm1, %%ymm6, %%ymm1      \n"  // ymm1 (G)
+    "vpaddsw  %%ymm0, %%ymm6, %%ymm0      \n"  // ymm0 (R)
+
+    "vpsraw     $6, %%ymm2, %%ymm2        \n"  // ymm2 >>= 6 (each int16)
+    "vpsraw     $6, %%ymm1, %%ymm1        \n"
+    "vpsraw     $6, %%ymm0, %%ymm0        \n"
+
+    // Cast each int16 to uint8.
+    "vpackuswb   %%ymm2, %%ymm2, %%ymm2   \n"
+    // ymm2 = xxxxxxxxBBBBBBBBxxxxxxxxBBBBBBBB
+    "vpackuswb   %%ymm1, %%ymm1, %%ymm1   \n"
+    // ymm1 = xxxxxxxxGGGGGGGGxxxxxxxxGGGGGGGG
+    "vpackuswb   %%ymm0, %%ymm0, %%ymm0   \n"
+    // ymm0 = xxxxxxxxRRRRRRRRxxxxxxxxRRRRRRRR
+
+    "vpunpcklbw %%ymm2, %%ymm1, %%ymm2    \n"
+    // ymm2 = BGBGBGBGBGBGBGBGBGBGBGBGBGBGBGBG
+    "vpcmpeqb   %%ymm6, %%ymm6, %%ymm6    \n"  // ymm6 = 0xFF..., for alpha.
+    "vpunpcklbw %%ymm0, %%ymm6, %%ymm0    \n"
+    // ymm0 = RARARARARARARARARARARARARARARARA
+
+    "vpermq  $0xd8,  %%ymm2, %%ymm2       \n"
+    "vpermq  $0xd8,  %%ymm0, %%ymm0       \n"
+    "vpunpcklwd %%ymm2, %%ymm0, %%ymm1    \n"
+    // ymm1 = BGRABGRABGRABGRABGRABGRABGRABGRA, pixels 0-7.
+    "vpunpckhwd %%ymm2, %%ymm0, %%ymm2    \n"
+    // ymm2 = BGRABGRABGRABGRABGRABGRABGRABGRA, pixels 8-15.
+
+    // Store pixels 0-15.
+    "vmovdqu    %%ymm1," MEMACCESS([dst_bgra])        "\n"
+    "vmovdqu    %%ymm2," MEMACCESS2(0x20, [dst_bgra]) "\n"
+
+    /*
+     * Pixels 16-31.
+     */
+    "vpaddsw  %%ymm5, %%ymm7, %%ymm5      \n"  // ymm5 (B) += ymm7 (each int16)
+    "vpaddsw  %%ymm4, %%ymm7, %%ymm4      \n"  // ymm4 (G)
+    "vpaddsw  %%ymm3, %%ymm7, %%ymm3      \n"  // ymm3 (R)
+
+    "vpsraw     $6, %%ymm5, %%ymm5        \n"  // ymm5 >>= 6 (each int16)
+    "vpsraw     $6, %%ymm4, %%ymm4        \n"
+    "vpsraw     $6, %%ymm3, %%ymm3        \n"
+
+    // Cast each int16 to uint8.
+    "vpackuswb   %%ymm5, %%ymm5, %%ymm5   \n"
+    // ymm5 = xxxxxxxxBBBBBBBBxxxxxxxxBBBBBBBB
+    "vpackuswb   %%ymm4, %%ymm4, %%ymm4   \n"
+    // ymm4 = xxxxxxxxGGGGGGGGxxxxxxxxGGGGGGGG
+    "vpackuswb   %%ymm3, %%ymm3, %%ymm3   \n"
+    // ymm3 = xxxxxxxxRRRRRRRRxxxxxxxxRRRRRRRR
+
+    "vpunpcklbw %%ymm5, %%ymm4, %%ymm5    \n"
+    // ymm5 = BGBGBGBGBGBGBGBGBGBGBGBGBGBGBGBG
+    "vpunpcklbw %%ymm3, %%ymm6, %%ymm3    \n"
+    // ymm3 = RARARARARARARARARARARARARARARARA
+
+    "vpermq  $0xd8,  %%ymm5, %%ymm5       \n"
+    "vpermq  $0xd8,  %%ymm3, %%ymm3       \n"
+    "vpunpcklwd %%ymm5, %%ymm3, %%ymm4    \n"
+    // ymm4 = BGRABGRABGRABGRABGRABGRABGRABGRA, pixels 16-23.
+    "vpunpckhwd %%ymm5, %%ymm3, %%ymm5    \n"
+    // ymm5 = BGRABGRABGRABGRABGRABGRABGRABGRA, pixels 24-31.
+
+    // Store pixels 16-31.
+    "vmovdqu    %%ymm4," MEMACCESS2(0x40, [dst_bgra])   "\n"
+    "vmovdqu    %%ymm5," MEMACCESS2(0x60, [dst_bgra])   "\n"
+
+    "lea       " MEMLEA(0x80, [dst_bgra]) ", %[dst_bgra] \n"  // dst_bgra += 128
+    "sub       $0x20, %[width]                           \n"  // width -= 32
+    "jg        1b                                        \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+// TODO(magjed): declare ymm usage when applicable.
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif  // HAS_I422ToBGRAROW_AVX2
+
+
 #ifdef HAS_YTOARGBROW_SSE2
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* dst_argb,

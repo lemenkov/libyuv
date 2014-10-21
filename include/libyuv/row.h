@@ -191,6 +191,7 @@ extern "C" {
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBCOPYALPHAROW_AVX2
 #define HAS_ARGBCOPYYTOALPHAROW_AVX2
+#define HAS_I422TOBGRAROW_AVX2
 #endif
 
 // The following are require VS2012.
@@ -200,7 +201,6 @@ extern "C" {
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
-#define HAS_I422TOBGRAROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
@@ -468,6 +468,12 @@ typedef int8 __attribute__((vector_size(16))) vec8;
 typedef uint16 __attribute__((vector_size(16))) uvec16;
 typedef uint32 __attribute__((vector_size(16))) uvec32;
 typedef uint8 __attribute__((vector_size(16))) uvec8;
+typedef int16 __attribute__((vector_size(32))) lvec16;
+typedef int32 __attribute__((vector_size(32))) lvec32;
+typedef int8 __attribute__((vector_size(32))) lvec8;
+typedef uint16 __attribute__((vector_size(32))) ulvec16;
+typedef uint32 __attribute__((vector_size(32))) ulvec32;
+typedef uint8 __attribute__((vector_size(32))) ulvec8;
 #else
 #define SIMD_ALIGNED(var) var
 typedef int16 vec16[8];
@@ -476,6 +482,12 @@ typedef int8 vec8[16];
 typedef uint16 uvec16[8];
 typedef uint32 uvec32[4];
 typedef uint8 uvec8[16];
+typedef int16 lvec16[16];
+typedef int32 lvec32[8];
+typedef int8 lvec8[32];
+typedef uint16 ulvec16[16];
+typedef uint32 ulvec32[8];
+typedef uint8 ulvec8[32];
 #endif
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
