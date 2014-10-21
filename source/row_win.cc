@@ -977,16 +977,16 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
-    movdqu     xmm4, [eax + esi]      
+    movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
-    movdqu     xmm4, [eax + esi + 16] 
+    movdqu     xmm4, [eax + esi + 16]
     pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
-    movdqu     xmm4, [eax + esi + 32] 
+    movdqu     xmm4, [eax + esi + 32]
     pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    movdqu     xmm4, [eax + esi + 48] 
+    movdqu     xmm4, [eax + esi + 48]
     pavgb      xmm3, xmm4
 
     lea        eax,  [eax + 64]
@@ -1048,16 +1048,16 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
-    movdqu     xmm4, [eax + esi]      
+    movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
-    movdqu     xmm4, [eax + esi + 16] 
+    movdqu     xmm4, [eax + esi + 16]
     pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
-    movdqu     xmm4, [eax + esi + 32] 
+    movdqu     xmm4, [eax + esi + 32]
     pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    movdqu     xmm4, [eax + esi + 48] 
+    movdqu     xmm4, [eax + esi + 48]
     pavgb      xmm3, xmm4
 
     lea        eax,  [eax + 64]
@@ -1304,16 +1304,16 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
-    movdqu     xmm4, [eax + esi]      
+    movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
-    movdqu     xmm4, [eax + esi + 16] 
+    movdqu     xmm4, [eax + esi + 16]
     pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
-    movdqu     xmm4, [eax + esi + 32] 
+    movdqu     xmm4, [eax + esi + 32]
     pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    movdqu     xmm4, [eax + esi + 48] 
+    movdqu     xmm4, [eax + esi + 48]
     pavgb      xmm3, xmm4
 
     lea        eax,  [eax + 64]
@@ -1375,16 +1375,16 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
-    movdqu     xmm4, [eax + esi]      
+    movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
-    movdqu     xmm4, [eax + esi + 16] 
+    movdqu     xmm4, [eax + esi + 16]
     pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
-    movdqu     xmm4, [eax + esi + 32] 
+    movdqu     xmm4, [eax + esi + 32]
     pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    movdqu     xmm4, [eax + esi + 48] 
+    movdqu     xmm4, [eax + esi + 48]
     pavgb      xmm3, xmm4
 
     lea        eax,  [eax + 64]
@@ -1446,16 +1446,16 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
  convertloop:
     /* step 1 - subsample 16x2 argb pixels to 8x1 */
     movdqu     xmm0, [eax]
-    movdqu     xmm4, [eax + esi]      
+    movdqu     xmm4, [eax + esi]
     pavgb      xmm0, xmm4
     movdqu     xmm1, [eax + 16]
-    movdqu     xmm4, [eax + esi + 16] 
+    movdqu     xmm4, [eax + esi + 16]
     pavgb      xmm1, xmm4
     movdqu     xmm2, [eax + 32]
-    movdqu     xmm4, [eax + esi + 32] 
+    movdqu     xmm4, [eax + esi + 32]
     pavgb      xmm2, xmm4
     movdqu     xmm3, [eax + 48]
-    movdqu     xmm4, [eax + esi + 48] 
+    movdqu     xmm4, [eax + esi + 48]
     pavgb      xmm3, xmm4
 
     lea        eax,  [eax + 64]
@@ -1529,6 +1529,43 @@ static const lvec16 kUVBiasR_AVX = {
   BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR
 };
 
+// Read 8 UV from 422, upsample to 16 UV.
+#define READYUV422_AVX2 __asm {                                                \
+    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
+    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
+    __asm lea        esi,  [esi + 8]                                           \
+    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
+  }
+
+// Convert 16 pixels: 16 UV and 16 Y.
+#define YUVTORGB_AVX2 __asm {                                                  \
+    /* Step 1: Find 8 UV contributions to 16 R,G,B values */                   \
+    __asm vpmaddubsw ymm2, ymm0, kUVToR_AVX        /* scale R UV */            \
+    __asm vpmaddubsw ymm1, ymm0, kUVToG_AVX        /* scale G UV */            \
+    __asm vpmaddubsw ymm0, ymm0, kUVToB_AVX        /* scale B UV */            \
+    __asm vpsubw     ymm2, ymm2, kUVBiasR_AVX      /* unbias back to signed */ \
+    __asm vpsubw     ymm1, ymm1, kUVBiasG_AVX                                  \
+    __asm vpsubw     ymm0, ymm0, kUVBiasB_AVX                                  \
+    /* Step 2: Find Y contribution to 16 R,G,B values */                       \
+    __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
+    __asm lea        eax, [eax + 16]                                           \
+    __asm vpermq     ymm3, ymm3, 0xd8                                          \
+    __asm vpunpcklbw ymm3, ymm3, ymm4                                          \
+    __asm vpsubsw    ymm3, ymm3, kYSub16_AVX                                   \
+    __asm vpmullw    ymm3, ymm3, kYToRgb_AVX                                   \
+    __asm vpaddsw    ymm0, ymm0, ymm3           /* B += Y */                   \
+    __asm vpaddsw    ymm1, ymm1, ymm3           /* G += Y */                   \
+    __asm vpaddsw    ymm2, ymm2, ymm3           /* R += Y */                   \
+    __asm vpsraw     ymm0, ymm0, 6                                             \
+    __asm vpsraw     ymm1, ymm1, 6                                             \
+    __asm vpsraw     ymm2, ymm2, 6                                             \
+    __asm vpackuswb  ymm0, ymm0, ymm0           /* B */                        \
+    __asm vpackuswb  ymm1, ymm1, ymm1           /* G */                        \
+    __asm vpackuswb  ymm2, ymm2, ymm2           /* R */                        \
+  }
+
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
 __declspec(naked) __declspec(align(16))
@@ -1551,35 +1588,8 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
 
     align      4
  convertloop:
-    vmovq      xmm0, qword ptr [esi]          //  U
-    vmovq      xmm1, qword ptr [esi + edi]    //  V
-    lea        esi,  [esi + 8]
-    vpunpcklbw ymm0, ymm0, ymm1               // UV
-    vpermq     ymm0, ymm0, 0xd8
-    vpunpcklwd ymm0, ymm0, ymm0              // UVUV
-    vpmaddubsw ymm2, ymm0, kUVToR_AVX        // scale R UV
-    vpmaddubsw ymm1, ymm0, kUVToG_AVX        // scale G UV
-    vpmaddubsw ymm0, ymm0, kUVToB_AVX        // scale B UV
-    vpsubw     ymm2, ymm2, kUVBiasR_AVX      // unbias back to signed
-    vpsubw     ymm1, ymm1, kUVBiasG_AVX
-    vpsubw     ymm0, ymm0, kUVBiasB_AVX      
-
-    // Step 2: Find Y contribution to 16 R,G,B values
-    vmovdqu    xmm3, [eax]                  // NOLINT
-    lea        eax, [eax + 16]
-    vpermq     ymm3, ymm3, 0xd8
-    vpunpcklbw ymm3, ymm3, ymm4
-    vpsubsw    ymm3, ymm3, kYSub16_AVX
-    vpmullw    ymm3, ymm3, kYToRgb_AVX
-    vpaddsw    ymm0, ymm0, ymm3           // B += Y
-    vpaddsw    ymm1, ymm1, ymm3           // G += Y
-    vpaddsw    ymm2, ymm2, ymm3           // R += Y
-    vpsraw     ymm0, ymm0, 6
-    vpsraw     ymm1, ymm1, 6
-    vpsraw     ymm2, ymm2, 6
-    vpackuswb  ymm0, ymm0, ymm0           // B
-    vpackuswb  ymm1, ymm1, ymm1           // G
-    vpackuswb  ymm2, ymm2, ymm2           // R
+    READYUV422_AVX2
+    YUVTORGB_AVX2
 
     // Step 3: Weave into ARGB
     vpunpcklbw ymm0, ymm0, ymm1           // BG
@@ -1624,35 +1634,8 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 
     align      4
  convertloop:
-    vmovq      xmm0, qword ptr [esi]          //  U
-    vmovq      xmm1, qword ptr [esi + edi]    //  V
-    lea        esi,  [esi + 8]
-    vpunpcklbw ymm0, ymm0, ymm1               // UV
-    vpermq     ymm0, ymm0, 0xd8
-    vpunpcklwd ymm0, ymm0, ymm0              // UVUV
-    vpmaddubsw ymm2, ymm0, kUVToR_AVX        // scale R UV
-    vpmaddubsw ymm1, ymm0, kUVToG_AVX        // scale G UV
-    vpmaddubsw ymm0, ymm0, kUVToB_AVX        // scale B UV
-    vpsubw     ymm2, ymm2, kUVBiasR_AVX      // unbias back to signed
-    vpsubw     ymm1, ymm1, kUVBiasG_AVX
-    vpsubw     ymm0, ymm0, kUVBiasB_AVX      
-
-    // Step 2: Find Y contribution to 16 R,G,B values
-    vmovdqu    xmm3, [eax]                  // NOLINT
-    lea        eax, [eax + 16]
-    vpermq     ymm3, ymm3, 0xd8
-    vpunpcklbw ymm3, ymm3, ymm4
-    vpsubsw    ymm3, ymm3, kYSub16_AVX
-    vpmullw    ymm3, ymm3, kYToRgb_AVX
-    vpaddsw    ymm0, ymm0, ymm3           // B += Y
-    vpaddsw    ymm1, ymm1, ymm3           // G += Y
-    vpaddsw    ymm2, ymm2, ymm3           // R += Y
-    vpsraw     ymm0, ymm0, 6
-    vpsraw     ymm1, ymm1, 6
-    vpsraw     ymm2, ymm2, 6
-    vpackuswb  ymm0, ymm0, ymm0           // B
-    vpackuswb  ymm1, ymm1, ymm1           // G
-    vpackuswb  ymm2, ymm2, ymm2           // R
+    READYUV422_AVX2
+    YUVTORGB_AVX2
 
     // Step 3: Weave into BGRA
     vpunpcklbw ymm1, ymm1, ymm0           // GB
