@@ -581,24 +581,20 @@ YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
     }
 
 #ifdef HAS_INTERPOLATEROW_AVX2
-NANY(InterpolateRow_Any_AVX2, InterpolateRow_AVX2,
-     InterpolateRow_C, 1, 1, 32)
+NANY(InterpolateRow_Any_AVX2, InterpolateRow_AVX2, InterpolateRow_C, 1, 1, 31)
 #endif
 #ifdef HAS_INTERPOLATEROW_SSSE3
-NANY(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3,
-     InterpolateRow_C, 1, 1, 15)
+NANY(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3, InterpolateRow_C, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_SSE2
-NANY(InterpolateRow_Any_SSE2, InterpolateRow_SSE2,
-     InterpolateRow_C, 1, 1, 15)
+NANY(InterpolateRow_Any_SSE2, InterpolateRow_SSE2, InterpolateRow_C, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_NEON
-NANY(InterpolateRow_Any_NEON, InterpolateRow_NEON,
-     InterpolateRow_C, 1, 1, 15)
+NANY(InterpolateRow_Any_NEON, InterpolateRow_NEON, InterpolateRow_C, 1, 1, 15)
 #endif
 #ifdef HAS_INTERPOLATEROW_MIPS_DSPR2
-NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2,
-     InterpolateRow_C, 1, 1, 3)
+NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, InterpolateRow_C,
+     1, 1, 3)
 #endif
 #undef NANY
 

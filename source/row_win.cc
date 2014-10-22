@@ -4972,11 +4972,11 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 #endif  // HAS_ARGBAFFINEROW_SSE2
 
 #ifdef HAS_INTERPOLATEROW_AVX2
-// Bilinear filter 16x2 -> 16x1
+// Bilinear filter 32x2 -> 32x1
 __declspec(naked) __declspec(align(16))
 void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
-                          ptrdiff_t src_stride, int dst_width,
-                          int source_y_fraction) {
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) {
   __asm {
     push       esi
     push       edi
@@ -5023,45 +5023,48 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
     jmp        xloop99
 
-    // Blend 25 / 75.
-    align      4
-  xloop25:
-    vmovdqu    ymm0, [esi]
-    vpavgb     ymm0, ymm0, [esi + edx]
-    vpavgb     ymm0, ymm0, [esi + edx]
-    sub        ecx, 32
-    vmovdqu    [esi + edi], ymm0
-    lea        esi, [esi + 32]
-    jg         xloop25
-    jmp        xloop99
+   // Blend 25 / 75.
+   align      4
+ xloop25:
+   vmovdqu    ymm0, [esi]
+   vmovdqu    ymm1, [esi + edx]
+   vpavgb     ymm0, ymm0, ymm1
+   vpavgb     ymm0, ymm0, ymm1
+   sub        ecx, 32
+   vmovdqu    [esi + edi], ymm0
+   lea        esi, [esi + 32]
+   jg         xloop25
+   jmp        xloop99
 
-    // Blend 50 / 50.
-    align      4
-  xloop50:
-    vmovdqu    ymm0, [esi]
-    vpavgb     ymm0, ymm0, [esi + edx]
-    sub        ecx, 32
-    vmovdqu    [esi + edi], ymm0
-    lea        esi, [esi + 32]
-    jg         xloop50
-    jmp        xloop99
+   // Blend 50 / 50.
+   align      4
+ xloop50:
+   vmovdqu    ymm0, [esi]
+   vmovdqu    ymm1, [esi + edx]
+   vpavgb     ymm0, ymm0, ymm1
+   sub        ecx, 32
+   vmovdqu    [esi + edi], ymm0
+   lea        esi, [esi + 32]
+   jg         xloop50
+   jmp        xloop99
 
-    // Blend 75 / 25.
-    align      4
-  xloop75:
-    vmovdqu    ymm0, [esi + edx]
-    vpavgb     ymm0, ymm0, [esi]
-    vpavgb     ymm0, ymm0, [esi]
-    sub        ecx, 32
-    vmovdqu     [esi + edi], ymm0
-    lea        esi, [esi + 32]
-    jg         xloop75
-    jmp        xloop99
+   // Blend 75 / 25.
+   align      4
+ xloop75:
+   vmovdqu    ymm1, [esi]
+   vmovdqu    ymm0, [esi + edx]
+   vpavgb     ymm0, ymm0, ymm1
+   vpavgb     ymm0, ymm0, ymm1
+   sub        ecx, 32
+   vmovdqu    [esi + edi], ymm0
+   lea        esi, [esi + 32]
+   jg         xloop75
+   jmp        xloop99
 
-    // Blend 100 / 0 - Copy row unchanged.
-    align      4
-  xloop100:
-    rep movsb
+   // Blend 100 / 0 - Copy row unchanged.
+   align      4
+ xloop100:
+   rep movsb
 
   xloop99:
     pop        edi
