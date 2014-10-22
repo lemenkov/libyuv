@@ -1613,7 +1613,6 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
 
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 BGRA (64 bytes).
-// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
 __declspec(naked) __declspec(align(16))
 void I422ToBGRARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
@@ -1659,7 +1658,6 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 RGBA (64 bytes).
-// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
 __declspec(naked) __declspec(align(16))
 void I422ToRGBARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
@@ -1675,6 +1673,7 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // argb
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
     vpxor      ymm4, ymm4, ymm4
 
     align      4
@@ -1683,13 +1682,12 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     YUVTORGB_AVX2
 
     // Step 3: Weave into RGBA
-    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
     vpunpcklbw ymm1, ymm1, ymm2           // GR
     vpermq     ymm1, ymm1, 0xd8
-    vpunpcklbw ymm5, ymm5, ymm0           // AB
-    vpermq     ymm5, ymm5, 0xd8
-    vpunpcklwd ymm0, ymm5, ymm1           // ABGR first 8 pixels
-    vpunpckhwd ymm1, ymm5, ymm1           // ABGR next 8 pixels
+    vpunpcklbw ymm2, ymm5, ymm0           // AB
+    vpermq     ymm2, ymm2, 0xd8
+    vpunpcklwd ymm0, ymm2, ymm1           // ABGR first 8 pixels
+    vpunpckhwd ymm1, ymm2, ymm1           // ABGR next 8 pixels
     vmovdqu    [edx], ymm0
     vmovdqu    [edx + 32], ymm1
     lea        edx,  [edx + 64]
@@ -1702,6 +1700,7 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     ret
   }
 }
+
 #endif  // HAS_I422TOARGBROW_AVX2
 
 #ifdef HAS_I422TOARGBROW_SSSE3
