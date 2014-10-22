@@ -672,6 +672,14 @@ int I420ToRGBA(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGBAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+    I422ToRGBARow = I422ToRGBARow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToRGBARow = I422ToRGBARow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_I422TORGBAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I422ToRGBARow = I422ToRGBARow_Any_NEON;

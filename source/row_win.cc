@@ -1656,6 +1656,52 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     ret
   }
 }
+
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 RGBA (64 bytes).
+// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
+__declspec(naked) __declspec(align(16))
+void I422ToRGBARow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    vpxor      ymm4, ymm4, ymm4
+
+    align      4
+ convertloop:
+    READYUV422_AVX2
+    YUVTORGB_AVX2
+
+    // Step 3: Weave into RGBA
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+    vpunpcklbw ymm1, ymm1, ymm2           // GR
+    vpermq     ymm1, ymm1, 0xd8
+    vpunpcklbw ymm5, ymm5, ymm0           // AB
+    vpermq     ymm5, ymm5, 0xd8
+    vpunpcklwd ymm0, ymm5, ymm1           // ABGR first 8 pixels
+    vpunpckhwd ymm1, ymm5, ymm1           // ABGR next 8 pixels
+    vmovdqu    [edx], ymm0
+    vmovdqu    [edx + 32], ymm1
+    lea        edx,  [edx + 64]
+    sub        ecx, 16
+    jg         convertloop
+    vzeroupper
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
 #endif  // HAS_I422TOARGBROW_AVX2
 
 #ifdef HAS_I422TOARGBROW_SSSE3
@@ -1782,8 +1828,8 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     punpcklbw  xmm0, xmm1           // BG
     punpcklbw  xmm2, xmm5           // RA
     movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
+    punpcklwd  xmm0, xmm2           // RGBA first 4 pixels
+    punpckhwd  xmm1, xmm2           // RGBA next 4 pixels
     movdqu     [edx], xmm0
     movdqu     [edx + 16], xmm1
     lea        edx,  [edx + 32]

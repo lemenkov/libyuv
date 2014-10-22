@@ -201,6 +201,7 @@ extern "C" {
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
+#define HAS_I422TORGBAROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
@@ -1052,6 +1053,11 @@ void I422ToBGRARow_AVX2(const uint8* src_y,
                         const uint8* src_v,
                         uint8* dst_argb,
                         int width);
+void I422ToRGBARow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
 void I444ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1135,6 +1141,11 @@ void I422ToARGBRow_Any_AVX2(const uint8* src_y,
                             uint8* dst_argb,
                             int width);
 void I422ToBGRARow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
+void I422ToRGBARow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
