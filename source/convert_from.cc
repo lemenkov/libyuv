@@ -620,6 +620,14 @@ int I420ToABGR(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_I422TOABGRROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+    I422ToABGRRow = I422ToABGRRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToABGRRow = I422ToABGRRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_I422TOABGRROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
     I422ToABGRRow = I422ToABGRRow_Any_NEON;
