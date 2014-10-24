@@ -185,7 +185,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   src_argb += xl * 4;
   x -= (int)(xl << 16);
 #if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && clip_src_width >= 16) {
+  if (TestCpuFlag(kCpuHasSSE2)) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(clip_src_width, 16)) {
       InterpolateRow = InterpolateRow_SSE2;
@@ -193,7 +193,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && clip_src_width >= 16) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(clip_src_width, 16)) {
       InterpolateRow = InterpolateRow_SSSE3;
@@ -201,7 +201,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && clip_src_width >= 32) {
+  if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
     if (IS_ALIGNED(clip_src_width, 32)) {
       InterpolateRow = InterpolateRow_AVX2;
@@ -209,7 +209,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && clip_src_width >= 16) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     InterpolateRow = InterpolateRow_Any_NEON;
     if (IS_ALIGNED(clip_src_width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
@@ -217,7 +217,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && clip_src_width >= 4 &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4)) {
     InterpolateRow = InterpolateRow_Any_MIPS_DSPR2;
     if (IS_ALIGNED(clip_src_width, 4)) {
@@ -275,7 +275,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
       filtering ? ScaleARGBFilterCols_C : ScaleARGBCols_C;
   const int max_y = (src_height - 1) << 16;
 #if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSE2)) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_SSE2;
@@ -283,7 +283,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_SSSE3;
@@ -291,7 +291,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && dst_width >= 8) {
+  if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
     if (IS_ALIGNED(dst_width, 8)) {
       InterpolateRow = InterpolateRow_AVX2;
@@ -299,7 +299,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     InterpolateRow = InterpolateRow_Any_NEON;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_NEON;
@@ -307,7 +307,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_width >= 1 &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride, 4)) {
     InterpolateRow = InterpolateRow_MIPS_DSPR2;
   }
@@ -408,7 +408,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
                         uint8* rgb_buf,
                         int width) = I422ToARGBRow_C;
 #if defined(HAS_I422TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && src_width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(src_width, 8)) {
       I422ToARGBRow = I422ToARGBRow_SSSE3;
@@ -416,7 +416,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_I422TOARGBROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && src_width >= 16) {
+  if (TestCpuFlag(kCpuHasAVX2)) {
     I422ToARGBRow = I422ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(src_width, 16)) {
       I422ToARGBRow = I422ToARGBRow_AVX2;
@@ -424,7 +424,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && src_width >= 8) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     I422ToARGBRow = I422ToARGBRow_Any_NEON;
     if (IS_ALIGNED(src_width, 8)) {
       I422ToARGBRow = I422ToARGBRow_NEON;
@@ -445,7 +445,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
 #if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSE2)) {
     InterpolateRow = InterpolateRow_Any_SSE2;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_SSE2;
@@ -453,7 +453,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_SSSE3;
@@ -461,7 +461,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && dst_width >= 8) {
+  if (TestCpuFlag(kCpuHasAVX2)) {
     InterpolateRow = InterpolateRow_Any_AVX2;
     if (IS_ALIGNED(dst_width, 8)) {
       InterpolateRow = InterpolateRow_AVX2;
@@ -469,7 +469,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && dst_width >= 4) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     InterpolateRow = InterpolateRow_Any_NEON;
     if (IS_ALIGNED(dst_width, 4)) {
       InterpolateRow = InterpolateRow_NEON;
@@ -477,7 +477,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   }
 #endif
 #if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && dst_width >= 1 &&
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
     InterpolateRow = InterpolateRow_MIPS_DSPR2;
   }

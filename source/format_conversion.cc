@@ -77,7 +77,7 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
@@ -85,7 +85,7 @@ int ARGBToBayer(const uint8* src_argb, int src_stride_argb,
   }
 #endif
 #if defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
@@ -315,7 +315,7 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
     dst_stride_v = -dst_stride_v;
   }
 #if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 16) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
@@ -325,7 +325,7 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
   }
 #endif
 #if defined(HAS_ARGBTOYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToYRow = ARGBToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToYRow = ARGBToYRow_NEON;
@@ -333,7 +333,7 @@ int BayerToI420(const uint8* src_bayer, int src_stride_bayer,
   }
 #endif
 #if defined(HAS_ARGBTOUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 16) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToUVRow = ARGBToUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_NEON;
@@ -421,7 +421,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
     src_stride_v = -src_stride_v;
   }
 #if defined(HAS_I422TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_SSSE3;
@@ -429,7 +429,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_I422TOARGBROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && width >= 16) {
+  if (TestCpuFlag(kCpuHasAVX2)) {
     I422ToARGBRow = I422ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       I422ToARGBRow = I422ToARGBRow_AVX2;
@@ -437,7 +437,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_I422TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     I422ToARGBRow = I422ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       I422ToARGBRow = I422ToARGBRow_NEON;
@@ -454,7 +454,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
 #endif
 
 #if defined(HAS_ARGBTOBAYERROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && width >= 8) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_SSSE3;
@@ -462,7 +462,7 @@ int I420ToBayer(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_ARGBTOBAYERROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && width >= 8) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToBayerRow = ARGBToBayerRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToBayerRow = ARGBToBayerRow_NEON;
