@@ -17,8 +17,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO(fbarchard): Consider 'any' functions handling any quantity of pixels.
-// TODO(fbarchard): Consider 'any' functions handling odd alignment.
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
     void NAMEANY(const uint8* y_buf,                                           \
@@ -27,7 +25,9 @@ extern "C" {
                  uint8* rgb_buf,                                               \
                  int width) {                                                  \
       int n = width & ~MASK;                                                   \
-      I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                         \
+      if (n > 0) {                                                             \
+        I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
+      }                                                                        \
       I420TORGB_C(y_buf + n,                                                   \
                   u_buf + (n >> UV_SHIFT),                                     \
                   v_buf + (n >> UV_SHIFT),                                     \
@@ -104,7 +104,9 @@ YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, I422ToUYVYRow_C, 1, 2, 15)
                  uint8* rgb_buf,                                               \
                  int width) {                                                  \
       int n = width & ~7;                                                      \
-      NV12TORGB_SIMD(y_buf, uv_buf, rgb_buf, n);                               \
+      if (n > 0) {                                                             \
+        NV12TORGB_SIMD(y_buf, uv_buf, rgb_buf, n);                             \
+      }                                                                        \
       NV12TORGB_C(y_buf + n,                                                   \
                   uv_buf + (n >> UV_SHIFT),                                    \
                   rgb_buf + n * BPP, width & 7);                               \
@@ -137,7 +139,9 @@ NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
                  uint8* dst,                                                   \
                  int width) {                                                  \
       int n = width & ~MASK;                                                   \
-      ARGBTORGB_SIMD(src, dst, n);                                             \
+      if (n > 0) {                                                             \
+        ARGBTORGB_SIMD(src, dst, n);                                           \
+      }                                                                        \
       ARGBTORGB_C(src + n * SBPP, dst + n * BPP, width & MASK);                \
     }
 
@@ -202,7 +206,9 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C,
                  uint8* dst, uint32 selector,                                  \
                  int width) {                                                  \
       int n = width & ~MASK;                                                   \
-      ARGBTORGB_SIMD(src, dst, selector, n);                                   \
+      if (n > 0) {                                                             \
+        ARGBTORGB_SIMD(src, dst, selector, n);                                 \
+      }                                                                        \
       ARGBTORGB_C(src + n * SBPP, dst + n * BPP, selector, width & MASK);      \
     }
 
@@ -225,10 +231,13 @@ BAYERANY(ARGBToBayerGGRow_Any_NEON, ARGBToBayerGGRow_NEON, ARGBToBayerGGRow_C,
 
 #undef BAYERANY
 
+// TODO(fbarchard): Use C for remainder to allow this to handle any width.
 // RGB/YUV to Y does multiple of 16 with SIMD and last 16 with SIMD.
 #define YANY(NAMEANY, ARGBTOY_SIMD, SBPP, BPP, NUM)                            \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
-      ARGBTOY_SIMD(src_argb, dst_y, width - NUM);                              \
+      if (width > NUM) {                                                       \
+        ARGBTOY_SIMD(src_argb, dst_y, width - NUM);                            \
+      }                                                                        \
       ARGBTOY_SIMD(src_argb + (width - NUM) * SBPP,                            \
                    dst_y + (width - NUM) * BPP, NUM);                          \
     }
@@ -308,7 +317,9 @@ YANY(ARGB4444ToARGBRow_Any_NEON, ARGB4444ToARGBRow_NEON, 2, 4, 8)
 #define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       int n = width & ~MASK;                                                   \
-      ARGBTOY_SIMD(src_argb, dst_y, n);                                        \
+      if (n > 0) {                                                             \
+        ARGBTOY_SIMD(src_argb, dst_y, n);                                      \
+      }                                                                        \
       ARGBTOY_C(src_argb + n * SBPP,                                           \
                 dst_y  + n * BPP, width & MASK);                               \
     }
@@ -345,7 +356,9 @@ YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
     void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
-      ANYTOUV_SIMD(src_argb, src_stride_argb, dst_u, dst_v, n);                \
+      if (n > 0) {                                                             \
+        ANYTOUV_SIMD(src_argb, src_stride_argb, dst_u, dst_v, n);              \
+      }                                                                        \
       ANYTOUV_C(src_argb  + n * BPP, src_stride_argb,                          \
                 dst_u + (n >> 1),                                              \
                 dst_v + (n >> 1),                                              \
@@ -410,7 +423,9 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
-      ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                   \
+      if (n > 0) {                                                             \
+        ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
+      }                                                                        \
       ANYTOUV_C(src_uv  + n * BPP,                                             \
                 dst_u + (n >> SHIFT),                                          \
                 dst_v + (n >> SHIFT),                                          \
@@ -455,7 +470,9 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
     void NAMEANY(const uint8* src_uv,                                          \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
       int n = width & ~MASK;                                                   \
-      ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                   \
+      if (n > 0) {                                                             \
+        ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
+      }                                                                        \
       ANYTOUV_C(src_uv + n * 2,                                                \
                 dst_u + n,                                                     \
                 dst_v + n,                                                     \
@@ -481,7 +498,9 @@ SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2,
     void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
                  uint8* dst_uv, int width) {                                   \
       int n = width & ~MASK;                                                   \
-      ANYTOUV_SIMD(src_u, src_v, dst_uv, n);                                   \
+      if (n > 0) {                                                             \
+        ANYTOUV_SIMD(src_u, src_v, dst_uv, n);                                 \
+      }                                                                        \
       ANYTOUV_C(src_u + n,                                                     \
                 src_v + n,                                                     \
                 dst_uv + n * 2,                                                \
@@ -503,7 +522,9 @@ MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
     void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
                  uint8* dst_argb, int width) {                                 \
       int n = width & ~MASK;                                                   \
-      ARGBMATH_SIMD(src_argb0, src_argb1, dst_argb, n);                        \
+      if (n > 0) {                                                             \
+        ARGBMATH_SIMD(src_argb0, src_argb1, dst_argb, n);                      \
+      }                                                                        \
       ARGBMATH_C(src_argb0 + n * 4,                                            \
                  src_argb1 + n * 4,                                            \
                  dst_argb + n * 4,                                             \
@@ -550,7 +571,9 @@ MATHROW_ANY(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, ARGBSubtractRow_C,
     void NAMEANY(const uint8* src_argb, uint8* dst_argb,                       \
                  const uint8* shuffler, int width) {                           \
       int n = width & ~MASK;                                                   \
-      ARGBTOY_SIMD(src_argb, dst_argb, shuffler, n);                           \
+      if (n > 0) {                                                             \
+        ARGBTOY_SIMD(src_argb, dst_argb, shuffler, n);                         \
+      }                                                                        \
       ARGBTOY_C(src_argb + n * SBPP,                                           \
                 dst_argb  + n * BPP, shuffler, width & MASK);                  \
     }
@@ -579,8 +602,9 @@ YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
                  ptrdiff_t src_stride_ptr, int width,                          \
                  int source_y_fraction) {                                      \
       int n = width & ~MASK;                                                   \
-      TERP_SIMD(dst_ptr, src_ptr, src_stride_ptr,                              \
-                n, source_y_fraction);                                         \
+      if (n > 0) {                                                             \
+        TERP_SIMD(dst_ptr, src_ptr, src_stride_ptr, n, source_y_fraction);     \
+      }                                                                        \
       TERP_C(dst_ptr + n * BPP,                                                \
              src_ptr + n * SBPP, src_stride_ptr,                               \
              width & MASK, source_y_fraction);                                 \
