@@ -241,94 +241,77 @@ BAYERANY(ARGBToBayerGGRow_Any_NEON, ARGBToBayerGGRow_NEON, ARGBToBayerGGRow_C,
                 dst_y  + n * BPP, width & MASK);                               \
     }
 #ifdef HAS_ARGBTOYROW_AVX2
-YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, ARGBToYRow_C, 4, 1, 32 - 1)
-YANY(ARGBToYJRow_Any_AVX2, ARGBToYJRow_AVX2, ARGBToYJRow_C, 4, 1, 32 - 1)
-YANY(YUY2ToYRow_Any_AVX2, YUY2ToYRow_AVX2, YUY2ToYRow_C, 2, 1, 32 - 1)
-YANY(UYVYToYRow_Any_AVX2, UYVYToYRow_AVX2, UYVYToYRow_C, 2, 1, 32 - 1)
+YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, ARGBToYRow_C, 4, 1, 31)
+YANY(ARGBToYJRow_Any_AVX2, ARGBToYJRow_AVX2, ARGBToYJRow_C, 4, 1, 31)
+YANY(YUY2ToYRow_Any_AVX2, YUY2ToYRow_AVX2, YUY2ToYRow_C, 2, 1, 31)
+YANY(UYVYToYRow_Any_AVX2, UYVYToYRow_AVX2, UYVYToYRow_C, 2, 1, 31)
 #endif
 #ifdef HAS_ARGBTOYROW_SSSE3
-YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_SSSE3, ARGBToYRow_C, 4, 1, 16 - 1)
+YANY(ARGBToYRow_Any_SSSE3, ARGBToYRow_SSSE3, ARGBToYRow_C, 4, 1, 15)
 #endif
 #ifdef HAS_BGRATOYROW_SSSE3
-YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_SSSE3, BGRAToYRow_C, 4, 1, 16 - 1)
-YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_SSSE3, ABGRToYRow_C, 4, 1, 16 - 1)
-YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_SSSE3, RGBAToYRow_C, 4, 1, 16 - 1)
-YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_SSE2, YUY2ToYRow_C, 2, 1, 16 - 1)
-YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_SSE2, UYVYToYRow_C, 2, 1, 16 - 1)
+YANY(BGRAToYRow_Any_SSSE3, BGRAToYRow_SSSE3, BGRAToYRow_C, 4, 1, 15)
+YANY(ABGRToYRow_Any_SSSE3, ABGRToYRow_SSSE3, ABGRToYRow_C, 4, 1, 15)
+YANY(RGBAToYRow_Any_SSSE3, RGBAToYRow_SSSE3, RGBAToYRow_C, 4, 1, 15)
+YANY(YUY2ToYRow_Any_SSE2, YUY2ToYRow_SSE2, YUY2ToYRow_C, 2, 1, 15)
+YANY(UYVYToYRow_Any_SSE2, UYVYToYRow_SSE2, UYVYToYRow_C, 2, 1, 15)
 #endif
 #ifdef HAS_ARGBTOYJROW_SSSE3
-YANY(ARGBToYJRow_Any_SSSE3, ARGBToYJRow_SSSE3, ARGBToYJRow_C, 4, 1, 16 - 1)
+YANY(ARGBToYJRow_Any_SSSE3, ARGBToYJRow_SSSE3, ARGBToYJRow_C, 4, 1, 15)
 #endif
 #ifdef HAS_ARGBTOYROW_NEON
-YANY(ARGBToYRow_Any_NEON, ARGBToYRow_NEON, ARGBToYRow_C, 4, 1, 8 - 1)
+YANY(ARGBToYRow_Any_NEON, ARGBToYRow_NEON, ARGBToYRow_C, 4, 1, 7)
 #endif
 #ifdef HAS_ARGBTOYJROW_NEON
-YANY(ARGBToYJRow_Any_NEON, ARGBToYJRow_NEON, ARGBToYJRow_C, 4, 1, 8 - 1)
+YANY(ARGBToYJRow_Any_NEON, ARGBToYJRow_NEON, ARGBToYJRow_C, 4, 1, 7)
 #endif
 #ifdef HAS_BGRATOYROW_NEON
-YANY(BGRAToYRow_Any_NEON, BGRAToYRow_NEON, BGRAToYRow_C, 4, 1, 8 - 1)
+YANY(BGRAToYRow_Any_NEON, BGRAToYRow_NEON, BGRAToYRow_C, 4, 1, 7)
 #endif
 #ifdef HAS_ABGRTOYROW_NEON
-YANY(ABGRToYRow_Any_NEON, ABGRToYRow_NEON, ABGRToYRow_C, 4, 1, 8 - 1)
+YANY(ABGRToYRow_Any_NEON, ABGRToYRow_NEON, ABGRToYRow_C, 4, 1, 7)
 #endif
 #ifdef HAS_RGBATOYROW_NEON
-YANY(RGBAToYRow_Any_NEON, RGBAToYRow_NEON, RGBAToYRow_C, 4, 1, 8 - 1)
+YANY(RGBAToYRow_Any_NEON, RGBAToYRow_NEON, RGBAToYRow_C, 4, 1, 7)
 #endif
 #ifdef HAS_RGB24TOYROW_NEON
-YANY(RGB24ToYRow_Any_NEON, RGB24ToYRow_NEON, RGB24ToYRow_C, 3, 1, 8 - 1)
+YANY(RGB24ToYRow_Any_NEON, RGB24ToYRow_NEON, RGB24ToYRow_C, 3, 1, 7)
 #endif
 #ifdef HAS_RAWTOYROW_NEON
-YANY(RAWToYRow_Any_NEON, RAWToYRow_NEON, RAWToYRow_C, 3, 1, 8 - 1)
+YANY(RAWToYRow_Any_NEON, RAWToYRow_NEON, RAWToYRow_C, 3, 1, 7)
 #endif
 #ifdef HAS_RGB565TOYROW_NEON
-YANY(RGB565ToYRow_Any_NEON, RGB565ToYRow_NEON, RGB565ToYRow_C, 2, 1, 8 - 1)
+YANY(RGB565ToYRow_Any_NEON, RGB565ToYRow_NEON, RGB565ToYRow_C, 2, 1, 7)
 #endif
 #ifdef HAS_ARGB1555TOYROW_NEON
-YANY(ARGB1555ToYRow_Any_NEON, ARGB1555ToYRow_NEON, ARGB1555ToYRow_C,
-     2, 1, 8 - 1)
+YANY(ARGB1555ToYRow_Any_NEON, ARGB1555ToYRow_NEON, ARGB1555ToYRow_C, 2, 1, 7)
 #endif
 #ifdef HAS_ARGB4444TOYROW_NEON
-YANY(ARGB4444ToYRow_Any_NEON, ARGB4444ToYRow_NEON, ARGB4444ToYRow_C,
-     2, 1, 8 - 1)
+YANY(ARGB4444ToYRow_Any_NEON, ARGB4444ToYRow_NEON, ARGB4444ToYRow_C, 2, 1, 7)
 #endif
 #ifdef HAS_YUY2TOYROW_NEON
-YANY(YUY2ToYRow_Any_NEON, YUY2ToYRow_NEON, YUY2ToYRow_C, 2, 1, 16 - 1)
+YANY(YUY2ToYRow_Any_NEON, YUY2ToYRow_NEON, YUY2ToYRow_C, 2, 1, 15)
 #endif
 #ifdef HAS_UYVYTOYROW_NEON
-YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, UYVYToYRow_C, 2, 1, 16 - 1)
+YANY(UYVYToYRow_Any_NEON, UYVYToYRow_NEON, UYVYToYRow_C, 2, 1, 15)
 #endif
 #ifdef HAS_RGB24TOARGBROW_NEON
-YANY(RGB24ToARGBRow_Any_NEON, RGB24ToARGBRow_NEON, RGB24ToARGBRow_C,
-     3, 4, 8 - 1)
+YANY(RGB24ToARGBRow_Any_NEON, RGB24ToARGBRow_NEON, RGB24ToARGBRow_C, 3, 4, 7)
 #endif
 #ifdef HAS_RAWTOARGBROW_NEON
-YANY(RAWToARGBRow_Any_NEON, RAWToARGBRow_NEON, RAWToARGBRow_C, 3, 4, 8 - 1)
+YANY(RAWToARGBRow_Any_NEON, RAWToARGBRow_NEON, RAWToARGBRow_C, 3, 4, 7)
 #endif
 #ifdef HAS_RGB565TOARGBROW_NEON
-YANY(RGB565ToARGBRow_Any_NEON, RGB565ToARGBRow_NEON, RGB565ToARGBRow_C,
-     2, 4, 8 - 1)
+YANY(RGB565ToARGBRow_Any_NEON, RGB565ToARGBRow_NEON, RGB565ToARGBRow_C, 2, 4, 7)
 #endif
 #ifdef HAS_ARGB1555TOARGBROW_NEON
 YANY(ARGB1555ToARGBRow_Any_NEON, ARGB1555ToARGBRow_NEON, ARGB1555ToARGBRow_C,
-     2, 4, 8 - 1)
+     2, 4, 7)
 #endif
 #ifdef HAS_ARGB4444TOARGBROW_NEON
 YANY(ARGB4444ToARGBRow_Any_NEON, ARGB4444ToARGBRow_NEON, ARGB4444ToARGBRow_C,
-     2, 4, 8 - 1)
+     2, 4, 7)
 #endif
-#undef YANY
-
-#define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
-    void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
-      int n = width & ~MASK;                                                   \
-      if (n > 0) {                                                             \
-        ARGBTOY_SIMD(src_argb, dst_y, n);                                      \
-      }                                                                        \
-      ARGBTOY_C(src_argb + n * SBPP,                                           \
-                dst_y  + n * BPP, width & MASK);                               \
-    }
-
-// Attenuate is destructive so last16 method can not be used due to overlap.
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 YANY(ARGBAttenuateRow_Any_SSSE3, ARGBAttenuateRow_SSSE3, ARGBAttenuateRow_C,
      4, 4, 3)
