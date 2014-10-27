@@ -1531,8 +1531,8 @@ static const lvec16 kUVBiasR_AVX = {
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 __asm {                                                \
-    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
-    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
+    __asm vmovq      xmm0, qword ptr [esi]        /* U */         /* NOLINT */ \
+    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */         /* NOLINT */ \
     __asm lea        esi,  [esi + 8]                                           \
     __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
@@ -5132,8 +5132,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
    align      4
  xloop50:
    vmovdqu    ymm0, [esi]
-   vmovdqu    ymm1, [esi + edx]
-   vpavgb     ymm0, ymm0, ymm1
+   vpavgb     ymm0, ymm0, [esi + edx]
    sub        ecx, 32
    vmovdqu    [esi + edi], ymm0
    lea        esi, [esi + 32]
