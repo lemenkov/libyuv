@@ -9,7 +9,6 @@
  */
 
 #include <stdlib.h>
-#include <time.h>
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/rotate_argb.h"
