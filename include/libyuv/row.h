@@ -507,7 +507,6 @@ typedef uint8 ulvec8[32];
 #if defined(__native_client__) && defined(__x86_64__)
 #define BUNDLELOCK ".bundle_lock\n"
 #define BUNDLEUNLOCK ".bundle_unlock\n"
-#define BUNDLEALIGN "\n"
 #define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
 #define MEMACCESS2(offset, base) "%%nacl:" #offset "(%%r15,%q" #base ")"
 #define MEMLEA(offset, base) #offset "(%q" #base ")"

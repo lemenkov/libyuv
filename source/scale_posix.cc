@@ -168,7 +168,6 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu  (%0,%3,1),%%xmm2
-    BUNDLEALIGN
     MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu  0x10(%0,%3,1),%%xmm3
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
@@ -245,12 +244,10 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm2)           //  movdqu  (%0,%4,1),%%xmm2
-    BUNDLEALIGN
     MEMOPREG(movdqu,0x10,0,4,1,xmm3)           //  movdqu  0x10(%0,%4,1),%%xmm3
     "pavgb     %%xmm2,%%xmm0                   \n"
     "pavgb     %%xmm3,%%xmm1                   \n"
     MEMOPREG(movdqu,0x00,0,4,2,xmm2)           //  movdqu  (%0,%4,2),%%xmm2
-    BUNDLEALIGN
     MEMOPREG(movdqu,0x10,0,4,2,xmm3)           //  movdqu  0x10(%0,%4,2),%%xmm3
     MEMOPREG(movdqu,0x00,0,3,1,xmm4)           //  movdqu  (%0,%3,1),%%xmm4
     MEMOPREG(movdqu,0x10,0,3,1,xmm5)           //  movdqu  0x10(%0,%3,1),%%xmm5
@@ -374,7 +371,6 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     "packuswb  %%xmm6,%%xmm6                   \n"
     "movq      %%xmm6," MEMACCESS2(0x8,1) "    \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
-    BUNDLEALIGN
     MEMOPREG(movdqu,0x10,0,3,1,xmm7)           //  movdqu  0x10(%0,%3),%%xmm7
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "pavgb     %%xmm7,%%xmm6                   \n"
@@ -708,7 +704,6 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     MEMOPARG(movzwl,0x00,1,3,1,k2)             //  movzwl  (%1,%3,1),%k2
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
-    BUNDLEALIGN
     MEMOPARG(movzwl,0x00,1,4,1,k2)             //  movzwl  (%1,%4,1),%k2
     "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
@@ -848,7 +843,6 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    BUNDLEALIGN
     MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu   (%0,%3,1),%%xmm2
     MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu   0x10(%0,%3,1),%%xmm3
     "lea       " MEMLEA(0x20,0) ",%0           \n"
@@ -891,7 +885,6 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
     "movd      " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(movd,0x00,0,1,1,xmm1)             //  movd      (%0,%1,1),%%xmm1
     "punpckldq %%xmm1,%%xmm0                   \n"
-    BUNDLEALIGN
     MEMOPREG(movd,0x00,0,1,2,xmm2)             //  movd      (%0,%1,2),%%xmm2
     MEMOPREG(movd,0x00,0,4,1,xmm3)             //  movd      (%0,%4,1),%%xmm3
     "lea       " MEMLEA4(0x00,0,1,4) ",%0      \n"
@@ -935,11 +928,9 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     "movq      " MEMACCESS(0) ",%%xmm0         \n"
     MEMOPREG(movhps,0x00,0,1,1,xmm0)           //  movhps    (%0,%1,1),%%xmm0
     MEMOPREG(movq,0x00,0,1,2,xmm1)             //  movq      (%0,%1,2),%%xmm1
-    BUNDLEALIGN
     MEMOPREG(movhps,0x00,0,4,1,xmm1)           //  movhps    (%0,%4,1),%%xmm1
     "lea       " MEMLEA4(0x00,0,1,4) ",%0      \n"
     "movq      " MEMACCESS(5) ",%%xmm2         \n"
-    BUNDLEALIGN
     MEMOPREG(movhps,0x00,5,1,1,xmm2)           //  movhps    (%5,%1,1),%%xmm2
     MEMOPREG(movq,0x00,5,1,2,xmm3)             //  movq      (%5,%1,2),%%xmm3
     MEMOPREG(movhps,0x00,5,4,1,xmm3)           //  movhps    (%5,%4,1),%%xmm3
@@ -1014,7 +1005,6 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
   "49:                                         \n"
     "test      $0x2,%4                         \n"
     "je        29f                             \n"
-    BUNDLEALIGN
     MEMOPREG(movd,0x00,3,0,4,xmm0)             //  movd      (%3,%0,4),%%xmm0
     MEMOPREG(movd,0x00,3,1,4,xmm1)             //  movd      (%3,%1,4),%%xmm1
     "pextrw    $0x5,%%xmm2,%k0                 \n"
@@ -1120,7 +1110,6 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "paddd     %%xmm3,%%xmm2                   \n"
     MEMOPREG(movq,0x00,1,3,4,xmm0)             //  movq      (%1,%3,4),%%xmm0
     "psrlw     $0x9,%%xmm1                     \n"
-    BUNDLEALIGN
     MEMOPREG(movhps,0x00,1,4,4,xmm0)           //  movhps    (%1,%4,4),%%xmm0
     "pshufb    %%xmm5,%%xmm1                   \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
@@ -1140,7 +1129,6 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     "add       $0x1,%2                         \n"
     "jl        99f                             \n"
     "psrlw     $0x9,%%xmm2                     \n"
-    BUNDLEALIGN
     MEMOPREG(movq,0x00,1,3,4,xmm0)             //  movq      (%1,%3,4),%%xmm0
     "pshufb    %%xmm5,%%xmm2                   \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
