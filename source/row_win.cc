@@ -1603,10 +1603,10 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
     lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
-    vzeroupper
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -1649,10 +1649,10 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
-    vzeroupper
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -1695,10 +1695,10 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
-    vzeroupper
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -1741,10 +1741,10 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
-    vzeroupper
 
     pop        edi
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -3123,8 +3123,8 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy,
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
     jg         convertloop
-    ret
     vzeroupper
+    ret
   }
 }
 
