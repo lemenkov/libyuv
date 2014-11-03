@@ -2853,6 +2853,64 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 }
 #endif  // HAS_YUY2TOYROW_SSE2
 
+#ifdef HAS_YUY2TOYROW_AVX2
+void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int pix) {
+  asm volatile (
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"
+    "vpsrlw    $0x8,%%ymm5,%%ymm5              \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
+    "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "sub       $0x20,%2                        \n"
+    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
+    "lea      " MEMLEA(0x20,1) ",%1            \n"
+    "jg        1b                              \n"
+  : "+r"(src_yuy2),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
+void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int pix) {
+  asm volatile (
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "sub       $0x20,%2                     \n"
+    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
+    "lea      " MEMLEA(0x20,1) ",%1            \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+    "ret                                       \n"
+  : "+r"(src_uyvy),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_YUY2TOYROW_AVX2
+
 #ifdef HAS_ARGBBLENDROW_SSE2
 // Blend 8 pixels at a time.
 void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
