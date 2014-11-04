@@ -192,6 +192,12 @@ extern "C" {
 #define HAS_ARGBCOPYALPHAROW_AVX2
 #define HAS_ARGBCOPYYTOALPHAROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
+#define HAS_YUY2TOYROW_AVX2
+#define HAS_YUY2TOUV422ROW_AVX2
+#define HAS_YUY2TOUVROW_AVX2
+#define HAS_UYVYTOYROW_AVX2
+#define HAS_UYVYTOUV422ROW_AVX2
+#define HAS_UYVYTOUVROW_AVX2
 #endif
 
 // The following are require VS2012.
@@ -207,12 +213,6 @@ extern "C" {
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_SPLITUVROW_AVX2
-#define HAS_UYVYTOUV422ROW_AVX2
-#define HAS_UYVYTOUVROW_AVX2
-#define HAS_UYVYTOYROW_AVX2
-#define HAS_YUY2TOUV422ROW_AVX2
-#define HAS_YUY2TOUVROW_AVX2
-#define HAS_YUY2TOYROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -531,6 +531,11 @@ typedef uint8 ulvec8[32];
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " (%%r15,%%r14),%" #arg "\n" \
     BUNDLEUNLOCK
+#define VMEMOPREG(opcode, offset, base, index, scale, reg1, reg2) \
+    BUNDLELOCK \
+    "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
+    #opcode " (%%r15,%%r14),%%" #reg1 ",%%" #reg2 "\n" \
+    BUNDLEUNLOCK
 #else  // defined(__native_client__) && defined(__x86_64__)
 #define BUNDLEALIGN "\n"
 #define MEMACCESS(base) "(%" #base ")"
@@ -548,6 +553,9 @@ typedef uint8 ulvec8[32];
     #opcode " %%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
 #define MEMOPARG(opcode, offset, base, index, scale, arg) \
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%" #arg "\n"
+#define VMEMOPREG(opcode, offset, base, index, scale, reg1, reg2) \
+    #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg1 ",%%" \
+    #reg2 "\n"
 #endif  // defined(__native_client__) && defined(__x86_64__)
 
 #if defined(__arm__) || defined(__aarch64__)

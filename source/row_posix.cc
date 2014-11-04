@@ -2882,6 +2882,93 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int pix) {
   );
 }
 
+
+void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
+                      uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"
+    "vpsrlw    $0x8,%%ymm5,%%ymm5              \n"
+    "sub       %1,%2                           \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
+    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
+    "lea       " MEMACCESS2(0x40,0) ",%0       \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm1            \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpackuswb %%ymm1,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    MEMOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "sub       $0x20,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_yuy2),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_v),       // %2
+    "+r"(pix)          // %3
+  : "r"((intptr_t)(stride_yuy2))  // %4
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
+void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
+                         uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"
+    "vpsrlw    $0x8,%%ymm5,%%ymm5              \n"
+    "sub       %1,%2                           \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm1            \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpackuswb %%ymm1,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    MEMOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "sub       $0x20,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_yuy2),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_v),       // %2
+    "+r"(pix)          // %3
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
 void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int pix) {
   asm volatile (
     LABELALIGN
@@ -2898,12 +2985,97 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "lea      " MEMLEA(0x20,1) ",%1            \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
-    "ret                                       \n"
   : "+r"(src_uyvy),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   :
   : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
+                      uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"
+    "vpsrlw    $0x8,%%ymm5,%%ymm5              \n"
+    "sub       %1,%2                           \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
+    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
+    "lea       " MEMACCESS2(0x40,0) ",%0       \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
+    "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm1            \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpackuswb %%ymm1,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    MEMOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "sub       $0x20,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_uyvy),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_v),       // %2
+    "+r"(pix)          // %3
+  : "r"((intptr_t)(stride_uyvy))  // %4
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm5"
+#endif
+  );
+}
+
+void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
+                         uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    "psrlw     $0x8,%%xmm5                     \n"
+    "sub       %1,%2                           \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
+    "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vpand     %%ymm5,%%ymm0,%%ymm1            \n"
+    "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
+    "vpackuswb %%ymm1,%%ymm1,%%ymm1            \n"
+    "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
+    "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    MEMOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "sub       $0x20,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_uyvy),    // %0
+    "+r"(dst_u),       // %1
+    "+r"(dst_v),       // %2
+    "+r"(pix)          // %3
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
 #if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
 #endif
