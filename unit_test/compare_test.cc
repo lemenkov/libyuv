@@ -17,6 +17,7 @@
 #include "libyuv/compare.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/row.h"
+#include "libyuv/video_common.h"
 
 namespace libyuv {
 
@@ -143,6 +144,34 @@ TEST_F(libyuvTest, BenchmarkDjb2_Unaligned) {
     h1 = HashDjb2(src_a + 1, kMaxTest, 5381);
   }
   EXPECT_EQ(h1, h2);
+  free_aligned_buffer_64(src_a);
+}
+
+TEST_F(libyuvTest, BenchmarkARGBDetect_Opt) {
+  uint32 fourcc;
+  const int kMaxTest = benchmark_width_ * benchmark_height_ * 4;
+  align_buffer_64(src_a, kMaxTest);
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i] = 255;
+  }
+
+  src_a[0] = 0;
+  fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
+                      benchmark_width_, benchmark_height_);
+  EXPECT_EQ(libyuv::FOURCC_BGRA, fourcc);
+  src_a[0] = 255;
+  src_a[3] = 0;
+  fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
+                      benchmark_width_, benchmark_height_);
+  EXPECT_EQ(libyuv::FOURCC_ARGB, fourcc);
+  src_a[3] = 255;
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
+                        benchmark_width_, benchmark_height_);
+  }
+  EXPECT_EQ(0, fourcc);
+
   free_aligned_buffer_64(src_a);
 }
 
