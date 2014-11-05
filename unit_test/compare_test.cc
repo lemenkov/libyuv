@@ -175,6 +175,33 @@ TEST_F(libyuvTest, BenchmarkARGBDetect_Opt) {
   free_aligned_buffer_64(src_a);
 }
 
+TEST_F(libyuvTest, BenchmarkARGBDetect_Unaligned) {
+  uint32 fourcc;
+  const int kMaxTest = benchmark_width_ * benchmark_height_ * 4 + 1;
+  align_buffer_64(src_a, kMaxTest);
+  for (int i = 0; i < kMaxTest; ++i) {
+    src_a[i + 1] = 255;
+  }
+
+  src_a[0 + 1] = 0;
+  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
+                      benchmark_width_, benchmark_height_);
+  EXPECT_EQ(libyuv::FOURCC_BGRA, fourcc);
+  src_a[0 + 1] = 255;
+  src_a[3 + 1] = 0;
+  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
+                      benchmark_width_, benchmark_height_);
+  EXPECT_EQ(libyuv::FOURCC_ARGB, fourcc);
+  src_a[3 + 1] = 255;
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
+                        benchmark_width_, benchmark_height_);
+  }
+  EXPECT_EQ(0, fourcc);
+
+  free_aligned_buffer_64(src_a);
+}
 TEST_F(libyuvTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
   align_buffer_64(src_a, kMaxWidth);
@@ -272,7 +299,6 @@ TEST_F(libyuvTest, BenchmarkPsnr_Opt) {
   free_aligned_buffer_64(src_a);
   free_aligned_buffer_64(src_b);
 }
-
 
 TEST_F(libyuvTest, BenchmarkPsnr_Unaligned) {
   align_buffer_64(src_a, benchmark_width_ * benchmark_height_ + 1);

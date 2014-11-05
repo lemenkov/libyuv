@@ -81,14 +81,28 @@ uint32 HashDjb2(const uint8* src, uint64 count, uint32 seed) {
 
 static uint32 ARGBDetectRow_C(const uint8* argb, int width) {
   int x;
-  for (x = 0; x < width; ++x) {
+  for (x = 0; x < width - 1; x += 2) {
     if (argb[0] != 255) {  // First byte is not Alpha of 255, so not ARGB.
       return FOURCC_BGRA;
     }
     if (argb[3] != 255) {  // 4th byte is not Alpha of 255, so not BGRA.
       return FOURCC_ARGB;
     }
-    argb += 4;
+    if (argb[4] != 255) {  // Second pixel first byte is not Alpha of 255.
+      return FOURCC_BGRA;
+    }
+    if (argb[7] != 255) {  // Second pixel 4th byte is not Alpha of 255.
+      return FOURCC_ARGB;
+    }
+    argb += 8;
+  }
+  if (width & 1) {
+    if (argb[0] != 255) {  // First byte is not Alpha of 255, so not ARGB.
+      return FOURCC_BGRA;
+    }
+    if (argb[3] != 255) {  // 4th byte is not Alpha of 255, so not BGRA.
+      return FOURCC_ARGB;
+    }
   }
   return 0;
 }
