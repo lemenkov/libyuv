@@ -2311,6 +2311,46 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_ARGBMIRRORROW_SSSE3
 
+#ifdef HAS_SPLITUVROW_AVX2
+void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
+  asm volatile (
+    "pcmpeqb    %%ymm5,%%ymm5                    \n"
+    "psrlw      $0x8,%%ymm5                      \n"
+    "sub        %1,%2                            \n"
+    LABELALIGN
+  "1:                                            \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0          \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1    \n"
+    "lea        " MEMLEA(0x40,0) ",%0            \n"
+    "vpsrlw      $0x8,%%ymm0,%%ymm2              \n"
+    "vpsrlw      $0x8,%%ymm1,%%ymm3              \n"
+    "vpand       %%ymm5,%%ymm0,%%ymm0            \n"
+    "vpand       %%ymm5,%%ymm1,%%ymm1            \n"
+    "vpackuswb   %%ymm1,%%ymm0,%%ymm0            \n"
+    "vpackuswb   %%ymm3,%%ymm2,%%ymm2            \n"
+    "vpermq      $0xd8,%%ymm0,%%ymm0             \n"
+    "vpermq      $0xd8,%%ymm2,%%ymm2             \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "          \n"
+    MEMOPMEM(vmovdqu,ymm2,0x00,1,2,1)             //  vmovdqu %%ymm2,(%1,%2)
+    "lea        " MEMLEA(0x20,1) ",%1            \n"
+    "sub        $0x20,%3                         \n"
+    "jg         1b                               \n"
+  : "+r"(src_uv),     // %0
+    "+r"(dst_u),      // %1
+    "+r"(dst_v),      // %2
+    "+r"(pix)         // %3
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_SPLITUVROW_AVX2
+
 #ifdef HAS_SPLITUVROW_SSE2
 void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
