@@ -2104,6 +2104,7 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     "lea       " MEMLEA(0x80, [dst_bgra]) ", %[dst_bgra] \n"  // dst_bgra += 128
     "sub       $0x20, %[width]                           \n"  // width -= 32
     "jg        1b                                        \n"
+    "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
@@ -2121,7 +2122,6 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422ToBGRAROW_AVX2
-
 
 #ifdef HAS_YTOARGBROW_SSE2
 void YToARGBRow_SSE2(const uint8* y_buf,
@@ -2314,27 +2314,28 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_SPLITUVROW_AVX2
 void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
-    "pcmpeqb    %%ymm5,%%ymm5                    \n"
-    "psrlw      $0x8,%%ymm5                      \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5             \n"
+    "vpsrlw     $0x8,%%ymm5,%%ymm5               \n"
     "sub        %1,%2                            \n"
     LABELALIGN
   "1:                                            \n"
     "vmovdqu    " MEMACCESS(0) ",%%ymm0          \n"
     "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1    \n"
     "lea        " MEMLEA(0x40,0) ",%0            \n"
-    "vpsrlw      $0x8,%%ymm0,%%ymm2              \n"
-    "vpsrlw      $0x8,%%ymm1,%%ymm3              \n"
-    "vpand       %%ymm5,%%ymm0,%%ymm0            \n"
-    "vpand       %%ymm5,%%ymm1,%%ymm1            \n"
-    "vpackuswb   %%ymm1,%%ymm0,%%ymm0            \n"
-    "vpackuswb   %%ymm3,%%ymm2,%%ymm2            \n"
-    "vpermq      $0xd8,%%ymm0,%%ymm0             \n"
-    "vpermq      $0xd8,%%ymm2,%%ymm2             \n"
+    "vpsrlw     $0x8,%%ymm0,%%ymm2               \n"
+    "vpsrlw     $0x8,%%ymm1,%%ymm3               \n"
+    "vpand      %%ymm5,%%ymm0,%%ymm0             \n"
+    "vpand      %%ymm5,%%ymm1,%%ymm1             \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0             \n"
+    "vpackuswb  %%ymm3,%%ymm2,%%ymm2             \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0              \n"
+    "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
     "vmovdqu    %%ymm0," MEMACCESS(1) "          \n"
     MEMOPMEM(vmovdqu,ymm2,0x00,1,2,1)             //  vmovdqu %%ymm2,(%1,%2)
     "lea        " MEMLEA(0x20,1) ",%1            \n"
     "sub        $0x20,%3                         \n"
     "jg         1b                               \n"
+    "vzeroupper                                  \n"
   : "+r"(src_uv),     // %0
     "+r"(dst_u),      // %1
     "+r"(dst_v),      // %2
@@ -2390,6 +2391,45 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   );
 }
 #endif  // HAS_SPLITUVROW_SSE2
+
+// TODO(fbarchard): Consider vpunpcklbw, vpunpckhbw, store-low1, store-low2,
+// extract-high1, extract-high2.
+#ifdef HAS_MERGEUVROW_AVX2
+void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
+                     int width) {
+  asm volatile (
+    "sub       %0,%1                             \n"
+    LABELALIGN
+  "1:                                            \n"
+    "vmovdqu   " MEMACCESS(0) ",%%ymm0           \n"
+    MEMOPREG(vmovdqu,0x00,0,1,1,ymm1)             //  vmovdqu (%0,%1,1),%%ymm1
+    "lea       " MEMLEA(0x20,0) ",%0             \n"
+
+    "vpunpcklbw %%ymm1,%%ymm0,%%ymm2             \n"
+    "vpunpckhbw %%ymm1,%%ymm0,%%ymm0             \n"
+    "vperm2i128 $0x20,%%ymm0,%%ymm2,%%ymm1       \n"
+    "vperm2i128 $0x31,%%ymm0,%%ymm2,%%ymm2       \n"
+    "vmovdqu    %%ymm1," MEMACCESS(2) "          \n"
+    "vmovdqu    %%ymm2," MEMACCESS2(0x20,2) "    \n"
+    "lea       " MEMLEA(0x40,2) ",%2             \n"
+    "sub       $0x20,%3                          \n"
+    "jg        1b                                \n"
+    "vzeroupper                                  \n"
+  : "+r"(src_u),     // %0
+    "+r"(src_v),     // %1
+    "+r"(dst_uv),    // %2
+    "+r"(width)      // %3
+  :
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2"
+#endif
+  );
+}
+#endif  // HAS_MERGEUVROW_AVX2
 
 #ifdef HAS_MERGEUVROW_SSE2
 void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
@@ -2911,6 +2951,7 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int pix) {
     "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
     "lea      " MEMLEA(0x20,1) ",%1            \n"
     "jg        1b                              \n"
+    "vzeroupper                                \n"
   : "+r"(src_yuy2),  // %0
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
@@ -2921,7 +2962,6 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int pix) {
 #endif
   );
 }
-
 
 void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
                       uint8* dst_u, uint8* dst_v, int pix) {
@@ -4853,6 +4893,7 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     "vmovdqu   %%ymm1," MEMACCESS2(0x20,1) "   \n"
     "lea       " MEMLEA(0x40,1) ",%1           \n"
     "jg        1b                              \n"
+    "vzeroupper                                \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
