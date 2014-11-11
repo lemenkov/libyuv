@@ -3890,7 +3890,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
 void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
                           uint8* dst_argb, int width) {
   asm volatile (
-    "pxor      %%xmm5,%%xmm5                   \n"
+    "pxor      %%xmm5,%%xmm5                  \n"
 
     // 4 pixel loop.
     LABELALIGN
@@ -3924,6 +3924,45 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 #endif  // HAS_ARGBMULTIPLYROW_SSE2
+
+#ifdef HAS_ARGBMULTIPLYROW_AVX2
+// Multiply 2 rows of ARGB pixels together, 8 pixels at a time.
+void ARGBMultiplyRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
+                          uint8* dst_argb, int width) {
+  asm volatile (
+    "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
+
+    // 4 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm1        \n"
+    "lea        " MEMLEA(0x20,0) ",%0          \n"
+    "vmovdqu    " MEMACCESS(1) ",%%ymm3        \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "vpunpcklbw %%ymm1,%%ymm1,%%ymm0           \n"
+    "vpunpckhbw %%ymm1,%%ymm1,%%ymm1           \n"
+    "vpunpcklbw %%ymm5,%%ymm3,%%ymm2           \n"
+    "vpunpckhbw %%ymm5,%%ymm3,%%ymm3           \n"
+    "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "vmovdqu    %%ymm0," MEMACCESS(2) "        \n"
+    "lea       " MEMLEA(0x20,2) ",%2           \n"
+    "sub        $0x8,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "memory", "cc"
+#if defined(__AVX2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBMULTIPLYROW_AVX2
 
 #ifdef HAS_ARGBADDROW_SSE2
 // Add 2 rows of ARGB pixels together, 4 pixels at a time.
