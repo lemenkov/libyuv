@@ -3955,6 +3955,36 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBADDROW_SSE2
 
+#ifdef HAS_ARGBADDROW_AVX2
+// Add 2 rows of ARGB pixels together, 4 pixels at a time.
+void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
+                     uint8* dst_argb, int width) {
+  asm volatile (
+    // 4 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "lea        " MEMLEA(0x20,0) ",%0          \n"
+    "vpaddusb   " MEMACCESS(1) ",%%ymm0,%%ymm0 \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "vmovdqu    %%ymm0," MEMACCESS(2) "        \n"
+    "lea        " MEMLEA(0x20,2) ",%2          \n"
+    "sub        $0x8,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb0),  // %0
+    "+r"(src_argb1),  // %1
+    "+r"(dst_argb),   // %2
+    "+r"(width)       // %3
+  :
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0"
+#endif
+  );
+}
+#endif  // HAS_ARGBADDROW_AVX2
+
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 // Subtract 2 rows of ARGB pixels, 4 pixels at a time.
 void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,

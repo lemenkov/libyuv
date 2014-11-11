@@ -185,7 +185,6 @@ extern "C" {
 // The code supports NaCL but requires a new compiler and validator.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(VISUALC_HAS_AVX2) || \
     defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
-// Effects:
 #define HAS_COPYROW_AVX
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -200,6 +199,9 @@ extern "C" {
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_SPLITUVROW_AVX2
 #define HAS_MERGEUVROW_AVX2
+
+// Effects:
+#define HAS_ARGBADDROW_AVX2
 #endif
 
 // The following are require VS2012.
@@ -215,7 +217,6 @@ extern "C" {
 #define HAS_MIRRORROW_AVX2
 
 // Effects:
-#define HAS_ARGBADDROW_AVX2
 #define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBMULTIPLYROW_AVX2
