@@ -3549,6 +3549,52 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 }
 #endif  // HAS_ARGBATTENUATEROW_SSSE3
 
+#ifdef HAS_ARGBATTENUATEROW_AVX2
+// Shuffle table duplicating alpha.
+static const ulvec8 kShuffleAlpha_AVX2 = {
+  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
+  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
+};
+// Attenuate 8 pixels at a time.
+void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
+  asm volatile (
+    "vbroadcastf128 %3,%%ymm4                  \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    "vpslld     $0x18,%%ymm5,%%ymm5            \n"
+    "sub        %0,%1                          \n"
+
+    // 8 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm6        \n"
+    "vpunpcklbw %%ymm6,%%ymm6,%%ymm0           \n"
+    "vpunpckhbw %%ymm6,%%ymm6,%%ymm1           \n"
+    "vpshufb    %%ymm4,%%ymm0,%%ymm2           \n"
+    "vpshufb    %%ymm4,%%ymm1,%%ymm3           \n"
+    "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
+    "vpand      %%ymm5,%%ymm6,%%ymm6           \n"
+    "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x8,%%ymm1,%%ymm1             \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpor       %%ymm6,%%ymm0,%%ymm0           \n"
+    "sub        $0x8,%2                        \n"
+    MEMOPMEM(vmovdqu,ymm0,0x00,0,1,1)          //  vmovdqu %%ymm0,(%0,%1)
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width)        // %2
+  : "m"(kShuffleAlpha_AVX2)  // %3
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBATTENUATEROW_AVX2
+
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
 // aligned to 16 bytes
