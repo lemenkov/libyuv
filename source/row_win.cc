@@ -3804,11 +3804,9 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
-static const ulvec8 kShuffleAlpha_AVX2 = {
+static const uvec8 kShuffleAlpha_AVX2 = {
   6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
-  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u,
-  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
-  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u,
+  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
 };
 __declspec(naked) __declspec(align(16))
 void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
@@ -3817,7 +3815,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vmovdqa    ymm4, kShuffleAlpha_AVX2
+    vbroadcastf128 ymm4,kShuffleAlpha_AVX2
     vpcmpeqb   ymm5, ymm5, ymm5 // generate mask 0xff000000
     vpslld     ymm5, ymm5, 24
 
@@ -3899,8 +3897,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 #ifdef HAS_ARGBUNATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
 static const ulvec8 kUnattenShuffleAlpha_AVX2 = {
-  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
-  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15,
+  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15u
 };
 // TODO(fbarchard): Enable USE_GATHER for future hardware if faster.
 // USE_GATHER is not on by default, due to being a slow instruction.
@@ -3913,7 +3910,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vmovdqa    ymm4, kUnattenShuffleAlpha_AVX2
+    vbroadcastf128 ymm4, kUnattenShuffleAlpha_AVX2
 
     align      4
  convertloop:
@@ -3949,7 +3946,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vmovdqa    ymm5, kUnattenShuffleAlpha_AVX2
+    vbroadcastf128 ymm5, kUnattenShuffleAlpha_AVX2
 
     push       esi
     push       edi
