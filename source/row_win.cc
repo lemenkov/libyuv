@@ -72,7 +72,6 @@ static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 // 64 bit
 #if defined(_M_X64)
 
-// Aligned destination version.
 __declspec(align(16))
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
@@ -165,7 +164,7 @@ static const lvec32 kPermdARGBToY_AVX = {
 // vpshufb for vphaddw + vpackuswb packed to shorts.
 static const lvec8 kShufARGBToUV_AVX = {
   0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
-  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
+  0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15
 };
 
 // Constants for BGRA.
@@ -1845,7 +1844,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm packuswb   xmm2, xmm2           /* R */                              \
   }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I444ToARGBRow_SSSE3(const uint8* y_buf,
@@ -1888,7 +1887,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToRGB24Row_SSSE3(const uint8* y_buf,
@@ -1935,7 +1934,7 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToRAWRow_SSSE3(const uint8* y_buf,
@@ -2055,7 +2054,7 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
@@ -2098,7 +2097,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 // Similar to I420 but duplicate UV once more.
 __declspec(naked) __declspec(align(16))
@@ -2144,7 +2143,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV12ToARGBRow_SSSE3(const uint8* y_buf,
@@ -2182,7 +2181,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels, dest aligned 16.
+// 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV21ToARGBRow_SSSE3(const uint8* y_buf,
@@ -2423,8 +2422,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 
 #ifdef HAS_MIRRORROW_AVX2
 // Shuffle table for reversing the bytes.
-static const ulvec8 kShuffleMirror_AVX2 = {
-  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u,
+static const uvec8 kShuffleMirror_AVX2 = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
@@ -2434,7 +2432,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    vmovdqa   ymm5, kShuffleMirror_AVX2
+    vbroadcastf128 ymm5, kShuffleMirror_AVX2
     lea       eax, [eax - 32]
 
     align      4
@@ -3711,7 +3709,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBATTENUATEROW_SSE2
 // Attenuate 4 pixels at a time.
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   __asm {
@@ -3805,8 +3802,7 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 #ifdef HAS_ARGBATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
 static const uvec8 kShuffleAlpha_AVX2 = {
-  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
-  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
+  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u, 14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
 };
 __declspec(naked) __declspec(align(16))
 void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
@@ -3846,7 +3842,6 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
                              int width) {
@@ -3896,7 +3891,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
 
 #ifdef HAS_ARGBUNATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
-static const ulvec8 kUnattenShuffleAlpha_AVX2 = {
+static const uvec8 kUnattenShuffleAlpha_AVX2 = {
   0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15u
 };
 // TODO(fbarchard): Enable USE_GATHER for future hardware if faster.
@@ -4185,7 +4180,6 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
 #ifdef HAS_ARGBQUANTIZEROW_SSE2
 // Quantize 4 ARGB pixels (16 bytes).
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
                           int interval_offset, int width) {
@@ -4232,7 +4226,6 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 
 #ifdef HAS_ARGBSHADEROW_SSE2
 // Shade 4 pixels at a time by specified value.
-// Aligned to 16 bytes.
 __declspec(naked) __declspec(align(16))
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value) {
@@ -4738,8 +4731,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 // area is the number of pixels in the area being averaged.
 // dst points to pixel to store result to.
 // count is number of averaged pixels to produce.
-// Does 4 pixels at a time, requires CumulativeSum pointers to be 16 byte
-// aligned.
+// Does 4 pixels at a time.
 void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
                                     int width, int area, uint8* dst,
                                     int count) {

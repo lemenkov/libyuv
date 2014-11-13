@@ -3379,7 +3379,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     "jge       40b                             \n"
     "jmp       49f                             \n"
 
-    // 4 pixel unaligned loop.
+    // 4 pixel loop.
     LABELALIGN
   "41:                                         \n"
     "movdqu    " MEMACCESS(0) ",%%xmm3         \n"
@@ -3449,7 +3449,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 
 #ifdef HAS_ARGBATTENUATEROW_SSE2
 // Attenuate 4 pixels at a time.
-// aligned to 16 bytes
 void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
   asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
@@ -3497,14 +3496,13 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
 static uvec8 kShuffleAlpha0 = {
-  3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u,
+  3u, 3u, 3u, 3u, 3u, 3u, 128u, 128u, 7u, 7u, 7u, 7u, 7u, 7u, 128u, 128u
 };
 static uvec8 kShuffleAlpha1 = {
   11u, 11u, 11u, 11u, 11u, 11u, 128u, 128u,
-  15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u,
+  15u, 15u, 15u, 15u, 15u, 15u, 128u, 128u
 };
 // Attenuate 4 pixels at a time.
-// aligned to 16 bytes
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   asm volatile (
     "pcmpeqb   %%xmm3,%%xmm3                   \n"
@@ -3551,9 +3549,8 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBATTENUATEROW_AVX2
 // Shuffle table duplicating alpha.
-static const ulvec8 kShuffleAlpha_AVX2 = {
-  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u,
-  14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
+static const uvec8 kShuffleAlpha_AVX2 = {
+  6u, 7u, 6u, 7u, 6u, 7u, 128u, 128u, 14u, 15u, 14u, 15u, 14u, 15u, 128u, 128u
 };
 // Attenuate 8 pixels at a time.
 void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
@@ -3597,7 +3594,6 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
 
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 // Unattenuate 4 pixels at a time.
-// aligned to 16 bytes
 void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
                              int width) {
   uintptr_t alpha = 0;
@@ -3646,6 +3642,80 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
   );
 }
 #endif  // HAS_ARGBUNATTENUATEROW_SSE2
+
+#ifdef HAS_ARGBUNATTENUATEROW_AVX2
+// Shuffle table duplicating alpha.
+static const uvec8 kUnattenShuffleAlpha_AVX2 = {
+  0u, 1u, 0u, 1u, 0u, 1u, 6u, 7u, 8u, 9u, 8u, 9u, 8u, 9u, 14u, 15u
+};
+// Unattenuate 8 pixels at a time.
+void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
+                             int width) {
+  uintptr_t alpha = 0;
+  asm volatile (
+    "sub        %0,%1                          \n"
+    "vbroadcastf128 %5,%%ymm5                  \n"
+
+    // 8 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    // replace VPGATHER
+    "movzb     " MEMACCESS2(0x03,0) ",%3       \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm0)             //  vmovd 0x0(%4,%3,4),%%xmm0
+    "movzb     " MEMACCESS2(0x07,0) ",%3       \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm1)             //  vmovd 0x0(%4,%3,4),%%xmm1
+    "movzb     " MEMACCESS2(0x0b,0) ",%3       \n"
+    "vpunpckldq %%xmm1,%%xmm0,%%xmm6           \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm2)             //  vmovd 0x0(%4,%3,4),%%xmm2
+    "movzb     " MEMACCESS2(0x0f,0) ",%3       \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm3)             //  vmovd 0x0(%4,%3,4),%%xmm3
+    "movzb     " MEMACCESS2(0x13,0) ",%3       \n"
+    "vpunpckldq %%xmm3,%%xmm2,%%xmm7           \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm0)             //  vmovd 0x0(%4,%3,4),%%xmm0
+    "movzb     " MEMACCESS2(0x17,0) ",%3       \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm1)             //  vmovd 0x0(%4,%3,4),%%xmm1
+    "movzb     " MEMACCESS2(0x1b,0) ",%3       \n"
+    "vpunpckldq %%xmm1,%%xmm0,%%xmm0           \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm2)             //  vmovd 0x0(%4,%3,4),%%xmm2
+    "movzb     " MEMACCESS2(0x1f,0) ",%3       \n"
+    MEMOPREG(vmovd,0x00,4,3,4,xmm3)             //  vmovd 0x0(%4,%3,4),%%xmm3
+    "vpunpckldq %%xmm3,%%xmm2,%%xmm2           \n"
+    "vpunpcklqdq %%xmm7,%%xmm6,%%xmm3          \n"
+    "vpunpcklqdq %%xmm2,%%xmm0,%%xmm0          \n"
+    "vinserti128 $0x1,%%xmm0,%%ymm3,%%ymm3     \n"
+    // end of VPGATHER
+
+    "vmovdqu    " MEMACCESS(0) ",%%ymm6        \n"
+    "vpunpcklbw %%ymm6,%%ymm6,%%ymm0           \n"
+    "vpunpckhbw %%ymm6,%%ymm6,%%ymm1           \n"
+    "vpunpcklwd %%ymm3,%%ymm3,%%ymm2           \n"
+    "vpunpckhwd %%ymm3,%%ymm3,%%ymm3           \n"
+    "vpshufb    %%ymm5,%%ymm2,%%ymm2           \n"
+    "vpshufb    %%ymm5,%%ymm3,%%ymm3           \n"
+    "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "sub        $0x8,%2                        \n"
+    MEMOPMEM(vmovdqu,ymm0,0x00,0,1,1)          //  vmovdqu %%ymm0,(%0,%1)
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),    // %0
+    "+r"(dst_argb),    // %1
+    "+r"(width),       // %2
+    "+r"(alpha)        // %3
+  : "r"(fixed_invtbl8),  // %4
+    "m"(kUnattenShuffleAlpha_AVX2)  // %5
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+#endif
+  );
+}
+#endif  // HAS_ARGBUNATTENUATEROW_AVX2
 
 #ifdef HAS_ARGBGRAYROW_SSSE3
 // Convert 8 ARGB pixels (64 bytes) to 8 Gray ARGB pixels
@@ -3841,7 +3911,6 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
 #ifdef HAS_ARGBQUANTIZEROW_SSE2
 // Quantize 4 ARGB pixels (16 bytes).
-// aligned to 16 bytes
 void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
                           int interval_offset, int width) {
   asm volatile (
@@ -3894,7 +3963,6 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
 
 #ifdef HAS_ARGBSHADEROW_SSE2
 // Shade 4 pixels at a time by specified value.
-// Aligned to 16 bytes.
 void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
                        uint32 value) {
   asm volatile (

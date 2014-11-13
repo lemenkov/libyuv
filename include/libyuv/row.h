@@ -205,6 +205,7 @@ extern "C" {
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBATTENUATEROW_AVX2
+#define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 
 // The following are require VS2012.
@@ -218,10 +219,7 @@ extern "C" {
 #define HAS_I422TOABGRROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_MIRRORROW_AVX2
-
-// Effects:
 #define HAS_ARGBMIRRORROW_AVX2
-#define HAS_ARGBUNATTENUATEROW_AVX2
 #endif  // defined(VISUALC_HAS_AVX2)
 
 // The following are Yasm x86 only:
