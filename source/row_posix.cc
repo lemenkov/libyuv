@@ -2207,6 +2207,37 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_MIRRORROW_SSSE3
 
+#ifdef HAS_MIRRORROW_AVX2
+void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
+  intptr_t temp_width = (intptr_t)(width);
+  asm volatile (
+    "vbroadcastf128 %3,%%ymm5                  \n"
+    "lea       " MEMLEA(-0x20,0) ",%0          \n"
+    LABELALIGN
+  "1:                                          \n"
+    MEMOPREG(vmovdqu,0x00,0,2,1,ymm0)          //  vmovdqu (%0,%2),%%ymm0
+    "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpermq     $0x4e,%%ymm0,%%ymm0            \n"
+    "sub       $0x20,%2                        \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(temp_width)  // %2
+  : "m"(kShuffleMirror) // %3
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_MIRRORROW_AVX2
+
 #ifdef HAS_MIRRORROW_SSE2
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = (intptr_t)(width);

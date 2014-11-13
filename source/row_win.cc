@@ -2398,6 +2398,7 @@ static const uvec8 kShuffleMirror = {
   15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
 };
 
+// TODO(fbarchard): Replace lea with -16 offset.
 __declspec(naked) __declspec(align(16))
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   __asm {
@@ -2421,18 +2422,13 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_MIRRORROW_SSSE3
 
 #ifdef HAS_MIRRORROW_AVX2
-// Shuffle table for reversing the bytes.
-static const uvec8 kShuffleMirror_AVX2 = {
-  15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u, 7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
-};
-
 __declspec(naked) __declspec(align(16))
 void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
   __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    vbroadcastf128 ymm5, kShuffleMirror_AVX2
+    vbroadcastf128 ymm5, kShuffleMirror
     lea       eax, [eax - 32]
 
     align      4
