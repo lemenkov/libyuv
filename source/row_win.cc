@@ -2392,6 +2392,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 }
 #endif  // HAS_YTOARGBROW_SSE2
 
+
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleMirror = {
@@ -2406,11 +2407,10 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
     movdqa    xmm5, kShuffleMirror
-    lea       eax, [eax - 16]
 
     align      4
  convertloop:
-    movdqu    xmm0, [eax + ecx]
+    movdqu    xmm0, [eax - 16 + ecx]
     pshufb    xmm0, xmm5
     sub       ecx, 16
     movdqu    [edx], xmm0
@@ -2429,11 +2429,10 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
     vbroadcastf128 ymm5, kShuffleMirror
-    lea       eax, [eax - 32]
 
     align      4
  convertloop:
-    vmovdqu   ymm0, [eax + ecx]
+    vmovdqu   ymm0, [eax - 32 + ecx]
     vpshufb   ymm0, ymm0, ymm5
     vpermq    ymm0, ymm0, 0x4e  // swap high and low halfs
     sub       ecx, 32
@@ -2453,11 +2452,10 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    lea       eax, [eax - 16]
 
     align      4
  convertloop:
-    movdqu    xmm0, [eax + ecx]
+    movdqu    xmm0, [eax - 16 + ecx]
     movdqa    xmm1, xmm0        // swap bytes
     psllw     xmm0, 8
     psrlw     xmm1, 8
@@ -2551,12 +2549,11 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    lea       eax, [eax - 32]
     vmovdqa   ymm5, kARGBShuffleMirror_AVX2
 
     align      4
  convertloop:
-    vpermd    ymm0, ymm5, [eax + ecx * 4]  // permute dword order
+    vpermd    ymm0, ymm5, [eax - 32 + ecx * 4]  // permute dword order
     sub       ecx, 8
     vmovdqu   [edx], ymm0
     lea       edx, [edx + 32]
