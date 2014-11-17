@@ -2211,10 +2211,9 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "vbroadcastf128 %3,%%ymm5                  \n"
-    "lea       " MEMLEA(-0x20,0) ",%0          \n"
     LABELALIGN
   "1:                                          \n"
-    MEMOPREG(vmovdqu,0x00,0,2,1,ymm0)          //  vmovdqu (%0,%2),%%ymm0
+    MEMOPREG(vmovdqu,-0x20,0,2,1,ymm0)         //  vmovdqu -0x20(%0,%2),%%ymm0
     "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n"
     "vpermq     $0x4e,%%ymm0,%%ymm0            \n"
     "sub       $0x20,%2                        \n"
@@ -2241,10 +2240,9 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = (intptr_t)(width);
   asm volatile (
-    "lea       " MEMLEA(-0x10,0) ",%0          \n"
     LABELALIGN
   "1:                                          \n"
-    MEMOPREG(movdqu,0x00,0,2,1,xmm0)           //  movdqu  (%0,%2),%%xmm0
+    MEMOPREG(movdqu,-0x10,0,2,1,xmm0)          //  movdqu -0x10(%0,%2),%%xmm0
     "movdqa    %%xmm0,%%xmm1                   \n"
     "psllw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
