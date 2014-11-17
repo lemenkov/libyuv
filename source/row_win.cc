@@ -2392,7 +2392,6 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 }
 #endif  // HAS_YTOARGBROW_SSE2
 
-
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
 static const uvec8 kShuffleMirror = {
@@ -2432,7 +2431,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    vmovdqu   ymm0, [eax - 32 + ecx]
+    vmovdqu   ymm0, -32[eax + ecx]
     vpshufb   ymm0, ymm0, ymm5
     vpermq    ymm0, ymm0, 0x4e  // swap high and low halfs
     sub       ecx, 32
@@ -2455,7 +2454,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    movdqu    xmm0, [eax - 16 + ecx]
+    movdqu    xmm0, -16[eax + ecx]
     movdqa    xmm1, xmm0        // swap bytes
     psllw     xmm0, 8
     psrlw     xmm1, 8
@@ -2553,7 +2552,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    vpermd    ymm0, ymm5, [eax - 32 + ecx * 4]  // permute dword order
+    vpermd    ymm0, ymm5, -32[eax + ecx * 4]  // permute dword order
     sub       ecx, 8
     vmovdqu   [edx], ymm0
     lea       edx, [edx + 32]
@@ -3608,11 +3607,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     add        ecx, 1 - 4
     jl         convertloop4b
 
-    test       eax, 15          // unaligned?
-    jne        convertuloop4
-    test       esi, 15          // unaligned?
-    jne        convertuloop4
-
     // 4 pixel loop.
   convertloop4:
     movdqu     xmm3, [eax]      // src argb
@@ -3637,32 +3631,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
     jge        convertloop4
-    jmp        convertloop4b
-
-    // 4 pixel unaligned loop.
-  convertuloop4:
-    movdqu     xmm3, [eax]      // src argb
-    lea        eax, [eax + 16]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqu     xmm2, [esi]      // _r_b
-    pshufb     xmm3, kShuffleAlpha // alpha
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqu     xmm1, [esi]      // _a_g
-    lea        esi, [esi + 16]
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    sub        ecx, 4
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    jge        convertuloop4
 
   convertloop4b:
     add        ecx, 4 - 1

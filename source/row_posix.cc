@@ -2183,10 +2183,9 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "movdqa    %3,%%xmm5                       \n"
-    "lea       " MEMLEA(-0x10,0) ",%0          \n"
     LABELALIGN
   "1:                                          \n"
-    MEMOPREG(movdqu,0x00,0,2,1,xmm0)           //  movdqu  (%0,%2),%%xmm0
+    MEMOPREG(movdqu,-0x10,0,2,1,xmm0)          //  movdqu -0x10(%0,%2),%%xmm0
     "pshufb    %%xmm5,%%xmm0                   \n"
     "sub       $0x10,%2                        \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
@@ -3378,10 +3377,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   "19:                                         \n"
     "add       $1-4,%3                         \n"
     "jl        49f                             \n"
-    "test      $0xf,%0                         \n"
-    "jne       41f                             \n"
-    "test      $0xf,%1                         \n"
-    "jne       41f                             \n"
 
     // 4 pixel loop.
     LABELALIGN
@@ -3408,33 +3403,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     "movdqu    %%xmm0," MEMACCESS(2) "         \n"
     "lea       " MEMLEA(0x10,2) ",%2           \n"
     "jge       40b                             \n"
-    "jmp       49f                             \n"
-
-    // 4 pixel loop.
-    LABELALIGN
-  "41:                                         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm3         \n"
-    "lea       " MEMLEA(0x10,0) ",%0           \n"
-    "movdqa    %%xmm3,%%xmm0                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
-    "pshufb    %4,%%xmm3                       \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "sub       $0x4,%3                         \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
-    "lea       " MEMLEA(0x10,2) ",%2           \n"
-    "jge       41b                             \n"
 
   "49:                                         \n"
     "add       $0x3,%3                         \n"

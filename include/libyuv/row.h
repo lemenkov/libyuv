@@ -207,12 +207,12 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBATTENUATEROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
-#define HAS_ARGBMIRRORROW_AVX2
 #endif
 
 // The following are require VS2012.
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+#define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
