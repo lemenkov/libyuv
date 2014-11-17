@@ -2431,7 +2431,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    vmovdqu   ymm0, -32[eax + ecx]
+    vmovdqu   ymm0, [eax - 32 + ecx]
     vpshufb   ymm0, ymm0, ymm5
     vpermq    ymm0, ymm0, 0x4e  // swap high and low halfs
     sub       ecx, 32
@@ -2454,7 +2454,7 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    movdqu    xmm0, -16[eax + ecx]
+    movdqu    xmm0, [eax - 16 + ecx]
     movdqa    xmm1, xmm0        // swap bytes
     psllw     xmm0, 8
     psrlw     xmm1, 8
@@ -2552,7 +2552,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     align      4
  convertloop:
-    vpermd    ymm0, ymm5, -32[eax + ecx * 4]  // permute dword order
+    vpermd    ymm0, ymm5, [eax - 32 + ecx * 4]  // permute dword order
     sub       ecx, 8
     vmovdqu   [edx], ymm0
     lea       edx, [edx + 32]
