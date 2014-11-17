@@ -501,7 +501,7 @@ typedef uint8 ulvec8[32];
 #if defined(__native_client__)
 #define LABELALIGN ".p2align 5\n"
 #else
-#define LABELALIGN ".p2align 2\n"
+#define LABELALIGN
 #endif
 #if defined(__native_client__) && defined(__x86_64__)
 #define BUNDLELOCK ".bundle_lock\n"
@@ -541,7 +541,7 @@ typedef uint8 ulvec8[32];
     #opcode " $0x0,%%" #reg ",(%%r15,%%r14)\n" \
     BUNDLEUNLOCK
 #else  // defined(__native_client__) && defined(__x86_64__)
-#define BUNDLEALIGN "\n"
+#define BUNDLEALIGN
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
 #define MEMLEA(offset, base) #offset "(%" #base ")"
@@ -567,9 +567,9 @@ typedef uint8 ulvec8[32];
 #if defined(__arm__) || defined(__aarch64__)
 #undef MEMACCESS
 #if defined(__native_client__)
-#define MEMACCESS(base) ".p2align   3\nbic %" #base ", #0xc0000000\n"
+#define MEMACCESS(base) ".p2align 3\nbic %" #base ", #0xc0000000\n"
 #else
-#define MEMACCESS(base) "\n"
+#define MEMACCESS(base)
 #endif
 #endif
 
