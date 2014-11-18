@@ -621,6 +621,34 @@ NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, InterpolateRow_C,
 #endif
 #undef NANY
 
+
+
+#define MANY(NAMEANY, MIRROR_SIMD, MIRROR_C, BPP, MASK)                        \
+    void NAMEANY(const uint8* src_y, uint8* dst_y, int width) {                \
+      int n = width & ~MASK;                                                   \
+      int r = width & MASK;                                                    \
+      if (n > 0) {                                                             \
+        MIRROR_SIMD(src_y, dst_y + r * BPP, n);                                \
+      }                                                                        \
+      MIRROR_C(src_y + n * BPP, dst_y, r);                                     \
+    }
+
+#ifdef HAS_MIRRORROW_AVX2
+MANY(MirrorRow_Any_AVX2, MirrorRow_AVX2, MirrorRow_C, 1, 31)
+#endif
+#ifdef HAS_MIRRORROW_SSSE3
+MANY(MirrorRow_Any_SSSE3, MirrorRow_SSSE3, MirrorRow_C, 1, 15)
+#endif
+#ifdef HAS_MIRRORROW_SSE2
+MANY(MirrorRow_Any_SSE2, MirrorRow_SSE2, MirrorRow_C, 1, 15)
+#endif
+#ifdef HAS_MIRRORROW_NEON
+MANY(MirrorRow_Any_NEON, MirrorRow_NEON, MirrorRow_C, 1, 15)
+#endif
+
+#undef MANY
+
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -240,23 +240,43 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     src_stride_y = -src_stride_y;
   }
 #if defined(HAS_MIRRORROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    MirrorRow = MirrorRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MirrorRow = MirrorRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_MIRRORROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
-    MirrorRow = MirrorRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    MirrorRow = MirrorRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_MIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    MirrorRow = MirrorRow_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    MirrorRow = MirrorRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_SSSE3;
+    }
   }
 #endif
 #if defined(HAS_MIRRORROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 32)) {
-    MirrorRow = MirrorRow_AVX2;
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MirrorRow = MirrorRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorRow = MirrorRow_AVX2;
+    }
+  }
+#endif
+// TODO(fbarchard): Mirror on mips handle unaligned memory.
+#if defined(HAS_MIRRORROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+      IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4) &&
+      IS_ALIGNED(dst, 4) && IS_ALIGNED(dst_stride, 4)) {
+    MirrorRow = MirrorRow_MIPS_DSPR2;
   }
 #endif
 
