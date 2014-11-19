@@ -645,9 +645,19 @@ MANY(MirrorRow_Any_SSE2, MirrorRow_SSE2, MirrorRow_C, 1, 15)
 #ifdef HAS_MIRRORROW_NEON
 MANY(MirrorRow_Any_NEON, MirrorRow_NEON, MirrorRow_C, 1, 15)
 #endif
-
+#ifdef HAS_ARGBMIRRORROW_AVX2
+MANY(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, ARGBMirrorRow_C, 4, 7)
+#endif
+#ifdef HAS_ARGBMIRRORROW_SSSE3
+MANY(ARGBMirrorRow_Any_SSSE3, ARGBMirrorRow_SSSE3, ARGBMirrorRow_C, 4, 3)
+#endif
+#ifdef HAS_ARGBMIRRORROW_SSE2
+MANY(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, ARGBMirrorRow_C, 4, 3)
+#endif
+#ifdef HAS_ARGBMIRRORROW_NEON
+MANY(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
+#endif
 #undef MANY
-
 
 #ifdef __cplusplus
 }  // extern "C"
