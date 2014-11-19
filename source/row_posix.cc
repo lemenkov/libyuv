@@ -2339,6 +2339,38 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_ARGBMIRRORROW_SSSE3
 
+#ifdef HAS_ARGBMIRRORROW_AVX2
+// Shuffle table for reversing the bytes.
+static const ulvec32 kARGBShuffleMirror_AVX2 = {
+  7u, 6u, 5u, 4u, 3u, 2u, 1u, 0u
+};
+void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
+  intptr_t temp_width = (intptr_t)(width);
+  asm volatile (
+    "vmovdqa    %3,%%ymm5                      \n"
+    LABELALIGN
+  "1:                                          \n"
+    VMEMOPREG(vpermd,-0x20,0,2,4,ymm5,ymm0) // vpermd -0x20(%0,%2,4),ymm5,ymm0
+    "sub        $0x20,%2                        \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea        " MEMLEA(0x20,1) ",%1           \n"
+    "jg         1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(temp_width)  // %2
+  : "m"(kARGBShuffleMirror_AVX2) // %3
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_ARGBMIRRORROW_AVX2
+
 #ifdef HAS_SPLITUVROW_AVX2
 void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
