@@ -656,7 +656,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
     "packssdw  %%xmm0,%%xmm0                   \n"
     "lea       " MEMLEA(0x10,0) ",%0           \n"
     "movq      %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMACCESS2(0x8,1) ",%1        \n"
+    "lea       " MEMLEA(0x8,1) ",%1            \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src),  // %0
@@ -1418,7 +1418,6 @@ struct {
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
   { VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR }
 };
-
 
 // Read 8 UV from 411
 #define READYUV444                                                             \
@@ -2279,12 +2278,12 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
   intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "movdqa    %4,%%xmm1                       \n"
-    "lea       " MEMLEA4(-0x10,0,3,2) ",%0       \n"
+    "lea       " MEMLEA4(-0x10,0,3,2) ",%0     \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "lea       " MEMLEA(-0x10,0) ",%0            \n"
+    "lea       " MEMLEA(-0x10,0) ",%0          \n"
     "pshufb    %%xmm1,%%xmm0                   \n"
     "sub       $8,%3                           \n"
     "movlpd    %%xmm0," MEMACCESS(1) "         \n"
@@ -3035,7 +3034,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
     "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
-    "lea       " MEMACCESS2(0x40,0) ",%0       \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
     "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
     "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
     "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
@@ -3048,7 +3047,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
     VEXTOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
-    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "lea      " MEMLEA(0x10,1) ",%1            \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
@@ -3090,7 +3089,7 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
     VEXTOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
-    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "lea      " MEMLEA(0x10,1) ",%1            \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
@@ -3148,7 +3147,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
     "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
-    "lea       " MEMACCESS2(0x40,0) ",%0       \n"
+    "lea       " MEMLEA(0x40,0) ",%0           \n"
     "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
     "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
     "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
@@ -3161,7 +3160,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
     VEXTOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
-    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "lea      " MEMLEA(0x10,1) ",%1            \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
@@ -3203,7 +3202,7 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
     VEXTOPMEM(vextractf128,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
-    "lea       0x10" MEMACCESS(1) ",%1         \n"
+    "lea      " MEMLEA(0x10,1) ",%1            \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
