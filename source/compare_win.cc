@@ -33,7 +33,6 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     lea        eax,  [eax + 16]
     movdqu     xmm2, [edx]
     lea        edx,  [edx + 16]
-    sub        ecx, 16
     movdqa     xmm3, xmm1  // abs trick
     psubusb    xmm1, xmm2
     psubusb    xmm2, xmm3
@@ -45,6 +44,7 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     pmaddwd    xmm2, xmm2
     paddd      xmm0, xmm1
     paddd      xmm0, xmm2
+    sub        ecx, 16
     jg         wloop
 
     pshufd     xmm1, xmm0, 0xee
@@ -75,7 +75,6 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
     vmovdqu    ymm1, [eax]
     vmovdqu    ymm2, [eax + edx]
     lea        eax,  [eax + 32]
-    sub        ecx, 32
     vpsubusb   ymm3, ymm1, ymm2  // abs difference trick
     vpsubusb   ymm2, ymm2, ymm1
     vpor       ymm1, ymm2, ymm3
@@ -85,6 +84,7 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
     vpmaddwd   ymm1, ymm1, ymm1
     vpaddd     ymm0, ymm0, ymm1
     vpaddd     ymm0, ymm0, ymm2
+    sub        ecx, 32
     jg         wloop
 
     vpshufd    ymm1, ymm0, 0xee  // 3, 2 + 1, 0 both lanes.
@@ -170,7 +170,6 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     pmulld(0xcd)                 // pmulld     xmm1, xmm5
     paddd      xmm3, xmm4        // add 16 results
     paddd      xmm1, xmm2
-    sub        ecx, 16
     paddd      xmm1, xmm3
 
     pshufd     xmm2, xmm1, 0x0e  // upper 2 dwords
@@ -178,6 +177,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     pshufd     xmm2, xmm1, 0x01
     paddd      xmm1, xmm2
     paddd      xmm0, xmm1
+    sub        ecx, 16
     jg         wloop
 
     movd       eax, xmm0         // return hash
@@ -209,13 +209,13 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
     pmulld     xmm1, kHashMul3
     paddd      xmm3, xmm4        // add 16 results
     paddd      xmm1, xmm2
-    sub        ecx, 16
     paddd      xmm1, xmm3
     pshufd     xmm2, xmm1, 0x0e  // upper 2 dwords
     paddd      xmm1, xmm2
     pshufd     xmm2, xmm1, 0x01
     paddd      xmm1, xmm2
     paddd      xmm0, xmm1
+    sub        ecx, 16
     jg         wloop
 
     movd       eax, xmm0         // return hash

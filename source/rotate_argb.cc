@@ -125,29 +125,24 @@ void ARGBRotate180(const uint8* src, int src_stride,
     }
   }
 #endif
-#if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width * 4, 32)) {
-    CopyRow = CopyRow_NEON;
-  }
-#endif
-#if defined(HAS_COPYROW_X86)
-  if (TestCpuFlag(kCpuHasX86)) {
-    CopyRow = CopyRow_X86;
-  }
-#endif
 #if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width * 4, 32)) {
-    CopyRow = CopyRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
   }
 #endif
 #if defined(HAS_COPYROW_AVX)
-  if (TestCpuFlag(kCpuHasAVX) && IS_ALIGNED(width, 64)) {
-    CopyRow = CopyRow_AVX;
+  if (TestCpuFlag(kCpuHasAVX)) {
+    CopyRow = IS_ALIGNED(width * 4, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)
   if (TestCpuFlag(kCpuHasERMS)) {
     CopyRow = CopyRow_ERMS;
+  }
+#endif
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
 #if defined(HAS_COPYROW_MIPS)

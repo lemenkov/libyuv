@@ -111,9 +111,9 @@ void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     psrlw      xmm0, 8               // isolate odd pixels.
     psrlw      xmm1, 8
     packuswb   xmm0, xmm1
-    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 16
     jg         wloop
 
     ret
@@ -149,9 +149,9 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     pavgw      xmm1, xmm3
     packuswb   xmm0, xmm1
 
-    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 16
     jg         wloop
 
     ret
@@ -192,9 +192,9 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     pavgw      xmm1, xmm3
     packuswb   xmm0, xmm1
 
-    sub        ecx, 16
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 16
     jg         wloop
 
     pop        esi
@@ -226,9 +226,9 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     packuswb   xmm0, xmm1
     psrlw      xmm0, 8
     packuswb   xmm0, xmm0
-    sub        ecx, 8
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
+    sub        ecx, 8
     jg         wloop
 
     ret
@@ -285,9 +285,9 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     pavgw      xmm0, xmm2
     packuswb   xmm0, xmm0
 
-    sub        ecx, 8
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
+    sub        ecx, 8
     jg         wloop
 
     pop        edi
@@ -398,9 +398,9 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    sub        ecx, 24
     movq       qword ptr [edx + 16], xmm0
     lea        edx, [edx + 24]
+    sub        ecx, 24
     jg         wloop
 
     pop        esi
@@ -460,9 +460,9 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
     packuswb   xmm0, xmm0
-    sub        ecx, 24
     movq       qword ptr [edx + 16], xmm0
     lea        edx, [edx+24]
+    sub        ecx, 24
     jg         wloop
 
     pop        esi
@@ -493,11 +493,11 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
     pshufb     xmm1, xmm5
     paddusb    xmm0, xmm1
 
-    sub        ecx, 12
     movq       qword ptr [edx], xmm0  // write 12 pixels
     movhlps    xmm1, xmm0
     movd       [edx + 8], xmm1
     lea        edx, [edx + 12]
+    sub        ecx, 12
     jg         xloop
 
     ret
@@ -558,11 +558,11 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     pmulhuw    xmm6, xmm4            // divide by 9,9,6, 9,9,6
     packuswb   xmm6, xmm6
 
-    sub        ecx, 6
     movd       [edx], xmm6           // write 6 pixels
     psrlq      xmm6, 16
     movd       [edx + 2], xmm6
     lea        edx, [edx + 6]
+    sub        ecx, 6
     jg         xloop
 
     pop        esi
@@ -604,11 +604,11 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     pmulhuw    xmm1, xmm5            // divide by 3,3,2, 3,3,2
     packuswb   xmm1, xmm1
 
-    sub        ecx, 6
     movd       [edx], xmm1           // write 6 pixels
     psrlq      xmm1, 16
     movd       [edx + 2], xmm1
     lea        edx, [edx + 6]
+    sub        ecx, 6
     jg         xloop
 
     pop        esi
@@ -784,10 +784,10 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     movdqa     xmm1, xmm0
     punpcklbw  xmm0, xmm0
     punpckhbw  xmm1, xmm1
-    sub        ecx, 32
     movdqu     [edx], xmm0
     movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
+    sub        ecx, 32
     jg         wloop
 
     ret
@@ -812,9 +812,9 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
     movdqu     xmm1, [eax + 16]
     lea        eax,  [eax + 32]
     shufps     xmm0, xmm1, 0xdd
-    sub        ecx, 4
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 4
     jg         wloop
 
     ret
@@ -842,9 +842,9 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
     shufps     xmm0, xmm1, 0x88      // even pixels
     shufps     xmm2, xmm1, 0xdd      // odd pixels
     pavgb      xmm0, xmm2
-    sub        ecx, 4
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 4
     jg         wloop
 
     ret
@@ -877,9 +877,9 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
     shufps     xmm0, xmm1, 0x88      // even pixels
     shufps     xmm2, xmm1, 0xdd      // odd pixels
     pavgb      xmm0, xmm2
-    sub        ecx, 4
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 4
     jg         wloop
 
     pop        esi
@@ -914,9 +914,9 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
     lea        eax,  [eax + ebx * 4]
     punpckldq  xmm2, xmm3
     punpcklqdq xmm0, xmm2
-    sub        ecx, 4
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 4
     jg         wloop
 
     pop        edi
@@ -963,9 +963,9 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     shufps     xmm0, xmm1, 0x88      // even pixels
     shufps     xmm2, xmm1, 0xdd      // odd pixels
     pavgb      xmm0, xmm2
-    sub        ecx, 4
     movdqu     [edx], xmm0
     lea        edx, [edx + 16]
+    sub        ecx, 4
     jg         wloop
 
     pop        edi
@@ -1021,9 +1021,9 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     pextrw     edx, xmm2, 3           // get x1 integer. next iteration.
     punpckldq  xmm1, xmm4             // x2 x3
     punpcklqdq xmm0, xmm1             // x0 x1 x2 x3
-    sub        ecx, 4                 // 4 pixels
     movdqu     [edi], xmm0
     lea        edi, [edi + 16]
+    sub        ecx, 4                 // 4 pixels
     jge        xloop4
 
     align      4
@@ -1160,10 +1160,10 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
     movdqa     xmm1, xmm0
     punpckldq  xmm0, xmm0
     punpckhdq  xmm1, xmm1
-    sub        ecx, 8
     movdqu     [edx], xmm0
     movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
+    sub        ecx, 8
     jg         wloop
 
     ret

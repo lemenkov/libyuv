@@ -534,11 +534,11 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     "paddusw   %%xmm0,%%xmm1                   \n"
     "pmulhuw   %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
-    "sub       $0x6,%2                         \n"
     "movd      %%xmm1," MEMACCESS(1) "         \n"
     "psrlq     $0x10,%%xmm1                    \n"
     "movd      %%xmm1," MEMACCESS2(0x2,1) "    \n"
     "lea       " MEMLEA(0x6,1) ",%1            \n"
+    "sub       $0x6,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
@@ -602,11 +602,11 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "paddusw   %%xmm7,%%xmm6                   \n"
     "pmulhuw   %%xmm4,%%xmm6                   \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
-    "sub       $0x6,%2                         \n"
     "movd      %%xmm6," MEMACCESS(1) "         \n"
     "psrlq     $0x10,%%xmm6                    \n"
     "movd      %%xmm6," MEMACCESS2(0x2,1) "    \n"
     "lea       " MEMLEA(0x6,1) ",%1            \n"
+    "sub       $0x6,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
@@ -765,10 +765,10 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
-    "sub       $0x20,%2                         \n"
     "movdqu    %%xmm0," MEMACCESS(0) "         \n"
     "movdqu    %%xmm1," MEMACCESS2(0x10,0) "   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "sub       $0x20,%2                         \n"
     "jg        1b                              \n"
 
   : "+r"(dst_ptr),     // %0
@@ -792,9 +792,9 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
     "shufps    $0xdd,%%xmm1,%%xmm0             \n"
-    "sub       $0x4,%2                         \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb),  // %1
@@ -820,9 +820,9 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
     "shufps    $0xdd,%%xmm1,%%xmm2             \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_argb),  // %0
     "+r"(dst_argb),  // %1
@@ -852,9 +852,9 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
     "shufps    $0xdd,%%xmm1,%%xmm2             \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
-    "sub       $0x4,%2                         \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_argb),   // %1
@@ -890,9 +890,9 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
     "lea       " MEMLEA4(0x00,0,1,4) ",%0      \n"
     "punpckldq %%xmm3,%%xmm2                   \n"
     "punpcklqdq %%xmm2,%%xmm0                  \n"
-    "sub       $0x4,%3                         \n"
     "movdqu    %%xmm0," MEMACCESS(2) "         \n"
     "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "sub       $0x4,%3                         \n"
     "jg        1b                              \n"
   : "+r"(src_argb),      // %0
     "+r"(src_stepx_x4),  // %1
@@ -941,9 +941,9 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     "shufps    $0x88,%%xmm1,%%xmm0             \n"
     "shufps    $0xdd,%%xmm1,%%xmm2             \n"
     "pavgb     %%xmm2,%%xmm0                   \n"
-    "sub       $0x4,%3                         \n"
     "movdqu    %%xmm0," MEMACCESS(2) "         \n"
     "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "sub       $0x4,%3                         \n"
     "jg        1b                              \n"
   : "+r"(src_argb),       // %0
     "+r"(src_stepx_x4),   // %1
@@ -997,9 +997,9 @@ void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,
     "pextrw    $0x3,%%xmm2,%k1                 \n"
     "punpckldq %%xmm4,%%xmm1                   \n"
     "punpcklqdq %%xmm1,%%xmm0                  \n"
-    "sub       $0x4,%4                         \n"
     "movdqu    %%xmm0," MEMACCESS(2) "         \n"
     "lea       " MEMLEA(0x10,2) ",%2           \n"
+    "sub       $0x4,%4                         \n"
     "jge       40b                             \n"
 
   "49:                                         \n"
@@ -1046,10 +1046,10 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpckldq %%xmm0,%%xmm0                   \n"
     "punpckhdq %%xmm1,%%xmm1                   \n"
-    "sub       $0x8,%2                         \n"
     "movdqu    %%xmm0," MEMACCESS(0) "         \n"
     "movdqu    %%xmm1," MEMACCESS2(0x10,0) "   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
 
   : "+r"(dst_argb),    // %0

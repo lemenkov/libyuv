@@ -188,19 +188,14 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
                        int width, int height) {
   int y;
   void (*CopyRow)(const uint8* src, uint8* dst, int width) = CopyRow_C;
-#if defined(HAS_COPYROW_X86)
-  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
-    CopyRow = CopyRow_X86;
-  }
-#endif
 #if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32)) {
-    CopyRow = CopyRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
   }
 #endif
 #if defined(HAS_COPYROW_AVX)
-  if (TestCpuFlag(kCpuHasAVX) && IS_ALIGNED(width, 64)) {
-    CopyRow = CopyRow_AVX;
+  if (TestCpuFlag(kCpuHasAVX)) {
+    CopyRow = IS_ALIGNED(width, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)
@@ -209,8 +204,8 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
   }
 #endif
 #if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
-    CopyRow = CopyRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
 #if defined(HAS_COPYROW_MIPS)
@@ -419,24 +414,14 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     dst_stride_v = -dst_stride_v;
   }
   // CopyRow for rows of just Y in Q420 copied to Y plane of I420.
-#if defined(HAS_COPYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
-    CopyRow = CopyRow_NEON;
-  }
-#endif
-#if defined(HAS_COPYROW_X86)
-  if (IS_ALIGNED(width, 4)) {
-    CopyRow = CopyRow_X86;
-  }
-#endif
 #if defined(HAS_COPYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 32)) {
-    CopyRow = CopyRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_SSE2 : CopyRow_Any_SSE2;
   }
 #endif
 #if defined(HAS_COPYROW_AVX)
-  if (TestCpuFlag(kCpuHasAVX) && IS_ALIGNED(width, 64)) {
-    CopyRow = CopyRow_AVX;
+  if (TestCpuFlag(kCpuHasAVX)) {
+    CopyRow = IS_ALIGNED(width, 64) ? CopyRow_AVX : CopyRow_Any_AVX;
   }
 #endif
 #if defined(HAS_COPYROW_ERMS)
@@ -444,12 +429,16 @@ int Q420ToI420(const uint8* src_y, int src_stride_y,
     CopyRow = CopyRow_ERMS;
   }
 #endif
+#if defined(HAS_COPYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
+  }
+#endif
 #if defined(HAS_COPYROW_MIPS)
   if (TestCpuFlag(kCpuHasMIPS)) {
     CopyRow = CopyRow_MIPS;
   }
 #endif
-
 #if defined(HAS_YUY2TOYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     YUY2ToUV422Row = YUY2ToUV422Row_Any_SSE2;

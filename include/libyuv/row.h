@@ -111,7 +111,6 @@ extern "C" {
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
-#define HAS_COPYROW_X86
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
@@ -877,10 +876,12 @@ void MergeUVRow_Any_NEON(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);
 void CopyRow_ERMS(const uint8* src, uint8* dst, int count);
-void CopyRow_X86(const uint8* src, uint8* dst, int count);
 void CopyRow_NEON(const uint8* src, uint8* dst, int count);
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count);
 void CopyRow_C(const uint8* src, uint8* dst, int count);
+void CopyRow_Any_SSE2(const uint8* src, uint8* dst, int count);
+void CopyRow_Any_AVX(const uint8* src, uint8* dst, int count);
+void CopyRow_Any_NEON(const uint8* src, uint8* dst, int count);
 
 void CopyRow_16_C(const uint16* src, uint16* dst, int count);
 

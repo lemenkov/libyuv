@@ -621,8 +621,6 @@ NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, InterpolateRow_C,
 #endif
 #undef NANY
 
-
-
 #define MANY(NAMEANY, MIRROR_SIMD, MIRROR_C, BPP, MASK)                        \
     void NAMEANY(const uint8* src_y, uint8* dst_y, int width) {                \
       int n = width & ~MASK;                                                   \
@@ -656,6 +654,27 @@ MANY(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, ARGBMirrorRow_C, 4, 3)
 #endif
 #ifdef HAS_ARGBMIRRORROW_NEON
 MANY(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
+#endif
+#undef MANY
+
+#define MANY(NAMEANY, COPY_SIMD, COPY_C, BPP, MASK)                            \
+    void NAMEANY(const uint8* src_y, uint8* dst_y, int width) {                \
+      int n = width & ~MASK;                                                   \
+      int r = width & MASK;                                                    \
+      if (n > 0) {                                                             \
+        COPY_SIMD(src_y, dst_y, n);                                            \
+      }                                                                        \
+      COPY_C(src_y + n * BPP, dst_y + n * BPP, r);                             \
+    }
+
+#ifdef HAS_COPYROW_AVX
+MANY(CopyRow_Any_AVX, CopyRow_AVX, CopyRow_C, 1, 63)
+#endif
+#ifdef HAS_COPYROW_SSE2
+MANY(CopyRow_Any_SSE2, CopyRow_SSE2, CopyRow_C, 1, 31)
+#endif
+#ifdef HAS_COPYROW_NEON
+MANY(CopyRow_Any_NEON, CopyRow_NEON, CopyRow_C, 1, 31)
 #endif
 #undef MANY
 
