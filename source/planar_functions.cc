@@ -502,11 +502,11 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBMIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBMirrorRow = ARGBMirrorRow_Any_SSSE3;
+#if defined(HAS_ARGBMIRRORROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBMirrorRow = ARGBMirrorRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
-      ARGBMirrorRow = ARGBMirrorRow_SSSE3;
+      ARGBMirrorRow = ARGBMirrorRow_SSE2;
     }
   }
 #endif

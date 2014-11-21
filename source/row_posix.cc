@@ -2306,21 +2306,16 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_MIRRORROW_UV_SSSE3
 
-#ifdef HAS_ARGBMIRRORROW_SSSE3
-// Shuffle table for reversing the bytes.
-static uvec8 kARGBShuffleMirror = {
-  12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u
-};
+#ifdef HAS_ARGBMIRRORROW_SSE2
 
-void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
+void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   intptr_t temp_width = (intptr_t)(width);
   asm volatile (
     "lea       " MEMLEA4(-0x10,0,2,4) ",%0     \n"
-    "movdqa    %3,%%xmm5                       \n"
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
+    "pshufd    $0x1b,%%xmm0,%%xmm0             \n"
     "lea       " MEMLEA(-0x10,0) ",%0          \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
@@ -2332,11 +2327,11 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
   : "m"(kARGBShuffleMirror)  // %3
   : "memory", "cc"
 #if defined(__SSE2__)
-    , "xmm0", "xmm5"
+    , "xmm0"
 #endif
   );
 }
-#endif  // HAS_ARGBMIRRORROW_SSSE3
+#endif  // HAS_ARGBMIRRORROW_SSE2
 
 #ifdef HAS_ARGBMIRRORROW_AVX2
 // Shuffle table for reversing the bytes.
@@ -2351,9 +2346,9 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
   "1:                                          \n"
     VMEMOPREG(vpermd,-0x20,0,2,4,ymm5,ymm0) // vpermd -0x20(%0,%2,4),ymm5,ymm0
     "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
-    "lea        " MEMLEA(0x20,1) ",%1           \n"
-    "sub        $0x20,%2                        \n"
-    "jg         1b                              \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "sub        $0x20,%2                       \n"
+    "jg         1b                             \n"
     "vzeroupper                                \n"
   : "+r"(src),  // %0
     "+r"(dst),  // %1

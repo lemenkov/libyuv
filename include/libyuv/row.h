@@ -68,7 +68,7 @@ extern "C" {
 #define HAS_ARGBCOPYYTOALPHAROW_SSE2
 #define HAS_ARGBGRAYROW_SSSE3
 #define HAS_ARGBLUMACOLORTABLEROW_SSSE3
-#define HAS_ARGBMIRRORROW_SSSE3
+#define HAS_ARGBMIRRORROW_SSE2
 #define HAS_ARGBMULTIPLYROW_SSE2
 #define HAS_ARGBPOLYNOMIALROW_SSE2
 #define HAS_ARGBQUANTIZEROW_SSE2
@@ -836,11 +836,11 @@ void MirrorUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                    int width);
 
 void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width);
-void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
+void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_C(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_Any_AVX2(const uint8* src, uint8* dst, int width);
-void ARGBMirrorRow_Any_SSSE3(const uint8* src, uint8* dst, int width);
+void ARGBMirrorRow_Any_SSE2(const uint8* src, uint8* dst, int width);
 void ARGBMirrorRow_Any_NEON(const uint8* src, uint8* dst, int width);
 
 void SplitUVRow_C(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix);

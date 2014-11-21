@@ -2507,26 +2507,20 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_MIRRORROW_UV_SSSE3
 
-#ifdef HAS_ARGBMIRRORROW_SSSE3
-// Shuffle table for reversing the bytes.
-static const uvec8 kARGBShuffleMirror = {
-  12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u, 4u, 5u, 6u, 7u, 0u, 1u, 2u, 3u
-};
-
+#ifdef HAS_ARGBMIRRORROW_SSE2
 __declspec(naked) __declspec(align(16))
-void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
+void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   __asm {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
     lea       eax, [eax - 16 + ecx * 4]  // last 4 pixels.
-    movdqa    xmm5, kARGBShuffleMirror
 
     align      4
  convertloop:
     movdqu    xmm0, [eax]
     lea       eax, [eax - 16]
-    pshufb    xmm0, xmm5
+    pshufd    xmm0, xmm0, 0x1b
     movdqu    [edx], xmm0
     lea       edx, [edx + 16]
     sub       ecx, 4
@@ -2534,7 +2528,7 @@ void ARGBMirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     ret
   }
 }
-#endif  // HAS_ARGBMIRRORROW_SSSE3
+#endif  // HAS_ARGBMIRRORROW_SSE2
 
 #ifdef HAS_ARGBMIRRORROW_AVX2
 // Shuffle table for reversing the bytes.
