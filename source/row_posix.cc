@@ -2324,7 +2324,7 @@ void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
-  : "m"(kARGBShuffleMirror)  // %3
+  :
   : "memory", "cc"
 #if defined(__SSE2__)
     , "xmm0"
