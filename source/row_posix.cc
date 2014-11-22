@@ -2446,8 +2446,6 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
 }
 #endif  // HAS_SPLITUVROW_SSE2
 
-// TODO(fbarchard): Consider vpunpcklbw, vpunpckhbw, store-low1, store-low2,
-// extract-high1, extract-high2.
 #ifdef HAS_MERGEUVROW_AVX2
 void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                      int width) {
@@ -2458,13 +2456,12 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     "vmovdqu   " MEMACCESS(0) ",%%ymm0           \n"
     MEMOPREG(vmovdqu,0x00,0,1,1,ymm1)             //  vmovdqu (%0,%1,1),%%ymm1
     "lea       " MEMLEA(0x20,0) ",%0             \n"
-
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm2             \n"
     "vpunpckhbw %%ymm1,%%ymm0,%%ymm0             \n"
-    "vperm2i128 $0x20,%%ymm0,%%ymm2,%%ymm1       \n"
-    "vperm2i128 $0x31,%%ymm0,%%ymm2,%%ymm2       \n"
-    "vmovdqu    %%ymm1," MEMACCESS(2) "          \n"
-    "vmovdqu    %%ymm2," MEMACCESS2(0x20,2) "    \n"
+    "vextractf128 $0x0,%%ymm2," MEMACCESS(2) "   \n"
+    "vextractf128 $0x0,%%ymm0," MEMACCESS2(0x10,2) "\n"
+    "vextractf128 $0x1,%%ymm2," MEMACCESS2(0x20,2) "\n"
+    "vextractf128 $0x1,%%ymm0," MEMACCESS2(0x30,2) "\n"
     "lea       " MEMLEA(0x40,2) ",%2             \n"
     "sub       $0x20,%3                          \n"
     "jg        1b                                \n"

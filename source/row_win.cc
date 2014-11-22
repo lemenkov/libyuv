@@ -2686,10 +2686,10 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     lea        eax,  [eax + 32]
     vpunpcklbw ymm2, ymm0, ymm1      // low 16 UV pairs. mutated qqword 0,2
     vpunpckhbw ymm0, ymm0, ymm1      // high 16 UV pairs. mutated qqword 1,3
-    vperm2i128 ymm1, ymm2, ymm0, 0x20  // low 128 of ymm2 and low 128 of ymm0
-    vperm2i128 ymm2, ymm2, ymm0, 0x31  // high 128 of ymm2 and high 128 of ymm0
-    vmovdqu    [edi], ymm1
-    vmovdqu    [edi + 32], ymm2
+    vextractf128 [edi], ymm2, 0       // bytes 0..15
+    vextractf128 [edi + 16], ymm0, 0  // bytes 16..31
+    vextractf128 [edi + 32], ymm2, 1  // bytes 32..47
+    vextractf128 [edi + 48], ymm0, 1  // bytes 47..63
     lea        edi, [edi + 64]
     sub        ecx, 32
     jg         convertloop
