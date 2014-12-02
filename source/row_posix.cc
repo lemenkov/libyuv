@@ -2204,6 +2204,52 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TOARGBROW_AVX2
 
+#if defined(HAS_I422TOABGRROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_argb,
+                               int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUV422_AVX2
+    YUVTORGB_AVX2
+
+    // Step 3: Weave into ABGR
+    "vpunpcklbw %%ymm1,%%ymm2,%%ymm1           \n"  // RG
+    "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
+    "vpunpcklbw %%ymm5,%%ymm0,%%ymm2           \n"  // BA
+    "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
+    "vpunpcklwd %%ymm2,%%ymm1,%%ymm0           \n"  // RGBA first 8 pixels
+    "vpunpckhwd %%ymm2,%%ymm1,%%ymm1           \n"  // RGBA next 8 pixels
+    "vmovdqu    %%ymm0," MEMACCESS([dst_argb]) "\n"
+    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_argb]) "\n"
+    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb] \n"
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_I422TOARGBROW_AVX2
+
 #ifdef HAS_YTOARGBROW_SSE2
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* dst_argb,
