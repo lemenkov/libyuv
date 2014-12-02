@@ -1950,6 +1950,8 @@ struct {
     YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
+// 32 pixels
+// 16 UV values upsampled to 32 UV, mixed with 32 Y producing 32 BGRA pixels.
 void I422ToBGRARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
@@ -2120,7 +2122,87 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 #endif
   );
 }
-#endif  // HAS_I422ToBGRAROW_AVX2
+#endif  // HAS_I422TOBGRAROW_AVX2
+
+#if defined(HAS_I422TOARGBROW_AVX2)
+// Read 8 UV from 422, upsample to 16 UV.
+#define READYUV422_AVX2                                                        \
+    "vmovq       " MEMACCESS([u_buf]) ",%%xmm0                      \n"        \
+    MEMOPREG(vmovq, 0x00, [u_buf], [v_buf], 1, xmm1)                           \
+    "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]                   \n"        \
+    "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
+    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"
+
+// Convert 16 pixels: 16 UV and 16 Y.
+#define YUVTORGB_AVX2                                                          \
+    "vpmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%ymm0,%%ymm2  \n"        \
+    "vpmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%ymm0,%%ymm1  \n"        \
+    "vpmaddubsw  " MEMACCESS([kYuvConstants]) ",%%ymm0,%%ymm0       \n"        \
+    "vpsubw      " MEMACCESS2(160, [kYuvConstants]) ",%%ymm2,%%ymm2 \n"        \
+    "vpsubw      " MEMACCESS2(128, [kYuvConstants]) ",%%ymm1,%%ymm1 \n"        \
+    "vpsubw      " MEMACCESS2(96, [kYuvConstants]) ",%%ymm0,%%ymm0  \n"        \
+    "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
+    "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
+    "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
+    "vpunpcklbw  %%ymm4,%%ymm3,%%ymm3                               \n"        \
+    "vpsubsw     " MEMACCESS2(192, [kYuvConstants]) ",%%ymm3,%%ymm3 \n"        \
+    "vpmullw     " MEMACCESS2(224, [kYuvConstants]) ",%%ymm3,%%ymm3 \n"        \
+    "vpaddsw     %%ymm3,%%ymm0,%%ymm0           \n"                            \
+    "vpaddsw     %%ymm3,%%ymm1,%%ymm1           \n"                            \
+    "vpaddsw     %%ymm3,%%ymm2,%%ymm2           \n"                            \
+    "vpsraw      $0x6,%%ymm0,%%ymm0             \n"                            \
+    "vpsraw      $0x6,%%ymm1,%%ymm1             \n"                            \
+    "vpsraw      $0x6,%%ymm2,%%ymm2             \n"                            \
+    "vpackuswb   %%ymm0,%%ymm0,%%ymm0           \n"                            \
+    "vpackuswb   %%ymm1,%%ymm1,%%ymm1           \n"                            \
+    "vpackuswb   %%ymm2,%%ymm2,%%ymm2           \n"
+
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_argb,
+                               int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUV422_AVX2
+    YUVTORGB_AVX2
+
+    // Step 3: Weave into ARGB
+    "vpunpcklbw %%ymm1,%%ymm0,%%ymm0           \n"  // BG
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vpunpcklbw %%ymm5,%%ymm2,%%ymm2           \n"  // RA
+    "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
+    "vpunpcklwd %%ymm2,%%ymm0,%%ymm1           \n"  // BGRA first 8 pixels
+    "vpunpckhwd %%ymm2,%%ymm0,%%ymm0           \n"  // BGRA next 8 pixels
+
+    "vmovdqu    %%ymm0," MEMACCESS([dst_argb]) "\n"
+    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_argb]) "\n"
+    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb] \n"
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_I422TOARGBROW_AVX2
 
 #ifdef HAS_YTOARGBROW_SSE2
 void YToARGBRow_SSE2(const uint8* y_buf,
