@@ -210,6 +210,7 @@ static const uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
+// 7 bit fixed point 0.5.
 static const vec16 kAddYJ64 = {
   64, 64, 64, 64, 64, 64, 64, 64
 };
@@ -697,8 +698,8 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, kAddY16
     movdqa     xmm4, kARGBToY
+    movdqa     xmm5, kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -724,7 +725,8 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   }
 }
 
-// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
+// Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
+// Same as ARGBToYRow but different coefficients, no add 16, but do rounding.
 __declspec(naked) __declspec(align(16))
 void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   __asm {
@@ -787,7 +789,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     vpsrlw     ymm2, ymm2, 7
     vpackuswb  ymm0, ymm0, ymm2  // mutates.
     vpermd     ymm0, ymm6, ymm0  // For vphaddw + vpackuswb mutation.
-    vpaddb     ymm0, ymm0, ymm5
+    vpaddb     ymm0, ymm0, ymm5  // add 16 for Y
     vmovdqu    [edx], ymm0
     lea        edx, [edx + 32]
     sub        ecx, 32

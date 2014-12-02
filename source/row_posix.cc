@@ -92,6 +92,7 @@ static uvec8 kAddY16 = {
   16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u
 };
 
+// 7 bit fixed point 0.5.
 static vec16 kAddYJ64 = {
   64, 64, 64, 64, 64, 64, 64, 64
 };
@@ -704,6 +705,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
 #ifdef HAS_ARGBTOYROW_SSSE3
+// Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
@@ -743,6 +745,8 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 #ifdef HAS_ARGBTOYJROW_SSSE3
+// Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
+// Same as ARGBToYRow but different coefficients, no add 16, but do rounding.
 void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "movdqa    %3,%%xmm4                       \n"
@@ -788,6 +792,7 @@ static const lvec32 kPermdARGBToY_AVX = {
   0, 4, 1, 5, 2, 6, 3, 7
 };
 
+// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "vbroadcastf128 %3,%%ymm4                  \n"
@@ -804,13 +809,13 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
     "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
     "lea       " MEMLEA(0x80,0) ",%0           \n"
-    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"
+    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
     "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
     "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
     "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
-    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"
-    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"
-    "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
+    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
+    "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"  // add 16 for Y
     "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
@@ -831,6 +836,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
 #endif  // HAS_ARGBTOYROW_AVX2
 
 #ifdef HAS_ARGBTOYJROW_AVX2
+// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
     "vbroadcastf128 %3,%%ymm4                  \n"
@@ -847,13 +853,14 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
     "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
     "lea       " MEMLEA(0x80,0) ",%0           \n"
-    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"
+    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
     "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
+    "vpaddw     %%ymm5,%%ymm0,%%ymm0           \n"  // Add .5 for rounding.
+    "vpaddw     %%ymm5,%%ymm2,%%ymm2           \n"
     "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
     "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
-    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"
-    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"
-    "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
+    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
     "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
@@ -863,7 +870,7 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     "+r"(dst_y),     // %1
     "+r"(pix)        // %2
   : "m"(kARGBToYJ),   // %3
-    "m"(kAddY16),    // %4
+    "m"(kAddYJ64),    // %4
     "m"(kPermdARGBToY_AVX)  // %5
   : "memory", "cc"
 #if defined(__SSE2__)
