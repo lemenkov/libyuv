@@ -706,8 +706,8 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
 #ifdef HAS_ARGBTOYROW_SSSE3
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   asm volatile (
-    "movdqa    %4,%%xmm5                       \n"
     "movdqa    %3,%%xmm4                       \n"
+    "movdqa    %4,%%xmm5                       \n"
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
@@ -781,6 +781,97 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
   );
 }
 #endif  // HAS_ARGBTOYJROW_SSSE3
+
+#ifdef HAS_ARGBTOYROW_AVX2
+// vpermd for vphaddw + vpackuswb vpermd.
+static const lvec32 kPermdARGBToY_AVX = {
+  0, 4, 1, 5, 2, 6, 3, 7
+};
+
+void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+    "vbroadcastf128 %3,%%ymm4                  \n"
+    "vbroadcastf128 %4,%%ymm5                  \n"
+    "vmovdqu    %5,%%ymm6                      \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x10,0) ",%%ymm1  \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm2  \n"
+    "vmovdqu    " MEMACCESS2(0x30,0) ",%%ymm3  \n"
+    "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
+    "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
+    "lea       " MEMLEA(0x80,0) ",%0           \n"
+    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"
+    "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
+    "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
+    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"
+    "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kARGBToY),   // %3
+    "m"(kAddY16),    // %4
+    "m"(kPermdARGBToY_AVX)  // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBTOYROW_AVX2
+
+#ifdef HAS_ARGBTOYJROW_AVX2
+void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
+  asm volatile (
+    "vbroadcastf128 %3,%%ymm4                  \n"
+    "vbroadcastf128 %4,%%ymm5                  \n"
+    "vmovdqu    %5,%%ymm6                      \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x10,0) ",%%ymm1  \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm2  \n"
+    "vmovdqu    " MEMACCESS2(0x30,0) ",%%ymm3  \n"
+    "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
+    "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
+    "lea       " MEMLEA(0x80,0) ",%0           \n"
+    "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"
+    "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
+    "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
+    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"
+    "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_y),     // %1
+    "+r"(pix)        // %2
+  : "m"(kARGBToYJ),   // %3
+    "m"(kAddY16),    // %4
+    "m"(kPermdARGBToY_AVX)  // %5
+  : "memory", "cc"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+#endif
+  );
+}
+#endif  // HAS_ARGBTOYJROW_AVX2
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 // TODO(fbarchard): pass xmm constants to single block of assembly.
