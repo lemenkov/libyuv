@@ -192,6 +192,7 @@ extern "C" {
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TOABGRROW_AVX2
+#define HAS_I422TORGBAROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
@@ -214,7 +215,6 @@ extern "C" {
 // The following are require VS2012.
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
-#define HAS_I422TORGBAROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
