@@ -35,7 +35,8 @@ typedef unsigned long long uint64;  // NOLINT
 // libyuv provides this function when linking library for jpeg support.
 #if !defined(HAVE_JPEG)
 
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__) && \
+    !defined(__aarch64__)
 #define HAS_SUMSQUAREERROR_NEON
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
@@ -70,6 +71,45 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
       "=r"(sse)
     :
     : "memory", "cc", "q0", "q1", "q2", "q3", "q7", "q8", "q9", "q10");
+  return sse;
+}
+#elif !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_SUMSQUAREERROR_NEON
+static uint32 SumSquareError_NEON(const uint8* src_a,
+                                  const uint8* src_b, int count) {
+  volatile uint32 sse;
+  asm volatile (
+    "eor        v16.16b, v16.16b, v16.16b      \n"
+    "eor        v18.16b, v18.16b, v18.16b      \n"
+    "eor        v17.16b, v17.16b, v17.16b      \n"
+    "eor        v19.16b, v19.16b, v19.16b      \n"
+
+    ".p2align  2                               \n"
+  "1:                                          \n"
+    MEMACCESS(0)
+    "ld1        {v0.16b}, [%0], #16            \n"
+    MEMACCESS(1)
+    "ld1        {v1.16b}, [%1], #16            \n"
+    "subs       %2, %2, #16                    \n"
+    "usubl      v2.8h, v0.8b, v1.8b            \n"
+    "usubl2     v3.8h, v0.16b, v1.16b          \n"
+    "smlal      v16.4s, v2.4h, v2.4h           \n"
+    "smlal      v17.4s, v3.4h, v3.4h           \n"
+    "smlal2     v18.4s, v2.8h, v2.8h           \n"
+    "smlal2     v19.4s, v3.8h, v3.8h           \n"
+    "b.gt       1b                             \n"
+
+    "add        v16.4s, v16.4s, v17.4s         \n"
+    "add        v18.4s, v18.4s, v19.4s         \n"
+    "add        v19.4s, v16.4s, v18.4s         \n"
+    "addv       s0, v19.4s                     \n"
+    "fmov       %w3, s0                        \n"
+    : "+r"(src_a),
+      "+r"(src_b),
+      "+r"(count),
+      "=r"(sse)
+    :
+    : "cc", "v0", "v1", "v2", "v3", "v16", "v17", "v18", "v19");
   return sse;
 }
 #elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
