@@ -86,6 +86,12 @@ def main(_):
                     help='Argument for --gtest_repeat')
   parser.add_option("--gtest_shuffle", action="store_true", default=False,
                     help="Randomize tests' orders on every iteration.")
+  parser.add_option("--gtest_break_on_failure", action="store_true",
+                    default=False,
+                    help="Drop in to debugger on assertion failure. Also "
+                         "useful for forcing tests to exit with a stack dump "
+                         "on the first assertion failure when running with "
+                         "--gtest_repeat=-1")
   parser.add_option('-v', '--verbose', action='store_true', default=False,
                     help='Verbose output - enable debug log messages')
   parser.add_option('', '--tool', dest='valgrind_tool', default='memcheck',
