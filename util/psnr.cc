@@ -41,13 +41,13 @@ typedef unsigned long long uint64;  // NOLINT
 static uint32 SumSquareError_NEON(const uint8* src_a,
                                   const uint8* src_b, int count) {
   volatile uint32 sse;
-  asm volatile (  // NOLINT
+  asm volatile (
     "vmov.u8    q7, #0                         \n"
     "vmov.u8    q9, #0                         \n"
     "vmov.u8    q8, #0                         \n"
     "vmov.u8    q10, #0                        \n"
 
-    "1:                                        \n"
+  "1:                                          \n"
     "vld1.u8    {q0}, [%0]!                    \n"
     "vld1.u8    {q1}, [%1]!                    \n"
     "vsubl.u8   q2, d0, d2                     \n"
@@ -84,11 +84,8 @@ static uint32 SumSquareError_NEON(const uint8* src_a,
     "eor        v17.16b, v17.16b, v17.16b      \n"
     "eor        v19.16b, v19.16b, v19.16b      \n"
 
-    ".p2align  2                               \n"
   "1:                                          \n"
-    MEMACCESS(0)
     "ld1        {v0.16b}, [%0], #16            \n"
-    MEMACCESS(1)
     "ld1        {v1.16b}, [%1], #16            \n"
     "subs       %2, %2, #16                    \n"
     "usubl      v2.8h, v0.8b, v1.8b            \n"
