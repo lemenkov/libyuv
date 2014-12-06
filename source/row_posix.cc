@@ -889,15 +889,9 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
 void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kARGBToU),  // %0
-    "m"(kARGBToV),  // %1
-    "m"(kAddUV128)  // %2
-  );
-  asm volatile (
+    "movdqa    %5,%%xmm3                       \n"
+    "movdqa    %6,%%xmm4                       \n"
+    "movdqa    %7,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -944,7 +938,10 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"((intptr_t)(src_stride_argb)) // %4
+  : "r"((intptr_t)(src_stride_argb)), // %4
+    "m"(kARGBToV),  // %5
+    "m"(kARGBToU),  // %6
+    "m"(kAddUV128)  // %7
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -961,15 +958,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                         uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kARGBToUJ),  // %0
-    "m"(kARGBToVJ),  // %1
-    "m"(kAddUVJ128)  // %2
-  );
-  asm volatile (
+    "movdqa    %5,%%xmm3                       \n"
+    "movdqa    %6,%%xmm4                       \n"
+    "movdqa    %7,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1017,7 +1008,10 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"((intptr_t)(src_stride_argb)) // %4
+  : "r"((intptr_t)(src_stride_argb)), // %4
+    "m"(kARGBToVJ),  // %5
+    "m"(kARGBToUJ),  // %6
+    "m"(kAddUVJ128)  // %7
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1033,15 +1027,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
                           int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kARGBToU),  // %0
-    "m"(kARGBToV),  // %1
-    "m"(kAddUV128)  // %2
-  );
-  asm volatile (
+    "movdqa    %4,%%xmm3                       \n"
+    "movdqa    %5,%%xmm4                       \n"
+    "movdqa    %6,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1083,7 +1071,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  :
+  : "m"(kARGBToV),  // %4
+    "m"(kARGBToU),  // %5
+    "m"(kAddUV128)  // %6
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1099,15 +1089,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
                           uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kARGBToU),  // %0
-    "m"(kARGBToV),  // %1
-    "m"(kAddUV128)  // %2
-  );
-  asm volatile (
+    "movdqa    %4,%%xmm3                       \n"
+    "movdqa    %5,%%xmm4                       \n"
+    "movdqa    %6,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1145,7 +1129,9 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  :
+  : "m"(kARGBToV),  // %4
+    "m"(kARGBToU),  // %5
+    "m"(kAddUV128)  // %6
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1197,15 +1183,9 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
 void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kBGRAToU),         // %0
-    "m"(kBGRAToV),         // %1
-    "m"(kAddUV128)         // %2
-  );
-  asm volatile (
+    "movdqa    %5,%%xmm3                       \n"
+    "movdqa    %6,%%xmm4                       \n"
+    "movdqa    %7,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1252,7 +1232,10 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"((intptr_t)(src_stride_bgra)) // %4
+  : "r"((intptr_t)(src_stride_bgra)), // %4
+    "m"(kBGRAToV),  // %5
+    "m"(kBGRAToU),  // %6
+    "m"(kAddUV128)  // %7
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1340,15 +1323,9 @@ void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int pix) {
 void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kABGRToU),         // %0
-    "m"(kABGRToV),         // %1
-    "m"(kAddUV128)         // %2
-  );
-  asm volatile (
+    "movdqa    %5,%%xmm3                       \n"
+    "movdqa    %6,%%xmm4                       \n"
+    "movdqa    %7,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1395,7 +1372,10 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"((intptr_t)(src_stride_abgr)) // %4
+  : "r"((intptr_t)(src_stride_abgr)), // %4
+    "m"(kABGRToV),  // %5
+    "m"(kABGRToU),  // %6
+    "m"(kAddUV128)  // %7
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1409,15 +1389,9 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
 void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
                        uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (
-    "movdqa    %0,%%xmm4                       \n"
-    "movdqa    %1,%%xmm3                       \n"
-    "movdqa    %2,%%xmm5                       \n"
-  :
-  : "m"(kRGBAToU),         // %0
-    "m"(kRGBAToV),         // %1
-    "m"(kAddUV128)         // %2
-  );
-  asm volatile (
+    "movdqa    %5,%%xmm3                       \n"
+    "movdqa    %6,%%xmm4                       \n"
+    "movdqa    %7,%%xmm5                       \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
@@ -1464,7 +1438,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "+r"(dst_u),           // %1
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
-  : "r"((intptr_t)(src_stride_rgba))
+  : "r"((intptr_t)(src_stride_rgba)), // %4
+    "m"(kRGBAToV),  // %5
+    "m"(kRGBAToU),  // %6
+    "m"(kAddUV128)  // %7
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
