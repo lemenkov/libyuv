@@ -334,12 +334,7 @@ extern "C" {
 #define HAS_SOBELXROW_NEON
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELYROW_NEON
-#endif
-
-// The following are available on only arm64 platforms:
-// TODO(fbarchard): Port to 32 bit armv7.
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
-// TODO(fbarchard): Investigate neon unittest failure on 32 bit.
+// TODO(fbarchard): Test the following 3 work on 32 bit arm.
 #define HAS_ARGBCOLORMATRIXROW_NEON
 #define HAS_ARGBSETROWS_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
