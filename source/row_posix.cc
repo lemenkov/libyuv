@@ -5135,6 +5135,112 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_SSSE3
 
+#ifdef HAS_INTERPOLATEROW_AVX2
+// Bilinear filter 32x2 -> 32x1
+void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
+                         ptrdiff_t src_stride, int dst_width,
+                         int source_y_fraction) {
+  asm volatile (
+    "shr       %3                              \n"
+    "cmp       $0x0,%3                         \n"
+    "je        100f                            \n"
+    "sub       %1,%0                           \n"
+    "cmp       $0x20,%3                        \n"
+    "je        75f                             \n"
+    "cmp       $0x40,%3                        \n"
+    "je        50f                             \n"
+    "cmp       $0x60,%3                        \n"
+    "je        25f                             \n"
+
+    "vmovd      %3,%%xmm0                      \n"
+    "neg        %3                             \n"
+    "add        $0x80,%3                       \n"
+    "vmovd      %3,%%xmm5                      \n"
+    "vpunpcklbw %%xmm0,%%xmm5,%%xmm5           \n"
+    "vpunpcklwd %%xmm5,%%xmm5,%%xmm5           \n"
+    "vpxor      %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpermd     %%ymm5,%%ymm0,%%ymm5           \n"
+
+    // General purpose row blend.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
+    MEMOPREG(vmovdqu,0x00,1,4,1,ymm2)
+    "vpunpckhbw %%ymm2,%%ymm0,%%ymm1           \n"
+    "vpunpcklbw %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm5,%%ymm1,%%ymm1           \n"
+    "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x7,%%ymm1,%%ymm1             \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "jmp       99f                             \n"
+
+    // Blend 25 / 75.
+    LABELALIGN
+  "25:                                         \n"
+    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
+    MEMOPREG(vmovdqu,0x00,1,4,1,ymm1)
+    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
+    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        25b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 50 / 50.
+    LABELALIGN
+  "50:                                         \n"
+    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
+    VMEMOPREG(vpavgb,0x00,1,4,1,ymm0,ymm0)     // vpavgb (%1,%4,1),%%ymm0,%%ymm0
+    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        50b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 75 / 25.
+    LABELALIGN
+  "75:                                         \n"
+    "vmovdqu    " MEMACCESS(1) ",%%ymm1        \n"
+    MEMOPREG(vmovdqu,0x00,1,4,1,ymm0)
+    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
+    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        75b                             \n"
+    "jmp       99f                             \n"
+
+    // Blend 100 / 0 - Copy row unchanged.
+    LABELALIGN
+  "100:                                        \n"
+    "rep movsb " MEMMOVESTRING(1,0) "          \n"
+    "jmp       999f                            \n"
+
+  "99:                                         \n"
+    "vzeroupper                                \n"
+  "999:                                        \n"
+  : "+D"(dst_ptr),    // %0
+    "+S"(src_ptr),    // %1
+    "+c"(dst_width),  // %2
+    "+r"(source_y_fraction)  // %3
+  : "r"((intptr_t)(src_stride))  // %4
+  : "memory", "cc"
+#if defined(__native_client__) && defined(__x86_64__)
+    , "r14"
+#endif
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm5"
+#endif
+  );
+}
+#endif  // HAS_INTERPOLATEROW_AVX2
+
 #ifdef HAS_INTERPOLATEROW_SSE2
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,

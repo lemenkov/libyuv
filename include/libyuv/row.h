@@ -196,6 +196,7 @@ extern "C" {
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORGBAROW_AVX2
+#define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_SPLITUVROW_AVX2
@@ -218,7 +219,6 @@ extern "C" {
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 #define HAS_ARGBTOUVROW_AVX2
-#define HAS_INTERPOLATEROW_AVX2
 #endif  // defined(VISUALC_HAS_AVX2)
 
 // The following are Yasm x86 only:
