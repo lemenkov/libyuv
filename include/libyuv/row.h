@@ -189,6 +189,7 @@ extern "C" {
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
+#define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_COPYROW_AVX
@@ -214,12 +215,6 @@ extern "C" {
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
-
-// The following are require VS2012.
-// TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
-#define HAS_ARGBTOUVROW_AVX2
-#endif  // defined(VISUALC_HAS_AVX2)
 
 // The following are Yasm x86 only:
 // TODO(fbarchard): Port AVX2 to inline.
