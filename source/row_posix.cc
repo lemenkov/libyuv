@@ -2267,7 +2267,6 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TOBGRAROW_AVX2
 
-#if defined(HAS_I422TOARGBROW_AVX2)
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2                                                        \
     "vmovq       " MEMACCESS([u_buf]) ",%%xmm0                      \n"        \
@@ -2301,6 +2300,7 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     "vpackuswb   %%ymm1,%%ymm1,%%ymm1           \n"                            \
     "vpackuswb   %%ymm2,%%ymm2,%%ymm2           \n"
 
+#if defined(HAS_I422TOARGBROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
 void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
