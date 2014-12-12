@@ -2667,7 +2667,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     VMEMOPREG(vpermd,-0x20,0,2,4,ymm5,ymm0) // vpermd -0x20(%0,%2,4),ymm5,ymm0
     "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
     "lea        " MEMLEA(0x20,1) ",%1          \n"
-    "sub        $0x20,%2                       \n"
+    "sub        $0x8,%2                        \n"
     "jg         1b                             \n"
     "vzeroupper                                \n"
   : "+r"(src),  // %0
