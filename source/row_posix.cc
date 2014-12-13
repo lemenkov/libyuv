@@ -3418,7 +3418,7 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
     "lea      " MEMLEA(0x20,1) ",%1            \n"
-    "sub       $0x20,%2                     \n"
+    "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
   : "+r"(src_uyvy),  // %0
@@ -3479,8 +3479,8 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
 void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
                          uint8* dst_u, uint8* dst_v, int pix) {
   asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlw     $0x8,%%xmm5                     \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    "vpsrlw     $0x8,%%ymm5,%%ymm5             \n"
     "sub       %1,%2                           \n"
     LABELALIGN
   "1:                                          \n"
