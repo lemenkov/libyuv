@@ -2325,8 +2325,8 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     "vpunpcklwd %%ymm2,%%ymm0,%%ymm1           \n"  // BGRA first 8 pixels
     "vpunpckhwd %%ymm2,%%ymm0,%%ymm0           \n"  // BGRA next 8 pixels
 
-    "vmovdqu    %%ymm0," MEMACCESS([dst_argb]) "\n"
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_argb]) "\n"
+    "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "\n"
+    "vmovdqu    %%ymm0," MEMACCESS2(0x20,[dst_argb]) "\n"
     "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb] \n"
     "sub       $0x10,%[width]                  \n"
     "jg        1b                              \n"
