@@ -657,30 +657,24 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   }                                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
     for (int j = 0; j < kWidth; ++j) {                                         \
-      int abs_diff =                                                           \
-          abs(static_cast<int>(dst_y_c[i * kWidth + j]) -                      \
-              static_cast<int>(dst_y_opt[i * kWidth + j]));                    \
-      EXPECT_LE(abs_diff, DIFF);                                               \
+      EXPECT_NEAR(static_cast<int>(dst_y_c[i * kWidth + j]),                   \
+                  static_cast<int>(dst_y_opt[i * kWidth + j]), DIFF);          \
     }                                                                          \
   }                                                                            \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
-      int abs_diff =                                                           \
-          abs(static_cast<int>(dst_u_c[i *                                     \
-                               SUBSAMPLE(kWidth, SUBSAMP_X) + j]) -            \
-              static_cast<int>(dst_u_opt[i *                                   \
-                               SUBSAMPLE(kWidth, SUBSAMP_X) + j]));            \
-      EXPECT_LE(abs_diff, DIFF);                                               \
+      EXPECT_NEAR(static_cast<int>(dst_u_c[i *                                 \
+                                   SUBSAMPLE(kWidth, SUBSAMP_X) + j]),         \
+                  static_cast<int>(dst_u_opt[i *                               \
+                                   SUBSAMPLE(kWidth, SUBSAMP_X) + j]), DIFF);  \
     }                                                                          \
   }                                                                            \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
-      int abs_diff =                                                           \
-          abs(static_cast<int>(dst_v_c[i *                                     \
-                               SUBSAMPLE(kWidth, SUBSAMP_X) + j]) -            \
-              static_cast<int>(dst_v_opt[i *                                   \
-                               SUBSAMPLE(kWidth, SUBSAMP_X) + j]));            \
-      EXPECT_LE(abs_diff, DIFF);                                               \
+      EXPECT_NEAR(static_cast<int>(dst_v_c[i *                                 \
+                                   SUBSAMPLE(kWidth, SUBSAMP_X) + j]),         \
+                  static_cast<int>(dst_v_opt[i *                               \
+                                   SUBSAMPLE(kWidth, SUBSAMP_X) + j]), DIFF);  \
     }                                                                          \
   }                                                                            \
   free_aligned_buffer_64(dst_y_c);                                             \
