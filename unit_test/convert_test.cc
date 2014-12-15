@@ -655,18 +655,14 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
                           dst_v_opt, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                           kWidth, NEG kHeight);                                \
   }                                                                            \
-  int max_diff = 0;                                                            \
   for (int i = 0; i < kHeight; ++i) {                                          \
     for (int j = 0; j < kWidth; ++j) {                                         \
       int abs_diff =                                                           \
           abs(static_cast<int>(dst_y_c[i * kWidth + j]) -                      \
               static_cast<int>(dst_y_opt[i * kWidth + j]));                    \
-      if (abs_diff > max_diff) {                                               \
-        max_diff = abs_diff;                                                   \
-      }                                                                        \
+      EXPECT_LE(abs_diff, DIFF);                                               \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, DIFF);                                                   \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -674,12 +670,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
                                SUBSAMPLE(kWidth, SUBSAMP_X) + j]) -            \
               static_cast<int>(dst_u_opt[i *                                   \
                                SUBSAMPLE(kWidth, SUBSAMP_X) + j]));            \
-      if (abs_diff > max_diff) {                                               \
-        max_diff = abs_diff;                                                   \
-      }                                                                        \
+      EXPECT_LE(abs_diff, DIFF);                                               \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, DIFF);                                                   \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -687,12 +680,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
                                SUBSAMPLE(kWidth, SUBSAMP_X) + j]) -            \
               static_cast<int>(dst_v_opt[i *                                   \
                                SUBSAMPLE(kWidth, SUBSAMP_X) + j]));            \
-      if (abs_diff > max_diff) {                                               \
-        max_diff = abs_diff;                                                   \
-      }                                                                        \
+      EXPECT_LE(abs_diff, DIFF);                                               \
     }                                                                          \
   }                                                                            \
-  EXPECT_LE(max_diff, DIFF);                                                   \
   free_aligned_buffer_64(dst_y_c);                                             \
   free_aligned_buffer_64(dst_u_c);                                             \
   free_aligned_buffer_64(dst_v_c);                                             \
