@@ -156,11 +156,6 @@ static const vec8 kARGBToVJ = {
   -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0, -20, -107, 127, 0
 };
 
-// vpermd for vphaddw + vpackuswb vpermd.
-static const lvec32 kPermdARGBToY_AVX = {
-  0, 4, 1, 5, 2, 6, 3, 7
-};
-
 // vpshufb for vphaddw + vpackuswb packed to shorts.
 static const lvec8 kShufARGBToUV_AVX = {
   0, 1, 8, 9, 2, 3, 10, 11, 4, 5, 12, 13, 6, 7, 14, 15,
@@ -762,6 +757,11 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 
 #ifdef HAS_ARGBTOYROW_AVX2
+// vpermd for vphaddw + vpackuswb vpermd.
+static const lvec32 kPermdARGBToY_AVX = {
+  0, 4, 1, 5, 2, 6, 3, 7
+};
+
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 __declspec(naked) __declspec(align(32))
 void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
@@ -1474,8 +1474,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 
-#ifdef HAS_I422TOARGBROW_AVX2
-
+#if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 static const lvec8 kUVToB_AVX = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB,
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
@@ -1541,6 +1540,7 @@ static const lvec16 kUVBiasR_AVX = {
     __asm vpackuswb  ymm2, ymm2, ymm2           /* R */                        \
   }
 
+#if defined(HAS_I422TOARGBROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
 __declspec(naked) __declspec(align(16))
