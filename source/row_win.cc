@@ -847,8 +847,8 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, kAddY16
     movdqa     xmm4, kBGRAToY
+    movdqa     xmm5, kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -880,8 +880,8 @@ void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, kAddY16
     movdqa     xmm4, kABGRToY
+    movdqa     xmm5, kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -913,8 +913,8 @@ void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm5, kAddY16
     movdqa     xmm4, kRGBAToY
+    movdqa     xmm5, kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -951,9 +951,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, kARGBToU
-    movdqa     xmm6, kARGBToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm7, kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1021,9 +1021,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, kARGBToUJ
-    movdqa     xmm6, kARGBToVJ
     movdqa     xmm5, kAddUVJ128
+    movdqa     xmm6, kARGBToVJ
+    movdqa     xmm7, kARGBToUJ
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1156,9 +1156,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     mov        edx, [esp + 4 + 8]   // dst_u
     mov        edi, [esp + 4 + 12]  // dst_v
     mov        ecx, [esp + 4 + 16]  // pix
-    movdqa     xmm7, kARGBToU
-    movdqa     xmm6, kARGBToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm7, kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1213,9 +1213,9 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
     mov        edx, [esp + 4 + 8]   // dst_u
     mov        edi, [esp + 4 + 12]  // dst_v
     mov        ecx, [esp + 4 + 16]  // pix
-    movdqa     xmm7, kARGBToU
-    movdqa     xmm6, kARGBToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kARGBToV
+    movdqa     xmm7, kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1273,9 +1273,9 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, kBGRAToU
-    movdqa     xmm6, kBGRAToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kBGRAToV
+    movdqa     xmm7, kBGRAToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1343,9 +1343,9 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, kABGRToU
-    movdqa     xmm6, kABGRToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kABGRToV
+    movdqa     xmm7, kABGRToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1413,9 +1413,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm7, kRGBAToU
-    movdqa     xmm6, kRGBAToV
     movdqa     xmm5, kAddUV128
+    movdqa     xmm6, kRGBAToV
+    movdqa     xmm7, kRGBAToU
     sub        edi, edx             // stride from u to v
 
  convertloop:

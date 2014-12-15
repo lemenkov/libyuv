@@ -1006,9 +1006,9 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     "+r"(dst_v),           // %2
     "+rm"(width)           // %3
   : "r"((intptr_t)(src_stride_argb)), // %4
-    "m"(kARGBToV),   // %5
-    "m"(kARGBToU),   // %6
-    "m"(kAddUV128),  // %7
+    "m"(kAddUV128),  // %5
+    "m"(kARGBToV),   // %6
+    "m"(kARGBToU),   // %7
     "m"(kShufARGBToUV_AVX)  // %8
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
