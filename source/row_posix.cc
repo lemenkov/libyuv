@@ -983,6 +983,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     "vshufps    $0x88,%%ymm3,%%ymm2,%%ymm4     \n"
     "vshufps    $0xdd,%%ymm3,%%ymm2,%%ymm2     \n"
     "vpavgb     %%ymm4,%%ymm2,%%ymm2           \n"
+
     "vpmaddubsw %%ymm7,%%ymm0,%%ymm1           \n"
     "vpmaddubsw %%ymm7,%%ymm2,%%ymm3           \n"
     "vpmaddubsw %%ymm6,%%ymm0,%%ymm0           \n"
@@ -995,6 +996,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpshufb    %8,%%ymm0,%%ymm0               \n"
     "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+
     "vextractf128 $0x0,%%ymm0," MEMACCESS(1) " \n"
     VEXTOPMEM(vextractf128,ymm0,0x1,1,2,1) // vextractf128 $0x1,%%ymm0,(%1,%2,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"

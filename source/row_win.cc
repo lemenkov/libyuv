@@ -1473,7 +1473,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
 
-
 #if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 static const lvec8 kUVToB_AVX = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB,
@@ -1502,6 +1501,7 @@ static const lvec16 kUVBiasG_AVX = {
 static const lvec16 kUVBiasR_AVX = {
   BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR
 };
+#endif  // defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 __asm {                                                \
@@ -1540,7 +1540,7 @@ static const lvec16 kUVBiasR_AVX = {
     __asm vpackuswb  ymm2, ymm2, ymm2           /* R */                        \
   }
 
-#if defined(HAS_I422TOARGBROW_AVX2)
+#ifdef HAS_I422TOARGBROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
 __declspec(naked) __declspec(align(16))
@@ -1584,7 +1584,9 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
     ret
   }
 }
+#endif  // HAS_I422TOARGBROW_AVX2
 
+#ifdef HAS_I422TOBGRAROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 BGRA (64 bytes).
 // TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
@@ -1629,7 +1631,9 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     ret
   }
 }
+#endif  // HAS_I422TOBGRAROW_AVX2
 
+#ifdef HAS_I422TORGBAROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 RGBA (64 bytes).
 // TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
@@ -1674,7 +1678,9 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     ret
   }
 }
+#endif  // HAS_I422TORGBAROW_AVX2
 
+#ifdef HAS_I422TOABGRROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ABGR (64 bytes).
 // TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
@@ -1719,7 +1725,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     ret
   }
 }
-#endif  // HAS_I422TOARGBROW_AVX2
+#endif  // HAS_I422TOABGRROW_AVX2
 
 #ifdef HAS_I422TOARGBROW_SSSE3
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
