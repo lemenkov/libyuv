@@ -440,10 +440,10 @@ typedef uint8 ulvec8[32];
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
     #opcode " (%%r15,%%r14),%%" #reg1 ",%%" #reg2 "\n" \
     BUNDLEUNLOCK
-#define VEXTOPMEM(opcode, reg, offset, base, index, scale) \
+#define VEXTOPMEM(op, sel, reg, offset, base, index, scale) \
     BUNDLELOCK \
     "lea " #offset "(%q" #base ",%q" #index "," #scale "),%%r14d\n" \
-    #opcode " $0x0,%%" #reg ",(%%r15,%%r14)\n" \
+    #op " $" #sel ",%%" #reg ",(%%r15,%%r14)\n" \
     BUNDLEUNLOCK
 #else  // defined(__native_client__) && defined(__x86_64__)
 #define BUNDLEALIGN
@@ -465,8 +465,8 @@ typedef uint8 ulvec8[32];
 #define VMEMOPREG(opcode, offset, base, index, scale, reg1, reg2) \
     #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg1 ",%%" \
     #reg2 "\n"
-#define VEXTOPMEM(opcode, reg, offset, base, index, scale) \
-    #opcode " $0x0,%%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
+#define VEXTOPMEM(op, sel, reg, offset, base, index, scale) \
+    #op " $" #sel ",%%" #reg ","#offset "(%" #base ",%" #index "," #scale ")\n"
 #endif  // defined(__native_client__) && defined(__x86_64__)
 
 #if defined(__arm__) || defined(__aarch64__)
