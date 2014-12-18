@@ -57,7 +57,7 @@
             # arm64 does not need -mfpu=neon option as neon is not optional
             ['target_arch != "arm64"', {
               'cflags': [
-                '-Wa,-mfpu=neon',
+                '-mfpu=neon',
               ],
             }],
           ],
