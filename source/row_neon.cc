@@ -2809,7 +2809,7 @@ void ARGBColorMatrixRow_NEON(const uint8* src_argb, uint8* dst_argb,
     "vmovl.u8   q8, d16                        \n"  // b (0 .. 255) 16 bit
     "vmovl.u8   q9, d18                        \n"  // g
     "vmovl.u8   q10, d20                       \n"  // r
-    "vmovl.u8   q15, d22                       \n"  // a
+    "vmovl.u8   q11, d22                       \n"  // a
     "vmul.s16   q12, q8, d0[0]                 \n"  // B = B * Matrix B
     "vmul.s16   q13, q8, d1[0]                 \n"  // G = B * Matrix G
     "vmul.s16   q14, q8, d2[0]                 \n"  // R = B * Matrix R
@@ -2830,10 +2830,10 @@ void ARGBColorMatrixRow_NEON(const uint8* src_argb, uint8* dst_argb,
     "vqadd.s16  q13, q13, q5                   \n"  // Accumulate G
     "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
     "vqadd.s16  q15, q15, q7                   \n"  // Accumulate A
-    "vmul.s16   q4, q15, d0[3]                 \n"  // B += A * Matrix B
-    "vmul.s16   q5, q15, d1[3]                 \n"  // G += A * Matrix G
-    "vmul.s16   q6, q15, d2[3]                 \n"  // R += A * Matrix R
-    "vmul.s16   q7, q15, d3[3]                 \n"  // A += A * Matrix A
+    "vmul.s16   q4, q11, d0[3]                 \n"  // B += A * Matrix B
+    "vmul.s16   q5, q11, d1[3]                 \n"  // G += A * Matrix G
+    "vmul.s16   q6, q11, d2[3]                 \n"  // R += A * Matrix R
+    "vmul.s16   q7, q11, d3[3]                 \n"  // A += A * Matrix A
     "vqadd.s16  q12, q12, q4                   \n"  // Accumulate B
     "vqadd.s16  q13, q13, q5                   \n"  // Accumulate G
     "vqadd.s16  q14, q14, q6                   \n"  // Accumulate R
@@ -2849,7 +2849,7 @@ void ARGBColorMatrixRow_NEON(const uint8* src_argb, uint8* dst_argb,
     "+r"(dst_argb),   // %1
     "+r"(width)       // %2
   : "r"(matrix_argb)  // %3
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9",
+  : "cc", "memory", "q0", "q1", "q2", "q4", "q5", "q6", "q7", "q8", "q9",
     "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }

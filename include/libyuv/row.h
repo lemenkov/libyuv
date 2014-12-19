@@ -329,8 +329,7 @@ extern "C" {
 #define HAS_SOBELXROW_NEON
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELYROW_NEON
-// TODO(fbarchard): Fix ARGBColorMatrix Neon version and reenable.
-// #define HAS_ARGBCOLORMATRIXROW_NEON
+#define HAS_ARGBCOLORMATRIXROW_NEON
 // TODO(fbarchard): Test the following 3 work on 32 bit arm.
 #define HAS_ARGBSETROWS_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
