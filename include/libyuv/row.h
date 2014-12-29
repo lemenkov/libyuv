@@ -96,6 +96,8 @@ extern "C" {
 #define HAS_I422TOUYVYROW_SSE2
 #define HAS_I422TOYUY2ROW_SSE2
 #define HAS_I444TOARGBROW_SSSE3
+// TODO(fbarchard): Implement SSSE3 version of J422ToARGB
+//#define HAS_J422TOARGBROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSE2
 #define HAS_MIRRORROW_SSSE3
@@ -928,6 +930,11 @@ void YUY2ToARGBRow_C(const uint8* src_yuy2,
 void UYVYToARGBRow_C(const uint8* src_uyvy,
                      uint8* dst_argb,
                      int width);
+void J422ToARGBRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_argb,
+                     int width);
 void I422ToBGRARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
@@ -1026,6 +1033,11 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
                          int width);
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
+                         uint8* dst_argb,
+                         int width);
+void J422ToARGBRow_SSSE3(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
                          uint8* dst_argb,
                          int width);
 void I422ToBGRARow_SSSE3(const uint8* src_y,

@@ -1008,6 +1008,7 @@ void I444ToARGBRow_C(const uint8* src_y,
   }
 }
 #endif
+
 // Also used for 420
 void I422ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
@@ -1030,6 +1031,59 @@ void I422ToARGBRow_C(const uint8* src_y,
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+  }
+}
+
+// C reference code that mimics the YUV assembly.
+// *  R = Y                + 1.40200 * Cr
+// *  G = Y - 0.34414 * Cb - 0.71414 * Cr
+// *  B = Y + 1.77200 * Cb
+
+#define YGJ 64 /* (int8)(1.000 * 64) */
+
+#define UBJ 113 /* (int8)(1.772 * 64) */
+#define UGJ -22 /* (int8)(-0.34414 * 64) */
+#define URJ 0
+
+#define VBJ 0
+#define VGJ -46 /* (int8)(-0.71414 * 64) */
+#define VRJ 90 /* (int8)(1.402 * 64) */
+
+// Bias
+#define BBJ UBJ * 128 + VBJ * 128
+#define BGJ UGJ * 128 + VGJ * 128
+#define BRJ URJ * 128 + VRJ * 128
+
+static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
+                              uint8* b, uint8* g, uint8* r) {
+  int32 y1 = ((int32)(y)) * YGJ;
+  *b = Clamp((int32)((u * UBJ + v * VBJ) - (BBJ) + y1) >> 6);
+  *g = Clamp((int32)((u * UGJ + v * VGJ) - (BGJ) + y1) >> 6);
+  *r = Clamp((int32)((u * URJ + v * VRJ) - (BRJ) + y1) >> 6);
+}
+
+void J422ToARGBRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvJPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvJPixel(src_y[1], src_u[0], src_v[0],
+              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvJPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
   }
 }
