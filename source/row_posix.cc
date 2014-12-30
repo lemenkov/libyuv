@@ -1716,8 +1716,8 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
 // TODO(fbarchard): Make width a register for 32 bit.
-#if defined(__APPLE__) && defined(__i386__))
-    [width]"+m"(width)    // %[width]
+#if defined(__APPLE__) && defined(__i386__)
+    [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
 #endif
@@ -1766,8 +1766,8 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_raw]"+r"(dst_raw),  // %[dst_raw]
 // TODO(fbarchard): Make width a register for 32 bit.
-#if defined(__APPLE__) && defined(__i386__))
-    [width]"+m"(width)    // %[width]
+#if defined(__APPLE__) && defined(__i386__)
+    [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
 #endif
