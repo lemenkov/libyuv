@@ -1683,25 +1683,15 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
   );
 }
 
+// TODO(fbarchard): Consider putting masks into constants.
 void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
                                  const uint8* u_buf,
                                  const uint8* v_buf,
                                  uint8* dst_rgb24,
                                  int width) {
-// fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
-#if defined(__i386__)
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
-  :: [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
-    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24));
-#endif
-
-  asm volatile (
-#if !defined(__i386__)
-    "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
-    "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
-#endif
     "sub       %[u_buf],%[v_buf]               \n"
     "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
@@ -1719,18 +1709,21 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     "movq      %%xmm0," MEMACCESS([dst_rgb24]) "\n"
     "movdqu    %%xmm1," MEMACCESS2(0x8,[dst_rgb24]) "\n"
     "lea       " MEMLEA(0x18,[dst_rgb24]) ",%[dst_rgb24] \n"
-    "sub       $0x8,%[width]                   \n"
+    "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
+// TODO(fbarchard): Make width a register for 32 bit.
+#if defined(__APPLE__) && defined(__i386__))
+    [width]"+m"(width)    // %[width]
+#else
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
-#if !defined(__i386__)
-    , [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
-    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
 #endif
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB),
+    [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
+    [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
@@ -1746,20 +1739,9 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
                                const uint8* v_buf,
                                uint8* dst_raw,
                                int width) {
-// fpic 32 bit gcc 4.2 on OSX runs out of GPR regs.
-#if defined(__i386__)
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
-  :: [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
-    [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW));
-#endif
-
-  asm volatile (
-#if !defined(__i386__)
-    "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
-    "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
-#endif
     "sub       %[u_buf],%[v_buf]               \n"
     "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
@@ -1777,18 +1759,21 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     "movq      %%xmm0," MEMACCESS([dst_raw]) " \n"
     "movdqu    %%xmm1," MEMACCESS2(0x8,[dst_raw]) "\n"
     "lea       " MEMLEA(0x18,[dst_raw]) ",%[dst_raw] \n"
-    "sub       $0x8,%[width]                   \n"
+    "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_raw]"+r"(dst_raw),  // %[dst_raw]
+// TODO(fbarchard): Make width a register for 32 bit.
+#if defined(__APPLE__) && defined(__i386__))
+    [width]"+m"(width)    // %[width]
+#else
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)
-#if !defined(__i386__)
-    , [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
-    [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
 #endif
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB),
+    [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
+    [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
   : "memory", "cc"
 #if defined(__native_client__) && defined(__x86_64__)
     , "r14"
