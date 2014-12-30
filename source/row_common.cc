@@ -940,27 +940,27 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 // C reference code that mimics the YUV assembly.
 
-#define YG 74 /* (int8)(1.164 * 64 + 0.5) */
+#define YG 74 /* (int8)round(1.164 * 64 + 0.5) */
 
-#define UB 127 /* min(63,(int8)(2.018 * 64)) */
-#define UG -25 /* (int8)(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(63,(int8)round(2.018 * 64)) */
+#define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* (int8)(-0.813 * 64 - 0.5) */
-#define VR 102 /* (int8)(1.596 * 64 + 0.5) */
+#define VG -52 /* (int8)round(-0.813 * 64 - 0.5) */
+#define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
 
 // Bias
-#define BB UB * 128 + VB * 128
-#define BG UG * 128 + VG * 128
-#define BR UR * 128 + VR * 128
+#define BB (UB * 128 + VB * 128 + YG * 16)
+#define BG (UG * 128 + VG * 128 + YG * 16)
+#define BR (UR * 128 + VR * 128 + YG * 16)
 
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
-  int32 y1 = ((int32)(y) - 16) * YG;
-  *b = Clamp((int32)((u * UB + v * VB) - (BB) + y1) >> 6);
-  *g = Clamp((int32)((u * UG + v * VG) - (BG) + y1) >> 6);
-  *r = Clamp((int32)((u * UR + v * VR) - (BR) + y1) >> 6);
+  uint32 y1 = (uint32)(y * YG);
+  *b = Clamp((int32)(u * UB + v * VB + y1 - BB) >> 6);
+  *g = Clamp((int32)(u * UG + v * VG + y1 - BG) >> 6);
+  *r = Clamp((int32)(u * UR + v * VR + y1 - BR) >> 6);
 }
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
@@ -1040,27 +1040,27 @@ void I422ToARGBRow_C(const uint8* src_y,
 // *  G = Y - 0.34414 * Cb - 0.71414 * Cr
 // *  B = Y + 1.77200 * Cb
 
-#define YGJ 64 /* (int8)(1.000 * 64) */
+#define YGJ 64 /* (int8)round(1.000 * 64) */
 
-#define UBJ 113 /* (int8)(1.772 * 64) */
-#define UGJ -22 /* (int8)(-0.34414 * 64) */
+#define UBJ 113 /* (int8)round(1.772 * 64) */
+#define UGJ -22 /* (int8)round(-0.34414 * 64) */
 #define URJ 0
 
 #define VBJ 0
-#define VGJ -46 /* (int8)(-0.71414 * 64) */
-#define VRJ 90 /* (int8)(1.402 * 64) */
+#define VGJ -46 /* (int8)round(-0.71414 * 64) */
+#define VRJ 90 /* (int8)round(1.402 * 64) */
 
 // Bias
-#define BBJ UBJ * 128 + VBJ * 128
-#define BGJ UGJ * 128 + VGJ * 128
-#define BRJ URJ * 128 + VRJ * 128
+#define BBJ (UBJ * 128 + VBJ * 128)
+#define BGJ (UGJ * 128 + VGJ * 128)
+#define BRJ (URJ * 128 + VRJ * 128)
 
 static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
-  int32 y1 = ((int32)(y)) * YGJ;
-  *b = Clamp((int32)((u * UBJ + v * VBJ) - (BBJ) + y1) >> 6);
-  *g = Clamp((int32)((u * UGJ + v * VGJ) - (BGJ) + y1) >> 6);
-  *r = Clamp((int32)((u * URJ + v * VRJ) - (BRJ) + y1) >> 6);
+  uint32 y1 = (uint32)(y * YGJ);
+  *b = Clamp((int32)(u * UBJ + v * VBJ + y1 - BBJ) >> 6);
+  *g = Clamp((int32)(u * UGJ + v * VGJ + y1 - BGJ) >> 6);
+  *r = Clamp((int32)(u * URJ + v * VRJ + y1 - BRJ) >> 6);
 }
 
 void J422ToARGBRow_C(const uint8* src_y,
