@@ -24,20 +24,20 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
-#define YG 74  /* (int8)(1.164 * 64 + 0.5) */
+#define YG 74 /* (int8)round(1.164 * 64 + 0.5) */
 
-#define UB 127  /* min(127,(int8)(2.018 * 64)) */
-#define UG -25  /* (int8)(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(63,(int8)round(2.018 * 64)) */
+#define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
 #define UR 0
 
 #define VB 0
-#define VG -52  /* (int8)(-0.813 * 64 - 0.5) */
-#define VR 102  /* (int8)(1.596 * 64 + 0.5) */
+#define VG -52 /* (int8)round(-0.813 * 64 - 0.5) */
+#define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
 
 // Bias
-#define BB UB * 128 + VB * 128
-#define BG UG * 128 + VG * 128
-#define BR UR * 128 + VR * 128
+#define BB (UB * 128 + VB * 128 + YG * 16)
+#define BG (UG * 128 + VG * 128 + YG * 16)
+#define BR (UR * 128 + VR * 128 + YG * 16)
 
 static const vec8 kUVToB = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
@@ -64,7 +64,6 @@ static const vec8 kVUToG = {
 };
 
 static const vec16 kYToRgb = { YG, YG, YG, YG, YG, YG, YG, YG };
-static const vec16 kYSub16 = { 16, 16, 16, 16, 16, 16, 16, 16 };
 static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
 static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
 static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
@@ -98,7 +97,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm2 = _mm_sub_epi16(xmm2, *(__m128i*)kUVBiasR);
     xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
     xmm3 = _mm_unpacklo_epi8(xmm3, xmm4);
-    xmm3 = _mm_subs_epi16(xmm3, *(__m128i*)kYSub16);
     xmm3 = _mm_mullo_epi16(xmm3, *(__m128i*)kYToRgb);
     xmm0 = _mm_adds_epi16(xmm0, xmm3);
     xmm1 = _mm_adds_epi16(xmm1, xmm3);
@@ -1489,9 +1487,6 @@ static const lvec8 kUVToG_AVX = {
 static const lvec16 kYToRgb_AVX = {
   YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG
 };
-static const lvec16 kYSub16_AVX = {
-  16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16
-};
 static const lvec16 kUVBiasB_AVX = {
   BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB
 };
@@ -1527,7 +1522,6 @@ static const lvec16 kUVBiasR_AVX = {
     __asm lea        eax, [eax + 16]                                           \
     __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpunpcklbw ymm3, ymm3, ymm4                                          \
-    __asm vpsubsw    ymm3, ymm3, kYSub16_AVX                                   \
     __asm vpmullw    ymm3, ymm3, kYToRgb_AVX                                   \
     __asm vpaddsw    ymm0, ymm0, ymm3           /* B += Y */                   \
     __asm vpaddsw    ymm1, ymm1, ymm3           /* G += Y */                   \
@@ -1727,7 +1721,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TOABGRROW_AVX2
 
-#ifdef HAS_I422TOARGBROW_SSSE3
+#if defined(HAS_I422TOARGBROW_SSSE3)
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
 
 // Read 8 UV from 444.
@@ -1781,7 +1775,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm4                                                \
-    __asm psubsw     xmm3, kYSub16                                             \
     __asm pmullw     xmm3, kYToRgb                                             \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
@@ -1809,7 +1802,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm4                                                \
-    __asm psubsw     xmm3, kYSub16                                             \
     __asm pmullw     xmm3, kYToRgb                                             \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
