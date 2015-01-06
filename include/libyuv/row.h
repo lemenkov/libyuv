@@ -331,7 +331,6 @@ extern "C" {
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELYROW_NEON
 #define HAS_ARGBCOLORMATRIXROW_NEON
-// TODO(fbarchard): Test the following 3 work on 32 bit arm.
 #define HAS_ARGBSETROWS_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
 #endif
@@ -800,15 +799,15 @@ void ARGBCopyYToAlphaRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 
-void SetRow_X86(uint8* dst, uint32 v32, int count);
-void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
-                     int dst_stride, int height);
-void SetRow_NEON(uint8* dst, uint32 v32, int count);
-void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
-                      int dst_stride, int height);
 void SetRow_C(uint8* dst, uint32 v32, int count);
+void SetRow_X86(uint8* dst, uint32 v32, int count);
+void SetRow_NEON(uint8* dst, uint32 v32, int count);
 void ARGBSetRows_C(uint8* dst, uint32 v32, int width, int dst_stride,
                    int height);
+void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
+                     int dst_stride, int height);
+void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
+                      int dst_stride, int height);
 
 // ARGBShufflers for BGRAToARGB etc.
 void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,

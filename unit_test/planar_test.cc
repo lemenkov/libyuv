@@ -2105,4 +2105,87 @@ TEST_F(libyuvTest, TestARGBCopyYToAlpha) {
   free_aligned_buffer_64(orig_pixels);
 }
 
+static int TestARGBRect(int width, int height, int benchmark_iterations,
+                        int invert, int off, int bpp) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kStride = (width * bpp + 15) & ~15;
+  const int kSize = kStride * height;
+  const uint32 v32 = random() & (bpp == 4 ? 0xffffffff : 0xff);
+
+  align_buffer_64(dst_argb_c, kSize + off);
+  align_buffer_64(dst_argb_opt, kSize + off);
+
+  MemRandomize(dst_argb_c + off, kSize);
+  memcpy(dst_argb_opt + off, dst_argb_c + off, kSize);
+
+  MaskCpuFlags(0);
+  if (bpp == 4) {
+    ARGBRect(dst_argb_c + off, kStride, 0, 0, width, invert * height, v32);
+  } else {
+    SetPlane(dst_argb_c + off, kStride, width, invert * height, v32);
+  }
+
+  MaskCpuFlags(-1);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    if (bpp == 4) {
+      ARGBRect(dst_argb_opt + off, kStride, 0, 0, width, invert * height, v32);
+    } else {
+      SetPlane(dst_argb_opt + off, kStride, width, invert * height, v32);
+    }
+  }
+  int max_diff = 0;
+  for (int i = 0; i < kStride * height; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(dst_argb_c[i + off]) -
+            static_cast<int>(dst_argb_opt[i + off]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+  free_aligned_buffer_64(dst_argb_c);
+  free_aligned_buffer_64(dst_argb_opt);
+  return max_diff;
+}
+
+// TODO(fbarchard): Add invert support and test.
+
+TEST_F(libyuvTest, ARGBRect_Any) {
+  int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
+                              benchmark_iterations_, +1, 0, 4);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBRect_Unaligned) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 1, 4);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBRect_Opt) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 0, 4);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, SetPlane_Any) {
+  int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
+                              benchmark_iterations_, +1, 0, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, SetPlane_Unaligned) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 1, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, SetPlane_Opt) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, +1, 0, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
+
 }  // namespace libyuv
