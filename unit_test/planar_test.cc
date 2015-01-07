@@ -2149,8 +2149,6 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
   return max_diff;
 }
 
-// TODO(fbarchard): Add invert support and test.
-
 TEST_F(libyuvTest, ARGBRect_Any) {
   int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
                               benchmark_iterations_, +1, 0, 4);
@@ -2160,6 +2158,12 @@ TEST_F(libyuvTest, ARGBRect_Any) {
 TEST_F(libyuvTest, ARGBRect_Unaligned) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
                               benchmark_iterations_, +1, 1, 4);
+  EXPECT_EQ(0, max_diff);
+}
+
+TEST_F(libyuvTest, ARGBRect_Invert) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, -1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
@@ -2181,11 +2185,16 @@ TEST_F(libyuvTest, SetPlane_Unaligned) {
   EXPECT_EQ(0, max_diff);
 }
 
+TEST_F(libyuvTest, SetPlane_Invert) {
+  int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
+                              benchmark_iterations_, -1, 0, 1);
+  EXPECT_EQ(0, max_diff);
+}
+
 TEST_F(libyuvTest, SetPlane_Opt) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
                               benchmark_iterations_, +1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
-
 
 }  // namespace libyuv

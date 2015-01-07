@@ -1096,6 +1096,11 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
   int y;
   uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
   void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
   // Coalesce rows.
   if (dst_stride_y == width) {
     width *= height;
@@ -1155,9 +1160,14 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int width, int height,
              uint32 value) {
   if (!dst_argb ||
-      width <= 0 || height <= 0 ||
+      width <= 0 || height == 0 ||
       dst_x < 0 || dst_y < 0) {
     return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
   }
   dst_argb += dst_y * dst_stride_argb + dst_x * 4;
   // Coalesce rows.
