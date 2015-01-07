@@ -2848,7 +2848,7 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_ARGBCOPYYTOALPHAROW_AVX2
 
 #ifdef HAS_SETROW_X86
-// SetRow8 writes 'count' bytes using a 32 bit value repeated.
+// SetRow writes 'count' bytes using a 32 bit value repeated.
 __declspec(naked) __declspec(align(16))
 void SetRow_X86(uint8* dst, uint32 v32, int count) {
   __asm {

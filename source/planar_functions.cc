@@ -1166,13 +1166,13 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-#if defined(HAS_SETROW_NEON)
+#if defined(HAS_ARGBSETROWS_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     ARGBSetRows_NEON(dst_argb, value, width, dst_stride_argb, height);
     return 0;
   }
 #endif
-#if defined(HAS_SETROW_X86)
+#if defined(HAS_ARGBSETROWS_X86)
   if (TestCpuFlag(kCpuHasX86)) {
     ARGBSetRows_X86(dst_argb, value, width, dst_stride_argb, height);
     return 0;

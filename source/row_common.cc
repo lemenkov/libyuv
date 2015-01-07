@@ -1625,7 +1625,7 @@ void CopyRow_16_C(const uint16* src, uint16* dst, int count) {
 
 void SetRow_C(uint8* dst, uint32 v8, int count) {
 #ifdef _MSC_VER
-  // VC will generate rep stosb.
+  // VisualC will generate rep stosb.
   int x;
   for (x = 0; x < count; ++x) {
     dst[x] = v8;
