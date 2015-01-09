@@ -735,13 +735,27 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 }
 #endif  // HAS_COPYROW_NEON
 
-// SetRow8 writes 'count' bytes using a 32 bit value repeated.
-#ifdef HAS_SETROW_NEON
-void SetRow_NEON(uint8* dst, uint32 v32, int count) {
+// SetRow writes 'count' bytes using an 8 bit value repeated.
+void SetRow_NEON(uint8* dst, uint32 v8, int count) {
+  asm volatile (
+    "dup        v0.16b, %w2                    \n"  // duplicate 16 bytes
+  "1:                                          \n"
+    "subs      %1, %1, #16                     \n"  // 16 bytes per loop
+    MEMACCESS(0)
+    "st1        {v0.16b}, [%0], #16            \n"  // store
+    "b.gt      1b                              \n"
+  : "+r"(dst),   // %0
+    "+r"(count)  // %1
+  : "r"(v8)      // %2
+  : "cc", "memory", "v0"
+  );
+}
+
+void ARGBSetRow_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
     "dup        v0.4s, %w2                     \n"  // duplicate 4 ints
-    "1:                                        \n"
-    "subs      %1, %1, #16                     \n"  // 16 bytes per loop
+  "1:                                          \n"
+    "subs      %1, %1, #4                      \n"  // 4 ints per loop
     MEMACCESS(0)
     "st1        {v0.16b}, [%0], #16            \n"  // store
     "b.gt      1b                              \n"
@@ -751,19 +765,6 @@ void SetRow_NEON(uint8* dst, uint32 v32, int count) {
   : "cc", "memory", "v0"
   );
 }
-#endif  // HAS_SETROW_NEON
-
-// TODO(fbarchard): Make fully assembler
-// SetRow32 writes 'count' words using a 32 bit value repeated.
-#ifdef HAS_ARGBSETROWS_NEON
-void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
-                      int dst_stride, int height) {
-  for (int y = 0; y < height; ++y) {
-    SetRow_NEON(dst, v32, width << 2);
-    dst += dst_stride;
-  }
-}
-#endif  // HAS_ARGBSETROWS_NEON
 
 #ifdef HAS_MIRRORROW_NEON
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
