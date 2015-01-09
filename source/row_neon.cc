@@ -862,7 +862,7 @@ void SetRow_NEON(uint8* dst, uint32 v8, int count) {
 }
 
 // ARGBSetRow writes 'count' pixels using an 32 bit value repeated.
-void ARGBSetRow_NEON(uint8* dst, uint32 v8, int count) {
+void ARGBSetRow_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
     "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
   "1:                                          \n"
