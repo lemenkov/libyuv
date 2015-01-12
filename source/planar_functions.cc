@@ -1094,8 +1094,7 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value) {
   int y;
-  uint32 v32 = value | (value << 8) | (value << 16) | (value << 24);
-  void (*SetRow)(uint8* dst, uint32 value, int pix) = SetRow_C;
+  void (*SetRow)(uint8* dst, uint8 value, int pix) = SetRow_C;
   if (height < 0) {
     height = -height;
     dst_y = dst_y + (height - 1) * dst_stride_y;
@@ -1108,19 +1107,30 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
     dst_stride_y = 0;
   }
 #if defined(HAS_SETROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    SetRow = SetRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SetRow = SetRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      SetRow = SetRow_NEON;
+    }
   }
 #endif
 #if defined(HAS_SETROW_X86)
-  if (TestCpuFlag(kCpuHasX86) && IS_ALIGNED(width, 4)) {
-    SetRow = SetRow_X86;
+  if (TestCpuFlag(kCpuHasX86)) {
+    SetRow = SetRow_Any_X86;
+    if (IS_ALIGNED(width, 4)) {
+      SetRow = SetRow_X86;
+    }
+  }
+#endif
+#if defined(HAS_SETROW_ERMS)
+  if (TestCpuFlag(kCpuHasERMS)) {
+    SetRow = SetRow_ERMS;
   }
 #endif
 
   // Set plane
   for (y = 0; y < height; ++y) {
-    SetRow(dst_y, v32, width);
+    SetRow(dst_y, value, width);
     dst_y += dst_stride_y;
   }
 }
@@ -1139,7 +1149,7 @@ int I420Rect(uint8* dst_y, int dst_stride_y,
   uint8* start_u = dst_u + (y / 2) * dst_stride_u + (x / 2);
   uint8* start_v = dst_v + (y / 2) * dst_stride_v + (x / 2);
   if (!dst_y || !dst_u || !dst_v ||
-      width <= 0 || height <= 0 ||
+      width <= 0 || height == 0 ||
       x < 0 || y < 0 ||
       value_y < 0 || value_y > 255 ||
       value_u < 0 || value_u > 255 ||
@@ -1159,6 +1169,8 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
              int dst_x, int dst_y,
              int width, int height,
              uint32 value) {
+  int y;
+  void (*ARGBSetRow)(uint8* dst_argb, uint32 value, int pix) = ARGBSetRow_C;
   if (!dst_argb ||
       width <= 0 || height == 0 ||
       dst_x < 0 || dst_y < 0) {
@@ -1176,19 +1188,26 @@ int ARGBRect(uint8* dst_argb, int dst_stride_argb,
     height = 1;
     dst_stride_argb = 0;
   }
-#if defined(HAS_ARGBSETROWS_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    ARGBSetRows_NEON(dst_argb, value, width, dst_stride_argb, height);
-    return 0;
+
+#if defined(HAS_ARGBSETROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBSetRow = ARGBSetRow_Any_NEON;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBSetRow = ARGBSetRow_NEON;
+    }
   }
 #endif
-#if defined(HAS_ARGBSETROWS_X86)
+#if defined(HAS_ARGBSETROW_X86)
   if (TestCpuFlag(kCpuHasX86)) {
-    ARGBSetRows_X86(dst_argb, value, width, dst_stride_argb, height);
-    return 0;
+    ARGBSetRow = ARGBSetRow_X86;
   }
 #endif
-  ARGBSetRows_C(dst_argb, value, width, dst_stride_argb, height);
+
+  // Set plane
+  for (y = 0; y < height; ++y) {
+    ARGBSetRow(dst_argb, value, width);
+    dst_argb += dst_stride_argb;
+  }
   return 0;
 }
 

@@ -1623,28 +1623,15 @@ void CopyRow_16_C(const uint16* src, uint16* dst, int count) {
   memcpy(dst, src, count * 2);
 }
 
-void SetRow_C(uint8* dst, uint32 v8, int count) {
-#ifdef _MSC_VER
-  // VisualC will generate rep stosb.
-  int x;
-  for (x = 0; x < count; ++x) {
-    dst[x] = v8;
-  }
-#else
-  memset(dst, v8, count);
-#endif
+void SetRow_C(uint8* dst, uint8 v8, int width) {
+  memset(dst, v8, width);
 }
 
-void ARGBSetRows_C(uint8* dst, uint32 v32, int width,
-                 int dst_stride, int height) {
-  int y;
-  for (y = 0; y < height; ++y) {
-    uint32* d = (uint32*)(dst);
-    int x;
-    for (x = 0; x < width; ++x) {
-      d[x] = v32;
-    }
-    dst += dst_stride;
+void ARGBSetRow_C(uint8* dst_argb, uint32 v32, int width) {
+  uint32* d = (uint32*)(dst_argb);
+  int x;
+  for (x = 0; x < width; ++x) {
+    d[x] = v32;
   }
 }
 

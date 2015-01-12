@@ -2848,13 +2848,16 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_ARGBCOPYYTOALPHAROW_AVX2
 
 #ifdef HAS_SETROW_X86
-// SetRow writes 'count' bytes using a 32 bit value repeated.
+// Write 'count' bytes using an 8 bit value repeated.
+// Count should be multiple of 4.
 __declspec(naked) __declspec(align(16))
-void SetRow_X86(uint8* dst, uint32 v32, int count) {
+void SetRow_X86(uint8* dst, uint8 v8, int count) {
   __asm {
+    movzx      eax, byte ptr [esp + 8]    // v8
+    mov        edx, 0x01010101  // Duplicate byte to all bytes.
+    mul        edx              // overwrites edx with upper part of result.
     mov        edx, edi
     mov        edi, [esp + 4]   // dst
-    mov        eax, [esp + 8]   // v32
     mov        ecx, [esp + 12]  // count
     shr        ecx, 2
     rep stosd
@@ -2863,32 +2866,30 @@ void SetRow_X86(uint8* dst, uint32 v32, int count) {
   }
 }
 
-// SetRow32 writes 'count' words using a 32 bit value repeated.
+// Write 'count' bytes using an 8 bit value repeated.
 __declspec(naked) __declspec(align(16))
-void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
-                   int dst_stride, int height) {
+void SetRow_ERMS(uint8* dst, uint8 v8, int count) {
   __asm {
-    push       esi
-    push       edi
-    push       ebp
-    mov        edi, [esp + 12 + 4]   // dst
-    mov        eax, [esp + 12 + 8]   // v32
-    mov        ebp, [esp + 12 + 12]  // width
-    mov        edx, [esp + 12 + 16]  // dst_stride
-    mov        esi, [esp + 12 + 20]  // height
-    lea        ecx, [ebp * 4]
-    sub        edx, ecx             // stride - width * 4
+    mov        edx, edi
+    mov        edi, [esp + 4]   // dst
+    mov        eax, [esp + 8]   // v8
+    mov        ecx, [esp + 12]  // count
+    rep stosb
+    mov        edi, edx
+    ret
+  }
+}
 
-  convertloop:
-    mov        ecx, ebp
+// Write 'count' 32 bit values.
+__declspec(naked) __declspec(align(16))
+void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int count) {
+  __asm {
+    mov        edx, edi
+    mov        edi, [esp + 4]   // dst
+    mov        eax, [esp + 8]   // v32
+    mov        ecx, [esp + 12]  // count
     rep stosd
-    add        edi, edx
-    sub        esi, 1
-    jg         convertloop
-
-    pop        ebp
-    pop        edi
-    pop        esi
+    mov        edi, edx
     ret
   }
 }

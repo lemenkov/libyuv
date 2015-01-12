@@ -846,7 +846,7 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
 }
 
 // SetRow writes 'count' bytes using an 8 bit value repeated.
-void SetRow_NEON(uint8* dst, uint32 v8, int count) {
+void SetRow_NEON(uint8* dst, uint8 v8, int count) {
   asm volatile (
     "vdup.8    q0, %2                          \n"  // duplicate 16 bytes
   "1:                                          \n"

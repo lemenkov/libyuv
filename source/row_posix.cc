@@ -2893,10 +2893,10 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 #endif  // HAS_ARGBCOPYYTOALPHAROW_AVX2
 
 #ifdef HAS_SETROW_X86
-void SetRow_X86(uint8* dst, uint32 v32, int width) {
-  size_t width_tmp = (size_t)(width);
+void SetRow_X86(uint8* dst, uint8 v8, int width) {
+  size_t width_tmp = (size_t)(width >> 2);
+  const uint32 v32 = v8 * 0x01010101;  // Duplicate byte to all bytes.
   asm volatile (
-    "shr       $0x2,%1                         \n"
     "rep stosl " MEMSTORESTRING(eax,0) "       \n"
     : "+D"(dst),       // %0
       "+c"(width_tmp)  // %1
@@ -2904,19 +2904,24 @@ void SetRow_X86(uint8* dst, uint32 v32, int width) {
     : "memory", "cc");
 }
 
-void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
-                   int dst_stride, int height) {
-  for (int y = 0; y < height; ++y) {
-    size_t width_tmp = (size_t)(width);
-    uint32* d = (uint32*)(dst);
-    asm volatile (
-      "rep stosl " MEMSTORESTRING(eax,0) "     \n"
-      : "+D"(d),         // %0
-        "+c"(width_tmp)  // %1
-      : "a"(v32)         // %2
-      : "memory", "cc");
-    dst += dst_stride;
-  }
+void SetRow_ERMS(uint8* dst, uint8 v8, int width) {
+  size_t width_tmp = (size_t)(width);
+  asm volatile (
+    "rep stosb " MEMSTORESTRING(al,0) "        \n"
+    : "+D"(dst),       // %0
+      "+c"(width_tmp)  // %1
+    : "a"(v8)          // %2
+    : "memory", "cc");
+}
+
+void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int width) {
+  size_t width_tmp = (size_t)(width);
+  asm volatile (
+    "rep stosl " MEMSTORESTRING(eax,0) "       \n"
+    : "+D"(dst_argb),  // %0
+      "+c"(width_tmp)  // %1
+    : "a"(v32)         // %2
+    : "memory", "cc");
 }
 #endif  // HAS_SETROW_X86
 

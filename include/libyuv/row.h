@@ -114,7 +114,8 @@ extern "C" {
 #define HAS_RGBATOUVROW_SSSE3
 #define HAS_RGBATOYROW_SSSE3
 #define HAS_SETROW_X86
-#define HAS_ARGBSETROWS_X86
+#define HAS_SETROW_ERMS
+#define HAS_ARGBSETROW_X86
 #define HAS_SPLITUVROW_SSE2
 #define HAS_UYVYTOARGBROW_SSSE3
 #define HAS_UYVYTOUV422ROW_SSE2
@@ -302,7 +303,8 @@ extern "C" {
 #define HAS_RGB565TOYROW_NEON
 #define HAS_RGBATOUVROW_NEON
 #define HAS_RGBATOYROW_NEON
-// #define HAS_SETROW_NEON
+#define HAS_SETROW_NEON
+#define HAS_ARGBSETROW_NEON
 #define HAS_SPLITUVROW_NEON
 #define HAS_UYVYTOARGBROW_NEON
 #define HAS_UYVYTOUV422ROW_NEON
@@ -332,7 +334,6 @@ extern "C" {
 #define HAS_SOBELXYROW_NEON
 #define HAS_SOBELYROW_NEON
 #define HAS_ARGBCOLORMATRIXROW_NEON
-// #define HAS_ARGBSETROWS_NEON
 #define HAS_ARGBSHUFFLEROW_NEON
 #endif
 
@@ -800,15 +801,17 @@ void ARGBCopyYToAlphaRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 
-void SetRow_C(uint8* dst, uint32 v32, int count);
-void SetRow_X86(uint8* dst, uint32 v32, int count);
-void SetRow_NEON(uint8* dst, uint32 v32, int count);
-void ARGBSetRows_C(uint8* dst, uint32 v32, int width, int dst_stride,
-                   int height);
-void ARGBSetRows_X86(uint8* dst, uint32 v32, int width,
-                     int dst_stride, int height);
-void ARGBSetRows_NEON(uint8* dst, uint32 v32, int width,
-                      int dst_stride, int height);
+void SetRow_C(uint8* dst, uint8 v8, int count);
+void SetRow_X86(uint8* dst, uint8 v8, int count);
+void SetRow_ERMS(uint8* dst, uint8 v8, int count);
+void SetRow_NEON(uint8* dst, uint8 v8, int count);
+void SetRow_Any_X86(uint8* dst, uint8 v8, int count);
+void SetRow_Any_NEON(uint8* dst, uint8 v8, int count);
+
+void ARGBSetRow_C(uint8* dst_argb, uint32 v32, int count);
+void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int count);
+void ARGBSetRow_NEON(uint8* dst_argb, uint32 v32, int count);
+void ARGBSetRow_Any_NEON(uint8* dst_argb, uint32 v32, int count);
 
 // ARGBShufflers for BGRAToARGB etc.
 void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,

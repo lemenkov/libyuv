@@ -681,6 +681,27 @@ MANY(CopyRow_Any_NEON, CopyRow_NEON, CopyRow_C, 1, 31)
 #endif
 #undef MANY
 
+#define SETANY(NAMEANY, SET_SIMD, SET_C, T, BPP, MASK)                         \
+    void NAMEANY(uint8* dst_y, T v8, int width) {                              \
+      int n = width & ~MASK;                                                   \
+      int r = width & MASK;                                                    \
+      if (n > 0) {                                                             \
+        SET_SIMD(dst_y, v8, n);                                                \
+      }                                                                        \
+      SET_C(dst_y + n * BPP, v8, r);                                           \
+    }
+
+#ifdef HAS_SETROW_X86
+SETANY(SetRow_Any_X86, SetRow_X86, SetRow_ERMS, uint8, 1, 3)
+#endif
+#ifdef HAS_SETROW_NEON
+SETANY(SetRow_Any_NEON, SetRow_NEON, SetRow_C, uint8, 1, 15)
+#endif
+#ifdef HAS_ARGBSETROW_NEON
+SETANY(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, ARGBSetRow_C, uint32, 4, 3)
+#endif
+#undef SETANY
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
