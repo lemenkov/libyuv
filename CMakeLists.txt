@@ -50,6 +50,7 @@ set(ly_source_files
 
 set(ly_unittest_sources
   ${ly_base_dir}/unit_test/basictypes_test.cc
+  ${ly_base_dir}/unit_test/color_test.cc
   ${ly_base_dir}/unit_test/compare_test.cc
   ${ly_base_dir}/unit_test/convert_test.cc
   ${ly_base_dir}/unit_test/cpu_test.cc

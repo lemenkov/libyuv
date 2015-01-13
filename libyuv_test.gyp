@@ -36,6 +36,7 @@
         # sources
         'unit_test/basictypes_test.cc',
         'unit_test/compare_test.cc',
+        'unit_test/color_test.cc',
         'unit_test/convert_test.cc',
         'unit_test/cpu_test.cc',
         'unit_test/math_test.cc',
