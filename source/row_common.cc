@@ -385,6 +385,28 @@ void NAME ## ToUVJRow_C(const uint8* src_rgb0, int src_stride_rgb,             \
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
 #undef MAKEROWYJ
 
+void ARGBToUVJ422Row_C(const uint8* src_argb,
+                       uint8* dst_u, uint8* dst_v, int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    uint8 ab = (src_argb[0] + src_argb[4]) >> 1;
+    uint8 ag = (src_argb[1] + src_argb[5]) >> 1;
+    uint8 ar = (src_argb[2] + src_argb[6]) >> 1;
+    dst_u[0] = RGBToUJ(ar, ag, ab);
+    dst_v[0] = RGBToVJ(ar, ag, ab);
+    src_argb += 8;
+    dst_u += 1;
+    dst_v += 1;
+  }
+  if (width & 1) {
+    uint8 ab = src_argb[0];
+    uint8 ag = src_argb[1];
+    uint8 ar = src_argb[2];
+    dst_u[0] = RGBToUJ(ar, ag, ab);
+    dst_v[0] = RGBToVJ(ar, ag, ab);
+  }
+}
+
 void RGB565ToYRow_C(const uint8* src_rgb565, uint8* dst_y, int width) {
   int x;
   for (x = 0; x < width; ++x) {

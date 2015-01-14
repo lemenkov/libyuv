@@ -1023,6 +1023,80 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+// ARGB little endian (bgra in memory) to J422
+LIBYUV_API
+int ARGBToJ422(const uint8* src_argb, int src_stride_argb,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_u, int dst_stride_u,
+               uint8* dst_v, int dst_stride_v,
+               int width, int height) {
+  int y;
+  void (*ARGBToUVJ422Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
+      int pix) = ARGBToUVJ422Row_C;
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      ARGBToYJRow_C;
+  if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce rows.
+  if (src_stride_argb == width * 4 &&
+      dst_stride_y == width &&
+      dst_stride_u * 2 == width &&
+      dst_stride_v * 2 == width) {
+    width *= height;
+    height = 1;
+    src_stride_argb = dst_stride_y = dst_stride_u = dst_stride_v = 0;
+  }
+#if defined(HAS_ARGBTOUVJ422ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToUVJ422Row = ARGBToUVJ422Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVJ422Row = ARGBToUVJ422Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVJ422ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToUVJ422Row = ARGBToUVJ422Row_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVJ422Row = ARGBToUVJ422Row_NEON;
+    }
+  }
+#endif
+
+#if defined(HAS_ARGBTOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYJRow = ARGBToYJRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYJROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToYJRow = ARGBToYJRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYJRow = ARGBToYJRow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    ARGBToUVJ422Row(src_argb, dst_u, dst_v, width);
+    ARGBToYJRow(src_argb, dst_y, width);
+    src_argb += src_stride_argb;
+    dst_y += dst_stride_y;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
+  return 0;
+}
+
 // Convert ARGB to J400.
 LIBYUV_API
 int ARGBToJ400(const uint8* src_argb, int src_stride_argb,

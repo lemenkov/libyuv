@@ -109,8 +109,9 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
   free_aligned_buffer_64(dst_pixels_c);                                        \
 }                                                                              \
 
+TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, 7)
+TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, 7)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 3)
-TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, 6)
-TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, 6)
+TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 3)
 
 }  // namespace libyuv
