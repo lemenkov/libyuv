@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>  // For round
 #include <stdlib.h>
 
 #include "libyuv/convert.h"
@@ -183,7 +184,7 @@ TEST_F(libyuvTest, TestYUV) {
 
   TestYUVToRGB(240, 128, 128, r1, g1, b1, benchmark_width_, benchmark_height_);
   EXPECT_EQ(255, r1);
-  EXPECT_EQ(254, g1);
+  EXPECT_EQ(255, g1);
   EXPECT_EQ(255, b1);
 }
 
