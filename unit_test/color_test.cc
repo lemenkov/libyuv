@@ -186,6 +186,14 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(255, r1);
   EXPECT_EQ(255, g1);
   EXPECT_EQ(255, b1);
+
+  for (int i = 0; i < 255; ++i) {
+    TestYUVToRGBReference(i, 128, 128, r0, g0, b0);
+    TestYUVToRGB(i, 128, 128, r1, g1, b1, benchmark_width_, benchmark_height_);
+    EXPECT_NEAR(r0, r1, 3);
+    EXPECT_NEAR(r0, g1, 3);
+    EXPECT_NEAR(r0, b1, 3);
+  }
 }
 
 }  // namespace libyuv
