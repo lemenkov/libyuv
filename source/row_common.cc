@@ -962,7 +962,8 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 // C reference code that mimics the YUV assembly.
 
-#define YG 74 /* round(1.164 * 64) */
+#define YG 4901247 /* round(1.164 * 64 * 256) = 19071 * 0x0101 */
+#define YGB 1192  /* round(1.164 * 64 * 16) */
 
 #define UB 127 /* min(127, round(2.018 * 64)) */
 #define UG -25 /* round(-0.391 * 64) */
@@ -973,13 +974,13 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define VR 102 /* round(1.596 * 64) */
 
 // Bias
-#define BB (UB * 128 + VB * 128 + YG * 16)
-#define BG (UG * 128 + VG * 128 + YG * 16)
-#define BR (UR * 128 + VR * 128 + YG * 16)
+#define BB (UB * 128 + VB * 128 + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR (UR * 128 + VR * 128 + YGB)
 
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
-  uint32 y1 = (uint32)(y * YG);
+  uint32 y1 = (uint32)(y * YG) >> 16;
   *b = Clamp((int32)(u * UB + v * VB + y1 - BB) >> 6);
   *g = Clamp((int32)(u * UG + v * VG + y1 - BG) >> 6);
   *r = Clamp((int32)(u * UR + v * VR + y1 - BR) >> 6);

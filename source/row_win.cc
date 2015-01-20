@@ -24,7 +24,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
-#define YG 74 /* (int8)round(1.164 * 64 + 0.5) */
+#define YG 19071 /* round(1.164 * 64 * 256) */
+#define YGB 1192  /* round(1.164 * 64 * 16) */
 
 #define UB 127 /* min(63,(int8)round(2.018 * 64)) */
 #define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
@@ -35,9 +36,9 @@ extern "C" {
 #define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
 
 // Bias
-#define BB (UB * 128 + VB * 128 + YG * 16)
-#define BG (UG * 128 + VG * 128 + YG * 16)
-#define BR (UR * 128 + VR * 128 + YG * 16)
+#define BB (UB * 128 + VB * 128 + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR (UR * 128 + VR * 128 + YGB)
 
 static const vec8 kUVToB = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
@@ -79,7 +80,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          int width) {
   __m128i xmm0, xmm1, xmm2, xmm3;
   const __m128i xmm5 = _mm_set1_epi8(-1);
-  const __m128i xmm4 = _mm_setzero_si128();
   const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
 
   while (width > 0) {
@@ -96,8 +96,8 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm1 = _mm_sub_epi16(xmm1, *(__m128i*)kUVBiasG);
     xmm2 = _mm_sub_epi16(xmm2, *(__m128i*)kUVBiasR);
     xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
-    xmm3 = _mm_unpacklo_epi8(xmm3, xmm4);
-    xmm3 = _mm_mullo_epi16(xmm3, *(__m128i*)kYToRgb);
+    xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);
+    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)kYToRgb);
     xmm0 = _mm_adds_epi16(xmm0, xmm3);
     xmm1 = _mm_adds_epi16(xmm1, xmm3);
     xmm2 = _mm_adds_epi16(xmm2, xmm3);
@@ -1521,8 +1521,8 @@ static const lvec16 kUVBiasR_AVX = {
     __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
     __asm lea        eax, [eax + 16]                                           \
     __asm vpermq     ymm3, ymm3, 0xd8                                          \
-    __asm vpunpcklbw ymm3, ymm3, ymm4                                          \
-    __asm vpmullw    ymm3, ymm3, kYToRgb_AVX                                   \
+    __asm vpunpcklbw ymm3, ymm3, ymm3                                          \
+    __asm vpmulhuw   ymm3, ymm3, kYToRgb_AVX                                   \
     __asm vpaddsw    ymm0, ymm0, ymm3           /* B += Y */                   \
     __asm vpaddsw    ymm1, ymm1, ymm3           /* G += Y */                   \
     __asm vpaddsw    ymm2, ymm2, ymm3           /* R += Y */                   \
@@ -1553,7 +1553,6 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-    vpxor      ymm4, ymm4, ymm4
 
  convertloop:
     READYUV422_AVX2
@@ -1600,7 +1599,6 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-    vpxor      ymm4, ymm4, ymm4
 
  convertloop:
     READYUV422_AVX2
@@ -1647,7 +1645,6 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-    vpxor      ymm4, ymm4, ymm4
 
  convertloop:
     READYUV422_AVX2
@@ -1694,7 +1691,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-    vpxor      ymm4, ymm4, ymm4
 
  convertloop:
     READYUV422_AVX2
@@ -1774,8 +1770,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
-    __asm punpcklbw  xmm3, xmm4                                                \
-    __asm pmullw     xmm3, kYToRgb                                             \
+    __asm punpcklbw  xmm3, xmm3                                                \
+    __asm pmulhuw    xmm3, kYToRgb                                             \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
     __asm paddsw     xmm2, xmm3           /* R += Y */                         \
@@ -1801,8 +1797,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
-    __asm punpcklbw  xmm3, xmm4                                                \
-    __asm pmullw     xmm3, kYToRgb                                             \
+    __asm punpcklbw  xmm3, xmm3                                                \
+    __asm pmulhuw    xmm3, kYToRgb                                             \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
     __asm paddsw     xmm2, xmm3           /* R += Y */                         \
@@ -1832,7 +1828,6 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV444
@@ -1873,7 +1868,6 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // rgb24
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    pxor       xmm4, xmm4
     movdqa     xmm5, kShuffleMaskARGBToRGB24_0
     movdqa     xmm6, kShuffleMaskARGBToRGB24
 
@@ -1919,7 +1913,6 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // raw
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    pxor       xmm4, xmm4
     movdqa     xmm5, kShuffleMaskARGBToRAW_0
     movdqa     xmm6, kShuffleMaskARGBToRAW
 
@@ -1965,7 +1958,6 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // rgb565
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    pxor       xmm4, xmm4
     pcmpeqb    xmm5, xmm5       // generate mask 0x0000001f
     psrld      xmm5, 27
     pcmpeqb    xmm6, xmm6       // generate mask 0x000007e0
@@ -2038,7 +2030,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV422
@@ -2082,7 +2073,6 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
     mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV411  // modifies EBX
@@ -2121,7 +2111,6 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 4 + 12]  // argb
     mov        ecx, [esp + 4 + 16]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READNV12
@@ -2158,7 +2147,6 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 4 + 12]  // argb
     mov        ecx, [esp + 4 + 16]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READNV12
@@ -2196,7 +2184,6 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // bgra
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV422
@@ -2237,7 +2224,6 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV422
@@ -2276,7 +2262,6 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // rgba
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    pxor       xmm4, xmm4
 
  convertloop:
     READYUV422
@@ -2303,21 +2288,24 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
+#define YG 19071 /* round(1.164 * 64 * 256) */
+#define YGB 1192  /* round(1.164 * 64 * 16) */
+
 #ifdef HAS_YTOARGBROW_SSE2
 __declspec(naked) __declspec(align(16))
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
   __asm {
-    pxor       xmm5, xmm5
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
-    mov        eax, 0x00100010
+    mov        eax, 0x04a804a8       // 04a8 = 1192 = round(1.164 * 64 * 16)
     movd       xmm3, eax
     pshufd     xmm3, xmm3, 0
-    mov        eax, 0x004a004a       // 74
+    mov        eax, 0x4a7f4a7f       // 4a7f = 19071 = round(1.164 * 64 * 256)
     movd       xmm2, eax
     pshufd     xmm2, xmm2,0
+
     mov        eax, [esp + 4]       // Y
     mov        edx, [esp + 8]       // rgb
     mov        ecx, [esp + 12]      // width
@@ -2326,9 +2314,9 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
     movq       xmm0, qword ptr [eax]
     lea        eax, [eax + 8]
-    punpcklbw  xmm0, xmm5           // 0.Y
-    psubusw    xmm0, xmm3
-    pmullw     xmm0, xmm2
+    punpcklbw  xmm0, xmm0           // Y.Y
+    pmulhuw    xmm0, xmm2
+    psubusw    xmm0, xmm3           // TODO(fbarchard): round 0.5
     psrlw      xmm0, 6
     packuswb   xmm0, xmm0           // G
 
