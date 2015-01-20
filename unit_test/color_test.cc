@@ -113,24 +113,7 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
 TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, 7)
 TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, 7)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 3)
-TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 3)
-
-int Clamp(double f) {
-  int i = static_cast<int>(round(f));
-  if (i < 0) {
-    i = 0;
-  }
-  if (i > 255) {
-    i = 255;
-  }
-  return i;
-}
-
-void TestYUVToRGBReference(int y, int u, int v, int &r, int &g, int &b) {
-  r = Clamp((y - 16) * 1.164 + (v - 128) * 1.596);
-  g = Clamp((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
-  b = Clamp((y - 16) * 1.164 + (u - 128) * 2.018);
-}
+TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 4)
 
 void TestYUVToRGB(int y, int u, int v, int &r, int &g, int &b,
                   int benchmark_width_, int benchmark_height_) {
@@ -164,8 +147,52 @@ void TestYUVToRGB(int y, int u, int v, int &r, int &g, int &b,
   free_aligned_buffer_64(orig_v);
 }
 
+int Clamp(double f) {
+  int i = static_cast<int>(round(f));
+  if (i < 0) {
+    i = 0;
+  }
+  if (i > 255) {
+    i = 255;
+  }
+  return i;
+}
+
+void TestYUVToRGBReference(int y, int u, int v, int &r, int &g, int &b) {
+  r = Clamp((y - 16) * 1.164 + (v - 128) * 1.596);
+  g = Clamp((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
+  b = Clamp((y - 16) * 1.164 + (u - 128) * 2.018);
+}
+
+// C prototype code
+
+#define YG 4901241 /* round(1.164 * 64 * 256 * 257) */
+#define YGB 1192  /* round(1.164 * 64 * 16 ) */
+
+#define UB -128 /* -min(128, round(2.018 * 64)) */
+#define UG 25 /* -round(-0.391 * 64) */
+#define UR 0
+
+#define VB 0
+#define VG 52 /* -round(-0.813 * 64) */
+#define VR -102 /* -round(1.596 * 64) */
+
+// Bias
+#define BB (UB * 128 + VB * 128 - YGB)
+#define BG (UG * 128 + VG * 128 - YGB)
+#define BR (UR * 128 + VR * 128 - YGB)
+
+void TestYUVToRGBInt(int y, int u, int v, int &r, int &g, int &b) {
+  uint32 y1 = (uint32)(y * YG) >> 16;
+  b = Clamp((int32)(y1 - (v * VB + u * UB) + BB) >> 6);
+  g = Clamp((int32)(y1 - (v * VG + u * UG) + BG) >> 6);
+  r = Clamp((int32)(y1 - (v * VR + u * UR) + BR) >> 6);
+}
+
 TEST_F(libyuvTest, TestYUV) {
   int r0, g0, b0;
+
+  // black
   TestYUVToRGBReference(16, 128, 128, r0, g0, b0);
   EXPECT_EQ(0, r0);
   EXPECT_EQ(0, g0);
@@ -177,6 +204,7 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(0, g1);
   EXPECT_EQ(0, b1);
 
+  // white
   TestYUVToRGBReference(240, 128, 128, r0, g0, b0);
   EXPECT_EQ(255, r0);
   EXPECT_EQ(255, g0);
@@ -187,12 +215,75 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(255, g1);
   EXPECT_EQ(255, b1);
 
+  // cyan (less red)
+  TestYUVToRGBReference(240, 255, 0, r0, g0, b0);
+  EXPECT_EQ(56, r0);
+  EXPECT_EQ(255, g0);
+  EXPECT_EQ(255, b0);
+
+  TestYUVToRGB(240, 255, 0, r1, g1, b1, benchmark_width_, benchmark_height_);
+  EXPECT_EQ(55, r1);
+  EXPECT_EQ(255, g1);
+  EXPECT_EQ(255, b1);
+
+  // green (less red and blue)
+  TestYUVToRGBReference(240, 0, 0, r0, g0, b0);
+  EXPECT_EQ(56, r0);
+  EXPECT_EQ(255, g0);
+  EXPECT_EQ(2, b0);
+
+  TestYUVToRGB(240, 0, 0, r1, g1, b1, benchmark_width_, benchmark_height_);
+  EXPECT_EQ(55, r1);
+  EXPECT_EQ(255, g1);
+  EXPECT_EQ(5, b1);
+
+  int r2, g2, b2;
   for (int i = 0; i < 255; ++i) {
     TestYUVToRGBReference(i, 128, 128, r0, g0, b0);
     TestYUVToRGB(i, 128, 128, r1, g1, b1, benchmark_width_, benchmark_height_);
+    TestYUVToRGBInt(i, 128, 128, r2, g2, b2);
     EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(r0, g1, 3);
-    EXPECT_NEAR(r0, b1, 3);
+    EXPECT_NEAR(g0, g1, 3);
+    EXPECT_NEAR(b0, b1, 3);
+    EXPECT_NEAR(r0, r2, 1);
+    EXPECT_NEAR(g0, g2, 1);
+    EXPECT_NEAR(b0, b2, 1);
+
+    TestYUVToRGBReference(i, 0, 0, r0, g0, b0);
+    TestYUVToRGB(i, 0, 0, r1, g1, b1, benchmark_width_, benchmark_height_);
+    TestYUVToRGBInt(i, 0, 0, r2, g2, b2);
+    EXPECT_NEAR(r0, r1, 3);
+    EXPECT_NEAR(g0, g1, 3);
+    EXPECT_NEAR(b0, b1, 3);
+    EXPECT_NEAR(r0, r2, 1);
+    EXPECT_NEAR(g0, g2, 1);
+    EXPECT_NEAR(b0, b2, 3);
+
+    TestYUVToRGBReference(i, 0, 255, r0, g0, b0);
+    TestYUVToRGB(i, 0, 255, r1, g1, b1, benchmark_width_, benchmark_height_);
+    TestYUVToRGBInt(i, 0, 255, r2, g2, b2);
+    EXPECT_NEAR(r0, r1, 3);
+    EXPECT_NEAR(g0, g1, 3);
+    EXPECT_NEAR(b0, b1, 3);
+    EXPECT_NEAR(r0, r2, 1);
+    EXPECT_NEAR(g0, g2, 1);
+    EXPECT_NEAR(b0, b2, 3);
+  }
+
+  for (int i = 0; i < 1000; ++i) {
+    int yr = random() & 255;
+    int ur = random() & 255;
+    int vr = random() & 255;
+
+    TestYUVToRGBReference(yr, ur, vr, r0, g0, b0);
+    TestYUVToRGB(yr, ur, vr, r1, g1, b1, benchmark_width_, benchmark_height_);
+    TestYUVToRGBInt(yr, ur, vr, r2, g2, b2);
+    EXPECT_NEAR(r0, r1, 3);
+    EXPECT_NEAR(g0, g1, 3);
+    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r2, 1);
+    EXPECT_NEAR(g0, g2, 1);
+    EXPECT_NEAR(b0, b2, 3);
   }
 }
 

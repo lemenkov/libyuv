@@ -962,15 +962,15 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 // C reference code that mimics the YUV assembly.
 
-#define YG 74 /* (int8)round(1.164 * 64 + 0.5) */
+#define YG 74 /* round(1.164 * 64) */
 
-#define UB 127 /* min(63,(int8)round(2.018 * 64)) */
-#define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
+#define UB 127 /* min(127, round(2.018 * 64)) */
+#define UG -25 /* round(-0.391 * 64) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* (int8)round(-0.813 * 64 - 0.5) */
-#define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
+#define VG -52 /* round(-0.813 * 64) */
+#define VR 102 /* round(1.596 * 64) */
 
 // Bias
 #define BB (UB * 128 + VB * 128 + YG * 16)
