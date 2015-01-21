@@ -27,8 +27,16 @@ namespace libyuv {
 
 #ifdef HIGH_ACCURACY
 #define MAX_CDIFF 0
+#define ERROR_R 1
+#define ERROR_G 1
+#define ERROR_B 3
+#define ERROR_FULL 5
 #else
 #define MAX_CDIFF 2
+#define ERROR_R 3
+#define ERROR_G 3
+#define ERROR_B 5
+#define ERROR_FULL 7
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF, CDIFF)       \
@@ -121,8 +129,9 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
 }                                                                              \
 
 // TODO(fbarchard): Reduce C to Opt diff to 0.
-TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, 7, MAX_CDIFF)
-TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, 7, MAX_CDIFF)
+TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_,
+       ERROR_FULL, MAX_CDIFF)
+TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, ERROR_FULL, MAX_CDIFF)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 3, 0)
 TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 4, 0)
 
@@ -251,9 +260,9 @@ TEST_F(libyuvTest, TestYUV) {
     YUVToRGBReference(i, 128, 128, &r0, &g0, &b0);
     YUVToRGB(i, 128, 128, &r1, &g1, &b1);
     YUVToRGBInt(i, 128, 128, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(g0, g1, 3);
-    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r1, ERROR_R);
+    EXPECT_NEAR(g0, g1, ERROR_G);
+    EXPECT_NEAR(b0, b1, ERROR_B);
     EXPECT_NEAR(r0, r2, 1);
     EXPECT_NEAR(g0, g2, 1);
     EXPECT_NEAR(b0, b2, 1);
@@ -261,9 +270,9 @@ TEST_F(libyuvTest, TestYUV) {
     YUVToRGBReference(i, 0, 0, &r0, &g0, &b0);
     YUVToRGB(i, 0, 0, &r1, &g1, &b1);
     YUVToRGBInt(i, 0, 0, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(g0, g1, 3);
-    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r1, ERROR_R);
+    EXPECT_NEAR(g0, g1, ERROR_G);
+    EXPECT_NEAR(b0, b1, ERROR_B);
     EXPECT_NEAR(r0, r2, 1);
     EXPECT_NEAR(g0, g2, 1);
     EXPECT_NEAR(b0, b2, 3);
@@ -271,9 +280,9 @@ TEST_F(libyuvTest, TestYUV) {
     YUVToRGBReference(i, 0, 255, &r0, &g0, &b0);
     YUVToRGB(i, 0, 255, &r1, &g1, &b1);
     YUVToRGBInt(i, 0, 255, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(g0, g1, 3);
-    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r1, ERROR_R);
+    EXPECT_NEAR(g0, g1, ERROR_G);
+    EXPECT_NEAR(b0, b1, ERROR_B);
     EXPECT_NEAR(r0, r2, 1);
     EXPECT_NEAR(g0, g2, 1);
     EXPECT_NEAR(b0, b2, 3);
@@ -287,9 +296,9 @@ TEST_F(libyuvTest, TestYUV) {
     YUVToRGBReference(yr, ur, vr, &r0, &g0, &b0);
     YUVToRGB(yr, ur, vr, &r1, &g1, &b1);
     YUVToRGBInt(yr, ur, vr, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(g0, g1, 3);
-    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r1, ERROR_R);
+    EXPECT_NEAR(g0, g1, ERROR_G);
+    EXPECT_NEAR(b0, b1, ERROR_B);
     EXPECT_NEAR(r0, r2, 1);
     EXPECT_NEAR(g0, g2, 1);
     EXPECT_NEAR(b0, b2, 3);
@@ -304,9 +313,9 @@ TEST_F(libyuvTest, TestGreyYUV) {
     YUVToRGBReference(y, 128, 128, &r0, &g0, &b0);
     YUVToRGB(y, 128, 128, &r1, &g1, &b1);
     YUVToRGBInt(y, 128, 128, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, 3);
-    EXPECT_NEAR(g0, g1, 3);
-    EXPECT_NEAR(b0, b1, 5);
+    EXPECT_NEAR(r0, r1, ERROR_R);
+    EXPECT_NEAR(g0, g1, ERROR_G);
+    EXPECT_NEAR(b0, b1, ERROR_B);
     EXPECT_NEAR(r0, r2, 1);
     EXPECT_NEAR(g0, g2, 1);
     EXPECT_NEAR(b0, b2, 3);
@@ -324,9 +333,9 @@ TEST_F(libyuvTest, TestFullYUV) {
         YUVToRGBReference(y, u, v, &r0, &g0, &b0);
         YUVToRGB(y, u, v, &r1, &g1, &b1);
         YUVToRGBInt(y, u, v, &r2, &g2, &b2);
-        EXPECT_NEAR(r0, r1, 3);
-        EXPECT_NEAR(g0, g1, 3);
-        EXPECT_NEAR(b0, b1, 5);
+        EXPECT_NEAR(r0, r1, ERROR_R);
+        EXPECT_NEAR(g0, g1, ERROR_G);
+        EXPECT_NEAR(b0, b1, ERROR_B);
         EXPECT_NEAR(r0, r2, 1);
         EXPECT_NEAR(g0, g2, 1);
         EXPECT_NEAR(b0, b2, 3);
