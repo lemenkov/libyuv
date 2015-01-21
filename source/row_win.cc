@@ -2288,9 +2288,7 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
-#define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1192  /* round(1.164 * 64 * 16) */
-
+// TODO(fbarchard): Remove shift by 6.
 #ifdef HAS_YTOARGBROW_SSE2
 __declspec(naked) __declspec(align(16))
 void YToARGBRow_SSE2(const uint8* y_buf,
@@ -2299,10 +2297,10 @@ void YToARGBRow_SSE2(const uint8* y_buf,
   __asm {
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
-    mov        eax, 0x04a804a8       // 04a8 = 1192 = round(1.164 * 64 * 16)
+    mov        eax, 0x04a804a8      // 04a8 = 1192 = round(1.164 * 64 * 16)
     movd       xmm3, eax
     pshufd     xmm3, xmm3, 0
-    mov        eax, 0x4a7f4a7f       // 4a7f = 19071 = round(1.164 * 64 * 256)
+    mov        eax, 0x4a7f4a7f      // 4a7f = 19071 = round(1.164 * 64 * 256)
     movd       xmm2, eax
     pshufd     xmm2, xmm2,0
 

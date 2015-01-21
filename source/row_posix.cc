@@ -1518,7 +1518,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
-#define YG 74 /* (int8)round(1.164 * 64 + 0.5) */
+#define YG 19071 /* round(1.164 * 64 * 256) */
+#define YGB 1192  /* round(1.164 * 64 * 16) */
 
 #define UB 127 /* min(63,(int8)round(2.018 * 64)) */
 #define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
@@ -1529,9 +1530,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
 
 // Bias
-#define BB (UB * 128 + VB * 128 + YG * 16)
-#define BG (UG * 128 + VG * 128 + YG * 16)
-#define BR (UR * 128 + VR * 128 + YG * 16)
+#define BB (UB * 128 + VB * 128 + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR (UR * 128 + VR * 128 + YGB)
 
 struct {
   vec8 kUVToB;  // 0
@@ -1599,8 +1600,8 @@ struct {
     "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
-    "punpcklbw  %%xmm4,%%xmm3                                   \n"            \
-    "pmullw     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
+    "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
+    "pmulhuw    " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -1623,8 +1624,8 @@ struct {
     "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
-    "punpcklbw  %%xmm4,%%xmm3                                   \n"            \
-    "pmullw     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
+    "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
+    "pmulhuw    " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -1643,7 +1644,6 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV444
@@ -1669,7 +1669,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -1684,7 +1684,6 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRGB24],%%xmm6   \n"
     "sub       %[u_buf],%[v_buf]               \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -1720,7 +1719,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
 #endif
   );
 }
@@ -1734,7 +1733,6 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
     "movdqa    %[kShuffleMaskARGBToRAW],%%xmm6   \n"
     "sub       %[u_buf],%[v_buf]               \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -1770,7 +1768,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
 #endif
   );
 }
@@ -1783,7 +1781,6 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -1809,7 +1806,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -1822,7 +1819,6 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV411
@@ -1848,7 +1844,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -1859,7 +1855,6 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READNV12
@@ -1882,7 +1877,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
   : "memory", "cc"
   // Does not use r14.
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -1929,7 +1924,6 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -1956,7 +1950,7 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -1969,7 +1963,6 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -1995,7 +1988,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2008,7 +2001,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422
@@ -2035,7 +2027,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2089,8 +2081,8 @@ struct {
     "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
     "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
     "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
-    "vpunpcklbw  %%ymm4,%%ymm3,%%ymm3                               \n"        \
-    "vpmullw     " MEMACCESS2(192, [kYuvConstants]) ",%%ymm3,%%ymm3 \n"        \
+    "vpunpcklbw  %%ymm3,%%ymm3,%%ymm3                               \n"        \
+    "vpmulhuw    " MEMACCESS2(192, [kYuvConstants]) ",%%ymm3,%%ymm3 \n"        \
     "vpaddsw     %%ymm3,%%ymm0,%%ymm0           \n"                            \
     "vpaddsw     %%ymm3,%%ymm1,%%ymm1           \n"                            \
     "vpaddsw     %%ymm3,%%ymm2,%%ymm2           \n"                            \
@@ -2112,7 +2104,6 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
-    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
@@ -2143,7 +2134,7 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2160,7 +2151,6 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
-    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
@@ -2191,7 +2181,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2208,7 +2198,6 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
-    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
@@ -2238,7 +2227,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2255,7 +2244,6 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
-    "vpxor      %%ymm4,%%ymm4,%%ymm4           \n"
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
@@ -2285,7 +2273,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     , "r14"
 #endif
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
@@ -2296,13 +2284,12 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* dst_argb,
                      int width) {
   asm volatile (
-    "pxor      %%xmm5,%%xmm5                   \n"
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
-    "mov       $0x00100010,%%eax               \n"
+    "mov       $0x04a804a8,%%eax               \n"
     "movd      %%eax,%%xmm3                    \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-    "mov       $0x004a004a,%%eax               \n"
+    "mov       $0x4a7f4a7f,%%eax               \n"
     "movd      %%eax,%%xmm2                    \n"
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
     LABELALIGN
@@ -2310,9 +2297,9 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
     "movq      " MEMACCESS(0) ",%%xmm0         \n"
     "lea       " MEMLEA(0x8,0) ",%0            \n"
-    "punpcklbw %%xmm5,%%xmm0                   \n"
+    "punpcklbw %%xmm0,%%xmm0                   \n"
+    "pmulhuw   %%xmm2,%%xmm0                   \n"
     "psubusw   %%xmm3,%%xmm0                   \n"
-    "pmullw    %%xmm2,%%xmm0                   \n"
     "psrlw     $6, %%xmm0                      \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
 
