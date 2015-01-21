@@ -115,23 +115,22 @@ TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, 7)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 3)
 TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 4)
 
-void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
-  const int kWidth = 128;
-  const int kHeight = 2;
+static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
+  const int kWidth = 16;
+  const int kHeight = 1;
   const int kPixels = kWidth * kHeight;
   const int kHalfPixels = ((kWidth + 1) / 2) * ((kHeight + 1) / 2);
-  align_buffer_64(orig_y, kPixels);
-  align_buffer_64(orig_u, kHalfPixels);
-  align_buffer_64(orig_v, kHalfPixels);
-  align_buffer_64(orig_pixels, kPixels * 4);
 
+  SIMD_ALIGNED(uint8 orig_y[16]);
+  SIMD_ALIGNED(uint8 orig_u[8]);
+  SIMD_ALIGNED(uint8 orig_v[8]);
+  SIMD_ALIGNED(uint8 orig_pixels[16 * 1 * 4]);
   memset(orig_y, y, kPixels);
   memset(orig_u, u, kHalfPixels);
   memset(orig_v, v, kHalfPixels);
-  MemRandomize(orig_pixels, kPixels * 4);
 
   /* YUV converted to ARGB. */
-  I420ToARGB(orig_y, kWidth,
+  I422ToARGB(orig_y, kWidth,
              orig_u, (kWidth + 1) / 2,
              orig_v, (kWidth + 1) / 2,
              orig_pixels, kWidth * 4,
@@ -140,14 +139,9 @@ void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
   *b = orig_pixels[0];
   *g = orig_pixels[1];
   *r = orig_pixels[2];
-
-  free_aligned_buffer_64(orig_pixels);
-  free_aligned_buffer_64(orig_y);
-  free_aligned_buffer_64(orig_u);
-  free_aligned_buffer_64(orig_v);
 }
 
-int RoundToByte(double f) {
+static int RoundToByte(double f) {
   int i = lrintf(f);
   if (i < 0) {
     i = 0;
@@ -158,7 +152,7 @@ int RoundToByte(double f) {
   return i;
 }
 
-void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
+static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *r = RoundToByte((y - 16) * 1.164 + (v - 128) * 1.596);
   *g = RoundToByte((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
   *b = RoundToByte((y - 16) * 1.164 + (u - 128) * 2.018);
