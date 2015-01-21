@@ -269,12 +269,15 @@ TEST_F(libyuvTest, TestGreyYUV) {
   }
 }
 
-// TODO(fbarchard): Speed up this test or disable it.
+// This full test should be run occassionally to test all values are accurate.
+// TODO(fbarchard): Determine error distribution.
 TEST_F(libyuvTest, TestFullYUV) {
+  // If using small image, step faster.
+  int step = benchmark_width_ <= 128 ? 3 : 1;
   int r0, g0, b0, r1, g1, b1;
-  for (int y = 0; y < 256; ++y) {
-    for (int u = 0; u < 256; ++u) {
-      for (int v = 0; v < 256; ++v) {
+  for (int y = 0; y < 256; y += step) {
+    for (int u = 0; u < 256; u += step) {
+      for (int v = 0; v < 256; v += step) {
         YUVToRGBReference(y, u, v, &r0, &g0, &b0);
         YUVToRGB(y, u, v, &r1, &g1, &b1);
         EXPECT_NEAR(r0, r1, ERROR_R);
