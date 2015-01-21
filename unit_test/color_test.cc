@@ -178,37 +178,8 @@ static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *b = RoundToByte((y - 16) * 1.164 + (u - 128) * 2.018);
 }
 
-// TODO(fbarchard): Remove prototype once integrated.
-
-// C prototype code
-// TODO(fbarchard): Consider adjusting bias for accurate center point instead
-// of accurate starting point.
-
-#define YG 4901247 /* round(1.164 * 64 * 256) = 19071 * 0x0101 */
-#define YGB 1192  /* round(1.164 * 64 * 16) */
-
-#define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UG 25 /* -round(-0.391 * 64) */
-#define UR 0
-
-#define VB 0
-#define VG 52 /* -round(-0.813 * 64) */
-#define VR -102 /* -round(1.596 * 64) */
-
-// Bias
-#define BB (UB * 128 + VB * 128 - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR (UR * 128 + VR * 128 - YGB)
-
-void YUVToRGBInt(int y, int u, int v, int* r, int* g, int* b) {
-  uint32 y1 = static_cast<uint32>(y * YG) >> 16;
-  *b = RoundToByte(static_cast<int32>(y1 - (v * VB + u * UB) + BB) >> 6);
-  *g = RoundToByte(static_cast<int32>(y1 - (v * VG + u * UG) + BG) >> 6);
-  *r = RoundToByte(static_cast<int32>(y1 - (v * VR + u * UR) + BR) >> 6);
-}
-
 TEST_F(libyuvTest, TestYUV) {
-  int r0, g0, b0;
+  int r0, g0, b0, r1, g1, b1;
 
   // black
   YUVToRGBReference(16, 128, 128, &r0, &g0, &b0);
@@ -216,7 +187,6 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(0, g0);
   EXPECT_EQ(0, b0);
 
-  int r1, g1, b1;
   YUVToRGB(16, 128, 128, &r1, &g1, &b1);
   EXPECT_EQ(0, r1);
   EXPECT_EQ(0, g1);
@@ -255,37 +225,24 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(255, g1);
   EXPECT_NEAR(6, b1, 1);
 
-  int r2, g2, b2;
   for (int i = 0; i < 256; ++i) {
     YUVToRGBReference(i, 128, 128, &r0, &g0, &b0);
     YUVToRGB(i, 128, 128, &r1, &g1, &b1);
-    YUVToRGBInt(i, 128, 128, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
-    EXPECT_NEAR(r0, r2, 1);
-    EXPECT_NEAR(g0, g2, 1);
-    EXPECT_NEAR(b0, b2, 1);
 
     YUVToRGBReference(i, 0, 0, &r0, &g0, &b0);
     YUVToRGB(i, 0, 0, &r1, &g1, &b1);
-    YUVToRGBInt(i, 0, 0, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
-    EXPECT_NEAR(r0, r2, 1);
-    EXPECT_NEAR(g0, g2, 1);
-    EXPECT_NEAR(b0, b2, 3);
 
     YUVToRGBReference(i, 0, 255, &r0, &g0, &b0);
     YUVToRGB(i, 0, 255, &r1, &g1, &b1);
-    YUVToRGBInt(i, 0, 255, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
-    EXPECT_NEAR(r0, r2, 1);
-    EXPECT_NEAR(g0, g2, 1);
-    EXPECT_NEAR(b0, b2, 3);
   }
 
   for (int i = 0; i < 1000; ++i) {
@@ -295,50 +252,34 @@ TEST_F(libyuvTest, TestYUV) {
 
     YUVToRGBReference(yr, ur, vr, &r0, &g0, &b0);
     YUVToRGB(yr, ur, vr, &r1, &g1, &b1);
-    YUVToRGBInt(yr, ur, vr, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
-    EXPECT_NEAR(r0, r2, 1);
-    EXPECT_NEAR(g0, g2, 1);
-    EXPECT_NEAR(b0, b2, 3);
   }
 }
 
 TEST_F(libyuvTest, TestGreyYUV) {
-  int r0, g0, b0;
-  int r1, g1, b1;
-  int r2, g2, b2;
+  int r0, g0, b0, r1, g1, b1;
   for (int y = 0; y < 256; ++y) {
     YUVToRGBReference(y, 128, 128, &r0, &g0, &b0);
     YUVToRGB(y, 128, 128, &r1, &g1, &b1);
-    YUVToRGBInt(y, 128, 128, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
-    EXPECT_NEAR(r0, r2, 1);
-    EXPECT_NEAR(g0, g2, 1);
-    EXPECT_NEAR(b0, b2, 3);
   }
 }
 
 // TODO(fbarchard): Speed up this test or disable it.
 TEST_F(libyuvTest, TestFullYUV) {
-  int r0, g0, b0;
-  int r1, g1, b1;
-  int r2, g2, b2;
+  int r0, g0, b0, r1, g1, b1;
   for (int y = 0; y < 256; ++y) {
     for (int u = 0; u < 256; ++u) {
       for (int v = 0; v < 256; ++v) {
         YUVToRGBReference(y, u, v, &r0, &g0, &b0);
         YUVToRGB(y, u, v, &r1, &g1, &b1);
-        YUVToRGBInt(y, u, v, &r2, &g2, &b2);
         EXPECT_NEAR(r0, r1, ERROR_R);
         EXPECT_NEAR(g0, g1, ERROR_G);
         EXPECT_NEAR(b0, b1, ERROR_B);
-        EXPECT_NEAR(r0, r2, 1);
-        EXPECT_NEAR(g0, g2, 1);
-        EXPECT_NEAR(b0, b2, 3);
       }
     }
   }
