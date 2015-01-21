@@ -24,21 +24,22 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
+// C reference code that mimics the YUV assembly.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1192  /* round(1.164 * 64 * 16) */
 
-#define UB 127 /* min(63,(int8)round(2.018 * 64)) */
-#define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
+#define UB -128 /* -min(128, round(2.018 * 64)) */
+#define UG 25 /* -round(-0.391 * 64) */
 #define UR 0
 
 #define VB 0
-#define VG -52 /* (int8)round(-0.813 * 64 - 0.5) */
-#define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
+#define VG 52 /* -round(-0.813 * 64) */
+#define VR -102 /* -round(1.596 * 64) */
 
 // Bias
-#define BB (UB * 128 + VB * 128 + YGB)
-#define BG (UG * 128 + VG * 128 + YGB)
-#define BR (UR * 128 + VR * 128 + YGB)
+#define BB (UB * 128 + VB * 128 - YGB)
+#define BG (UG * 128 + VG * 128 - YGB)
+#define BR (UR * 128 + VR * 128 - YGB)
 
 static const vec8 kUVToB = {
   UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
@@ -1514,9 +1515,12 @@ static const lvec16 kUVBiasR_AVX = {
     __asm vpmaddubsw ymm2, ymm0, kUVToR_AVX        /* scale R UV */            \
     __asm vpmaddubsw ymm1, ymm0, kUVToG_AVX        /* scale G UV */            \
     __asm vpmaddubsw ymm0, ymm0, kUVToB_AVX        /* scale B UV */            \
-    __asm vpsubw     ymm2, ymm2, kUVBiasR_AVX      /* unbias back to signed */ \
-    __asm vpsubw     ymm1, ymm1, kUVBiasG_AVX                                  \
-    __asm vpsubw     ymm0, ymm0, kUVBiasB_AVX                                  \
+    __asm vmovdqu    ymm3, kUVBiasR_AVX                                        \
+    __asm vpsubw     ymm2, ymm3, ymm2                                          \
+    __asm vmovdqu    ymm3, kUVBiasG_AVX                                        \
+    __asm vpsubw     ymm1, ymm3, ymm1                                          \
+    __asm vmovdqu    ymm3, kUVBiasB_AVX                                        \
+    __asm vpsubw     ymm0, ymm3, ymm0                                          \
     /* Step 2: Find Y contribution to 16 R,G,B values */                       \
     __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
     __asm lea        eax, [eax + 16]                                           \
@@ -1761,12 +1765,16 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
-    __asm pmaddubsw  xmm0, kUVToB        /* scale B UV */                      \
-    __asm pmaddubsw  xmm1, kUVToG        /* scale G UV */                      \
-    __asm pmaddubsw  xmm2, kUVToR        /* scale R UV */                      \
-    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */           \
-    __asm psubw      xmm1, kUVBiasG                                            \
-    __asm psubw      xmm2, kUVBiasR                                            \
+    __asm movdqa     xmm3, xmm0                                                \
+    __asm movdqa     xmm0, kUVBiasB      /* unbias back to signed */           \
+    __asm pmaddubsw  xmm1, kUVToB        /* scale B UV */                      \
+    __asm psubw      xmm0, xmm1                                                \
+    __asm movdqa     xmm1, kUVBiasG                                            \
+    __asm pmaddubsw  xmm2, kUVToG        /* scale G UV */                      \
+    __asm psubw      xmm1, xmm2                                                \
+    __asm movdqa     xmm2, kUVBiasR                                            \
+    __asm pmaddubsw  xmm3, kUVToR        /* scale R UV */                      \
+    __asm psubw      xmm2, xmm3                                                \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
@@ -1788,12 +1796,16 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
-    __asm pmaddubsw  xmm0, kVUToB        /* scale B UV */                      \
-    __asm pmaddubsw  xmm1, kVUToG        /* scale G UV */                      \
-    __asm pmaddubsw  xmm2, kVUToR        /* scale R UV */                      \
-    __asm psubw      xmm0, kUVBiasB      /* unbias back to signed */           \
-    __asm psubw      xmm1, kUVBiasG                                            \
-    __asm psubw      xmm2, kUVBiasR                                            \
+    __asm movdqa     xmm3, xmm0                                                \
+    __asm movdqa     xmm0, kUVBiasB      /* unbias back to signed */           \
+    __asm pmaddubsw  xmm1, kVUToB        /* scale B UV */                      \
+    __asm psubw      xmm0, xmm1                                                \
+    __asm movdqa     xmm1, kUVBiasG                                            \
+    __asm pmaddubsw  xmm2, kVUToG        /* scale G UV */                      \
+    __asm psubw      xmm1, xmm2                                                \
+    __asm movdqa     xmm2, kUVBiasR                                            \
+    __asm pmaddubsw  xmm3, kVUToR        /* scale R UV */                      \
+    __asm psubw      xmm2, xmm3                                                \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
