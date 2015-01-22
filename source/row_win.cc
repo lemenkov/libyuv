@@ -24,10 +24,11 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
-// C reference code that mimics the YUV assembly.
+// YUV conversion constants.
 #define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1192  /* round(1.164 * 64 * 16) */
+#define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
 
+// TODO(fbarchard): Adjusted U and V bias for even error distribution.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
 #define UG 25 /* -round(-0.391 * 64) */
 #define UR 0
