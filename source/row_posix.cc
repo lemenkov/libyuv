@@ -1888,7 +1888,6 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
     LABELALIGN
   "1:                                          \n"
     READNV12
@@ -1911,7 +1910,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
   : "memory", "cc"
   // Does not use r14.
 #if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
   );
 }
