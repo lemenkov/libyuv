@@ -2310,7 +2310,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
   __asm {
     pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
     pslld      xmm4, 24
-    mov        eax, 0x04a804a8      // 04a8 = 1192 = round(1.164 * 64 * 16)
+    mov        eax, 0x04ad04ad      // 04ad = 1197 = round(1.164 * 64 * 16)
     movd       xmm3, eax
     pshufd     xmm3, xmm3, 0
     mov        eax, 0x4a7f4a7f      // 4a7f = 19071 = round(1.164 * 64 * 256)
