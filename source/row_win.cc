@@ -94,9 +94,9 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)kUVToB);
     xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)kUVToG);
     xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)kUVToR);
-    xmm0 = _mm_sub_epi16(xmm0, *(__m128i*)kUVBiasB);
-    xmm1 = _mm_sub_epi16(xmm1, *(__m128i*)kUVBiasG);
-    xmm2 = _mm_sub_epi16(xmm2, *(__m128i*)kUVBiasR);
+    xmm0 = _mm_sub_epi16(*(__m128i*)kUVBiasB, xmm0);
+    xmm1 = _mm_sub_epi16(*(__m128i*)kUVBiasG, xmm1);
+    xmm2 = _mm_sub_epi16(*(__m128i*)kUVBiasR, xmm2);
     xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
     xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);
     xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)kYToRgb);
