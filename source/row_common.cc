@@ -960,40 +960,39 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   }
 }
 
-// C reference code that mimics the YUV assembly.
+// YUV to RGB conversion constants.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
-
-// TODO(fbarchard): Adjusted U and V bias for even error distribution.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
+#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
 #define UG 25 /* -round(-0.391 * 64) */
-#define UR 0
-
-#define VB 0
+#define UGB 3200 /* -round(-0.391 * 64) * 128 */
 #define VG 52 /* -round(-0.813 * 64) */
+#define VGB 6656 /* -round(-0.813 * 64) * 128 */
 #define VR -102 /* -round(1.596 * 64) */
+#define VRB -13056 /* -round(1.596 * 64) * 128 */
+#define BB (UBB       - YGB)
+#define BG (UGB + VGB - YGB)
+#define BR (      VRB - YGB)
 
-// Bias
-#define BB (UB * 128 + VB * 128 - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR (UR * 128 + VR * 128 - YGB)
-
+// C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
   uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
-  *b = Clamp((int32)(BB - (v * VB + u * UB) + y1) >> 6);
+  *b = Clamp((int32)(BB - (         u * UB) + y1) >> 6);
   *g = Clamp((int32)(BG - (v * VG + u * UG) + y1) >> 6);
-  *r = Clamp((int32)(BR - (v * VR + u * UR) + y1) >> 6);
+  *r = Clamp((int32)(BR - (v * VR         ) + y1) >> 6);
 }
-
 #undef YG
 #undef YGB
 #undef UB
+#undef UBB
 #undef UG
-#undef UR
-#undef VB
+#undef UGB
 #undef VG
+#undef VGB
 #undef VR
+#undef VRB
 #undef BB
 #undef BG
 #undef BR

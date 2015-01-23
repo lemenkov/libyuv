@@ -24,30 +24,27 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
-// YUV conversion constants.
+// YUV to RGB conversion constants.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
-
-// TODO(fbarchard): Adjusted U and V bias for even error distribution.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
+#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
 #define UG 25 /* -round(-0.391 * 64) */
-#define UR 0
-
-#define VB 0
+#define UGB 3200 /* -round(-0.391 * 64) * 128 */
 #define VG 52 /* -round(-0.813 * 64) */
+#define VGB 6656 /* -round(-0.813 * 64) * 128 */
 #define VR -102 /* -round(1.596 * 64) */
-
-// Bias
-#define BB (UB * 128 + VB * 128 - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR (UR * 128 + VR * 128 - YGB)
+#define VRB -13056 /* -round(1.596 * 64) * 128 */
+#define BB (UBB       - YGB)
+#define BG (UGB + VGB - YGB)
+#define BR (      VRB - YGB)
 
 static const vec8 kUVToB = {
-  UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
+  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0
 };
 
 static const vec8 kUVToR = {
-  UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR
+  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR
 };
 
 static const vec8 kUVToG = {
@@ -55,11 +52,11 @@ static const vec8 kUVToG = {
 };
 
 static const vec8 kVUToB = {
-  VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB,
+  0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
 };
 
 static const vec8 kVUToR = {
-  VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR,
+  VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
 };
 
 static const vec8 kVUToG = {
@@ -1475,12 +1472,12 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 #if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 static const lvec8 kUVToB_AVX = {
-  UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB,
-  UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB
+  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0
 };
 static const lvec8 kUVToR_AVX = {
-  UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR,
-  UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR
+  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR
 };
 static const lvec8 kUVToG_AVX = {
   UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
