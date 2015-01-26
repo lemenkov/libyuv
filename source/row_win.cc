@@ -2324,7 +2324,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     lea        eax, [eax + 8]
     punpcklbw  xmm0, xmm0           // Y.Y
     pmulhuw    xmm0, xmm2
-    psubusw    xmm0, xmm3           // TODO(fbarchard): round 0.5
+    psubusw    xmm0, xmm3
     psrlw      xmm0, 6
     packuswb   xmm0, xmm0           // G
 

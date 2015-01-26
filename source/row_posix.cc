@@ -1518,21 +1518,21 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
+
+// YUV to RGB conversion constants.
 #define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1192  /* round(1.164 * 64 * 16) */
-
-#define UB 127 /* min(63,(int8)round(2.018 * 64)) */
-#define UG -25 /* (int8)round(-0.391 * 64 - 0.5) */
-#define UR 0
-
-#define VB 0
-#define VG -52 /* (int8)round(-0.813 * 64 - 0.5) */
-#define VR 102 /* (int8)round(1.596 * 64 + 0.5) */
-
-// Bias
-#define BB (UB * 128 + VB * 128 + YGB)
-#define BG (UG * 128 + VG * 128 + YGB)
-#define BR (UR * 128 + VR * 128 + YGB)
+#define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define UB -128 /* -min(128, round(2.018 * 64)) */
+#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
+#define UG 25 /* -round(-0.391 * 64) */
+#define UGB 3200 /* -round(-0.391 * 64) * 128 */
+#define VG 52 /* -round(-0.813 * 64) */
+#define VGB 6656 /* -round(-0.813 * 64) * 128 */
+#define VR -102 /* -round(1.596 * 64) */
+#define VRB -13056 /* -round(1.596 * 64) * 128 */
+#define BB (UBB       - YGB)
+#define BG (UGB + VGB - YGB)
+#define BR (      VRB - YGB)
 
 struct {
   vec8 kUVToB;  // 0
@@ -1546,16 +1546,16 @@ struct {
   vec8 kVUToG;  // 128
   vec8 kVUToR;  // 144
 } static SIMD_ALIGNED(kYuvConstants) = {
-  { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
-  { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
   { BB, BB, BB, BB, BB, BB, BB, BB },
   { BG, BG, BG, BG, BG, BG, BG, BG },
   { BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG },
-  { VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB },
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
-  { VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR }
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 }
 };
 
 // Read 8 UV from 411
@@ -1592,12 +1592,16 @@ struct {
 #define YUVTORGB                                                               \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
-    "pmaddubsw  " MEMACCESS([kYuvConstants]) ",%%xmm0           \n"            \
-    "pmaddubsw  " MEMACCESS2(16, [kYuvConstants]) ",%%xmm1      \n"            \
-    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm2      \n"            \
-    "psubw      " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
-    "psubw      " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
-    "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
+    "movdqa     %%xmm0,%%xmm3                                   \n"            \
+    "movdqa     " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
+    "pmaddubsw  " MEMACCESS([kYuvConstants]) ",%%xmm1           \n"            \
+    "psubw      %%xmm1,%%xmm0                                   \n"            \
+    "movdqa     " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
+    "pmaddubsw  " MEMACCESS2(16, [kYuvConstants]) ",%%xmm2      \n"            \
+    "psubw      %%xmm2,%%xmm1                                   \n"            \
+    "movdqa     " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
+    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm3      \n"            \
+    "psubw      %%xmm3,%%xmm2                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
@@ -1616,12 +1620,16 @@ struct {
 #define YVUTORGB                                                               \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
-    "pmaddubsw  " MEMACCESS2(112, [kYuvConstants]) ",%%xmm0     \n"            \
-    "pmaddubsw  " MEMACCESS2(128, [kYuvConstants]) ",%%xmm1     \n"            \
-    "pmaddubsw  " MEMACCESS2(144, [kYuvConstants]) ",%%xmm2     \n"            \
-    "psubw      " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
-    "psubw      " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
-    "psubw      " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
+    "movdqa     %%xmm0,%%xmm3                                   \n"            \
+    "movdqa     " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
+    "pmaddubsw  " MEMACCESS2(112, [kYuvConstants]) ",%%xmm1     \n"            \
+    "psubw      %%xmm1,%%xmm0                                   \n"            \
+    "movdqa     " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
+    "pmaddubsw  " MEMACCESS2(128, [kYuvConstants]) ",%%xmm2     \n"            \
+    "psubw      %%xmm2,%%xmm1                                   \n"            \
+    "movdqa     " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
+    "pmaddubsw  " MEMACCESS2(144, [kYuvConstants]) ",%%xmm3     \n"            \
+    "psubw      %%xmm3,%%xmm2                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
@@ -2043,12 +2051,12 @@ struct {
   lvec16 kUVBiasR_AVX;  // 160
   lvec16 kYToRgb_AVX;   // 192
 } static SIMD_ALIGNED(kYuvConstants_AVX) = {
-  { UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB,
-    UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB, UB, VB },
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
     UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
-  { UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR,
-    UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR, UR, VR },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
   { BB, BB, BB, BB, BB, BB, BB, BB,
     BB, BB, BB, BB, BB, BB, BB, BB },
   { BG, BG, BG, BG, BG, BG, BG, BG,
@@ -2074,9 +2082,12 @@ struct {
     "vpmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%ymm0,%%ymm2  \n"        \
     "vpmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%ymm0,%%ymm1  \n"        \
     "vpmaddubsw  " MEMACCESS([kYuvConstants]) ",%%ymm0,%%ymm0       \n"        \
-    "vpsubw      " MEMACCESS2(160, [kYuvConstants]) ",%%ymm2,%%ymm2 \n"        \
-    "vpsubw      " MEMACCESS2(128, [kYuvConstants]) ",%%ymm1,%%ymm1 \n"        \
-    "vpsubw      " MEMACCESS2(96, [kYuvConstants]) ",%%ymm0,%%ymm0  \n"        \
+    "vmovdqu     " MEMACCESS2(160, [kYuvConstants]) ",%%ymm3        \n"        \
+    "vpsubw      %%ymm3,%%ymm2,%%ymm2                               \n"        \
+    "vmovdqu     " MEMACCESS2(128, [kYuvConstants]) ",%%ymm2        \n"        \
+    "vpsubw      %%ymm2,%%ymm1,%%ymm1                               \n"        \
+    "vmovdqu     " MEMACCESS2(96, [kYuvConstants]) ",%%ymm1         \n"        \
+    "vpsubw      %%ymm1,%%ymm0,%%ymm0                               \n"        \
     "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
     "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
     "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
@@ -2285,10 +2296,10 @@ void YToARGBRow_SSE2(const uint8* y_buf,
   asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
     "pslld     $0x18,%%xmm4                    \n"
-    "mov       $0x04a804a8,%%eax               \n"
+    "mov       $0x04ad04ad,%%eax               \n"  // 04ad = 1197 = 1.164 * 16
     "movd      %%eax,%%xmm3                    \n"
     "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-    "mov       $0x4a7f4a7f,%%eax               \n"
+    "mov       $0x4a7f4a7f,%%eax               \n"  // 4a7f = 19071 = 1.164
     "movd      %%eax,%%xmm2                    \n"
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
     LABELALIGN
