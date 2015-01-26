@@ -161,6 +161,25 @@ static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
   *r = orig_pixels[2];
 }
 
+static void YToRGB(int y, int* r, int* g, int* b) {
+  const int kWidth = 16;
+  const int kHeight = 1;
+  const int kPixels = kWidth * kHeight;
+
+  SIMD_ALIGNED(uint8 orig_y[16]);
+  SIMD_ALIGNED(uint8 orig_pixels[16 * 1 * 4]);
+  memset(orig_y, y, kPixels);
+
+  /* YUV converted to ARGB. */
+  YToARGB(orig_y, kWidth,
+          orig_pixels, kWidth * 4,
+          kWidth, kHeight);
+
+  *b = orig_pixels[0];
+  *g = orig_pixels[1];
+  *r = orig_pixels[2];
+}
+
 static int RoundToByte(double f) {
   int i = lrintf(f);
   if (i < 0) {
@@ -259,13 +278,17 @@ TEST_F(libyuvTest, TestYUV) {
 }
 
 TEST_F(libyuvTest, TestGreyYUV) {
-  int r0, g0, b0, r1, g1, b1;
+  int r0, g0, b0, r1, g1, b1, r2, g2, b2;
   for (int y = 0; y < 256; ++y) {
     YUVToRGBReference(y, 128, 128, &r0, &g0, &b0);
     YUVToRGB(y, 128, 128, &r1, &g1, &b1);
+    YToRGB(y, &r2, &g2, &b2);
     EXPECT_NEAR(r0, r1, ERROR_R);
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
+    EXPECT_EQ(r1, r2);
+    EXPECT_EQ(g1, g2);
+    EXPECT_EQ(b1, b2);
   }
 }
 
