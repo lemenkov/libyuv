@@ -988,9 +988,9 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 // C reference code that mimics the YUV assembly.
 static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
   uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
-  *b = Clamp((int32)(-YGB + y1) >> 6);
-  *g = Clamp((int32)(-YGB + y1) >> 6);
-  *r = Clamp((int32)(-YGB + y1) >> 6);
+  *b = Clamp((int32)(y1 - YGB) >> 6);
+  *g = Clamp((int32)(y1 - YGB) >> 6);
+  *r = Clamp((int32)(y1 - YGB) >> 6);
 }
 
 #undef YG

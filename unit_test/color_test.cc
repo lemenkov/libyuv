@@ -21,7 +21,8 @@
 
 namespace libyuv {
 
-#ifdef _MSC_VER
+#if defined (_M_X64) || defined(_M_IX86) || \
+    defined(__x86_64__) || defined(__i386__))
 #define HIGH_ACCURACY 1
 #endif
 
