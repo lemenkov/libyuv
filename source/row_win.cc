@@ -25,19 +25,20 @@ extern "C" {
     (defined(_M_IX86) || defined(_M_X64))
 
 // YUV to RGB conversion constants.
+// Y contribution to R,G,B.  Scale and bias.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+
+// U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
 #define UG 25 /* -round(-0.391 * 64) */
-#define UGB 3200 /* -round(-0.391 * 64) * 128 */
 #define VG 52 /* -round(-0.813 * 64) */
-#define VGB 6656 /* -round(-0.813 * 64) * 128 */
 #define VR -102 /* -round(1.596 * 64) */
-#define VRB -13056 /* -round(1.596 * 64) * 128 */
-#define BB (UBB       - YGB)
-#define BG (UGB + VGB - YGB)
-#define BR (      VRB - YGB)
+
+// Bias values to subtract 16 from Y and 128 from U and V.
+#define BB (UB * 128            - YGB)
+#define BG (UG * 128 + VG * 128 - YGB)
+#define BR (           VR * 128 - YGB)
 
 static const vec8 kUVToB = {
   UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0

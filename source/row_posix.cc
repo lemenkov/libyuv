@@ -1,3 +1,4 @@
+// VERSION 1
 /*
  *  Copyright 2011 The LibYuv Project Authors. All rights reserved.
  *
@@ -1520,19 +1521,20 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #ifdef HAS_I422TOARGBROW_SSSE3
 
 // YUV to RGB conversion constants.
+// Y contribution to R,G,B.  Scale and bias.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+
+// U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
 #define UG 25 /* -round(-0.391 * 64) */
-#define UGB 3200 /* -round(-0.391 * 64) * 128 */
 #define VG 52 /* -round(-0.813 * 64) */
-#define VGB 6656 /* -round(-0.813 * 64) * 128 */
 #define VR -102 /* -round(1.596 * 64) */
-#define VRB -13056 /* -round(1.596 * 64) * 128 */
-#define BB (UBB       - YGB)
-#define BG (UGB + VGB - YGB)
-#define BR (      VRB - YGB)
+
+// Bias values to subtract 16 from Y and 128 from U and V.
+#define BB (UB * 128            - YGB)
+#define BG (UG * 128 + VG * 128 - YGB)
+#define BR (           VR * 128 - YGB)
 
 struct {
   vec8 kUVToB;  // 0
@@ -2083,11 +2085,11 @@ struct {
     "vpmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%ymm0,%%ymm1  \n"        \
     "vpmaddubsw  " MEMACCESS([kYuvConstants]) ",%%ymm0,%%ymm0       \n"        \
     "vmovdqu     " MEMACCESS2(160, [kYuvConstants]) ",%%ymm3        \n"        \
-    "vpsubw      %%ymm3,%%ymm2,%%ymm2                               \n"        \
+    "vpsubw      %%ymm2,%%ymm3,%%ymm2                               \n"        \
     "vmovdqu     " MEMACCESS2(128, [kYuvConstants]) ",%%ymm2        \n"        \
-    "vpsubw      %%ymm2,%%ymm1,%%ymm1                               \n"        \
+    "vpsubw      %%ymm1,%%ymm2,%%ymm1                               \n"        \
     "vmovdqu     " MEMACCESS2(96, [kYuvConstants]) ",%%ymm1         \n"        \
-    "vpsubw      %%ymm1,%%ymm0,%%ymm0                               \n"        \
+    "vpsubw      %%ymm0,%%ymm1,%%ymm0                               \n"        \
     "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
     "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
     "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \

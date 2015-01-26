@@ -961,19 +961,20 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 }
 
 // YUV to RGB conversion constants.
+// Y contribution to R,G,B.  Scale and bias.
 #define YG 19071 /* round(1.164 * 64 * 256) */
 #define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+
+// U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UBB -16385 /* approx -round(2.018 * 64 * 128) */
 #define UG 25 /* -round(-0.391 * 64) */
-#define UGB 3200 /* -round(-0.391 * 64) * 128 */
 #define VG 52 /* -round(-0.813 * 64) */
-#define VGB 6656 /* -round(-0.813 * 64) * 128 */
 #define VR -102 /* -round(1.596 * 64) */
-#define VRB -13056 /* -round(1.596 * 64) * 128 */
-#define BB (UBB       - YGB)
-#define BG (UGB + VGB - YGB)
-#define BR (      VRB - YGB)
+
+// Bias values to subtract 16 from Y and 128 from U and V.
+#define BB (UB * 128            - YGB)
+#define BG (UG * 128 + VG * 128 - YGB)
+#define BR (           VR * 128 - YGB)
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
@@ -983,16 +984,21 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
   *g = Clamp((int32)(BG - (v * VG + u * UG) + y1) >> 6);
   *r = Clamp((int32)(BR - (v * VR         ) + y1) >> 6);
 }
+
+// C reference code that mimics the YUV assembly.
+static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
+  uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
+  *b = Clamp((int32)(-YGB + y1) >> 6);
+  *g = Clamp((int32)(-YGB + y1) >> 6);
+  *r = Clamp((int32)(-YGB + y1) >> 6);
+}
+
 #undef YG
 #undef YGB
 #undef UB
-#undef UBB
 #undef UG
-#undef UGB
 #undef VG
-#undef VGB
 #undef VR
-#undef VRB
 #undef BB
 #undef BG
 #undef BR
@@ -1558,18 +1564,15 @@ void I422ToRGBARow_C(const uint8* src_y,
 void YToARGBRow_C(const uint8* src_y, uint8* rgb_buf, int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], 128, 128,
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YPixel(src_y[0], rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
-    YuvPixel(src_y[1], 128, 128,
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    YPixel(src_y[1], rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
     rgb_buf[7] = 255;
     src_y += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], 128, 128,
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YPixel(src_y[0], rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
   }
 }
