@@ -1243,4 +1243,24 @@ TEST_F(libyuvTest, HaveJPEG) {
 #endif
 }
 
+TEST_F(libyuvTest, TestYToARGB) {
+  uint8 y[32];
+  uint8 expectedg[32];
+  for (int i = 0; i < 32; ++i) {
+    y[i] = i * 5 + 17;
+    expectedg[i] = round((y[i] - 16) * 1.164);
+  }
+  uint8 argb[32 * 4];
+  YToARGB(y, 0, argb, 0, 32, 1);
+
+  for (int i = 0; i < 32; ++i) {
+    printf("%d: %d <-> %d,%d,%d,%d\n", y[i], expectedg[i],
+           argb[i * 4 + 0],
+           argb[i * 4 + 1],
+           argb[i * 4 + 2],
+           argb[i * 4 + 3]);
+    EXPECT_NEAR(expectedg[i], argb[i * 4 + 0], 1);
+  }
+}
+
 }  // namespace libyuv
