@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>  // For round
+#include <math.h>  // For lrintf
 #include <stdlib.h>
 
 #include "libyuv/convert.h"
