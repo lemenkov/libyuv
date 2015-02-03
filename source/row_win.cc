@@ -2299,8 +2299,8 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
-// TODO(fbarchard): Remove shift by 6.
 #ifdef HAS_YTOARGBROW_SSE2
+// 8 pixels of Y converted to 8 pixels of ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
@@ -2341,11 +2341,61 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
-
     ret
   }
 }
 #endif  // HAS_YTOARGBROW_SSE2
+
+#ifdef HAS_YTOARGBROW_AVX2
+// 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void YToARGBRow_AVX2(const uint8* y_buf,
+                     uint8* rgb_buf,
+                     int width) {
+  __asm {
+    vpcmpeqb   ymm4, ymm4, ymm4     // generate mask 0xff000000
+    vpslld     ymm4, ymm4, 24
+    mov        eax, 0x04ad04ad      // 04ad = 1197 = round(1.164 * 64 * 16)
+    vmovd      xmm3, eax
+    vbroadcastss ymm3, xmm3
+    mov        eax, 0x4a7f4a7f      // 4a7f = 19071 = round(1.164 * 64 * 256)
+    vmovd      xmm2, eax
+    vbroadcastss ymm2, xmm2
+
+    mov        eax, [esp + 4]       // Y
+    mov        edx, [esp + 8]       // rgb
+    mov        ecx, [esp + 12]      // width
+
+ convertloop:
+    // Step 1: Scale Y contribution to 16 G values. G = (y - 16) * 1.164
+    vmovdqu    xmm0, [eax]
+    lea        eax, [eax + 16]
+    vpermq     ymm0, ymm0, 0xd8
+    vpunpcklbw ymm0, ymm0, ymm0           // Y.Y
+    vpmulhuw   ymm0, ymm0, ymm2
+    vpsubusw   ymm0, ymm0, ymm3
+    vpsrlw     ymm0, ymm0, 6
+    vpackuswb  ymm0, ymm0, ymm0           // G.  still mutated: 3120
+
+    // TODO(fbarchard): Weave alpha with unpack.
+    // Step 2: Weave into ARGB
+    vpunpcklbw ymm1, ymm0, ymm0           // GG - mutates
+    vpermq     ymm1, ymm1, 0xd8
+    vpunpcklwd ymm0, ymm1, ymm1           // GGGG first 4 pixels
+    vpunpckhwd ymm1, ymm1, ymm1           // GGGG next 4 pixels
+    vpor       ymm0, ymm0, ymm4
+    vpor       ymm1, ymm1, ymm4
+    vmovdqu    [edx], ymm0
+    vmovdqu    [edx + 32], ymm1
+    lea        edx,  [edx + 64]
+    sub        ecx, 16
+    jg         convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_YTOARGBROW_AVX2
+
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.

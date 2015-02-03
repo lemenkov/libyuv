@@ -220,6 +220,11 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 
+// The following are available require VS2012
+#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+#define HAS_YTOARGBROW_AVX2
+#endif
+
 // The following are Yasm x86 only:
 // TODO(fbarchard): Port AVX2 to inline.
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAVE_YASM)
@@ -980,9 +985,6 @@ void I422ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_v,
                        uint8* dst_rgb565,
                        int width);
-void YToARGBRow_C(const uint8* src_y,
-                  uint8* dst_argb,
-                  int width);
 void I422ToARGBRow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -1182,13 +1184,23 @@ void I422ToRAWRow_Any_SSSE3(const uint8* src_y,
                             const uint8* src_v,
                             uint8* dst_argb,
                             int width);
+
+void YToARGBRow_C(const uint8* src_y,
+                  uint8* dst_argb,
+                  int width);
 void YToARGBRow_SSE2(const uint8* src_y,
+                     uint8* dst_argb,
+                     int width);
+void YToARGBRow_AVX2(const uint8* src_y,
                      uint8* dst_argb,
                      int width);
 void YToARGBRow_NEON(const uint8* src_y,
                      uint8* dst_argb,
                      int width);
 void YToARGBRow_Any_SSE2(const uint8* src_y,
+                         uint8* dst_argb,
+                         int width);
+void YToARGBRow_Any_AVX2(const uint8* src_y,
                          uint8* dst_argb,
                          int width);
 void YToARGBRow_Any_NEON(const uint8* src_y,

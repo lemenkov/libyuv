@@ -1255,11 +1255,13 @@ TEST_F(libyuvTest, TestYToARGB) {
   YToARGB(y, 0, argb, 0, 32, 1);
 
   for (int i = 0; i < 32; ++i) {
-    printf("%d: %d <-> %d,%d,%d,%d\n", y[i], expectedg[i],
+    printf("%2d %d: %d <-> %d,%d,%d,%d\n", i, y[i], expectedg[i],
            argb[i * 4 + 0],
            argb[i * 4 + 1],
            argb[i * 4 + 2],
            argb[i * 4 + 3]);
+  }
+  for (int i = 0; i < 32; ++i) {
     EXPECT_NEAR(expectedg[i], argb[i * 4 + 0], 1);
   }
 }
