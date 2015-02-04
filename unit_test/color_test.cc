@@ -325,32 +325,32 @@ TEST_F(libyuvTest, TestFullYUV) {
   }
   if (step == 1) {
     for (i = 0; i < 256; ++i) {
-      printf("red %d %d, green %d %d, blue %d %d\n",
+      printf("red %2d %2d, green %2d %2d, blue %2d %2d\n",
              rn[i], rx[i], gn[i], gx[i], bn[i], bx[i]);
     }
   }
   printf("hist\t");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%d", i - 128);
+      printf("\t%8d", i - 128);
     }
   }
   printf("\nred\t");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%d", rh[i]);
+      printf("\t%8d", rh[i]);
     }
   }
   printf("\ngreen\t");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%d", gh[i]);
+      printf("\t%8d", gh[i]);
     }
   }
   printf("\nblue\t");
   for (i = 0; i < 256; ++i) {
     if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%d", bh[i]);
+      printf("\t%8d", bh[i]);
     }
   }
   printf("\n");
