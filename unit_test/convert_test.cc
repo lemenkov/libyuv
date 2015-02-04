@@ -1262,7 +1262,7 @@ TEST_F(libyuvTest, TestYToARGB) {
            argb[i * 4 + 3]);
   }
   for (int i = 0; i < 32; ++i) {
-    EXPECT_NEAR(expectedg[i], argb[i * 4 + 0], 1);
+    EXPECT_EQ(expectedg[i], argb[i * 4 + 0]);
   }
 }
 

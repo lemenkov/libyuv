@@ -26,8 +26,8 @@ extern "C" {
 
 // YUV to RGB conversion constants.
 // Y contribution to R,G,B.  Scale and bias.
-#define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
+#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
 
 // U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
@@ -2306,14 +2306,14 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
   __asm {
-    pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
-    pslld      xmm4, 24
-    mov        eax, 0x04ad04ad      // 04ad = 1197 = round(1.164 * 64 * 16)
-    movd       xmm3, eax
-    pshufd     xmm3, xmm3, 0
-    mov        eax, 0x4a7f4a7f      // 4a7f = 19071 = round(1.164 * 64 * 256)
+    mov        eax, 0x4a354a35      // 4a35 = 18997 = round(1.164 * 64 * 256)
     movd       xmm2, eax
     pshufd     xmm2, xmm2,0
+    mov        eax, 0x04880488      // 0488 = 1160 = round(1.164 * 64 * 16)
+    movd       xmm3, eax
+    pshufd     xmm3, xmm3, 0
+    pcmpeqb    xmm4, xmm4           // generate mask 0xff000000
+    pslld      xmm4, 24
 
     mov        eax, [esp + 4]       // Y
     mov        edx, [esp + 8]       // rgb
@@ -2348,6 +2348,7 @@ void YToARGBRow_SSE2(const uint8* y_buf,
 
 #ifdef HAS_YTOARGBROW_AVX2
 // 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
+// note: vpunpcklbw mutates and vpackuswb unmutates.
 __declspec(naked) __declspec(align(16))
 void YToARGBRow_AVX2(const uint8* y_buf,
                      uint8* rgb_buf,
@@ -2355,10 +2356,10 @@ void YToARGBRow_AVX2(const uint8* y_buf,
   __asm {
     vpcmpeqb   ymm4, ymm4, ymm4     // generate mask 0xff000000
     vpslld     ymm4, ymm4, 24
-    mov        eax, 0x04ad04ad      // 04ad = 1197 = round(1.164 * 64 * 16)
+    mov        eax, 0x04880488      // 0488 = 1160 = round(1.164 * 64 * 16)
     vmovd      xmm3, eax
     vbroadcastss ymm3, xmm3
-    mov        eax, 0x4a7f4a7f      // 4a7f = 19071 = round(1.164 * 64 * 256)
+    mov        eax, 0x4a354a35      // 4a35 = 18997 = round(1.164 * 64 * 256)
     vmovd      xmm2, eax
     vbroadcastss ymm2, xmm2
 
@@ -2370,7 +2371,7 @@ void YToARGBRow_AVX2(const uint8* y_buf,
     // Step 1: Scale Y contribution to 16 G values. G = (y - 16) * 1.164
     vmovdqu    xmm0, [eax]
     lea        eax, [eax + 16]
-    vpermq     ymm0, ymm0, 0xd8
+    vpermq     ymm0, ymm0, 0xd8           // vpunpcklbw mutates
     vpunpcklbw ymm0, ymm0, ymm0           // Y.Y
     vpmulhuw   ymm0, ymm0, ymm2
     vpsubusw   ymm0, ymm0, ymm3
@@ -2381,8 +2382,8 @@ void YToARGBRow_AVX2(const uint8* y_buf,
     // Step 2: Weave into ARGB
     vpunpcklbw ymm1, ymm0, ymm0           // GG - mutates
     vpermq     ymm1, ymm1, 0xd8
-    vpunpcklwd ymm0, ymm1, ymm1           // GGGG first 4 pixels
-    vpunpckhwd ymm1, ymm1, ymm1           // GGGG next 4 pixels
+    vpunpcklwd ymm0, ymm1, ymm1           // GGGG first 8 pixels
+    vpunpckhwd ymm1, ymm1, ymm1           // GGGG next 8 pixels
     vpor       ymm0, ymm0, ymm4
     vpor       ymm1, ymm1, ymm4
     vmovdqu    [edx], ymm0
@@ -2395,7 +2396,6 @@ void YToARGBRow_AVX2(const uint8* y_buf,
   }
 }
 #endif  // HAS_YTOARGBROW_AVX2
-
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.

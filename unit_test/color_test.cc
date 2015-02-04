@@ -227,7 +227,7 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(255, b0);
 
   YUVToRGB(240, 255, 0, &r1, &g1, &b1);
-  EXPECT_NEAR(56, r1, 1);
+  EXPECT_EQ(57, r1);
   EXPECT_EQ(255, g1);
   EXPECT_EQ(255, b1);
 
@@ -238,9 +238,9 @@ TEST_F(libyuvTest, TestYUV) {
   EXPECT_EQ(2, b0);
 
   YUVToRGB(240, 0, 0, &r1, &g1, &b1);
-  EXPECT_NEAR(56, r1, 1);
+  EXPECT_EQ(57, r1);
   EXPECT_EQ(255, g1);
-  EXPECT_NEAR(6, b1, 1);
+  EXPECT_EQ(5, b1);
 
   for (int i = 0; i < 256; ++i) {
     YUVToRGBReference(i, 128, 128, &r0, &g0, &b0);
@@ -281,9 +281,9 @@ TEST_F(libyuvTest, TestGreyYUV) {
     YUVToRGBReference(y, 128, 128, &r0, &g0, &b0);
     YUVToRGB(y, 128, 128, &r1, &g1, &b1);
     YToRGB(y, &r2, &g2, &b2);
-    EXPECT_NEAR(r0, r1, ERROR_R);
-    EXPECT_NEAR(g0, g1, ERROR_G);
-    EXPECT_NEAR(b0, b1, ERROR_B);
+    EXPECT_EQ(r0, r1);
+    EXPECT_EQ(g0, g1);
+    EXPECT_EQ(b0, b1);
     EXPECT_EQ(r1, r2);
     EXPECT_EQ(g1, g2);
     EXPECT_EQ(b1, b2);

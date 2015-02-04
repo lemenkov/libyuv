@@ -962,8 +962,9 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 
 // YUV to RGB conversion constants.
 // Y contribution to R,G,B.  Scale and bias.
-#define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+// TODO(fbarchard): Consider moving constants into a common header.
+#define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
+#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
 
 // U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */

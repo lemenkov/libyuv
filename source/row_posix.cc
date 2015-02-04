@@ -1522,8 +1522,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 
 // YUV to RGB conversion constants.
 // Y contribution to R,G,B.  Scale and bias.
-#define YG 19071 /* round(1.164 * 64 * 256) */
-#define YGB 1197 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
+#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
 
 // U and V contributions to R,G,B.
 #define UB -128 /* -min(128, round(2.018 * 64)) */
@@ -2296,14 +2296,14 @@ void YToARGBRow_SSE2(const uint8* y_buf,
                      uint8* dst_argb,
                      int width) {
   asm volatile (
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
-    "mov       $0x04ad04ad,%%eax               \n"  // 04ad = 1197 = 1.164 * 16
-    "movd      %%eax,%%xmm3                    \n"
-    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
-    "mov       $0x4a7f4a7f,%%eax               \n"  // 4a7f = 19071 = 1.164
+    "mov       $0x4a354a35,%%eax               \n"  // 4a35 = 18997 = 1.164
     "movd      %%eax,%%xmm2                    \n"
     "pshufd    $0x0,%%xmm2,%%xmm2              \n"
+    "mov       $0x04880488,%%eax               \n"  // 0488 = 1160 = 1.164 * 16
+    "movd      %%eax,%%xmm3                    \n"
+    "pshufd    $0x0,%%xmm3,%%xmm3              \n"
+    "pcmpeqb   %%xmm4,%%xmm4                   \n"
+    "pslld     $0x18,%%xmm4                    \n"
     LABELALIGN
   "1:                                          \n"
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
