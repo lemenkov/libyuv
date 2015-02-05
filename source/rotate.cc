@@ -376,10 +376,8 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
       "+r"(width)   // %2
     : "r"((intptr_t)(src_stride)),  // %3
       "r"((intptr_t)(dst_stride))   // %4
-    : "memory", "cc"
-  #if defined(__SSE2__)
-      , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-  #endif
+    : "memory", "cc",
+      "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 

@@ -231,10 +231,7 @@ void TestRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm5"
   );
 }
 #endif  // TESTING
@@ -262,11 +259,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   : "+r"(src_y),     // %0
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  :: "memory", "cc", "xmm0", "xmm1", "xmm5"
   );
 }
 #endif  // HAS_I400TOARGBROW_SSE2
@@ -306,10 +299,7 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   : "m"(kShuffleMaskRGB24ToARGB)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc" , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -347,10 +337,7 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix) {
     "+r"(dst_argb),  // %1
     "+r"(pix)        // %2
   : "m"(kShuffleMaskRAWToARGB)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -397,13 +384,8 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "+r"(dst),  // %1
     "+r"(pix)   // %2
   :
-  : "memory", "cc", "eax"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", "eax", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 
@@ -453,13 +435,8 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "+r"(dst),  // %1
     "+r"(pix)   // %2
   :
-  : "memory", "cc", "eax"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", "eax", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 
@@ -496,13 +473,8 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int pix) {
     "+r"(dst),  // %1
     "+r"(pix)   // %2
   :
-  : "memory", "cc", "eax"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "eax", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -540,10 +512,7 @@ void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int pix) {
     "+r"(dst),  // %1
     "+r"(pix)   // %2
   : "m"(kShuffleMaskARGBToRGB24)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 
@@ -581,10 +550,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int pix) {
     "+r"(dst),  // %1
     "+r"(pix)   // %2
   : "m"(kShuffleMaskARGBToRAW)  // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 
@@ -620,11 +586,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  :: "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -664,11 +626,8 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  :: "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 
@@ -696,11 +655,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int pix) {
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-#endif
+  :: "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
   );
 }
 #endif  // HAS_RGB24TOARGBROW_SSSE3
@@ -737,10 +692,7 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   : "m"(kARGBToY),   // %3
     "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
@@ -779,10 +731,7 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   : "m"(kARGBToYJ),  // %3
     "m"(kAddYJ64)    // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_ARGBTOYJROW_SSSE3
@@ -828,10 +777,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   : "m"(kARGBToY),   // %3
     "m"(kAddY16),    // %4
     "m"(kPermdARGBToY_AVX)  // %5
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 #endif  // HAS_ARGBTOYROW_AVX2
@@ -873,10 +819,7 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   : "m"(kARGBToYJ),   // %3
     "m"(kAddYJ64),    // %4
     "m"(kPermdARGBToY_AVX)  // %5
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 #endif  // HAS_ARGBTOYJROW_AVX2
@@ -938,13 +881,8 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "m"(kARGBToV),  // %5
     "m"(kARGBToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBTOUVROW_SSSE3
@@ -1008,13 +946,8 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     "m"(kARGBToV),   // %6
     "m"(kARGBToU),   // %7
     "m"(kShufARGBToUV_AVX)  // %8
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBTOUVROW_AVX2
@@ -1078,13 +1011,8 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     "m"(kARGBToVJ),  // %5
     "m"(kARGBToUJ),  // %6
     "m"(kAddUVJ128)  // %7
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBTOUVJROW_SSSE3
@@ -1140,13 +1068,8 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
   : "m"(kARGBToV),  // %4
     "m"(kARGBToU),  // %5
     "m"(kAddUV128)  // %6
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6"
   );
 }
 #endif  // HAS_ARGBTOUV444ROW_SSSE3
@@ -1198,13 +1121,8 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
   : "m"(kARGBToV),  // %4
     "m"(kARGBToU),  // %5
     "m"(kAddUV128)  // %6
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBTOUV422ROW_SSSE3
@@ -1239,10 +1157,7 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   : "m"(kBGRAToY),   // %3
     "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1302,13 +1217,8 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0, int src_stride_bgra,
     "m"(kBGRAToV),  // %5
     "m"(kBGRAToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 
@@ -1342,10 +1252,7 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   : "m"(kABGRToY),   // %3
     "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1379,10 +1286,7 @@ void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   : "m"(kRGBAToY),   // %3
     "m"(kAddY16)     // %4
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1442,13 +1346,8 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0, int src_stride_abgr,
     "m"(kABGRToV),  // %5
     "m"(kABGRToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 
@@ -1508,13 +1407,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "m"(kRGBAToV),  // %5
     "m"(kRGBAToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
 
@@ -1674,13 +1568,8 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1724,13 +1613,8 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB),
     [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
     [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
   );
 }
 
@@ -1773,13 +1657,8 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB),
     [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
     [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
   );
 }
 
@@ -1811,13 +1690,8 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1849,13 +1723,8 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1884,11 +1753,8 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
   // Does not use r14.
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1917,11 +1783,8 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
   // Does not use r14.
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1954,13 +1817,8 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -1992,13 +1850,8 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -2031,13 +1884,8 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     [dst_rgba]"+r"(dst_rgba),  // %[dst_rgba]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -2141,13 +1989,8 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_I422TOBGRAROW_AVX2
@@ -2188,13 +2031,8 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_I422TOARGBROW_AVX2
@@ -2234,13 +2072,8 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_I422TOABGRROW_AVX2
@@ -2280,13 +2113,8 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_I422TORGBAROW_AVX2
@@ -2331,9 +2159,7 @@ void YToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
     "+rm"(width)     // %2
   :
   : "memory", "cc", "eax"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-#endif
   );
 }
 #endif  // HAS_YTOARGBROW_SSE2
@@ -2380,9 +2206,7 @@ void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     "+rm"(width)     // %2
   :
   : "memory", "cc", "eax"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
-#endif
   );
 }
 #endif  // HAS_YTOARGBROW_AVX2
@@ -2409,13 +2233,8 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kShuffleMirror) // %3
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm5"
   );
 }
 #endif  // HAS_MIRRORROW_SSSE3
@@ -2439,13 +2258,8 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kShuffleMirror) // %3
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm5"
   );
 }
 #endif  // HAS_MIRRORROW_AVX2
@@ -2472,13 +2286,8 @@ void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1"
   );
 }
 #endif  // HAS_MIRRORROW_SSE2
@@ -2510,13 +2319,8 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     "+r"(dst_v),    // %2
     "+r"(temp_width)  // %3
   : "m"(kShuffleMirrorUV)  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1"
   );
 }
 #endif  // HAS_MIRRORROW_UV_SSSE3
@@ -2541,9 +2345,7 @@ void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(temp_width)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0"
-#endif
   );
 }
 #endif  // HAS_ARGBMIRRORROW_SSE2
@@ -2569,13 +2371,8 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kARGBShuffleMirror_AVX2) // %3
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm5"
   );
 }
 #endif  // HAS_ARGBMIRRORROW_AVX2
@@ -2610,13 +2407,8 @@ void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "+r"(dst_v),      // %2
     "+r"(pix)         // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_SPLITUVROW_AVX2
@@ -2650,13 +2442,8 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int pix) {
     "+r"(dst_v),      // %2
     "+r"(pix)         // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_SPLITUVROW_SSE2
@@ -2686,13 +2473,8 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     "+r"(dst_uv),    // %2
     "+r"(width)      // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2"
   );
 }
 #endif  // HAS_MERGEUVROW_AVX2
@@ -2720,13 +2502,8 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
     "+r"(dst_uv),    // %2
     "+r"(width)      // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2"
   );
 }
 #endif  // HAS_MERGEUVROW_SSE2
@@ -2749,9 +2526,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     "+r"(count)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1"
-#endif
   );
 }
 #endif  // HAS_COPYROW_SSE2
@@ -2774,9 +2549,7 @@ void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
     "+r"(count)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1"
-#endif
   );
 }
 #endif  // HAS_COPYROW_AVX
@@ -2827,9 +2600,7 @@ void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(width)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBCOPYALPHAROW_SSE2
@@ -2858,9 +2629,7 @@ void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(width)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2"
-#endif
   );
 }
 #endif  // HAS_ARGBCOPYALPHAROW_AVX2
@@ -2898,9 +2667,7 @@ void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(width)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBCOPYYTOALPHAROW_SSE2
@@ -2931,9 +2698,7 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(width)  // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2"
-#endif
   );
 }
 #endif  // HAS_ARGBCOPYYTOALPHAROW_AVX2
@@ -2993,9 +2758,7 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 
@@ -3032,13 +2795,8 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   : "r"((intptr_t)(stride_yuy2))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -3071,13 +2829,8 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 
@@ -3100,9 +2853,7 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1"
-#endif
   );
 }
 
@@ -3139,13 +2890,8 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   : "r"((intptr_t)(stride_uyvy))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
@@ -3178,13 +2924,8 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 #endif  // HAS_YUY2TOYROW_SSE2
@@ -3213,9 +2954,7 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 
@@ -3253,13 +2992,8 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   : "r"((intptr_t)(stride_yuy2))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 
@@ -3295,13 +3029,8 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 
@@ -3326,9 +3055,7 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int pix) {
     "+r"(pix)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
@@ -3366,13 +3093,8 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy, int stride_uyvy,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   : "r"((intptr_t)(stride_uyvy))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 
@@ -3408,13 +3130,8 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(pix)          // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 #endif  // HAS_YUY2TOYROW_AVX2
@@ -3534,9 +3251,7 @@ void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)         // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
   );
 }
 #endif  // HAS_ARGBBLENDROW_SSE2
@@ -3665,9 +3380,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)         // %3
   : "m"(kShuffleAlpha)  // %4
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
   );
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
@@ -3711,9 +3424,7 @@ void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
     "+r"(width)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBATTENUATEROW_SSE2
@@ -3765,9 +3476,7 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   : "m"(kShuffleAlpha0),  // %3
     "m"(kShuffleAlpha1)  // %4
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBATTENUATEROW_SSSE3
@@ -3810,9 +3519,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     "+r"(width)        // %2
   : "m"(kShuffleAlpha_AVX2)  // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
   );
 }
 #endif  // HAS_ARGBATTENUATEROW_AVX2
@@ -3857,13 +3564,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     "+r"(width),       // %2
     "+r"(alpha)        // %3
   : "r"(fixed_invtbl8)  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_ARGBUNATTENUATEROW_SSE2
@@ -3931,13 +3633,8 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     "+r"(alpha)        // %3
   : "r"(fixed_invtbl8),  // %4
     "m"(kUnattenShuffleAlpha_AVX2)  // %5
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBUNATTENUATEROW_AVX2
@@ -3984,9 +3681,7 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
   : "m"(kARGBToYJ),   // %3
     "m"(kAddYJ64)     // %4
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBGRAYROW_SSSE3
@@ -4061,9 +3756,7 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     "m"(kARGBToSepiaG),  // %3
     "m"(kARGBToSepiaR)   // %4
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
   );
 }
 #endif  // HAS_ARGBSEPIAROW_SSSE3
@@ -4127,9 +3820,7 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     "+r"(width)          // %2
   : "r"(matrix_argb)     // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
   );
 }
 #endif  // HAS_ARGBCOLORMATRIXROW_SSSE3
@@ -4179,9 +3870,7 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb, int scale, int interval_size,
     "r"(interval_size),   // %3
     "r"(interval_offset)  // %4
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
   );
 }
 #endif  // HAS_ARGBQUANTIZEROW_SSE2
@@ -4217,9 +3906,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width,
     "+r"(width)      // %2
   : "r"(value)       // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2"
-#endif
   );
 }
 #endif  // HAS_ARGBSHADEROW_SSE2
@@ -4257,9 +3944,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)       // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBMULTIPLYROW_SSE2
@@ -4326,9 +4011,7 @@ void ARGBAddRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)       // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1"
-#endif
   );
 }
 #endif  // HAS_ARGBADDROW_SSE2
@@ -4356,9 +4039,7 @@ void ARGBAddRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)       // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0"
-#endif
   );
 }
 #endif  // HAS_ARGBADDROW_AVX2
@@ -4386,9 +4067,7 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)       // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1"
-#endif
   );
 }
 #endif  // HAS_ARGBSUBTRACTROW_SSE2
@@ -4416,9 +4095,7 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0, const uint8* src_argb1,
     "+r"(width)       // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0"
-#endif
   );
 }
 #endif  // HAS_ARGBSUBTRACTROW_AVX2
@@ -4471,13 +4148,8 @@ void SobelXRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     "+r"(dst_sobelx),  // %3
     "+r"(width)        // %4
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_SOBELXROW_SSE2
@@ -4528,13 +4200,8 @@ void SobelYRow_SSE2(const uint8* src_y0, const uint8* src_y1,
     "+r"(dst_sobely),  // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_SOBELYROW_SSE2
@@ -4584,13 +4251,8 @@ void SobelRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 #endif  // HAS_SOBELROW_SSE2
@@ -4620,13 +4282,8 @@ void SobelToPlaneRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "+r"(dst_y),       // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1"
   );
 }
 #endif  // HAS_SOBELTOPLANEROW_SSE2
@@ -4675,13 +4332,8 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_SOBELXYROW_SSE2
@@ -4761,9 +4413,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row, int32* cumsum,
     "+r"(width)  // %3
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
   );
 }
 #endif  // HAS_COMPUTECUMULATIVESUMROW_SSE2
@@ -4893,13 +4543,8 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
     "+rm"(count)    // %3
   : "r"((intptr_t)(width)),  // %4
     "rm"(area)     // %5
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 #endif  // HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
@@ -4984,13 +4629,8 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
     "+rm"(width),    // %4
     "+r"(temp)   // %5
   :
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBAFFINEROW_SSE2
@@ -5092,13 +4732,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSSE3
@@ -5198,13 +4833,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "+c"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_AVX2
@@ -5314,13 +4944,8 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
@@ -5349,9 +4974,7 @@ void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
     "+r"(pix)        // %2
   : "g"(selector)    // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBTOBAYERROW_SSSE3
@@ -5382,9 +5005,7 @@ void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
     "+r"(pix)        // %2
   :
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBTOBAYERGGROW_SSE2
@@ -5412,9 +5033,7 @@ void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     "+r"(pix)        // %2
   : "r"(shuffler)    // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBSHUFFLEROW_SSSE3
@@ -5443,9 +5062,7 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     "+r"(pix)        // %2
   : "r"(shuffler)    // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm5"
-#endif
   );
 }
 #endif  // HAS_ARGBSHUFFLEROW_AVX2
@@ -5564,13 +5181,8 @@ void ARGBShuffleRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     "+d"(pixel_temp),  // %2
     "+r"(pix)         // %3
   : "r"(shuffler)      // %4
-  : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm5"
-#endif
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm5"
   );
 }
 #endif  // HAS_ARGBSHUFFLEROW_SSE2
@@ -5604,13 +5216,8 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
       "+r"(dst_frame),  // %3
       "+rm"(width)  // %4
     :
-    : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3"
-#endif
+    : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
 #endif  // HAS_I422TOYUY2ROW_SSE2
@@ -5644,13 +5251,8 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
       "+r"(dst_frame),  // %3
       "+rm"(width)  // %4
     :
-    : "memory", "cc"
-#if defined(__native_client__) && defined(__x86_64__)
-    , "r14"
-#endif
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3"
-#endif
+    : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
 #endif  // HAS_I422TOUYVYROW_SSE2
@@ -5706,9 +5308,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     "+r"(width)      // %2
   : "r"(poly)        // %3
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
-#endif
   );
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_SSE2
@@ -5747,11 +5347,8 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     "+r"(dst_argb),  // %1
     "+r"(width)      // %2
   : "r"(poly)        // %3
-  : "memory", "cc"
-#if defined(__SSE2__)
-// TODO(fbarchard): declare ymm usage when applicable.
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
@@ -5911,10 +5508,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
     "+rm"(width)       // %4
   : "r"(luma),         // %5
     "rm"(lumacoeff)    // %6
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm3", "xmm4", "xmm5"
-#endif
+  : "memory", "cc", "xmm0", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3

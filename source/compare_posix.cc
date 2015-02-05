@@ -53,11 +53,7 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     "+r"(src_b),      // %1
     "+r"(count),      // %2
     "=g"(sse)         // %3
-  :
-  : "memory", "cc"
-#if defined(__SSE2__)
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-#endif
+  :: "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );  // NOLINT
   return sse;
 }
@@ -143,9 +139,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     "m"(kHashMul2),   // %7
     "m"(kHashMul3)    // %8
   : "memory", "cc"
-#if defined(__SSE2__)
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-#endif
   );  // NOLINT
   return hash;
 }

@@ -417,6 +417,8 @@ typedef uint8 ulvec8[32];
 #define LABELALIGN
 #endif
 #if defined(__native_client__) && defined(__x86_64__)
+// r14 is used for MEMOP macros.
+#define NACL_R14 "r14",
 #define BUNDLELOCK ".bundle_lock\n"
 #define BUNDLEUNLOCK ".bundle_unlock\n"
 #define MEMACCESS(base) "%%nacl:(%%r15,%q" #base ")"
@@ -454,6 +456,7 @@ typedef uint8 ulvec8[32];
     #op " $" #sel ",%%" #reg ",(%%r15,%%r14)\n" \
     BUNDLEUNLOCK
 #else  // defined(__native_client__) && defined(__x86_64__)
+#define NACL_R14
 #define BUNDLEALIGN
 #define MEMACCESS(base) "(%" #base ")"
 #define MEMACCESS2(offset, base) #offset "(%" #base ")"
