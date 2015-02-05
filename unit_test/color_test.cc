@@ -198,28 +198,6 @@ static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
 TEST_F(libyuvTest, TestYUV) {
   int r0, g0, b0, r1, g1, b1;
 
-  // black
-  YUVToRGBReference(16, 128, 128, &r0, &g0, &b0);
-  EXPECT_EQ(0, r0);
-  EXPECT_EQ(0, g0);
-  EXPECT_EQ(0, b0);
-
-  YUVToRGB(16, 128, 128, &r1, &g1, &b1);
-  EXPECT_EQ(0, r1);
-  EXPECT_EQ(0, g1);
-  EXPECT_EQ(0, b1);
-
-  // white
-  YUVToRGBReference(240, 128, 128, &r0, &g0, &b0);
-  EXPECT_EQ(255, r0);
-  EXPECT_EQ(255, g0);
-  EXPECT_EQ(255, b0);
-
-  YUVToRGB(240, 128, 128, &r1, &g1, &b1);
-  EXPECT_EQ(255, r1);
-  EXPECT_EQ(255, g1);
-  EXPECT_EQ(255, b1);
-
   // cyan (less red)
   YUVToRGBReference(240, 255, 0, &r0, &g0, &b0);
   EXPECT_EQ(56, r0);
@@ -261,22 +239,45 @@ TEST_F(libyuvTest, TestYUV) {
     EXPECT_NEAR(g0, g1, ERROR_G);
     EXPECT_NEAR(b0, b1, ERROR_B);
   }
-
-  for (int i = 0; i < 1000; ++i) {
-    int yr = random() & 255;
-    int ur = random() & 255;
-    int vr = random() & 255;
-
-    YUVToRGBReference(yr, ur, vr, &r0, &g0, &b0);
-    YUVToRGB(yr, ur, vr, &r1, &g1, &b1);
-    EXPECT_NEAR(r0, r1, ERROR_R);
-    EXPECT_NEAR(g0, g1, ERROR_G);
-    EXPECT_NEAR(b0, b1, ERROR_B);
-  }
 }
 
 TEST_F(libyuvTest, TestGreyYUV) {
   int r0, g0, b0, r1, g1, b1, r2, g2, b2;
+
+  // black
+  YUVToRGBReference(16, 128, 128, &r0, &g0, &b0);
+  EXPECT_EQ(0, r0);
+  EXPECT_EQ(0, g0);
+  EXPECT_EQ(0, b0);
+
+  YUVToRGB(16, 128, 128, &r1, &g1, &b1);
+  EXPECT_EQ(0, r1);
+  EXPECT_EQ(0, g1);
+  EXPECT_EQ(0, b1);
+
+  // white
+  YUVToRGBReference(240, 128, 128, &r0, &g0, &b0);
+  EXPECT_EQ(255, r0);
+  EXPECT_EQ(255, g0);
+  EXPECT_EQ(255, b0);
+
+  YUVToRGB(240, 128, 128, &r1, &g1, &b1);
+  EXPECT_EQ(255, r1);
+  EXPECT_EQ(255, g1);
+  EXPECT_EQ(255, b1);
+
+  // grey
+  YUVToRGBReference(128, 128, 128, &r0, &g0, &b0);
+  EXPECT_EQ(130, r0);
+  EXPECT_EQ(130, g0);
+  EXPECT_EQ(130, b0);
+
+  YUVToRGB(128, 128, 128, &r1, &g1, &b1);
+  EXPECT_EQ(130, r1);
+  EXPECT_EQ(130, g1);
+  EXPECT_EQ(130, b1);
+
+
   for (int y = 0; y < 256; ++y) {
     YUVToRGBReference(y, 128, 128, &r0, &g0, &b0);
     YUVToRGB(y, 128, 128, &r1, &g1, &b1);
@@ -284,9 +285,9 @@ TEST_F(libyuvTest, TestGreyYUV) {
     EXPECT_EQ(r0, r1);
     EXPECT_EQ(g0, g1);
     EXPECT_EQ(b0, b1);
-    EXPECT_EQ(r1, r2);
-    EXPECT_EQ(g1, g2);
-    EXPECT_EQ(b1, b2);
+    EXPECT_EQ(r0, r2);
+    EXPECT_EQ(g0, g2);
+    EXPECT_EQ(b0, b2);
   }
 }
 
