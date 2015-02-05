@@ -2351,12 +2351,12 @@ void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     "vbroadcastss %%xmm3,%%ymm3                \n"
     "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
     "vpslld     $0x18,%%ymm4,%%ymm4            \n"
-                                               \n"
+
     LABELALIGN
   "1:                                          \n"
     // Step 1: Scale Y contribution to 16 G values. G = (y - 16) * 1.164
-    "vmovdqu    (%0),%%xmm0                    \n"
-    "lea        0x10(%0),%0                    \n"
+    "vmovdqu    " MEMACCESS(0) ",%%xmm0        \n"
+    "lea        " MEMLEA(0x10,0) ",%0          \n"
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
     "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
@@ -2369,9 +2369,9 @@ void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     "vpunpckhwd %%ymm1,%%ymm1,%%ymm1           \n"
     "vpor       %%ymm4,%%ymm0,%%ymm0           \n"
     "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
-    "vmovdqu    %%ymm0,(%1)                    \n"
-    "vmovdqu    %%ymm1,0x20(%1)                \n"
-    "lea        0x40(%1),%1                    \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm1," MEMACCESS2(0x20,1) "  \n"
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
     "sub        $0x10,%2                       \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
