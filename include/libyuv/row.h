@@ -196,11 +196,6 @@ extern "C" {
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_COPYROW_AVX
-// TODO(fbarchard): fix AVX2 versions of YUV conversion.  bug=393
-//#define HAS_I422TOABGRROW_AVX2
-//#define HAS_I422TOARGBROW_AVX2
-//#define HAS_I422TOBGRAROW_AVX2
-//#define HAS_I422TORGBAROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
@@ -220,9 +215,14 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 
-// The following are available require VS2012
+// The following are available require VS2012.  Port to GCC.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 #define HAS_YTOARGBROW_AVX2
+// TODO(fbarchard): fix AVX2 versions of YUV conversion.  bug=393
+#define HAS_I422TOABGRROW_AVX2
+#define HAS_I422TOARGBROW_AVX2
+#define HAS_I422TOBGRAROW_AVX2
+#define HAS_I422TORGBAROW_AVX2
 #endif
 
 // The following are Yasm x86 only:
