@@ -203,6 +203,7 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_AVX2
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
+#define HAS_YTOARGBROW_AVX2
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
@@ -217,7 +218,6 @@ extern "C" {
 
 // The following are available require VS2012.  Port to GCC.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
-#define HAS_YTOARGBROW_AVX2
 // TODO(fbarchard): fix AVX2 versions of YUV conversion.  bug=393
 #define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGBROW_AVX2

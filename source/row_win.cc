@@ -2354,14 +2354,14 @@ void YToARGBRow_AVX2(const uint8* y_buf,
                      uint8* rgb_buf,
                      int width) {
   __asm {
-    vpcmpeqb   ymm4, ymm4, ymm4     // generate mask 0xff000000
-    vpslld     ymm4, ymm4, 24
-    mov        eax, 0x04880488      // 0488 = 1160 = round(1.164 * 64 * 16)
-    vmovd      xmm3, eax
-    vbroadcastss ymm3, xmm3
     mov        eax, 0x4a354a35      // 4a35 = 18997 = round(1.164 * 64 * 256)
     vmovd      xmm2, eax
     vbroadcastss ymm2, xmm2
+    mov        eax, 0x04880488      // 0488 = 1160 = round(1.164 * 64 * 16)
+    vmovd      xmm3, eax
+    vbroadcastss ymm3, xmm3
+    vpcmpeqb   ymm4, ymm4, ymm4     // generate mask 0xff000000
+    vpslld     ymm4, ymm4, 24
 
     mov        eax, [esp + 4]       // Y
     mov        edx, [esp + 8]       // rgb

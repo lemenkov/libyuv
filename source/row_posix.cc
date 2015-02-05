@@ -2292,9 +2292,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
 #endif  // HAS_I422TORGBAROW_AVX2
 
 #ifdef HAS_YTOARGBROW_SSE2
-void YToARGBRow_SSE2(const uint8* y_buf,
-                     uint8* dst_argb,
-                     int width) {
+void YToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
   asm volatile (
     "mov       $0x4a354a35,%%eax               \n"  // 4a35 = 18997 = 1.164
     "movd      %%eax,%%xmm2                    \n"
@@ -2339,6 +2337,55 @@ void YToARGBRow_SSE2(const uint8* y_buf,
   );
 }
 #endif  // HAS_YTOARGBROW_SSE2
+
+#ifdef HAS_YTOARGBROW_AVX2
+// 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
+// note: vpunpcklbw mutates and vpackuswb unmutates.
+void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
+  asm volatile (
+    "mov        $0x4a354a35,%%eax              \n" // 0488 = 1160 = 1.164 * 16
+    "vmovd      %%eax,%%xmm2                   \n"
+    "vbroadcastss %%xmm2,%%ymm2                \n"
+    "mov        $0x4880488,%%eax               \n" // 4a35 = 18997 = 1.164
+    "vmovd      %%eax,%%xmm3                   \n"
+    "vbroadcastss %%xmm3,%%ymm3                \n"
+    "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpslld     $0x18,%%ymm4,%%ymm4            \n"
+                                               \n"
+    LABELALIGN
+  "1:                                          \n"
+    // Step 1: Scale Y contribution to 16 G values. G = (y - 16) * 1.164
+    "vmovdqu    (%0),%%xmm0                    \n"
+    "lea        0x10(%0),%0                    \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpsubusw   %%ymm3,%%ymm0,%%ymm0           \n"
+    "vpsrlw     $0x6,%%ymm0,%%ymm0             \n"
+    "vpackuswb  %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpunpcklbw %%ymm0,%%ymm0,%%ymm1           \n"
+    "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
+    "vpunpcklwd %%ymm1,%%ymm1,%%ymm0           \n"
+    "vpunpckhwd %%ymm1,%%ymm1,%%ymm1           \n"
+    "vpor       %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
+    "vmovdqu    %%ymm1,0x20(%1)                \n"
+    "lea        0x40(%1),%1                    \n"
+    "sub        $0x10,%2                       \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(y_buf),     // %0
+    "+r"(dst_argb),  // %1
+    "+rm"(width)     // %2
+  :
+  : "memory", "cc", "eax"
+#if defined(__SSE2__)
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+#endif
+  );
+}
+#endif  // HAS_YTOARGBROW_AVX2
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.
