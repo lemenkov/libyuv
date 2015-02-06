@@ -1,4 +1,4 @@
-// VERSION 1
+// VERSION 2
 /*
  *  Copyright 2011 The LibYuv Project Authors. All rights reserved.
  *
@@ -1412,7 +1412,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
   );
 }
 
-#ifdef HAS_I422TOARGBROW_SSSE3
+#if defined(HAS_I422TOARGBROW_SSSE3) || defined(HAS_I422TOARGBROW_AVX2)
 
 // YUV to RGB conversion constants.
 // Y contribution to R,G,B.  Scale and bias.
@@ -1431,33 +1431,39 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #define BR (           VR * 128 - YGB)
 
 struct YuvConstants {
-  vec8 kUVToB;  // 0
-  vec8 kUVToG;  // 16
-  vec8 kUVToR;  // 32
-  vec16 kUVBiasB;  // 48
-  vec16 kUVBiasG;  // 64
-  vec16 kUVBiasR;  // 80
-  vec16 kYToRgb;  // 96
+  lvec8 kUVToB;     // 0
+  lvec8 kUVToG;     // 32
+  lvec8 kUVToR;     // 64
+  lvec16 kUVBiasB;  // 96
+  lvec16 kUVBiasG;  // 128
+  lvec16 kUVBiasR;  // 160
+  lvec16 kYToRgb;   // 192
 };
 
 static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
-  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
-  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
-  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
-  { BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG }
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
+    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
 static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
-  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
-  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
-  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 }
-  { BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG }
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
+    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
+  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
+    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
 // Read 8 UV from 411
@@ -1495,19 +1501,19 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
     "movdqa     %%xmm0,%%xmm3                                   \n"            \
-    "movdqa     " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
+    "movdqa     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm0      \n"            \
     "pmaddubsw  " MEMACCESS([kYuvConstants]) ",%%xmm1           \n"            \
     "psubw      %%xmm1,%%xmm0                                   \n"            \
-    "movdqa     " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
-    "pmaddubsw  " MEMACCESS2(16, [kYuvConstants]) ",%%xmm2      \n"            \
+    "movdqa     " MEMACCESS2(128, [kYuvConstants]) ",%%xmm1     \n"            \
+    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm2      \n"            \
     "psubw      %%xmm2,%%xmm1                                   \n"            \
-    "movdqa     " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
-    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm3      \n"            \
+    "movdqa     " MEMACCESS2(160, [kYuvConstants]) ",%%xmm2     \n"            \
+    "pmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%xmm3      \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
-    "pmulhuw    " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
+    "pmulhuw    " MEMACCESS2(192, [kYuvConstants]) ",%%xmm3     \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -1869,33 +1875,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
-#if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
-struct {
-  lvec8 kUVToB_AVX;     // 0
-  lvec8 kUVToG_AVX;     // 32
-  lvec8 kUVToR_AVX;     // 64
-  lvec16 kUVBiasB_AVX;  // 96
-  lvec16 kUVBiasG_AVX;  // 128
-  lvec16 kUVBiasR_AVX;  // 160
-  lvec16 kYToRgb_AVX;   // 192
-} static SIMD_ALIGNED(kYuvConstants_AVX) = {
-  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
-    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
-  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
-    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
-  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
-    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
-  { BB, BB, BB, BB, BB, BB, BB, BB,
-    BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG,
-    BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR,
-    BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG,
-    YG, YG, YG, YG, YG, YG, YG, YG }
-};
-#endif  // defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
-
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2                                                        \
     "vmovq       " MEMACCESS([u_buf]) ",%%xmm0                      \n"        \
@@ -1966,7 +1945,7 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_bgra]"+r"(dst_bgra),  // %[dst_bgra]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -2008,7 +1987,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -2049,7 +2028,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -2090,7 +2069,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants_AVX.kUVToB_AVX)  // %[kYuvConstants]
+  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
