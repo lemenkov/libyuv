@@ -1430,7 +1430,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #define BG (UG * 128 + VG * 128 - YGB)
 #define BR (           VR * 128 - YGB)
 
-struct {
+struct YuvConstants {
   vec8 kUVToB;  // 0
   vec8 kUVToG;  // 16
   vec8 kUVToR;  // 32
@@ -1438,20 +1438,26 @@ struct {
   vec16 kUVBiasG;  // 64
   vec16 kUVBiasR;  // 80
   vec16 kYToRgb;  // 96
-  vec8 kVUToB;  // 112
-  vec8 kVUToG;  // 128
-  vec8 kVUToR;  // 144
-} static SIMD_ALIGNED(kYuvConstants) = {
+};
+
+static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
   { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
   { BB, BB, BB, BB, BB, BB, BB, BB },
   { BG, BG, BG, BG, BG, BG, BG, BG },
   { BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG },
+  { YG, YG, YG, YG, YG, YG, YG, YG }
+};
+
+static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
   { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 }
+  { BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
 // Read 8 UV from 411
@@ -1497,34 +1503,6 @@ struct {
     "psubw      %%xmm2,%%xmm1                                   \n"            \
     "movdqa     " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
     "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm3      \n"            \
-    "psubw      %%xmm3,%%xmm2                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
-    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
-    "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
-    "pmulhuw    " MEMACCESS2(96, [kYuvConstants]) ",%%xmm3      \n"            \
-    "paddsw     %%xmm3,%%xmm0                                   \n"            \
-    "paddsw     %%xmm3,%%xmm1                                   \n"            \
-    "paddsw     %%xmm3,%%xmm2                                   \n"            \
-    "psraw      $0x6,%%xmm0                                     \n"            \
-    "psraw      $0x6,%%xmm1                                     \n"            \
-    "psraw      $0x6,%%xmm2                                     \n"            \
-    "packuswb   %%xmm0,%%xmm0                                   \n"            \
-    "packuswb   %%xmm1,%%xmm1                                   \n"            \
-    "packuswb   %%xmm2,%%xmm2                                   \n"
-
-// Convert 8 pixels: 8 VU and 8 Y
-#define YVUTORGB                                                               \
-    "movdqa     %%xmm0,%%xmm1                                   \n"            \
-    "movdqa     %%xmm0,%%xmm2                                   \n"            \
-    "movdqa     %%xmm0,%%xmm3                                   \n"            \
-    "movdqa     " MEMACCESS2(48, [kYuvConstants]) ",%%xmm0      \n"            \
-    "pmaddubsw  " MEMACCESS2(112, [kYuvConstants]) ",%%xmm1     \n"            \
-    "psubw      %%xmm1,%%xmm0                                   \n"            \
-    "movdqa     " MEMACCESS2(64, [kYuvConstants]) ",%%xmm1      \n"            \
-    "pmaddubsw  " MEMACCESS2(128, [kYuvConstants]) ",%%xmm2     \n"            \
-    "psubw      %%xmm2,%%xmm1                                   \n"            \
-    "movdqa     " MEMACCESS2(80, [kYuvConstants]) ",%%xmm2      \n"            \
-    "pmaddubsw  " MEMACCESS2(144, [kYuvConstants]) ",%%xmm3     \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
@@ -1767,7 +1745,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READNV12
-    YVUTORGB
+    YUVTORGB
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1782,7 +1760,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     [uv_buf]"+r"(uv_buf),    // %[uv_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
+  : [kYuvConstants]"r"(&kYvuConstants.kUVToB) // %[kYuvConstants]
   // Does not use r14.
   : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
