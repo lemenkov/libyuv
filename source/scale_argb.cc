@@ -216,7 +216,7 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src_argb, 4) && IS_ALIGNED(src_stride, 4)) {
     InterpolateRow = InterpolateRow_Any_MIPS_DSPR2;
@@ -306,7 +306,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride, 4)) {
     InterpolateRow = InterpolateRow_MIPS_DSPR2;
@@ -476,7 +476,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
     InterpolateRow = InterpolateRow_MIPS_DSPR2;

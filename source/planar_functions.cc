@@ -264,8 +264,8 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
 // TODO(fbarchard): Mirror on mips handle unaligned memory.
 #if defined(HAS_MIRRORROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
-      IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4) &&
-      IS_ALIGNED(dst, 4) && IS_ALIGNED(dst_stride, 4)) {
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(dst_y, 4) && IS_ALIGNED(dst_stride_y, 4)) {
     MirrorRow = MirrorRow_MIPS_DSPR2;
   }
 #endif
@@ -1867,12 +1867,12 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROWS_MIPS_DSPR2)
+#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
       IS_ALIGNED(src_argb0, 4) && IS_ALIGNED(src_stride_argb0, 4) &&
       IS_ALIGNED(src_argb1, 4) && IS_ALIGNED(src_stride_argb1, 4) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
-    ScaleARGBFilterRows = InterpolateRow_MIPS_DSPR2;
+    InterpolateRow = InterpolateRow_MIPS_DSPR2;
   }
 #endif
 

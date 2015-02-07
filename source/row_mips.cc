@@ -844,9 +844,9 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
 }
 
 // Bilinear filter 8x2 -> 8x1
-void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
-                                ptrdiff_t src_stride, int dst_width,
-                                int source_y_fraction) {
+void InterpolateRow_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                               ptrdiff_t src_stride, int dst_width,
+                               int source_y_fraction) {
     int y0_fraction = 256 - source_y_fraction;
     const uint8* src_ptr1 = src_ptr + src_stride;
 

@@ -351,7 +351,7 @@ extern "C" {
 #define HAS_I422TOABGRROW_MIPS_DSPR2
 #define HAS_I422TOARGBROW_MIPS_DSPR2
 #define HAS_I422TOBGRAROW_MIPS_DSPR2
-#define HAS_INTERPOLATEROWS_MIPS_DSPR2
+#define HAS_INTERPOLATEROW_MIPS_DSPR2
 #define HAS_MIRRORROW_MIPS_DSPR2
 #define HAS_MIRRORUVROW_MIPS_DSPR2
 #define HAS_SPLITUVROW_MIPS_DSPR2
@@ -1623,9 +1623,9 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
 void InterpolateRow_NEON(uint8* dst_ptr, const uint8* src_ptr,
                          ptrdiff_t src_stride_ptr, int width,
                          int source_y_fraction);
-void InterpolateRows_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
-                                ptrdiff_t src_stride_ptr, int width,
-                                int source_y_fraction);
+void InterpolateRow_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                               ptrdiff_t src_stride_ptr, int width,
+                               int source_y_fraction);
 void InterpolateRow_Any_NEON(uint8* dst_ptr, const uint8* src_ptr,
                              ptrdiff_t src_stride_ptr, int width,
                              int source_y_fraction);
@@ -1638,9 +1638,9 @@ void InterpolateRow_Any_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 void InterpolateRow_Any_AVX2(uint8* dst_ptr, const uint8* src_ptr,
                              ptrdiff_t src_stride_ptr, int width,
                              int source_y_fraction);
-void InterpolateRows_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
-                                    ptrdiff_t src_stride_ptr, int width,
-                                    int source_y_fraction);
+void InterpolateRow_Any_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
+                                   ptrdiff_t src_stride_ptr, int width,
+                                   int source_y_fraction);
 
 void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
                          ptrdiff_t src_stride_ptr,
