@@ -12,7 +12,6 @@
 
 #include "libyuv/convert.h"
 
-#include "libyuv/format_conversion.h"
 #include "libyuv/video_common.h"
 
 #ifdef __cplusplus
@@ -172,40 +171,6 @@ int ConvertToI420(const uint8* sample,
                      u, u_stride,
                      v, v_stride,
                      crop_width, inv_crop_height);
-      break;
-    // TODO(fbarchard): Support cropping Bayer by odd numbers
-    // by adjusting fourcc.
-    case FOURCC_BGGR:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerBGGRToI420(src, src_width,
-                          y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          crop_width, inv_crop_height);
-      break;
-    case FOURCC_GBRG:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerGBRGToI420(src, src_width,
-                          y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          crop_width, inv_crop_height);
-      break;
-    case FOURCC_GRBG:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerGRBGToI420(src, src_width,
-                          y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          crop_width, inv_crop_height);
-      break;
-    case FOURCC_RGGB:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerRGGBToI420(src, src_width,
-                          y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          crop_width, inv_crop_height);
       break;
     case FOURCC_I400:
       src = sample + src_width * crop_y + crop_x;

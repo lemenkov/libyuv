@@ -24,7 +24,6 @@ set(ly_source_files
   ${ly_src_dir}/convert_to_argb.cc
   ${ly_src_dir}/convert_to_i420.cc
   ${ly_src_dir}/cpu_id.cc
-  ${ly_src_dir}/format_conversion.cc
   ${ly_src_dir}/mjpeg_decoder.cc
   ${ly_src_dir}/mjpeg_validate.cc
   ${ly_src_dir}/planar_functions.cc
@@ -73,7 +72,6 @@ set(ly_header_files
   ${ly_inc_dir}/libyuv/convert_from.h
   ${ly_inc_dir}/libyuv/convert_from_argb.h
   ${ly_inc_dir}/libyuv/cpu_id.h
-  ${ly_inc_dir}/libyuv/format_conversion.h
   ${ly_inc_dir}/libyuv/planar_functions.h
   ${ly_inc_dir}/libyuv/rotate.h
   ${ly_inc_dir}/libyuv/rotate_argb.h

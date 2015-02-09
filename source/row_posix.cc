@@ -1428,7 +1428,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 // Bias values to subtract 16 from Y and 128 from U and V.
 #define BB (UB * 128            - YGB)
 #define BG (UG * 128 + VG * 128 - YGB)
-#define BR (           VR * 128 - YGB)
+#define BR            (VR * 128 - YGB)
 
 struct YuvConstants {
   lvec8 kUVToB;     // 0
@@ -4906,35 +4906,6 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
-
-#ifdef HAS_ARGBTOBAYERROW_SSSE3
-void ARGBToBayerRow_SSSE3(const uint8* src_argb, uint8* dst_bayer,
-                          uint32 selector, int pix) {
-  asm volatile (
-    // NaCL caveat - assumes movd is from GPR
-    "movd      %3,%%xmm5                       \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "pshufb    %%xmm5,%%xmm0                   \n"
-    "pshufb    %%xmm5,%%xmm1                   \n"
-    "punpckldq %%xmm1,%%xmm0                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x8,1) ",%1            \n"
-    "sub       $0x8,%2                         \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_bayer), // %1
-    "+r"(pix)        // %2
-  : "g"(selector)    // %3
-  : "memory", "cc"
-    , "xmm0", "xmm1", "xmm5"
-  );
-}
-#endif  // HAS_ARGBTOBAYERROW_SSSE3
 
 #ifdef HAS_ARGBTOBAYERGGROW_SSE2
 void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,

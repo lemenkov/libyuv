@@ -11,7 +11,6 @@
 #include "libyuv/convert_argb.h"
 
 #include "libyuv/cpu_id.h"
-#include "libyuv/format_conversion.h"
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif

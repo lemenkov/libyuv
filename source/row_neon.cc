@@ -1280,29 +1280,6 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
   );
 }
 
-// Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
-void ARGBToBayerRow_NEON(const uint8* src_argb, uint8* dst_bayer,
-                         uint32 selector, int pix) {
-  asm volatile (
-    "vmov.u32   d6[0], %3                      \n"  // selector
-  "1:                                          \n"
-    MEMACCESS(0)
-    "vld1.8     {q0, q1}, [%0]!                \n"  // load row 8 pixels.
-    "subs       %2, %2, #8                     \n"  // 8 processed per loop
-    "vtbl.8     d4, {d0, d1}, d6               \n"  // look up 4 pixels
-    "vtbl.8     d5, {d2, d3}, d6               \n"  // look up 4 pixels
-    "vtrn.u32   d4, d5                         \n"  // combine 8 pixels
-    MEMACCESS(1)
-    "vst1.8     {d4}, [%1]!                    \n"  // store 8.
-    "bgt        1b                             \n"
-  : "+r"(src_argb),   // %0
-    "+r"(dst_bayer),  // %1
-    "+r"(pix)         // %2
-  : "r"(selector)     // %3
-  : "cc", "memory", "q0", "q1", "q2", "q3"  // Clobber List
-  );
-}
-
 // Select G channels from ARGB.  e.g.  GGGGGGGG
 void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
                            uint32 /*selector*/, int pix) {

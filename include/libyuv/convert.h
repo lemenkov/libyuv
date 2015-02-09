@@ -211,8 +211,6 @@ int MJPGSize(const uint8* sample, size_t sample_size,
              int* width, int* height);
 #endif
 
-// Note Bayer formats (BGGR) To I420 are in format_conversion.h
-
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
 // "dst_stride_y" number of bytes in a row of the dst_y plane.

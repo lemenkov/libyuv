@@ -75,7 +75,7 @@ enum FourCC {
   FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE.
   FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE.
 
-  // 4 Secondary RGB formats: 4 Bayer Patterns.
+  // 4 Secondary RGB formats: 4 Bayer Patterns. deprecated.
   FOURCC_RGGB = FOURCC('R', 'G', 'G', 'B'),
   FOURCC_BGGR = FOURCC('B', 'G', 'G', 'R'),
   FOURCC_GRBG = FOURCC('G', 'R', 'B', 'G'),

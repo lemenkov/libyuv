@@ -975,7 +975,7 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 // Bias values to subtract 16 from Y and 128 from U and V.
 #define BB (UB * 128            - YGB)
 #define BG (UG * 128 + VG * 128 - YGB)
-#define BR (           VR * 128 - YGB)
+#define BR            (VR * 128 - YGB)
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
@@ -2033,24 +2033,6 @@ void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
   }
   if (width & 1) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
-  }
-}
-
-// Select 2 channels from ARGB on alternating pixels.  e.g.  BGBGBGBG
-void ARGBToBayerRow_C(const uint8* src_argb,
-                      uint8* dst_bayer, uint32 selector, int pix) {
-  int index0 = selector & 0xff;
-  int index1 = (selector >> 8) & 0xff;
-  // Copy a row of Bayer.
-  int x;
-  for (x = 0; x < pix - 1; x += 2) {
-    dst_bayer[0] = src_argb[index0];
-    dst_bayer[1] = src_argb[index1];
-    src_argb += 8;
-    dst_bayer += 2;
-  }
-  if (pix & 1) {
-    dst_bayer[0] = src_argb[index0];
   }
 }
 

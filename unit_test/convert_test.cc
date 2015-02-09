@@ -18,7 +18,6 @@
 #include "libyuv/convert_from.h"
 #include "libyuv/convert_from_argb.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/format_conversion.h"
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif
@@ -521,10 +520,6 @@ TESTPLANARTOB(I420, 2, 2, UYVY, 2, 4, 1, 1, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, YUY2, 2, 4, 1, 0, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, UYVY, 2, 4, 1, 0, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 1, 0, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, BayerBGGR, 1, 2, 2, 2, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, BayerRGGB, 1, 2, 2, 2, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, BayerGBRG, 1, 2, 2, 2, ARGB, 4)
-TESTPLANARTOB(I420, 2, 2, BayerGRBG, 1, 2, 2, 2, ARGB, 4)
 
 #define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,       \
                          W1280, DIFF, N, NEG, OFF)                             \
@@ -723,10 +718,6 @@ TESTATOPLANAR(UYVY, 2, 1, I420, 2, 2, 2)
 TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1, 2)
 TESTATOPLANAR(UYVY, 2, 1, I422, 2, 1, 2)
 TESTATOPLANAR(I400, 1, 1, I420, 2, 2, 2)
-TESTATOPLANAR(BayerBGGR, 1, 2, I420, 2, 2, 4)
-TESTATOPLANAR(BayerRGGB, 1, 2, I420, 2, 2, 4)
-TESTATOPLANAR(BayerGBRG, 1, 2, I420, 2, 2, 4)
-TESTATOPLANAR(BayerGRBG, 1, 2, I420, 2, 2, 4)
 
 #define TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,       \
                        W1280, N, NEG, OFF)                                     \
@@ -923,10 +914,6 @@ TESTATOB(ARGB, 4, 4, 1, RGB24, 3, 3, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RGB565, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB1555, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB4444, 2, 2, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerBGGR, 1, 1, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerRGGB, 1, 1, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerGBRG, 1, 1, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, BayerGRBG, 1, 1, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, YUY2, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, UYVY, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, I400, 1, 1, 1, 2)
@@ -941,10 +928,6 @@ TESTATOB(ARGB1555, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB4444, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(YUY2, 2, 4, 1, ARGB, 4, 4, 1, 4)
 TESTATOB(UYVY, 2, 4, 1, ARGB, 4, 4, 1, 4)
-TESTATOB(BayerBGGR, 1, 2, 2, ARGB, 4, 4, 1, 0)
-TESTATOB(BayerRGGB, 1, 2, 2, ARGB, 4, 4, 1, 0)
-TESTATOB(BayerGBRG, 1, 2, 2, ARGB, 4, 4, 1, 0)
-TESTATOB(BayerGRBG, 1, 2, 2, ARGB, 4, 4, 1, 0)
 TESTATOB(I400, 1, 1, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(I400, 1, 1, 1, I400, 1, 1, 1, 0)
 TESTATOB(I400, 1, 1, 1, I400Mirror, 1, 1, 1, 0)

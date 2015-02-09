@@ -11,7 +11,6 @@
 #include "libyuv/convert_argb.h"
 
 #include "libyuv/cpu_id.h"
-#include "libyuv/format_conversion.h"
 #ifdef HAVE_JPEG
 #include "libyuv/mjpeg_decoder.h"
 #endif
@@ -144,36 +143,6 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
                          crop_argb, argb_stride,
                          crop_width, inv_crop_height);
       break;
-    // TODO(fbarchard): Support cropping Bayer by odd numbers
-    // by adjusting fourcc.
-    case FOURCC_BGGR:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerBGGRToARGB(src, src_width,
-                          crop_argb, argb_stride,
-                          crop_width, inv_crop_height);
-      break;
-
-    case FOURCC_GBRG:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerGBRGToARGB(src, src_width,
-                          crop_argb, argb_stride,
-                          crop_width, inv_crop_height);
-      break;
-
-    case FOURCC_GRBG:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerGRBGToARGB(src, src_width,
-                          crop_argb, argb_stride,
-                          crop_width, inv_crop_height);
-      break;
-
-    case FOURCC_RGGB:
-      src = sample + (src_width * crop_y + crop_x);
-      r = BayerRGGBToARGB(src, src_width,
-                          crop_argb, argb_stride,
-                          crop_width, inv_crop_height);
-      break;
-
     case FOURCC_I400:
       src = sample + src_width * crop_y + crop_x;
       r = I400ToARGB(src, src_width,

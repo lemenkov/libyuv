@@ -222,14 +222,6 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C,
       ARGBTORGB_C(src + n * SBPP, dst + n * BPP, selector, width & MASK);      \
     }
 
-#if defined(HAS_ARGBTOBAYERROW_SSSE3)
-BAYERANY(ARGBToBayerRow_Any_SSSE3, ARGBToBayerRow_SSSE3, ARGBToBayerRow_C,
-         7, 4, 1)
-#endif
-#if defined(HAS_ARGBTOBAYERROW_NEON)
-BAYERANY(ARGBToBayerRow_Any_NEON, ARGBToBayerRow_NEON, ARGBToBayerRow_C,
-         7, 4, 1)
-#endif
 #if defined(HAS_ARGBTOBAYERGGROW_SSE2)
 BAYERANY(ARGBToBayerGGRow_Any_SSE2, ARGBToBayerGGRow_SSE2, ARGBToBayerGGRow_C,
          7, 4, 1)

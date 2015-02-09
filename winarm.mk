@@ -19,7 +19,6 @@ LOCAL_OBJ_FILES = \
 	source/convert_to_argb.o\
 	source/convert_to_i420.o\
 	source/cpu_id.o\
-	source/format_conversion.o\
 	source/planar_functions.o\
 	source/rotate.o\
 	source/rotate_argb.o\

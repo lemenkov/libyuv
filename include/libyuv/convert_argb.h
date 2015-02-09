@@ -200,8 +200,6 @@ int MJPGToARGB(const uint8* sample, size_t sample_size,
                int dst_width, int dst_height);
 #endif
 
-// Note Bayer formats (BGGR) to ARGB are in format_conversion.h.
-
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
 // "dst_stride_argb" number of bytes in a row of the dst_argb plane.

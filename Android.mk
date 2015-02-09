@@ -16,7 +16,6 @@ LOCAL_SRC_FILES := \
     source/convert_to_argb.cc   \
     source/convert_to_i420.cc   \
     source/cpu_id.cc            \
-    source/format_conversion.cc \
     source/planar_functions.cc  \
     source/rotate.cc            \
     source/rotate_argb.cc       \

@@ -13,7 +13,6 @@
 #include "libyuv/basic_types.h"
 #include "libyuv/convert.h"  // For I420Copy
 #include "libyuv/cpu_id.h"
-#include "libyuv/format_conversion.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/scale.h"  // For ScalePlane()
@@ -1073,38 +1072,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                      dst_sample,
                      dst_sample_stride ? dst_sample_stride : width * 4,
                      width, height);
-      break;
-    case FOURCC_BGGR:
-      r = I420ToBayerBGGR(y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          dst_sample,
-                          dst_sample_stride ? dst_sample_stride : width,
-                          width, height);
-      break;
-    case FOURCC_GBRG:
-      r = I420ToBayerGBRG(y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          dst_sample,
-                          dst_sample_stride ? dst_sample_stride : width,
-                          width, height);
-      break;
-    case FOURCC_GRBG:
-      r = I420ToBayerGRBG(y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          dst_sample,
-                          dst_sample_stride ? dst_sample_stride : width,
-                          width, height);
-      break;
-    case FOURCC_RGGB:
-      r = I420ToBayerRGGB(y, y_stride,
-                          u, u_stride,
-                          v, v_stride,
-                          dst_sample,
-                          dst_sample_stride ? dst_sample_stride : width,
-                          width, height);
       break;
     case FOURCC_I400:
       r = I400Copy(y, y_stride,
