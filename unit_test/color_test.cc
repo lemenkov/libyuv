@@ -74,6 +74,12 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
       p[HN + 1] = r;                                                           \
       p += 2;                                                                  \
     }                                                                          \
+    if (benchmark_width_ & 1) {                                                \
+      uint8 r = static_cast<uint8>(random());                                  \
+      p[0] = r;                                                                \
+      p[HN] = r;                                                               \
+      p += 1;                                                                  \
+    }                                                                          \
     p += HN;                                                                   \
   }                                                                            \
                                                                                \
