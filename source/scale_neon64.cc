@@ -701,7 +701,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
     "+r"(dst_width)    // %2
-  : "r"(src_stepx * 4) // %3
+  : "r"(static_cast<ptrdiff_t>(src_stepx * 4)) // %3
   : "memory", "cc", "v0"
   );
 }

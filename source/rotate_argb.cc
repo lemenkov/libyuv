@@ -31,7 +31,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_ptr, int src_stride,
                                uint8* dst_ptr, int dst_width);
 #endif
 #if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
-    (defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+    (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 void ScaleARGBRowDownEven_NEON(const uint8* src_ptr, int src_stride,
                                int src_stepx,
