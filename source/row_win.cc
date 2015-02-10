@@ -1472,30 +1472,45 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 #if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
-static const lvec8 kUVToB_AVX = {
-  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
-  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0
+
+struct YuvConstants {
+  lvec8 kUVToB;     // 0
+  lvec8 kUVToG;     // 32
+  lvec8 kUVToR;     // 64
+  lvec16 kUVBiasB;  // 96
+  lvec16 kUVBiasG;  // 128
+  lvec16 kUVBiasR;  // 160
+  lvec16 kYToRgb;   // 192
 };
-static const lvec8 kUVToR_AVX = {
-  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
-  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR
+
+// BT601 constants for YUV to RGB.
+static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
+    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-static const lvec8 kUVToG_AVX = {
-  UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
-  UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
+
+// BT601 constants for NV21 where chroma plane is VU instead of UV.
+static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
+    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
+  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
+    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-static const lvec16 kYToRgb_AVX = {
-  YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG
-};
-static const lvec16 kUVBiasB_AVX = {
-  BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB
-};
-static const lvec16 kUVBiasG_AVX = {
-  BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG
-};
-static const lvec16 kUVBiasR_AVX = {
-  BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR
-};
+
 #endif  // defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 
 // Read 8 UV from 422, upsample to 16 UV.
@@ -1509,23 +1524,23 @@ static const lvec16 kUVBiasR_AVX = {
   }
 
 // Convert 16 pixels: 16 UV and 16 Y.
-#define YUVTORGB_AVX2 __asm {                                                  \
+#define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
     /* Step 1: Find 8 UV contributions to 16 R,G,B values */                   \
-    __asm vpmaddubsw ymm2, ymm0, kUVToR_AVX        /* scale R UV */            \
-    __asm vpmaddubsw ymm1, ymm0, kUVToG_AVX        /* scale G UV */            \
-    __asm vpmaddubsw ymm0, ymm0, kUVToB_AVX        /* scale B UV */            \
-    __asm vmovdqu    ymm3, kUVBiasR_AVX                                        \
+    __asm vpmaddubsw ymm2, ymm0, YuvConstants.kUVToR        /* scale R UV */   \
+    __asm vpmaddubsw ymm1, ymm0, YuvConstants.kUVToG        /* scale G UV */   \
+    __asm vpmaddubsw ymm0, ymm0, YuvConstants.kUVToB        /* scale B UV */   \
+    __asm vmovdqu    ymm3, YuvConstants.kUVBiasR                               \
     __asm vpsubw     ymm2, ymm3, ymm2                                          \
-    __asm vmovdqu    ymm3, kUVBiasG_AVX                                        \
+    __asm vmovdqu    ymm3, YuvConstants.kUVBiasG                               \
     __asm vpsubw     ymm1, ymm3, ymm1                                          \
-    __asm vmovdqu    ymm3, kUVBiasB_AVX                                        \
+    __asm vmovdqu    ymm3, YuvConstants.kUVBiasB                               \
     __asm vpsubw     ymm0, ymm3, ymm0                                          \
     /* Step 2: Find Y contribution to 16 R,G,B values */                       \
     __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
     __asm lea        eax, [eax + 16]                                           \
     __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpunpcklbw ymm3, ymm3, ymm3                                          \
-    __asm vpmulhuw   ymm3, ymm3, kYToRgb_AVX                                   \
+    __asm vpmulhuw   ymm3, ymm3, YuvConstants.kYToRgb                          \
     __asm vpaddsw    ymm0, ymm0, ymm3           /* B += Y */                   \
     __asm vpaddsw    ymm1, ymm1, ymm3           /* G += Y */                   \
     __asm vpaddsw    ymm2, ymm2, ymm3           /* R += Y */                   \
@@ -1559,7 +1574,7 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into ARGB
     vpunpcklbw ymm0, ymm0, ymm1           // BG
@@ -1605,7 +1620,7 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into BGRA
     vpunpcklbw ymm1, ymm1, ymm0           // GB
@@ -1651,7 +1666,7 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into RGBA
     vpunpcklbw ymm1, ymm1, ymm2           // GR
@@ -1697,7 +1712,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into ABGR
     vpunpcklbw ymm1, ymm2, ymm1           // RG
@@ -1760,56 +1775,25 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
   }
 
 // Convert 8 pixels: 8 UV and 8 Y.
-#define YUVTORGB __asm {                                                       \
+#define YUVTORGB(YuvConstants) __asm {                                         \
     /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
     __asm movdqa     xmm3, xmm0                                                \
-    __asm movdqa     xmm0, kUVBiasB      /* unbias back to signed */           \
-    __asm pmaddubsw  xmm1, kUVToB        /* scale B UV */                      \
+    __asm movdqa     xmm0, YuvConstants.kUVBiasB /* unbias back to signed */   \
+    __asm pmaddubsw  xmm1, YuvConstants.kUVToB   /* scale B UV */              \
     __asm psubw      xmm0, xmm1                                                \
-    __asm movdqa     xmm1, kUVBiasG                                            \
-    __asm pmaddubsw  xmm2, kUVToG        /* scale G UV */                      \
+    __asm movdqa     xmm1, YuvConstants.kUVBiasG                               \
+    __asm pmaddubsw  xmm2, YuvConstants.kUVToG   /* scale G UV */              \
     __asm psubw      xmm1, xmm2                                                \
-    __asm movdqa     xmm2, kUVBiasR                                            \
-    __asm pmaddubsw  xmm3, kUVToR        /* scale R UV */                      \
+    __asm movdqa     xmm2, YuvConstants.kUVBiasR                               \
+    __asm pmaddubsw  xmm3, YuvConstants.kUVToR   /* scale R UV */              \
     __asm psubw      xmm2, xmm3                                                \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm3                                                \
-    __asm pmulhuw    xmm3, kYToRgb                                             \
-    __asm paddsw     xmm0, xmm3           /* B += Y */                         \
-    __asm paddsw     xmm1, xmm3           /* G += Y */                         \
-    __asm paddsw     xmm2, xmm3           /* R += Y */                         \
-    __asm psraw      xmm0, 6                                                   \
-    __asm psraw      xmm1, 6                                                   \
-    __asm psraw      xmm2, 6                                                   \
-    __asm packuswb   xmm0, xmm0           /* B */                              \
-    __asm packuswb   xmm1, xmm1           /* G */                              \
-    __asm packuswb   xmm2, xmm2           /* R */                              \
-  }
-
-// Convert 8 pixels: 8 VU and 8 Y.
-#define YVUTORGB __asm {                                                       \
-    /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
-    __asm movdqa     xmm1, xmm0                                                \
-    __asm movdqa     xmm2, xmm0                                                \
-    __asm movdqa     xmm3, xmm0                                                \
-    __asm movdqa     xmm0, kUVBiasB      /* unbias back to signed */           \
-    __asm pmaddubsw  xmm1, kVUToB        /* scale B UV */                      \
-    __asm psubw      xmm0, xmm1                                                \
-    __asm movdqa     xmm1, kUVBiasG                                            \
-    __asm pmaddubsw  xmm2, kVUToG        /* scale G UV */                      \
-    __asm psubw      xmm1, xmm2                                                \
-    __asm movdqa     xmm2, kUVBiasR                                            \
-    __asm pmaddubsw  xmm3, kVUToR        /* scale R UV */                      \
-    __asm psubw      xmm2, xmm3                                                \
-    /* Step 2: Find Y contribution to 8 R,G,B values */                        \
-    __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
-    __asm lea        eax, [eax + 8]                                            \
-    __asm punpcklbw  xmm3, xmm3                                                \
-    __asm pmulhuw    xmm3, kYToRgb                                             \
+    __asm pmulhuw    xmm3, YuvConstants.kYToRgb                                \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
     __asm paddsw     xmm2, xmm3           /* R += Y */                         \
@@ -1842,7 +1826,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV444
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -1884,7 +1868,7 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into RRGB
     punpcklbw  xmm0, xmm1           // BG
@@ -1929,7 +1913,7 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into RRGB
     punpcklbw  xmm0, xmm1           // BG
@@ -1979,7 +1963,7 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into RRGB
     punpcklbw  xmm0, xmm1           // BG
@@ -2044,7 +2028,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -2087,7 +2071,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV411  // modifies EBX
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -2125,7 +2109,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READNV12
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -2145,7 +2129,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+// 4 VU values upsampled to 8 VU, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
 void NV21ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* uv_buf,
@@ -2154,14 +2138,14 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     mov        eax, [esp + 4 + 4]   // Y
-    mov        esi, [esp + 4 + 8]   // VU
+    mov        esi, [esp + 4 + 8]   // UV
     mov        edx, [esp + 4 + 12]  // argb
     mov        ecx, [esp + 4 + 16]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READNV12
-    YVUTORGB
+    YUVTORGB(kYvuConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm0, xmm1           // BG
@@ -2198,7 +2182,7 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into BGRA
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
@@ -2238,7 +2222,7 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into ARGB
     punpcklbw  xmm2, xmm1           // RG
@@ -2276,7 +2260,7 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
 
     // Step 3: Weave into RGBA
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha

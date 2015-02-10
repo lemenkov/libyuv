@@ -1499,23 +1499,23 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
     "punpcklwd  %%xmm0,%%xmm0                                   \n"
 
 // Convert 8 pixels: 8 UV and 8 Y
-#define YUVTORGB(kYuvConstants)                                                \
+#define YUVTORGB(YuvConstants)                                                 \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
     "movdqa     %%xmm0,%%xmm3                                   \n"            \
-    "movdqa     " MEMACCESS2(96, [kYuvConstants]) ",%%xmm0      \n"            \
-    "pmaddubsw  " MEMACCESS([kYuvConstants]) ",%%xmm1           \n"            \
+    "movdqa     " MEMACCESS2(96, [YuvConstants]) ",%%xmm0       \n"            \
+    "pmaddubsw  " MEMACCESS([YuvConstants]) ",%%xmm1            \n"            \
     "psubw      %%xmm1,%%xmm0                                   \n"            \
-    "movdqa     " MEMACCESS2(128, [kYuvConstants]) ",%%xmm1     \n"            \
-    "pmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%xmm2      \n"            \
+    "movdqa     " MEMACCESS2(128, [YuvConstants]) ",%%xmm1      \n"            \
+    "pmaddubsw  " MEMACCESS2(32, [YuvConstants]) ",%%xmm2       \n"            \
     "psubw      %%xmm2,%%xmm1                                   \n"            \
-    "movdqa     " MEMACCESS2(160, [kYuvConstants]) ",%%xmm2     \n"            \
-    "pmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%xmm3      \n"            \
+    "movdqa     " MEMACCESS2(160, [YuvConstants]) ",%%xmm2      \n"            \
+    "pmaddubsw  " MEMACCESS2(64, [YuvConstants]) ",%%xmm3       \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
     "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
-    "pmulhuw    " MEMACCESS2(192, [kYuvConstants]) ",%%xmm3     \n"            \
+    "pmulhuw    " MEMACCESS2(192, [YuvConstants]) ",%%xmm3      \n"            \
     "paddsw     %%xmm3,%%xmm0                                   \n"            \
     "paddsw     %%xmm3,%%xmm1                                   \n"            \
     "paddsw     %%xmm3,%%xmm2                                   \n"            \
@@ -1887,21 +1887,21 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"
 
 // Convert 16 pixels: 16 UV and 16 Y.
-#define YUVTORGB_AVX2(kYuvConstants)                                           \
-    "vpmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%ymm0,%%ymm2  \n"        \
-    "vpmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%ymm0,%%ymm1  \n"        \
-    "vpmaddubsw  " MEMACCESS([kYuvConstants]) ",%%ymm0,%%ymm0       \n"        \
-    "vmovdqu     " MEMACCESS2(160, [kYuvConstants]) ",%%ymm3        \n"        \
+#define YUVTORGB_AVX2(YuvConstants)                                            \
+    "vpmaddubsw  " MEMACCESS2(64, [YuvConstants]) ",%%ymm0,%%ymm2   \n"        \
+    "vpmaddubsw  " MEMACCESS2(32, [YuvConstants]) ",%%ymm0,%%ymm1   \n"        \
+    "vpmaddubsw  " MEMACCESS([YuvConstants]) ",%%ymm0,%%ymm0        \n"        \
+    "vmovdqu     " MEMACCESS2(160, [YuvConstants]) ",%%ymm3         \n"        \
     "vpsubw      %%ymm2,%%ymm3,%%ymm2                               \n"        \
-    "vmovdqu     " MEMACCESS2(128, [kYuvConstants]) ",%%ymm2        \n"        \
+    "vmovdqu     " MEMACCESS2(128, [YuvConstants]) ",%%ymm2         \n"        \
     "vpsubw      %%ymm1,%%ymm2,%%ymm1                               \n"        \
-    "vmovdqu     " MEMACCESS2(96, [kYuvConstants]) ",%%ymm1         \n"        \
+    "vmovdqu     " MEMACCESS2(96, [YuvConstants]) ",%%ymm1          \n"        \
     "vpsubw      %%ymm0,%%ymm1,%%ymm0                               \n"        \
     "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
     "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
     "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
     "vpunpcklbw  %%ymm3,%%ymm3,%%ymm3                               \n"        \
-    "vpmulhuw    " MEMACCESS2(192, [kYuvConstants]) ",%%ymm3,%%ymm3 \n"        \
+    "vpmulhuw    " MEMACCESS2(192, [YuvConstants]) ",%%ymm3,%%ymm3  \n"        \
     "vpaddsw     %%ymm3,%%ymm0,%%ymm0           \n"                            \
     "vpaddsw     %%ymm3,%%ymm1,%%ymm1           \n"                            \
     "vpaddsw     %%ymm3,%%ymm2,%%ymm2           \n"                            \
