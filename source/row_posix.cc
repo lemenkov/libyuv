@@ -1440,6 +1440,7 @@ struct YuvConstants {
   lvec16 kYToRgb;   // 192
 };
 
+// BT601 constants for YUV to RGB.
 static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
@@ -1453,6 +1454,7 @@ static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
+// BT601 constants for NV21 where chroma plane is VU instead of UV.
 static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
   { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
     0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
@@ -1497,7 +1499,7 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
     "punpcklwd  %%xmm0,%%xmm0                                   \n"
 
 // Convert 8 pixels: 8 UV and 8 Y
-#define YUVTORGB                                                               \
+#define YUVTORGB(kYuvConstants)                                                \
     "movdqa     %%xmm0,%%xmm1                                   \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
     "movdqa     %%xmm0,%%xmm3                                   \n"            \
@@ -1535,7 +1537,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV444
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1570,7 +1572,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm2,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1614,7 +1616,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm2,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1657,7 +1659,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1690,7 +1692,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV411
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1721,7 +1723,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READNV12
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1751,7 +1753,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READNV12
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -1783,7 +1785,7 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "punpcklbw %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm5                   \n"
@@ -1817,7 +1819,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "punpcklbw %%xmm1,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
@@ -1850,7 +1852,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422
-    YUVTORGB
+    YUVTORGB(kYuvConstants)
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "punpcklbw %%xmm2,%%xmm1                   \n"
     "punpcklbw %%xmm0,%%xmm5                   \n"
@@ -1885,7 +1887,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"
 
 // Convert 16 pixels: 16 UV and 16 Y.
-#define YUVTORGB_AVX2                                                          \
+#define YUVTORGB_AVX2(kYuvConstants)                                           \
     "vpmaddubsw  " MEMACCESS2(64, [kYuvConstants]) ",%%ymm0,%%ymm2  \n"        \
     "vpmaddubsw  " MEMACCESS2(32, [kYuvConstants]) ",%%ymm0,%%ymm1  \n"        \
     "vpmaddubsw  " MEMACCESS([kYuvConstants]) ",%%ymm0,%%ymm0       \n"        \
@@ -1924,7 +1926,7 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into BGRA
     "vpunpcklbw %%ymm0,%%ymm1,%%ymm1           \n"  // GB
@@ -1966,7 +1968,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into ARGB
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0           \n"  // BG
@@ -2008,7 +2010,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into ABGR
     "vpunpcklbw %%ymm1,%%ymm2,%%ymm1           \n"  // RG
@@ -2049,7 +2051,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     LABELALIGN
   "1:                                          \n"
     READYUV422_AVX2
-    YUVTORGB_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
 
     // Step 3: Weave into RGBA
     "vpunpcklbw %%ymm2,%%ymm1,%%ymm1           \n"
