@@ -1135,7 +1135,7 @@ TEST_F(libyuvTest, CropNV12) {
   const int crop_y =
     ((benchmark_height_ - (benchmark_height_ * 360 / 480)) / 2 + 1) & ~1;
   const int kDestWidth = benchmark_width_;
-  const int kDestHeight = benchmark_height_ - crop_y * 2;;
+  const int kDestHeight = benchmark_height_ - crop_y * 2;
   const int sample_size = kWidth * kHeight +
     SUBSAMPLE(kWidth, SUBSAMP_X) *
     SUBSAMPLE(kHeight, SUBSAMP_Y) * 2;
@@ -1162,8 +1162,8 @@ TEST_F(libyuvTest, CropNV12) {
   for (int i = 0; i < kHeight * kWidth; ++i) {
     src_y[i] = (random() & 0xff);
   }
-  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y) *
-       SUBSAMPLE(kWidth, SUBSAMP_X) * 2; ++i) {
+  for (int i = 0; i < (SUBSAMPLE(kHeight, SUBSAMP_Y) *
+       SUBSAMPLE(kWidth, SUBSAMP_X)) * 2; ++i) {
     src_uv[i] = (random() & 0xff);
   }
   memset(dst_y, 1, kDestWidth * kDestHeight);
@@ -1187,7 +1187,8 @@ TEST_F(libyuvTest, CropNV12) {
                 libyuv::kRotate0, libyuv::FOURCC_NV12);
 
   NV12ToI420(src_y + crop_y * kWidth, kWidth,
-             src_uv + (crop_y / 2) * kWidth, kWidth,
+             src_uv + (crop_y / 2) * SUBSAMPLE(kWidth, SUBSAMP_X) * 2,
+               SUBSAMPLE(kWidth, SUBSAMP_X) * 2,
              dst_y, kDestWidth,
              dst_u, SUBSAMPLE(kDestWidth, SUBSAMP_X),
              dst_v, SUBSAMPLE(kDestWidth, SUBSAMP_X),

@@ -183,7 +183,8 @@ int ConvertToI420(const uint8* sample,
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
+      src_uv = sample + (src_width * src_height) +
+        ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       r = NV12ToI420Rotate(src, src_width,
                            src_uv, aligned_src_width,
                            y, y_stride,
@@ -193,7 +194,8 @@ int ConvertToI420(const uint8* sample,
       break;
     case FOURCC_NV21:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
+      src_uv = sample + (src_width * src_height) +
+        ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       // Call NV12 but with u and v parameters swapped.
       r = NV12ToI420Rotate(src, src_width,
                            src_uv, aligned_src_width,
