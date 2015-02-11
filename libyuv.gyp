@@ -122,6 +122,9 @@
           'dependencies': [
             'libyuv_neon',
           ],
+          'defines': [
+            'LIBYUV_NEON',
+          ],
         }],
         # MemorySanitizer does not support assembly code yet.
         # http://crbug.com/344505
