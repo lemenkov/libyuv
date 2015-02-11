@@ -1103,7 +1103,7 @@ int ConvertFromI420(const uint8* y, int y_stride,
                      width, height);
       break;
     }
-    // TODO(fbarchard): Add M420 and Q420.
+    // TODO(fbarchard): Add M420.
     // Triplanar formats
     // TODO(fbarchard): halfstride instead of halfwidth
     case FOURCC_I420:

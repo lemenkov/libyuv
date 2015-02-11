@@ -62,7 +62,7 @@ enum FourCC {
 
   // 2 Secondary YUV formats: row biplanar.
   FOURCC_M420 = FOURCC('M', '4', '2', '0'),
-  FOURCC_Q420 = FOURCC('Q', '4', '2', '0'),
+  FOURCC_Q420 = FOURCC('Q', '4', '2', '0'), // deprecated.
 
   // 9 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp.
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),

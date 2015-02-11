@@ -57,7 +57,6 @@ int I400Copy(const uint8* src_y, int src_stride_y,
              int width, int height);
 
 // TODO(fbarchard): I420ToM420
-// TODO(fbarchard): I420ToQ420
 
 LIBYUV_API
 int I420ToNV12(const uint8* src_y, int src_stride_y,

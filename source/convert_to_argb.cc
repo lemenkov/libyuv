@@ -174,15 +174,6 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
                      crop_argb, argb_stride,
                      crop_width, inv_crop_height);
       break;
-//    case FOURCC_Q420:
-//      src = sample + (src_width + aligned_src_width * 2) * crop_y + crop_x;
-//      src_uv = sample + (src_width + aligned_src_width * 2) * crop_y +
-//               src_width + crop_x * 2;
-//      r = Q420ToARGB(src, src_width * 3,
-//                    src_uv, src_width * 3,
-//                    crop_argb, argb_stride,
-//                    crop_width, inv_crop_height);
-//      break;
     // Triplanar formats
     case FOURCC_I420:
     case FOURCC_YU12:

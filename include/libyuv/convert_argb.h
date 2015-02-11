@@ -18,7 +18,6 @@
 #include "libyuv/rotate.h"
 
 // TODO(fbarchard): This set of functions should exactly match convert.h
-// Add missing Q420.
 // TODO(fbarchard): Add tests. Create random content of right size and convert
 // with C vs Opt and or to I420 and compare.
 // TODO(fbarchard): Some of these functions lack parameter setting.
@@ -103,13 +102,6 @@ LIBYUV_API
 int M420ToARGB(const uint8* src_m420, int src_stride_m420,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
-
-// TODO(fbarchard): Convert Q420 to ARGB.
-// LIBYUV_API
-// int Q420ToARGB(const uint8* src_y, int src_stride_y,
-//                const uint8* src_yuy2, int src_stride_yuy2,
-//                uint8* dst_argb, int dst_stride_argb,
-//                int width, int height);
 
 // Convert YUY2 to ARGB.
 LIBYUV_API
