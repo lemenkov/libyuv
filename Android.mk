@@ -8,6 +8,7 @@ LOCAL_CPP_EXTENSION := .cc
 LOCAL_SRC_FILES := \
     source/compare.cc           \
     source/compare_common.cc    \
+    source/compare_neon64.cc    \
     source/compare_posix.cc     \
     source/convert.cc           \
     source/convert_argb.cc      \
@@ -20,14 +21,17 @@ LOCAL_SRC_FILES := \
     source/rotate.cc            \
     source/rotate_argb.cc       \
     source/rotate_mips.cc       \
+    source/rotate_neon64.cc     \
     source/row_any.cc           \
     source/row_common.cc        \
     source/row_mips.cc          \
-    source/row_posix.cc         \
+    source/row_neon64.cc        \
+    source/row_posix.cc	        \
     source/scale.cc             \
     source/scale_argb.cc        \
     source/scale_common.cc      \
     source/scale_mips.cc        \
+    source/scale_neon64.cc      \
     source/scale_posix.cc       \
     source/video_common.cc
 
