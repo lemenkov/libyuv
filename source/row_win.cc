@@ -40,34 +40,43 @@ extern "C" {
 #define BG (UG * 128 + VG * 128 - YGB)
 #define BR            (VR * 128 - YGB)
 
-static const vec8 kUVToB = {
-  UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0
+struct YuvConstants {
+  lvec8 kUVToB;     // 0
+  lvec8 kUVToG;     // 32
+  lvec8 kUVToR;     // 64
+  lvec16 kUVBiasB;  // 96
+  lvec16 kUVBiasG;  // 128
+  lvec16 kUVBiasR;  // 160
+  lvec16 kYToRgb;   // 192
 };
 
-static const vec8 kUVToR = {
-  0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR
+// BT601 constants for YUV to RGB.
+static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
+    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
 
-static const vec8 kUVToG = {
-  UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG
+// BT601 constants for NV21 where chroma plane is VU instead of UV.
+static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
+    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
+  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
+    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-
-static const vec8 kVUToB = {
-  0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
-};
-
-static const vec8 kVUToR = {
-  VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
-};
-
-static const vec8 kVUToG = {
-  VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
-};
-
-static const vec16 kYToRgb = { YG, YG, YG, YG, YG, YG, YG, YG };
-static const vec16 kUVBiasB = { BB, BB, BB, BB, BB, BB, BB, BB };
-static const vec16 kUVBiasG = { BG, BG, BG, BG, BG, BG, BG, BG };
-static const vec16 kUVBiasR = { BR, BR, BR, BR, BR, BR, BR, BR };
 
 // 64 bit
 #if defined(_M_X64)
@@ -89,15 +98,15 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);
     xmm1 = _mm_loadu_si128(&xmm0);
     xmm2 = _mm_loadu_si128(&xmm0);
-    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)kUVToB);
-    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)kUVToG);
-    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)kUVToR);
-    xmm0 = _mm_sub_epi16(*(__m128i*)kUVBiasB, xmm0);
-    xmm1 = _mm_sub_epi16(*(__m128i*)kUVBiasG, xmm1);
-    xmm2 = _mm_sub_epi16(*(__m128i*)kUVBiasR, xmm2);
+    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)kYuvConstants.kUVToB);
+    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)kYuvConstants.kUVToG);
+    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)kYuvConstants.kUVToR);
+    xmm0 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasB, xmm0);
+    xmm1 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasG, xmm1);
+    xmm2 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasR, xmm2);
     xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
     xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);
-    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)kYToRgb);
+    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)kYuvConstants.kYToRgb);
     xmm0 = _mm_adds_epi16(xmm0, xmm3);
     xmm1 = _mm_adds_epi16(xmm1, xmm3);
     xmm2 = _mm_adds_epi16(xmm2, xmm3);
@@ -1470,48 +1479,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
   }
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
-
-#if defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
-
-struct YuvConstants {
-  lvec8 kUVToB;     // 0
-  lvec8 kUVToG;     // 32
-  lvec8 kUVToR;     // 64
-  lvec16 kUVBiasB;  // 96
-  lvec16 kUVBiasG;  // 128
-  lvec16 kUVBiasR;  // 160
-  lvec16 kYToRgb;   // 192
-};
-
-// BT601 constants for YUV to RGB.
-static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
-  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
-    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
-  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
-    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
-  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
-    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
-  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
-};
-
-// BT601 constants for NV21 where chroma plane is VU instead of UV.
-static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
-  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
-    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
-  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
-    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
-  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
-    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
-  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
-};
-
-#endif  // defined(HAS_I422TOARGBROW_AVX2) || defined(HAS_I422TOBGRAROW_AVX2)
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 __asm {                                                \
