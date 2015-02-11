@@ -1526,6 +1526,17 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
     "packuswb   %%xmm1,%%xmm1                                   \n"            \
     "packuswb   %%xmm2,%%xmm2                                   \n"
 
+// Store 8 ARGB values. Assumes XMM5 is zero.
+#define STOREARGB                                                              \
+    "punpcklbw  %%xmm1,%%xmm0                                    \n"           \
+    "punpcklbw  %%xmm5,%%xmm2                                    \n"           \
+    "movdqa     %%xmm0,%%xmm1                                    \n"           \
+    "punpcklwd  %%xmm2,%%xmm0                                    \n"           \
+    "punpckhwd  %%xmm2,%%xmm1                                    \n"           \
+    "movdqu     %%xmm0," MEMACCESS([dst_argb]) "                 \n"           \
+    "movdqu     %%xmm1," MEMACCESS2(0x10,[dst_argb]) "           \n"           \
+    "lea        " MEMLEA(0x20,[dst_argb]) ",%[dst_argb]          \n"
+
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
@@ -1538,14 +1549,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV444
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm0                   \n"
-    "punpcklbw %%xmm5,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm2,%%xmm0                   \n"
-    "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS([dst_argb]) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_argb]) "   \n"
-    "lea       " MEMLEA(0x20,[dst_argb]) ",%[dst_argb]  \n"
+    STOREARGB
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1660,14 +1664,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV422
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm0                   \n"
-    "punpcklbw %%xmm5,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm2,%%xmm0                   \n"
-    "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS([dst_argb]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x20,[dst_argb]) ",%[dst_argb] \n"
+    STOREARGB
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1693,14 +1690,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV411
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm0                   \n"
-    "punpcklbw %%xmm5,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm2,%%xmm0                   \n"
-    "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS([dst_argb]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x20,[dst_argb]) ",%[dst_argb] \n"
+    STOREARGB
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1724,14 +1714,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READNV12
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm0                   \n"
-    "punpcklbw %%xmm5,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm2,%%xmm0                   \n"
-    "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS([dst_argb]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x20,[dst_argb]) ",%[dst_argb] \n"
+    STOREARGB
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1754,14 +1737,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READNV12
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm0                   \n"
-    "punpcklbw %%xmm5,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklwd %%xmm2,%%xmm0                   \n"
-    "punpckhwd %%xmm2,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS([dst_argb]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x20,[dst_argb]) ",%[dst_argb] \n"
+    STOREARGB
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]

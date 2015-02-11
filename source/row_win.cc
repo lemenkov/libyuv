@@ -316,7 +316,7 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     por       xmm3, xmm5
     movdqu    [edx + 48], xmm3
     lea       edx, [edx + 64]
-      sub       ecx, 16
+    sub       ecx, 16
     jg        convertloop
     ret
   }
@@ -1772,6 +1772,19 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm packuswb   xmm2, xmm2           /* R */                              \
   }
 
+// Store 8 ARGB values.
+#define STOREARGB __asm {                                                      \
+    /* Step 3: Weave into ARGB */                                              \
+    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
+    __asm punpcklbw  xmm2, xmm5           /* RA */                             \
+    __asm movdqa     xmm1, xmm0                                                \
+    __asm punpcklwd  xmm0, xmm2           /* BGRA first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2           /* BGRA next 4 pixels */             \
+    __asm movdqu     [edx], xmm0                                               \
+    __asm movdqu     [edx + 16], xmm1                                          \
+    __asm lea        edx,  [edx + 32]                                          \
+  }
+
 // 8 pixels.
 // 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
@@ -1794,16 +1807,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV444
     YUVTORGB(kYuvConstants)
-
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm5           // RA
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // ABGR first 4 pixels
-    punpckhwd  xmm1, xmm2           // ABGR next 4 pixels
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
+    STOREARGB
     sub        ecx, 8
     jg         convertloop
 
@@ -1996,16 +2000,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
-
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm5           // RA
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
+    STOREARGB
     sub        ecx, 8
     jg         convertloop
 
@@ -2039,16 +2034,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV411  // modifies EBX
     YUVTORGB(kYuvConstants)
-
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm5           // RA
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
+    STOREARGB
     sub        ecx, 8
     jg         convertloop
 
@@ -2077,16 +2063,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READNV12
     YUVTORGB(kYuvConstants)
-
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm5           // RA
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
+    STOREARGB
     sub        ecx, 8
     jg         convertloop
 
@@ -2113,16 +2090,7 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READNV12
     YUVTORGB(kYvuConstants)
-
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm5           // RA
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRA first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRA next 4 pixels
-    movdqu     [edx], xmm0
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
+    STOREARGB
     sub        ecx, 8
     jg         convertloop
 
