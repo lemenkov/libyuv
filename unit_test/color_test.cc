@@ -301,7 +301,7 @@ TEST_F(libyuvTest, TestGreyYUV) {
 TEST_F(libyuvTest, TestFullYUV) {
   int i;
   // If using small image, step faster.
-  int step = benchmark_width_ <= 128 ? 3 : 1;
+  int step = benchmark_width_ <= 128 ? 5 : 1;
   int r0, g0, b0, r1, g1, b1;
   int rn[256] = { 0, }, gn[256] = { 0, },
       bn[256] = { 0, }, rx[256] = { 0, },
