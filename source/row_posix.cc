@@ -1537,6 +1537,41 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
     "movdqu     %%xmm1," MEMACCESS2(0x10,[dst_argb]) "           \n"           \
     "lea        " MEMLEA(0x20,[dst_argb]) ",%[dst_argb]          \n"
 
+// Store 8 BGRA values. Assumes XMM5 is zero.
+#define STOREBGRA                                                              \
+    "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
+    "punpcklbw %%xmm0,%%xmm1                                     \n"           \
+    "punpcklbw %%xmm2,%%xmm5                                     \n"           \
+    "movdqa    %%xmm5,%%xmm0                                     \n"           \
+    "punpcklwd %%xmm1,%%xmm5                                     \n"           \
+    "punpckhwd %%xmm1,%%xmm0                                     \n"           \
+    "movdqu    %%xmm5," MEMACCESS([dst_bgra]) "                  \n"           \
+    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_bgra]) "            \n"           \
+    "lea       " MEMLEA(0x20,[dst_bgra]) ",%[dst_bgra]           \n"
+
+// Store 8 ABGR values. Assumes XMM5 is zero.
+#define STOREABGR                                                              \
+    "punpcklbw %%xmm1,%%xmm2                                     \n"           \
+    "punpcklbw %%xmm5,%%xmm0                                     \n"           \
+    "movdqa    %%xmm2,%%xmm1                                     \n"           \
+    "punpcklwd %%xmm0,%%xmm2                                     \n"           \
+    "punpckhwd %%xmm0,%%xmm1                                     \n"           \
+    "movdqu    %%xmm2," MEMACCESS([dst_abgr]) "                  \n"           \
+    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_abgr]) "            \n"           \
+    "lea       " MEMLEA(0x20,[dst_abgr]) ",%[dst_abgr]           \n"
+
+// Store 8 RGBA values. Assumes XMM5 is zero.
+#define STORERGBA                                                              \
+    "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
+    "punpcklbw %%xmm2,%%xmm1                                     \n"           \
+    "punpcklbw %%xmm0,%%xmm5                                     \n"           \
+    "movdqa    %%xmm5,%%xmm0                                     \n"           \
+    "punpcklwd %%xmm1,%%xmm5                                     \n"           \
+    "punpckhwd %%xmm1,%%xmm0                                     \n"           \
+    "movdqu    %%xmm5," MEMACCESS([dst_rgba]) "                  \n"           \
+    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_rgba]) "            \n"           \
+    "lea       " MEMLEA(0x20,[dst_rgba]) ",%[dst_rgba]           \n"
+
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
@@ -1762,15 +1797,7 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV422
     YUVTORGB(kYuvConstants)
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "punpcklbw %%xmm0,%%xmm1                   \n"
-    "punpcklbw %%xmm2,%%xmm5                   \n"
-    "movdqa    %%xmm5,%%xmm0                   \n"
-    "punpcklwd %%xmm1,%%xmm5                   \n"
-    "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm5," MEMACCESS([dst_bgra]) "\n"
-    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_bgra]) "\n"
-    "lea       " MEMLEA(0x20,[dst_bgra]) ",%[dst_bgra] \n"
+    STOREBGRA
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1796,14 +1823,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV422
     YUVTORGB(kYuvConstants)
-    "punpcklbw %%xmm1,%%xmm2                   \n"
-    "punpcklbw %%xmm5,%%xmm0                   \n"
-    "movdqa    %%xmm2,%%xmm1                   \n"
-    "punpcklwd %%xmm0,%%xmm2                   \n"
-    "punpckhwd %%xmm0,%%xmm1                   \n"
-    "movdqu    %%xmm2," MEMACCESS([dst_abgr]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_abgr]) "\n"
-    "lea       " MEMLEA(0x20,[dst_abgr]) ",%[dst_abgr] \n"
+    STOREABGR
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -1829,15 +1849,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
   "1:                                          \n"
     READYUV422
     YUVTORGB(kYuvConstants)
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "punpcklbw %%xmm2,%%xmm1                   \n"
-    "punpcklbw %%xmm0,%%xmm5                   \n"
-    "movdqa    %%xmm5,%%xmm0                   \n"
-    "punpcklwd %%xmm1,%%xmm5                   \n"
-    "punpckhwd %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm5," MEMACCESS([dst_rgba]) "\n"
-    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_rgba]) "\n"
-    "lea       " MEMLEA(0x20,[dst_rgba]) ",%[dst_rgba] \n"
+    STORERGBA
     "sub       $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
