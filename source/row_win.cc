@@ -1785,6 +1785,117 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm lea        edx,  [edx + 32]                                          \
   }
 
+// Store 8 BGRA values.
+#define STOREBGRA __asm {                                                      \
+    /* Step 3: Weave into BGRA */                                              \
+    __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
+    __asm punpcklbw  xmm1, xmm0           /* GB */                             \
+    __asm punpcklbw  xmm5, xmm2           /* AR */                             \
+    __asm movdqa     xmm0, xmm5                                                \
+    __asm punpcklwd  xmm5, xmm1           /* BGRA first 4 pixels */            \
+    __asm punpckhwd  xmm0, xmm1           /* BGRA next 4 pixels */             \
+    __asm movdqu     [edx], xmm5                                               \
+    __asm movdqu     [edx + 16], xmm0                                          \
+    __asm lea        edx,  [edx + 32]                                          \
+  }
+
+// Store 8 ABGR values.
+#define STOREABGR __asm {                                                      \
+    /* Step 3: Weave into ABGR */                                              \
+    __asm punpcklbw  xmm2, xmm1           /* RG */                             \
+    __asm punpcklbw  xmm0, xmm5           /* BA */                             \
+    __asm movdqa     xmm1, xmm2                                                \
+    __asm punpcklwd  xmm2, xmm0           /* RGBA first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm0           /* RGBA next 4 pixels */             \
+    __asm movdqu     [edx], xmm2                                               \
+    __asm movdqu     [edx + 16], xmm1                                          \
+    __asm lea        edx,  [edx + 32]                                          \
+  }
+
+// Store 8 RGBA values.
+#define STORERGBA __asm {                                                      \
+    /* Step 3: Weave into RGBA */                                              \
+    __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
+    __asm punpcklbw  xmm1, xmm2           /* GR */                             \
+    __asm punpcklbw  xmm5, xmm0           /* AB */                             \
+    __asm movdqa     xmm0, xmm5                                                \
+    __asm punpcklwd  xmm5, xmm1           /* RGBA first 4 pixels */            \
+    __asm punpckhwd  xmm0, xmm1           /* RGBA next 4 pixels */             \
+    __asm movdqu     [edx], xmm5                                               \
+    __asm movdqu     [edx + 16], xmm0                                          \
+    __asm lea        edx,  [edx + 32]                                          \
+  }
+
+// Store 8 RGB24 values.
+#define STORERGB24 __asm {                                                     \
+    /* Step 3: Weave into RRGB */                                              \
+    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
+    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
+    __asm movdqa     xmm1, xmm0                                                \
+    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
+    /* Step 4: RRGB -> RGB24 */                                                \
+    __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
+    __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
+    __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
+    __asm movq       qword ptr [edx], xmm0  /* First 8 bytes */                \
+    __asm movdqu     [edx + 8], xmm1      /* Last 16 bytes */                  \
+    __asm lea        edx,  [edx + 24]                                          \
+  }
+
+// Store 8 RAW values.
+#define STORERAW __asm {                                                       \
+    /* Step 3: Weave into RRGB */                                              \
+    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
+    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
+    __asm movdqa     xmm1, xmm0                                                \
+    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
+    /* Step 4: RRGB -> RAW */                                                  \
+    __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
+    __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
+    __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
+    __asm movq       qword ptr [edx], xmm0  /* First 8 bytes */                \
+    __asm movdqu     [edx + 8], xmm1      /* Last 16 bytes */                  \
+    __asm lea        edx,  [edx + 24]                                          \
+  }
+
+// Store 8 RGB565 values.
+#define STORERGB565 __asm {                                                    \
+    /* Step 3: Weave into RRGB */                                              \
+    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
+    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
+    __asm movdqa     xmm1, xmm0                                                \
+    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
+    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
+    /* Step 4: RRGB -> RGB565 */                                               \
+    __asm movdqa     xmm3, xmm0    /* B  first 4 pixels of argb */             \
+    __asm movdqa     xmm2, xmm0    /* G */                                     \
+    __asm pslld      xmm0, 8       /* R */                                     \
+    __asm psrld      xmm3, 3       /* B */                                     \
+    __asm psrld      xmm2, 5       /* G */                                     \
+    __asm psrad      xmm0, 16      /* R */                                     \
+    __asm pand       xmm3, xmm5    /* B */                                     \
+    __asm pand       xmm2, xmm6    /* G */                                     \
+    __asm pand       xmm0, xmm7    /* R */                                     \
+    __asm por        xmm3, xmm2    /* BG */                                    \
+    __asm por        xmm0, xmm3    /* BGR */                                   \
+    __asm movdqa     xmm3, xmm1    /* B  next 4 pixels of argb */              \
+    __asm movdqa     xmm2, xmm1    /* G */                                     \
+    __asm pslld      xmm1, 8       /* R */                                     \
+    __asm psrld      xmm3, 3       /* B */                                     \
+    __asm psrld      xmm2, 5       /* G */                                     \
+    __asm psrad      xmm1, 16      /* R */                                     \
+    __asm pand       xmm3, xmm5    /* B */                                     \
+    __asm pand       xmm2, xmm6    /* G */                                     \
+    __asm pand       xmm1, xmm7    /* R */                                     \
+    __asm por        xmm3, xmm2    /* BG */                                    \
+    __asm por        xmm1, xmm3    /* BGR */                                   \
+    __asm packssdw   xmm0, xmm1                                                \
+    __asm movdqu     [edx], xmm0   /* store 8 pixels of RGB565 */              \
+    __asm lea        edx, [edx + 16]                                           \
+  }
+
 // 8 pixels.
 // 8 UV values, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
@@ -1808,6 +1919,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
     READYUV444
     YUVTORGB(kYuvConstants)
     STOREARGB
+
     sub        ecx, 8
     jg         convertloop
 
@@ -1818,7 +1930,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 RGB24 (24 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToRGB24Row_SSSE3(const uint8* y_buf,
                           const uint8* u_buf,
@@ -1840,19 +1952,8 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STORERGB24
 
-    // Step 3: Weave into RRGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm2           // RR
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
-    pshufb     xmm0, xmm5           // Pack into first 8 and last 4 bytes.
-    pshufb     xmm1, xmm6           // Pack into first 12 bytes.
-    palignr    xmm1, xmm0, 12       // last 4 bytes of xmm0 + 12 from xmm1
-    movq       qword ptr [edx], xmm0  // First 8 bytes
-    movdqu     [edx + 8], xmm1      // Last 16 bytes. = 24 bytes, 8 RGB pixels.
-    lea        edx,  [edx + 24]
     sub        ecx, 8
     jg         convertloop
 
@@ -1863,7 +1964,7 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 RAW (24 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToRAWRow_SSSE3(const uint8* y_buf,
                         const uint8* u_buf,
@@ -1885,19 +1986,8 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STORERAW
 
-    // Step 3: Weave into RRGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm2           // RR
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
-    pshufb     xmm0, xmm5           // Pack into first 8 and last 4 bytes.
-    pshufb     xmm1, xmm6           // Pack into first 12 bytes.
-    palignr    xmm1, xmm0, 12       // last 4 bytes of xmm0 + 12 from xmm1
-    movq       qword ptr [edx], xmm0  // First 8 bytes
-    movdqu     [edx + 8], xmm1      // Last 16 bytes. = 24 bytes, 8 RGB pixels.
-    lea        edx,  [edx + 24]
     sub        ecx, 8
     jg         convertloop
 
@@ -1908,7 +1998,7 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 RGB565 (16 bytes).
 __declspec(naked) __declspec(align(16))
 void I422ToRGB565Row_SSSE3(const uint8* y_buf,
                            const uint8* u_buf,
@@ -1935,40 +2025,8 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STORERGB565
 
-    // Step 3: Weave into RRGB
-    punpcklbw  xmm0, xmm1           // BG
-    punpcklbw  xmm2, xmm2           // RR
-    movdqa     xmm1, xmm0
-    punpcklwd  xmm0, xmm2           // BGRR first 4 pixels
-    punpckhwd  xmm1, xmm2           // BGRR next 4 pixels
-
-    // Step 3b: RRGB -> RGB565
-    movdqa     xmm3, xmm0    // B  first 4 pixels of argb
-    movdqa     xmm2, xmm0    // G
-    pslld      xmm0, 8       // R
-    psrld      xmm3, 3       // B
-    psrld      xmm2, 5       // G
-    psrad      xmm0, 16      // R
-    pand       xmm3, xmm5    // B
-    pand       xmm2, xmm6    // G
-    pand       xmm0, xmm7    // R
-    por        xmm3, xmm2    // BG
-    por        xmm0, xmm3    // BGR
-    movdqa     xmm3, xmm1    // B  next 4 pixels of argb
-    movdqa     xmm2, xmm1    // G
-    pslld      xmm1, 8       // R
-    psrld      xmm3, 3       // B
-    psrld      xmm2, 5       // G
-    psrad      xmm1, 16      // R
-    pand       xmm3, xmm5    // B
-    pand       xmm2, xmm6    // G
-    pand       xmm1, xmm7    // R
-    por        xmm3, xmm2    // BG
-    por        xmm1, xmm3    // BGR
-    packssdw   xmm0, xmm1
-    movdqu     [edx], xmm0   // store 8 pixels of RGB565
-    lea        edx, [edx + 16]
     sub        ecx, 8
     jg         convertloop
 
@@ -2001,6 +2059,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     READYUV422
     YUVTORGB(kYuvConstants)
     STOREARGB
+
     sub        ecx, 8
     jg         convertloop
 
@@ -2029,12 +2088,13 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 12 + 16]  // argb
     mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+    pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
 
  convertloop:
     READYUV411  // modifies EBX
     YUVTORGB(kYuvConstants)
     STOREARGB
+
     sub        ecx, 8
     jg         convertloop
 
@@ -2064,6 +2124,7 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
     READNV12
     YUVTORGB(kYuvConstants)
     STOREARGB
+
     sub        ecx, 8
     jg         convertloop
 
@@ -2091,6 +2152,7 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
     READNV12
     YUVTORGB(kYvuConstants)
     STOREARGB
+
     sub        ecx, 8
     jg         convertloop
 
@@ -2118,17 +2180,8 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STOREBGRA
 
-    // Step 3: Weave into BGRA
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    punpcklbw  xmm1, xmm0           // GB
-    punpcklbw  xmm5, xmm2           // AR
-    movdqa     xmm0, xmm5
-    punpcklwd  xmm5, xmm1           // BGRA first 4 pixels
-    punpckhwd  xmm0, xmm1           // BGRA next 4 pixels
-    movdqu     [edx], xmm5
-    movdqu     [edx + 16], xmm0
-    lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
 
@@ -2158,16 +2211,8 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STOREABGR
 
-    // Step 3: Weave into ARGB
-    punpcklbw  xmm2, xmm1           // RG
-    punpcklbw  xmm0, xmm5           // BA
-    movdqa     xmm1, xmm2
-    punpcklwd  xmm2, xmm0           // RGBA first 4 pixels
-    punpckhwd  xmm1, xmm0           // RGBA next 4 pixels
-    movdqu     [edx], xmm2
-    movdqu     [edx + 16], xmm1
-    lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
 
@@ -2196,17 +2241,8 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STORERGBA
 
-    // Step 3: Weave into RGBA
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-    punpcklbw  xmm1, xmm2           // GR
-    punpcklbw  xmm5, xmm0           // AB
-    movdqa     xmm0, xmm5
-    punpcklwd  xmm5, xmm1           // RGBA first 4 pixels
-    punpckhwd  xmm0, xmm1           // RGBA next 4 pixels
-    movdqu     [edx], xmm5
-    movdqu     [edx + 16], xmm0
-    lea        edx,  [edx + 32]
     sub        ecx, 8
     jg         convertloop
 
