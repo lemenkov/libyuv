@@ -1029,6 +1029,30 @@ TEST_F(libyuvTest, ValidateJpeg) {
   free_aligned_buffer_page_end(orig_pixels);
 }
 
+TEST_F(libyuvTest, ValidateJpegLarge) {
+  const int kOff = 10;
+  const int kMinJpeg = 64;
+  const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
+    benchmark_width_ * benchmark_height_ : kMinJpeg;
+  const int kSize = kImageSize + kOff;
+  const int kBufSize = kImageSize * 10 + kOff;
+  align_buffer_64(orig_pixels, kBufSize);
+
+  // No SOI or EOI. Expect fail.
+  memset(orig_pixels, 0, kBufSize);
+  EXPECT_FALSE(ValidateJpeg(orig_pixels, kBufSize));
+
+  // EOI, SOI. Expect pass.
+  orig_pixels[0] = 0xff;
+  orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[kSize - kOff + 0] = 0xff;
+  orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
+  for (int times = 0; times < benchmark_iterations_; ++times) {
+    EXPECT_TRUE(ValidateJpeg(orig_pixels, kBufSize));
+  }
+  free_aligned_buffer_page_end(orig_pixels);
+}
+
 TEST_F(libyuvTest, InvalidateJpeg) {
   const int kOff = 10;
   const int kMinJpeg = 64;
