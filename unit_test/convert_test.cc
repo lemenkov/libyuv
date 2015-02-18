@@ -66,7 +66,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[i * kWidth + j + OFF] = (random() & 0xff);                       \
+      src_y[i * kWidth + j + OFF] = (random() & 0xff);                         \
   for (int i = 0; i < SUBSAMPLE(kHeight, SRC_SUBSAMP_Y); ++i) {                \
     for (int j = 0; j < SUBSAMPLE(kWidth, SRC_SUBSAMP_X); ++j) {               \
       src_u[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
@@ -1035,7 +1035,8 @@ TEST_F(libyuvTest, ValidateJpegLarge) {
   const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
     benchmark_width_ * benchmark_height_ : kMinJpeg;
   const int kSize = kImageSize + kOff;
-  const int kBufSize = kImageSize * 10 + kOff;
+  const int kMultiple = 10;
+  const int kBufSize = kImageSize * kMultiple + kOff;
   align_buffer_64(orig_pixels, kBufSize);
 
   // No SOI or EOI. Expect fail.
