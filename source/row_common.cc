@@ -2131,17 +2131,17 @@ void I422ToUYVYRow_C(const uint8* src_y,
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
-                           uint8* rgb_buf,
+                           uint8* dst_rgb565,
                            int width) {
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToRGB565Row_SSE2(row, rgb_buf, twidth);
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
-    dst_argb += twidth * 2;
+    dst_rgb565 += twidth * 2;
     width -= twidth;
   }
 }
@@ -2151,18 +2151,18 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
-                             uint8* rgb_buf,
+                             uint8* dst_argb1555,
                              int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB1555Row_SSE2(row, rgb_buf, twidth);
+    ARGBToARGB1555Row_SSE2(row, dst_argb1555, twidth);
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
-    rgb_buf += twidth * 2;
+    dst_argb1555 += twidth * 2;
     width -= twidth;
   }
 }
@@ -2170,18 +2170,18 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
 void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
-                             uint8* rgb_buf,
+                             uint8* dst_argb4444,
                              int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB4444Row_SSE2(row, rgb_buf, twidth);
+    ARGBToARGB4444Row_SSE2(row, dst_argb4444, twidth);
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
-    rgb_buf += twidth * 2;
+    dst_argb4444 += twidth * 2;
     width -= twidth;
   }
 }
