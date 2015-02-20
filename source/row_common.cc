@@ -2122,6 +2122,9 @@ void I422ToUYVYRow_C(const uint8* src_y,
   }
 }
 
+// Maximum temporary width for wrappers to process at a time, in pixels.
+#define MAXTWIDTH 4096
+
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
 #if !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
@@ -2130,11 +2133,17 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_v,
                            uint8* rgb_buf,
                            int width) {
-  // Allocate a row of ARGB.
-  align_buffer_64(row, width * 4);
-  I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
-  ARGBToRGB565Row_SSE2(row, rgb_buf, width);
-  free_aligned_buffer_64(row);
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
+    ARGBToRGB565Row_SSE2(row, rgb_buf, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb += twidth * 2;
+    width -= twidth;
+  }
 }
 #endif  // !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
 
@@ -2144,11 +2153,18 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* rgb_buf,
                              int width) {
-  // Allocate a row of ARGB.
-  align_buffer_64(row, width * 4);
-  I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
-  ARGBToARGB1555Row_SSE2(row, rgb_buf, width);
-  free_aligned_buffer_64(row);
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
+    ARGBToARGB1555Row_SSE2(row, rgb_buf, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    rgb_buf += twidth * 2;
+    width -= twidth;
+  }
 }
 
 void I422ToARGB4444Row_SSSE3(const uint8* src_y,
@@ -2156,61 +2172,81 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* rgb_buf,
                              int width) {
-  // Allocate a row of ARGB.
-  align_buffer_64(row, width * 4);
-  I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, width);
-  ARGBToARGB4444Row_SSE2(row, rgb_buf, width);
-  free_aligned_buffer_64(row);
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
+    ARGBToARGB4444Row_SSE2(row, rgb_buf, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    rgb_buf += twidth * 2;
+    width -= twidth;
+  }
 }
 
-void NV12ToRGB565Row_SSSE3(const uint8* src_y,
-                           const uint8* src_uv,
-                           uint8* dst_rgb565,
-                           int width) {
-  // Allocate a row of ARGB.
-  align_buffer_64(row, width * 4);
-  NV12ToARGBRow_SSSE3(src_y, src_uv, row, width);
-  ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
-  free_aligned_buffer_64(row);
+void NV12ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_uv,
+                           uint8* dst_rgb565, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV12ToARGBRow_SSSE3(src_y, src_uv, row, twidth);
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_uv += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
 }
 
-void NV21ToRGB565Row_SSSE3(const uint8* src_y,
-                           const uint8* src_vu,
-                           uint8* dst_rgb565,
-                           int width) {
-  // Allocate a row of ARGB.
-  align_buffer_64(row, width * 4);
-  NV21ToARGBRow_SSSE3(src_y, src_vu, row, width);
-  ARGBToRGB565Row_SSE2(row, dst_rgb565, width);
-  free_aligned_buffer_64(row);
+void NV21ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_vu,
+                           uint8* dst_rgb565, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV21ToARGBRow_SSSE3(src_y, src_vu, row, twidth);
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_vu += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
 }
 
-void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
-                         uint8* dst_argb,
-                         int width) {
-  // Allocate a rows of yuv.
-  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-  uint8* row_u = row_y + ((width + 63) & ~63);
-  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
-  YUY2ToUV422Row_SSE2(src_yuy2, row_u, row_v, width);
-  YUY2ToYRow_SSE2(src_yuy2, row_y, width);
-  I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, width);
-  free_aligned_buffer_64(row_y);
+void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2, uint8* dst_argb, int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    YUY2ToUV422Row_SSE2(src_yuy2, row_u, row_v, twidth);
+    YUY2ToYRow_SSE2(src_yuy2, row_y, twidth);
+    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, twidth);
+    src_yuy2 += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
 }
 
-void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
-                         uint8* dst_argb,
-                         int width) {
-  // Allocate a rows of yuv.
-  align_buffer_64(row_y, ((width + 63) & ~63) * 2);
-  uint8* row_u = row_y + ((width + 63) & ~63);
-  uint8* row_v = row_u + ((width + 63) & ~63) / 2;
-  UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, width);
-  UYVYToYRow_SSE2(src_uyvy, row_y, width);
-  I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, width);
-  free_aligned_buffer_64(row_y);
+void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, twidth);
+    UYVYToYRow_SSE2(src_uyvy, row_y, twidth);
+    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, twidth);
+    src_uyvy += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
 }
-
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
 
