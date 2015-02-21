@@ -206,6 +206,8 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_YUY2TOARGBROW_AVX2
+#define HAS_UYVYTOARGBROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -358,6 +360,7 @@ extern "C" {
 
 #if defined(_MSC_VER) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
+#define SIMD_ALIGNED32(var) __declspec(align(64)) var
 typedef __declspec(align(16)) int16 vec16[8];
 typedef __declspec(align(16)) int32 vec32[4];
 typedef __declspec(align(16)) int8 vec8[16];
@@ -374,6 +377,7 @@ typedef __declspec(align(32)) uint8 ulvec8[32];
 #elif defined(__GNUC__)
 // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#define SIMD_ALIGNED32(var) var __attribute__((aligned(64)))
 typedef int16 __attribute__((vector_size(16))) vec16;
 typedef int32 __attribute__((vector_size(16))) vec32;
 typedef int8 __attribute__((vector_size(16))) vec8;
@@ -388,6 +392,7 @@ typedef uint32 __attribute__((vector_size(32))) ulvec32;
 typedef uint8 __attribute__((vector_size(32))) ulvec8;
 #else
 #define SIMD_ALIGNED(var) var
+#define SIMD_ALIGNED32(var) var
 typedef int16 vec16[8];
 typedef int32 vec32[4];
 typedef int8 vec8[16];
@@ -1043,6 +1048,12 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          uint8* dst_argb,
                          int width);
+void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
+                        uint8* dst_argb,
+                        int width);
+void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
+                        uint8* dst_argb,
+                        int width);
 void J422ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1145,6 +1156,12 @@ void YUY2ToARGBRow_Any_SSSE3(const uint8* src_yuy2,
 void UYVYToARGBRow_Any_SSSE3(const uint8* src_uyvy,
                              uint8* dst_argb,
                              int width);
+void YUY2ToARGBRow_Any_AVX2(const uint8* src_yuy2,
+                            uint8* dst_argb,
+                            int width);
+void UYVYToARGBRow_Any_AVX2(const uint8* src_uyvy,
+                            uint8* dst_argb,
+                            int width);
 void I422ToBGRARow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
