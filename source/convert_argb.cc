@@ -843,18 +843,11 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
     src_stride_yuy2 = dst_stride_argb = 0;
   }
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
+  // Posix is 16, Windows is 8.
   if (TestCpuFlag(kCpuHasSSSE3)) {
     YUY2ToARGBRow = YUY2ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       YUY2ToARGBRow = YUY2ToARGBRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_YUY2TOARGBROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    YUY2ToARGBRow = YUY2ToARGBRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      YUY2ToARGBRow = YUY2ToARGBRow_AVX2;
     }
   }
 #endif
@@ -900,18 +893,11 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
     src_stride_uyvy = dst_stride_argb = 0;
   }
 #if defined(HAS_UYVYTOARGBROW_SSSE3)
+  // Posix is 16, Windows is 8.
   if (TestCpuFlag(kCpuHasSSSE3)) {
     UYVYToARGBRow = UYVYToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
       UYVYToARGBRow = UYVYToARGBRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_UYVYTOARGBROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    UYVYToARGBRow = UYVYToARGBRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      UYVYToARGBRow = UYVYToARGBRow_AVX2;
     }
   }
 #endif

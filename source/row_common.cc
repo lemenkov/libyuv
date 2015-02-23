@@ -2123,7 +2123,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
 }
 
 // Maximum temporary width for wrappers to process at a time, in pixels.
-#define MAXTWIDTH 2048
+#define MAXTWIDTH 4096
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
@@ -2249,40 +2249,6 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
 }
 #endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
-
-#if defined(HAS_YUY2TOARGBROW_AVX2)
-void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV conversion.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
-    YUY2ToYRow_AVX2(src_yuy2, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, twidth);
-    src_yuy2 += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-
-void UYVYToARGBRow_AVX2(const uint8* src_uyvy, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV conversion.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);
-    UYVYToYRow_AVX2(src_uyvy, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, twidth);
-    src_uyvy += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif
 
 void ARGBPolynomialRow_C(const uint8* src_argb,
                          uint8* dst_argb, const float* poly,
