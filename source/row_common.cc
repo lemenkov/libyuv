@@ -2265,7 +2265,7 @@ void I422ToRGB565Row_AVX2(const uint8* src_y,
                           const uint8* src_v,
                           uint8* dst_rgb565,
                           int width) {
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
@@ -2286,7 +2286,7 @@ void I422ToARGB1555Row_AVX2(const uint8* src_y,
                             uint8* dst_argb1555,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
@@ -2307,7 +2307,7 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
                             uint8* dst_argb4444,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
@@ -2325,7 +2325,7 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
 void NV12ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_uv,
                           uint8* dst_rgb565, int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, twidth);
@@ -2342,7 +2342,7 @@ void NV12ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_uv,
 void NV21ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_vu,
                           uint8* dst_rgb565, int width) {
   // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV21ToARGBRow_AVX2(src_y, src_vu, row, twidth);
@@ -2358,9 +2358,9 @@ void NV21ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_vu,
 #if defined(HAS_YUY2TOARGBROW_AVX2)
 void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
   // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
@@ -2376,9 +2376,9 @@ void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
 #if defined(HAS_UYVYTOARGBROW_AVX2)
 void UYVYToARGBRow_AVX2(const uint8* src_uyvy, uint8* dst_argb, int width) {
   // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);

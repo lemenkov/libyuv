@@ -219,6 +219,7 @@ extern "C" {
 #if defined(HAS_I422TOARGBROW_AVX2)
 #define HAS_YUY2TOARGBROW_AVX2
 #define HAS_UYVYTOARGBROW_AVX2
+// TODO(fbarchard): Enable once low levels are ported to AVX2
 #define HAS_NV12TORGB565ROW_AVX2
 #define HAS_NV21TORGB565ROW_AVX2
 #define HAS_I422TORGB565ROW_AVX2
