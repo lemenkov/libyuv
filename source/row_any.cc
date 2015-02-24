@@ -19,11 +19,8 @@ extern "C" {
 
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
-    void NAMEANY(const uint8* y_buf,                                           \
-                 const uint8* u_buf,                                           \
-                 const uint8* v_buf,                                           \
-                 uint8* rgb_buf,                                               \
-                 int width) {                                                  \
+    void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
+                 uint8* rgb_buf, int width) {                                  \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
@@ -49,14 +46,12 @@ YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_SSSE3, I422ToABGRRow_C,
      1, 4, 7)
 YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_SSSE3, I422ToRGBARow_C,
      1, 4, 7)
-// I422ToRGB565Row_SSSE3 is unaligned.
 YANY(I422ToARGB4444Row_Any_SSSE3, I422ToARGB4444Row_SSSE3, I422ToARGB4444Row_C,
      1, 2, 7)
 YANY(I422ToARGB1555Row_Any_SSSE3, I422ToARGB1555Row_SSSE3, I422ToARGB1555Row_C,
      1, 2, 7)
 YANY(I422ToRGB565Row_Any_SSSE3, I422ToRGB565Row_SSSE3, I422ToRGB565Row_C,
      1, 2, 7)
-// I422ToRGB24Row_SSSE3 is unaligned.
 YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, I422ToRGB24Row_C, 1, 3, 7)
 YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, I422ToRAWRow_C, 1, 3, 7)
 YANY(I422ToYUY2Row_Any_SSE2, I422ToYUY2Row_SSE2, I422ToYUY2Row_C, 1, 2, 15)
@@ -102,46 +97,42 @@ YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, I422ToUYVYRow_C, 1, 2, 15)
 #undef YANY
 
 // Wrappers to handle odd width
-#define NV2NY(NAMEANY, NV12TORGB_SIMD, NV12TORGB_C, UV_SHIFT, BPP)             \
-    void NAMEANY(const uint8* y_buf,                                           \
-                 const uint8* uv_buf,                                          \
-                 uint8* rgb_buf,                                               \
-                 int width) {                                                  \
-      int n = width & ~7;                                                      \
+#define NV2NY(NAMEANY, NV12TORGB_SIMD, NV12TORGB_C, UV_SHIFT, BPP, MASK)       \
+    void NAMEANY(const uint8* y_buf, const uint8* uv_buf,                      \
+                 uint8* rgb_buf, int width) {                                  \
+      int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         NV12TORGB_SIMD(y_buf, uv_buf, rgb_buf, n);                             \
       }                                                                        \
       NV12TORGB_C(y_buf + n,                                                   \
                   uv_buf + (n >> UV_SHIFT),                                    \
-                  rgb_buf + n * BPP, width & 7);                               \
+                  rgb_buf + n * BPP, width & MASK);                            \
     }
 
 #ifdef HAS_NV12TOARGBROW_SSSE3
-NV2NY(NV12ToARGBRow_Any_SSSE3, NV12ToARGBRow_SSSE3, NV12ToARGBRow_C,
-      0, 4)
-NV2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_SSSE3, NV21ToARGBRow_C,
-      0, 4)
+NV2NY(NV12ToARGBRow_Any_SSSE3, NV12ToARGBRow_SSSE3, NV12ToARGBRow_C, 0, 4, 7)
+NV2NY(NV21ToARGBRow_Any_SSSE3, NV21ToARGBRow_SSSE3, NV21ToARGBRow_C, 0, 4, 7)
 #endif  // HAS_NV12TOARGBROW_SSSE3
 #ifdef HAS_NV12TOARGBROW_NEON
-NV2NY(NV12ToARGBRow_Any_NEON, NV12ToARGBRow_NEON, NV12ToARGBRow_C, 0, 4)
-NV2NY(NV21ToARGBRow_Any_NEON, NV21ToARGBRow_NEON, NV21ToARGBRow_C, 0, 4)
+NV2NY(NV12ToARGBRow_Any_NEON, NV12ToARGBRow_NEON, NV12ToARGBRow_C, 0, 4, 7)
+NV2NY(NV21ToARGBRow_Any_NEON, NV21ToARGBRow_NEON, NV21ToARGBRow_C, 0, 4, 7)
 #endif  // HAS_NV12TOARGBROW_NEON
 #ifdef HAS_NV12TORGB565ROW_SSSE3
 NV2NY(NV12ToRGB565Row_Any_SSSE3, NV12ToRGB565Row_SSSE3, NV12ToRGB565Row_C,
-      0, 2)
+      0, 2, 7)
 NV2NY(NV21ToRGB565Row_Any_SSSE3, NV21ToRGB565Row_SSSE3, NV21ToRGB565Row_C,
-      0, 2)
+      0, 2, 7)
 #endif  // HAS_NV12TORGB565ROW_SSSE3
 #ifdef HAS_NV12TORGB565ROW_NEON
-NV2NY(NV12ToRGB565Row_Any_NEON, NV12ToRGB565Row_NEON, NV12ToRGB565Row_C, 0, 2)
-NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
+NV2NY(NV12ToRGB565Row_Any_NEON, NV12ToRGB565Row_NEON, NV12ToRGB565Row_C,
+      0, 2, 7)
+NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C,
+      0, 2, 7)
 #endif  // HAS_NV12TORGB565ROW_NEON
 #undef NVANY
 
-#define RGBANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, MASK, SBPP, BPP)          \
-    void NAMEANY(const uint8* src,                                             \
-                 uint8* dst,                                                   \
-                 int width) {                                                  \
+#define RGBANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)          \
+    void NAMEANY(const uint8* src, uint8* dst, int width) {                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTORGB_SIMD(src, dst, n);                                           \
@@ -151,63 +142,61 @@ NV2NY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, NV21ToRGB565Row_C, 0, 2)
 
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
 RGBANY(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, ARGBToRGB24Row_C,
-       15, 4, 3)
+       4, 3, 15)
 RGBANY(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, ARGBToRAWRow_C,
-       15, 4, 3)
+       4, 3, 15)
 RGBANY(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, ARGBToRGB565Row_C,
-       3, 4, 2)
+       4, 2, 3)
 RGBANY(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, ARGBToARGB1555Row_C,
-       3, 4, 2)
+       4, 2, 3)
 RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
-       3, 4, 2)
+       4, 2, 3)
 #endif
 #if defined(HAS_I400TOARGBROW_SSE2)
-RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_SSE2, I400ToARGBRow_C, 7, 1, 4)
+RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_SSE2, I400ToARGBRow_C, 1, 4, 7)
 #endif
 #if defined(HAS_YTOARGBROW_SSE2)
-RGBANY(YToARGBRow_Any_SSE2, YToARGBRow_SSE2, YToARGBRow_C, 7, 1, 4)
+RGBANY(YToARGBRow_Any_SSE2, YToARGBRow_SSE2, YToARGBRow_C, 1, 4, 7)
 #endif
 #if defined(HAS_YTOARGBROW_AVX2)
-RGBANY(YToARGBRow_Any_AVX2, YToARGBRow_AVX2, YToARGBRow_C, 15, 1, 4)
+RGBANY(YToARGBRow_Any_AVX2, YToARGBRow_AVX2, YToARGBRow_C, 1, 4, 15)
 #endif
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
-RGBANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_SSSE3, YUY2ToARGBRow_C, 15, 2, 4)
-RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_SSSE3, UYVYToARGBRow_C, 15, 2, 4)
+RGBANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_SSSE3, YUY2ToARGBRow_C, 2, 4, 15)
+RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_SSSE3, UYVYToARGBRow_C, 2, 4, 15)
 RGBANY(RGB24ToARGBRow_Any_SSSE3, RGB24ToARGBRow_SSSE3, RGB24ToARGBRow_C,
-       15, 3, 4)
-RGBANY(RAWToARGBRow_Any_SSSE3, RAWToARGBRow_SSSE3, RAWToARGBRow_C, 15, 3, 4)
+       3, 4, 15)
+RGBANY(RAWToARGBRow_Any_SSSE3, RAWToARGBRow_SSSE3, RAWToARGBRow_C, 3, 4, 15)
 RGBANY(RGB565ToARGBRow_Any_SSE2, RGB565ToARGBRow_SSE2, RGB565ToARGBRow_C,
-       7, 2, 4)
+       2, 4, 7)
 RGBANY(ARGB1555ToARGBRow_Any_SSE2, ARGB1555ToARGBRow_SSE2, ARGB1555ToARGBRow_C,
-       7, 2, 4)
+       2, 4, 7)
 RGBANY(ARGB4444ToARGBRow_Any_SSE2, ARGB4444ToARGBRow_SSE2, ARGB4444ToARGBRow_C,
-       7, 2, 4)
+       2, 4, 7)
 #endif
 #if defined(HAS_YUY2TOARGBROW_AVX2)
-RGBANY(YUY2ToARGBRow_Any_AVX2, YUY2ToARGBRow_AVX2, YUY2ToARGBRow_C, 31, 2, 4)
-RGBANY(UYVYToARGBRow_Any_AVX2, UYVYToARGBRow_AVX2, UYVYToARGBRow_C, 31, 2, 4)
+RGBANY(YUY2ToARGBRow_Any_AVX2, YUY2ToARGBRow_AVX2, YUY2ToARGBRow_C, 2, 4, 31)
+RGBANY(UYVYToARGBRow_Any_AVX2, UYVYToARGBRow_AVX2, UYVYToARGBRow_C, 2, 4, 31)
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
-RGBANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 7, 4, 3)
-RGBANY(ARGBToRAWRow_Any_NEON, ARGBToRAWRow_NEON, ARGBToRAWRow_C, 7, 4, 3)
+RGBANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 4, 3, 7)
+RGBANY(ARGBToRAWRow_Any_NEON, ARGBToRAWRow_NEON, ARGBToRAWRow_C, 4, 3, 7)
 RGBANY(ARGBToRGB565Row_Any_NEON, ARGBToRGB565Row_NEON, ARGBToRGB565Row_C,
-       7, 4, 2)
+       4, 2, 7)
 RGBANY(ARGBToARGB1555Row_Any_NEON, ARGBToARGB1555Row_NEON, ARGBToARGB1555Row_C,
-       7, 4, 2)
+       4, 2, 7)
 RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
-       7, 4, 2)
-RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C, 7, 1, 4)
-RGBANY(YToARGBRow_Any_NEON, YToARGBRow_NEON, YToARGBRow_C, 7, 1, 4)
-RGBANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C, 7, 2, 4)
-RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 7, 2, 4)
+       4, 2, 7)
+RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C, 1, 4, 7)
+RGBANY(YToARGBRow_Any_NEON, YToARGBRow_NEON, YToARGBRow_C, 1, 4, 7)
+RGBANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C, 2, 4, 7)
+RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 2, 4, 7)
 #endif
 #undef RGBANY
 
 // ARGB to Bayer does multiple of 4 pixels, SSSE3 aligned src, unaligned dst.
-#define BAYERANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, MASK, SBPP, BPP)        \
-    void NAMEANY(const uint8* src,                                             \
-                 uint8* dst, uint32 selector,                                  \
-                 int width) {                                                  \
+#define BAYERANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)        \
+    void NAMEANY(const uint8* src, uint8* dst, uint32 selector, int width) {   \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTORGB_SIMD(src, dst, selector, n);                                 \
@@ -217,11 +206,11 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 7, 2, 4)
 
 #if defined(HAS_ARGBTOBAYERGGROW_SSE2)
 BAYERANY(ARGBToBayerGGRow_Any_SSE2, ARGBToBayerGGRow_SSE2, ARGBToBayerGGRow_C,
-         7, 4, 1)
+         4, 1, 7)
 #endif
 #if defined(HAS_ARGBTOBAYERGGROW_NEON)
 BAYERANY(ARGBToBayerGGRow_Any_NEON, ARGBToBayerGGRow_NEON, ARGBToBayerGGRow_C,
-         7, 4, 1)
+         4, 1, 7)
 #endif
 
 #undef BAYERANY
@@ -409,9 +398,8 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
 #endif
 #undef UVANY
 
-#define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK, SHIFT)           \
-    void NAMEANY(const uint8* src_uv,                                          \
-                 uint8* dst_u, uint8* dst_v, int width) {                      \
+#define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, SHIFT, MASK)           \
+    void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
@@ -424,41 +412,40 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
 
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
 UV422ANY(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3,
-         ARGBToUV444Row_C, 4, 15, 0)
+         ARGBToUV444Row_C, 4, 0, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_AVX2
 UV422ANY(YUY2ToUV422Row_Any_AVX2, YUY2ToUV422Row_AVX2,
-         YUY2ToUV422Row_C, 2, 31, 1)
+         YUY2ToUV422Row_C, 2, 1, 31)
 UV422ANY(UYVYToUV422Row_Any_AVX2, UYVYToUV422Row_AVX2,
-         UYVYToUV422Row_C, 2, 31, 1)
+         UYVYToUV422Row_C, 2, 1, 31)
 #endif
 #ifdef HAS_ARGBTOUV422ROW_SSSE3
 UV422ANY(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_SSSE3,
-         ARGBToUV422Row_C, 4, 15, 1)
+         ARGBToUV422Row_C, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_SSE2
 UV422ANY(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_SSE2,
-         YUY2ToUV422Row_C, 2, 15, 1)
+         YUY2ToUV422Row_C, 2, 1, 15)
 UV422ANY(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2,
-         UYVYToUV422Row_C, 2, 15, 1)
+         UYVYToUV422Row_C, 2, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
 UV422ANY(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON,
-         ARGBToUV444Row_C, 4, 7, 0)
+         ARGBToUV444Row_C, 4, 0, 7)
 UV422ANY(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON,
-         ARGBToUV422Row_C, 4, 15, 1)
+         ARGBToUV422Row_C, 4, 1, 15)
 UV422ANY(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON,
-         ARGBToUV411Row_C, 4, 31, 2)
+         ARGBToUV411Row_C, 4, 2, 31)
 UV422ANY(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON,
-         YUY2ToUV422Row_C, 2, 15, 1)
+         YUY2ToUV422Row_C, 2, 1, 15)
 UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
-         UYVYToUV422Row_C, 2, 15, 1)
+         UYVYToUV422Row_C, 2, 1, 15)
 #endif
 #undef UV422ANY
 
 #define SPLITUVROWANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
-    void NAMEANY(const uint8* src_uv,                                          \
-                 uint8* dst_u, uint8* dst_v, int width) {                      \
+    void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
