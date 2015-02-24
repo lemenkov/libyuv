@@ -187,6 +187,8 @@ extern "C" {
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORGBAROW_AVX2
+#define HAS_NV12TOARGBROW_AVX2
+#define HAS_NV21TOARGBROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -1044,6 +1046,14 @@ void NV21ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_vu,
                          uint8* dst_argb,
                          int width);
+void NV12ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_uv,
+                        uint8* dst_argb,
+                        int width);
+void NV21ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_vu,
+                        uint8* dst_argb,
+                        int width);
 void NV12ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_uv,
                            uint8* dst_argb,
@@ -1175,6 +1185,14 @@ void NV21ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_vu,
                              uint8* dst_argb,
                              int width);
+void NV12ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_uv,
+                            uint8* dst_argb,
+                            int width);
+void NV21ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_vu,
+                            uint8* dst_argb,
+                            int width);
 void NV12ToRGB565Row_Any_SSSE3(const uint8* src_y,
                                const uint8* src_uv,
                                uint8* dst_argb,

@@ -1490,6 +1490,14 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
   }
 
+// Read 8 UV from NV12, upsample to 16 UV.
+#define READNV12_AVX2 __asm {                                                  \
+    __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
+    __asm lea        esi,  [esi + 16]                                          \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
+  }
+
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
     /* Step 1: Find 8 UV contributions to 16 R,G,B values */                   \
@@ -1519,6 +1527,20 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpackuswb  ymm2, ymm2, ymm2           /* R */                        \
   }
 
+// Store 16 ARGB values.
+#define STOREARGB_AVX2 __asm {                                                 \
+    /* Step 3: Weave into ARGB */                                              \
+    __asm vpunpcklbw ymm0, ymm0, ymm1           /* BG */                       \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpunpcklbw ymm2, ymm2, ymm5           /* RA */                       \
+    __asm vpermq     ymm2, ymm2, 0xd8                                          \
+    __asm vpunpcklwd ymm1, ymm0, ymm2           /* BGRA first 8 pixels */      \
+    __asm vpunpckhwd ymm0, ymm0, ymm2           /* BGRA next 8 pixels */       \
+    __asm vmovdqu    [edx], ymm1                                               \
+    __asm vmovdqu    [edx + 32], ymm0                                          \
+    __asm lea        edx,  [edx + 64]                                          \
+  }
+
 #ifdef HAS_I422TOARGBROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
@@ -1542,17 +1564,8 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
  convertloop:
     READYUV422_AVX2
     YUVTORGB_AVX2(kYuvConstants)
+    STOREARGB_AVX2
 
-    // Step 3: Weave into ARGB
-    vpunpcklbw ymm0, ymm0, ymm1           // BG
-    vpermq     ymm0, ymm0, 0xd8
-    vpunpcklbw ymm2, ymm2, ymm5           // RA
-    vpermq     ymm2, ymm2, 0xd8
-    vpunpcklwd ymm1, ymm0, ymm2           // BGRA first 8 pixels
-    vpunpckhwd ymm0, ymm0, ymm2           // BGRA next 8 pixels
-    vmovdqu    [edx], ymm1
-    vmovdqu    [edx + 32], ymm0
-    lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
 
@@ -1563,6 +1576,62 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
   }
 }
 #endif  // HAS_I422TOARGBROW_AVX2
+
+// 16 pixels.
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void NV12ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* uv_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // UV
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READNV12_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
+
+// 16 pixels.
+// 8 VU values upsampled to 16 VU, mixed with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void NV21ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* uv_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    mov        eax, [esp + 4 + 4]   // Y
+    mov        esi, [esp + 4 + 8]   // UV
+    mov        edx, [esp + 4 + 12]  // argb
+    mov        ecx, [esp + 4 + 16]  // width
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READNV12_AVX2
+    YUVTORGB_AVX2(kYvuConstants)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        esi
+    ret
+  }
+}
 
 #ifdef HAS_I422TOBGRAROW_AVX2
 // 16 pixels
