@@ -2125,9 +2125,8 @@ void I422ToUYVYRow_C(const uint8* src_y,
 // Maximum temporary width for wrappers to process at a time, in pixels.
 #define MAXTWIDTH 2048
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(HAS_I422TOARGBROW_SSSE3)
+#if !defined(_MSC_VER) && defined(HAS_I422TORGB565ROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
-#if !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
@@ -2145,9 +2144,9 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
     width -= twidth;
   }
 }
-#endif  // !defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
+#endif
 
-#if defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
+#if defined(HAS_I422TOARGB1555ROW_SSSE3)
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
@@ -2166,7 +2165,9 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_I422TOARGB4444ROW_SSSE3)
 void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
@@ -2185,7 +2186,9 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_NV12TORGB565ROW_SSSE3)
 void NV12ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_uv,
                            uint8* dst_rgb565, int width) {
   // Row buffer for intermediate ARGB pixels.
@@ -2200,7 +2203,9 @@ void NV12ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_uv,
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_NV21TORGB565ROW_SSSE3)
 void NV21ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_vu,
                            uint8* dst_rgb565, int width) {
   // Row buffer for intermediate ARGB pixels.
@@ -2215,7 +2220,9 @@ void NV21ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_vu,
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_YUY2TOARGBROW_SSSE3)
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2, uint8* dst_argb, int width) {
   // Row buffers for intermediate YUV pixels.
   SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
@@ -2231,7 +2238,9 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2, uint8* dst_argb, int width) {
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_UYVYTOARGBROW_SSSE3)
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
   // Row buffers for intermediate YUV pixels.
   SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
@@ -2247,15 +2256,111 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
     width -= twidth;
   }
 }
-#endif  // defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)
 #endif  // !defined(LIBYUV_DISABLE_X86)
+
+#if defined(HAS_I422TORGB565ROW_AVX2) && !defined(_MSC_VER)
+// row_win.cc has asm version, but GCC uses 2 step wrapper.
+void I422ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          uint8* dst_rgb565,
+                          int width) {
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
+    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB1555ROW_AVX2)
+void I422ToARGB1555Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb1555,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
+    ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb1555 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB4444ROW_AVX2)
+void I422ToARGB4444Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb4444,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
+    ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb4444 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_NV12TORGB565ROW_AVX2)
+void NV12ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_uv,
+                          uint8* dst_rgb565, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV12ToARGBRow_AVX2(src_y, src_uv, row, twidth);
+    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_uv += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_NV21TORGB565ROW_AVX2)
+void NV21ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_vu,
+                          uint8* dst_rgb565, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV21ToARGBRow_AVX2(src_y, src_vu, row, twidth);
+    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_vu += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
 
 #if defined(HAS_YUY2TOARGBROW_AVX2)
 void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV conversion.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
@@ -2266,12 +2371,14 @@ void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
     width -= twidth;
   }
 }
+#endif
 
+#if defined(HAS_UYVYTOARGBROW_AVX2)
 void UYVYToARGBRow_AVX2(const uint8* src_uyvy, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV conversion.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);
@@ -2282,7 +2389,7 @@ void UYVYToARGBRow_AVX2(const uint8* src_uyvy, uint8* dst_argb, int width) {
     width -= twidth;
   }
 }
-#endif
+#endif  // !defined(LIBYUV_DISABLE_X86)
 
 void ARGBPolynomialRow_C(const uint8* src_argb,
                          uint8* dst_argb, const float* poly,

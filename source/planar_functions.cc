@@ -1020,6 +1020,14 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_NV12TORGB565ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    NV12ToRGB565Row = NV12ToRGB565Row_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      NV12ToRGB565Row = NV12ToRGB565Row_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_NV12TORGB565ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     NV12ToRGB565Row = NV12ToRGB565Row_Any_NEON;
@@ -1066,6 +1074,14 @@ int NV21ToRGB565(const uint8* src_y, int src_stride_y,
     NV21ToRGB565Row = NV21ToRGB565Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       NV21ToRGB565Row = NV21ToRGB565Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_NV21TORGB565ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    NV21ToRGB565Row = NV21ToRGB565Row_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      NV21ToRGB565Row = NV21ToRGB565Row_AVX2;
     }
   }
 #endif

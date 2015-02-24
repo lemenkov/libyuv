@@ -84,7 +84,6 @@ extern "C" {
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
-#define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
@@ -220,6 +219,11 @@ extern "C" {
 #if defined(HAS_I422TOARGBROW_AVX2)
 #define HAS_YUY2TOARGBROW_AVX2
 #define HAS_UYVYTOARGBROW_AVX2
+#define HAS_NV12TORGB565ROW_AVX2
+#define HAS_NV21TORGB565ROW_AVX2
+#define HAS_I422TORGB565ROW_AVX2
+#define HAS_I422TOARGB1555ROW_AVX2
+#define HAS_I422TOARGB4444ROW_AVX2
 #endif
 
 // Effects:
@@ -1047,6 +1051,14 @@ void NV21ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_vu,
                            uint8* dst_argb,
                            int width);
+void NV12ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_uv,
+                          uint8* dst_argb,
+                          int width);
+void NV21ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_vu,
+                          uint8* dst_argb,
+                          int width);
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
                          int width);
@@ -1084,16 +1096,31 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* dst_argb,
                              int width);
+void I422ToARGB4444Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
                              uint8* dst_argb,
                              int width);
+void I422ToARGB1555Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
                            uint8* dst_argb,
                            int width);
+void I422ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          uint8* dst_argb,
+                          int width);
 void I422ToRGB24Row_SSSE3(const uint8* src_y,
                           const uint8* src_u,
                           const uint8* src_v,
@@ -1155,6 +1182,14 @@ void NV21ToRGB565Row_Any_SSSE3(const uint8* src_y,
                                const uint8* src_vu,
                                uint8* dst_argb,
                                int width);
+void NV12ToRGB565Row_Any_AVX2(const uint8* src_y,
+                              const uint8* src_uv,
+                              uint8* dst_argb,
+                              int width);
+void NV21ToRGB565Row_Any_AVX2(const uint8* src_y,
+                              const uint8* src_vu,
+                              uint8* dst_argb,
+                              int width);
 void YUY2ToARGBRow_Any_SSSE3(const uint8* src_yuy2,
                              uint8* dst_argb,
                              int width);
@@ -1187,16 +1222,31 @@ void I422ToARGB4444Row_Any_SSSE3(const uint8* src_y,
                                  const uint8* src_v,
                                  uint8* dst_rgba,
                                  int width);
+void I422ToARGB4444Row_Any_AVX2(const uint8* src_y,
+                                const uint8* src_u,
+                                const uint8* src_v,
+                                uint8* dst_rgba,
+                                int width);
 void I422ToARGB1555Row_Any_SSSE3(const uint8* src_y,
                                  const uint8* src_u,
                                  const uint8* src_v,
                                  uint8* dst_rgba,
                                  int width);
+void I422ToARGB1555Row_Any_AVX2(const uint8* src_y,
+                                const uint8* src_u,
+                                const uint8* src_v,
+                                uint8* dst_rgba,
+                                int width);
 void I422ToRGB565Row_Any_SSSE3(const uint8* src_y,
                                const uint8* src_u,
                                const uint8* src_v,
                                uint8* dst_rgba,
                                int width);
+void I422ToRGB565Row_Any_AVX2(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_rgba,
+                              int width);
 void I422ToRGB24Row_Any_SSSE3(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
