@@ -1,6 +1,4 @@
 vars = {
-  "libyuv_trunk" : "https://libyuv.googlecode.com/svn/trunk",
-
   # Override root_dir in your .gclient's custom_vars to specify a custom root
   # folder name.
   "root_dir": "trunk",
