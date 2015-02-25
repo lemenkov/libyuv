@@ -39,6 +39,7 @@ extern "C" {
 
 #if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR) || \
+    (defined(__i386__) && !defined(__SSE2__)) || \
     (defined(_MSC_VER) && defined(__clang__))
 #define LIBYUV_DISABLE_X86
 #endif
@@ -189,6 +190,7 @@ extern "C" {
 #define HAS_I422TORGBAROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV21TOARGBROW_AVX2
+#define HAS_ARGBTOARGB4444ROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -216,7 +218,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
-#define HAS_ARGBTOARGB4444ROW_AVX2
 
 // The following require HAS_I422TOARGBROW_AVX2
 #if defined(HAS_I422TOARGBROW_AVX2)
