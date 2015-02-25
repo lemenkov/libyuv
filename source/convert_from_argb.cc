@@ -931,6 +931,14 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOARGB4444ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToARGB4444Row = ARGBToARGB4444Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToARGB4444Row = ARGBToARGB4444Row_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOARGB4444ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBToARGB4444Row = ARGBToARGB4444Row_Any_NEON;

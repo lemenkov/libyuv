@@ -216,16 +216,17 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_ARGBTOARGB4444ROW_AVX2
 
 // The following require HAS_I422TOARGBROW_AVX2
 #if defined(HAS_I422TOARGBROW_AVX2)
 #define HAS_YUY2TOARGBROW_AVX2
 #define HAS_UYVYTOARGBROW_AVX2
 // TODO(fbarchard): Enable once low levels are ported to AVX2
-#define HAS_NV12TORGB565ROW_AVX2
-#define HAS_NV21TORGB565ROW_AVX2
-#define HAS_I422TORGB565ROW_AVX2
-#define HAS_I422TOARGB1555ROW_AVX2
+// #define HAS_NV12TORGB565ROW_AVX2
+// #define HAS_NV21TORGB565ROW_AVX2
+// #define HAS_I422TORGB565ROW_AVX2
+// #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
 #endif
 
@@ -902,6 +903,8 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
+void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
 void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -1364,6 +1367,8 @@ void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
+void ARGBToARGB4444Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB24Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRAWRow_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int pix);

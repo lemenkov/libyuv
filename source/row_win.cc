@@ -680,8 +680,8 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
     movdqa    xmm1, xmm0
     pand      xmm0, xmm3    // low nibble
     pand      xmm1, xmm4    // high nibble
-    psrl      xmm0, 4
-    psrl      xmm1, 8
+    psrld     xmm0, 4
+    psrld     xmm1, 8
     por       xmm0, xmm1
     packuswb  xmm0, xmm0
     lea       eax, [eax + 16]
@@ -692,6 +692,37 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
     ret
   }
 }
+
+#ifdef HAS_ARGBTOARGB4444ROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_rgb
+    mov        ecx, [esp + 12]  // pix
+    vpcmpeqb   ymm4, ymm4, ymm4       // generate mask 0xf000f000
+    vpsllw     ymm4, ymm4, 12
+    vpsrlw     ymm3, ymm4, 8          // generate mask 0x00f000f0
+
+ convertloop:
+    vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
+    vpand      ymm1, ymm0, ymm4    // high nibble
+    vpand      ymm0, ymm0, ymm3    // low nibble
+    vpsrld     ymm1, ymm1, 8
+    vpsrld     ymm0, ymm0, 4
+    vpor       ymm0, ymm0, ymm1
+    vpackuswb  ymm0, ymm0, ymm0
+    vpermq     ymm0, ymm0, 0xd8
+    lea        eax, [eax + 32]
+    vmovdqu    [edx], xmm0         // store 8 pixels of ARGB4444
+    lea        edx, [edx + 16]
+    sub        ecx, 8
+    jg         convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBTOARGB4444ROW_AVX2
 
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 __declspec(naked) __declspec(align(16))
