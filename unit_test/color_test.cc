@@ -24,11 +24,11 @@ namespace libyuv {
 // TODO(fbarchard): Port high accuracy YUV to RGB to Neon.
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
-#define MAX_CDIFF 2
-#define ERROR_R 3
-#define ERROR_G 3
-#define ERROR_B 5
-#define ERROR_FULL 7
+#define MAX_CDIFF 0
+#define ERROR_R 1
+#define ERROR_G 1
+#define ERROR_B 3
+#define ERROR_FULL 6
 #else
 #define MAX_CDIFF 0
 #define ERROR_R 1
