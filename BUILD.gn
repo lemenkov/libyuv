@@ -6,6 +6,8 @@
 # in the file PATENTS. All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import("//build/config/arm.gni")
+
 config("libyuv_config") {
   include_dirs = [
     ".",
@@ -88,5 +90,25 @@ source_set("libyuv") {
     "//third_party:jpeg",
   ]
 
-  # TODO(GYP) Neon build.
+  if (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)) {
+    deps += [ ":libyuv_neon" ]
+  }
+}
+
+static_library("libyuv_neon") {
+  sources = [
+    "source/compare_neon.cc",
+    "source/compare_neon64.cc",
+    "source/rotate_neon.cc",
+    "source/rotate_neon64.cc",
+    "source/row_neon.cc",
+    "source/row_neon64.cc",
+    "source/scale_neon.cc",
+    "source/scale_neon64.cc",
+  ]
+
+  public_configs = [ ":libyuv_config" ]
+
+  configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+  cflags = [ "-mfpu=neon" ]
 }
