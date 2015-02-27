@@ -1,7 +1,8 @@
 .gn
 build
 buildtools
-chromium/.gclient_entries
+chromium/.gclient.tmp
+chromium/.gclient.tmp_entries
 chromium/.last_sync_chromium
 chromium/src/
 google_apis

@@ -41,8 +41,6 @@ DIRECTORIES = [
   'third_party/android_testrunner',
   'third_party/android_tools',
   'third_party/binutils',
-  'third_party/libc++',
-  'third_party/libc++abi',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
   'third_party/llvm-build',

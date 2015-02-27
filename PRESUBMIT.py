@@ -34,14 +34,6 @@ def GetPreferredTryMasters(project, change):
     'ios_arm64',
     'ios_arm64_rel',
     'mac_asan',
-    'mac_xcode61',
-    'mac_rel_xcode61',
-    'mac_x64_rel_xcode61',
-    'ios_xcode61',
-    'ios_rel_xcode61',
-    'ios_arm64_xcode61',
-    'ios_arm64_rel_xcode61',
-    'mac_asan_xcode61',
     'linux',
     'linux_rel',
     'linux_memcheck',
@@ -49,6 +41,8 @@ def GetPreferredTryMasters(project, change):
     'linux_asan',
     'android',
     'android_rel',
+    'android_clang',
+    'android_arm64',
   ]
   if not files or all(re.search(r'[\\/]OWNERS$', f) for f in files):
     return {}
