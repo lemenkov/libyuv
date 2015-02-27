@@ -804,6 +804,46 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
+static const uint8 kDither8x8[64] = {
+  0, 128, 32, 160,  8, 136, 40, 168,
+  192, 64, 224, 96, 200, 72, 232, 104,
+  48, 176, 16, 144, 56, 184, 24, 152,
+  240, 112, 208, 80, 248, 120, 216, 88,
+  12, 140, 44, 172,  4, 132, 36, 164,
+  204, 76, 236, 108, 196, 68, 228, 100,
+  60, 188, 28, 156, 52, 180, 20, 148,
+  252, 124, 220, 92, 244, 116, 212, 84,
+};
+
+// Convert ARGB To RGB565 with 8x8 dither matrix (64 bytes).
+LIBYUV_API
+int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_rgb565, int dst_stride_rgb565,
+                       const uint8* dither8x8, int width, int height) {
+  int y;
+  void (*ARGBToRGB565DitherRow)(const uint8* src_argb, uint8* dst_rgb,
+      const uint8* dither8x8, int pix) = ARGBToRGB565DitherRow_C;
+  if (!src_argb || !dst_rgb565 || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  if (!dither8x8) {
+    dither8x8 = kDither8x8;
+
+  }
+  for (y = 0; y < height; ++y) {
+    ARGBToRGB565DitherRow(src_argb, dst_rgb565,
+                          dither8x8 + ((y & 7) << 3), width);
+    src_argb += src_stride_argb;
+    dst_rgb565 += dst_stride_rgb565;
+  }
+  return 0;
+}
+
 // Convert ARGB To RGB565.
 LIBYUV_API
 int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
@@ -832,6 +872,14 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
     ARGBToRGB565Row = ARGBToRGB565Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToRGB565Row = ARGBToRGB565Row_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB565ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToRGB565Row = ARGBToRGB565Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565Row = ARGBToRGB565Row_AVX2;
     }
   }
 #endif
@@ -880,6 +928,14 @@ int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
     ARGBToARGB1555Row = ARGBToARGB1555Row_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {
       ARGBToARGB1555Row = ARGBToARGB1555Row_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOARGB1555ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToARGB1555Row = ARGBToARGB1555Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToARGB1555Row = ARGBToARGB1555Row_AVX2;
     }
   }
 #endif

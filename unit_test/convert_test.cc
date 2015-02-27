@@ -934,6 +934,112 @@ TESTATOB(I400, 1, 1, 1, I400Mirror, 1, 1, 1, 0)
 TESTATOB(Y, 1, 1, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGBMirror, 4, 4, 1, 0)
 
+#define TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                           \
+                   FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                           \
+                   W1280, DIFF, N, NEG, OFF)                                   \
+TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither##N) {                              \
+  const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
+  const int kHeight = benchmark_height_;                                       \
+  const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;         \
+  const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;         \
+  const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;  \
+  const int kStrideB = (kWidth * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;  \
+  align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
+  align_buffer_64(dst_argb_c, kStrideB * kHeightB);                            \
+  align_buffer_64(dst_argb_opt, kStrideB * kHeightB);                          \
+  srandom(time(NULL));                                                         \
+  for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
+    src_argb[i + OFF] = (random() & 0xff);                                     \
+  }                                                                            \
+  memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
+  memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
+  MaskCpuFlags(0);                                                             \
+  FMT_A##To##FMT_B##Dither(src_argb + OFF, kStrideA,                           \
+                           dst_argb_c, kStrideB,                               \
+                           NULL, kWidth, NEG kHeight);                         \
+  MaskCpuFlags(-1);                                                            \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
+    FMT_A##To##FMT_B##Dither(src_argb + OFF, kStrideA,                         \
+                             dst_argb_opt, kStrideB,                           \
+                             NULL, kWidth, NEG kHeight);                       \
+  }                                                                            \
+  int max_diff = 0;                                                            \
+  for (int i = 0; i < kStrideB * kHeightB; ++i) {                              \
+    int abs_diff =                                                             \
+        abs(static_cast<int>(dst_argb_c[i]) -                                  \
+            static_cast<int>(dst_argb_opt[i]));                                \
+    if (abs_diff > max_diff) {                                                 \
+      max_diff = abs_diff;                                                     \
+    }                                                                          \
+  }                                                                            \
+  EXPECT_LE(max_diff, DIFF);                                                   \
+  free_aligned_buffer_64(src_argb);                                            \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
+}
+
+#define TESTATOBDRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                      \
+                       FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                 \
+TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither_Random) {                          \
+  srandom(time(NULL));                                                         \
+  for (int times = 0; times < benchmark_iterations_; ++times) {                \
+    const int kWidth = (random() & 63) + 1;                                    \
+    const int kHeight = (random() & 31) + 1;                                   \
+    const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;       \
+    const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;       \
+    const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;\
+    const int kStrideB = (kWidth * BPP_B + STRIDE_B - 1) / STRIDE_B * STRIDE_B;\
+    align_buffer_page_end(src_argb, kStrideA * kHeightA);                      \
+    align_buffer_page_end(dst_argb_c, kStrideB * kHeightB);                    \
+    align_buffer_page_end(dst_argb_opt, kStrideB * kHeightB);                  \
+    for (int i = 0; i < kStrideA * kHeightA; ++i) {                            \
+      src_argb[i] = (random() & 0xff);                                         \
+    }                                                                          \
+    memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
+    memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
+    MaskCpuFlags(0);                                                           \
+    FMT_A##To##FMT_B##Dither(src_argb, kStrideA,                               \
+                             dst_argb_c, kStrideB,                             \
+                             NULL, kWidth, kHeight);                           \
+    MaskCpuFlags(-1);                                                          \
+    FMT_A##To##FMT_B##Dither(src_argb, kStrideA,                               \
+                             dst_argb_opt, kStrideB,                           \
+                             NULL, kWidth, kHeight);                           \
+    int max_diff = 0;                                                          \
+    for (int i = 0; i < kStrideB * kHeightB; ++i) {                            \
+      int abs_diff =                                                           \
+          abs(static_cast<int>(dst_argb_c[i]) -                                \
+              static_cast<int>(dst_argb_opt[i]));                              \
+      if (abs_diff > max_diff) {                                               \
+        max_diff = abs_diff;                                                   \
+      }                                                                        \
+    }                                                                          \
+    EXPECT_LE(max_diff, DIFF);                                                 \
+    free_aligned_buffer_page_end(src_argb);                                    \
+    free_aligned_buffer_page_end(dst_argb_c);                                  \
+    free_aligned_buffer_page_end(dst_argb_opt);                                \
+  }                                                                            \
+}
+
+#define TESTATOBD(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                            \
+                  FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                      \
+    TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                               \
+               FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                               \
+               benchmark_width_ - 4, DIFF, _Any, +, 0)                         \
+    TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                               \
+               FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                               \
+               benchmark_width_, DIFF, _Unaligned, +, 1)                       \
+    TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                               \
+               FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                               \
+               benchmark_width_, DIFF, _Invert, -, 0)                          \
+    TESTATOBDI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                               \
+               FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                               \
+               benchmark_width_, DIFF, _Opt, +, 0)                             \
+    TESTATOBDRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                          \
+                    FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)
+
+TESTATOBD(ARGB, 4, 4, 1, RGB565, 2, 2, 1, 0)
+
 #define TESTSYMI(FMT_ATOB, BPP_A, STRIDE_A, HEIGHT_A,                          \
                  W1280, N, NEG, OFF)                                           \
 TEST_F(libyuvTest, FMT_ATOB##_Symetric##N) {                                   \

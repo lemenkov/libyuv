@@ -199,6 +199,32 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
+void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
+                             const uint8* dither8x8, int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    int dither0 = dither8x8[x & 7] - 128;
+    int dither1 = dither8x8[(x & 7) + 1] - 128;
+    uint8 b0 = Clamp(src_argb[0] + dither0) >> 3;
+    uint8 g0 = Clamp(src_argb[1] + dither0) >> 2;
+    uint8 r0 = Clamp(src_argb[2] + dither0) >> 3;
+    uint8 b1 = Clamp(src_argb[4] + dither1) >> 3;
+    uint8 g1 = Clamp(src_argb[5] + dither1) >> 2;
+    uint8 r1 = Clamp(src_argb[6] + dither1) >> 3;
+    WRITEWORD(dst_rgb, b0 | (g0 << 5) | (r0 << 11) |
+              (b1 << 16) | (g1 << 21) | (r1 << 27));
+    dst_rgb += 4;
+    src_argb += 8;
+  }
+  if (width & 1) {
+    int dither0 = dither8x8[(width - 1) & 7] - 128;
+    uint8 b0 = Clamp(src_argb[0] + dither0) >> 3;
+    uint8 g0 = Clamp(src_argb[1] + dither0) >> 2;
+    uint8 r0 = Clamp(src_argb[2] + dither0) >> 3;
+    *(uint16*)(dst_rgb) = b0 | (g0 << 5) | (r0 << 11);
+  }
+}
+
 void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -2258,8 +2284,7 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
 }
 #endif  // !defined(LIBYUV_DISABLE_X86)
 
-#if defined(HAS_I422TORGB565ROW_AVX2) && !defined(_MSC_VER)
-// row_win.cc has asm version, but GCC uses 2 step wrapper.
+#if defined(HAS_I422TORGB565ROW_AVX2)
 void I422ToRGB565Row_AVX2(const uint8* src_y,
                           const uint8* src_u,
                           const uint8* src_v,

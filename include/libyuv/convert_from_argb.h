@@ -61,6 +61,13 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height);
 
+// Convert ARGB To RGB565 with 8x8 dither matrix (64 bytes).
+// Values in dither matrix from 0 to 255.  128 is best for no dither.
+LIBYUV_API
+int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_rgb565, int dst_stride_rgb565,
+                       const uint8* dither8x8, int width, int height);
+
 // Convert ARGB To ARGB1555.
 LIBYUV_API
 int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,

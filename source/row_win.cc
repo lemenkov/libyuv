@@ -693,6 +693,85 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
+#ifdef HAS_ARGBTORGB565ROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+  __asm {
+    mov        eax, [esp + 4]      // src_argb
+    mov        edx, [esp + 8]      // dst_rgb
+    mov        ecx, [esp + 12]     // pix
+    vpcmpeqb   ymm3, ymm3, ymm3    // generate mask 0x0000001f
+    vpsrld     ymm3, ymm3, 27
+    vpcmpeqb   ymm4, ymm4, ymm4    // generate mask 0x000007e0
+    vpsrld     ymm4, ymm4, 26
+    vpslld     ymm4, ymm4, 5
+    vpcmpeqb   ymm5, ymm5, ymm5    // generate mask 0xfffff800
+    vpslld     ymm5, ymm5, 11
+
+ convertloop:
+    vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
+    vpsrld     ymm2, ymm0, 5       // G
+    vpsrld     ymm1, ymm0, 3       // B
+    vpslld     ymm0, ymm0, 8       // R
+    vpand      ymm2, ymm2, ymm4    // G
+    vpand      ymm1, ymm1, ymm3    // B
+    vpsrad     ymm0, ymm0, 16      // R
+    vpand      ymm0, ymm0, ymm5    // R
+    vpor       ymm1, ymm1, ymm2    // BG
+    vpor       ymm0, ymm0, ymm1    // BGR
+    vpackssdw  ymm0, ymm0, ymm0
+    vpermq     ymm0, ymm0, 0xd8
+    lea        eax, [eax + 32]
+    vmovdqu    [edx], xmm0         // store 8 pixels of RGB565
+    lea        edx, [edx + 16]
+    sub        ecx, 8
+    jg         convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBTORGB565ROW_AVX2
+
+#ifdef HAS_ARGBTOARGB1555ROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
+  __asm {
+    mov        eax, [esp + 4]      // src_argb
+    mov        edx, [esp + 8]      // dst_rgb
+    mov        ecx, [esp + 12]     // pix
+    vpcmpeqb   ymm4, ymm4, ymm4
+    vpsrld     ymm4, ymm4, 27      // generate mask 0x0000001f
+    vpslld     ymm5, ymm4, 5       // generate mask 0x000003e0
+    vpslld     ymm6, ymm4, 10      // generate mask 0x00007c00
+    vpcmpeqb   ymm7, ymm7, ymm7    // generate mask 0xffff8000
+    vpslld     ymm7, ymm7, 15
+
+ convertloop:
+    vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
+    vpsrld     ymm3, ymm0, 9       // R
+    vpsrld     ymm2, ymm0, 6       // G
+    vpsrld     ymm1, ymm0, 3       // B
+    vpsrad     ymm0, ymm0, 16      // A
+    vpand      ymm3, ymm3, ymm6    // R
+    vpand      ymm2, ymm2, ymm5    // G
+    vpand      ymm1, ymm1, ymm4    // B
+    vpand      ymm0, ymm0, ymm7    // A
+    vpor       ymm0, ymm0, ymm1    // BA
+    vpor       ymm2, ymm2, ymm3    // GR
+    vpor       ymm0, ymm0, ymm2    // BGRA
+    vpackssdw  ymm0, ymm0, ymm0
+    vpermq     ymm0, ymm0, 0xd8
+    lea        eax, [eax + 32]
+    vmovdqu    [edx], xmm0         // store 8 pixels of ARGB1555
+    lea        edx, [edx + 16]
+    sub        ecx, 8
+    jg         convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBTOARGB1555ROW_AVX2
+
 #ifdef HAS_ARGBTOARGB4444ROW_AVX2
 __declspec(naked) __declspec(align(16))
 void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
@@ -700,9 +779,9 @@ void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
     mov        eax, [esp + 4]   // src_argb
     mov        edx, [esp + 8]   // dst_rgb
     mov        ecx, [esp + 12]  // pix
-    vpcmpeqb   ymm4, ymm4, ymm4       // generate mask 0xf000f000
+    vpcmpeqb   ymm4, ymm4, ymm4   // generate mask 0xf000f000
     vpsllw     ymm4, ymm4, 12
-    vpsrlw     ymm3, ymm4, 8          // generate mask 0x00f000f0
+    vpsrlw     ymm3, ymm4, 8      // generate mask 0x00f000f0
 
  convertloop:
     vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
