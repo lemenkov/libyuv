@@ -112,9 +112,9 @@ extern "C" {
     "vqshrun.s32 d0, q0, #16                   \n"                             \
     "vqshrun.s32 d1, q10, #16                  \n" /* Y                      */\
     "vadd.s16   d18, d19                       \n"                             \
-    "vshll.u16  q1, d16, 16                    \n" /* Replicate u * UB       */\
-    "vshll.u16  q10, d17, 16                   \n" /* Replicate v * VR       */\
-    "vshll.u16  q3, d18, 16                    \n" /* Replicate (v*VG + u*UG)*/\
+    "vshll.u16  q1, d16, #16                   \n" /* Replicate u * UB       */\
+    "vshll.u16  q10, d17, #16                  \n" /* Replicate v * VR       */\
+    "vshll.u16  q3, d18, #16                   \n" /* Replicate (v*VG + u*UG)*/\
     "vaddw.u16  q1, q1, d16                    \n"                             \
     "vaddw.u16  q10, q10, d17                  \n"                             \
     "vaddw.u16  q3, q3, d18                    \n"                             \
