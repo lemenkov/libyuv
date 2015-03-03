@@ -268,6 +268,9 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width);
 
+void ScaleRowDown2Linear_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst, int dst_width);
+
 void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
 

@@ -55,7 +55,9 @@ static void ScalePlaneDown2(int src_width, int src_height,
 
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering ? ScaleRowDown2Box_NEON : ScaleRowDown2_NEON;
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_NEON :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_NEON :
+        ScaleRowDown2Box_NEON);
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSE2)

@@ -43,6 +43,30 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
+// Read 32x1 average down and write 16x1.
+void ScaleRowDown2Linear_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst, int dst_width) {
+  asm volatile (
+    ".p2align   2                              \n"
+  "1:                                          \n"
+    MEMACCESS(0)
+    "vld1.8     {q0, q1}, [%0]!                \n"  // load pixels and post inc
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop
+    "vpaddl.u8  q0, q0                         \n"  // add adjacent
+    "vpaddl.u8  q1, q1                         \n"
+    "vrshrn.u16 d0, q0, #1                     \n"  // downshift, round and pack
+    "vrshrn.u16 d1, q1, #1                     \n"
+    MEMACCESS(1)
+    "vst1.8     {q0}, [%1]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src_ptr),          // %0
+    "+r"(dst),              // %1
+    "+r"(dst_width)         // %2
+  :
+  : "q0", "q1"     // Clobber List
+  );
+}
+
 // Read 32x2 average down and write 16x1.
 void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
