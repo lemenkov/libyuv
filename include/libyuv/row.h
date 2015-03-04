@@ -198,7 +198,10 @@ extern "C" {
 #define HAS_I422TORGB565ROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
+
+// TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
+#define HAS_ARGBTORGB565DITHERROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -906,8 +909,12 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
+void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
+                             const uint8* dither8, int pix);
 void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint8* dither8x8, int pix);
+                                const uint8* dither8, int pix);
+void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb, uint8* dst_rgb,
+                                const uint8* dither8, int pix);
 
 void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -925,9 +932,6 @@ void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
-
-void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
-                             const uint8* dither8x8, int pix);
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int pix);
@@ -1380,7 +1384,9 @@ void ARGBToARGB1555Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB565DitherRow_Any_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                    const uint8* dither8x8, int pix);
+                                    const uint8* dither8, int pix);
+void ARGBToRGB565DitherRow_Any_AVX2(const uint8* src_argb, uint8* dst_rgb,
+                                    const uint8* dither8, int pix);
 
 void ARGBToRGB565Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);

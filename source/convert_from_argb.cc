@@ -843,6 +843,14 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_AVX2;
+    }
+  }
+#endif
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
                           dither8x8 + ((y & 7) << 3), width);
@@ -853,6 +861,7 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
 }
 
 // Convert ARGB To RGB565.
+// TODO(fbarchard): Consider using dither function low level with zeros.
 LIBYUV_API
 int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,

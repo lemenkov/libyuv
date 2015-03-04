@@ -1381,4 +1381,37 @@ TEST_F(libyuvTest, TestYToARGB) {
   }
 }
 
+static const uint8 kNoDither8x8[64] = {
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+TEST_F(libyuvTest, TestDither) {
+  align_buffer_64(src_argb, benchmark_width_ * benchmark_height_ * 4);
+  align_buffer_64(dst_rgb565, benchmark_width_ * benchmark_height_ * 2);
+  align_buffer_64(dst_rgb565dither, benchmark_width_ * benchmark_height_ * 2);
+  MemRandomize(src_argb, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(dst_rgb565, benchmark_width_ * benchmark_height_ * 2);
+  MemRandomize(dst_rgb565dither, benchmark_width_ * benchmark_height_ * 2);
+  ARGBToRGB565(src_argb, benchmark_width_ * 4,
+               dst_rgb565, benchmark_width_ * 2,
+               benchmark_width_, benchmark_height_);
+  ARGBToRGB565Dither(src_argb, benchmark_width_ * 4,
+                     dst_rgb565dither, benchmark_width_ * 2,
+                     kNoDither8x8, benchmark_width_, benchmark_height_);
+  for (int i = 0; i < benchmark_width_ * benchmark_height_ * 2; ++i) {
+    EXPECT_EQ(dst_rgb565[i], dst_rgb565dither[i]);
+  }
+
+  free_aligned_buffer_64(src_argb);
+  free_aligned_buffer_64(dst_rgb565);
+  free_aligned_buffer_64(dst_rgb565dither);
+}
+
 }  // namespace libyuv

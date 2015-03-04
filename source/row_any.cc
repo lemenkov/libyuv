@@ -239,6 +239,10 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 2, 4, 7)
 RGBDANY(ARGBToRGB565DitherRow_Any_SSE2, ARGBToRGB565DitherRow_SSE2,
         ARGBToRGB565DitherRow_C, 4, 2, 7)
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_AVX2)
+RGBDANY(ARGBToRGB565DitherRow_Any_AVX2, ARGBToRGB565DitherRow_AVX2,
+        ARGBToRGB565DitherRow_C, 4, 2, 7)
+#endif
 #undef RGBDANY
 
 // ARGB to Bayer does multiple of 4 pixels, SSSE3 aligned src, unaligned dst.
