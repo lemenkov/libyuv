@@ -585,6 +585,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
+// 4 pixels
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
   __asm {
@@ -617,6 +618,70 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
     movq      qword ptr [edx], xmm0  // store 4 pixels of RGB565
     lea       edx, [edx + 8]
     sub       ecx, 4
+    jg        convertloop
+    ret
+  }
+}
+
+// 8 pixels
+__declspec(naked) __declspec(align(16))
+void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
+                                const uint8* dither8, int pix) {
+  __asm {
+    mov       eax, [esp + 12]  // dither8
+    movq      xmm6, qword ptr [eax]      // fetch 8 dither values
+    punpcklbw xmm6, xmm6
+    movdqa    xmm7, xmm6
+    punpcklwd xmm6, xmm6
+    punpckhwd xmm7, xmm7
+
+    mov       eax, [esp + 4]   // src_argb
+    mov       edx, [esp + 8]   // dst_rgb
+    mov       ecx, [esp + 16]  // pix
+    pcmpeqb   xmm3, xmm3       // generate mask 0x0000001f
+    psrld     xmm3, 27
+    pcmpeqb   xmm4, xmm4       // generate mask 0x000007e0
+    psrld     xmm4, 26
+    pslld     xmm4, 5
+    pcmpeqb   xmm5, xmm5       // generate mask 0xfffff800
+    pslld     xmm5, 11
+
+ convertloop:
+    movdqu    xmm0, [eax]   // fetch 4 pixels of argb
+    paddusb   xmm0, xmm6
+    movdqa    xmm1, xmm0    // B
+    movdqa    xmm2, xmm0    // G
+    pslld     xmm0, 8       // R
+    psrld     xmm1, 3       // B
+    psrld     xmm2, 5       // G
+    psrad     xmm0, 16      // R
+    pand      xmm1, xmm3    // B
+    pand      xmm2, xmm4    // G
+    pand      xmm0, xmm5    // R
+    por       xmm1, xmm2    // BG
+    por       xmm0, xmm1    // BGR
+    packssdw  xmm0, xmm0
+    movq      qword ptr [edx], xmm0  // store 4 pixels of RGB565
+
+    movdqu    xmm0, [eax + 16]   // fetch 4 pixels of argb
+    paddusb   xmm0, xmm7
+    movdqa    xmm1, xmm0    // B
+    movdqa    xmm2, xmm0    // G
+    pslld     xmm0, 8       // R
+    psrld     xmm1, 3       // B
+    psrld     xmm2, 5       // G
+    psrad     xmm0, 16      // R
+    pand      xmm1, xmm3    // B
+    pand      xmm2, xmm4    // G
+    pand      xmm0, xmm5    // R
+    por       xmm1, xmm2    // BG
+    por       xmm0, xmm1    // BGR
+    packssdw  xmm0, xmm0
+    movq      qword ptr [edx + 8], xmm0  // store 4 pixels of RGB565
+
+    lea       eax, [eax + 32]
+    lea       edx, [edx + 16]
+    sub       ecx, 8
     jg        convertloop
     ret
   }
@@ -1646,8 +1711,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm2, ymm2, 0xd8                                          \
     __asm vpunpcklwd ymm1, ymm0, ymm2           /* BGRA first 8 pixels */      \
     __asm vpunpckhwd ymm0, ymm0, ymm2           /* BGRA next 8 pixels */       \
-    __asm vmovdqu    [edx], ymm1                                               \
-    __asm vmovdqu    [edx + 32], ymm0                                          \
+    __asm vmovdqu    0[edx], ymm1                                              \
+    __asm vmovdqu    32[edx], ymm0                                             \
     __asm lea        edx,  [edx + 64]                                          \
   }
 
@@ -1959,8 +2024,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm1, xmm0                                                \
     __asm punpcklwd  xmm0, xmm2           /* BGRA first 4 pixels */            \
     __asm punpckhwd  xmm1, xmm2           /* BGRA next 4 pixels */             \
-    __asm movdqu     [edx], xmm0                                               \
-    __asm movdqu     [edx + 16], xmm1                                          \
+    __asm movdqu     0[edx], xmm0                                              \
+    __asm movdqu     16[edx], xmm1                                             \
     __asm lea        edx,  [edx + 32]                                          \
   }
 
@@ -1973,8 +2038,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm0, xmm5                                                \
     __asm punpcklwd  xmm5, xmm1           /* BGRA first 4 pixels */            \
     __asm punpckhwd  xmm0, xmm1           /* BGRA next 4 pixels */             \
-    __asm movdqu     [edx], xmm5                                               \
-    __asm movdqu     [edx + 16], xmm0                                          \
+    __asm movdqu     0[edx], xmm5                                              \
+    __asm movdqu     16[edx], xmm0                                             \
     __asm lea        edx,  [edx + 32]                                          \
   }
 
@@ -1986,8 +2051,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm1, xmm2                                                \
     __asm punpcklwd  xmm2, xmm0           /* RGBA first 4 pixels */            \
     __asm punpckhwd  xmm1, xmm0           /* RGBA next 4 pixels */             \
-    __asm movdqu     [edx], xmm2                                               \
-    __asm movdqu     [edx + 16], xmm1                                          \
+    __asm movdqu     0[edx], xmm2                                              \
+    __asm movdqu     16[edx], xmm1                                             \
     __asm lea        edx,  [edx + 32]                                          \
   }
 
@@ -2000,8 +2065,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm0, xmm5                                                \
     __asm punpcklwd  xmm5, xmm1           /* RGBA first 4 pixels */            \
     __asm punpckhwd  xmm0, xmm1           /* RGBA next 4 pixels */             \
-    __asm movdqu     [edx], xmm5                                               \
-    __asm movdqu     [edx + 16], xmm0                                          \
+    __asm movdqu     0[edx], xmm5                                              \
+    __asm movdqu     16[edx], xmm0                                             \
     __asm lea        edx,  [edx + 32]                                          \
   }
 
@@ -2017,8 +2082,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
     __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
     __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
-    __asm movq       qword ptr [edx], xmm0  /* First 8 bytes */                \
-    __asm movdqu     [edx + 8], xmm1      /* Last 16 bytes */                  \
+    __asm movq       qword ptr 0[edx], xmm0  /* First 8 bytes */               \
+    __asm movdqu     8[edx], xmm1         /* Last 16 bytes */                  \
     __asm lea        edx,  [edx + 24]                                          \
   }
 
@@ -2034,8 +2099,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
     __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
     __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
-    __asm movq       qword ptr [edx], xmm0  /* First 8 bytes */                \
-    __asm movdqu     [edx + 8], xmm1      /* Last 16 bytes */                  \
+    __asm movq       qword ptr 0[edx], xmm0  /* First 8 bytes */               \
+    __asm movdqu     8[edx], xmm1         /* Last 16 bytes */                  \
     __asm lea        edx,  [edx + 24]                                          \
   }
 
@@ -2071,7 +2136,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm por        xmm3, xmm2    /* BG */                                    \
     __asm por        xmm1, xmm3    /* BGR */                                   \
     __asm packssdw   xmm0, xmm1                                                \
-    __asm movdqu     [edx], xmm0   /* store 8 pixels of RGB565 */              \
+    __asm movdqu     0[edx], xmm0  /* store 8 pixels of RGB565 */              \
     __asm lea        edx, [edx + 16]                                           \
   }
 

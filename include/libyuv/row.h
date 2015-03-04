@@ -198,6 +198,7 @@ extern "C" {
 #define HAS_I422TORGB565ROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
+#define HAS_ARGBTORGB565DITHERROW_SSE2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -905,6 +906,9 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
+void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
+                                const uint8* dither8x8, int pix);
+
 void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -1374,6 +1378,9 @@ void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToRGB565Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
+
+void ARGBToRGB565DitherRow_Any_SSE2(const uint8* src_argb, uint8* dst_rgb,
+                                    const uint8* dither8x8, int pix);
 
 void ARGBToRGB565Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);

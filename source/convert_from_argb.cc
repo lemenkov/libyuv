@@ -804,15 +804,16 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-static const uint8 kDither8x8[64] = {
-  0, 128, 32, 160,  8, 136, 40, 168,
-  192, 64, 224, 96, 200, 72, 232, 104,
-  48, 176, 16, 144, 56, 184, 24, 152,
-  240, 112, 208, 80, 248, 120, 216, 88,
-  12, 140, 44, 172,  4, 132, 36, 164,
-  204, 76, 236, 108, 196, 68, 228, 100,
-  60, 188, 28, 156, 52, 180, 20, 148,
-  252, 124, 220, 92, 244, 116, 212, 84,
+// Ordered 8x8 dither for 888 to 565.  Values from 0 to 7.
+static const uint8 kDither565_8x8[64] = {
+  0 >> 5, 128 >> 5, 32 >> 5, 160 >> 5,  8 >> 5, 136 >> 5, 40 >> 5, 168 >> 5,
+  192 >> 5, 64 >> 5, 224 >> 5, 96 >> 5, 200 >> 5, 72 >> 5, 232 >> 5, 104 >> 5,
+  48 >> 5, 176 >> 5, 16 >> 5, 144 >> 5, 56 >> 5, 184 >> 5, 24 >> 5, 152 >> 5,
+  240 >> 5, 112 >> 5, 208 >> 5, 80 >> 5, 248 >> 5, 120 >> 5, 216 >> 5, 88 >> 5,
+  12 >> 5, 140 >> 5, 44 >> 5, 172 >> 5,  4 >> 5, 132 >> 5, 36 >> 5, 164 >> 5,
+  204 >> 5, 76 >> 5, 236 >> 5, 108 >> 5, 196 >> 5, 68 >> 5, 228 >> 5, 100 >> 5,
+  60 >> 5, 188 >> 5, 28 >> 5, 156 >> 5, 52 >> 5, 180 >> 5, 20 >> 5, 148 >> 5,
+  252 >> 5, 124 >> 5, 220 >> 5, 92 >> 5, 244 >> 5, 116 >> 5, 212 >> 5, 84 >> 5,
 };
 
 // Convert ARGB To RGB565 with 8x8 dither matrix (64 bytes).
@@ -832,9 +833,16 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
     src_stride_argb = -src_stride_argb;
   }
   if (!dither8x8) {
-    dither8x8 = kDither8x8;
-
+    dither8x8 = kDither565_8x8;
   }
+#if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_SSE2;
+    }
+  }
+#endif
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
                           dither8x8 + ((y & 7) << 3), width);
