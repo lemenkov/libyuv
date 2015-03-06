@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>  // For lrintf
 #include <stdlib.h>
 #include <time.h>
 
@@ -1364,7 +1363,7 @@ TEST_F(libyuvTest, TestYToARGB) {
   uint8 expectedg[32];
   for (int i = 0; i < 32; ++i) {
     y[i] = i * 5 + 17;
-    expectedg[i] = lrintf((y[i] - 16) * 1.164);
+    expectedg[i] = static_cast<int>((y[i] - 16) * 1.164f + 0.5f);
   }
   uint8 argb[32 * 4];
   YToARGB(y, 0, argb, 0, 32, 1);

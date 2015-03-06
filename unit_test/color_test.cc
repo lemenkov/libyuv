@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>  // For lrintf
 #include <stdlib.h>
 
 #include "libyuv/convert.h"
@@ -185,7 +184,7 @@ static void YToRGB(int y, int* r, int* g, int* b) {
 }
 
 static int RoundToByte(double f) {
-  int i = lrintf(f);
+  int i = static_cast<int>(f + 0.5);
   if (i < 0) {
     i = 0;
   }
