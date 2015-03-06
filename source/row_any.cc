@@ -227,17 +227,17 @@ RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 2, 4, 7)
 
 #define RGBDANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)         \
     void NAMEANY(const uint8* src, uint8* dst,                                 \
-                 const uint8* dither8x8, int width) {                          \
+                 const uint32 dither4, int width) {                            \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
-        ARGBTORGB_SIMD(src, dst, dither8x8, n);                                \
+        ARGBTORGB_SIMD(src, dst, dither4, n);                                  \
       }                                                                        \
-      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, dither8x8, width & MASK);     \
+      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, dither4, width & MASK);       \
     }
 
 #if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
 RGBDANY(ARGBToRGB565DitherRow_Any_SSE2, ARGBToRGB565DitherRow_SSE2,
-        ARGBToRGB565DitherRow_C, 4, 2, 7)
+        ARGBToRGB565DitherRow_C, 4, 2, 3)
 #endif
 #if defined(HAS_ARGBTORGB565DITHERROW_AVX2)
 RGBDANY(ARGBToRGB565DitherRow_Any_AVX2, ARGBToRGB565DitherRow_AVX2,

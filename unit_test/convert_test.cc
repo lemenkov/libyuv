@@ -1381,18 +1381,14 @@ TEST_F(libyuvTest, TestYToARGB) {
   }
 }
 
-static const uint8 kNoDither8x8[64] = {
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,
+static const uint8 kNoDither4x4[16] = {
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
+  0, 0, 0, 0,
 };
 
-TEST_F(libyuvTest, TestDither) {
+TEST_F(libyuvTest, TestNoDither) {
   align_buffer_64(src_argb, benchmark_width_ * benchmark_height_ * 4);
   align_buffer_64(dst_rgb565, benchmark_width_ * benchmark_height_ * 2);
   align_buffer_64(dst_rgb565dither, benchmark_width_ * benchmark_height_ * 2);
@@ -1404,7 +1400,7 @@ TEST_F(libyuvTest, TestDither) {
                benchmark_width_, benchmark_height_);
   ARGBToRGB565Dither(src_argb, benchmark_width_ * 4,
                      dst_rgb565dither, benchmark_width_ * 2,
-                     kNoDither8x8, benchmark_width_, benchmark_height_);
+                     kNoDither4x4, benchmark_width_, benchmark_height_);
   for (int i = 0; i < benchmark_width_ * benchmark_height_ * 2; ++i) {
     EXPECT_EQ(dst_rgb565[i], dst_rgb565dither[i]);
   }
@@ -1412,6 +1408,48 @@ TEST_F(libyuvTest, TestDither) {
   free_aligned_buffer_64(src_argb);
   free_aligned_buffer_64(dst_rgb565);
   free_aligned_buffer_64(dst_rgb565dither);
+}
+
+// Ordered 4x4 dither for 888 to 565.  Values from 0 to 7.
+static const uint8 kDither565_4x4[16] = {
+  0, 4, 1, 5,
+  6, 2, 7, 3,
+  1, 5, 0, 4,
+  7, 3, 6, 2,
+};
+
+TEST_F(libyuvTest, TestDither) {
+  align_buffer_64(src_argb, benchmark_width_ * benchmark_height_ * 4);
+  align_buffer_64(dst_rgb565, benchmark_width_ * benchmark_height_ * 2);
+  align_buffer_64(dst_rgb565dither, benchmark_width_ * benchmark_height_ * 2);
+  align_buffer_64(dst_argb, benchmark_width_ * benchmark_height_ * 4);
+  align_buffer_64(dst_argbdither, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(src_argb, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(dst_rgb565, benchmark_width_ * benchmark_height_ * 2);
+  MemRandomize(dst_rgb565dither, benchmark_width_ * benchmark_height_ * 2);
+  MemRandomize(dst_argb, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(dst_argbdither, benchmark_width_ * benchmark_height_ * 4);
+  ARGBToRGB565(src_argb, benchmark_width_ * 4,
+               dst_rgb565, benchmark_width_ * 2,
+               benchmark_width_, benchmark_height_);
+  ARGBToRGB565Dither(src_argb, benchmark_width_ * 4,
+                     dst_rgb565dither, benchmark_width_ * 2,
+                     kDither565_4x4, benchmark_width_, benchmark_height_);
+  RGB565ToARGB(dst_rgb565, benchmark_width_ * 2,
+               dst_argb, benchmark_width_ * 4,
+               benchmark_width_, benchmark_height_);
+  RGB565ToARGB(dst_rgb565dither, benchmark_width_ * 2,
+               dst_argbdither, benchmark_width_ * 4,
+               benchmark_width_, benchmark_height_);
+
+  for (int i = 0; i < benchmark_width_ * benchmark_height_ * 4; ++i) {
+    EXPECT_NEAR(dst_argb[i], dst_argbdither[i], 9);
+  }
+  free_aligned_buffer_64(src_argb);
+  free_aligned_buffer_64(dst_rgb565);
+  free_aligned_buffer_64(dst_rgb565dither);
+  free_aligned_buffer_64(dst_argb);
+  free_aligned_buffer_64(dst_argbdither);
 }
 
 }  // namespace libyuv

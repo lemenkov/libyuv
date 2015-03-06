@@ -626,18 +626,17 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 // 8 pixels
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint8* dither8, int pix) {
+                                const uint32 dither4, int pix) {
   __asm {
-    mov       eax, [esp + 12]  // dither8
-    movq      xmm6, qword ptr [eax]      // fetch 8 dither values
-    punpcklbw xmm6, xmm6
-    movdqa    xmm7, xmm6
-    punpcklwd xmm6, xmm6
-    punpckhwd xmm7, xmm7
 
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
+    movd      xmm6, [esp + 12] // dither4
     mov       ecx, [esp + 16]  // pix
+    punpcklbw xmm6, xmm6       // make dither 16 bytes
+    movdqa    xmm7, xmm6
+    punpcklwd xmm6, xmm6
+    punpckhwd xmm7, xmm7
     pcmpeqb   xmm3, xmm3       // generate mask 0x0000001f
     psrld     xmm3, 27
     pcmpeqb   xmm4, xmm4       // generate mask 0x000007e0
@@ -648,7 +647,7 @@ void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
 
  convertloop:
     movdqu    xmm0, [eax]   // fetch 4 pixels of argb
-    paddusb   xmm0, xmm6
+    paddusb   xmm0, xmm6    // add dither
     movdqa    xmm1, xmm0    // B
     movdqa    xmm2, xmm0    // G
     pslld     xmm0, 8       // R
@@ -661,68 +660,46 @@ void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
     por       xmm1, xmm2    // BG
     por       xmm0, xmm1    // BGR
     packssdw  xmm0, xmm0
+    lea       eax, [eax + 16]
     movq      qword ptr [edx], xmm0  // store 4 pixels of RGB565
-
-    movdqu    xmm0, [eax + 16]   // fetch 4 pixels of argb
-    paddusb   xmm0, xmm7
-    movdqa    xmm1, xmm0    // B
-    movdqa    xmm2, xmm0    // G
-    pslld     xmm0, 8       // R
-    psrld     xmm1, 3       // B
-    psrld     xmm2, 5       // G
-    psrad     xmm0, 16      // R
-    pand      xmm1, xmm3    // B
-    pand      xmm2, xmm4    // G
-    pand      xmm0, xmm5    // R
-    por       xmm1, xmm2    // BG
-    por       xmm0, xmm1    // BGR
-    packssdw  xmm0, xmm0
-    movq      qword ptr [edx + 8], xmm0  // store 4 pixels of RGB565
-
-    lea       eax, [eax + 32]
-    lea       edx, [edx + 16]
-    sub       ecx, 8
+    lea       edx, [edx + 8]
+    sub       ecx, 4
     jg        convertloop
     ret
   }
 }
 
 #ifdef HAS_ARGBTORGB565DITHERROW_AVX2
-// TODO(fbarchard): Consider vpackusdw and remove vpsrad 16
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint8* dither8, int pix) {
+                                const uint32 dither4, int pix) {
   __asm {
-    mov        eax, [esp + 12]  // dither8
-    vmovq      xmm6, qword ptr [eax]      // fetch 8 dither values
-    vpunpcklbw xmm6, xmm6, xmm6
-    vpermq     ymm6, ymm6, 0xd8
-    vpunpcklwd ymm6, ymm6, ymm6
-
     mov        eax, [esp + 4]      // src_argb
     mov        edx, [esp + 8]      // dst_rgb
+    vbroadcastss xmm6, [esp + 12]  // dither4
     mov        ecx, [esp + 16]     // pix
+    vpunpcklbw xmm6, xmm6, xmm6    // make dither 32 bytes
+    vpermq     ymm6, ymm6, 0xd8
+    vpunpcklwd ymm6, ymm6, ymm6
     vpcmpeqb   ymm3, ymm3, ymm3    // generate mask 0x0000001f
     vpsrld     ymm3, ymm3, 27
     vpcmpeqb   ymm4, ymm4, ymm4    // generate mask 0x000007e0
     vpsrld     ymm4, ymm4, 26
     vpslld     ymm4, ymm4, 5
-    vpcmpeqb   ymm5, ymm5, ymm5    // generate mask 0xfffff800
-    vpslld     ymm5, ymm5, 11
+    vpslld     ymm5, ymm3, 11      // generate mask 0x0000f800
 
  convertloop:
     vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
-    vpaddusb   ymm0, ymm0, ymm6
+    vpaddusb   ymm0, ymm0, ymm6    // add dither
     vpsrld     ymm2, ymm0, 5       // G
     vpsrld     ymm1, ymm0, 3       // B
-    vpslld     ymm0, ymm0, 8       // R
+    vpsrld     ymm0, ymm0, 8       // R
     vpand      ymm2, ymm2, ymm4    // G
     vpand      ymm1, ymm1, ymm3    // B
-    vpsrad     ymm0, ymm0, 16      // R
     vpand      ymm0, ymm0, ymm5    // R
     vpor       ymm1, ymm1, ymm2    // BG
     vpor       ymm0, ymm0, ymm1    // BGR
-    vpackssdw  ymm0, ymm0, ymm0
+    vpackusdw  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
     vmovdqu    [edx], xmm0         // store 8 pixels of RGB565
@@ -807,7 +784,6 @@ void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
 }
 
 #ifdef HAS_ARGBTORGB565ROW_AVX2
-// TODO(fbarchard): Consider vpackusdw and remove vpsrad 16
 __declspec(naked) __declspec(align(16))
 void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
   __asm {
@@ -819,21 +795,19 @@ void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix) {
     vpcmpeqb   ymm4, ymm4, ymm4    // generate mask 0x000007e0
     vpsrld     ymm4, ymm4, 26
     vpslld     ymm4, ymm4, 5
-    vpcmpeqb   ymm5, ymm5, ymm5    // generate mask 0xfffff800
-    vpslld     ymm5, ymm5, 11
+    vpslld     ymm5, ymm3, 11      // generate mask 0x0000f800
 
  convertloop:
     vmovdqu    ymm0, [eax]         // fetch 8 pixels of argb
     vpsrld     ymm2, ymm0, 5       // G
     vpsrld     ymm1, ymm0, 3       // B
-    vpslld     ymm0, ymm0, 8       // R
+    vpsrld     ymm0, ymm0, 8       // R
     vpand      ymm2, ymm2, ymm4    // G
     vpand      ymm1, ymm1, ymm3    // B
-    vpsrad     ymm0, ymm0, 16      // R
     vpand      ymm0, ymm0, ymm5    // R
     vpor       ymm1, ymm1, ymm2    // BG
     vpor       ymm0, ymm0, ymm1    // BGR
-    vpackssdw  ymm0, ymm0, ymm0
+    vpackusdw  ymm0, ymm0, ymm0
     vpermq     ymm0, ymm0, 0xd8
     lea        eax, [eax + 32]
     vmovdqu    [edx], xmm0         // store 8 pixels of RGB565

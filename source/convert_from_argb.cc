@@ -805,25 +805,21 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
 }
 
 // Ordered 8x8 dither for 888 to 565.  Values from 0 to 7.
-static const uint8 kDither565_8x8[64] = {
-  0 >> 5, 128 >> 5, 32 >> 5, 160 >> 5,  8 >> 5, 136 >> 5, 40 >> 5, 168 >> 5,
-  192 >> 5, 64 >> 5, 224 >> 5, 96 >> 5, 200 >> 5, 72 >> 5, 232 >> 5, 104 >> 5,
-  48 >> 5, 176 >> 5, 16 >> 5, 144 >> 5, 56 >> 5, 184 >> 5, 24 >> 5, 152 >> 5,
-  240 >> 5, 112 >> 5, 208 >> 5, 80 >> 5, 248 >> 5, 120 >> 5, 216 >> 5, 88 >> 5,
-  12 >> 5, 140 >> 5, 44 >> 5, 172 >> 5,  4 >> 5, 132 >> 5, 36 >> 5, 164 >> 5,
-  204 >> 5, 76 >> 5, 236 >> 5, 108 >> 5, 196 >> 5, 68 >> 5, 228 >> 5, 100 >> 5,
-  60 >> 5, 188 >> 5, 28 >> 5, 156 >> 5, 52 >> 5, 180 >> 5, 20 >> 5, 148 >> 5,
-  252 >> 5, 124 >> 5, 220 >> 5, 92 >> 5, 244 >> 5, 116 >> 5, 212 >> 5, 84 >> 5,
+static const uint8 kDither565_4x4[16] = {
+  0, 4, 1, 5,
+  6, 2, 7, 3,
+  1, 5, 0, 4,
+  7, 3, 6, 2,
 };
 
-// Convert ARGB To RGB565 with 8x8 dither matrix (64 bytes).
+// Convert ARGB To RGB565 with 4x4 dither matrix (16 bytes).
 LIBYUV_API
 int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_rgb565, int dst_stride_rgb565,
-                       const uint8* dither8x8, int width, int height) {
+                       const uint8* dither4x4, int width, int height) {
   int y;
   void (*ARGBToRGB565DitherRow)(const uint8* src_argb, uint8* dst_rgb,
-      const uint8* dither8x8, int pix) = ARGBToRGB565DitherRow_C;
+      const uint32 dither4, int pix) = ARGBToRGB565DitherRow_C;
   if (!src_argb || !dst_rgb565 || width <= 0 || height == 0) {
     return -1;
   }
@@ -832,13 +828,13 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
     src_argb = src_argb + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  if (!dither8x8) {
-    dither8x8 = kDither565_8x8;
+  if (!dither4x4) {
+    dither4x4 = kDither565_4x4;
   }
 #if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(width, 4)) {
       ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_SSE2;
     }
   }
@@ -853,7 +849,7 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
 #endif
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
-                          dither8x8 + ((y & 7) << 3), width);
+                          *(uint32*)(dither4x4 + ((y & 3) << 2)), width);
     src_argb += src_stride_argb;
     dst_rgb565 += dst_stride_rgb565;
   }

@@ -199,12 +199,20 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
+// dither4 is a row of 4 values from 4x4 dither matrix.
+// The 4x4 matrix contains values to increase RGB.  When converting to
+// fewer bits (565) this provides an ordered dither.
+// The order in the 4x4 matrix in first byte is upper left.
+// The 4 values are passed as an int, then referenced as an array, so
+// endian will not affect order of the original matrix.  But the dither4
+// will containing the first pixel in the lower byte for little endian
+// or the upper byte for big endian.
 void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
-                             const uint8* dither8x8, int width) {
+                             const uint32 dither4, int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    int dither0 = dither8x8[x & 7];
-    int dither1 = dither8x8[(x + 1) & 7];
+    int dither0 = ((unsigned char*)(&dither4))[x & 3];
+    int dither1 = ((unsigned char*)(&dither4))[(x + 1) & 3];
     uint8 b0 = clamp255(src_argb[0] + dither0) >> 3;
     uint8 g0 = clamp255(src_argb[1] + dither0) >> 2;
     uint8 r0 = clamp255(src_argb[2] + dither0) >> 3;
@@ -217,7 +225,7 @@ void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
     src_argb += 8;
   }
   if (width & 1) {
-    int dither0 = dither8x8[(width - 1) & 7];
+    int dither0 = ((unsigned char*)(&dither4))[(width - 1) & 3];
     uint8 b0 = clamp255(src_argb[0] + dither0) >> 3;
     uint8 g0 = clamp255(src_argb[1] + dither0) >> 2;
     uint8 r0 = clamp255(src_argb[2] + dither0) >> 3;

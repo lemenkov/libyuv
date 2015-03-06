@@ -910,11 +910,11 @@ void ARGBToARGB1555Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
-                             const uint8* dither8, int pix);
+                             const uint32 dither4, int pix);
 void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint8* dither8, int pix);
+                                const uint32 dither4, int pix);
 void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb, uint8* dst_rgb,
-                                const uint8* dither8, int pix);
+                                const uint32 dither4, int pix);
 
 void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
@@ -1384,9 +1384,9 @@ void ARGBToARGB1555Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_Any_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void ARGBToRGB565DitherRow_Any_SSE2(const uint8* src_argb, uint8* dst_rgb,
-                                    const uint8* dither8, int pix);
+                                    const uint32 dither4, int pix);
 void ARGBToRGB565DitherRow_Any_AVX2(const uint8* src_argb, uint8* dst_rgb,
-                                    const uint8* dither8, int pix);
+                                    const uint32 dither4, int pix);
 
 void ARGBToRGB565Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int pix);
