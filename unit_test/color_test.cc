@@ -300,39 +300,22 @@ TEST_F(libyuvTest, TestGreyYUV) {
 TEST_F(libyuvTest, TestFullYUV) {
   int i;
   // If using small image, step faster.
-  int step = benchmark_width_ <= 128 ? 5 : 1;
+  int step = benchmark_width_ <= 128 ? 3 : 1;
   int r0, g0, b0, r1, g1, b1;
-  int rn[256] = { 0, }, gn[256] = { 0, },
-      bn[256] = { 0, }, rx[256] = { 0, },
-      gx[256] = { 0, }, bx[256] = { 0, };
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int y = 0; y < 256; y += step) {
     for (int u = 0; u < 256; u += step) {
-      for (int v = 0; v < 256; v += step) {
+      for (int v2 = 0; v2 < 256; v2 += step) {
+        int v = (v2 & 1) ? ((v2 >> 1) ^ 0xb8) : (v2 >> 1);
         YUVToRGBReference(y, u, v, &r0, &g0, &b0);
         YUVToRGB(y, u, v, &r1, &g1, &b1);
         EXPECT_NEAR(r0, r1, ERROR_R);
         EXPECT_NEAR(g0, g1, ERROR_G);
         EXPECT_NEAR(b0, b1, ERROR_B);
-        int rd = r1 - r0;
-        int gd = g1 - g0;
-        int bd = b1 - b0;
-        ++rh[rd + 128];
-        ++gh[gd + 128];
-        ++bh[bd + 128];
-        if (rd < rn[r0]) { rn[r0] = rd; }
-        if (gd < gn[g0]) { gn[g0] = gd; }
-        if (bd < bn[b0]) { bn[b0] = bd; }
-        if (rd > rx[r0]) { rx[r0] = rd; }
-        if (gd > gx[g0]) { gx[g0] = gd; }
-        if (bd > bx[b0]) { bx[b0] = bd; }
+        ++rh[r1 - r0 + 128];
+        ++gh[g1 - g0 + 128];
+        ++bh[b1 - b0 + 128];
       }
-    }
-  }
-  if (step == 1) {
-    for (i = 0; i < 256; ++i) {
-      printf("red %2d %2d, green %2d %2d, blue %2d %2d\n",
-             rn[i], rx[i], gn[i], gx[i], bn[i], bx[i]);
     }
   }
   printf("hist\t");
