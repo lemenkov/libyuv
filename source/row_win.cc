@@ -1678,6 +1678,16 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
 
+// Read 16 UV from 444
+#define READYUV444_AVX2 __asm {                                                \
+    __asm vmovdqu    xmm0, [esi]                  /* U */         /* NOLINT */ \
+    __asm vmovdqu    xmm1, [esi + edi]            /* V */         /* NOLINT */ \
+    __asm lea        esi,  [esi + 16]                                          \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpermq     ymm1, ymm1, 0xd8                                          \
+    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+  }
+
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 __asm {                                                \
     __asm vmovq      xmm0, qword ptr [esi]        /* U */         /* NOLINT */ \
@@ -1774,6 +1784,44 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
   }
 }
 #endif  // HAS_I422TOARGBROW_AVX2
+
+#ifdef HAS_I444TOARGBROW_AVX2
+// 16 pixels
+// 16 UV values with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void I444ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READYUV444_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_I444TOARGBROW_AVX2
+
+
 
 #ifdef HAS_NV12TOARGBROW_AVX2
 // 16 pixels.
