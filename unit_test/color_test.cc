@@ -185,7 +185,13 @@ static void YToRGB(int y, int* r, int* g, int* b) {
 
 static int RoundToByte(double f) {
   int i = static_cast<int>(f + 0.5);
-  return (i & ~0xff) ?  (int)(((int32)(-i) >> 31) & 0xff) : i;
+  if (i < 0) {
+    i = 0;
+  }
+  if (i > 255) {
+    i = 255;
+  }
+  return i;
 }
 
 static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
