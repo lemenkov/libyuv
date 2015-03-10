@@ -496,7 +496,6 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
     TESTPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
         YALIGN, benchmark_width_, DIFF, _Opt, +, 0, FMT_C, BPP_C)
 
-// TODO(fbarchard): Make vertical alignment unnecessary on bayer.
 TESTPLANARTOB(I420, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(J420, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, BGRA, 4, 4, 1, 2, ARGB, 4)
@@ -1450,5 +1449,85 @@ TEST_F(libyuvTest, TestDither) {
   free_aligned_buffer_64(dst_argb);
   free_aligned_buffer_64(dst_argbdither);
 }
+
+#define TESTPLANARTOBID(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
+                       YALIGN, W1280, DIFF, N, NEG, OFF, FMT_C, BPP_C)         \
+TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##Dither##N) {                         \
+  const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
+  const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                     \
+  const int kStrideB = ALIGNINT(kWidth * BPP_B, ALIGN);                        \
+  const int kSizeUV =                                                          \
+    SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y);              \
+  align_buffer_64(src_y, kWidth * kHeight + OFF);                              \
+  align_buffer_64(src_u, kSizeUV + OFF);                                       \
+  align_buffer_64(src_v, kSizeUV + OFF);                                       \
+  align_buffer_64(dst_argb_c, kStrideB * kHeight + OFF);                       \
+  align_buffer_64(dst_argb_opt, kStrideB * kHeight + OFF);                     \
+  srandom(time(NULL));                                                         \
+  for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
+    src_y[i + OFF] = (random() & 0xff);                                        \
+  }                                                                            \
+  for (int i = 0; i < kSizeUV; ++i) {                                          \
+    src_u[i + OFF] = (random() & 0xff);                                        \
+    src_v[i + OFF] = (random() & 0xff);                                        \
+  }                                                                            \
+  memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
+  memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
+  MaskCpuFlags(0);                                                             \
+  FMT_PLANAR##To##FMT_B##Dither(src_y + OFF, kWidth,                           \
+                        src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
+                        src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
+                        dst_argb_c + OFF, kStrideB,                            \
+                        NULL, kWidth, NEG kHeight);                            \
+  MaskCpuFlags(-1);                                                            \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
+    FMT_PLANAR##To##FMT_B##Dither(src_y + OFF, kWidth,                         \
+                          src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
+                          src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
+                          dst_argb_opt + OFF, kStrideB,                        \
+                          NULL, kWidth, NEG kHeight);                          \
+  }                                                                            \
+  int max_diff = 0;                                                            \
+  /* Convert to ARGB so 565 is expanded to bytes that can be compared. */      \
+  align_buffer_64(dst_argb32_c, kWidth * BPP_C  * kHeight);                    \
+  align_buffer_64(dst_argb32_opt, kWidth * BPP_C  * kHeight);                  \
+  memset(dst_argb32_c, 2, kWidth * BPP_C  * kHeight);                          \
+  memset(dst_argb32_opt, 102, kWidth * BPP_C  * kHeight);                      \
+  FMT_B##To##FMT_C(dst_argb_c + OFF, kStrideB,                                 \
+                   dst_argb32_c, kWidth * BPP_C ,                              \
+                   kWidth, kHeight);                                           \
+  FMT_B##To##FMT_C(dst_argb_opt + OFF, kStrideB,                               \
+                   dst_argb32_opt, kWidth * BPP_C ,                            \
+                   kWidth, kHeight);                                           \
+  for (int i = 0; i < kWidth * BPP_C * kHeight; ++i) {                         \
+    int abs_diff =                                                             \
+        abs(static_cast<int>(dst_argb32_c[i]) -                                \
+            static_cast<int>(dst_argb32_opt[i]));                              \
+    if (abs_diff > max_diff) {                                                 \
+      max_diff = abs_diff;                                                     \
+    }                                                                          \
+  }                                                                            \
+  EXPECT_LE(max_diff, DIFF);                                                   \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_u);                                               \
+  free_aligned_buffer_64(src_v);                                               \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_opt);                                        \
+  free_aligned_buffer_64(dst_argb32_c);                                        \
+  free_aligned_buffer_64(dst_argb32_opt);                                      \
+}
+
+#define TESTPLANARTOBD(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
+                      YALIGN, DIFF, FMT_C, BPP_C)                              \
+    TESTPLANARTOBID(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
+        YALIGN, benchmark_width_ - 4, DIFF, _Any, +, 0, FMT_C, BPP_C)          \
+    TESTPLANARTOBID(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
+        YALIGN, benchmark_width_, DIFF, _Unaligned, +, 1, FMT_C, BPP_C)        \
+    TESTPLANARTOBID(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
+        YALIGN, benchmark_width_, DIFF, _Invert, -, 0, FMT_C, BPP_C)           \
+    TESTPLANARTOBID(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
+        YALIGN, benchmark_width_, DIFF, _Opt, +, 0, FMT_C, BPP_C)
+
+TESTPLANARTOBD(I420, 2, 2, RGB565, 2, 2, 1, 9, ARGB, 4)
 
 }  // namespace libyuv
