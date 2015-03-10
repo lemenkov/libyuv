@@ -15,6 +15,8 @@ config("libyuv_config") {
   ]
 }
 
+use_neon = current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)
+
 source_set("libyuv") {
   sources = [
     "include/libyuv.h",
@@ -90,25 +92,27 @@ source_set("libyuv") {
     "//third_party:jpeg",
   ]
 
-  if (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)) {
+  if (use_neon) {
     deps += [ ":libyuv_neon" ]
   }
 }
 
-static_library("libyuv_neon") {
-  sources = [
-    "source/compare_neon.cc",
-    "source/compare_neon64.cc",
-    "source/rotate_neon.cc",
-    "source/rotate_neon64.cc",
-    "source/row_neon.cc",
-    "source/row_neon64.cc",
-    "source/scale_neon.cc",
-    "source/scale_neon64.cc",
-  ]
+if (use_neon) {
+  static_library("libyuv_neon") {
+    sources = [
+      "source/compare_neon.cc",
+      "source/compare_neon64.cc",
+      "source/rotate_neon.cc",
+      "source/rotate_neon64.cc",
+      "source/row_neon.cc",
+      "source/row_neon64.cc",
+      "source/scale_neon.cc",
+      "source/scale_neon64.cc",
+    ]
 
-  public_configs = [ ":libyuv_config" ]
+    public_configs = [ ":libyuv_config" ]
 
-  configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-  cflags = [ "-mfpu=neon" ]
+    configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+    cflags = [ "-mfpu=neon" ]
+  }
 }
