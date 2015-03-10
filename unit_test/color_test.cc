@@ -296,17 +296,16 @@ TEST_F(libyuvTest, TestGreyYUV) {
   }
 }
 
-// This full test should be run occassionally to test all values are accurate.
+#define RANDOM256(s) ((s & 1) ? ((s >> 1) ^ 0xb8) : (s >> 1))
+
 TEST_F(libyuvTest, TestFullYUV) {
   int i;
-  // If using small image, step faster.
-  int step = benchmark_width_ <= 128 ? 3 : 1;
-  int r0, g0, b0, r1, g1, b1;
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
-  for (int y = 0; y < 256; y += step) {
-    for (int u = 0; u < 256; u += step) {
-      for (int v2 = 0; v2 < 256; v2 += step) {
-        int v = (v2 & 1) ? ((v2 >> 1) ^ 0xb8) : (v2 >> 1);
+  for (int u = 0; u < 256; ++u) {
+    for (int v = 0; v < 256; ++v) {
+      for (int y2 = 0; y2 < 256; ++y2) {
+        int r0, g0, b0, r1, g1, b1;
+        int y = RANDOM256(y2);
         YUVToRGBReference(y, u, v, &r0, &g0, &b0);
         YUVToRGB(y, u, v, &r1, &g1, &b1);
         EXPECT_NEAR(r0, r1, ERROR_R);
