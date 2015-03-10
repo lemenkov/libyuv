@@ -1565,6 +1565,7 @@ int I420Scale(const uint8* src_y, int src_stride_y,
   int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
   int dst_halfheight = SUBSAMPLE(dst_height, 1, 1);
   if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 ||
       !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
@@ -1596,6 +1597,7 @@ int I420Scale_16(const uint16* src_y, int src_stride_y,
   int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
   int dst_halfheight = SUBSAMPLE(dst_height, 1, 1);
   if (!src_y || !src_u || !src_v || src_width == 0 || src_height == 0 ||
+      src_width > 32768 || src_height > 32768 ||
       !dst_y || !dst_u || !dst_v || dst_width <= 0 || dst_height <= 0) {
     return -1;
   }
