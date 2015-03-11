@@ -200,6 +200,7 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I411TOARGBROW_AVX2
+#define HAS_I400TOARGBROW_AVX2
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
@@ -935,9 +936,11 @@ void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
+void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
+void I400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
 void I400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int pix);
 
 void I444ToARGBRow_C(const uint8* src_y,

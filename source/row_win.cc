@@ -284,6 +284,38 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   }
 }
 
+#ifdef HAS_I400TOARGBROW_AVX2
+// Duplicates gray value 3 times and fills in alpha opaque.
+__declspec(naked) __declspec(align(16))
+void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix) {
+  __asm {
+    mov         eax, [esp + 4]        // src_y
+    mov         edx, [esp + 8]        // dst_argb
+    mov         ecx, [esp + 12]       // pix
+    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0xff000000
+    vpslld      ymm5, ymm5, 24
+
+  convertloop:
+    vmovdqu     xmm0, [eax]
+    lea         eax,  [eax + 16]
+    vpermq      ymm0, ymm0, 0xd8
+    vpunpcklbw  ymm0, ymm0, ymm0
+    vpermq      ymm0, ymm0, 0xd8
+    vpunpckhwd  ymm1, ymm0, ymm0
+    vpunpcklwd  ymm0, ymm0, ymm0
+    vpor        ymm0, ymm0, ymm5
+    vpor        ymm1, ymm1, ymm5
+    vmovdqu     [edx], ymm0
+    vmovdqu     [edx + 32], ymm1
+    lea         edx, [edx + 64]
+    sub         ecx, 16
+    jg          convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_I400TOARGBROW_AVX2
+
 __declspec(naked) __declspec(align(16))
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
   __asm {

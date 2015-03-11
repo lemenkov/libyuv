@@ -349,6 +349,14 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_I400TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I400ToARGBRow = I400ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I400ToARGBRow = I400ToARGBRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_I400TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I400ToARGBRow = I400ToARGBRow_Any_NEON;
