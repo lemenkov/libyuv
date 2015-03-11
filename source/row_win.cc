@@ -1698,6 +1698,17 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
   }
 
+// Read 4 UV from 411, upsample to 16 UV.
+#define READYUV411_AVX2 __asm {                                                \
+    __asm vmovd      xmm0, dword ptr [esi]        /* U */         /* NOLINT */ \
+    __asm vmovd      xmm1, dword ptr [esi + edi]  /* V */         /* NOLINT */ \
+    __asm lea        esi,  [esi + 4]                                           \
+    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpunpckldq ymm0, ymm0, ymm0             /* UVUVUVUV (upsample) */    \
+  }
+
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2 __asm {                                                  \
     __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
@@ -1821,7 +1832,41 @@ void I444ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I444TOARGBROW_AVX2
 
+#ifdef HAS_I411TOARGBROW_AVX2
+// 16 pixels
+// 4 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void I411ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
+ convertloop:
+    READYUV411_AVX2
+    YUVTORGB_AVX2(kYuvConstants)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_I411TOARGBROW_AVX2
 
 #ifdef HAS_NV12TOARGBROW_AVX2
 // 16 pixels.
@@ -2050,7 +2095,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm lea        esi,  [esi + 2]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
-    __asm punpckldq  xmm0, xmm0           /* UVUV (upsample) */                \
+    __asm punpckldq  xmm0, xmm0           /* UVUVUVUV (upsample) */            \
   }
 
 // Read 4 UV from NV12, upsample to 8 UV.

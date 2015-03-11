@@ -230,6 +230,14 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_I411TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I411ToARGBRow = I411ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I411ToARGBRow = I411ToARGBRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_I411TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I411ToARGBRow = I411ToARGBRow_Any_NEON;

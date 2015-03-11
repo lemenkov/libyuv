@@ -199,6 +199,7 @@ extern "C" {
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
+#define HAS_I411TOARGBROW_AVX2
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
@@ -1061,6 +1062,11 @@ void I411ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_v,
                          uint8* dst_argb,
                          int width);
+void I411ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
 void NV12ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_uv,
                          uint8* dst_argb,
@@ -1205,6 +1211,11 @@ void I411ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* dst_argb,
                              int width);
+void I411ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
 void NV12ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_uv,
                              uint8* dst_argb,
