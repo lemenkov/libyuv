@@ -388,7 +388,9 @@ int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     int width, int height, int interpolation);
 
 #if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
-    defined(TARGET_IPHONE_SIMULATOR)
+    defined(TARGET_IPHONE_SIMULATOR) || \
+    (defined(__i386__) && !defined(__SSE2__)) || \
+    (defined(_MSC_VER) && defined(__clang__))
 #define LIBYUV_DISABLE_X86
 #endif
 
