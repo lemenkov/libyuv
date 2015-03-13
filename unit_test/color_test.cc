@@ -185,10 +185,19 @@ static void YToRGB(int y, int* r, int* g, int* b) {
 
 // Pick a method for clamping.
 #define CLAMPMETHOD_IF 1
+//#define CLAMPMETHOD_TABLE 1
+//#define CLAMPMETHOD_TERNARY 1
+//#define CLAMPMETHOD_MASK 1
+
+// Pick a method for rounding.
+#define ROUND(f) static_cast<int>(f + 0.5)
+//#define ROUND(f) lrintf(f)
+//#define ROUND(f) static_cast<int>(round(f))
+//#define ROUND(f) _mm_cvt_ss2si(_mm_load_ss(&f))
 
 #if defined(CLAMPMETHOD_IF)
-static int RoundToByte(double f) {
-  int i = static_cast<int>(f + 0.5);
+static int RoundToByte(float f) {
+  int i =  ROUND(f);
   if (i < 0) {
     i = 0;
   }
@@ -246,27 +255,21 @@ static const unsigned char clamptable[811] = {
   255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
-static int RoundToByte(double f) {
-  return clamptable[static_cast<int>(f + 0.5) + 276];
+static int RoundToByte(float f) {
+  return clamptable[ROUND(f) + 276];
 }
 #elif defined(CLAMPMETHOD_TERNARY)
 static int RoundToByte(float f) {
-  int i = static_cast<int>(f + 0.5);
+  int i = ROUND(f);
   return (i < 0) ? 0 : ((i > 255) ? 255 : i);
 }
 #elif defined(CLAMPMETHOD_MASK)
 static int RoundToByte(float f) {
-  int i = static_cast<int>(f + 0.5);
+  int i = ROUND(f);
   i =  ((-(i) >> 31) & (i));  // clamp to 0.
   return (((255 - (i)) >> 31) | (i)) & 255;  // clamp to 255.
 }
 #endif
-
-static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
-  *r = RoundToByte((y - 16) * 1.164 + (v - 128) * 1.596);
-  *g = RoundToByte((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
-  *b = RoundToByte((y - 16) * 1.164 + (u - 128) * 2.018);
-}
 
 #define RANDOM256(s) ((s & 1) ? ((s >> 1) ^ 0xb8) : (s >> 1))
 
@@ -285,6 +288,12 @@ TEST_F(libyuvTest, TestRoundToByte) {
   }
   EXPECT_GE(allb, 0);
   EXPECT_LE(allb, 255);
+}
+
+static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
+  *r = RoundToByte((y - 16) * 1.164 + (v - 128) * 1.596);
+  *g = RoundToByte((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
+  *b = RoundToByte((y - 16) * 1.164 + (u - 128) * 2.018);
 }
 
 TEST_F(libyuvTest, TestYUV) {
