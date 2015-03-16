@@ -206,7 +206,8 @@ static __inline void __cpuid(int cpu_info[4], int info_type) {
     : "=a"(cpu_info[0]), "=D"(cpu_info[1]), "=c"(cpu_info[2]), "=d"(cpu_info[3])
     : "a"(info_type));
 }
-#elif defined(__i386__) || defined(__x86_64__)
+// For gcc/clang but not clangcl.
+#elif (defined(__i386__) || defined(__x86_64__)) && !defined(_MSC_VER)
 static __inline void __cpuid(int cpu_info[4], int info_type) {
   asm volatile (  // NOLINT
     "cpuid                                     \n"
