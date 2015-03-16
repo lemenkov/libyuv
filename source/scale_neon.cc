@@ -541,6 +541,40 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
   );
 }
 
+void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                    uint16* dst_ptr, int src_width, int src_height) {
+  const uint8* src_tmp = NULL;
+  asm volatile (
+    ".p2align   2                              \n"
+  "1:                                          \n"
+    "mov       %0, %1                          \n"
+    "mov       r12, %5                         \n"
+    "veor      q2, q2, q2                      \n"
+    "veor      q3, q3, q3                      \n"
+  "2:                                          \n"
+    // load 16 pixels into q0
+    MEMACCESS(0)
+    "vld1.8     {q0}, [%0], %3                 \n"
+    "vaddw.u8   q3, q3, d1                     \n"
+    "vaddw.u8   q2, q2, d0                     \n"
+    "subs       r12, r12, #1                   \n"
+    "bgt        2b                             \n"
+    MEMACCESS(2)
+    "vst1.16    {q2, q3}, [%2]!                \n"  // store pixels
+    "add        %1, %1, #16                    \n"
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop
+    "bgt        1b                             \n"
+  : "+r"(src_tmp),          // %0
+    "+r"(src_ptr),          // %1
+    "+r"(dst_ptr),          // %2
+    "+r"(src_stride),       // %3
+    "+r"(src_width),        // %4
+    "+r"(src_height)        // %5
+  :
+  : "memory", "cc", "r12", "q0", "q1", "q2", "q3"  // Clobber List
+  );
+}
+
 // 16x2 -> 16x1
 void ScaleFilterRows_NEON(uint8* dst_ptr,
                           const uint8* src_ptr, ptrdiff_t src_stride,

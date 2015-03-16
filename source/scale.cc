@@ -758,6 +758,12 @@ static void ScalePlaneBox(int src_width, int src_height,
     }
 #endif
 
+#if defined(HAS_SCALEADDROWS_NEON)
+    if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 16)) {
+      ScaleAddRows = ScaleAddRows_NEON;
+    }
+#endif
+
     for (j = 0; j < dst_height; ++j) {
       int boxheight;
       int iy = y >> 16;
