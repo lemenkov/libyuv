@@ -24,21 +24,26 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
-// YUV to RGB conversion constants.
+// BT.601 YUV to RGB reference
+//  R = (Y - 16) * 1.164              - V * -1.596
+//  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813
+//  B = (Y - 16) * 1.164 - U * -2.018
+
 // Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
-#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
 // U and V contributions to R,G,B.
-#define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UG 25 /* -round(-0.391 * 64) */
-#define VG 52 /* -round(-0.813 * 64) */
-#define VR -102 /* -round(1.596 * 64) */
+#define UB -128 /* max(-128, round(-2.018 * 64)) */
+#define UG 25 /* round(0.391 * 64) */
+#define VG 52 /* round(0.813 * 64) */
+#define VR -102 /* round(-1.596 * 64) */
 
 // Bias values to subtract 16 from Y and 128 from U and V.
-#define BB (UB * 128            - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR            (VR * 128 - YGB)
+#define BB (UB * 128            + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR            (VR * 128 + YGB)
 
 struct YuvConstants {
   lvec8 kUVToB;     // 0
@@ -77,6 +82,67 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
+
+#undef YG
+#undef YGB
+#undef UB
+#undef UG
+#undef VG
+#undef VR
+#undef BB
+#undef BG
+#undef BR
+
+// JPEG YUV to RGB reference
+// *  R = Y                - V * -1.40200
+// *  G = Y - U *  0.34414 - V *  0.71414
+// *  B = Y - U * -1.77200
+
+// Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
+#define YGJ 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
+#define YGBJ 32  /* 64 / 2 */
+
+// U and V contributions to R,G,B.
+#define UBJ -113 /* round(-1.77200 * 64) */
+#define UGJ 22 /* round(0.34414 * 64) */
+#define VGJ 46 /* round(0.71414  * 64) */
+#define VRJ -90 /* round(-1.40200 * 64) */
+
+// Bias values to subtract 16 from Y and 128 from U and V.
+#define BBJ (UBJ * 128             + YGBJ)
+#define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
+#define BRJ             (VRJ * 128 + YGBJ)
+
+// JPEG constants for YUV to RGB.
+static YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+  { UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0,
+    UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0 },
+  { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ },
+  { 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ,
+    0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ },
+  { BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ,
+    BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ },
+  { BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ,
+    BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ },
+  { BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ,
+    BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ },
+  { YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ,
+    YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ }
+};
+
+#undef YGJ
+#undef YGBJ
+#undef UBJ
+#undef UGJ
+#undef VGJ
+#undef VRJ
+#undef BBJ
+#undef BGJ
+#undef BRJ
 
 // 64 bit
 #if defined(_M_X64)
@@ -1828,6 +1894,43 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TOARGBROW_AVX2
 
+
+#ifdef HAS_J422TOARGBROW_AVX2
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked) __declspec(align(16))
+void J422ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* dst_argb,
+                        int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READYUV422_AVX2
+    YUVTORGB_AVX2(kYuvJConstants)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_J422TOARGBROW_AVX2
+
 #ifdef HAS_I444TOARGBROW_AVX2
 // 16 pixels
 // 16 UV values with 16 Y producing 16 ARGB (64 bytes).
@@ -2454,6 +2557,40 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUV422
     YUVTORGB(kYuvConstants)
+    STOREARGB
+
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels.
+// JPeg color space version of I422ToARGB
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked) __declspec(align(16))
+void J422ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* dst_argb,
+                         int width) {
+  __asm {
+    push       esi
+    push       edi
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // U
+    mov        edi, [esp + 8 + 12]  // V
+    mov        edx, [esp + 8 + 16]  // argb
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        edi, esi
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+
+ convertloop:
+    READYUV422
+    YUVTORGB(kYuvJConstants)
     STOREARGB
 
     sub        ecx, 8

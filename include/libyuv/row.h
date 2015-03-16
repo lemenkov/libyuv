@@ -95,7 +95,6 @@ extern "C" {
 #define HAS_I422TOUYVYROW_SSE2
 #define HAS_I422TOYUY2ROW_SSE2
 #define HAS_I444TOARGBROW_SSSE3
-// #define HAS_J422TOARGBROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSE2
 #define HAS_MIRRORROW_SSSE3
@@ -204,6 +203,8 @@ extern "C" {
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
+#define HAS_J422TOARGBROW_SSSE3
+#define HAS_J422TOARGBROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -1119,6 +1120,11 @@ void J422ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_v,
                          uint8* dst_argb,
                          int width);
+void J422ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
 void I422ToBGRARow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1261,6 +1267,16 @@ void YUY2ToARGBRow_Any_AVX2(const uint8* src_yuy2,
                             uint8* dst_argb,
                             int width);
 void UYVYToARGBRow_Any_AVX2(const uint8* src_uyvy,
+                            uint8* dst_argb,
+                            int width);
+void J422ToARGBRow_Any_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb,
+                             int width);
+void J422ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
                             uint8* dst_argb,
                             int width);
 void I422ToBGRARow_Any_SSSE3(const uint8* src_y,
