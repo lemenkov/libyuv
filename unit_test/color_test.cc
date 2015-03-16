@@ -135,8 +135,8 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
 TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_,
        ERROR_FULL, MAX_CDIFF)
 TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, ERROR_FULL, MAX_CDIFF)
-TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 3, 0)
-TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 4, 0)
+TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, 1, 0)
+TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 1, 0)
 
 static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
   const int kWidth = 16;
@@ -154,6 +154,32 @@ static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
 
   /* YUV converted to ARGB. */
   I422ToARGB(orig_y, kWidth,
+             orig_u, (kWidth + 1) / 2,
+             orig_v, (kWidth + 1) / 2,
+             orig_pixels, kWidth * 4,
+             kWidth, kHeight);
+
+  *b = orig_pixels[0];
+  *g = orig_pixels[1];
+  *r = orig_pixels[2];
+}
+
+static void YUVJToRGB(int y, int u, int v, int* r, int* g, int* b) {
+  const int kWidth = 16;
+  const int kHeight = 1;
+  const int kPixels = kWidth * kHeight;
+  const int kHalfPixels = ((kWidth + 1) / 2) * ((kHeight + 1) / 2);
+
+  SIMD_ALIGNED(uint8 orig_y[16]);
+  SIMD_ALIGNED(uint8 orig_u[8]);
+  SIMD_ALIGNED(uint8 orig_v[8]);
+  SIMD_ALIGNED(uint8 orig_pixels[16 * 1 * 4]);
+  memset(orig_y, y, kPixels);
+  memset(orig_u, u, kHalfPixels);
+  memset(orig_v, v, kHalfPixels);
+
+  /* YUV converted to ARGB. */
+  J422ToARGB(orig_y, kWidth,
              orig_u, (kWidth + 1) / 2,
              orig_v, (kWidth + 1) / 2,
              orig_pixels, kWidth * 4,
@@ -291,9 +317,15 @@ TEST_F(libyuvTest, TestRoundToByte) {
 }
 
 static void YUVToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
-  *r = RoundToByte((y - 16) * 1.164 + (v - 128) * 1.596);
-  *g = RoundToByte((y - 16) * 1.164 + (u - 128) * -0.391 + (v - 128) * -0.813);
-  *b = RoundToByte((y - 16) * 1.164 + (u - 128) * 2.018);
+  *r = RoundToByte((y - 16) * 1.164 - (v - 128) * -1.596);
+  *g = RoundToByte((y - 16) * 1.164 - (u - 128) * 0.391 - (v - 128) * 0.813);
+  *b = RoundToByte((y - 16) * 1.164 - (u - 128) * -2.018);
+}
+
+static void YUVJToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
+  *r = RoundToByte(y - (v - 128) * -1.40200);
+  *g = RoundToByte(y - (u - 128) * 0.34414 - (v - 128) * 0.71414);
+  *b = RoundToByte(y - (u - 128) * -1.77200);
 }
 
 TEST_F(libyuvTest, TestYUV) {
@@ -405,6 +437,52 @@ TEST_F(libyuvTest, TestFullYUV) {
         EXPECT_NEAR(r0, r1, ERROR_R);
         EXPECT_NEAR(g0, g1, ERROR_G);
         EXPECT_NEAR(b0, b1, ERROR_B);
+        ++rh[r1 - r0 + 128];
+        ++gh[g1 - g0 + 128];
+        ++bh[b1 - b0 + 128];
+      }
+    }
+  }
+  printf("hist\t");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", i - 128);
+    }
+  }
+  printf("\nred\t");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", rh[i]);
+    }
+  }
+  printf("\ngreen\t");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", gh[i]);
+    }
+  }
+  printf("\nblue\t");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", bh[i]);
+    }
+  }
+  printf("\n");
+}
+
+TEST_F(libyuvTest, TestFullYUVJ) {
+  int i;
+  int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
+  for (int u = 0; u < 256; ++u) {
+    for (int v = 0; v < 256; ++v) {
+      for (int y2 = 0; y2 < 256; ++y2) {
+        int r0, g0, b0, r1, g1, b1;
+        int y = RANDOM256(y2);
+        YUVJToRGBReference(y, u, v, &r0, &g0, &b0);
+        YUVJToRGB(y, u, v, &r1, &g1, &b1);
+        EXPECT_NEAR(r0, r1, 1);
+        EXPECT_NEAR(g0, g1, 1);
+        EXPECT_NEAR(b0, b1, 1);
         ++rh[r1 - r0 + 128];
         ++gh[g1 - g0 + 128];
         ++bh[b1 - b0 + 128];
