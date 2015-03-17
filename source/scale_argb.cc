@@ -61,8 +61,9 @@ static void ScaleARGBDown2(int src_width, int src_height,
 #endif
 #if defined(HAS_SCALEARGBROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
-    ScaleARGBRowDown2 = filtering ? ScaleARGBRowDown2Box_NEON :
-        ScaleARGBRowDown2_NEON;
+    ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_NEON :
+        (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_NEON :
+        ScaleARGBRowDown2Box_NEON);
   }
 #endif
 

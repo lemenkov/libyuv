@@ -698,6 +698,35 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
+void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb, ptrdiff_t src_stride,
+                                  uint8* dst_argb, int dst_width) {
+  asm volatile (
+    ".p2align   2                              \n"
+  "1:                                          \n"
+    MEMACCESS(0)
+    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+    MEMACCESS(0)
+    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB pixels.
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
+    "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
+    "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
+    "vpaddl.u8  q3, q3                         \n"  // A 16 bytes -> 8 shorts.
+    "vrshrn.u16 d0, q0, #1                     \n"  // downshift, round and pack
+    "vrshrn.u16 d1, q1, #1                     \n"
+    "vrshrn.u16 d2, q2, #1                     \n"
+    "vrshrn.u16 d3, q3, #1                     \n"
+    MEMACCESS(1)
+    "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"
+    "bgt       1b                              \n"
+  : "+r"(src_argb),         // %0
+    "+r"(dst_argb),         // %1
+    "+r"(dst_width)         // %2
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3"     // Clobber List
+  );
+}
+
 void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width) {
   asm volatile (
