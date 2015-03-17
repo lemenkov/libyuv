@@ -517,6 +517,7 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
 void I400ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
+	int64 width64 = (int64)(width);
   asm volatile (
     YUV422TORGB_SETUP_REG
   "1:                                          \n"
@@ -529,7 +530,7 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
-      "+r"(width)      // %2
+      "+r"(width64)    // %2
     : [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
@@ -674,6 +675,7 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
 void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
                         int width) {
+  int64 width64 = (int64)(width);	
   asm volatile (
     YUV422TORGB_SETUP_REG
   "1:                                          \n"
@@ -686,7 +688,7 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
     "b.gt       1b                             \n"
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
-      "+r"(width)      // %2
+      "+r"(width64)    // %2
     : [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
@@ -699,6 +701,7 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
 void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
                         int width) {
+  int64 width64 = (int64)(width);	
   asm volatile (
     YUV422TORGB_SETUP_REG
   "1:                                          \n"
@@ -711,7 +714,7 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
     "b.gt       1b                             \n"
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
-      "+r"(width)      // %2
+      "+r"(width64)    // %2
     : [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
