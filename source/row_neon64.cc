@@ -1376,6 +1376,31 @@ void ARGBToRGB565Row_NEON(const uint8* src_argb, uint8* dst_rgb565, int pix) {
 }
 #endif  // HAS_ARGBTORGB565ROW_NEON
 
+#ifdef HAS_ARGBTORGB565DITHERROW_NEON
+void ARGBToRGB565DitherRow_NEON(const uint8* src_argb, uint8* dst_rgb,
+                                const uint32 dither4, int width) {
+  asm volatile (
+    "dup        v1.4s, %w2                     \n"  // dither4
+  "1:                                          \n"
+    MEMACCESS(1)
+    "ld4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%1], #32 \n"  // load 8 pixels
+    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "uqadd      v20.8b, v20.8b, v1.8b          \n"
+    "uqadd      v21.8b, v21.8b, v1.8b          \n"
+    "uqadd      v22.8b, v22.8b, v1.8b          \n"
+    ARGBTORGB565
+    MEMACCESS(0)
+    "st1        {v0.16b}, [%0], #16            \n"  // store 8 pixels RGB565.
+    "b.gt       1b                             \n"
+  : "+r"(dst_rgb)    // %0
+  : "r"(src_argb),   // %1
+    "r"(dither4),    // %2
+    "r"(width)       // %3
+  : "cc", "memory", "v0", "v1", "v20", "v21", "v22", "v23"
+  );
+}
+#endif  // HAS_ARGBTORGB565ROW_NEON
+
 #ifdef HAS_ARGBTOARGB1555ROW_NEON
 void ARGBToARGB1555Row_NEON(const uint8* src_argb, uint8* dst_argb1555,
                             int pix) {

@@ -847,6 +847,14 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_NEON;
+    }
+  }
+#endif
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
                           *(uint32*)(dither4x4 + ((y & 3) << 2)), width);
