@@ -24,6 +24,16 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
     (defined(_M_IX86) || defined(_M_X64))
 
+struct YuvConstants {
+  lvec8 kUVToB;     // 0
+  lvec8 kUVToG;     // 32
+  lvec8 kUVToR;     // 64
+  lvec16 kUVBiasB;  // 96
+  lvec16 kUVBiasG;  // 128
+  lvec16 kUVBiasR;  // 160
+  lvec16 kYToRgb;   // 192
+};
+
 // BT.601 YUV to RGB reference
 //  R = (Y - 16) * 1.164              - V * -1.596
 //  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813
@@ -44,16 +54,6 @@ extern "C" {
 #define BB (UB * 128            + YGB)
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
-
-struct YuvConstants {
-  lvec8 kUVToB;     // 0
-  lvec8 kUVToG;     // 32
-  lvec8 kUVToR;     // 64
-  lvec16 kUVBiasB;  // 96
-  lvec16 kUVBiasG;  // 128
-  lvec16 kUVBiasR;  // 160
-  lvec16 kYToRgb;   // 192
-};
 
 // BT601 constants for YUV to RGB.
 static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
@@ -1893,7 +1893,6 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
   }
 }
 #endif  // HAS_I422TOARGBROW_AVX2
-
 
 #ifdef HAS_J422TOARGBROW_AVX2
 // 16 pixels

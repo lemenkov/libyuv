@@ -124,6 +124,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
+#define HAS_J422TOARGBROW_SSSE3
 
 // Effects:
 #define HAS_ARGBADDROW_SSE2
@@ -203,8 +204,6 @@ extern "C" {
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
-#define HAS_J422TOARGBROW_SSSE3
-#define HAS_J422TOARGBROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -232,6 +231,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_J422TOARGBROW_AVX2
 
 // The following require HAS_I422TOARGBROW_AVX2
 #if defined(HAS_I422TOARGBROW_AVX2)
@@ -246,7 +246,6 @@ extern "C" {
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
-
 
 // The following are Yasm x86 only:
 // TODO(fbarchard): Port AVX2 to inline.
