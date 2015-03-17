@@ -196,7 +196,7 @@ static void YToRGB(int y, int* r, int* g, int* b) {
   memset(orig_y, y, kPixels);
 
   /* YUV converted to ARGB. */
-  YToARGB(orig_y, kWidth, orig_pixels, kWidth * 4, kWidth, kHeight);
+  I400ToARGB(orig_y, kWidth, orig_pixels, kWidth * 4, kWidth, kHeight);
 
   *b = orig_pixels[0];
   *g = orig_pixels[1];
@@ -213,7 +213,7 @@ static void YJToRGB(int y, int* r, int* g, int* b) {
   memset(orig_y, y, kPixels);
 
   /* YUV converted to ARGB. */
-  I400ToARGB(orig_y, kWidth, orig_pixels, kWidth * 4, kWidth, kHeight);
+  J400ToARGB(orig_y, kWidth, orig_pixels, kWidth * 4, kWidth, kHeight);
 
   *b = orig_pixels[0];
   *g = orig_pixels[1];

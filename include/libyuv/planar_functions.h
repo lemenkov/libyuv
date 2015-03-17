@@ -45,6 +45,7 @@ int I400ToI400(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
+#define J400ToJ400 I400ToI400
 
 // Copy I422 to I422.
 #define I422ToI422 I422Copy
@@ -84,6 +85,7 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
                uint8* dst_v, int dst_stride_v,
                int width, int height);
 
+
 // Convert I420 to I400. (calls CopyPlane ignoring u/v).
 LIBYUV_API
 int I420ToI400(const uint8* src_y, int src_stride_y,
@@ -93,6 +95,7 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
                int width, int height);
 
 // Alias
+#define J420ToJ400 I420ToI400
 #define I420ToI420Mirror I420Mirror
 
 // I420 mirror.

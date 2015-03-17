@@ -531,9 +531,9 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
   );
 }
 
-void YToARGBRow_NEON(const uint8* src_y,
-                     uint8* dst_argb,
-                     int width) {
+void I400ToARGBRow_NEON(const uint8* src_y,
+                        uint8* dst_argb,
+                        int width) {
   asm volatile (
     YUV422TORGB_SETUP_REG
     ".p2align   2                              \n"
@@ -557,12 +557,12 @@ void YToARGBRow_NEON(const uint8* src_y,
   );
 }
 
-void I400ToARGBRow_NEON(const uint8* src_y,
+void J400ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    ".p2align   2                              \n"
     "vmov.u8    d23, #255                      \n"
+    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {d20}, [%0]!                   \n"

@@ -513,10 +513,10 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
 }
 #endif  // HAS_I422TOARGB4444ROW_NEON
 
-#ifdef HAS_YTOARGBROW_NEON
-void YToARGBRow_NEON(const uint8* src_y,
-                     uint8* dst_argb,
-                     int width) {
+#ifdef HAS_I400TOARGBROW_NEON
+void I400ToARGBRow_NEON(const uint8* src_y,
+                        uint8* dst_argb,
+                        int width) {
   asm volatile (
     YUV422TORGB_SETUP_REG
   "1:                                          \n"
@@ -536,10 +536,10 @@ void YToARGBRow_NEON(const uint8* src_y,
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
 }
-#endif  // HAS_YTOARGBROW_NEON
+#endif  // HAS_I400TOARGBROW_NEON
 
-#ifdef HAS_I400TOARGBROW_NEON
-void I400ToARGBRow_NEON(const uint8* src_y,
+#ifdef HAS_J400TOARGBROW_NEON
+void J400ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
@@ -560,7 +560,7 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "cc", "memory", "v20", "v21", "v22", "v23"
   );
 }
-#endif  // HAS_I400TOARGBROW_NEON
+#endif  // HAS_J400TOARGBROW_NEON
 
 #ifdef HAS_NV12TOARGBROW_NEON
 void NV12ToARGBRow_NEON(const uint8* src_y,

@@ -236,8 +236,8 @@ void TestRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
 }
 #endif  // TESTING
 
-#ifdef HAS_I400TOARGBROW_SSE2
-void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
+#ifdef HAS_J400TOARGBROW_SSE2
+void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     "pslld     $0x18,%%xmm5                    \n"
@@ -262,7 +262,7 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   :: "memory", "cc", "xmm0", "xmm1", "xmm5"
   );
 }
-#endif  // HAS_I400TOARGBROW_SSE2
+#endif  // HAS_J400TOARGBROW_SSE2
 
 #ifdef HAS_RGB24TOARGBROW_SSSE3
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
@@ -2066,8 +2066,8 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TORGBAROW_AVX2
 
-#ifdef HAS_YTOARGBROW_SSE2
-void YToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
+#ifdef HAS_I400TOARGBROW_SSE2
+void I400ToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
   asm volatile (
     "mov       $0x4a354a35,%%eax               \n"  // 4a35 = 18997 = 1.164
     "movd      %%eax,%%xmm2                    \n"
@@ -2109,12 +2109,12 @@ void YToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
   );
 }
-#endif  // HAS_YTOARGBROW_SSE2
+#endif  // HAS_I400TOARGBROW_SSE2
 
-#ifdef HAS_YTOARGBROW_AVX2
+#ifdef HAS_I400TOARGBROW_AVX2
 // 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
 // note: vpunpcklbw mutates and vpackuswb unmutates.
-void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
+void I400ToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
   asm volatile (
     "mov        $0x4a354a35,%%eax              \n" // 0488 = 1160 = 1.164 * 16
     "vmovd      %%eax,%%xmm2                   \n"
@@ -2156,7 +2156,7 @@ void YToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
   );
 }
-#endif  // HAS_YTOARGBROW_AVX2
+#endif  // HAS_I400TOARGBROW_AVX2
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.

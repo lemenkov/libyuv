@@ -982,7 +982,7 @@ void SobelXYRow_C(const uint8* src_sobelx, const uint8* src_sobely,
   }
 }
 
-void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
+void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
   // Copy a Y to RGB.
   int x;
   for (x = 0; x < width; ++x) {
@@ -1612,7 +1612,7 @@ void I422ToRGBARow_C(const uint8* src_y,
   }
 }
 
-void YToARGBRow_C(const uint8* src_y, uint8* rgb_buf, int width) {
+void I400ToARGBRow_C(const uint8* src_y, uint8* rgb_buf, int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YPixel(src_y[0], rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);

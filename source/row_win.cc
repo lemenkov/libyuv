@@ -324,7 +324,7 @@ static const uvec8 kShuffleMaskARGBToRAW_0 = {
 
 // Duplicates gray value 3 times and fills in alpha opaque.
 __declspec(naked) __declspec(align(16))
-void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
+void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
     mov        eax, [esp + 4]        // src_y
     mov        edx, [esp + 8]        // dst_argb
@@ -350,10 +350,10 @@ void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
   }
 }
 
-#ifdef HAS_I400TOARGBROW_AVX2
+#ifdef HAS_J400TOARGBROW_AVX2
 // Duplicates gray value 3 times and fills in alpha opaque.
 __declspec(naked) __declspec(align(16))
-void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix) {
+void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix) {
   __asm {
     mov         eax, [esp + 4]        // src_y
     mov         edx, [esp + 8]        // dst_argb
@@ -380,7 +380,7 @@ void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix) {
     ret
   }
 }
-#endif  // HAS_I400TOARGBROW_AVX2
+#endif  // HAS_J400TOARGBROW_AVX2
 
 __declspec(naked) __declspec(align(16))
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
@@ -2787,12 +2787,12 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #endif  // HAS_I422TOARGBROW_SSSE3
 
-#ifdef HAS_YTOARGBROW_SSE2
+#ifdef HAS_I400TOARGBROW_SSE2
 // 8 pixels of Y converted to 8 pixels of ARGB (32 bytes).
 __declspec(naked) __declspec(align(16))
-void YToARGBRow_SSE2(const uint8* y_buf,
-                     uint8* rgb_buf,
-                     int width) {
+void I400ToARGBRow_SSE2(const uint8* y_buf,
+                        uint8* rgb_buf,
+                        int width) {
   __asm {
     mov        eax, 0x4a354a35      // 4a35 = 18997 = round(1.164 * 64 * 256)
     movd       xmm2, eax
@@ -2832,15 +2832,15 @@ void YToARGBRow_SSE2(const uint8* y_buf,
     ret
   }
 }
-#endif  // HAS_YTOARGBROW_SSE2
+#endif  // HAS_I400TOARGBROW_SSE2
 
-#ifdef HAS_YTOARGBROW_AVX2
+#ifdef HAS_I400TOARGBROW_AVX2
 // 16 pixels of Y converted to 16 pixels of ARGB (64 bytes).
 // note: vpunpcklbw mutates and vpackuswb unmutates.
 __declspec(naked) __declspec(align(16))
-void YToARGBRow_AVX2(const uint8* y_buf,
-                     uint8* rgb_buf,
-                     int width) {
+void I400ToARGBRow_AVX2(const uint8* y_buf,
+                        uint8* rgb_buf,
+                        int width) {
   __asm {
     mov        eax, 0x4a354a35      // 4a35 = 18997 = round(1.164 * 64 * 256)
     vmovd      xmm2, eax
@@ -2883,7 +2883,7 @@ void YToARGBRow_AVX2(const uint8* y_buf,
     ret
   }
 }
-#endif  // HAS_YTOARGBROW_AVX2
+#endif  // HAS_I400TOARGBROW_AVX2
 
 #ifdef HAS_MIRRORROW_SSSE3
 // Shuffle table for reversing the bytes.

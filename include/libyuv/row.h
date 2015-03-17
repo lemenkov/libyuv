@@ -81,7 +81,7 @@ extern "C" {
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
-#define HAS_I400TOARGBROW_SSE2
+#define HAS_J400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
@@ -119,7 +119,7 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_SSE2
 #define HAS_UYVYTOUVROW_SSE2
 #define HAS_UYVYTOYROW_SSE2
-#define HAS_YTOARGBROW_SSE2
+#define HAS_I400TOARGBROW_SSE2
 #define HAS_YUY2TOARGBROW_SSSE3
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
@@ -199,7 +199,7 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I411TOARGBROW_AVX2
-#define HAS_I400TOARGBROW_AVX2
+#define HAS_J400TOARGBROW_AVX2
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
@@ -228,7 +228,7 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_AVX2
 #define HAS_UYVYTOUVROW_AVX2
 #define HAS_UYVYTOYROW_AVX2
-#define HAS_YTOARGBROW_AVX2
+#define HAS_I400TOARGBROW_AVX2
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
@@ -299,7 +299,7 @@ extern "C" {
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_COPYROW_NEON
-#define HAS_I400TOARGBROW_NEON
+#define HAS_J400TOARGBROW_NEON
 #define HAS_I411TOARGBROW_NEON
 #define HAS_I422TOABGRROW_NEON
 #define HAS_I422TOARGB1555ROW_NEON
@@ -338,7 +338,7 @@ extern "C" {
 #define HAS_UYVYTOUV422ROW_NEON
 #define HAS_UYVYTOUVROW_NEON
 #define HAS_UYVYTOYROW_NEON
-#define HAS_YTOARGBROW_NEON
+#define HAS_I400TOARGBROW_NEON
 #define HAS_YUY2TOARGBROW_NEON
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
@@ -936,13 +936,13 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int pix);
 
-void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
-void I400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int pix);
+void J400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int pix);
 
 void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
@@ -1335,27 +1335,13 @@ void I422ToRAWRow_Any_SSSE3(const uint8* src_y,
                             uint8* dst_argb,
                             int width);
 
-void YToARGBRow_C(const uint8* src_y,
-                  uint8* dst_argb,
-                  int width);
-void YToARGBRow_SSE2(const uint8* src_y,
-                     uint8* dst_argb,
-                     int width);
-void YToARGBRow_AVX2(const uint8* src_y,
-                     uint8* dst_argb,
-                     int width);
-void YToARGBRow_NEON(const uint8* src_y,
-                     uint8* dst_argb,
-                     int width);
-void YToARGBRow_Any_SSE2(const uint8* src_y,
-                         uint8* dst_argb,
-                         int width);
-void YToARGBRow_Any_AVX2(const uint8* src_y,
-                         uint8* dst_argb,
-                         int width);
-void YToARGBRow_Any_NEON(const uint8* src_y,
-                         uint8* dst_argb,
-                         int width);
+void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int width);
 
 // ARGB preattenuated alpha blend.
 void ARGBBlendRow_SSSE3(const uint8* src_argb, const uint8* src_argb1,

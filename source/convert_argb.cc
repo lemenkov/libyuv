@@ -259,13 +259,13 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
 
 // Convert I400 to ARGB.
 LIBYUV_API
-int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
-                         uint8* dst_argb, int dst_stride_argb,
-                         int width, int height) {
+int I400ToARGB(const uint8* src_y, int src_stride_y,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
   int y;
-  void (*YToARGBRow)(const uint8* y_buf,
+  void (*I400ToARGBRow)(const uint8* y_buf,
                      uint8* rgb_buf,
-                     int width) = YToARGBRow_C;
+                     int width) = I400ToARGBRow_C;
   if (!src_y || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -275,64 +275,6 @@ int I400ToARGB_Reference(const uint8* src_y, int src_stride_y,
     height = -height;
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
-  }
-  // Coalesce rows.
-  if (src_stride_y == width &&
-      dst_stride_argb == width * 4) {
-    width *= height;
-    height = 1;
-    src_stride_y = dst_stride_argb = 0;
-  }
-#if defined(HAS_YTOARGBROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    YToARGBRow = YToARGBRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      YToARGBRow = YToARGBRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_YTOARGBROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    YToARGBRow = YToARGBRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      YToARGBRow = YToARGBRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_YTOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    YToARGBRow = YToARGBRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      YToARGBRow = YToARGBRow_NEON;
-    }
-  }
-#endif
-
-  for (y = 0; y < height; ++y) {
-    YToARGBRow(src_y, dst_argb, width);
-    dst_argb += dst_stride_argb;
-    src_y += src_stride_y;
-  }
-  return 0;
-}
-
-// Convert I400 to ARGB.
-LIBYUV_API
-int I400ToARGB(const uint8* src_y, int src_stride_y,
-               uint8* dst_argb, int dst_stride_argb,
-               int width, int height) {
-  int y;
-  void (*I400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix) =
-      I400ToARGBRow_C;
-  if (!src_y || !dst_argb ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_stride_y = -src_stride_y;
   }
   // Coalesce rows.
   if (src_stride_y == width &&
@@ -365,8 +307,66 @@ int I400ToARGB(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+
   for (y = 0; y < height; ++y) {
     I400ToARGBRow(src_y, dst_argb, width);
+    dst_argb += dst_stride_argb;
+    src_y += src_stride_y;
+  }
+  return 0;
+}
+
+// Convert J400 to ARGB.
+LIBYUV_API
+int J400ToARGB(const uint8* src_y, int src_stride_y,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height) {
+  int y;
+  void (*J400ToARGBRow)(const uint8* src_y, uint8* dst_argb, int pix) =
+      J400ToARGBRow_C;
+  if (!src_y || !dst_argb ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width &&
+      dst_stride_argb == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_argb = 0;
+  }
+#if defined(HAS_J400TOARGBROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    J400ToARGBRow = J400ToARGBRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      J400ToARGBRow = J400ToARGBRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_J400TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    J400ToARGBRow = J400ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      J400ToARGBRow = J400ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_J400TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    J400ToARGBRow = J400ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      J400ToARGBRow = J400ToARGBRow_NEON;
+    }
+  }
+#endif
+  for (y = 0; y < height; ++y) {
+    J400ToARGBRow(src_y, dst_argb, width);
     src_y += src_stride_y;
     dst_argb += dst_stride_argb;
   }
