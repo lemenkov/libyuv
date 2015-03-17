@@ -2370,6 +2370,50 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
 }
 #endif
 
+#if defined(HAS_I422TORGB24ROW_AVX2)
+void I422ToRGB24Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_rgb24,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
+    // TODO(fbarchard): ARGBToRGB24Row_AVX2
+    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb24 += twidth * 3;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TORAWROW_AVX2)
+void I422ToRAWRow_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_raw,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
+    // TODO(fbarchard): ARGBToRAWRow_AVX2
+    ARGBToRAWRow_SSSE3(row, dst_raw, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_raw += twidth * 3;
+    width -= twidth;
+  }
+}
+#endif
+
 #if defined(HAS_NV12TORGB565ROW_AVX2)
 void NV12ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_uv,
                           uint8* dst_rgb565, int width) {

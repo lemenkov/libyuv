@@ -198,6 +198,8 @@ extern "C" {
 #define HAS_I422TORGB565ROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
+#define HAS_I422TORGB24ROW_AVX2
+#define HAS_I422TORAWROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I411TOARGBROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
@@ -1177,11 +1179,21 @@ void I422ToRGB24Row_SSSE3(const uint8* src_y,
                           const uint8* src_v,
                           uint8* dst_rgb24,
                           int width);
+void I422ToRGB24Row_AVX2(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_rgb24,
+                         int width);
 void I422ToRAWRow_SSSE3(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_raw,
                         int width);
+void I422ToRAWRow_AVX2(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_raw,
+                       int width);
 void I422ToARGBRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
@@ -1331,11 +1343,21 @@ void I422ToRGB24Row_Any_SSSE3(const uint8* src_y,
                               const uint8* src_v,
                               uint8* dst_argb,
                               int width);
+void I422ToRGB24Row_Any_AVX2(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb,
+                             int width);
 void I422ToRAWRow_Any_SSSE3(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
                             int width);
+void I422ToRAWRow_Any_AVX2(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_argb,
+                           int width);
 
 void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
