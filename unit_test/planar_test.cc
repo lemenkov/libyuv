@@ -22,12 +22,6 @@
 #include "libyuv/row.h"  // For Sobel
 #include "../unit_test/unit_test.h"
 
-#if defined(_MSC_VER)
-#define SIMD_ALIGNED(var) __declspec(align(16)) var
-#else  // __GNUC__
-#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#endif
-
 namespace libyuv {
 
 TEST_F(libyuvTest, TestAttenuate) {

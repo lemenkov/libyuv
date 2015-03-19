@@ -39,8 +39,7 @@ extern "C" {
 
 #if defined(__pnacl__) || defined(__CLR_VER) || defined(COVERAGE_ENABLED) || \
     defined(TARGET_IPHONE_SIMULATOR) || \
-    (defined(__i386__) && !defined(__SSE2__)) || \
-    (defined(_MSC_VER) && defined(__clang__))
+    (defined(__i386__) && !defined(__SSE2__))
 #define LIBYUV_DISABLE_X86
 #endif
 // True if compiling for SSSE3 as a requirement.
@@ -158,7 +157,7 @@ extern "C" {
 #endif
 
 // The following are available on x64 Visual C:
-#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64)
+#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && !defined(__clang__)
 #define HAS_I422TOARGBROW_SSSE3
 #endif
 
@@ -177,15 +176,16 @@ extern "C" {
 #endif  // __clang__
 
 // Visual C 2012 required for AVX2.
-#if defined(_M_IX86) && defined(_MSC_VER) && _MSC_VER >= 1700
+#if defined(_M_IX86) && !defined(__clang__) && \
+    defined(_MSC_VER) && _MSC_VER >= 1700
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
 // The following are available require VS2012.  Port to GCC.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 // TODO(fbarchard): fix AVX2 versions of YUV conversion.  bug=393
-#define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
+#define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORGBAROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
@@ -382,7 +382,7 @@ extern "C" {
 #endif
 #endif
 
-#if defined(_MSC_VER) && !defined(__CLR_VER)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 #define SIMD_ALIGNED32(var) __declspec(align(64)) var
 typedef __declspec(align(16)) int16 vec16[8];
@@ -397,8 +397,7 @@ typedef __declspec(align(32)) int8 lvec8[32];
 typedef __declspec(align(32)) uint16 ulvec16[16];
 typedef __declspec(align(32)) uint32 ulvec32[8];
 typedef __declspec(align(32)) uint8 ulvec8[32];
-
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined(__clang__)
 // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 #define SIMD_ALIGNED32(var) var __attribute__((aligned(64)))

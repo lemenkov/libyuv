@@ -20,6 +20,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// TODO(fbarchard): switch to standard form of inline; fails on clangcl.
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 #if defined(__APPLE__) && defined(__i386__)
@@ -70,7 +71,7 @@ void TransposeUVWx8_MIPS_DSPR2(const uint8* src, int src_stride,
 #endif  // defined(__mips__)
 
 #if !defined(LIBYUV_DISABLE_X86) && \
-    defined(_M_IX86) && defined(_MSC_VER)
+    defined(_M_IX86) && defined(_MSC_VER) && !defined(__clang__)
 #define HAS_TRANSPOSE_WX8_SSSE3
 __declspec(naked) __declspec(align(16))
 static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
@@ -381,7 +382,7 @@ static void TransposeWx8_SSSE3(const uint8* src, int src_stride,
   );
 }
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)  && !defined(__clang__)
 #define HAS_TRANSPOSE_UVWX8_SSE2
 void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,

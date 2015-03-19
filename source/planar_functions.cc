@@ -677,12 +677,12 @@ int ARGBAdd(const uint8* src_argb0, int src_stride_argb0,
     height = 1;
     src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
   }
-#if defined(HAS_ARGBADDROW_SSE2) && defined(_MSC_VER)
+#if defined(HAS_ARGBADDROW_SSE2) && (defined(_MSC_VER) && !defined(__clang__))
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBAddRow = ARGBAddRow_SSE2;
   }
 #endif
-#if defined(HAS_ARGBADDROW_SSE2) && !defined(_MSC_VER)
+#if defined(HAS_ARGBADDROW_SSE2) && !(defined(_MSC_VER) && !defined(__clang__))
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBAddRow = ARGBAddRow_Any_SSE2;
     if (IS_ALIGNED(width, 4)) {

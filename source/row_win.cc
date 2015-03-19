@@ -10,7 +10,8 @@
 
 #include "libyuv/row.h"
 
-#if defined (_M_X64) && !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_X64) && \
+    defined(_MSC_VER) && !defined(__clang__)
 #include <emmintrin.h>
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
 #endif
@@ -21,8 +22,8 @@ extern "C" {
 #endif
 
 // This module is for Visual C.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
-    (defined(_M_IX86) || defined(_M_X64))
+#if !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64)) && \
+    defined(_MSC_VER) && !defined(__clang__)
 
 struct YuvConstants {
   lvec8 kUVToB;     // 0
@@ -6273,7 +6274,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 #endif  // defined(_M_X64)
-#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER)
+#endif  // !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) ...
 
 #ifdef __cplusplus
 }  // extern "C"

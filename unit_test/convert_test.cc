@@ -26,12 +26,6 @@
 #include "libyuv/video_common.h"
 #include "../unit_test/unit_test.h"
 
-#if defined(_MSC_VER)
-#define SIMD_ALIGNED(var) __declspec(align(16)) var
-#else  // __GNUC__
-#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#endif
-
 namespace libyuv {
 
 #define SUBSAMPLE(v, a) ((((v) + (a) - 1)) / (a))

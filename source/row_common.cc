@@ -2175,7 +2175,8 @@ void I422ToUYVYRow_C(const uint8* src_y,
 // Maximum temporary width for wrappers to process at a time, in pixels.
 #define MAXTWIDTH 2048
 
-#if !defined(_MSC_VER) && defined(HAS_I422TORGB565ROW_SSSE3)
+#if !(defined(_MSC_VER) && !defined(__clang__)) && \
+    defined(HAS_I422TORGB565ROW_SSSE3)
 // row_win.cc has asm version, but GCC uses 2 step wrapper.
 void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
