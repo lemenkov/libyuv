@@ -575,6 +575,73 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
+// TODO(Yang Zhang): Investigate less load instructions for
+// the x/dx stepping
+#define LOAD2_DATA8_LANE(n)                                    \
+    "lsr        %5, %3, #16                    \n"             \
+    "add        r12, %1, %5                    \n"             \
+    "add        %3, %3, %4                     \n"             \
+    "vld2.8     {d6["#n"], d7["#n"]}, [r12]    \n"
+
+void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
+                          int dst_width, int x, int dx) {
+  int tmp[4] = {0, 1, 2, 3};
+  asm volatile (
+    ".p2align   2                              \n"
+    "vdup.32    q0, %3                         \n"  // x
+    "vdup.32    q1, %4                         \n"  // dx
+    "vld1.32    {q2}, [%5]                     \n"  // 0 1 2 3
+    "vshl.i32   q3, q1, #2                     \n"  // 4 * dx
+    "vmul.s32   q1, q1, q2                     \n"
+    // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
+    "vadd.s32   q1, q1, q0                     \n"
+    // x + 4 * dx, x + 5 * dx, x + 6 * dx, x + 7 * dx
+    "vadd.s32   q2, q1, q3                     \n"
+    "vshl.i32   q0, q3, #1                     \n"  // 8 * dx
+  "1:                                          \n"
+    LOAD2_DATA8_LANE(0)
+    LOAD2_DATA8_LANE(1)
+    LOAD2_DATA8_LANE(2)
+    LOAD2_DATA8_LANE(3)
+    LOAD2_DATA8_LANE(4)
+    LOAD2_DATA8_LANE(5)
+    LOAD2_DATA8_LANE(6)
+    LOAD2_DATA8_LANE(7)
+    "vmov       q10, q1                        \n"
+    "vmov       q11, q2                        \n"
+    "vuzp.16    q10, q11                       \n"
+    "vmovl.u8   q8, d6                         \n"
+    "vmovl.u8   q9, d7                         \n"
+    "vsubl.s16  q11, d18, d16                  \n"
+    "vsubl.s16  q12, d19, d17                  \n"
+    "vmovl.u16  q13, d20                       \n"
+    "vmovl.u16  q10, d21                       \n"
+    "vmul.s32   q11, q11, q13                  \n"
+    "vmul.s32   q12, q12, q10                  \n"
+    "vshrn.s32  d18, q11, #16                  \n"
+    "vshrn.s32  d19, q12, #16                  \n"
+    "vadd.s16   q8, q8, q9                     \n"
+    "vmovn.s16  d6, q8                         \n"
+
+    MEMACCESS(0)
+    "vst1.8     {d6}, [%0]!                    \n"  // store pixels
+    "vadd.s32   q1, q1, q0                     \n"
+    "vadd.s32   q2, q2, q0                     \n"
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    "bgt        1b                             \n"
+  : "+r"(dst_ptr)          // %0
+  : "r"(src_ptr),          // %1
+    "r"(dst_width),        // %2
+    "r"(x),                // %3
+    "r"(dx),               // %4
+    "r"(tmp)               // %5
+  : "memory", "cc", "r12", "q0", "q1", "q2", "q3",
+    "q8", "q9", "q10", "q11", "q12", "q13"
+  );
+}
+
+#undef LOAD2_DATA8_LANE
+
 // 16x2 -> 16x1
 void ScaleFilterRows_NEON(uint8* dst_ptr,
                           const uint8* src_ptr, ptrdiff_t src_stride,

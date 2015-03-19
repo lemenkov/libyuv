@@ -55,6 +55,7 @@
       'source/row_win.cc',
       'source/scale.cc',
       'source/scale_argb.cc',
+      'source/scale_any.cc',
       'source/scale_common.cc',
       'source/scale_mips.cc',
       'source/scale_posix.cc',

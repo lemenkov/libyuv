@@ -929,6 +929,14 @@ void ScalePlaneBilinearDown(int src_width, int src_height,
     ScaleFilterCols = ScaleFilterCols_SSSE3;
   }
 #endif
+#if defined(HAS_SCALEFILTERCOLS_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleFilterCols = ScaleFilterCols_NEON;
+    }
+  }
+#endif
   if (y > max_y) {
     y = max_y;
   }
@@ -1118,6 +1126,14 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
 #if defined(HAS_SCALEFILTERCOLS_SSSE3)
   if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleFilterCols = ScaleFilterCols_SSSE3;
+  }
+#endif
+#if defined(HAS_SCALEFILTERCOLS_NEON)
+  if (filtering && TestCpuFlag(kCpuHasNEON) && src_width < 32768) {
+    ScaleFilterCols = ScaleFilterCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleFilterCols = ScaleFilterCols_NEON;
+    }
   }
 #endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
