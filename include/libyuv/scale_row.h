@@ -222,6 +222,12 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
 void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8* dst_ptr, int dst_width);
+void ScaleRowDown2_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Linear_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                  uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width,
                        int src_height);
@@ -271,10 +277,8 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 // Note - not static due to reuse in convert for 444 to 420.
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width);
-
 void ScaleRowDown2Linear_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst, int dst_width);
-
 void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width);
 
@@ -308,6 +312,13 @@ void ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
 void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
+
+void ScaleRowDown2_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst, int dst_width);
+void ScaleRowDown2Linear_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                                  uint8* dst, int dst_width);
+void ScaleRowDown2Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst, int dst_width);
 
 void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);

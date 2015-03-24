@@ -666,7 +666,6 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Bilinear column filtering. SSSE3 version.
-// TODO(fbarchard): Port to Neon
 // TODO(fbarchard): Switch the following:
 //    xor        ebx, ebx
 //    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels

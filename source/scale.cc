@@ -54,17 +54,27 @@ static void ScalePlaneDown2(int src_width, int src_height,
   }
 
 #if defined(HAS_SCALEROWDOWN2_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_NEON :
-        (filtering == kFilterLinear ? ScaleRowDown2Linear_NEON :
-        ScaleRowDown2Box_NEON);
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_NEON :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_NEON :
+        ScaleRowDown2Box_Any_NEON);
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_NEON :
+          (filtering == kFilterLinear ? ScaleRowDown2Linear_NEON :
+          ScaleRowDown2Box_NEON);
+    }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 16)) {
-    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSE2 :
-        (filtering == kFilterLinear ? ScaleRowDown2Linear_SSE2 :
-        ScaleRowDown2Box_SSE2);
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_SSE2 :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_SSE2 :
+        ScaleRowDown2Box_Any_SSE2);
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSE2 :
+          (filtering == kFilterLinear ? ScaleRowDown2Linear_SSE2 :
+          ScaleRowDown2Box_SSE2);
+    }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
