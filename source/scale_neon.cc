@@ -579,13 +579,16 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 // the x/dx stepping
 #define LOAD2_DATA8_LANE(n)                                    \
     "lsr        %5, %3, #16                    \n"             \
-    "add        r12, %1, %5                    \n"             \
+    "add        %6, %1, %5                     \n"             \
     "add        %3, %3, %4                     \n"             \
-    "vld2.8     {d6["#n"], d7["#n"]}, [r12]    \n"
+    MEMACCESS(6)                                               \
+    "vld2.8     {d6["#n"], d7["#n"]}, [%6]     \n"
 
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
                           int dst_width, int x, int dx) {
-  int tmp[4] = {0, 1, 2, 3};
+  int dx_offset[4] = {0, 1, 2, 3};
+  int *tmp = dx_offset;
+  const uint8* src_tmp = src_ptr;
   asm volatile (
     ".p2align   2                              \n"
     "vdup.32    q0, %3                         \n"  // x
@@ -629,13 +632,15 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
     "vadd.s32   q2, q2, q0                     \n"
     "subs       %2, %2, #8                     \n"  // 8 processed per loop
     "bgt        1b                             \n"
-  : "+r"(dst_ptr)          // %0
-  : "r"(src_ptr),          // %1
-    "r"(dst_width),        // %2
-    "r"(x),                // %3
-    "r"(dx),               // %4
-    "r"(tmp)               // %5
-  : "memory", "cc", "r12", "q0", "q1", "q2", "q3",
+  : "+r"(dst_ptr),          // %0
+    "+r"(src_ptr),          // %1
+    "+r"(dst_width),        // %2
+    "+r"(x),                // %3
+    "+r"(dx),               // %4
+    "+r"(tmp),              // %5
+    "+r"(src_tmp)           // %6
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3",
     "q8", "q9", "q10", "q11", "q12", "q13"
   );
 }
