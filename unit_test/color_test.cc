@@ -435,8 +435,36 @@ TEST_F(libyuvTest, TestGreyYUV) {
   }
 }
 
-TEST_F(libyuvTest, TestFullYUV) {
+void PrintHistogram(int rh[256], int gh[256], int bh[256]) {
   int i;
+  printf("hist");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", i - 128);
+    }
+  }
+  printf("\nred");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", rh[i]);
+    }
+  }
+  printf("\ngreen");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", gh[i]);
+    }
+  }
+  printf("\nblue");
+  for (i = 0; i < 256; ++i) {
+    if (rh[i] || gh[i] || bh[i]) {
+      printf("\t%8d", bh[i]);
+    }
+  }
+  printf("\n");
+}
+
+TEST_F(libyuvTest, TestFullYUV) {
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -454,35 +482,10 @@ TEST_F(libyuvTest, TestFullYUV) {
       }
     }
   }
-  printf("hist\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", i - 128);
-    }
-  }
-  printf("\nred\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", rh[i]);
-    }
-  }
-  printf("\ngreen\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", gh[i]);
-    }
-  }
-  printf("\nblue\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", bh[i]);
-    }
-  }
-  printf("\n");
+  PrintHistogram(rh, gh, bh);
 }
 
 TEST_F(libyuvTest, TestFullYUVJ) {
-  int i;
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -500,31 +503,7 @@ TEST_F(libyuvTest, TestFullYUVJ) {
       }
     }
   }
-  printf("hist\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", i - 128);
-    }
-  }
-  printf("\nred\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", rh[i]);
-    }
-  }
-  printf("\ngreen\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", gh[i]);
-    }
-  }
-  printf("\nblue\t");
-  for (i = 0; i < 256; ++i) {
-    if (rh[i] || gh[i] || bh[i]) {
-      printf("\t%8d", bh[i]);
-    }
-  }
-  printf("\n");
+  PrintHistogram(rh, gh, bh);
 }
 
 TEST_F(libyuvTest, TestGreyYUVJ) {
