@@ -77,6 +77,16 @@ static void ScalePlaneDown2(int src_width, int src_height,
     }
   }
 #endif
+// TODO(fbarchard): Do other filter modes.
+#if defined(HAS_SCALEROWDOWN2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2) &&
+      (filtering == kFilterBox || filtering == kFilterBilinear)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 32)) {
+      ScaleRowDown2 = ScaleRowDown2Box_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN2_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(src_ptr, 4) &&
       IS_ALIGNED(src_stride, 4) && IS_ALIGNED(row_stride, 4) &&

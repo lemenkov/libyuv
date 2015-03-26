@@ -94,7 +94,6 @@ static uvec16 kScaleAb2 =
   { 65536 / 3, 65536 / 3, 65536 / 2, 65536 / 3, 65536 / 3, 65536 / 2, 0, 0 };
 
 // Reads 32 pixels, throws half away and writes 16 pixels.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
@@ -121,7 +120,6 @@ void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Blends 32x1 rectangle to 16x1.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width) {
@@ -158,7 +156,6 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Blends 32x2 rectangle to 16x1.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
@@ -200,8 +197,47 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
+// Blends 64x2 rectangle to 32x1.
+__declspec(naked) __declspec(align(16))
+void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width) {
+  __asm {
+    push        esi
+    mov         eax, [esp + 4 + 4]    // src_ptr
+    mov         esi, [esp + 4 + 8]    // src_stride
+    mov         edx, [esp + 4 + 12]   // dst_ptr
+    mov         ecx, [esp + 4 + 16]   // dst_width
+    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
+    vpsrlw      ymm5, ymm5, 8
+
+  wloop:
+    vmovdqu     ymm0, [eax]
+    vmovdqu     ymm1, [eax + 32]
+    vpavgb      ymm0, ymm0, [eax + esi]    // average rows
+    vpavgb      ymm1, ymm1, [eax + esi + 32]
+    lea         eax,  [eax + 64]
+
+    vpsrlw      ymm2, ymm0, 8              // average columns (32 to 16 pixels)
+    vpsrlw      ymm3, ymm1, 8
+    vpand       ymm0, ymm0, ymm5
+    vpand       ymm1, ymm1, ymm5
+    vpavgw      ymm0, ymm0, ymm2
+    vpavgw      ymm1, ymm1, ymm3
+    vpackuswb   ymm0, ymm0, ymm1
+    vpermq      ymm0, ymm0, 0xd8           // unmutate
+
+    vmovdqu     [edx], ymm0
+    lea         edx, [edx + 32]
+    sub         ecx, 32
+    jg          wloop
+
+    pop         esi
+    vzeroupper
+    ret
+  }
+}
+
 // Point samples 32 pixels to 8 pixels.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
@@ -233,7 +269,6 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 }
 
 // Blends 32x4 rectangle to 8x1.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
@@ -297,7 +332,6 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Then shuffled to do the scaling.
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                           uint8* dst_ptr, int dst_width) {
@@ -345,7 +379,6 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
 // xmm7 kRound34
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
                                 ptrdiff_t src_stride,
@@ -403,7 +436,6 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
 }
 
 // Note that movdqa+palign may be better than movdqu.
-// Alignment requirement: src_ptr 16 byte aligned, dst_ptr 8 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
                                 ptrdiff_t src_stride,
@@ -751,7 +783,6 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 // Reads 16 pixels, duplicates them and writes 32 pixels.
-// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx) {
@@ -777,7 +808,6 @@ void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 
 // Reads 8 pixels, throws half away and writes 4 even pixels (0, 2, 4, 6)
-// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
                             ptrdiff_t src_stride,
@@ -803,7 +833,6 @@ void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
 }
 
 // Blends 8x1 rectangle to 4x1.
-// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
                                   ptrdiff_t src_stride,
@@ -832,7 +861,6 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
 }
 
 // Blends 8x2 rectangle to 4x1.
-// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
                                ptrdiff_t src_stride,
@@ -867,7 +895,6 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
 }
 
 // Reads 4 pixels at a time.
-// Alignment requirement: dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                int src_stepx,
@@ -904,7 +931,6 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
 }
 
 // Blends four 2x2 to 4x1.
-// Alignment requirement: dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
                                   ptrdiff_t src_stride,
@@ -1115,7 +1141,6 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
 }
 
 // Reads 4 pixels, duplicates them and writes 8 pixels.
-// Alignment requirement: src_argb 16 byte aligned, dst_argb 16 byte aligned.
 __declspec(naked) __declspec(align(16))
 void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx) {

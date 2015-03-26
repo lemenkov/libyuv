@@ -23,6 +23,13 @@ extern "C" {
 #define LIBYUV_DISABLE_X86
 #endif
 
+// Visual C 2012 required for AVX2.
+#if defined(_M_IX86) && !defined(__clang__) && \
+    defined(_MSC_VER) && _MSC_VER >= 1700
+#define VISUALC_HAS_AVX2 1
+#endif  // VisualStudio >= 2012
+
+
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
@@ -40,6 +47,11 @@ extern "C" {
 #define HAS_SCALEARGBCOLSUP2_SSE2
 #define HAS_FIXEDDIV_X86
 #define HAS_FIXEDDIV1_X86
+#endif
+
+// The following are available on VS2012.
+#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+#define HAS_SCALEROWDOWN2_AVX2
 #endif
 
 // The following are available on Neon platforms:
@@ -202,6 +214,8 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width);
 void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -228,6 +242,8 @@ void ScaleRowDown2Linear_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Box_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width);
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width,
                        int src_height);

@@ -528,7 +528,7 @@ int ARGBMirror(const uint8* src_argb, int src_stride_argb,
   return 0;
 }
 
-// Get a blender that optimized for the CPU, alignment and pixel count.
+// Get a blender that optimized for the CPU and pixel count.
 // As there are 6 blenders to choose from, the caller should try to use
 // the same blend function for all pixels if possible.
 LIBYUV_API
