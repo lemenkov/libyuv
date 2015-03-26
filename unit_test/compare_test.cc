@@ -263,7 +263,7 @@ TEST_F(libyuvTest, SumSquareError) {
     src_b[i] = (random() & 0xff);
   }
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   uint64 c_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
   MaskCpuFlags(-1);
@@ -385,7 +385,7 @@ TEST_F(libyuvTest, Psnr) {
     }
   }
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   double c_err, opt_err;
 
   c_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
@@ -495,7 +495,7 @@ TEST_F(libyuvTest, Ssim) {
     }
   }
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   double c_err, opt_err;
 
   c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,

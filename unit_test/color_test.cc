@@ -93,7 +93,7 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
             temp_v, (benchmark_width_ + 1) / 2,                                \
             benchmark_width_, benchmark_height_);                              \
                                                                                \
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                                             \
   YUVTOARGB(temp_y, benchmark_width_,                                          \
             temp_u, (benchmark_width_ + 1) / 2,                                \
             temp_v, (benchmark_width_ + 1) / 2,                                \

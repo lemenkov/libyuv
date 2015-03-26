@@ -20,7 +20,7 @@
 
 libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72) {
+    benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
     if (repeat) {
       benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -38,6 +38,10 @@ libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     const char* height = getenv("LIBYUV_HEIGHT");
     if (height) {
       benchmark_height_ = atoi(height);  // NOLINT
+    }
+    const char* cpu_flags = getenv("LIBYUV_FLAGS");
+    if (cpu_flags) {
+      disable_cpu_flags_ = atoi(cpu_flags);  // NOLINT
     }
     benchmark_pixels_div256_ = static_cast<int>((
         static_cast<double>(Abs(benchmark_width_)) *

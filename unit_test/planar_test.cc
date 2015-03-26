@@ -105,7 +105,7 @@ TEST_F(libyuvTest, TestAttenuate) {
 }
 
 static int TestAttenuateI(int width, int height, int benchmark_iterations,
-                          int invert, int off) {
+                          int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -121,7 +121,7 @@ static int TestAttenuateI(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBAttenuate(src_argb + off, kStride,
                 dst_argb_c, kStride,
                 width, invert * height);
@@ -148,30 +148,30 @@ static int TestAttenuateI(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBAttenuate_Any) {
   int max_diff = TestAttenuateI(benchmark_width_ - 1, benchmark_height_,
-                                benchmark_iterations_, +1, 0);
+                                benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBAttenuate_Unaligned) {
   int max_diff = TestAttenuateI(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_, +1, 1);
+                                benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBAttenuate_Invert) {
   int max_diff = TestAttenuateI(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_, -1, 0);
+                                benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBAttenuate_Opt) {
   int max_diff = TestAttenuateI(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_, +1, 0);
+                                benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
 static int TestUnattenuateI(int width, int height, int benchmark_iterations,
-                            int invert, int off) {
+                            int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -190,7 +190,7 @@ static int TestUnattenuateI(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBUnattenuate(src_argb + off, kStride,
                   dst_argb_c, kStride,
                   width, invert * height);
@@ -217,25 +217,25 @@ static int TestUnattenuateI(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBUnattenuate_Any) {
   int max_diff = TestUnattenuateI(benchmark_width_ - 1, benchmark_height_,
-                                  benchmark_iterations_, +1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBUnattenuate_Unaligned) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, +1, 1);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBUnattenuate_Invert) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, -1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
 TEST_F(libyuvTest, ARGBUnattenuate_Opt) {
   int max_diff = TestUnattenuateI(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, +1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 2);
 }
 
@@ -541,7 +541,7 @@ TEST_F(libyuvTest, TestARGBColorMatrix) {
     orig_pixels[i][2] = i / 3;
     orig_pixels[i][3] = i;
   }
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   ARGBColorMatrix(&orig_pixels[0][0], 0, &dst_pixels_c[0][0], 0,
                   &kRGBToSepia[0], 1280, 1);
   MaskCpuFlags(-1);
@@ -941,7 +941,7 @@ TEST_F(libyuvTest, ARGBInterpolate##TERP##N) {                                 \
     src_argb_a[i + OFF] = (random() & 0xff);                                   \
     src_argb_b[i + OFF] = (random() & 0xff);                                   \
   }                                                                            \
-  MaskCpuFlags(0);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                                             \
   ARGBInterpolate(src_argb_a + OFF, kStrideA,                                  \
                   src_argb_b + OFF, kStrideA,                                  \
                   dst_argb_c, kStrideB,                                        \
@@ -988,7 +988,7 @@ TESTINTERPOLATE(192)
 TESTINTERPOLATE(255)
 
 static int TestBlend(int width, int height, int benchmark_iterations,
-                     int invert, int off) {
+                     int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1010,7 +1010,7 @@ static int TestBlend(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 255, kStride * height);
   memset(dst_argb_opt, 255, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBBlend(src_argb_a + off, kStride,
             src_argb_b + off, kStride,
             dst_argb_c, kStride,
@@ -1040,25 +1040,25 @@ static int TestBlend(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBBlend_Any) {
   int max_diff = TestBlend(benchmark_width_ - 4, benchmark_height_,
-                           benchmark_iterations_, +1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlend_Unaligned) {
   int max_diff = TestBlend(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, +1, 1);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlend_Invert) {
   int max_diff = TestBlend(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, -1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlend_Opt) {
   int max_diff = TestBlend(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, +1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
@@ -1333,7 +1333,7 @@ TEST_F(libyuvTest, TestCopyPlane) {
   int stride = 8;
 
   // Disable all optimizations.
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   double c_time = get_time();
   for (j = 0; j < benchmark_iterations_; j++) {
     CopyPlane(orig_y + y_off, y_st, dst_c + y_off, stride, yw, yh);
@@ -1361,7 +1361,7 @@ TEST_F(libyuvTest, TestCopyPlane) {
 }
 
 static int TestMultiply(int width, int height, int benchmark_iterations,
-                        int invert, int off) {
+                        int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1379,7 +1379,7 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBMultiply(src_argb_a + off, kStride,
                src_argb_b + off, kStride,
                dst_argb_c, kStride,
@@ -1409,30 +1409,30 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBMultiply_Any) {
   int max_diff = TestMultiply(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, +1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBMultiply_Unaligned) {
   int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 1);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBMultiply_Invert) {
   int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, -1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBMultiply_Opt) {
   int max_diff = TestMultiply(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 static int TestAdd(int width, int height, int benchmark_iterations,
-                   int invert, int off) {
+                   int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1450,7 +1450,7 @@ static int TestAdd(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBAdd(src_argb_a + off, kStride,
           src_argb_b + off, kStride,
           dst_argb_c, kStride,
@@ -1480,30 +1480,30 @@ static int TestAdd(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBAdd_Any) {
   int max_diff = TestAdd(benchmark_width_ - 1, benchmark_height_,
-                         benchmark_iterations_, +1, 0);
+                         benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBAdd_Unaligned) {
   int max_diff = TestAdd(benchmark_width_, benchmark_height_,
-                         benchmark_iterations_, +1, 1);
+                         benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBAdd_Invert) {
   int max_diff = TestAdd(benchmark_width_, benchmark_height_,
-                         benchmark_iterations_, -1, 0);
+                         benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBAdd_Opt) {
   int max_diff = TestAdd(benchmark_width_, benchmark_height_,
-                         benchmark_iterations_, +1, 0);
+                         benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 static int TestSubtract(int width, int height, int benchmark_iterations,
-                        int invert, int off) {
+                        int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1521,7 +1521,7 @@ static int TestSubtract(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBSubtract(src_argb_a + off, kStride,
                src_argb_b + off, kStride,
                dst_argb_c, kStride,
@@ -1551,30 +1551,30 @@ static int TestSubtract(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBSubtract_Any) {
   int max_diff = TestSubtract(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, +1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBSubtract_Unaligned) {
   int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 1);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBSubtract_Invert) {
   int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, -1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBSubtract_Opt) {
   int max_diff = TestSubtract(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 0);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_LE(max_diff, 1);
 }
 
 static int TestSobel(int width, int height, int benchmark_iterations,
-                     int invert, int off) {
+                     int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1591,7 +1591,7 @@ static int TestSobel(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBSobel(src_argb_a + off, kStride,
             dst_argb_c, kStride,
             width, invert * height);
@@ -1618,30 +1618,30 @@ static int TestSobel(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBSobel_Any) {
   int max_diff = TestSobel(benchmark_width_ - 1, benchmark_height_,
-                           benchmark_iterations_, +1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Unaligned) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, +1, 1);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Invert) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, -1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobel_Opt) {
   int max_diff = TestSobel(benchmark_width_, benchmark_height_,
-                           benchmark_iterations_, +1, 0);
+                           benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 static int TestSobelToPlane(int width, int height, int benchmark_iterations,
-                            int invert, int off) {
+                            int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1660,7 +1660,7 @@ static int TestSobelToPlane(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kDstStride * height);
   memset(dst_argb_opt, 0, kDstStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBSobelToPlane(src_argb_a + off, kSrcStride,
                    dst_argb_c, kDstStride,
                    width, invert * height);
@@ -1687,30 +1687,30 @@ static int TestSobelToPlane(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBSobelToPlane_Any) {
   int max_diff = TestSobelToPlane(benchmark_width_ - 1, benchmark_height_,
-                                  benchmark_iterations_, +1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelToPlane_Unaligned) {
   int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, +1, 1);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelToPlane_Invert) {
   int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, -1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelToPlane_Opt) {
   int max_diff = TestSobelToPlane(benchmark_width_, benchmark_height_,
-                                  benchmark_iterations_, +1, 0);
+                                  benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 static int TestSobelXY(int width, int height, int benchmark_iterations,
-                     int invert, int off) {
+                       int disable_cpu_flags, int invert, int off) {
   if (width < 1) {
     width = 1;
   }
@@ -1727,7 +1727,7 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBSobelXY(src_argb_a + off, kStride,
             dst_argb_c, kStride,
             width, invert * height);
@@ -1754,30 +1754,30 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBSobelXY_Any) {
   int max_diff = TestSobelXY(benchmark_width_ - 1, benchmark_height_,
-                             benchmark_iterations_, +1, 0);
+                             benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Unaligned) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
-                             benchmark_iterations_, +1, 1);
+                             benchmark_iterations_, disable_cpu_flags_, +1, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Invert) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
-                             benchmark_iterations_, -1, 0);
+                             benchmark_iterations_, disable_cpu_flags_, -1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBSobelXY_Opt) {
   int max_diff = TestSobelXY(benchmark_width_, benchmark_height_,
-                             benchmark_iterations_, +1, 0);
+                             benchmark_iterations_, disable_cpu_flags_, +1, 0);
   EXPECT_EQ(0, max_diff);
 }
 
 static int TestBlur(int width, int height, int benchmark_iterations,
-                    int invert, int off, int radius) {
+                    int disable_cpu_flags, int invert, int off, int radius) {
   if (width < 1) {
     width = 1;
   }
@@ -1795,7 +1795,7 @@ static int TestBlur(int width, int height, int benchmark_iterations,
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   ARGBBlur(src_argb_a + off, kStride,
            dst_argb_c, kStride,
            reinterpret_cast<int32*>(dst_cumsum), width * 4,
@@ -1826,50 +1826,50 @@ static int TestBlur(int width, int height, int benchmark_iterations,
 static const int kBlurSize = 55;
 TEST_F(libyuvTest, ARGBBlur_Any) {
   int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
-                          benchmark_iterations_, +1, 0, kBlurSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 0, kBlurSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlur_Unaligned) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, +1, 1, kBlurSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 1, kBlurSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlur_Invert) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, -1, 0, kBlurSize);
+                          benchmark_iterations_, disable_cpu_flags_, -1, 0, kBlurSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlur_Opt) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, +1, 0, kBlurSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 0, kBlurSize);
   EXPECT_LE(max_diff, 1);
 }
 
 static const int kBlurSmallSize = 5;
 TEST_F(libyuvTest, ARGBBlurSmall_Any) {
   int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
-                          benchmark_iterations_, +1, 0, kBlurSmallSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 0, kBlurSmallSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlurSmall_Unaligned) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, +1, 1, kBlurSmallSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 1, kBlurSmallSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlurSmall_Invert) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, -1, 0, kBlurSmallSize);
+                          benchmark_iterations_, disable_cpu_flags_, -1, 0, kBlurSmallSize);
   EXPECT_LE(max_diff, 1);
 }
 
 TEST_F(libyuvTest, ARGBBlurSmall_Opt) {
   int max_diff = TestBlur(benchmark_width_, benchmark_height_,
-                          benchmark_iterations_, +1, 0, kBlurSmallSize);
+                          benchmark_iterations_, disable_cpu_flags_, +1, 0, kBlurSmallSize);
   EXPECT_LE(max_diff, 1);
 }
 
@@ -1942,7 +1942,7 @@ TEST_F(libyuvTest, TestARGBPolynomial) {
     orig_pixels[i][3] = i;
   }
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   ARGBPolynomial(&orig_pixels[0][0], 0, &dst_pixels_c[0][0], 0,
                  &kWarmifyPolynomial[0], 1280, 1);
   MaskCpuFlags(-1);
@@ -2019,7 +2019,7 @@ TEST_F(libyuvTest, TestARGBLumaColorTable) {
     orig_pixels[i][3] = i;
   }
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   ARGBLumaColorTable(&orig_pixels[0][0], 0, &dst_pixels_c[0][0], 0,
                      lumacolortable, 1280, 1);
   MaskCpuFlags(-1);
@@ -2048,7 +2048,7 @@ TEST_F(libyuvTest, TestARGBCopyAlpha) {
   MemRandomize(dst_pixels_opt, kSize);
   memcpy(dst_pixels_c, dst_pixels_opt, kSize);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   ARGBCopyAlpha(orig_pixels, benchmark_width_ * 4,
                 dst_pixels_c, benchmark_width_ * 4,
                 benchmark_width_, benchmark_height_);
@@ -2078,7 +2078,7 @@ TEST_F(libyuvTest, TestARGBCopyYToAlpha) {
   MemRandomize(dst_pixels_opt, kPixels * 4);
   memcpy(dst_pixels_c, dst_pixels_opt, kPixels * 4);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags_);
   ARGBCopyYToAlpha(orig_pixels, benchmark_width_,
                    dst_pixels_c, benchmark_width_ * 4,
                    benchmark_width_, benchmark_height_);
@@ -2099,7 +2099,7 @@ TEST_F(libyuvTest, TestARGBCopyYToAlpha) {
 }
 
 static int TestARGBRect(int width, int height, int benchmark_iterations,
-                        int invert, int off, int bpp) {
+                        int disable_cpu_flags, int invert, int off, int bpp) {
   if (width < 1) {
     width = 1;
   }
@@ -2113,7 +2113,7 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
   MemRandomize(dst_argb_c + off, kSize);
   memcpy(dst_argb_opt + off, dst_argb_c + off, kSize);
 
-  MaskCpuFlags(0);
+  MaskCpuFlags(disable_cpu_flags);
   if (bpp == 4) {
     ARGBRect(dst_argb_c + off, kStride, 0, 0, width, invert * height, v32);
   } else {
@@ -2144,49 +2144,49 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBRect_Any) {
   int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, +1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Unaligned) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 1, 4);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 1, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Invert) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, -1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_, -1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Opt) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Any) {
   int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, +1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Unaligned) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 1, 1);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 1, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Invert) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, -1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_, -1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Opt) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, +1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
