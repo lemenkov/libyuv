@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -197,6 +198,7 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
+#ifdef HAS_SCALEROWDOWN2_AVX2
 // Blends 64x2 rectangle to 32x1.
 __declspec(naked) __declspec(align(16))
 void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -207,8 +209,11 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov         esi, [esp + 4 + 8]    // src_stride
     mov         edx, [esp + 4 + 12]   // dst_ptr
     mov         ecx, [esp + 4 + 16]   // dst_width
-    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
-    vpsrlw      ymm5, ymm5, 8
+
+    vpcmpeqb    ymm4, ymm4, ymm4
+    vpsrlw      ymm4, ymm4, 15        // '1' constant, 16b
+    vpackuswb   ymm4, ymm4, ymm4      // '1' constant, 8b
+    vpxor       ymm5, ymm5, ymm5      // constant 0
 
   wloop:
     vmovdqu     ymm0, [eax]
@@ -217,14 +222,12 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     vpavgb      ymm1, ymm1, [eax + esi + 32]
     lea         eax,  [eax + 64]
 
-    vpsrlw      ymm2, ymm0, 8              // average columns (32 to 16 pixels)
-    vpsrlw      ymm3, ymm1, 8
-    vpand       ymm0, ymm0, ymm5
-    vpand       ymm1, ymm1, ymm5
-    vpavgw      ymm0, ymm0, ymm2
-    vpavgw      ymm1, ymm1, ymm3
+    vpmaddubsw  ymm0, ymm0, ymm4           // add horizontally
+    vpmaddubsw  ymm1, ymm1, ymm4
+    vpavgw      ymm0, ymm0, ymm5           // (x+1) >> 1
+    vpavgw      ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8           // unmutate
+    vpermq      ymm0, ymm0, 0xd8           // unmutate vpackuswb
 
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
@@ -236,6 +239,7 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     ret
   }
 }
+#endif  // HAS_SCALEROWDOWN2_AVX2
 
 // Point samples 32 pixels to 8 pixels.
 __declspec(naked) __declspec(align(16))
