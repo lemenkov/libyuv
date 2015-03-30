@@ -28,6 +28,7 @@ LOCAL_SRC_FILES := \
     source/row_neon64.cc        \
     source/row_posix.cc	        \
     source/scale.cc             \
+    source/scale_any.cc         \
     source/scale_argb.cc        \
     source/scale_common.cc      \
     source/scale_mips.cc        \

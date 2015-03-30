@@ -38,6 +38,7 @@ set(ly_source_files
   ${ly_src_dir}/row_posix.cc
   ${ly_src_dir}/row_win.cc
   ${ly_src_dir}/scale.cc
+  ${ly_src_dir}/scale_any.cc
   ${ly_src_dir}/scale_argb.cc
   ${ly_src_dir}/scale_common.cc
   ${ly_src_dir}/scale_mips.cc
