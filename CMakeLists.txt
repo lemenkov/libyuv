@@ -28,10 +28,32 @@ set(ly_unix_source_files
 )
 endif(UNIX)
 
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64")
+add_definitions(-DLIBYUV_DISABLE_NEON -DLIBYUV_DISABLE_MIPS)
+endif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "amd64")
+
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*")
+set(ly_neon_source_files
+  ${ly_src_dir}/compare_neon.cc
+  ${ly_src_dir}/rotate_neon.cc
+  ${ly_src_dir}/row_neon.cc
+  ${ly_src_dir}/scale_neon.cc
+)
+add_definitions(-DLIBYUV_DISABLE_X86 -DLIBYUV_DISABLE_MIPS)
+endif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*")
+
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "mips.*")
+set(ly_mips_source_files
+  ${ly_src_dir}/rotate_mips.cc
+  ${ly_src_dir}/row_mips.cc
+  ${ly_src_dir}/scale_mips.cc
+)
+add_definitions(-DLIBYUV_DISABLE_X86 -DLIBYUV_DISABLE_NEON)
+endif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "mips.*")
+
 set(ly_source_files
   ${ly_src_dir}/compare.cc
   ${ly_src_dir}/compare_common.cc
-  ${ly_src_dir}/compare_neon.cc
   ${ly_src_dir}/compare_neon64.cc
   ${ly_src_dir}/convert.cc
   ${ly_src_dir}/convert_argb.cc
@@ -48,24 +70,20 @@ set(ly_source_files
   ${ly_src_dir}/rotate_any.cc
   ${ly_src_dir}/rotate_argb.cc
   ${ly_src_dir}/rotate_common.cc
-  ${ly_src_dir}/rotate_mips.cc
-  ${ly_src_dir}/rotate_neon.cc
   ${ly_src_dir}/rotate_neon64.cc
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
-  ${ly_src_dir}/row_mips.cc
-  ${ly_src_dir}/row_neon.cc
   ${ly_src_dir}/row_neon64.cc
   ${ly_src_dir}/scale.cc
   ${ly_src_dir}/scale_any.cc
   ${ly_src_dir}/scale_argb.cc
   ${ly_src_dir}/scale_common.cc
-  ${ly_src_dir}/scale_mips.cc
-  ${ly_src_dir}/scale_neon.cc
   ${ly_src_dir}/scale_neon64.cc
   ${ly_src_dir}/video_common.cc
   ${ly_windows_source_files}
   ${ly_unix_source_files}
+  ${ly_neon_source_files}
+  ${ly_mips_source_files}
 )
 
 set(ly_unittest_sources
