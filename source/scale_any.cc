@@ -56,7 +56,10 @@ SDANY(ScaleRowDown2Box_Any_SSE2, ScaleRowDown2Box_SSE2, ScaleRowDown2Box_C,
       2, 1, 15)
 #endif
 #ifdef HAS_SCALEROWDOWN2_AVX2
-SDANY(ScaleRowDown2Box_Any_AVX2, ScaleRowDown2Box_AVX2,ScaleRowDown2Box_C,
+SDANY(ScaleRowDown2_Any_AVX2, ScaleRowDown2_AVX2, ScaleRowDown2_C, 2, 1, 31)
+SDANY(ScaleRowDown2Linear_Any_AVX2, ScaleRowDown2Linear_AVX2,
+      ScaleRowDown2Linear_C, 2, 1, 31)
+SDANY(ScaleRowDown2Box_Any_AVX2, ScaleRowDown2Box_AVX2, ScaleRowDown2Box_C,
       2, 1, 31)
 #endif
 #ifdef HAS_SCALEROWDOWN2_NEON

@@ -12,6 +12,7 @@
 #define INCLUDE_LIBYUV_SCALE_ROW_H_
 
 #include "libyuv/basic_types.h"
+#include "libyuv/scale.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -214,6 +215,10 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown2_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Linear_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
 void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -242,6 +247,10 @@ void ScaleRowDown2Linear_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
+void ScaleRowDown2_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown2Linear_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                                  uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
