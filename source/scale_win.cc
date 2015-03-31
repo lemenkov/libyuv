@@ -236,22 +236,23 @@ void ScaleRowDown2Linear_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                                       // src_stride
     mov         edx, [esp + 12]       // dst_ptr
     mov         ecx, [esp + 16]       // dst_width
-    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
-    vpsrlw      ymm5, ymm5, 8
+
+    vpcmpeqb    ymm4, ymm4, ymm4      // '1' constant, 8b
+    vpsrlw      ymm4, ymm4, 15
+    vpackuswb   ymm4, ymm4, ymm4
+    vpxor       ymm5, ymm5, ymm5      // constant 0
 
   wloop:
     vmovdqu     ymm0, [eax]
     vmovdqu     ymm1, [eax + 32]
     lea         eax,  [eax + 64]
 
-    vpsrlw      ymm2, ymm0, 8              // average columns (32 to 16 pixels)
-    vpsrlw      ymm3, ymm1, 8
-    vpand       ymm0, ymm0, ymm5
-    vpand       ymm1, ymm1, ymm5
-    vpavgw      ymm0, ymm0, ymm2
-    vpavgw      ymm1, ymm1, ymm3
+    vpmaddubsw  ymm0, ymm0, ymm4      // average horizontally
+    vpmaddubsw  ymm1, ymm1, ymm4
+    vpavgw      ymm0, ymm0, ymm5      // (x + 1) / 2
+    vpavgw      ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8           // unmutate
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
 
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
@@ -273,24 +274,25 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov         esi, [esp + 4 + 8]    // src_stride
     mov         edx, [esp + 4 + 12]   // dst_ptr
     mov         ecx, [esp + 4 + 16]   // dst_width
-    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0x00ff00ff
-    vpsrlw      ymm5, ymm5, 8
+
+    vpcmpeqb    ymm4, ymm4, ymm4      // '1' constant, 8b
+    vpsrlw      ymm4, ymm4, 15
+    vpackuswb   ymm4, ymm4, ymm4
+    vpxor       ymm5, ymm5, ymm5      // constant 0
 
   wloop:
-    vmovdqu     ymm0, [eax]
+    vmovdqu     ymm0, [eax]           // average rows
     vmovdqu     ymm1, [eax + 32]
-    vpavgb      ymm0, ymm0, [eax + esi]    // average rows
+    vpavgb      ymm0, ymm0, [eax + esi]
     vpavgb      ymm1, ymm1, [eax + esi + 32]
     lea         eax,  [eax + 64]
 
-    vpsrlw      ymm2, ymm0, 8              // average columns (32 to 16 pixels)
-    vpsrlw      ymm3, ymm1, 8
-    vpand       ymm0, ymm0, ymm5
-    vpand       ymm1, ymm1, ymm5
-    vpavgw      ymm0, ymm0, ymm2
-    vpavgw      ymm1, ymm1, ymm3
+    vpmaddubsw  ymm0, ymm0, ymm4      // average horizontally
+    vpmaddubsw  ymm1, ymm1, ymm4
+    vpavgw      ymm0, ymm0, ymm5      // (x + 1) / 2
+    vpavgw      ymm1, ymm1, ymm5
     vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8           // unmutate
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
 
     vmovdqu     [edx], ymm0
     lea         edx, [edx + 32]
