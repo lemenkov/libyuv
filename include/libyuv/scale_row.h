@@ -66,6 +66,7 @@ extern "C" {
 #define HAS_SCALEARGBROWDOWN2_NEON
 #define HAS_SCALEADDROWS_NEON
 #define HAS_SCALEFILTERCOLS_NEON
+#define HAS_SCALEARGBCOLS_NEON
 #endif
 
 // The following are available on Mips platforms:
@@ -353,6 +354,12 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
 
 void ScaleFilterCols_Any_NEON(uint8* dst_ptr, const uint8* src_ptr,
                               int dst_width, int x, int dx);
+
+void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int x, int dx);
+
+void ScaleARGBCols_Any_NEON(uint8* dst_argb, const uint8* src_argb,
+                            int dst_width, int x, int dx);
 
 void ScaleRowDown2_MIPS_DSPR2(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst, int dst_width);

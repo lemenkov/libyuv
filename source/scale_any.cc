@@ -33,6 +33,9 @@ extern "C" {
 #ifdef HAS_SCALEFILTERCOLS_NEON
 CANY(ScaleFilterCols_Any_NEON, ScaleFilterCols_NEON, ScaleFilterCols_C, 1, 7)
 #endif
+#ifdef HAS_SCALEARGBCOLS_NEON
+CANY(ScaleARGBCols_Any_NEON, ScaleARGBCols_NEON, ScaleARGBCols_C, 4, 7)
+#endif
 #undef CANY
 
 // Fixed scale down.

@@ -912,6 +912,49 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16"
   );
 }
+
+// TODO(Yang Zhang): Investigate less load instructions for
+// the x/dx stepping
+#define LOAD1_DATA32_LANE(vn, n)                               \
+    "lsr        %5, %3, #16                    \n"             \
+    "add        %6, %1, %5, lsl 2              \n"             \
+    "add        %3, %3, %4                     \n"             \
+    MEMACCESS(6)                                               \
+    "ld1        {"#vn".s}["#n"], [%6]          \n"
+
+void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int x, int dx) {
+  int tmp;
+  const uint8* src_tmp = src_argb;
+  asm volatile (
+  "1:                                          \n"
+    LOAD1_DATA32_LANE(v0, 0)
+    LOAD1_DATA32_LANE(v0, 1)
+    LOAD1_DATA32_LANE(v0, 2)
+    LOAD1_DATA32_LANE(v0, 3)
+    LOAD1_DATA32_LANE(v1, 0)
+    LOAD1_DATA32_LANE(v1, 1)
+    LOAD1_DATA32_LANE(v1, 2)
+    LOAD1_DATA32_LANE(v1, 3)
+
+    MEMACCESS(0)
+    "st1        {v0.4s, v1.4s}, [%0], #32      \n"  // store pixels
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    "b.gt        1b                            \n"
+  : "+r"(dst_argb),         // %0
+    "+r"(src_argb),         // %1
+    "+r"(dst_width),        // %2
+    "+r"(x),                // %3
+    "+r"(dx),               // %4
+    "+r"(tmp),              // %5
+    "+r"(src_tmp)           // %6
+  :
+  : "memory", "cc", "v0", "v1"
+  );
+}
+
+#undef LOAD1_DATA32_LANE
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

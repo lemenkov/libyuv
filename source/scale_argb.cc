@@ -327,6 +327,14 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     ScaleARGBFilterCols = ScaleARGBCols_SSE2;
   }
 #endif
+#if defined(HAS_SCALEARGBCOLS_NEON)
+  if (!filtering && TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterCols = ScaleARGBCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBCols_NEON;
+    }
+  }
+#endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
     ScaleARGBFilterCols = ScaleARGBColsUp2_C;
 #if defined(HAS_SCALEARGBCOLSUP2_SSE2)
@@ -501,6 +509,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
     ScaleARGBFilterCols = ScaleARGBCols_SSE2;
   }
 #endif
+#if defined(HAS_SCALEARGBCOLS_NEON)
+  if (!filtering && TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterCols = ScaleARGBCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBFilterCols = ScaleARGBCols_NEON;
+    }
+  }
+#endif
   if (!filtering && src_width * 2 == dst_width && x < 0x8000) {
     ScaleARGBFilterCols = ScaleARGBColsUp2_C;
 #if defined(HAS_SCALEARGBCOLSUP2_SSE2)
@@ -606,6 +622,14 @@ static void ScaleARGBSimple(int src_width, int src_height,
 #if defined(HAS_SCALEARGBCOLS_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && src_width < 32768) {
     ScaleARGBCols = ScaleARGBCols_SSE2;
+  }
+#endif
+#if defined(HAS_SCALEARGBCOLS_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBCols = ScaleARGBCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBCols = ScaleARGBCols_NEON;
+    }
   }
 #endif
   if (src_width * 2 == dst_width && x < 0x8000) {
