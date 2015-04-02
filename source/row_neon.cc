@@ -186,7 +186,7 @@ void I444ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -216,7 +216,7 @@ void I422ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -246,7 +246,7 @@ void I411ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -277,7 +277,7 @@ void I422ToBGRARow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -308,7 +308,7 @@ void I422ToABGRRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -338,7 +338,7 @@ void I422ToRGBARow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -367,7 +367,7 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -397,7 +397,7 @@ void I422ToRAWRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -439,7 +439,7 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -485,7 +485,7 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -526,7 +526,7 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %6
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -552,7 +552,7 @@ void I400ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %4
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -603,7 +603,7 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %5
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -631,7 +631,7 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %5
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -659,7 +659,7 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %5
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -687,7 +687,7 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
       [kUVToG]"r"(&kUVToG),     // %5
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -713,7 +713,7 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
       [kUVToG]"r"(&kUVToG),     // %4
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
@@ -739,7 +739,7 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
       [kUVToG]"r"(&kUVToG),     // %4
       [kUVBiasBGR]"r"(&kUVBiasBGR),
       [kYToRgb]"r"(&kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3",
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
