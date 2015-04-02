@@ -269,7 +269,7 @@ static int TestFilter_16(int src_width, int src_height,
                             disable_cpu_flags_);                               \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, ScaleDownBy##name##_##filter##_16) {                    \
+    TEST_F(libyuvTest, DISABLED_ScaleDownBy##name##_##filter##_16) {           \
       int diff = TestFilter_16(benchmark_width_, benchmark_height_,            \
                                Abs(benchmark_width_) * hfactor,                \
                                Abs(benchmark_height_) * vfactor,               \
@@ -308,13 +308,15 @@ TEST_FACTOR(3by8, 3 / 8, 3 / 8)
                             disable_cpu_flags_);                               \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, name##To##width##x##height##_##filter##_16) {           \
+    TEST_F(libyuvTest,                                                         \
+        DISABLED_##name##To##width##x##height##_##filter##_16) {               \
       int diff = TestFilter_16(benchmark_width_, benchmark_height_,            \
                                width, height,                                  \
                                kFilter##filter, benchmark_iterations_);        \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
-    TEST_F(libyuvTest, name##From##width##x##height##_##filter##_16) {         \
+    TEST_F(libyuvTest,                                                         \
+        DISABLED_##name##From##width##x##height##_##filter##_16) {             \
       int diff = TestFilter_16(width, height,                                  \
                                Abs(benchmark_width_), Abs(benchmark_height_),  \
                                kFilter##filter, benchmark_iterations_);        \

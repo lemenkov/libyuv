@@ -23,9 +23,6 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Remove this macro if OVERREAD is safe.
-#define AVOID_OVERREAD 1
-
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
@@ -44,9 +41,8 @@ static void ScalePlaneDown2(int src_width, int src_height,
   int y;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-    filtering == kFilterNone ? ScaleRowDown2_C :
-        (filtering == kFilterLinear ? ScaleRowDown2Linear_C :
-        ScaleRowDown2Box_C);
+      filtering == kFilterNone ? ScaleRowDown2_C :
+      (filtering == kFilterLinear ? ScaleRowDown2Linear_C : ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
   if (!filtering) {
     src_ptr += src_stride;  // Point to odd rows.
@@ -79,9 +75,9 @@ static void ScalePlaneDown2(int src_width, int src_height,
 #endif
 #if defined(HAS_SCALEROWDOWN2_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-//    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_AVX2 :
-//        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_AVX2 :
-//        ScaleRowDown2Box_Any_AVX2);
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_AVX2 :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_AVX2 :
+        ScaleRowDown2Box_Any_AVX2);
     if (IS_ALIGNED(dst_width, 32)) {
       ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_AVX2 :
           (filtering == kFilterLinear ? ScaleRowDown2Linear_AVX2 :
@@ -754,9 +750,7 @@ static void ScalePlaneBox(int src_width, int src_height,
         y = max_y;
       }
       boxheight = (y >> 16) - iy;
-      ScalePlaneBoxRow_C(dst_width, boxheight,
-                         x, dx, src_stride,
-                         src, dst);
+      ScalePlaneBoxRow_C(dst_width, boxheight, x, dx, src_stride, src, dst);
       dst += dst_stride;
     }
     return;
@@ -771,15 +765,10 @@ static void ScalePlaneBox(int src_width, int src_height,
         uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
 
 #if defined(HAS_SCALEADDROWS_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2)
-#ifdef AVOID_OVERREAD
-         && IS_ALIGNED(src_width, 16)
-#endif
-        ) {
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 16)) {
       ScaleAddRows = ScaleAddRows_SSE2;
     }
 #endif
-
 #if defined(HAS_SCALEADDROWS_NEON)
     if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 16)) {
       ScaleAddRows = ScaleAddRows_NEON;
@@ -795,10 +784,8 @@ static void ScalePlaneBox(int src_width, int src_height,
         y = (src_height << 16);
       }
       boxheight = (y >> 16) - iy;
-      ScaleAddRows(src, src_stride, (uint16*)(row16),
-                 src_width, boxheight);
-      ScaleAddCols(dst_width, boxheight, x, dx, (uint16*)(row16),
-                 dst_ptr);
+      ScaleAddRows(src, src_stride, (uint16*)(row16), src_width, boxheight);
+      ScaleAddCols(dst_width, boxheight, x, dx, (uint16*)(row16), dst_ptr);
       dst_ptr += dst_stride;
     }
     free_aligned_buffer_64(row16);
@@ -832,9 +819,7 @@ static void ScalePlaneBox_16(int src_width, int src_height,
         y = max_y;
       }
       boxheight = (y >> 16) - iy;
-      ScalePlaneBoxRow_16_C(dst_width, boxheight,
-                            x, dx, src_stride,
-                            src, dst);
+      ScalePlaneBoxRow_16_C(dst_width, boxheight, x, dx, src_stride, src, dst);
       dst += dst_stride;
     }
     return;
@@ -849,11 +834,7 @@ static void ScalePlaneBox_16(int src_width, int src_height,
         uint32* dst_ptr, int src_width, int src_height) = ScaleAddRows_16_C;
 
 #if defined(HAS_SCALEADDROWS_16_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2)
-#ifdef AVOID_OVERREAD
-        && IS_ALIGNED(src_width, 16)
-#endif
-        ) {
+    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 16)) {
       ScaleAddRows = ScaleAddRows_16_SSE2;
     }
 #endif
@@ -868,9 +849,9 @@ static void ScalePlaneBox_16(int src_width, int src_height,
       }
       boxheight = (y >> 16) - iy;
       ScaleAddRows(src, src_stride, (uint32*)(row32),
-                 src_width, boxheight);
+                   src_width, boxheight);
       ScaleAddCols(dst_width, boxheight, x, dx, (uint32*)(row32),
-                 dst_ptr);
+                   dst_ptr);
       dst_ptr += dst_stride;
     }
     free_aligned_buffer_64(row32);
@@ -1095,8 +1076,8 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_C;
   void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr,
-       int dst_width, int x, int dx) =
-       filtering ? ScaleFilterCols_C : ScaleCols_C;
+      int dst_width, int x, int dx) =
+      filtering ? ScaleFilterCols_C : ScaleCols_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
@@ -1234,8 +1215,8 @@ void ScalePlaneBilinearUp_16(int src_width, int src_height,
       ptrdiff_t src_stride, int dst_width, int source_y_fraction) =
       InterpolateRow_16_C;
   void (*ScaleFilterCols)(uint16* dst_ptr, const uint16* src_ptr,
-       int dst_width, int x, int dx) =
-       filtering ? ScaleFilterCols_16_C : ScaleCols_16_C;
+      int dst_width, int x, int dx) =
+      filtering ? ScaleFilterCols_16_C : ScaleCols_16_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
@@ -1380,8 +1361,7 @@ static void ScalePlaneSimple(int src_width, int src_height,
   }
 
   for (i = 0; i < dst_height; ++i) {
-    ScaleCols(dst_ptr, src_ptr + (y >> 16) * src_stride,
-              dst_width, x, dx);
+    ScaleCols(dst_ptr, src_ptr + (y >> 16) * src_stride, dst_width, x, dx);
     dst_ptr += dst_stride;
     y += dy;
   }
