@@ -920,7 +920,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
 // the x/dx stepping
 #define LOAD1_DATA32_LANE(dn, n)                               \
     "lsr        %5, %3, #16                    \n"             \
-    "add        %6, %1, %5, lsl 2              \n"             \
+    "add        %6, %1, %5, lsl #2             \n"             \
     "add        %3, %3, %4                     \n"             \
     MEMACCESS(6)                                               \
     "vld1.32    {"#dn"["#n"]}, [%6]            \n"
