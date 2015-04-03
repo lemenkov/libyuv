@@ -174,13 +174,21 @@ static void ScalePlaneDown4(int src_width, int src_height,
     src_stride = 0;
   }
 #if defined(HAS_SCALEROWDOWN4_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
-    ScaleRowDown4 = filtering ? ScaleRowDown4Box_NEON : ScaleRowDown4_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleRowDown4 = filtering ?
+        ScaleRowDown4Box_Any_NEON : ScaleRowDown4_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_NEON : ScaleRowDown4_NEON;
+    }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN4_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 8)) {
-    ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSE2 : ScaleRowDown4_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleRowDown4 = filtering ?
+        ScaleRowDown4Box_Any_SSE2 : ScaleRowDown4_Any_SSE2;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSE2 : ScaleRowDown4_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)

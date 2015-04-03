@@ -210,6 +210,7 @@ void ScaleARGBFilterCols_C(uint8* dst_argb, const uint8* src_argb,
 void ScaleARGBFilterCols64_C(uint8* dst_argb, const uint8* src_argb,
                              int dst_width, int x, int dx);
 
+// Specialized scalers for x86.
 void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -254,6 +255,11 @@ void ScaleRowDown2Linear_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst_ptr, int dst_width);
 void ScaleRowDown2Box_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown4_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown4Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
+
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width,
                        int src_height);
@@ -345,6 +351,10 @@ void ScaleRowDown2Linear_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                   uint8* dst, int dst_width);
 void ScaleRowDown2Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
+void ScaleRowDown4_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown4Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
 
 void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);
