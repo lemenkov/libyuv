@@ -47,6 +47,9 @@ extern "C" {
 #define LIBYUV_SSSE3_ONLY
 #endif
 
+#if defined(__native_client__)
+#define LIBYUV_DISABLE_NEON
+#endif
 // clang >= 3.5.0 required for Arm64.
 #if defined(__clang__) && defined(__aarch64__) && !defined(LIBYUV_DISABLE_NEON)
 #if (__clang_major__ < 3) || (__clang_major__ == 3 && (__clang_minor__ < 5))
@@ -184,26 +187,27 @@ extern "C" {
 // The following are available require VS2012.  Port to GCC.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 // TODO(fbarchard): fix AVX2 versions of YUV conversion.  bug=393
-#define HAS_I422TOARGBROW_AVX2
-#define HAS_I422TOABGRROW_AVX2
-#define HAS_I422TOBGRAROW_AVX2
-#define HAS_I422TORGBAROW_AVX2
-#define HAS_NV12TOARGBROW_AVX2
-#define HAS_NV21TOARGBROW_AVX2
-#define HAS_ARGBTORGB565ROW_AVX2
 #define HAS_ARGBTOARGB1555ROW_AVX2
 #define HAS_ARGBTOARGB4444ROW_AVX2
-#define HAS_NV12TORGB565ROW_AVX2
-#define HAS_NV21TORGB565ROW_AVX2
-#define HAS_I422TORGB565ROW_AVX2
+#define HAS_ARGBTORGB565ROW_AVX2
+#define HAS_I411TOARGBROW_AVX2
+#define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
-#define HAS_I422TORGB24ROW_AVX2
+#define HAS_I422TOARGBROW_AVX2
+#define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORAWROW_AVX2
+#define HAS_I422TORGB24ROW_AVX2
+#define HAS_I422TORGB565ROW_AVX2
+#define HAS_I422TORGBAROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
-#define HAS_I411TOARGBROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
+#define HAS_NV12TOARGBROW_AVX2
+#define HAS_NV12TORGB565ROW_AVX2
+#define HAS_NV21TOARGBROW_AVX2
+#define HAS_NV21TORGB565ROW_AVX2
+#define HAS_RGB565TOARGBROW_AVX2
 // TODO(fbarchard): Port to Neon
 #define HAS_ARGBTORGB565DITHERROW_SSE2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
@@ -877,6 +881,7 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
                             int pix);
 void ARGB4444ToARGBRow_SSE2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix);
+void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb, int pix);
 
 void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int pix);
@@ -894,6 +899,9 @@ void RGB24ToARGBRow_Any_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix);
 void RAWToARGBRow_Any_SSSE3(const uint8* src_raw, uint8* dst_argb, int pix);
 void RGB565ToARGBRow_Any_SSE2(const uint8* src_rgb565, uint8* dst_argb,
                               int pix);
+void RGB565ToARGBRow_Any_AVX2(const uint8* src_rgb565, uint8* dst_argb,
+                              int pix);
+
 void ARGB1555ToARGBRow_Any_SSE2(const uint8* src_argb1555, uint8* dst_argb,
                                 int pix);
 void ARGB4444ToARGBRow_Any_SSE2(const uint8* src_argb4444, uint8* dst_argb,
