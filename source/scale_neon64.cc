@@ -955,6 +955,76 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
 
 #undef LOAD1_DATA32_LANE
 
+// TODO(Yang Zhang): Investigate less load instructions for
+// the x/dx stepping
+#define LOAD2_DATA32_LANE(vn1, vn2, n)                         \
+    "lsr        %5, %3, #16                           \n"      \
+    "add        %6, %1, %5, lsl #2                    \n"      \
+    "add        %3, %3, %4                            \n"      \
+    MEMACCESS(6)                                               \
+    "ld2        {"#vn1".s, "#vn2".s}["#n"], [%6]      \n"
+
+void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
+                              int dst_width, int x, int dx) {
+  int dx_offset[4] = {0, 1, 2, 3};
+  int *tmp = dx_offset;
+  const uint8* src_tmp = src_argb;
+  asm volatile (
+    "dup        v0.4s, %w3                     \n"  // x
+    "dup        v1.4s, %w4                     \n"  // dx
+    "ld1        {v2.4s}, [%5]                  \n"  // 0 1 2 3
+    "shl        v6.4s, v1.4s, #2               \n"  // 4 * dx
+    "mul        v1.4s, v1.4s, v2.4s            \n"
+    "movi       v3.16b, #0x7f                  \n"  // 0x7F
+    "movi       v4.8h, #0x7f                   \n"  // 0x7F
+    // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
+    "add        v5.4s, v1.4s, v0.4s            \n"
+  "1:                                          \n"
+    // d0, d1: a
+    // d2, d3: b
+    LOAD2_DATA32_LANE(v0, v1, 0)
+    LOAD2_DATA32_LANE(v0, v1, 1)
+    LOAD2_DATA32_LANE(v0, v1, 2)
+    LOAD2_DATA32_LANE(v0, v1, 3)
+    "shrn       v2.4h, v5.4s, #9               \n"
+    "and        v2.8b, v2.8b, v4.8b            \n"
+    "dup        v16.8b, v2.b[0]                \n"
+    "dup        v17.8b, v2.b[2]                \n"
+    "dup        v18.8b, v2.b[4]                \n"
+    "dup        v19.8b, v2.b[6]                \n"
+    "ext        v2.8b, v16.8b, v17.8b, #4      \n"
+    "ext        v17.8b, v18.8b, v19.8b, #4     \n"
+    "ins        v2.d[1], v17.d[0]              \n"  // f
+    "eor        v7.16b, v2.16b, v3.16b         \n"  // 0x7f ^ f
+    "umull      v16.8h, v0.8b, v7.8b           \n"
+    "umull2     v17.8h, v0.16b, v7.16b         \n"
+    "umull      v18.8h, v1.8b, v2.8b           \n"
+    "umull2     v19.8h, v1.16b, v2.16b         \n"
+    "add        v16.8h, v16.8h, v18.8h         \n"
+    "add        v17.8h, v17.8h, v19.8h         \n"
+    "shrn       v0.8b, v16.8h, #7              \n"
+    "shrn2      v0.16b, v17.8h, #7             \n"
+
+    MEMACCESS(0)
+    "st1     {v0.4s}, [%0], #16                \n"  // store pixels
+    "add     v5.4s, v5.4s, v6.4s               \n"
+    "subs    %2, %2, #4                        \n"  // 4 processed per loop
+    "b.gt    1b                                \n"
+  : "+r"(dst_argb),         // %0
+    "+r"(src_argb),         // %1
+    "+r"(dst_width),        // %2
+    "+r"(x),                // %3
+    "+r"(dx),               // %4
+    "+r"(tmp),              // %5
+    "+r"(src_tmp)           // %6
+  :
+  : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5",
+    "v6", "v7", "v16", "v17", "v18", "v19"
+  );
+}
+
+#undef LOAD2_DATA32_LANE
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

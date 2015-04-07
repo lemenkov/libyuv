@@ -959,6 +959,76 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
 
 #undef LOAD1_DATA32_LANE
 
+// TODO(Yang Zhang): Investigate less load instructions for
+// the x/dx stepping
+#define LOAD2_DATA32_LANE(dn1, dn2, n)                         \
+    "lsr        %5, %3, #16                           \n"      \
+    "add        %6, %1, %5, lsl #2                    \n"      \
+    "add        %3, %3, %4                            \n"      \
+    MEMACCESS(6)                                               \
+    "vld2.32    {"#dn1"["#n"], "#dn2"["#n"]}, [%6]    \n"
+
+void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
+                              int dst_width, int x, int dx) {
+  int dx_offset[4] = {0, 1, 2, 3};
+  int *tmp = dx_offset;
+  const uint8* src_tmp = src_argb;
+  asm volatile (
+    ".p2align   2                              \n"
+    "vdup.32    q0, %3                         \n"  // x
+    "vdup.32    q1, %4                         \n"  // dx
+    "vld1.32    {q2}, [%5]                     \n"  // 0 1 2 3
+    "vshl.i32   q9, q1, #2                     \n"  // 4 * dx
+    "vmul.s32   q1, q1, q2                     \n"
+    "vmov.i8    q3, #0x7f                      \n"  // 0x7F
+    "vmov.i16   q15, #0x7f                     \n"  // 0x7F
+    // x         , x + 1 * dx, x + 2 * dx, x + 3 * dx
+    "vadd.s32   q8, q1, q0                     \n"
+  "1:                                          \n"
+    // d0, d1: a
+    // d2, d3: b
+    LOAD2_DATA32_LANE(d0, d2, 0)
+    LOAD2_DATA32_LANE(d0, d2, 1)
+    LOAD2_DATA32_LANE(d1, d3, 0)
+    LOAD2_DATA32_LANE(d1, d3, 1)
+    "vshrn.i32   d22, q8, #9                   \n"
+    "vand.16     d22, d22, d30                 \n"
+    "vdup.8      d24, d22[0]                   \n"
+    "vdup.8      d25, d22[2]                   \n"
+    "vdup.8      d26, d22[4]                   \n"
+    "vdup.8      d27, d22[6]                   \n"
+    "vext.8      d4, d24, d25, #4              \n"
+    "vext.8      d5, d26, d27, #4              \n"  // f
+    "veor.8      q10, q2, q3                   \n"  // 0x7f ^ f
+    "vmull.u8    q11, d0, d20                  \n"
+    "vmull.u8    q12, d1, d21                  \n"
+    "vmull.u8    q13, d2, d4                   \n"
+    "vmull.u8    q14, d3, d5                   \n"
+    "vadd.i16    q11, q11, q13                 \n"
+    "vadd.i16    q12, q12, q14                 \n"
+    "vshrn.i16   d0, q11, #7                   \n"
+    "vshrn.i16   d1, q12, #7                   \n"
+
+    MEMACCESS(0)
+    "vst1.32     {d0, d1}, [%0]!               \n"  // store pixels
+    "vadd.s32    q8, q8, q9                    \n"
+    "subs        %2, %2, #4                    \n"  // 4 processed per loop
+    "bgt         1b                            \n"
+  : "+r"(dst_argb),         // %0
+    "+r"(src_argb),         // %1
+    "+r"(dst_width),        // %2
+    "+r"(x),                // %3
+    "+r"(dx),               // %4
+    "+r"(tmp),              // %5
+    "+r"(src_tmp)           // %6
+  :
+  : "memory", "cc", "q0", "q1", "q2", "q3", "q8", "q9",
+    "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+
+#undef LOAD2_DATA32_LANE
+
 #endif  // defined(__ARM_NEON__) && !defined(__aarch64__)
 
 #ifdef __cplusplus

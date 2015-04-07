@@ -231,6 +231,14 @@ static void ScaleARGBBilinearDown(int src_width, int src_height,
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
   }
 #endif
+#if defined(HAS_SCALEARGBFILTERCOLS_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_NEON;
+    }
+  }
+#endif
   // TODO(fbarchard): Consider not allocating row buffer for kFilterLinear.
   // Allocate a row of ARGB.
   {
@@ -320,6 +328,14 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
   if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+  }
+#endif
+#if defined(HAS_SCALEARGBFILTERCOLS_NEON)
+  if (filtering && TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_NEON;
+    }
   }
 #endif
 #if defined(HAS_SCALEARGBCOLS_SSE2)
@@ -502,6 +518,14 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
 #if defined(HAS_SCALEARGBFILTERCOLS_SSSE3)
   if (filtering && TestCpuFlag(kCpuHasSSSE3) && src_width < 32768) {
     ScaleARGBFilterCols = ScaleARGBFilterCols_SSSE3;
+  }
+#endif
+#if defined(HAS_SCALEARGBFILTERCOLS_NEON)
+  if (filtering && TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBFilterCols = ScaleARGBFilterCols_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBFilterCols = ScaleARGBFilterCols_NEON;
+    }
   }
 #endif
 #if defined(HAS_SCALEARGBCOLS_SSE2)

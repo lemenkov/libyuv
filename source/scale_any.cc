@@ -36,6 +36,10 @@ CANY(ScaleFilterCols_Any_NEON, ScaleFilterCols_NEON, ScaleFilterCols_C, 1, 7)
 #ifdef HAS_SCALEARGBCOLS_NEON
 CANY(ScaleARGBCols_Any_NEON, ScaleARGBCols_NEON, ScaleARGBCols_C, 4, 7)
 #endif
+#ifdef HAS_SCALEARGBFILTERCOLS_NEON
+CANY(ScaleARGBFilterCols_Any_NEON, ScaleARGBFilterCols_NEON,
+     ScaleARGBFilterCols_C, 4, 3)
+#endif
 #undef CANY
 
 // Fixed scale down.
