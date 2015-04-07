@@ -573,6 +573,92 @@ void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
 }
 #endif  // HAS_RGB565TOARGBROW_AVX2
 
+#ifdef HAS_ARGB1555TOARGBROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
+                            int pix) {
+  __asm {
+    mov        eax, 0x01080108  // generate multiplier to repeat 5 bits
+    vmovd      xmm5, eax
+    vbroadcastss ymm5, xmm5
+    mov        eax, 0x42004200  // multiplier shift by 6 and then repeat 5 bits
+    movd       xmm6, eax
+    vbroadcastss ymm6, xmm6
+    vpcmpeqb   ymm3, ymm3, ymm3 // generate mask 0xf800f800 for Red
+    vpsllw     ymm3, ymm3, 11
+    vpsrlw     ymm4, ymm3, 6    // generate mask 0x03e003e0 for Green
+    vpcmpeqb   ymm7, ymm7, ymm7 // generate mask 0xff00ff00 for Alpha
+    vpsllw     ymm7, ymm7, 8
+
+    mov        eax,  [esp + 4]   // src_argb1555
+    mov        edx,  [esp + 8]   // dst_argb
+    mov        ecx,  [esp + 12]  // pix
+    sub        edx,  eax
+    sub        edx,  eax
+
+ convertloop:
+    vmovdqu    ymm0, [eax]         // fetch 16 pixels of 1555
+    vpsllw     ymm1, ymm0, 1       // R in upper 5 bits
+    vpsllw     ymm2, ymm0, 11      // B in upper 5 bits
+    vpand      ymm1, ymm1, ymm3
+    vpmulhuw   ymm2, ymm2, ymm5    // * (256 + 8)
+    vpmulhuw   ymm1, ymm1, ymm5    // * (256 + 8)
+    vpsllw     ymm1, ymm1, 8
+    vpor       ymm1, ymm1, ymm2    // RB
+    vpsraw     ymm2, ymm0, 8       // A
+    vpand      ymm0, ymm0, ymm4    // G in middle 5 bits
+    vpmulhuw   ymm0, ymm0, ymm6    // << 6 * (256 + 8)
+    vpand      ymm2, ymm2, ymm7
+    vpor       ymm0, ymm0, ymm2    // AG
+    vpunpckhbw ymm2, ymm1, ymm0
+    vpunpcklbw ymm1, ymm1, ymm0
+    vmovdqu    [eax * 2 + edx], ymm1  // store 8 pixels of ARGB
+    vmovdqu    [eax * 2 + edx + 32], ymm2  // store next 8 pixels of ARGB
+    lea       eax, [eax + 32]
+    sub       ecx, 16
+    jg        convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGB1555TOARGBROW_AVX2
+
+#ifdef HAS_ARGB4444TOARGBROW_AVX2
+__declspec(naked) __declspec(align(16))
+void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
+                            int pix) {
+  __asm {
+    mov        eax,  0x0f0f0f0f  // generate mask 0x0f0f0f0f
+    vmovd      xmm4, eax
+    vbroadcastss ymm4, xmm4
+    vpslld     ymm5, ymm4, 4    // 0xf0f0f0f0 for high nibbles
+    mov       eax,  [esp + 4]   // src_argb4444
+    mov       edx,  [esp + 8]   // dst_argb
+    mov       ecx,  [esp + 12]  // pix
+    sub       edx,  eax
+    sub       edx,  eax
+
+ convertloop:
+    vmovdqu    ymm0, [eax]         // fetch 16 pixels of bgra4444
+    vpand      ymm2, ymm0, ymm5    // mask high nibbles
+    vpand      ymm0, ymm0, ymm4    // mask low nibbles
+    vpsrlw     ymm3, ymm2, 4
+    vpsllw     ymm1, ymm0, 4
+    vpor       ymm2, ymm2, ymm3
+    vpor       ymm0, ymm0, ymm1
+    vpunpckhbw ymm1, ymm0, ymm2
+    vpunpcklbw ymm0, ymm0, ymm2
+    vmovdqu    [eax * 2 + edx], ymm0  // store 8 pixels of ARGB
+    vmovdqu    [eax * 2 + edx + 32], ymm1  // store next 8 pixels of ARGB
+    lea       eax, [eax + 32]
+    sub       ecx, 16
+    jg        convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGB4444TOARGBROW_AVX2
+
 // 24 instructions
 __declspec(naked) __declspec(align(16))
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
