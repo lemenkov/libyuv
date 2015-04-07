@@ -1161,7 +1161,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
 }
 #endif  //  HAS_ARGBTOYROW_AVX2
 
-#ifdef HAS_ARGBTOYROW_AVX2
+#ifdef HAS_ARGBTOYJROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 __declspec(naked) __declspec(align(32))
 void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {

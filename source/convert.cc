@@ -544,10 +544,12 @@ int ARGBToI420(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
@@ -839,34 +841,30 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_SSSE3;
     }
   }
-#endif  // HAS_ARGBTOUVROW_SSSE3
-#if defined(HAS_ARGBTOYROW_AVX2)
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
 #endif
-  {
 #if !defined(HAS_RGB24TOYROW_NEON)
+  {
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 15) & ~15;
+    const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
@@ -899,8 +897,8 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
     }
 #if !defined(HAS_RGB24TOYROW_NEON)
     free_aligned_buffer_64(row);
-#endif
   }
+#endif
   return 0;
 }
 
@@ -960,66 +958,64 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_SSSE3;
     }
   }
-#endif  // HAS_ARGBTOUVROW_SSSE3
-#if defined(HAS_ARGBTOYROW_AVX2)
+#endif
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
 #endif
+#if !defined(HAS_RAWTOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 15) & ~15;
+    const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
+#endif
 
     for (y = 0; y < height - 1; y += 2) {
-  #if defined(HAS_RAWTOYROW_NEON)
+#if defined(HAS_RAWTOYROW_NEON)
       RAWToUVRow(src_raw, src_stride_raw, dst_u, dst_v, width);
       RAWToYRow(src_raw, dst_y, width);
       RAWToYRow(src_raw + src_stride_raw, dst_y + dst_stride_y, width);
-  #else
+#else
       RAWToARGBRow(src_raw, row, width);
       RAWToARGBRow(src_raw + src_stride_raw, row + kRowSize, width);
       ARGBToUVRow(row, kRowSize, dst_u, dst_v, width);
       ARGBToYRow(row, dst_y, width);
       ARGBToYRow(row + kRowSize, dst_y + dst_stride_y, width);
-  #endif
+#endif
       src_raw += src_stride_raw * 2;
       dst_y += dst_stride_y * 2;
       dst_u += dst_stride_u;
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-  #if defined(HAS_RAWTOYROW_NEON)
+#if defined(HAS_RAWTOYROW_NEON)
       RAWToUVRow(src_raw, 0, dst_u, dst_v, width);
       RAWToYRow(src_raw, dst_y, width);
-  #else
+#else
       RAWToARGBRow(src_raw, row, width);
       ARGBToUVRow(row, 0, dst_u, dst_v, width);
       ARGBToYRow(row, dst_y, width);
-  #endif
+#endif
     }
-  #if !defined(HAS_RAWTOYROW_NEON)
+#if !defined(HAS_RAWTOYROW_NEON)
     free_aligned_buffer_64(row);
-  #endif
   }
+#endif
   return 0;
 }
 
@@ -1083,35 +1079,30 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
 #endif
-
-  {
 #if !defined(HAS_RGB565TOYROW_NEON)
+  {
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 15) & ~15;
+    const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
@@ -1144,8 +1135,8 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
     }
 #if !defined(HAS_RGB565TOYROW_NEON)
     free_aligned_buffer_64(row);
-#endif
   }
+#endif
   return 0;
 }
 
@@ -1202,35 +1193,30 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
 #endif
-
-  {
 #if !defined(HAS_ARGB1555TOYROW_NEON)
+  {
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 15) & ~15;
+    const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
     for (y = 0; y < height - 1; y += 2) {
@@ -1263,9 +1249,9 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
 #endif
     }
 #if !defined(HAS_ARGB1555TOYROW_NEON)
-  free_aligned_buffer_64(row);
-#endif
+    free_aligned_buffer_64(row);
   }
+#endif
   return 0;
 }
 
@@ -1322,35 +1308,31 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     }
   }
 #endif
-#if defined(HAS_ARGBTOUVROW_SSSE3)
+#if defined(HAS_ARGBTOYROW_SSSE3) && defined(HAS_ARGBTOUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToUVRow = ARGBToUVRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToUVRow = ARGBToUVRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBToYRow = ARGBToYRow_Any_SSSE3;
     if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_SSSE3;
       ARGBToYRow = ARGBToYRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
 #endif
 
-  {
 #if !defined(HAS_ARGB4444TOYROW_NEON)
+  {
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 15) & ~15;
+    const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
@@ -1385,8 +1367,8 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     }
 #if !defined(HAS_ARGB4444TOYROW_NEON)
     free_aligned_buffer_64(row);
-#endif
   }
+#endif
   return 0;
 }
 

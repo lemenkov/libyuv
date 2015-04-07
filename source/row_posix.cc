@@ -953,7 +953,6 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
 #endif  // HAS_ARGBTOUVROW_AVX2
 
 #ifdef HAS_ARGBTOUVJROW_SSSE3
-// TODO(fbarchard): Share code with ARGBToUVRow_SSSE3.
 void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                         uint8* dst_u, uint8* dst_v, int width) {
   asm volatile (

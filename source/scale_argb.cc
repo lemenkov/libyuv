@@ -87,7 +87,7 @@ static void ScaleARGBDown4Box(int src_width, int src_height,
                               int x, int dx, int y, int dy) {
   int j;
   // Allocate 2 rows of ARGB.
-  const int kRowSize = (dst_width * 2 * 4 + 15) & ~15;
+  const int kRowSize = (dst_width * 2 * 4 + 31) & ~31;
   align_buffer_64(row, kRowSize * 2);
   int row_stride = src_stride * (dy >> 16);
   void (*ScaleARGBRowDown2)(const uint8* src_argb, ptrdiff_t src_stride,
@@ -353,7 +353,7 @@ static void ScaleARGBBilinearUp(int src_width, int src_height,
     const uint8* src = src_argb + yi * src_stride;
 
     // Allocate 2 rows of ARGB.
-    const int kRowSize = (dst_width * 4 + 15) & ~15;
+    const int kRowSize = (dst_width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 
     uint8* rowptr = row;
@@ -538,7 +538,7 @@ static void ScaleYUVToARGBBilinearUp(int src_width, int src_height,
   const uint8* src_row_v = src_v + uv_yi * src_stride_v;
 
   // Allocate 2 rows of ARGB.
-  const int kRowSize = (dst_width * 4 + 15) & ~15;
+  const int kRowSize = (dst_width * 4 + 31) & ~31;
   align_buffer_64(row, kRowSize * 2);
 
   // Allocate 1 row of ARGB for source conversion.

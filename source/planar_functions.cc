@@ -2040,7 +2040,7 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
 #endif
   {
     // 3 rows with edges before/after.
-    const int kRowSize = (width + kEdge + 15) & ~15;
+    const int kRowSize = (width + kEdge + 31) & ~31;
     align_buffer_64(rows, kRowSize * 2 + (kEdge + kRowSize * 3 + kEdge));
     uint8* row_sobelx = rows;
     uint8* row_sobely = rows + kRowSize;

@@ -289,10 +289,12 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
@@ -339,8 +341,8 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
 #endif
   {
     // Allocate a rows of uv.
-    align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
-    uint8* row_v = row_u + ((halfwidth + 15) & ~15);
+    align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    uint8* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
       ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -396,10 +398,12 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_AVX2)
+#if defined(HAS_ARGBTOYROW_AVX2) && defined(HAS_ARGBTOUVROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToUVRow = ARGBToUVRow_Any_AVX2;
     ARGBToYRow = ARGBToYRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
+      ARGBToUVRow = ARGBToUVRow_AVX2;
       ARGBToYRow = ARGBToYRow_AVX2;
     }
   }
@@ -446,8 +450,8 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
 #endif
   {
     // Allocate a rows of uv.
-    align_buffer_64(row_u, ((halfwidth + 15) & ~15) * 2);
-    uint8* row_v = row_u + ((halfwidth + 15) & ~15);
+    align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
+    uint8* row_v = row_u + ((halfwidth + 31) & ~31);
 
     for (y = 0; y < height - 1; y += 2) {
       ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
@@ -1088,7 +1092,7 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUVJRow)(const uint8* src_argb0, int src_stride_argb,
-                      uint8* dst_u, uint8* dst_v, int width) = ARGBToUVJRow_C;
+                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVJRow_C;
   void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
       ARGBToYJRow_C;
   if (!src_argb ||
@@ -1112,7 +1116,7 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYJROW_AVX2) && defined(HAS_ARGBTOUVJROW_AVX2)
+#if defined(HAS_ARGBTOYJROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToYJRow = ARGBToYJRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {

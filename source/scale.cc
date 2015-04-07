@@ -1164,7 +1164,7 @@ void ScalePlaneBilinearUp(int src_width, int src_height,
     const uint8* src = src_ptr + yi * src_stride;
 
     // Allocate 2 row buffers.
-    const int kRowSize = (dst_width + 15) & ~15;
+    const int kRowSize = (dst_width + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 
     uint8* rowptr = row;
@@ -1295,7 +1295,7 @@ void ScalePlaneBilinearUp_16(int src_width, int src_height,
     const uint16* src = src_ptr + yi * src_stride;
 
     // Allocate 2 row buffers.
-    const int kRowSize = (dst_width + 15) & ~15;
+    const int kRowSize = (dst_width + 31) & ~31;
     align_buffer_64(row, kRowSize * 4);
 
     uint16* rowptr = (uint16*)row;
