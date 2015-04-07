@@ -567,11 +567,11 @@ void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
     lea       eax, [eax + 32]
     sub       ecx, 16
     jg        convertloop
-    ret
     vzeroupper
+    ret
   }
 }
-#endif  HAS_RGB565TOARGBROW_AVX2
+#endif  // HAS_RGB565TOARGBROW_AVX2
 
 // 24 instructions
 __declspec(naked) __declspec(align(16))
@@ -2085,6 +2085,7 @@ void NV12ToARGBRow_AVX2(const uint8* y_buf,
     jg         convertloop
 
     pop        esi
+    vzeroupper
     ret
   }
 }
@@ -2115,6 +2116,7 @@ void NV21ToARGBRow_AVX2(const uint8* y_buf,
     jg         convertloop
 
     pop        esi
+    vzeroupper
     ret
   }
 }
