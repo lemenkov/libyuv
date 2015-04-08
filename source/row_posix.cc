@@ -1972,10 +1972,10 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpmaddubsw  " MEMACCESS([YuvConstants]) ",%%ymm0,%%ymm0        \n"        \
     "vmovdqu     " MEMACCESS2(160, [YuvConstants]) ",%%ymm3         \n"        \
     "vpsubw      %%ymm2,%%ymm3,%%ymm2                               \n"        \
-    "vmovdqu     " MEMACCESS2(128, [YuvConstants]) ",%%ymm2         \n"        \
-    "vpsubw      %%ymm1,%%ymm2,%%ymm1                               \n"        \
-    "vmovdqu     " MEMACCESS2(96, [YuvConstants]) ",%%ymm1          \n"        \
-    "vpsubw      %%ymm0,%%ymm1,%%ymm0                               \n"        \
+    "vmovdqu     " MEMACCESS2(128, [YuvConstants]) ",%%ymm3         \n"        \
+    "vpsubw      %%ymm1,%%ymm3,%%ymm1                               \n"        \
+    "vmovdqu     " MEMACCESS2(96, [YuvConstants]) ",%%ymm3          \n"        \
+    "vpsubw      %%ymm0,%%ymm3,%%ymm0                               \n"        \
     "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
     "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
     "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
