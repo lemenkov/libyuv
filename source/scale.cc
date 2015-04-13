@@ -745,8 +745,8 @@ static void ScalePlaneBox(int src_width, int src_height,
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
-  // TODO(fbarchard): Remove this and make AddRows handle boxheight 1.
-  if (!IS_ALIGNED(src_width, 16) || dst_height * 2 > src_height) {
+  // TODO(fbarchard): Remove this and make AddRows handle odd width.
+  if (!IS_ALIGNED(src_width, 16)) {
     uint8* dst = dst_ptr;
     int j;
     for (j = 0; j < dst_height; ++j) {

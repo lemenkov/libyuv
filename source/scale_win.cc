@@ -708,11 +708,9 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
 }
 
 // Reads 16xN bytes and produces 16 shorts at a time.
-// TODO(fbarchard): Make this handle 4xN bytes for any width ARGB.
 __declspec(naked)
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                       uint16* dst_ptr, int src_width,
-                       int src_height) {
+                       uint16* dst_ptr, int src_width, int src_height) {
   __asm {
     push       esi
     push       edi
@@ -724,21 +722,14 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov        ecx, [esp + 16 + 16]  // dst_width
     mov        ebx, [esp + 16 + 20]  // height
     pxor       xmm4, xmm4
-    dec        ebx
+    mov        eax, esi          // row pointer
+    mov        ebp, ebx          // height
+    pxor       xmm0, xmm0        // clear accumulators
+    pxor       xmm1, xmm1
 
   xloop:
-    // first row
-    movdqu     xmm0, [esi]
-    lea        eax, [esi + edx]
-    movdqa     xmm1, xmm0
-    punpcklbw  xmm0, xmm4
-    punpckhbw  xmm1, xmm4
-    lea        esi, [esi + 16]
-    mov        ebp, ebx
-    test       ebp, ebp
-    je         ydone
 
-    // sum remaining rows
+    // sum rows
   yloop:
     movdqu     xmm2, [eax]       // read 16 pixels
     lea        eax, [eax + edx]  // advance to next row
@@ -750,11 +741,14 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     sub        ebp, 1
     jg         yloop
 
-  ydone:
     movdqu     [edi], xmm0
     movdqu     [edi + 16], xmm1
-    lea        edi, [edi + 32]
-
+    lea        edi, [edi + 32]   // dst_ptr += 16
+    lea        esi, [esi + 16]   // src_ptr += 16
+    mov        eax, esi          // row pointer
+    mov        ebp, ebx          // height
+    pxor       xmm0, xmm0        // clear accumulators
+    pxor       xmm1, xmm1
     sub        ecx, 16
     jg         xloop
 
