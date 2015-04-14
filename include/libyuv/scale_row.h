@@ -52,6 +52,7 @@ extern "C" {
 
 // The following are available on VS2012.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+#define HAS_SCALEADDROWS_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
 #endif
 
@@ -262,26 +263,22 @@ void ScaleRowDown4Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
 
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                       uint16* dst_ptr, int src_width,
-                       int src_height);
+                       uint16* dst_ptr, int src_width, int src_height);
+void ScaleAddRows_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                       uint16* dst_ptr, int src_width, int src_height);
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                            int dst_width, int x, int dx);
 void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                        int dst_width, int x, int dx);
-void ScaleARGBRowDown2_SSE2(const uint8* src_argb,
-                            ptrdiff_t src_stride,
+void ScaleARGBRowDown2_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                             uint8* dst_argb, int dst_width);
-void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb,
-                                  ptrdiff_t src_stride,
+void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                   uint8* dst_argb, int dst_width);
-void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
-                               ptrdiff_t src_stride,
+void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                uint8* dst_argb, int dst_width);
 void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
-                               int src_stepx,
-                               uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
-                                  ptrdiff_t src_stride,
+                               int src_stepx, uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                   int src_stepx,
                                   uint8* dst_argb, int dst_width);
 void ScaleARGBCols_SSE2(uint8* dst_argb, const uint8* src_argb,

@@ -1030,10 +1030,6 @@ enum FilterMode ScaleFilterReduce(int src_width, int src_height,
     if (dst_width * 2 >= src_width && dst_height * 2 >= src_height) {
       filtering = kFilterBilinear;
     }
-    // If scaling to larger, switch from Box to Bilinear.
-    if (dst_width >= src_width || dst_height >= src_height) {
-      filtering = kFilterBilinear;
-    }
   }
   if (filtering == kFilterBilinear) {
     if (src_height == 1) {

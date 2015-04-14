@@ -721,16 +721,14 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov        edi, [esp + 16 + 12]  // dst_ptr
     mov        ecx, [esp + 16 + 16]  // dst_width
     mov        ebx, [esp + 16 + 20]  // height
-    pxor       xmm4, xmm4
     mov        eax, esi          // row pointer
     mov        ebp, ebx          // height
     pxor       xmm0, xmm0        // clear accumulators
     pxor       xmm1, xmm1
+    pxor       xmm4, xmm4
 
+  // sum rows
   xloop:
-
-    // sum rows
-  yloop:
     movdqu     xmm2, [eax]       // read 16 pixels
     lea        eax, [eax + edx]  // advance to next row
     movdqa     xmm3, xmm2
@@ -739,7 +737,7 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     paddusw    xmm0, xmm2        // sum 16 words
     paddusw    xmm1, xmm3
     sub        ebp, 1
-    jg         yloop
+    jg         xloop
 
     movdqu     [edi], xmm0
     movdqu     [edi + 16], xmm1
@@ -760,15 +758,59 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   }
 }
 
-// Bilinear column filtering. SSSE3 version.
-// TODO(fbarchard): Switch the following:
-//    xor        ebx, ebx
-//    mov        bx, word ptr [esi + eax]  // 2 source x0 pixels
-// To
-//    movzx      ebx, word ptr [esi + eax]  // 2 source x0 pixels
-// when drmemory bug fixed.
-// https://code.google.com/p/drmemory/issues/detail?id=1396
+// Reads 32xN bytes and produces 32 shorts at a time.
+__declspec(naked)
+void ScaleAddRows_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                       uint16* dst_ptr, int src_width, int src_height) {
+  __asm {
+    push        esi
+    push        edi
+    push        ebx
+    push        ebp
+    mov         esi, [esp + 16 + 4]   // src_ptr
+    mov         edx, [esp + 16 + 8]   // src_stride
+    mov         edi, [esp + 16 + 12]  // dst_ptr
+    mov         ecx, [esp + 16 + 16]  // dst_width
+    mov         ebx, [esp + 16 + 20]  // height
+    mov         eax, esi              // row pointer
+    mov         ebp, ebx              // height
+    vpxor       ymm0, ymm0, ymm0      // clear accumulators
+    vpxor       ymm1, ymm1, ymm1
+    vpxor       ymm4, ymm4, ymm4
 
+  // sum rows
+  xloop:
+    vmovdqu     ymm2, [eax]       // read 16 pixels
+    vpermq      ymm2, ymm2, 0xd8  // unmutate for vpunpck
+    lea         eax, [eax + edx]  // advance to next row
+    vpunpckhbw  ymm3, ymm2, ymm4
+    vpunpcklbw  ymm2, ymm2, ymm4
+    vpaddusw    ymm0, ymm0, ymm2  // sum 16 words
+    vpaddusw    ymm1, ymm1, ymm3
+    sub         ebp, 1
+    jg          xloop
+
+    vmovdqu     [edi], ymm0
+    vmovdqu     [edi + 32], ymm1
+    lea         edi, [edi + 64]   // dst_ptr
+    lea         esi, [esi + 32]   // src_ptr
+    mov         eax, esi          // row pointer
+    mov         ebp, ebx          // height
+    vpxor       ymm0, ymm0, ymm0  // clear accumulators
+    vpxor       ymm1, ymm1, ymm1
+    sub         ecx, 32
+    jg          xloop
+
+    pop         ebp
+    pop         ebx
+    pop         edi
+    pop         esi
+    vzeroupper
+    ret
+  }
+}
+
+// Bilinear column filtering. SSSE3 version.
 __declspec(naked)
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                            int dst_width, int x, int dx) {

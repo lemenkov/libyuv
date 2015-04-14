@@ -702,11 +702,22 @@ static void ScaleAddCols2_16_C(int dst_width, int boxheight, int x, int dx,
   }
 }
 
+static void ScaleAddCols0_C(int dst_width, int boxheight, int x, int,
+                            const uint16* src_ptr, uint8* dst_ptr) {
+  int scaleval = 65536 / boxheight;
+  int i;
+  src_ptr += (x >> 16);
+  for (i = 0; i < dst_width; ++i) {
+    *dst_ptr++ = src_ptr[i] * scaleval >> 16;
+  }
+}
+
 static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
   int boxwidth = (dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int i;
+  x >>= 16;
   for (i = 0; i < dst_width; ++i) {
     *dst_ptr++ = SumPixels(boxwidth, src_ptr + x) * scaleval >> 16;
     x += boxwidth;
@@ -768,13 +779,18 @@ static void ScalePlaneBox(int src_width, int src_height,
     align_buffer_64(row16, src_width * 2);
     void (*ScaleAddCols)(int dst_width, int boxheight, int x, int dx,
         const uint16* src_ptr, uint8* dst_ptr) =
-        (dx & 0xffff) ? ScaleAddCols2_C: ScaleAddCols1_C;
+        (dx & 0xffff) ? ScaleAddCols2_C:
+        ((dx != 0x10000) ? ScaleAddCols1_C : ScaleAddCols0_C);
     void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
         uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
-
 #if defined(HAS_SCALEADDROWS_SSE2)
     if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 16)) {
       ScaleAddRows = ScaleAddRows_SSE2;
+    }
+#endif
+#if defined(HAS_SCALEADDROWS_AVX2)
+    if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(src_width, 32)) {
+      ScaleAddRows = ScaleAddRows_AVX2;
     }
 #endif
 #if defined(HAS_SCALEADDROWS_NEON)
@@ -1419,8 +1435,7 @@ void ScalePlane(const uint8* src, int src_stride,
                 enum FilterMode filtering) {
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
-                                dst_width, dst_height,
-                                filtering);
+                                dst_width, dst_height, filtering);
 
   // Negative height means invert the image.
   if (src_height < 0) {
@@ -1436,7 +1451,7 @@ void ScalePlane(const uint8* src, int src_stride,
     CopyPlane(src, src_stride, dst, dst_stride, dst_width, dst_height);
     return;
   }
-  if (dst_width == src_width) {
+  if (dst_width == src_width && filtering != kFilterBox) {
     int dy = FixedDiv(src_height, dst_height);
     // Arbitrary scale vertically, but unscaled vertically.
     ScalePlaneVertical(src_height,
@@ -1503,8 +1518,7 @@ void ScalePlane_16(const uint16* src, int src_stride,
                   enum FilterMode filtering) {
   // Simplify filtering when possible.
   filtering = ScaleFilterReduce(src_width, src_height,
-                                dst_width, dst_height,
-                                filtering);
+                                dst_width, dst_height, filtering);
 
   // Negative height means invert the image.
   if (src_height < 0) {

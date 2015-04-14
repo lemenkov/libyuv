@@ -579,11 +579,11 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   int tmp_height = 0;
   intptr_t tmp_src = 0;
   asm volatile (
-    "pxor      %%xmm4,%%xmm4                   \n"
     "mov       %0,%3                           \n"  // row pointer
     "mov       %5,%2                           \n"  // height
     "pxor      %%xmm0,%%xmm0                   \n"  // clear accumulators
     "pxor      %%xmm1,%%xmm1                   \n"
+    "pxor      %%xmm4,%%xmm4                   \n"
 
     LABELALIGN
   "1:                                          \n"
