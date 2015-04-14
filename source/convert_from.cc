@@ -1025,11 +1025,6 @@ int I420ToRGB565Dither(const uint8* src_y, int src_stride_y,
                        uint8* dst_rgb565, int dst_stride_rgb565,
                        const uint8* dither4x4, int width, int height) {
   int y;
-  void (*I422ToRGB565Row)(const uint8* y_buf,
-                          const uint8* u_buf,
-                          const uint8* v_buf,
-                          uint8* rgb_buf,
-                          int width) = I422ToRGB565Row_C;
   void (*I422ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
