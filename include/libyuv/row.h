@@ -249,21 +249,6 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #endif
 
-// The following are Yasm x86 only:
-// TODO(fbarchard): Port AVX2 to inline.
-#if !defined(LIBYUV_DISABLE_X86) && defined(HAVE_YASM)
-    (defined(_M_IX86) || defined(_M_X64) || \
-    defined(__x86_64__) || defined(__i386__))
-#define HAS_MERGEUVROW_AVX2
-#define HAS_MERGEUVROW_MMX
-#define HAS_SPLITUVROW_AVX2
-#define HAS_SPLITUVROW_MMX
-#define HAS_UYVYTOYROW_AVX2
-#define HAS_UYVYTOYROW_MMX
-#define HAS_YUY2TOYROW_AVX2
-#define HAS_YUY2TOYROW_MMX
-#endif
-
 // The following are disabled when SSSE3 is available:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \

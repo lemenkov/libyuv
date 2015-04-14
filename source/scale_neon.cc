@@ -587,7 +587,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
                           int dst_width, int x, int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int *tmp = dx_offset;
+  int* tmp = dx_offset;
   const uint8* src_tmp = src_ptr;
   asm volatile (
     ".p2align   2                              \n"
@@ -971,7 +971,7 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
 void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
                               int dst_width, int x, int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int *tmp = dx_offset;
+  int* tmp = dx_offset;
   const uint8* src_tmp = src_argb;
   asm volatile (
     ".p2align   2                              \n"

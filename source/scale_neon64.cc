@@ -590,7 +590,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
                           int dst_width, int x, int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int *tmp = dx_offset;
+  int* tmp = dx_offset;
   const uint8* src_tmp = src_ptr;
   asm volatile (
     "dup        v0.4s, %w3                     \n"  // x
@@ -862,7 +862,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
 
 // Reads 4 pixels at a time.
 // Alignment requirement: src_argb 4 byte aligned.
-// TODO, might be worth another optimization pass in future.
+// TODO(Yang Zhang): Might be worth another optimization pass in future.
 // It could be upgraded to 8 pixels at a time to start with.
 void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                   int src_stepx,
@@ -917,7 +917,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
 // the x/dx stepping
 #define LOAD1_DATA32_LANE(vn, n)                               \
     "lsr        %5, %3, #16                    \n"             \
-    "add        %6, %1, %5, lsl 2              \n"             \
+    "add        %6, %1, %5, lsl #2             \n"             \
     "add        %3, %3, %4                     \n"             \
     MEMACCESS(6)                                               \
     "ld1        {"#vn".s}["#n"], [%6]          \n"
@@ -967,7 +967,7 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
 void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
                               int dst_width, int x, int dx) {
   int dx_offset[4] = {0, 1, 2, 3};
-  int *tmp = dx_offset;
+  int* tmp = dx_offset;
   const uint8* src_tmp = src_argb;
   asm volatile (
     "dup        v0.4s, %w3                     \n"  // x
