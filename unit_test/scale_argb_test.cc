@@ -226,6 +226,7 @@ TEST_FACTOR(4, 1 / 4, 1 / 4)
 TEST_FACTOR(8, 1 / 8, 1 / 8)
 TEST_FACTOR(3by4, 3 / 4, 3 / 4)
 TEST_FACTOR(3by8, 3 / 8, 3 / 8)
+TEST_FACTOR(3, 1 / 3, 1 / 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
