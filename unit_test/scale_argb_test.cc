@@ -218,8 +218,7 @@ static int ARGBClipTestFilter(int src_width, int src_height,
 #define TEST_FACTOR(name, hfactor, vfactor)                                    \
     TEST_FACTOR1(name, None, hfactor, vfactor, 2)                              \
     TEST_FACTOR1(name, Linear, hfactor, vfactor, 2)                            \
-    TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 2)                          \
-    TEST_FACTOR1(name, Box, hfactor, vfactor, 2)
+    TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 2)
 
 TEST_FACTOR(2, 1 / 2, 1 / 2)
 TEST_FACTOR(4, 1 / 4, 1 / 4)
@@ -262,8 +261,7 @@ TEST_FACTOR(3, 1 / 3, 1 / 3)
 #define TEST_SCALETO(name, width, height)                                      \
     TEST_SCALETO1(name, width, height, None, 0)                                \
     TEST_SCALETO1(name, width, height, Linear, 3)                              \
-    TEST_SCALETO1(name, width, height, Bilinear, 3)                            \
-    TEST_SCALETO1(name, width, height, Box, 3)
+    TEST_SCALETO1(name, width, height, Bilinear, 3)
 
 TEST_SCALETO(ARGBScale, 1, 1)
 TEST_SCALETO(ARGBScale, 320, 240)

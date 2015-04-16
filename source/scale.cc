@@ -587,6 +587,8 @@ static void ScalePlaneDown38_16(int src_width, int src_height,
   }
 }
 
+#define MIN1(x) ((x) < 1 ? 1 : (x))
+
 static __inline uint32 SumBox(int iboxwidth, int iboxheight,
                               ptrdiff_t src_stride, const uint8* src_ptr) {
   uint32 sum = 0u;
@@ -627,7 +629,7 @@ static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
   for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
-    boxwidth = (x >> 16) - ix;
+    boxwidth = MIN1((x >> 16) - ix);
     *dst_ptr++ = SumBox(boxwidth, boxheight, src_stride, src_ptr + ix) /
         (boxwidth * boxheight);
   }
@@ -641,7 +643,7 @@ static void ScalePlaneBoxRow_16_C(int dst_width, int boxheight,
   for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
-    boxwidth = (x >> 16) - ix;
+    boxwidth = MIN1((x >> 16) - ix);
     *dst_ptr++ = SumBox_16(boxwidth, boxheight, src_stride, src_ptr + ix) /
         (boxwidth * boxheight);
   }
@@ -671,15 +673,15 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
   int i;
   int scaletbl[2];
-  int minboxwidth = (dx >> 16);
+  int minboxwidth = dx >> 16;
   int* scaleptr = scaletbl - minboxwidth;
   int boxwidth;
-  scaletbl[0] = 65536 / (minboxwidth * boxheight);
-  scaletbl[1] = 65536 / ((minboxwidth + 1) * boxheight);
+  scaletbl[0] = 65536 / (MIN1(minboxwidth) * boxheight);
+  scaletbl[1] = 65536 / (MIN1(minboxwidth + 1) * boxheight);
   for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
-    boxwidth = (x >> 16) - ix;
+    boxwidth = MIN1((x >> 16) - ix);
     *dst_ptr++ = SumPixels(boxwidth, src_ptr + ix) * scaleptr[boxwidth] >> 16;
   }
 }
@@ -688,17 +690,17 @@ static void ScaleAddCols2_16_C(int dst_width, int boxheight, int x, int dx,
                                const uint32* src_ptr, uint16* dst_ptr) {
   int i;
   int scaletbl[2];
-  int minboxwidth = (dx >> 16);
+  int minboxwidth = dx >> 16;
   int* scaleptr = scaletbl - minboxwidth;
   int boxwidth;
-  scaletbl[0] = 65536 / (minboxwidth * boxheight);
-  scaletbl[1] = 65536 / ((minboxwidth + 1) * boxheight);
+  scaletbl[0] = 65536 / (MIN1(minboxwidth) * boxheight);
+  scaletbl[1] = 65536 / (MIN1(minboxwidth + 1) * boxheight);
   for (i = 0; i < dst_width; ++i) {
     int ix = x >> 16;
     x += dx;
-    boxwidth = (x >> 16) - ix;
-    *dst_ptr++ = SumPixels_16(boxwidth, src_ptr + ix) *
-        scaleptr[boxwidth] >> 16;
+    boxwidth = MIN1((x >> 16) - ix);
+    *dst_ptr++ =
+        SumPixels_16(boxwidth, src_ptr + ix) * scaleptr[boxwidth] >> 16;
   }
 }
 
@@ -714,7 +716,7 @@ static void ScaleAddCols0_C(int dst_width, int boxheight, int x, int,
 
 static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
                             const uint16* src_ptr, uint8* dst_ptr) {
-  int boxwidth = (dx >> 16);
+  int boxwidth = MIN1(dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int i;
   x >>= 16;
@@ -726,7 +728,7 @@ static void ScaleAddCols1_C(int dst_width, int boxheight, int x, int dx,
 
 static void ScaleAddCols1_16_C(int dst_width, int boxheight, int x, int dx,
                                const uint32* src_ptr, uint16* dst_ptr) {
-  int boxwidth = (dx >> 16);
+  int boxwidth = MIN1(dx >> 16);
   int scaleval = 65536 / (boxwidth * boxheight);
   int i;
   for (i = 0; i < dst_width; ++i) {
@@ -768,7 +770,7 @@ static void ScalePlaneBox(int src_width, int src_height,
       if (y > max_y) {
         y = max_y;
       }
-      boxheight = (y >> 16) - iy;
+      boxheight = MIN1((y >> 16) - iy);
       ScalePlaneBoxRow_C(dst_width, boxheight, x, dx, src_stride, src, dst);
       dst += dst_stride;
     }
@@ -807,7 +809,7 @@ static void ScalePlaneBox(int src_width, int src_height,
       if (y > (src_height << 16)) {
         y = (src_height << 16);
       }
-      boxheight = (y >> 16) - iy;
+      boxheight = MIN1((y >> 16) - iy);
       ScaleAddRows(src, src_stride, (uint16*)(row16), src_width, boxheight);
       ScaleAddCols(dst_width, boxheight, x, dx, (uint16*)(row16), dst_ptr);
       dst_ptr += dst_stride;
@@ -830,8 +832,8 @@ static void ScalePlaneBox_16(int src_width, int src_height,
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
-  // TODO(fbarchard): Remove this and make AddRows handle boxheight 1.
-  if (!IS_ALIGNED(src_width, 16) || dst_height * 2 > src_height) {
+  // TODO(fbarchard): Remove this and make AddRows handle odd width.
+  if (!IS_ALIGNED(src_width, 16)) {
     uint16* dst = dst_ptr;
     int j;
     for (j = 0; j < dst_height; ++j) {
@@ -842,7 +844,7 @@ static void ScalePlaneBox_16(int src_width, int src_height,
       if (y > max_y) {
         y = max_y;
       }
-      boxheight = (y >> 16) - iy;
+      boxheight = MIN1((y >> 16) - iy);
       ScalePlaneBoxRow_16_C(dst_width, boxheight, x, dx, src_stride, src, dst);
       dst += dst_stride;
     }
@@ -871,7 +873,7 @@ static void ScalePlaneBox_16(int src_width, int src_height,
       if (y > (src_height << 16)) {
         y = (src_height << 16);
       }
-      boxheight = (y >> 16) - iy;
+      boxheight = MIN1((y >> 16) - iy);
       ScaleAddRows(src, src_stride, (uint32*)(row32),
                    src_width, boxheight);
       ScaleAddCols(dst_width, boxheight, x, dx, (uint32*)(row32),
