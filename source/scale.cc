@@ -1455,7 +1455,7 @@ void ScalePlane(const uint8* src, int src_stride,
   }
   if (dst_width == src_width && filtering != kFilterBox) {
     int dy = FixedDiv(src_height, dst_height);
-    // Arbitrary scale vertically, but unscaled vertically.
+    // Arbitrary scale vertically, but unscaled horizontally.
     ScalePlaneVertical(src_height,
                        dst_width, dst_height,
                        src_stride, dst_stride, src, dst,
@@ -1486,7 +1486,7 @@ void ScalePlane(const uint8* src, int src_stride,
       return;
     }
     if (4 * dst_width == src_width && 4 * dst_height == src_height &&
-               filtering != kFilterBilinear) {
+        (filtering == kFilterBox || filtering == kFilterNone)) {
       // optimized, 1/4
       ScalePlaneDown4(src_width, src_height, dst_width, dst_height,
                       src_stride, dst_stride, src, dst, filtering);
