@@ -1206,7 +1206,7 @@ static const lvec32 kPermdARGBToY_AVX = {
 };
 
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
-__declspec(naked) __declspec(align(32))
+__declspec(naked)
 void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -1245,7 +1245,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
 
 #ifdef HAS_ARGBTOYJROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
-__declspec(naked) __declspec(align(32))
+__declspec(naked)
 void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
   __asm {
     mov        eax, [esp + 4]   /* src_argb */
@@ -1525,7 +1525,7 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 }
 
 #ifdef HAS_ARGBTOUVROW_AVX2
-__declspec(naked) __declspec(align(32))
+__declspec(naked)
 void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) {
   __asm {
