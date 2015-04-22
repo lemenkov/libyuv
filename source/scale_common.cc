@@ -634,7 +634,7 @@ void ScaleAddRows_C(const uint8* src_ptr, ptrdiff_t src_stride,
       sum += s[0];
       s += src_stride;
     }
-    // TODO(fbarchard): Consider limitting height to 256 to avoid overflow.
+    // TODO(fbarchard): Consider limiting height to 256 to avoid overflow.
     dst_ptr[x] = sum < 65535u ? sum : 65535u;
   }
 }

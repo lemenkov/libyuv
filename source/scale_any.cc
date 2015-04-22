@@ -88,8 +88,35 @@ SDANY(ScaleRowDown4Box_Any_NEON, ScaleRowDown4Box_NEON, ScaleRowDown4Box_C,
 #endif
 #undef SDANY
 
+// Fixed scale down.
+#define SAANY(NAMEANY, SCALEADDROWS_SIMD, SCALEADDROWS_C, MASK)                \
+  void NAMEANY(const uint8* src_ptr, ptrdiff_t src_stride,                     \
+               uint16* dst_ptr, int src_width, int src_height) {               \
+      int n = src_width & ~MASK;                                               \
+      if (n > 0) {                                                             \
+        SCALEADDROWS_SIMD(src_ptr, src_stride, dst_ptr, n, src_height);        \
+      }                                                                        \
+      SCALEADDROWS_C(src_ptr + n, src_stride,                                  \
+                     dst_ptr + n, src_width & MASK, src_height);               \
+    }
+
+#ifdef HAS_SCALEADDROWS_SSE2
+SAANY(ScaleAddRows_Any_SSE2, ScaleAddRows_SSE2, ScaleAddRows_C, 15)
+#endif
+#ifdef HAS_SCALEADDROWS_AVX2
+SAANY(ScaleAddRows_Any_AVX2, ScaleAddRows_AVX2, ScaleAddRows_C, 31)
+#endif
+#ifdef HAS_SCALEADDROWS_NEON
+SAANY(ScaleAddRows_Any_NEON, ScaleAddRows_NEON, ScaleAddRows_C, 15)
+#endif
+#undef SAANY
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
 #endif
+
+
+
+
 

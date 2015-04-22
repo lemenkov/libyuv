@@ -758,24 +758,6 @@ static void ScalePlaneBox(int src_width, int src_height,
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
-  // TODO(fbarchard): Remove this and make AddRows handle odd width.
-  if (!IS_ALIGNED(src_width, 16)) {
-    uint8* dst = dst_ptr;
-    int j;
-    for (j = 0; j < dst_height; ++j) {
-      int boxheight;
-      int iy = y >> 16;
-      const uint8* src = src_ptr + iy * src_stride;
-      y += dy;
-      if (y > max_y) {
-        y = max_y;
-      }
-      boxheight = MIN1((y >> 16) - iy);
-      ScalePlaneBoxRow_C(dst_width, boxheight, x, dx, src_stride, src, dst);
-      dst += dst_stride;
-    }
-    return;
-  }
   {
     // Allocate a row buffer of uint16.
     align_buffer_64(row16, src_width * 2);
@@ -786,18 +768,27 @@ static void ScalePlaneBox(int src_width, int src_height,
     void (*ScaleAddRows)(const uint8* src_ptr, ptrdiff_t src_stride,
         uint16* dst_ptr, int src_width, int src_height) = ScaleAddRows_C;
 #if defined(HAS_SCALEADDROWS_SSE2)
-    if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(src_width, 16)) {
-      ScaleAddRows = ScaleAddRows_SSE2;
+    if (TestCpuFlag(kCpuHasSSE2)) {
+      ScaleAddRows = ScaleAddRows_Any_SSE2;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRows = ScaleAddRows_SSE2;
+      }
     }
 #endif
 #if defined(HAS_SCALEADDROWS_AVX2)
-    if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(src_width, 32)) {
-      ScaleAddRows = ScaleAddRows_AVX2;
+    if (TestCpuFlag(kCpuHasAVX2)) {
+      ScaleAddRows = ScaleAddRows_Any_AVX2;
+      if (IS_ALIGNED(src_width, 32)) {
+        ScaleAddRows = ScaleAddRows_AVX2;
+      }
     }
 #endif
 #if defined(HAS_SCALEADDROWS_NEON)
-    if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(src_width, 16)) {
-      ScaleAddRows = ScaleAddRows_NEON;
+    if (TestCpuFlag(kCpuHasNEON)) {
+      ScaleAddRows = ScaleAddRows_Any_NEON;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRows = ScaleAddRows_NEON;
+      }
     }
 #endif
 

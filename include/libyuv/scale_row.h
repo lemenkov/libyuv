@@ -266,6 +266,11 @@ void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);
 void ScaleAddRows_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);
+void ScaleAddRows_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint16* dst_ptr, int src_width, int src_height);
+void ScaleAddRows_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint16* dst_ptr, int src_width, int src_height);
+
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                            int dst_width, int x, int dx);
 void ScaleColsUp2_SSE2(uint8* dst_ptr, const uint8* src_ptr,
@@ -356,6 +361,8 @@ void ScaleRowDown4Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 
 void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);
+void ScaleAddRows_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint16* dst_ptr, int src_width, int src_height);
 
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
                           int dst_width, int x, int dx);
