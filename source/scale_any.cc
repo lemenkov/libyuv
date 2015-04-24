@@ -46,12 +46,13 @@ CANY(ScaleARGBFilterCols_Any_NEON, ScaleARGBFilterCols_NEON,
 #define SDANY(NAMEANY, SCALEROWDOWN_SIMD, SCALEROWDOWN_C, FACTOR, BPP, MASK)   \
     void NAMEANY(const uint8* src_ptr, ptrdiff_t src_stride,                   \
                  uint8* dst_ptr, int dst_width) {                              \
-      int n = dst_width & ~MASK;                                               \
+      int r = (int)((unsigned int)dst_width % (MASK + 1));                     \
+      int n = dst_width - r;                                                   \
       if (n > 0) {                                                             \
         SCALEROWDOWN_SIMD(src_ptr, src_stride, dst_ptr, n);                    \
       }                                                                        \
       SCALEROWDOWN_C(src_ptr + (n * FACTOR) * BPP, src_stride,                 \
-                     dst_ptr + n * BPP, dst_width & MASK);                     \
+                     dst_ptr + n * BPP, r);                                    \
     }
 
 
