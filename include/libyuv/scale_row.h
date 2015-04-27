@@ -261,6 +261,22 @@ void ScaleRowDown4_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_Any_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_1_Box_Any_SSSE3(const uint8* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_0_Box_Any_SSSE3(const uint8* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_Any_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_3_Box_Any_SSSE3(const uint8* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8* dst_ptr, int dst_width);
+void ScaleRowDown38_2_Box_Any_SSSE3(const uint8* src_ptr,
+                                    ptrdiff_t src_stride,
+                                    uint8* dst_ptr, int dst_width);
 
 void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                        uint16* dst_ptr, int src_width, int src_height);
@@ -357,6 +373,21 @@ void ScaleRowDown2Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown4_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                             uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_0_Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                                   uint8* dst_ptr, int dst_width);
+void ScaleRowDown34_1_Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                                   uint8* dst_ptr, int dst_width);
+// 32 -> 12
+void ScaleRowDown38_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                             uint8* dst_ptr, int dst_width);
+// 32x3 -> 12x1
+void ScaleRowDown38_3_Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
+// 32x2 -> 12x1
+void ScaleRowDown38_2_Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
 
 void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,

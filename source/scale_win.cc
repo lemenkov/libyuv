@@ -400,7 +400,6 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 // Produces three 8 byte values. For each 8 bytes, 16 bytes are read.
 // Then shuffled to do the scaling.
 
-// Note that movdqa+palign may be better than movdqu.
 __declspec(naked)
 void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                           uint8* dst_ptr, int dst_width) {

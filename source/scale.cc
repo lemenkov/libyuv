@@ -277,24 +277,42 @@ static void ScalePlaneDown34(int src_width, int src_height,
     ScaleRowDown34_1 = ScaleRowDown34_1_Box_C;
   }
 #if defined(HAS_SCALEROWDOWN34_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && (dst_width % 24 == 0)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     if (!filtering) {
-      ScaleRowDown34_0 = ScaleRowDown34_NEON;
-      ScaleRowDown34_1 = ScaleRowDown34_NEON;
+      ScaleRowDown34_0 = ScaleRowDown34_Any_NEON;
+      ScaleRowDown34_1 = ScaleRowDown34_Any_NEON;
     } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Box_NEON;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Box_NEON;
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_Any_NEON;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_Any_NEON;
+    }
+    if (dst_width % 24 == 0) {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_NEON;
+        ScaleRowDown34_1 = ScaleRowDown34_NEON;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_NEON;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_NEON;
+      }
     }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN34_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0)) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     if (!filtering) {
-      ScaleRowDown34_0 = ScaleRowDown34_SSSE3;
-      ScaleRowDown34_1 = ScaleRowDown34_SSSE3;
+      ScaleRowDown34_0 = ScaleRowDown34_Any_SSSE3;
+      ScaleRowDown34_1 = ScaleRowDown34_Any_SSSE3;
     } else {
-      ScaleRowDown34_0 = ScaleRowDown34_0_Box_SSSE3;
-      ScaleRowDown34_1 = ScaleRowDown34_1_Box_SSSE3;
+      ScaleRowDown34_0 = ScaleRowDown34_0_Box_Any_SSSE3;
+      ScaleRowDown34_1 = ScaleRowDown34_1_Box_Any_SSSE3;
+    }
+    if (dst_width % 24 == 0) {
+      if (!filtering) {
+        ScaleRowDown34_0 = ScaleRowDown34_SSSE3;
+        ScaleRowDown34_1 = ScaleRowDown34_SSSE3;
+      } else {
+        ScaleRowDown34_0 = ScaleRowDown34_0_Box_SSSE3;
+        ScaleRowDown34_1 = ScaleRowDown34_1_Box_SSSE3;
+      }
     }
   }
 #endif
@@ -450,23 +468,41 @@ static void ScalePlaneDown38(int src_width, int src_height,
     ScaleRowDown38_3 = ScaleRowDown38_3_Box_C;
     ScaleRowDown38_2 = ScaleRowDown38_2_Box_C;
   }
+
 #if defined(HAS_SCALEROWDOWN38_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && (dst_width % 12 == 0)) {
+  if (TestCpuFlag(kCpuHasNEON)) {
     if (!filtering) {
-      ScaleRowDown38_3 = ScaleRowDown38_NEON;
-      ScaleRowDown38_2 = ScaleRowDown38_NEON;
+      ScaleRowDown38_3 = ScaleRowDown38_Any_NEON;
+      ScaleRowDown38_2 = ScaleRowDown38_Any_NEON;
     } else {
-      ScaleRowDown38_3 = ScaleRowDown38_3_Box_NEON;
-      ScaleRowDown38_2 = ScaleRowDown38_2_Box_NEON;
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_Any_NEON;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_Any_NEON;
+    }
+    if (dst_width % 12 == 0) {
+      if (!filtering) {
+        ScaleRowDown38_3 = ScaleRowDown38_NEON;
+        ScaleRowDown38_2 = ScaleRowDown38_NEON;
+      } else {
+        ScaleRowDown38_3 = ScaleRowDown38_3_Box_NEON;
+        ScaleRowDown38_2 = ScaleRowDown38_2_Box_NEON;
+      }
     }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN38_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && (dst_width % 24 == 0)) {
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_Any_SSSE3;
+      ScaleRowDown38_2 = ScaleRowDown38_Any_SSSE3;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_Any_SSSE3;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_Any_SSSE3;
+    }
+    if (dst_width % 12 == 0 && !filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_SSSE3;
-    } else {
+    }
+    if (dst_width % 6 == 0 && filtering) {
       ScaleRowDown38_3 = ScaleRowDown38_3_Box_SSSE3;
       ScaleRowDown38_2 = ScaleRowDown38_2_Box_SSSE3;
     }
