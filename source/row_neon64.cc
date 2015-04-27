@@ -1387,7 +1387,7 @@ void ARGBToRGB565DitherRow_NEON(const uint8* src_argb, uint8* dst_rgb,
   "1:                                          \n"
     MEMACCESS(1)
     "ld4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%1], #32 \n"  // load 8 pixels
-    "subs       %3, %3, #8                     \n"  // 8 processed per loop.
+    "subs       %w3, %w3, #8                   \n"  // 8 processed per loop.
     "uqadd      v20.8b, v20.8b, v1.8b          \n"
     "uqadd      v21.8b, v21.8b, v1.8b          \n"
     "uqadd      v22.8b, v22.8b, v1.8b          \n"
