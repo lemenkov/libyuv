@@ -19,6 +19,8 @@
   'variables': {
     'use_system_libjpeg%': 0,
     'libyuv_disable_jpeg%': 0,
+    # 'chromium_code' treats libyuv as internal and increases warning level.
+    'chromium_code': 1,
     # Link-Time Optimizations.
     'use_lto%': 0,
     'build_neon': 0,
@@ -141,7 +143,7 @@
         # 'LIBYUV_DISABLE_MIPS',
         # Enable the following macro to build libyuv as a shared library (dll).
         # 'LIBYUV_USING_SHARED_LIBRARY',
-	# TODO(fbarchard): Make these into gyp defines.
+        # TODO(fbarchard): Make these into gyp defines.
       ],
       'include_dirs': [
         'include',
