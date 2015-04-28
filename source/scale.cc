@@ -625,38 +625,6 @@ static void ScalePlaneDown38_16(int src_width, int src_height,
 
 #define MIN1(x) ((x) < 1 ? 1 : (x))
 
-static __inline uint32 SumBox(int iboxwidth, int iboxheight,
-                              ptrdiff_t src_stride, const uint8* src_ptr) {
-  uint32 sum = 0u;
-  int y;
-  assert(iboxwidth > 0);
-  assert(iboxheight > 0);
-  for (y = 0; y < iboxheight; ++y) {
-    int x;
-    for (x = 0; x < iboxwidth; ++x) {
-      sum += src_ptr[x];
-    }
-    src_ptr += src_stride;
-  }
-  return sum;
-}
-
-static __inline uint32 SumBox_16(int iboxwidth, int iboxheight,
-                                 ptrdiff_t src_stride, const uint16* src_ptr) {
-  uint32 sum = 0u;
-  int y;
-  assert(iboxwidth > 0);
-  assert(iboxheight > 0);
-  for (y = 0; y < iboxheight; ++y) {
-    int x;
-    for (x = 0; x < iboxwidth; ++x) {
-      sum += src_ptr[x];
-    }
-    src_ptr += src_stride;
-  }
-  return sum;
-}
-
 static __inline uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   uint32 sum = 0u;
   int x;
