@@ -592,6 +592,9 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
   int dx_offset[4] = {0, 1, 2, 3};
   int* tmp = dx_offset;
   const uint8* src_tmp = src_ptr;
+  int64 dst_width64 = (int64) dst_width;  // Work around ios 64 bit warning.
+  int64 x64 = (int64) x;
+  int64 dx64 = (int64) dx;
   asm volatile (
     "dup        v0.4s, %w3                     \n"  // x
     "dup        v1.4s, %w4                     \n"  // dx
@@ -636,9 +639,9 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
     "b.gt      1b                              \n"
   : "+r"(dst_ptr),          // %0
     "+r"(src_ptr),          // %1
-    "+r"(dst_width),        // %2
-    "+r"(x),                // %3
-    "+r"(dx),               // %4
+    "+r"(dst_width64),      // %2
+    "+r"(x64),              // %3
+    "+r"(dx64),             // %4
     "+r"(tmp),              // %5
     "+r"(src_tmp)           // %6
   :
@@ -924,8 +927,11 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
 
 void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int x, int dx) {
-  int tmp;
   const uint8* src_tmp = src_argb;
+  int64 dst_width64 = (int64) dst_width;  // Work around ios 64 bit warning.
+  int64 x64 = (int64) x;
+  int64 dx64 = (int64) dx;
+  int64 tmp64;
   asm volatile (
   "1:                                          \n"
     LOAD1_DATA32_LANE(v0, 0)
@@ -943,10 +949,10 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
     "b.gt        1b                            \n"
   : "+r"(dst_argb),         // %0
     "+r"(src_argb),         // %1
-    "+r"(dst_width),        // %2
-    "+r"(x),                // %3
-    "+r"(dx),               // %4
-    "+r"(tmp),              // %5
+    "+r"(dst_width64),      // %2
+    "+r"(x64),              // %3
+    "+r"(dx64),             // %4
+    "+r"(tmp64),            // %5
     "+r"(src_tmp)           // %6
   :
   : "memory", "cc", "v0", "v1"
@@ -969,6 +975,9 @@ void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
   int dx_offset[4] = {0, 1, 2, 3};
   int* tmp = dx_offset;
   const uint8* src_tmp = src_argb;
+  int64 dst_width64 = (int64) dst_width;  // Work around ios 64 bit warning.
+  int64 x64 = (int64) x;
+  int64 dx64 = (int64) dx;
   asm volatile (
     "dup        v0.4s, %w3                     \n"  // x
     "dup        v1.4s, %w4                     \n"  // dx
@@ -1012,9 +1021,9 @@ void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
     "b.gt    1b                                \n"
   : "+r"(dst_argb),         // %0
     "+r"(src_argb),         // %1
-    "+r"(dst_width),        // %2
-    "+r"(x),                // %3
-    "+r"(dx),               // %4
+    "+r"(dst_width64),      // %2
+    "+r"(x64),              // %3
+    "+r"(dx64),             // %4
     "+r"(tmp),              // %5
     "+r"(src_tmp)           // %6
   :
