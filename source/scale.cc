@@ -657,34 +657,6 @@ static __inline uint32 SumBox_16(int iboxwidth, int iboxheight,
   return sum;
 }
 
-static void ScalePlaneBoxRow_C(int dst_width, int boxheight,
-                               int x, int dx, ptrdiff_t src_stride,
-                               const uint8* src_ptr, uint8* dst_ptr) {
-  int i;
-  int boxwidth;
-  for (i = 0; i < dst_width; ++i) {
-    int ix = x >> 16;
-    x += dx;
-    boxwidth = MIN1((x >> 16) - ix);
-    *dst_ptr++ = SumBox(boxwidth, boxheight, src_stride, src_ptr + ix) /
-        (boxwidth * boxheight);
-  }
-}
-
-static void ScalePlaneBoxRow_16_C(int dst_width, int boxheight,
-                                  int x, int dx, ptrdiff_t src_stride,
-                                  const uint16* src_ptr, uint16* dst_ptr) {
-  int i;
-  int boxwidth;
-  for (i = 0; i < dst_width; ++i) {
-    int ix = x >> 16;
-    x += dx;
-    boxwidth = MIN1((x >> 16) - ix);
-    *dst_ptr++ = SumBox_16(boxwidth, boxheight, src_stride, src_ptr + ix) /
-        (boxwidth * boxheight);
-  }
-}
-
 static __inline uint32 SumPixels(int iboxwidth, const uint16* src_ptr) {
   uint32 sum = 0u;
   int x;
