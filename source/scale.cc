@@ -833,8 +833,8 @@ static void ScalePlaneBox(int src_width, int src_height,
       int iy = y >> 16;
       const uint8* src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > (src_height << 16)) {
-        y = (src_height << 16);
+      if (y > max_y) {
+        y = max_y;
       }
       boxheight = MIN1((y >> 16) - iy);
       ScaleAddRows(src, src_stride, (uint16*)(row16), src_width, boxheight);
@@ -859,24 +859,6 @@ static void ScalePlaneBox_16(int src_width, int src_height,
   ScaleSlope(src_width, src_height, dst_width, dst_height, kFilterBox,
              &x, &y, &dx, &dy);
   src_width = Abs(src_width);
-  // TODO(fbarchard): Remove this and make AddRows handle odd width.
-  if (!IS_ALIGNED(src_width, 16)) {
-    uint16* dst = dst_ptr;
-    int j;
-    for (j = 0; j < dst_height; ++j) {
-      int boxheight;
-      int iy = y >> 16;
-      const uint16* src = src_ptr + iy * src_stride;
-      y += dy;
-      if (y > max_y) {
-        y = max_y;
-      }
-      boxheight = MIN1((y >> 16) - iy);
-      ScalePlaneBoxRow_16_C(dst_width, boxheight, x, dx, src_stride, src, dst);
-      dst += dst_stride;
-    }
-    return;
-  }
   {
     // Allocate a row buffer of uint32.
     align_buffer_64(row32, src_width * 4);
@@ -897,14 +879,12 @@ static void ScalePlaneBox_16(int src_width, int src_height,
       int iy = y >> 16;
       const uint16* src = src_ptr + iy * src_stride;
       y += dy;
-      if (y > (src_height << 16)) {
-        y = (src_height << 16);
+      if (y > max_y) {
+        y = max_y;
       }
       boxheight = MIN1((y >> 16) - iy);
-      ScaleAddRows(src, src_stride, (uint32*)(row32),
-                   src_width, boxheight);
-      ScaleAddCols(dst_width, boxheight, x, dx, (uint32*)(row32),
-                   dst_ptr);
+      ScaleAddRows(src, src_stride, (uint32*)(row32), src_width, boxheight);
+      ScaleAddCols(dst_width, boxheight, x, dx, (uint32*)(row32), dst_ptr);
       dst_ptr += dst_stride;
     }
     free_aligned_buffer_64(row32);
