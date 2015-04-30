@@ -931,7 +931,7 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
   int64 dst_width64 = (int64) dst_width;  // Work around ios 64 bit warning.
   int64 x64 = (int64) x;
   int64 dx64 = (int64) dx;
-  int64 tmp64;
+  int64 tmp64 = 0;
   asm volatile (
   "1:                                          \n"
     LOAD1_DATA32_LANE(v0, 0)

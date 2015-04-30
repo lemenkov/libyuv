@@ -927,7 +927,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
 
 void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
                         int dst_width, int x, int dx) {
-  int tmp;
+  int tmp = 0;
   const uint8* src_tmp = src_argb;
   asm volatile (
     ".p2align   2                              \n"
