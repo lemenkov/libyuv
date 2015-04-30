@@ -353,11 +353,11 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     psrlw      xmm7, 8
 
   wloop:
-    movdqu     xmm0, [eax]
+    movdqu     xmm0, [eax]           // average rows
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + esi]
     movdqu     xmm3, [eax + esi + 16]
-    pavgb      xmm0, xmm2            // average rows
+    pavgb      xmm0, xmm2
     pavgb      xmm1, xmm3
     movdqu     xmm2, [eax + esi * 2]
     movdqu     xmm3, [eax + esi * 2 + 16]
@@ -395,6 +395,97 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     ret
   }
 }
+
+#ifdef HAS_SCALEROWDOWN4_AVX2
+// Point samples 64 pixels to 16 pixels.
+__declspec(naked)
+void ScaleRowDown4_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst_ptr, int dst_width) {
+  __asm {
+    mov         eax, [esp + 4]        // src_ptr
+                                      // src_stride ignored
+    mov         edx, [esp + 12]       // dst_ptr
+    mov         ecx, [esp + 16]       // dst_width
+    vpcmpeqb    ymm5, ymm5, ymm5      // generate mask 0x00ff0000
+    vpsrld      ymm5, ymm5, 24
+    vpslld      ymm5, ymm5, 16
+
+  wloop:
+    vmovdqu     ymm0, [eax]
+    vmovdqu     ymm1, [eax + 32]
+    lea         eax,  [eax + 64]
+    vpand       ymm0, ymm0, ymm5
+    vpand       ymm1, ymm1, ymm5
+    vpackuswb   ymm0, ymm0, ymm1
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
+    vpsrlw      ymm0, ymm0, 8
+    vpackuswb   ymm0, ymm0, ymm0
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
+    vmovdqu     [edx], xmm0
+    lea         edx, [edx + 16]
+    sub         ecx, 16
+    jg          wloop
+
+    vzeroupper
+    ret
+  }
+}
+
+// Blends 64x4 rectangle to 16x1.
+__declspec(naked)
+void ScaleRowDown4Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width) {
+  __asm {
+    push        esi
+    push        edi
+    mov         eax, [esp + 8 + 4]    // src_ptr
+    mov         esi, [esp + 8 + 8]    // src_stride
+    mov         edx, [esp + 8 + 12]   // dst_ptr
+    mov         ecx, [esp + 8 + 16]   // dst_width
+    lea         edi, [esi + esi * 2]  // src_stride * 3
+    vpcmpeqb    ymm7, ymm7, ymm7      // generate mask 0x00ff00ff
+    vpsrlw      ymm7, ymm7, 8
+
+  wloop:
+    vmovdqu     ymm0, [eax]           // average rows
+    vmovdqu     ymm1, [eax + 32]
+    vpavgb      ymm0, ymm0, [eax + esi]
+    vpavgb      ymm1, ymm1, [eax + esi + 32]
+    vmovdqu     ymm2, [eax + esi * 2]
+    vmovdqu     ymm3, [eax + esi * 2 + 32]
+    vpavgb      ymm2, ymm2, [eax + edi]
+    vpavgb      ymm3, ymm3, [eax + edi + 32]
+    lea         eax, [eax + 64]
+    vpavgb      ymm0, ymm0, ymm2
+    vpavgb      ymm1, ymm1, ymm3
+
+    vpand       ymm2, ymm0, ymm7      // average columns (64 to 32 pixels)
+    vpand       ymm3, ymm1, ymm7
+    vpsrlw      ymm0, ymm0, 8
+    vpsrlw      ymm1, ymm1, 8
+    vpavgw      ymm0, ymm0, ymm2
+    vpavgw      ymm1, ymm1, ymm3
+    vpackuswb   ymm0, ymm0, ymm1
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
+
+    vpand       ymm2, ymm0, ymm7      // average columns (32 to 16 pixels)
+    vpsrlw      ymm0, ymm0, 8
+    vpavgw      ymm0, ymm0, ymm2
+    vpackuswb   ymm0, ymm0, ymm0
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
+
+    vmovdqu     [edx], xmm0
+    lea         edx, [edx + 16]
+    sub         ecx, 16
+    jg          wloop
+
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_SCALEROWDOWN4_AVX2
 
 // Point samples 32 pixels to 24 pixels.
 // Produces three 8 byte values. For each 8 bytes, 16 bytes are read.

@@ -54,6 +54,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
 #define HAS_SCALEADDROWS_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
+#define HAS_SCALEROWDOWN4_AVX2
 #endif
 
 // The following are available on Neon platforms:
@@ -229,6 +230,11 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown4_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst_ptr, int dst_width);
+void ScaleRowDown4Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width);
+
 void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                           uint8* dst_ptr, int dst_width);
 void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
@@ -261,6 +267,11 @@ void ScaleRowDown4_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst_ptr, int dst_width);
 void ScaleRowDown4Box_Any_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst_ptr, int dst_width);
+void ScaleRowDown4_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width);
+void ScaleRowDown4Box_Any_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width);
+
 void ScaleRowDown34_Any_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                               uint8* dst_ptr, int dst_width);
 void ScaleRowDown34_1_Box_Any_SSSE3(const uint8* src_ptr,

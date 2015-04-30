@@ -191,6 +191,15 @@ static void ScalePlaneDown4(int src_width, int src_height,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN4_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleRowDown4 = filtering ?
+        ScaleRowDown4Box_Any_AVX2 : ScaleRowDown4_Any_AVX2;
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_AVX2 : ScaleRowDown4_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN4_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(row_stride, 4) &&
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
