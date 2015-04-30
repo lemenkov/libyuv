@@ -95,36 +95,36 @@ SDANY(ScaleRowDown4Box_Any_NEON, ScaleRowDown4Box_NEON, ScaleRowDown4Box_C,
 
 
 #ifdef HAS_SCALEROWDOWN34_SSSE3
-SDANY(ScaleRowDown34_Any_SSSE3, ScaleRowDown34_SSSE3, ScaleRowDown34_C,
-      3 / 4, 1, 23)
+SDANY(ScaleRowDown34_Any_SSSE3, ScaleRowDown34_SSSE3,
+      ScaleRowDown34_C, 4 / 3, 1, 23)
 SDANY(ScaleRowDown34_0_Box_Any_SSSE3, ScaleRowDown34_0_Box_SSSE3,
-      ScaleRowDown34_0_Box_C, 3 / 4, 1, 23)
+      ScaleRowDown34_0_Box_C, 4 / 3, 1, 23)
 SDANY(ScaleRowDown34_1_Box_Any_SSSE3, ScaleRowDown34_1_Box_SSSE3,
-      ScaleRowDown34_1_Box_C, 3 / 4, 1, 23)
+      ScaleRowDown34_1_Box_C, 4 / 3, 1, 23)
 #endif
 #ifdef HAS_SCALEROWDOWN34_NEON
-SDANY(ScaleRowDown34_Any_NEON, ScaleRowDown34_NEON, ScaleRowDown34_C,
-      3 / 4, 1, 23)
+SDANY(ScaleRowDown34_Any_NEON, ScaleRowDown34_NEON,
+      ScaleRowDown34_C, 4 / 3, 1, 23)
 SDANY(ScaleRowDown34_0_Box_Any_NEON, ScaleRowDown34_0_Box_NEON,
-      ScaleRowDown34_0_Box_C, 3 / 4, 1, 23)
+      ScaleRowDown34_0_Box_C, 4 / 3, 1, 23)
 SDANY(ScaleRowDown34_1_Box_Any_NEON, ScaleRowDown34_1_Box_NEON,
-      ScaleRowDown34_1_Box_C, 3 / 4, 1, 23)
+      ScaleRowDown34_1_Box_C, 4 / 3, 1, 23)
 #endif
 #ifdef HAS_SCALEROWDOWN38_SSSE3
-SDANY(ScaleRowDown38_Any_SSSE3, ScaleRowDown38_SSSE3, ScaleRowDown38_C,
-      3 / 4, 1, 11)
+SDANY(ScaleRowDown38_Any_SSSE3, ScaleRowDown38_SSSE3,
+      ScaleRowDown38_C, 8 / 3, 1, 11)
 SDANY(ScaleRowDown38_3_Box_Any_SSSE3, ScaleRowDown38_3_Box_SSSE3,
-      ScaleRowDown38_3_Box_C, 3 / 4, 1, 5)
+      ScaleRowDown38_3_Box_C, 8 / 3, 1, 5)
 SDANY(ScaleRowDown38_2_Box_Any_SSSE3, ScaleRowDown38_2_Box_SSSE3,
-      ScaleRowDown38_2_Box_C, 3 / 4, 1, 5)
+      ScaleRowDown38_2_Box_C, 8 / 3, 1, 5)
 #endif
 #ifdef HAS_SCALEROWDOWN38_NEON
-SDANY(ScaleRowDown38_Any_NEON, ScaleRowDown38_NEON, ScaleRowDown38_C,
-      3 / 4, 1, 11)
+SDANY(ScaleRowDown38_Any_NEON, ScaleRowDown38_NEON,
+      ScaleRowDown38_C, 8 / 3, 1, 11)
 SDANY(ScaleRowDown38_3_Box_Any_NEON, ScaleRowDown38_3_Box_NEON,
-      ScaleRowDown38_3_Box_C, 3 / 4, 1, 11)
+      ScaleRowDown38_3_Box_C, 8 / 3, 1, 11)
 SDANY(ScaleRowDown38_2_Box_Any_NEON, ScaleRowDown38_2_Box_NEON,
-      ScaleRowDown38_2_Box_C, 3 / 4, 1, 11)
+      ScaleRowDown38_2_Box_C, 8 / 3, 1, 11)
 #endif
 #undef SDANY
 
