@@ -17,8 +17,12 @@ extern "C" {
 #endif
 
 // This module is for Visual C x86.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
+
+// ClangCL use posix source instead.
+#if defined(__clang__)
+#include "source/scale_posix.cc"
+#else
 
 // Offsets for source bytes 0 to 9
 static uvec8 kShuf0 =
@@ -1390,6 +1394,7 @@ int FixedDiv1_X86(int num, int div) {
   }
 }
 
+#endif  // defined(__clang__)
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && ...
 
 #ifdef __cplusplus
