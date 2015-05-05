@@ -827,7 +827,7 @@ void ARGBSetRow_NEON(uint8* dst, uint32 v32, int count) {
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // Start at end of source row.
-    "add        %0, %0, %2                     \n"
+    "add        %0, %0, %w2                    \n"
     "sub        %0, %0, #16                    \n"
 
   "1:                                          \n"
@@ -854,7 +854,7 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                       int width) {
   asm volatile (
     // Start at end of source row.
-    "add        %0, %0, %3, lsl #1             \n"
+    "add        %0, %0, %w3, lsl #1            \n"
     "sub        %0, %0, #16                    \n"
 
   "1:                                          \n"
@@ -882,7 +882,7 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
   asm volatile (
     // Start at end of source row.
-    "add        %0, %0, %2, lsl #2             \n"
+    "add        %0, %0, %w2, lsl #2            \n"
     "sub        %0, %0, #16                    \n"
 
   "1:                                          \n"
@@ -2408,13 +2408,13 @@ void InterpolateRow_NEON(uint8* dst_ptr,
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
   asm volatile (
-    "cmp        %4, #0                         \n"
+    "cmp        %w4, #0                        \n"
     "b.eq       100f                           \n"
-    "cmp        %4, #64                        \n"
+    "cmp        %w4, #64                       \n"
     "b.eq       75f                            \n"
-    "cmp        %4, #128                       \n"
+    "cmp        %w4, #128                      \n"
     "b.eq       50f                            \n"
-    "cmp        %4, #192                       \n"
+    "cmp        %w4, #192                      \n"
     "b.eq       25f                            \n"
 
     "dup        v5.16b, %w4                    \n"
@@ -2532,7 +2532,7 @@ void ARGBBlendRow_NEON(const uint8* src_argb0, const uint8* src_argb1,
     "b.ge       8b                             \n"
 
   "89:                                         \n"
-    "adds       %3, %3, #8-1                   \n"
+    "adds       %w3, %w3, #8-1                 \n"
     "b.lt       99f                            \n"
 
     // Blend 1 pixels.
@@ -3019,21 +3019,21 @@ void SobelXRow_NEON(const uint8* src_y0, const uint8* src_y1,
   asm volatile (
   "1:                                          \n"
     MEMACCESS(0)
-    "ld1        {v0.8b}, [%0],%5               \n"  // top
+    "ld1        {v0.8b}, [%0],%w5              \n"  // top
     MEMACCESS(0)
-    "ld1        {v1.8b}, [%0],%6               \n"
+    "ld1        {v1.8b}, [%0],%w6              \n"
     "usubl      v0.8h, v0.8b, v1.8b            \n"
     MEMACCESS(1)
-    "ld1        {v2.8b}, [%1],%5               \n"  // center * 2
+    "ld1        {v2.8b}, [%1],%w5              \n"  // center * 2
     MEMACCESS(1)
-    "ld1        {v3.8b}, [%1],%6               \n"
+    "ld1        {v3.8b}, [%1],%w6              \n"
     "usubl      v1.8h, v2.8b, v3.8b            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
     MEMACCESS(2)
-    "ld1        {v2.8b}, [%2],%5               \n"  // bottom
+    "ld1        {v2.8b}, [%2],%w5              \n"  // bottom
     MEMACCESS(2)
-    "ld1        {v3.8b}, [%2],%6               \n"
+    "ld1        {v3.8b}, [%2],%w6              \n"
     "subs       %w4, %w4, #8                   \n"  // 8 pixels
     "usubl      v1.8h, v2.8b, v3.8b            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
@@ -3064,21 +3064,21 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
   asm volatile (
   "1:                                          \n"
     MEMACCESS(0)
-    "ld1        {v0.8b}, [%0],%4               \n"  // left
+    "ld1        {v0.8b}, [%0],%w4              \n"  // left
     MEMACCESS(1)
-    "ld1        {v1.8b}, [%1],%4               \n"
+    "ld1        {v1.8b}, [%1],%w4              \n"
     "usubl      v0.8h, v0.8b, v1.8b            \n"
     MEMACCESS(0)
-    "ld1        {v2.8b}, [%0],%4               \n"  // center * 2
+    "ld1        {v2.8b}, [%0],%w4              \n"  // center * 2
     MEMACCESS(1)
-    "ld1        {v3.8b}, [%1],%4               \n"
+    "ld1        {v3.8b}, [%1],%w4              \n"
     "usubl      v1.8h, v2.8b, v3.8b            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
     MEMACCESS(0)
-    "ld1        {v2.8b}, [%0],%5               \n"  // right
+    "ld1        {v2.8b}, [%0],%w5              \n"  // right
     MEMACCESS(1)
-    "ld1        {v3.8b}, [%1],%5               \n"
+    "ld1        {v3.8b}, [%1],%w5              \n"
     "subs       %w3, %w3, #8                   \n"  // 8 pixels
     "usubl      v1.8h, v2.8b, v3.8b            \n"
     "add        v0.8h, v0.8h, v1.8h            \n"
