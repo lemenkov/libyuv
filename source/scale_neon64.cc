@@ -551,7 +551,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
   "1:                                          \n"
     "mov       %0, %1                          \n"
-    "mov       x12, %5                         \n"
+    "mov       w12, %w5                        \n"
     "eor       v2.16b, v2.16b, v2.16b          \n"
     "eor       v3.16b, v3.16b, v3.16b          \n"
   "2:                                          \n"
@@ -560,7 +560,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "ld1       {v0.16b}, [%0], %3              \n"
     "uaddw2    v3.8h, v3.8h, v0.16b            \n"
     "uaddw     v2.8h, v2.8h, v0.8b             \n"
-    "subs      x12, x12, #1                    \n"
+    "subs      w12, w12, #1                    \n"
     "b.gt      2b                              \n"
     MEMACCESS(2)
     "st1      {v2.8h, v3.8h}, [%2], #32        \n"  // store pixels
@@ -574,7 +574,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "+r"(src_width),        // %4
     "+r"(src_height)        // %5
   :
-  : "memory", "cc", "x12", "v0", "v1", "v2", "v3"  // Clobber List
+  : "memory", "cc", "w12", "v0", "v1", "v2", "v3"  // Clobber List
   );
 }
 
@@ -658,14 +658,14 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
                           int dst_width, int source_y_fraction) {
     int y_fraction = 256 - source_y_fraction;
   asm volatile (
-    "cmp          %4, #0                       \n"
+    "cmp          %w4, #0                      \n"
     "b.eq         100f                         \n"
     "add          %2, %2, %1                   \n"
-    "cmp          %4, #64                      \n"
+    "cmp          %w4, #64                     \n"
     "b.eq         75f                          \n"
-    "cmp          %4, #128                     \n"
+    "cmp          %w4, #128                    \n"
     "b.eq         50f                          \n"
-    "cmp          %4, #192                     \n"
+    "cmp          %w4, #192                    \n"
     "b.eq         25f                          \n"
 
     "dup          v5.8b, %w4                   \n"
@@ -858,7 +858,7 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
   : "+r"(src_argb),    // %0
     "+r"(dst_argb),    // %1
     "+r"(dst_width)    // %2
-  : "r"(static_cast<ptrdiff_t>(src_stepx * 4)) // %3
+  : "r"((int64)(src_stepx * 4)) // %3
   : "memory", "cc", "v0"
   );
 }
@@ -874,35 +874,35 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
     "add        %1, %1, %0                     \n"
   "1:                                          \n"
     MEMACCESS(0)
-    "ld1     {v0.8b}, [%0], %4                 \n"  // Read 4 2x2 blocks -> 2x1
+    "ld1        {v0.8b}, [%0], %4              \n"  // Read 4 2x2 blocks -> 2x1
     MEMACCESS(1)
-    "ld1     {v1.8b}, [%1], %4                 \n"
+    "ld1        {v1.8b}, [%1], %4              \n"
     MEMACCESS(0)
-    "ld1     {v2.8b}, [%0], %4                 \n"
+    "ld1        {v2.8b}, [%0], %4              \n"
     MEMACCESS(1)
-    "ld1     {v3.8b}, [%1], %4                 \n"
+    "ld1        {v3.8b}, [%1], %4              \n"
     MEMACCESS(0)
-    "ld1     {v4.8b}, [%0], %4                 \n"
+    "ld1        {v4.8b}, [%0], %4              \n"
     MEMACCESS(1)
-    "ld1     {v5.8b}, [%1], %4                 \n"
+    "ld1        {v5.8b}, [%1], %4              \n"
     MEMACCESS(0)
-    "ld1     {v6.8b}, [%0], %4                 \n"
+    "ld1        {v6.8b}, [%0], %4              \n"
     MEMACCESS(1)
-    "ld1     {v7.8b}, [%1], %4                 \n"
-    "uaddl   v0.8h, v0.8b, v1.8b               \n"
-    "uaddl   v2.8h, v2.8b, v3.8b               \n"
-    "uaddl   v4.8h, v4.8b, v5.8b               \n"
-    "uaddl   v6.8h, v6.8b, v7.8b               \n"
-    "mov     v16.d[1], v0.d[1]                 \n"  // ab_cd -> ac_bd
-    "mov     v0.d[1], v2.d[0]                  \n"
-    "mov     v2.d[0], v16.d[1]                 \n"
-    "mov     v16.d[1], v4.d[1]                 \n"  // ef_gh -> eg_fh
-    "mov     v4.d[1], v6.d[0]                  \n"
-    "mov     v6.d[0], v16.d[1]                 \n"
-    "add     v0.8h, v0.8h, v2.8h               \n"  // (a+b)_(c+d)
-    "add     v4.8h, v4.8h, v6.8h               \n"  // (e+f)_(g+h)
-    "rshrn   v0.8b, v0.8h, #2                  \n"  // first 2 pixels.
-    "rshrn2  v0.16b, v4.8h, #2                 \n"  // next 2 pixels.
+    "ld1        {v7.8b}, [%1], %4              \n"
+    "uaddl      v0.8h, v0.8b, v1.8b            \n"
+    "uaddl      v2.8h, v2.8b, v3.8b            \n"
+    "uaddl      v4.8h, v4.8b, v5.8b            \n"
+    "uaddl      v6.8h, v6.8b, v7.8b            \n"
+    "mov        v16.d[1], v0.d[1]              \n"  // ab_cd -> ac_bd
+    "mov        v0.d[1], v2.d[0]               \n"
+    "mov        v2.d[0], v16.d[1]              \n"
+    "mov        v16.d[1], v4.d[1]              \n"  // ef_gh -> eg_fh
+    "mov        v4.d[1], v6.d[0]               \n"
+    "mov        v6.d[0], v16.d[1]              \n"
+    "add        v0.8h, v0.8h, v2.8h            \n"  // (a+b)_(c+d)
+    "add        v4.8h, v4.8h, v6.8h            \n"  // (e+f)_(g+h)
+    "rshrn      v0.8b, v0.8h, #2               \n"  // first 2 pixels.
+    "rshrn2     v0.16b, v4.8h, #2              \n"  // next 2 pixels.
     "subs       %w3, %w3, #4                   \n"  // 4 pixels per loop.
     MEMACCESS(2)
     "st1     {v0.16b}, [%2], #16               \n"
@@ -911,7 +911,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
     "+r"(src_stride),  // %1
     "+r"(dst_argb),    // %2
     "+r"(dst_width)    // %3
-  : "r"(src_stepx * 4) // %4
+  : "r"((int64)(src_stepx * 4)) // %4
   : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16"
   );
 }
