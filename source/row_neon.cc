@@ -94,11 +94,17 @@ extern "C" {
     "vtrn.u32   d2, d3                         \n"
 
 #define YUV422TORGB_SETUP_REG                                                  \
+    MEMACCESS([kUVToRB])                                                       \
     "vld1.8     {d24}, [%[kUVToRB]]            \n"                             \
+    MEMACCESS([kUVToG])                                                        \
     "vld1.8     {d25}, [%[kUVToG]]             \n"                             \
+    MEMACCESS([kUVBiasBGR])                                                    \
     "vld1.16    {d26[], d27[]}, [%[kUVBiasBGR]]! \n"                           \
+    MEMACCESS([kUVBiasBGR])                                                    \
     "vld1.16    {d8[], d9[]}, [%[kUVBiasBGR]]!   \n"                           \
+    MEMACCESS([kUVBiasBGR])                                                    \
     "vld1.16    {d28[], d29[]}, [%[kUVBiasBGR]]  \n"                           \
+    MEMACCESS([kYToRgb])                                                       \
     "vld1.32    {d30[], d31[]}, [%[kYToRgb]]     \n"
 
 #define YUV422TORGB                                                            \
