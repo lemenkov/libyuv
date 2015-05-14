@@ -16,13 +16,12 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
-
 // ClangCL use posix source instead.
-#if defined(__clang__)
+#if defined(__clang__) && defined(_MSC_VER)
 #include "source/compare_posix.cc"
-#else
 
+// This module is for Visual C.
+#elif !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && defined(_MSC_VER)
 __declspec(naked)
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   __asm {
@@ -224,9 +223,7 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
   }
 }
 #endif  // _MSC_VER >= 1700
-
-#endif  // defined(__clang__)
-#endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) ...
+#endif  // defined(__clang__) && defined(_MSC_VER)
 
 #ifdef __cplusplus
 }  // extern "C"
