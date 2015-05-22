@@ -55,7 +55,6 @@ CANY(ScaleARGBFilterCols_Any_NEON, ScaleARGBFilterCols_NEON,
                      dst_ptr + n * BPP, r);                                    \
     }
 
-
 #ifdef HAS_SCALEROWDOWN2_SSE2
 SDANY(ScaleRowDown2_Any_SSE2, ScaleRowDown2_SSE2, ScaleRowDown2_C, 2, 1, 15)
 SDANY(ScaleRowDown2Linear_Any_SSE2, ScaleRowDown2Linear_SSE2,
@@ -92,8 +91,6 @@ SDANY(ScaleRowDown4_Any_NEON, ScaleRowDown4_NEON, ScaleRowDown4_C, 4, 1, 7)
 SDANY(ScaleRowDown4Box_Any_NEON, ScaleRowDown4Box_NEON, ScaleRowDown4Box_C,
       4, 1, 7)
 #endif
-
-
 #ifdef HAS_SCALEROWDOWN34_SSSE3
 SDANY(ScaleRowDown34_Any_SSSE3, ScaleRowDown34_SSSE3,
       ScaleRowDown34_C, 4 / 3, 1, 23)
@@ -126,6 +123,24 @@ SDANY(ScaleRowDown38_3_Box_Any_NEON, ScaleRowDown38_3_Box_NEON,
 SDANY(ScaleRowDown38_2_Box_Any_NEON, ScaleRowDown38_2_Box_NEON,
       ScaleRowDown38_2_Box_C, 8 / 3, 1, 11)
 #endif
+
+#ifdef HAS_SCALEARGBROWDOWN2_SSE2
+SDANY(ScaleARGBRowDown2_Any_SSE2, ScaleARGBRowDown2_SSE2,
+      ScaleARGBRowDown2_C, 2, 4, 3)
+SDANY(ScaleARGBRowDown2Linear_Any_SSE2, ScaleARGBRowDown2Linear_SSE2,
+      ScaleARGBRowDown2Linear_C, 2, 4, 3)
+SDANY(ScaleARGBRowDown2Box_Any_SSE2, ScaleARGBRowDown2Box_SSE2,
+      ScaleARGBRowDown2Box_C, 2, 4, 3)
+#endif
+#ifdef HAS_SCALEARGBROWDOWN2_NEON
+SDANY(ScaleARGBRowDown2_Any_NEON, ScaleARGBRowDown2_NEON,
+      ScaleARGBRowDown2_C, 2, 4, 7)
+SDANY(ScaleARGBRowDown2Linear_Any_NEON, ScaleARGBRowDown2Linear_NEON,
+      ScaleARGBRowDown2Linear_C, 2, 4, 7)
+SDANY(ScaleARGBRowDown2Box_Any_NEON, ScaleARGBRowDown2Box_NEON,
+      ScaleARGBRowDown2Box_C, 2, 4, 7)
+#endif
+
 #undef SDANY
 
 // Fixed scale down.

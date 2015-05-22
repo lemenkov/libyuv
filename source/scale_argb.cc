@@ -53,17 +53,27 @@ static void ScaleARGBDown2(int src_width, int src_height,
   }
 
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4)) {
-    ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_SSE2 :
-        (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_SSE2 :
-        ScaleARGBRowDown2Box_SSE2);
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_Any_SSE2 :
+        (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_Any_SSE2 :
+        ScaleARGBRowDown2Box_Any_SSE2);
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_SSE2 :
+          (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_SSE2 :
+          ScaleARGBRowDown2Box_SSE2);
+    }
   }
 #endif
 #if defined(HAS_SCALEARGBROWDOWN2_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
-    ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_NEON :
-        (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_NEON :
-        ScaleARGBRowDown2Box_NEON);
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_Any_NEON :
+        (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_Any_NEON :
+        ScaleARGBRowDown2Box_Any_NEON);
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBRowDown2 = filtering == kFilterNone ? ScaleARGBRowDown2_NEON :
+          (filtering == kFilterLinear ? ScaleARGBRowDown2Linear_NEON :
+          ScaleARGBRowDown2Box_NEON);
+    }
   }
 #endif
 
