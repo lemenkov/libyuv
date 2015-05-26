@@ -107,15 +107,22 @@ static void ScaleARGBDown4Box(int src_width, int src_height,
   assert(dx == 65536 * 4);  // Test scale factor of 4.
   assert((dy & 0x3ffff) == 0);  // Test vertical scale is multiple of 4.
 #if defined(HAS_SCALEARGBROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4)) {
-    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_Any_SSE2;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDown2 = ScaleARGBRowDown2Box_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SCALEARGBROWDOWN2_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 8)) {
-    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBRowDown2 = ScaleARGBRowDown2Box_Any_NEON;
+    if (IS_ALIGNED(dst_width, 8)) {
+      ScaleARGBRowDown2 = ScaleARGBRowDown2Box_NEON;
+    }
   }
 #endif
+
   for (j = 0; j < dst_height; ++j) {
     ScaleARGBRowDown2(src_argb, src_stride, row, dst_width * 2);
     ScaleARGBRowDown2(src_argb + src_stride * 2, src_stride,
@@ -146,15 +153,23 @@ static void ScaleARGBDownEven(int src_width, int src_height,
   assert(IS_ALIGNED(src_height, 2));
   src_argb += (y >> 16) * src_stride + (x >> 16) * 4;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(dst_width, 4)) {
-    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_SSE2 :
-        ScaleARGBRowDownEven_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_Any_SSE2 :
+        ScaleARGBRowDownEven_Any_SSE2;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_SSE2 :
+          ScaleARGBRowDownEven_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SCALEARGBROWDOWNEVEN_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(dst_width, 4)) {
-    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_NEON :
-        ScaleARGBRowDownEven_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_Any_NEON :
+        ScaleARGBRowDownEven_Any_NEON;
+    if (IS_ALIGNED(dst_width, 4)) {
+      ScaleARGBRowDownEven = filtering ? ScaleARGBRowDownEvenBox_NEON :
+          ScaleARGBRowDownEven_NEON;
+    }
   }
 #endif
 

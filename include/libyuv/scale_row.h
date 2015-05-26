@@ -313,9 +313,12 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb, const uint8* src_argb,
                            int dst_width, int x, int dx);
 void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
                               int dst_width, int x, int dx);
-
+void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
+                        int dst_width, int x, int dx);
 void ScaleARGBFilterCols_Any_NEON(uint8* dst_argb, const uint8* src_argb,
                                   int dst_width, int x, int dx);
+void ScaleARGBCols_Any_NEON(uint8* dst_argb, const uint8* src_argb,
+                            int dst_width, int x, int dx);
 
 // ARGB Row functions
 void ScaleARGBRowDown2_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
@@ -324,28 +327,12 @@ void ScaleARGBRowDown2Linear_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                   uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
-                               int src_stepx, uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
-                                  int src_stepx,
-                                  uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst, int dst_width);
 void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                   uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                uint8* dst, int dst_width);
-void ScaleARGBRowDownEven_NEON(const uint8* src_argb, ptrdiff_t src_stride,
-                               int src_stepx,
-                               uint8* dst_argb, int dst_width);
-void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
-                                  int src_stepx,
-                                  uint8* dst_argb, int dst_width);
-void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
-                        int dst_width, int x, int dx);
-void ScaleARGBCols_Any_NEON(uint8* dst_argb, const uint8* src_argb,
-                            int dst_width, int x, int dx);
-
 void ScaleARGBRowDown2_Any_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
                                 uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2Linear_Any_SSE2(const uint8* src_argb,
@@ -360,6 +347,32 @@ void ScaleARGBRowDown2Linear_Any_NEON(const uint8* src_argb,
                                       uint8* dst_argb, int dst_width);
 void ScaleARGBRowDown2Box_Any_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                                    uint8* dst, int dst_width);
+
+void ScaleARGBRowDownEven_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
+                               int src_stepx, uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
+                                  int src_stepx,
+                                  uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEven_NEON(const uint8* src_argb, ptrdiff_t src_stride,
+                               int src_stepx,
+                               uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
+                                  int src_stepx,
+                                  uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEven_Any_SSE2(const uint8* src_argb, ptrdiff_t src_stride,
+                                   int src_stepx,
+                                   uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenBox_Any_SSE2(const uint8* src_argb,
+                                      ptrdiff_t src_stride,
+                                      int src_stepx,
+                                      uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEven_Any_NEON(const uint8* src_argb, ptrdiff_t src_stride,
+                                   int src_stepx,
+                                   uint8* dst_argb, int dst_width);
+void ScaleARGBRowDownEvenBox_Any_NEON(const uint8* src_argb,
+                                      ptrdiff_t src_stride,
+                                      int src_stepx,
+                                      uint8* dst_argb, int dst_width);
 
 // ScaleRowDown2Box also used by planar functions
 // NEON downscalers with interpolation.

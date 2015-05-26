@@ -140,10 +140,35 @@ SDANY(ScaleARGBRowDown2Linear_Any_NEON, ScaleARGBRowDown2Linear_NEON,
 SDANY(ScaleARGBRowDown2Box_Any_NEON, ScaleARGBRowDown2Box_NEON,
       ScaleARGBRowDown2Box_C, 2, 4, 7)
 #endif
-
 #undef SDANY
 
-// Fixed scale down.
+// Scale down by even scale factor.
+#define SDAANY(NAMEANY, SCALEROWDOWN_SIMD, SCALEROWDOWN_C, BPP, MASK)          \
+    void NAMEANY(const uint8* src_ptr, ptrdiff_t src_stride, int src_stepx,    \
+                 uint8* dst_ptr, int dst_width) {                              \
+      int r = (int)((unsigned int)dst_width % (MASK + 1));                     \
+      int n = dst_width - r;                                                   \
+      if (n > 0) {                                                             \
+        SCALEROWDOWN_SIMD(src_ptr, src_stride, src_stepx, dst_ptr, n);         \
+      }                                                                        \
+      SCALEROWDOWN_C(src_ptr + (n * src_stepx) * BPP, src_stride,              \
+                     src_stepx, dst_ptr + n * BPP, r);                         \
+    }
+
+#ifdef HAS_SCALEARGBROWDOWNEVEN_SSE2
+SDAANY(ScaleARGBRowDownEven_Any_SSE2, ScaleARGBRowDownEven_SSE2,
+       ScaleARGBRowDownEven_C, 4, 3)
+SDAANY(ScaleARGBRowDownEvenBox_Any_SSE2, ScaleARGBRowDownEvenBox_SSE2,
+       ScaleARGBRowDownEvenBox_C, 4, 3)
+#endif
+#ifdef HAS_SCALEARGBROWDOWNEVEN_NEON
+SDAANY(ScaleARGBRowDownEven_Any_NEON, ScaleARGBRowDownEven_NEON,
+       ScaleARGBRowDownEven_C, 4, 3)
+SDAANY(ScaleARGBRowDownEvenBox_Any_NEON, ScaleARGBRowDownEvenBox_NEON,
+       ScaleARGBRowDownEvenBox_C, 4, 3)
+#endif
+
+// Add rows box filter scale down.
 #define SAANY(NAMEANY, SCALEADDROWS_SIMD, SCALEADDROWS_C, MASK)                \
   void NAMEANY(const uint8* src_ptr, ptrdiff_t src_stride,                     \
                uint16* dst_ptr, int src_width, int src_height) {               \
