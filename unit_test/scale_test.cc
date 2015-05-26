@@ -260,37 +260,39 @@ static int TestFilter_16(int src_width, int src_height,
   return max_diff;
 }
 
-#define TEST_FACTOR1(name, filter, hfactor, vfactor, max_diff)                 \
+#define TEST_FACTOR1(name, filter, factor, max_diff)                           \
     TEST_F(libyuvTest, ScaleDownBy##name##_##filter) {                         \
-      int diff = TestFilter(benchmark_width_, benchmark_height_,               \
-                            Abs(benchmark_width_) * hfactor,                   \
-                            Abs(benchmark_height_) * vfactor,                  \
+      int diff = TestFilter(benchmark_width_ * factor,                         \
+                            benchmark_height_ * factor,                        \
+                            Abs(benchmark_width_),                             \
+                            Abs(benchmark_height_),                            \
                             kFilter##filter, benchmark_iterations_,            \
                             disable_cpu_flags_);                               \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
     TEST_F(libyuvTest, DISABLED_ScaleDownBy##name##_##filter##_16) {           \
-      int diff = TestFilter_16(benchmark_width_, benchmark_height_,            \
-                               Abs(benchmark_width_) * hfactor,                \
-                               Abs(benchmark_height_) * vfactor,               \
+      int diff = TestFilter_16(benchmark_width_ * factor,                      \
+                               benchmark_height_ * factor,                     \
+                               Abs(benchmark_width_),                          \
+                               Abs(benchmark_height_),                         \
                                kFilter##filter, benchmark_iterations_);        \
       EXPECT_LE(diff, max_diff);                                               \
     }
 
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
-#define TEST_FACTOR(name, hfactor, vfactor)                                    \
-    TEST_FACTOR1(name, None, hfactor, vfactor, 0)                              \
-    TEST_FACTOR1(name, Linear, hfactor, vfactor, 3)                            \
-    TEST_FACTOR1(name, Bilinear, hfactor, vfactor, 3)                          \
-    TEST_FACTOR1(name, Box, hfactor, vfactor, 3)                               \
+#define TEST_FACTOR(name, factor)                                              \
+    TEST_FACTOR1(name, None, factor, 0)                                        \
+    TEST_FACTOR1(name, Linear, factor, 3)                                      \
+    TEST_FACTOR1(name, Bilinear, factor, 3)                                    \
+    TEST_FACTOR1(name, Box, factor, 3)                                         \
 
-TEST_FACTOR(2, 1 / 2, 1 / 2)
-TEST_FACTOR(4, 1 / 4, 1 / 4)
-TEST_FACTOR(8, 1 / 8, 1 / 8)
-TEST_FACTOR(3by4, 3 / 4, 3 / 4)
-TEST_FACTOR(3by8, 3 / 8, 3 / 8)
-TEST_FACTOR(3, 1 / 3, 1 / 3)
+TEST_FACTOR(2, 2)
+TEST_FACTOR(4, 4)
+TEST_FACTOR(8, 8)
+TEST_FACTOR(3by4, 4 / 3)
+TEST_FACTOR(3by8, 8 / 3)
+TEST_FACTOR(3, 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 
