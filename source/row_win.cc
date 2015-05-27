@@ -5875,36 +5875,6 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
 
-// Specialized ARGB to Bayer that just isolates G channel.
-__declspec(naked)
-void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
-                           uint32 selector, int pix) {
-  __asm {
-    mov        eax, [esp + 4]    // src_argb
-    mov        edx, [esp + 8]    // dst_bayer
-                                 // selector
-    mov        ecx, [esp + 16]   // pix
-    pcmpeqb    xmm5, xmm5        // generate mask 0x000000ff
-    psrld      xmm5, 24
-
-  wloop:
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    lea        eax, [eax + 32]
-    psrld      xmm0, 8  // Move green to bottom.
-    psrld      xmm1, 8
-    pand       xmm0, xmm5
-    pand       xmm1, xmm5
-    packssdw   xmm0, xmm1
-    packuswb   xmm0, xmm1
-    movq       qword ptr [edx], xmm0
-    lea        edx, [edx + 8]
-    sub        ecx, 8
-    jg         wloop
-    ret
-  }
-}
-
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 __declspec(naked)
 void ARGBShuffleRow_SSSE3(const uint8* src_argb, uint8* dst_argb,

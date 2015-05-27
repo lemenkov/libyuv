@@ -1599,8 +1599,8 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
     "punpcklwd  %%xmm2,%%xmm0                                    \n"           \
     "punpckhwd  %%xmm2,%%xmm1                                    \n"           \
     "movdqu     %%xmm0," MEMACCESS([dst_argb]) "                 \n"           \
-    "movdqu     %%xmm1," MEMACCESS2(0x10,[dst_argb]) "           \n"           \
-    "lea        " MEMLEA(0x20,[dst_argb]) ",%[dst_argb]          \n"
+    "movdqu     %%xmm1," MEMACCESS2(0x10, [dst_argb]) "          \n"           \
+    "lea        " MEMLEA(0x20, [dst_argb]) ", %[dst_argb]        \n"
 
 // Store 8 BGRA values. Assumes XMM5 is zero.
 #define STOREBGRA                                                              \
@@ -1611,8 +1611,8 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
     "punpcklwd %%xmm1,%%xmm5                                     \n"           \
     "punpckhwd %%xmm1,%%xmm0                                     \n"           \
     "movdqu    %%xmm5," MEMACCESS([dst_bgra]) "                  \n"           \
-    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_bgra]) "            \n"           \
-    "lea       " MEMLEA(0x20,[dst_bgra]) ",%[dst_bgra]           \n"
+    "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_bgra]) "           \n"           \
+    "lea       " MEMLEA(0x20, [dst_bgra]) ", %[dst_bgra]         \n"
 
 // Store 8 ABGR values. Assumes XMM5 is zero.
 #define STOREABGR                                                              \
@@ -1622,8 +1622,8 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
     "punpcklwd %%xmm0,%%xmm2                                     \n"           \
     "punpckhwd %%xmm0,%%xmm1                                     \n"           \
     "movdqu    %%xmm2," MEMACCESS([dst_abgr]) "                  \n"           \
-    "movdqu    %%xmm1," MEMACCESS2(0x10,[dst_abgr]) "            \n"           \
-    "lea       " MEMLEA(0x20,[dst_abgr]) ",%[dst_abgr]           \n"
+    "movdqu    %%xmm1," MEMACCESS2(0x10, [dst_abgr]) "           \n"           \
+    "lea       " MEMLEA(0x20, [dst_abgr]) ", %[dst_abgr]         \n"
 
 // Store 8 RGBA values. Assumes XMM5 is zero.
 #define STORERGBA                                                              \
@@ -1634,8 +1634,8 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
     "punpcklwd %%xmm1,%%xmm5                                     \n"           \
     "punpckhwd %%xmm1,%%xmm0                                     \n"           \
     "movdqu    %%xmm5," MEMACCESS([dst_rgba]) "                  \n"           \
-    "movdqu    %%xmm0," MEMACCESS2(0x10,[dst_rgba]) "            \n"           \
-    "lea       " MEMLEA(0x20,[dst_rgba]) ",%[dst_rgba]           \n"
+    "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_rgba]) "           \n"           \
+    "lea       " MEMLEA(0x20, [dst_rgba]) ",%[dst_rgba]          \n"
 
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
@@ -5029,37 +5029,6 @@ void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSE2
-
-#ifdef HAS_ARGBTOBAYERGGROW_SSE2
-void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
-                           uint32 selector, int pix) {
-  asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrld     $0x18,%%xmm5                    \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "psrld     $0x8,%%xmm0                     \n"
-    "psrld     $0x8,%%xmm1                     \n"
-    "pand      %%xmm5,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "packssdw  %%xmm1,%%xmm0                   \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x8,1) ",%1            \n"
-    "sub       $0x8,%2                         \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_bayer), // %1
-    "+r"(pix)        // %2
-  :
-  : "memory", "cc"
-    , "xmm0", "xmm1", "xmm5"
-  );
-}
-#endif  // HAS_ARGBTOBAYERGGROW_SSE2
 
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.

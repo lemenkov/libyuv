@@ -1011,17 +1011,17 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define VR -102 /* round(-1.596 * 64) */
 
 // Bias values to subtract 16 from Y and 128 from U and V.
-#define BB (UB * 128            + YGB)
+#define BB (UB * 128 + YGB)
 #define BG (UG * 128 + VG * 128 + YGB)
-#define BR            (VR * 128 + YGB)
+#define BR (VR * 128 + YGB)
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r) {
   uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
-  *b = Clamp((int32)(-(         u * UB) + y1 + BB) >> 6);
+  *b = Clamp((int32)(-(u * UB) + y1 + BB) >> 6);
   *g = Clamp((int32)(-(v * VG + u * UG) + y1 + BG) >> 6);
-  *r = Clamp((int32)(-(v * VR         ) + y1 + BR) >> 6);
+  *r = Clamp((int32)(-(v * VR)+ y1 + BR) >> 6);
 }
 
 // C reference code that mimics the YUV assembly.
@@ -1059,17 +1059,17 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 #define VRJ -90 /* round(-1.40200 * 64) */
 
 // Bias values to subtract 16 from Y and 128 from U and V.
-#define BBJ (UBJ * 128             + YGBJ)
+#define BBJ (UBJ * 128 + YGBJ)
 #define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
-#define BRJ             (VRJ * 128 + YGBJ)
+#define BRJ (VRJ * 128 + YGBJ)
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
                                uint8* b, uint8* g, uint8* r) {
   uint32 y1 = (uint32)(y * 0x0101 * YGJ) >> 16;
-  *b = Clamp((int32)(-(          u * UBJ) + y1 + BBJ) >> 6);
+  *b = Clamp((int32)(-(u * UBJ) + y1 + BBJ) >> 6);
   *g = Clamp((int32)(-(v * VGJ + u * UGJ) + y1 + BGJ) >> 6);
-  *r = Clamp((int32)(-(v * VRJ          ) + y1 + BRJ) >> 6);
+  *r = Clamp((int32)(-(v * VRJ) + y1 + BRJ) >> 6);
 }
 
 #undef YGJ
@@ -2083,22 +2083,6 @@ void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
   }
   if (width & 1) {
     dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
-  }
-}
-
-// Select G channel from ARGB.  e.g.  GGGGGGGG
-void ARGBToBayerGGRow_C(const uint8* src_argb,
-                        uint8* dst_bayer, uint32 selector, int pix) {
-  // Copy a row of G.
-  int x;
-  for (x = 0; x < pix - 1; x += 2) {
-    dst_bayer[0] = src_argb[1];
-    dst_bayer[1] = src_argb[5];
-    src_argb += 8;
-    dst_bayer += 2;
-  }
-  if (pix & 1) {
-    dst_bayer[0] = src_argb[1];
   }
 }
 

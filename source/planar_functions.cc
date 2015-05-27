@@ -1976,8 +1976,8 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
                                          const uint8* src_sobely,
                                          uint8* dst, int width)) {
   int y;
-  void (*ARGBToBayerRow)(const uint8* src_argb, uint8* dst_bayer,
-                         uint32 selector, int pix) = ARGBToBayerGGRow_C;
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_g, int pix) =
+      ARGBToYJRow_C;
   void (*SobelYRow)(const uint8* src_y0, const uint8* src_y1,
                     uint8* dst_sobely, int width) = SobelYRow_C;
   void (*SobelXRow)(const uint8* src_y0, const uint8* src_y1,
@@ -1993,31 +1993,32 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     src_argb  = src_argb  + (height - 1) * src_stride_argb;
     src_stride_argb = -src_stride_argb;
   }
-  // ARGBToBayer used to select G channel from ARGB.
-#if defined(HAS_ARGBTOBAYERGGROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBToBayerRow = ARGBToBayerGGRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerGGRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOBAYERROW_SSSE3)
+
+#if defined(HAS_ARGBTOYJROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToBayerRow = ARGBToBayerRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerRow_SSSE3;
+    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYJRow = ARGBToYJRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_ARGBTOBAYERGGROW_NEON)
+#if defined(HAS_ARGBTOYJROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToYJRow = ARGBToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ARGBToYJRow = ARGBToYJRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGBToBayerRow = ARGBToBayerGGRow_Any_NEON;
+    ARGBToYJRow = ARGBToYJRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      ARGBToBayerRow = ARGBToBayerGGRow_NEON;
+      ARGBToYJRow = ARGBToYJRow_NEON;
     }
   }
 #endif
+
 #if defined(HAS_SOBELYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     SobelYRow = SobelYRow_SSE2;
@@ -2050,20 +2051,20 @@ static int ARGBSobelize(const uint8* src_argb, int src_stride_argb,
     uint8* row_y0 = row_y + kEdge;
     uint8* row_y1 = row_y0 + kRowSize;
     uint8* row_y2 = row_y1 + kRowSize;
-    ARGBToBayerRow(src_argb, row_y0, 0x0d090501, width);
+    ARGBToYJRow(src_argb, row_y0, width);
     row_y0[-1] = row_y0[0];
     memset(row_y0 + width, row_y0[width - 1], 16);  // Extrude 16 for valgrind.
-    ARGBToBayerRow(src_argb, row_y1, 0x0d090501, width);
+    ARGBToYJRow(src_argb, row_y1, width);
     row_y1[-1] = row_y1[0];
     memset(row_y1 + width, row_y1[width - 1], 16);
     memset(row_y2 + width, 0, 16);
 
     for (y = 0; y < height; ++y) {
-      // Convert next row of ARGB to Y.
+      // Convert next row of ARGB to G.
       if (y < (height - 1)) {
         src_argb += src_stride_argb;
       }
-      ARGBToBayerRow(src_argb, row_y2, 0x0d090501, width);
+      ARGBToYJRow(src_argb, row_y2, width);
       row_y2[-1] = row_y2[0];
       row_y2[width] = row_y2[width - 1];
 

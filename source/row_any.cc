@@ -278,27 +278,6 @@ RGBDANY(ARGBToRGB565DitherRow_Any_NEON, ARGBToRGB565DitherRow_NEON,
 #endif
 #undef RGBDANY
 
-// ARGB to Bayer does multiple of 4 pixels, SSSE3 aligned src, unaligned dst.
-#define BAYERANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)        \
-    void NAMEANY(const uint8* src, uint8* dst, uint32 selector, int width) {   \
-      int n = width & ~MASK;                                                   \
-      if (n > 0) {                                                             \
-        ARGBTORGB_SIMD(src, dst, selector, n);                                 \
-      }                                                                        \
-      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, selector, width & MASK);      \
-    }
-
-#if defined(HAS_ARGBTOBAYERGGROW_SSE2)
-BAYERANY(ARGBToBayerGGRow_Any_SSE2, ARGBToBayerGGRow_SSE2, ARGBToBayerGGRow_C,
-         4, 1, 7)
-#endif
-#if defined(HAS_ARGBTOBAYERGGROW_NEON)
-BAYERANY(ARGBToBayerGGRow_Any_NEON, ARGBToBayerGGRow_NEON, ARGBToBayerGGRow_C,
-         4, 1, 7)
-#endif
-
-#undef BAYERANY
-
 #define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
       int n = width & ~MASK;                                                   \

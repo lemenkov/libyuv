@@ -143,6 +143,12 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height);
 
+// Convert ARGB to G. (Reverse of J400toARGB, which replicates G back to ARGB)
+LIBYUV_API
+int ARGBToG(const uint8* src_argb, int src_stride_argb,
+            uint8* dst_g, int dst_stride_g,
+            int width, int height);
+
 // Convert ARGB To NV12.
 LIBYUV_API
 int ARGBToNV12(const uint8* src_argb, int src_stride_argb,

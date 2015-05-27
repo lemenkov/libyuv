@@ -70,7 +70,6 @@ extern "C" {
 #define HAS_ARGBSHUFFLEROW_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
-#define HAS_ARGBTOBAYERGGROW_SSE2
 #define HAS_ARGBTORAWROW_SSSE3
 #define HAS_ARGBTORGB24ROW_SSSE3
 #define HAS_ARGBTORGB565ROW_SSE2
@@ -271,7 +270,6 @@ extern "C" {
 #define HAS_ARGB4444TOYROW_NEON
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
-#define HAS_ARGBTOBAYERGGROW_NEON
 #define HAS_ARGBTORAWROW_NEON
 #define HAS_ARGBTORGB24ROW_NEON
 #define HAS_ARGBTORGB565ROW_NEON
@@ -1631,17 +1629,6 @@ void UYVYToUVRow_Any_NEON(const uint8* src_uyvy, int stride_uyvy,
                           uint8* dst_u, uint8* dst_v, int pix);
 void UYVYToUV422Row_Any_NEON(const uint8* src_uyvy,
                              uint8* dst_u, uint8* dst_v, int pix);
-
-void ARGBToBayerGGRow_C(const uint8* src_argb, uint8* dst_bayer,
-                        uint32 /* selector */, int pix);
-void ARGBToBayerGGRow_SSE2(const uint8* src_argb, uint8* dst_bayer,
-                           uint32 /* selector */, int pix);
-void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
-                           uint32 /* selector */, int pix);
-void ARGBToBayerGGRow_Any_SSE2(const uint8* src_argb, uint8* dst_bayer,
-                               uint32 /* selector */, int pix);
-void ARGBToBayerGGRow_Any_NEON(const uint8* src_argb, uint8* dst_bayer,
-                               uint32 /* selector */, int pix);
 
 void I422ToYUY2Row_C(const uint8* src_y,
                      const uint8* src_u,

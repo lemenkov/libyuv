@@ -1259,27 +1259,6 @@ void UYVYToUVRow_NEON(const uint8* src_uyvy, int stride_uyvy,
 }
 #endif  // HAS_UYVYTOUVROW_NEON
 
-// Select G channels from ARGB.  e.g.  GGGGGGGG
-#ifdef HAS_ARGBTOBAYERGGROW_NEON
-void ARGBToBayerGGRow_NEON(const uint8* src_argb, uint8* dst_bayer,
-                           uint32 /*selector*/, int pix) {
-  asm volatile (
-  "1:                                          \n"
-    MEMACCESS(0)
-    "ld4        {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load row 8 pixels
-    "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
-    MEMACCESS(1)
-    "st1        {v1.8b}, [%1], #8              \n"  // store 8 G's.
-    "b.gt       1b                             \n"
-  : "+r"(src_argb),   // %0
-    "+r"(dst_bayer),  // %1
-    "+r"(pix)         // %2
-  :
-  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
-  );
-}
-#endif  // HAS_ARGBTOBAYERGGROW_NEON
-
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 #ifdef HAS_ARGBSHUFFLEROW_NEON
 void ARGBShuffleRow_NEON(const uint8* src_argb, uint8* dst_argb,
