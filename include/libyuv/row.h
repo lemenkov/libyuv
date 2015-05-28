@@ -1819,6 +1819,18 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
 void SobelXYRow_NEON(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width);
+void SobelRow_Any_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                       uint8* dst_argb, int width);
+void SobelRow_Any_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                       uint8* dst_argb, int width);
+void SobelToPlaneRow_Any_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                              uint8* dst_y, int width);
+void SobelToPlaneRow_Any_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                              uint8* dst_y, int width);
+void SobelXYRow_Any_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
+                         uint8* dst_argb, int width);
+void SobelXYRow_Any_NEON(const uint8* src_sobelx, const uint8* src_sobely,
+                         uint8* dst_argb, int width);
 
 void ARGBPolynomialRow_C(const uint8* src_argb,
                          uint8* dst_argb, const float* poly,

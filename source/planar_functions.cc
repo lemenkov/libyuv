@@ -2095,13 +2095,19 @@ int ARGBSobel(const uint8* src_argb, int src_stride_argb,
   void (*SobelRow)(const uint8* src_sobelx, const uint8* src_sobely,
                    uint8* dst_argb, int width) = SobelRow_C;
 #if defined(HAS_SOBELROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
-    SobelRow = SobelRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelRow = SobelRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      SobelRow = SobelRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SOBELROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    SobelRow = SobelRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelRow = SobelRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      SobelRow = SobelRow_NEON;
+    }
   }
 #endif
   return ARGBSobelize(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
@@ -2116,13 +2122,19 @@ int ARGBSobelToPlane(const uint8* src_argb, int src_stride_argb,
   void (*SobelToPlaneRow)(const uint8* src_sobelx, const uint8* src_sobely,
                           uint8* dst_, int width) = SobelToPlaneRow_C;
 #if defined(HAS_SOBELTOPLANEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
-    SobelToPlaneRow = SobelToPlaneRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelToPlaneRow = SobelToPlaneRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      SobelToPlaneRow = SobelToPlaneRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SOBELTOPLANEROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
-    SobelToPlaneRow = SobelToPlaneRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelToPlaneRow = SobelToPlaneRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      SobelToPlaneRow = SobelToPlaneRow_NEON;
+    }
   }
 #endif
   return ARGBSobelize(src_argb, src_stride_argb, dst_y, dst_stride_y,
@@ -2138,13 +2150,19 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
   void (*SobelXYRow)(const uint8* src_sobelx, const uint8* src_sobely,
                      uint8* dst_argb, int width) = SobelXYRow_C;
 #if defined(HAS_SOBELXYROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 16)) {
-    SobelXYRow = SobelXYRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SobelXYRow = SobelXYRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      SobelXYRow = SobelXYRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_SOBELXYROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    SobelXYRow = SobelXYRow_NEON;
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SobelXYRow = SobelXYRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      SobelXYRow = SobelXYRow_NEON;
+    }
   }
 #endif
   return ARGBSobelize(src_argb, src_stride_argb, dst_argb, dst_stride_argb,

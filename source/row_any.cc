@@ -558,51 +558,71 @@ MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #endif
 #undef MERGEUVROW_ANY
 
-#define MATHROW_ANY(NAMEANY, ARGBMATH_SIMD, ARGBMATH_C, MASK)                  \
+#define MATHROW_ANY(NAMEANY, ARGBMATH_SIMD, ARGBMATH_C, SBPP, DBPP, MASK)      \
     void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
                  uint8* dst_argb, int width) {                                 \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBMATH_SIMD(src_argb0, src_argb1, dst_argb, n);                      \
       }                                                                        \
-      ARGBMATH_C(src_argb0 + n * 4,                                            \
-                 src_argb1 + n * 4,                                            \
-                 dst_argb + n * 4,                                             \
+      ARGBMATH_C(src_argb0 + n * SBPP,                                         \
+                 src_argb1 + n * SBPP,                                         \
+                 dst_argb + n * DBPP,                                          \
                  width & MASK);                                                \
     }
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 MATHROW_ANY(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2, ARGBMultiplyRow_C,
-            3)
+            4, 4, 3)
 #endif
 #ifdef HAS_ARGBADDROW_SSE2
-MATHROW_ANY(ARGBAddRow_Any_SSE2, ARGBAddRow_SSE2, ARGBAddRow_C, 3)
+MATHROW_ANY(ARGBAddRow_Any_SSE2, ARGBAddRow_SSE2, ARGBAddRow_C, 4, 4, 3)
 #endif
 #ifdef HAS_ARGBSUBTRACTROW_SSE2
 MATHROW_ANY(ARGBSubtractRow_Any_SSE2, ARGBSubtractRow_SSE2, ARGBSubtractRow_C,
-            3)
+            4, 4, 3)
 #endif
 #ifdef HAS_ARGBMULTIPLYROW_AVX2
 MATHROW_ANY(ARGBMultiplyRow_Any_AVX2, ARGBMultiplyRow_AVX2, ARGBMultiplyRow_C,
-            7)
+            4, 4, 7)
 #endif
 #ifdef HAS_ARGBADDROW_AVX2
-MATHROW_ANY(ARGBAddRow_Any_AVX2, ARGBAddRow_AVX2, ARGBAddRow_C, 7)
+MATHROW_ANY(ARGBAddRow_Any_AVX2, ARGBAddRow_AVX2, ARGBAddRow_C, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBSUBTRACTROW_AVX2
 MATHROW_ANY(ARGBSubtractRow_Any_AVX2, ARGBSubtractRow_AVX2, ARGBSubtractRow_C,
-            7)
+            4, 4, 7)
 #endif
 #ifdef HAS_ARGBMULTIPLYROW_NEON
 MATHROW_ANY(ARGBMultiplyRow_Any_NEON, ARGBMultiplyRow_NEON, ARGBMultiplyRow_C,
-            7)
+            4, 4, 7)
 #endif
 #ifdef HAS_ARGBADDROW_NEON
-MATHROW_ANY(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, ARGBAddRow_C, 7)
+MATHROW_ANY(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, ARGBAddRow_C, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBSUBTRACTROW_NEON
 MATHROW_ANY(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, ARGBSubtractRow_C,
-            7)
+            4, 4, 7)
+#endif
+#ifdef HAS_SOBELROW_SSE2
+MATHROW_ANY(SobelRow_Any_SSE2, SobelRow_SSE2, SobelRow_C, 1, 4, 15)
+#endif
+#ifdef HAS_SOBELROW_NEON
+MATHROW_ANY(SobelRow_Any_NEON, SobelRow_NEON, SobelRow_C, 1, 4, 7)
+#endif
+#ifdef HAS_SOBELTOPLANEROW_SSE2
+MATHROW_ANY(SobelToPlaneRow_Any_SSE2, SobelToPlaneRow_SSE2, SobelToPlaneRow_C,
+            1, 1, 15)
+#endif
+#ifdef HAS_SOBELTOPLANEROW_NEON
+MATHROW_ANY(SobelToPlaneRow_Any_NEON, SobelToPlaneRow_NEON, SobelToPlaneRow_C,
+            1, 1, 7)
+#endif
+#ifdef HAS_SOBELXYROW_SSE2
+MATHROW_ANY(SobelXYRow_Any_SSE2, SobelXYRow_SSE2, SobelXYRow_C, 1, 4, 15)
+#endif
+#ifdef HAS_SOBELXYROW_NEON
+MATHROW_ANY(SobelXYRow_Any_NEON, SobelXYRow_NEON, SobelXYRow_C, 1, 4, 7)
 #endif
 #undef MATHROW_ANY
 
