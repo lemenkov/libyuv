@@ -110,7 +110,7 @@ static int TestAttenuateI(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
@@ -176,7 +176,7 @@ static int TestUnattenuateI(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
@@ -1366,7 +1366,7 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
@@ -1437,7 +1437,7 @@ static int TestAdd(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
@@ -1508,7 +1508,7 @@ static int TestSubtract(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
@@ -1579,7 +1579,7 @@ static int TestSobel(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
@@ -1715,7 +1715,7 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
@@ -1782,7 +1782,7 @@ static int TestBlur(int width, int height, int benchmark_iterations,
     width = 1;
   }
   const int kBpp = 4;
-  const int kStride = (width * kBpp + 15) & ~15;
+  const int kStride = width * kBpp;
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(dst_cumsum, width * height * 16);
   align_buffer_64(dst_argb_c, kStride * height);
@@ -2103,7 +2103,7 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
   if (width < 1) {
     width = 1;
   }
-  const int kStride = (width * bpp + 15) & ~15;
+  const int kStride = width * bpp;
   const int kSize = kStride * height;
   const uint32 v32 = random() & (bpp == 4 ? 0xffffffff : 0xff);
 
@@ -2144,49 +2144,57 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
 
 TEST_F(libyuvTest, ARGBRect_Any) {
   int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Unaligned) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 1, 4);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 1, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Invert) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, -1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              -1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, ARGBRect_Opt) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 4);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 0, 4);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Any) {
   int max_diff = TestARGBRect(benchmark_width_ - 1, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Unaligned) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 1, 1);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 1, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Invert) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, -1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              -1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
 TEST_F(libyuvTest, SetPlane_Opt) {
   int max_diff = TestARGBRect(benchmark_width_, benchmark_height_,
-                              benchmark_iterations_, disable_cpu_flags_, +1, 0, 1);
+                              benchmark_iterations_, disable_cpu_flags_,
+                              +1, 0, 1);
   EXPECT_EQ(0, max_diff);
 }
 
