@@ -59,6 +59,7 @@ set(ly_unittest_sources
   ${ly_base_dir}/unit_test/rotate_argb_test.cc
   ${ly_base_dir}/unit_test/rotate_test.cc
   ${ly_base_dir}/unit_test/scale_argb_test.cc
+  ${ly_base_dir}/unit_test/scale_color_test.cc
   ${ly_base_dir}/unit_test/scale_test.cc
   ${ly_base_dir}/unit_test/unit_test.cc
   ${ly_base_dir}/unit_test/video_common_test.cc
