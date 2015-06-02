@@ -24,7 +24,7 @@ static void I420TestRotate(int src_width, int src_height,
   if (src_width < 1) {
     src_width = 1;
   }
-  if (src_height < 1) {
+  if (src_height == 0) {
     src_height = 1;
   }
   if (dst_width < 1) {
@@ -33,8 +33,8 @@ static void I420TestRotate(int src_width, int src_height,
   if (dst_height < 1) {
     dst_height = 1;
   }
-  int src_i420_y_size = src_width * src_height;
-  int src_i420_uv_size = ((src_width + 1) / 2) * ((src_height + 1) / 2);
+  int src_i420_y_size = src_width * Abs(src_height);
+  int src_i420_uv_size = ((src_width + 1) / 2) * ((Abs(src_height) + 1) / 2);
   int src_i420_size = src_i420_y_size + src_i420_uv_size * 2;
   align_buffer_64(src_i420, src_i420_size);
   for (int i = 0; i < src_i420_size; ++i) {
@@ -137,7 +137,7 @@ static void NV12TestRotate(int src_width, int src_height,
   if (src_width < 1) {
     src_width = 1;
   }
-  if (src_height < 1) {
+  if (src_height == 0) {  // allow negative for inversion test.
     src_height = 1;
   }
   if (dst_width < 1) {
@@ -146,8 +146,8 @@ static void NV12TestRotate(int src_width, int src_height,
   if (dst_height < 1) {
     dst_height = 1;
   }
-  int src_nv12_y_size = src_width * src_height;
-  int src_nv12_uv_size = ((src_width + 1) / 2) * ((src_height + 1) / 2) * 2;
+  int src_nv12_y_size = src_width * Abs(src_height);
+  int src_nv12_uv_size = ((src_width + 1) / 2) * ((Abs(src_height) + 1) / 2) * 2;
   int src_nv12_size = src_nv12_y_size + src_nv12_uv_size;
   align_buffer_64(src_nv12, src_nv12_size);
   for (int i = 0; i < src_nv12_size; ++i) {
@@ -239,5 +239,33 @@ TEST_F(libyuvTest, NV12Rotate270_Odd) {
                  benchmark_height_ - 1, benchmark_width_ - 3,
                  kRotate270, benchmark_iterations_, disable_cpu_flags_);
 }
+
+TEST_F(libyuvTest, NV12Rotate0_Inverted) {
+  NV12TestRotate(benchmark_width_, -benchmark_height_,
+                 benchmark_width_, benchmark_height_,
+                 kRotate0, benchmark_iterations_, disable_cpu_flags_);
+}
+
+TEST_F(libyuvTest, NV12Rotate90_Inverted) {
+  NV12TestRotate(benchmark_width_, -benchmark_height_,
+                 benchmark_height_, benchmark_width_,
+                 kRotate90, benchmark_iterations_, disable_cpu_flags_);
+}
+
+TEST_F(libyuvTest, NV12Rotate180_Inverted) {
+  NV12TestRotate(benchmark_width_, -benchmark_height_,
+                 benchmark_width_, benchmark_height_,
+                 kRotate180, benchmark_iterations_, disable_cpu_flags_);
+}
+
+TEST_F(libyuvTest, NV12Rotate270_Inverted) {
+  NV12TestRotate(benchmark_width_, -benchmark_height_,
+                 benchmark_height_, benchmark_width_,
+                 kRotate270, benchmark_iterations_, disable_cpu_flags_);
+}
+
+
+
+
 
 }  // namespace libyuv
