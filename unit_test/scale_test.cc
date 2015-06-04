@@ -15,6 +15,9 @@
 #include "libyuv/scale.h"
 #include "../unit_test/unit_test.h"
 
+#define STRINGIZE(line) #line
+#define FILELINESTR(file, line) file ":" STRINGIZE(line)
+
 namespace libyuv {
 
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
@@ -36,6 +39,10 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_page_end(src_y, src_y_plane_size)
   align_buffer_page_end(src_u, src_uv_plane_size)
   align_buffer_page_end(src_v, src_uv_plane_size)
+  if (!src_y || !src_u || !src_v) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
   srandom(time(NULL));
   MemRandomize(src_y, src_y_plane_size);
   MemRandomize(src_u, src_uv_plane_size);
@@ -44,8 +51,8 @@ static int TestFilter(int src_width, int src_height,
   int dst_width_uv = (dst_width + 1) >> 1;
   int dst_height_uv = (dst_height + 1) >> 1;
 
-  int dst_y_plane_size = (dst_width + b * 2) * (dst_height + b * 2);
-  int dst_uv_plane_size = (dst_width_uv + b * 2) * (dst_height_uv + b * 2);
+  int64 dst_y_plane_size = (dst_width + b * 2) * (dst_height + b * 2);
+  int64 dst_uv_plane_size = (dst_width_uv + b * 2) * (dst_height_uv + b * 2);
 
   int dst_stride_y = b * 2 + dst_width;
   int dst_stride_uv = b * 2 + dst_width_uv;
@@ -56,6 +63,11 @@ static int TestFilter(int src_width, int src_height,
   align_buffer_page_end(dst_y_opt, dst_y_plane_size)
   align_buffer_page_end(dst_u_opt, dst_uv_plane_size)
   align_buffer_page_end(dst_v_opt, dst_uv_plane_size)
+  if (!dst_y_c || !dst_u_c || !dst_v_c ||
+      !dst_y_opt|| !dst_u_opt|| !dst_v_opt) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
 
   MaskCpuFlags(disable_cpu_flags);  // Disable all CPU optimization.
   double c_time = get_time();

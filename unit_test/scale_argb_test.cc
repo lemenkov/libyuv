@@ -18,6 +18,9 @@
 
 namespace libyuv {
 
+#define STRINGIZE(line) #line
+#define FILELINESTR(file, line) file ":" STRINGIZE(line)
+
 // Test scaling with C vs Opt and return maximum pixel difference. 0 = exact.
 static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
@@ -25,19 +28,27 @@ static int ARGBTestFilter(int src_width, int src_height,
                           int disable_cpu_flags) {
   int i, j;
   const int b = 0;  // 128 to test for padding/stride.
-  int src_argb_plane_size = (Abs(src_width) + b * 2) *
-      (Abs(src_height) + b * 2) * 4;
+  int64 src_argb_plane_size = (Abs(src_width) + b * 2) *
+      (Abs(src_height) + b * 2) * 4LL;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
   align_buffer_page_end(src_argb, src_argb_plane_size);
+  if (!src_argb) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
   srandom(time(NULL));
   MemRandomize(src_argb, src_argb_plane_size);
 
-  int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
+  int64 dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4LL;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
 
   align_buffer_page_end(dst_argb_c, dst_argb_plane_size);
   align_buffer_page_end(dst_argb_opt, dst_argb_plane_size);
+  if (!dst_argb_c || !dst_argb_opt) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
@@ -137,9 +148,13 @@ static int ARGBClipTestFilter(int src_width, int src_height,
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
   align_buffer_64(src_argb, src_argb_plane_size);
+  if (!src_argb) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
   memset(src_argb, 1, src_argb_plane_size);
 
-  int dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
+  int64 dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
 
   srandom(time(NULL));
@@ -153,6 +168,10 @@ static int ARGBClipTestFilter(int src_width, int src_height,
 
   align_buffer_64(dst_argb_c, dst_argb_plane_size);
   align_buffer_64(dst_argb_opt, dst_argb_plane_size);
+  if (!dst_argb_c || !dst_argb_opt) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
   memset(dst_argb_c, 2, dst_argb_plane_size);
   memset(dst_argb_opt, 3, dst_argb_plane_size);
 
