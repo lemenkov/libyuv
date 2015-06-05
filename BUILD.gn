@@ -17,12 +17,7 @@ config("libyuv_config") {
 
 use_neon = current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)
 
-static_library("libyuv") {
-  # libyuv requires that foo_posix.cc is linked in on Windows too,
-  # just like in libyuv.gyp
-  # TODO(thakis): Fix this, http://crbug.com/496928
-  set_sources_assignment_filter([])
-
+source_set("libyuv") {
   sources = [
     "include/libyuv.h",
     "include/libyuv/basic_types.h",
