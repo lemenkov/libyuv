@@ -158,8 +158,9 @@ extern "C" {
 #define HAS_SOBELYROW_SSE2
 #endif
 
-// The following are available on x64 Visual C:
-#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && !defined(__clang__)
+// The following are available on x64 Visual C and clangcl.
+#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
+    (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422TOARGBROW_SSSE3
 #endif
 

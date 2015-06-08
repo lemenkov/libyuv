@@ -151,6 +151,7 @@ static YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 
 // 64 bit
 #if defined(_M_X64)
+#if defined(HAS_I422TOARGBROW_SSSE3)
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
@@ -200,6 +201,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     width -= 8;
   }
 }
+#endif
 // 32 bit
 #else  // defined(_M_X64)
 #ifdef HAS_ARGBTOYROW_SSSE3
