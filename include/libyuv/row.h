@@ -365,7 +365,7 @@ extern "C" {
 #endif
 #endif
 
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(__CLR_VER)
+#if defined(_MSC_VER) && !defined(__CLR_VER)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
 #define SIMD_ALIGNED32(var) __declspec(align(64)) var
 typedef __declspec(align(16)) int16 vec16[8];
@@ -380,7 +380,7 @@ typedef __declspec(align(32)) int8 lvec8[32];
 typedef __declspec(align(32)) uint16 ulvec16[16];
 typedef __declspec(align(32)) uint32 ulvec32[8];
 typedef __declspec(align(32)) uint8 ulvec8[32];
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(__GNUC__)
 // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
 #define SIMD_ALIGNED32(var) var __attribute__((aligned(64)))
