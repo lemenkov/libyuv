@@ -21,13 +21,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// ClangCL use posix source instead.
-#if defined(__clang__) && defined(_MSC_VER)
-#include "source/row_posix.cc"
-
 // This module is for Visual C.
-#elif !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64)) && \
-    defined(_MSC_VER)
+#if !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64)) && \
+    defined(_MSC_VER) && !defined(__clang__)
 
 struct YuvConstants {
   lvec8 kUVToB;     // 0
@@ -6391,7 +6387,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 #endif  // defined(_M_X64)
-#endif  // defined(__clang__) && defined(_MSC_VER)
+#endif  // !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64))
 
 #ifdef __cplusplus
 }  // extern "C"

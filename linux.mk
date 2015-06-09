@@ -8,7 +8,7 @@ CXXFLAGS+=-Iinclude/
 LOCAL_OBJ_FILES := \
     source/compare.o           \
     source/compare_common.o    \
-    source/compare_posix.o     \
+    source/compare_gcc.o       \
     source/convert.o           \
     source/convert_argb.o      \
     source/convert_from.o      \
@@ -23,12 +23,12 @@ LOCAL_OBJ_FILES := \
     source/row_any.o           \
     source/row_common.o        \
     source/row_mips.o          \
-    source/row_posix.o         \
+    source/row_gcc.o           \
     source/scale.o             \
     source/scale_argb.o        \
     source/scale_common.o      \
     source/scale_mips.o        \
-    source/scale_posix.o       \
+    source/scale_gcc.o         \
     source/video_common.o
 
 .cc.o:
