@@ -169,25 +169,23 @@ SDAANY(ScaleARGBRowDownEvenBox_Any_NEON, ScaleARGBRowDownEvenBox_NEON,
 #endif
 
 // Add rows box filter scale down.
-#define SAANY(NAMEANY, SCALEADDROWS_SIMD, SCALEADDROWS_C, MASK)                \
-  void NAMEANY(const uint8* src_ptr, ptrdiff_t src_stride,                     \
-               uint16* dst_ptr, int src_width, int src_height) {               \
+#define SAANY(NAMEANY, SCALEADDROW_SIMD, SCALEADDROW_C, MASK)                  \
+  void NAMEANY(const uint8* src_ptr, uint16* dst_ptr, int src_width) {         \
       int n = src_width & ~MASK;                                               \
       if (n > 0) {                                                             \
-        SCALEADDROWS_SIMD(src_ptr, src_stride, dst_ptr, n, src_height);        \
+        SCALEADDROW_SIMD(src_ptr, dst_ptr, n);                                 \
       }                                                                        \
-      SCALEADDROWS_C(src_ptr + n, src_stride,                                  \
-                     dst_ptr + n, src_width & MASK, src_height);               \
+      SCALEADDROW_C(src_ptr + n, dst_ptr + n, src_width & MASK);               \
     }
 
-#ifdef HAS_SCALEADDROWS_SSE2
-SAANY(ScaleAddRows_Any_SSE2, ScaleAddRows_SSE2, ScaleAddRows_C, 15)
+#ifdef HAS_SCALEADDROW_SSE2
+SAANY(ScaleAddRow_Any_SSE2, ScaleAddRow_SSE2, ScaleAddRow_C, 15)
 #endif
-#ifdef HAS_SCALEADDROWS_AVX2
-SAANY(ScaleAddRows_Any_AVX2, ScaleAddRows_AVX2, ScaleAddRows_C, 31)
+#ifdef HAS_SCALEADDROW_AVX2
+SAANY(ScaleAddRow_Any_AVX2, ScaleAddRow_AVX2, ScaleAddRow_C, 31)
 #endif
-#ifdef HAS_SCALEADDROWS_NEON
-SAANY(ScaleAddRows_Any_NEON, ScaleAddRows_NEON, ScaleAddRows_C, 15)
+#ifdef HAS_SCALEADDROW_NEON
+SAANY(ScaleAddRow_Any_NEON, ScaleAddRow_NEON, ScaleAddRow_C, 15)
 #endif
 #undef SAANY
 

@@ -78,7 +78,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                          SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
   memset(dst_v_opt, 103, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
                          SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_u + OFF,                                  \
                                  SUBSAMPLE(kWidth, SRC_SUBSAMP_X),             \
@@ -211,7 +211,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   memset(dst_y_opt, 101, kWidth * kHeight);                                    \
   memset(dst_uv_opt, 102, SUBSAMPLE(kWidth * 2, SUBSAMP_X) *                   \
                           SUBSAMPLE(kHeight, SUBSAMP_Y));                      \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_u + OFF,                                  \
                                  SUBSAMPLE(kWidth, SRC_SUBSAMP_X),             \
@@ -326,7 +326,7 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
                          SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
   memset(dst_v_opt, 103, SUBSAMPLE(kWidth, SUBSAMP_X) *                        \
                          SUBSAMPLE(kHeight, SUBSAMP_Y));                       \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_uv + OFF,                                 \
                                  2 * SUBSAMPLE(kWidth, SRC_SUBSAMP_X),         \
@@ -435,7 +435,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   }                                                                            \
   memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
   memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                   \
                         src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                         src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
@@ -538,7 +538,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeight);                                   \
   memset(dst_argb_opt, 101, kStrideB * kHeight);                               \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                   \
                         src_uv + OFF, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,        \
                         dst_argb_c, kWidth * BPP_B,                            \
@@ -632,7 +632,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kStride; ++j)                                          \
       src_argb[(i * kStride) + j + OFF] = (random() & 0xff);                   \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                               \
                         dst_y_c, kWidth,                                       \
                         dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),                 \
@@ -690,6 +690,8 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
 
 TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 4)
 #if defined(__arm__) || defined (__aarch64__)
+// arm version subsamples by summing 4 pixels then multiplying by matrix with
+// 4x smaller coefficients which are rounded to nearest integer.
 TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 4)
 #else
 TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 0)
@@ -738,7 +740,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   memset(dst_y_opt, 101, kWidth * kHeight);                                    \
   memset(dst_uv_opt, 102, SUBSAMPLE(kWidth, SUBSAMP_X) * 2 *                   \
                         SUBSAMPLE(kHeight, SUBSAMP_Y));                        \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                               \
                         dst_y_c, kWidth,                                       \
                         dst_uv_c, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,            \
@@ -814,7 +816,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
   memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_A##To##FMT_B(src_argb + OFF, kStrideA,                                   \
                    dst_argb_c, kStrideB,                                       \
                    kWidth, NEG kHeight);                                       \
@@ -858,7 +860,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
     }                                                                          \
     memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
     memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
-    MaskCpuFlags(disable_cpu_flags_);                                                           \
+    MaskCpuFlags(disable_cpu_flags_);                                          \
     FMT_A##To##FMT_B(src_argb, kStrideA,                                       \
                      dst_argb_c, kStrideB,                                     \
                      kWidth, kHeight);                                         \
@@ -948,7 +950,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither##N) {                              \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
   memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_A##To##FMT_B##Dither(src_argb + OFF, kStrideA,                           \
                            dst_argb_c, kStrideB,                               \
                            NULL, kWidth, NEG kHeight);                         \
@@ -992,7 +994,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither_Random) {                          \
     }                                                                          \
     memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
     memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
-    MaskCpuFlags(disable_cpu_flags_);                                                           \
+    MaskCpuFlags(disable_cpu_flags_);                                          \
     FMT_A##To##FMT_B##Dither(src_argb, kStrideA,                               \
                              dst_argb_c, kStrideB,                             \
                              NULL, kWidth, kHeight);                           \
@@ -1051,7 +1053,7 @@ TEST_F(libyuvTest, FMT_ATOB##_Symetric##N) {                                   \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideA * kHeightA);                                  \
   memset(dst_argb_opt, 101, kStrideA * kHeightA);                              \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_ATOB(src_argb + OFF, kStrideA,                                           \
            dst_argb_c, kStrideA,                                               \
            kWidth, NEG kHeight);                                               \
@@ -1061,7 +1063,7 @@ TEST_F(libyuvTest, FMT_ATOB##_Symetric##N) {                                   \
              dst_argb_opt, kStrideA,                                           \
              kWidth, NEG kHeight);                                             \
   }                                                                            \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_ATOB(dst_argb_c, kStrideA,                                               \
            dst_argb_c, kStrideA,                                               \
            kWidth, NEG kHeight);                                               \
@@ -1470,7 +1472,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##Dither##N) {                         \
   }                                                                            \
   memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
   memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
-  MaskCpuFlags(disable_cpu_flags_);                                                             \
+  MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_PLANAR##To##FMT_B##Dither(src_y + OFF, kWidth,                           \
                         src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                         src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \

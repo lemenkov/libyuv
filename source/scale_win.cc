@@ -800,104 +800,61 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
   }
 }
 
-// Reads 16xN bytes and produces 16 shorts at a time.
+// Reads 16 bytes and accumulates to 16 shorts at a time.
 __declspec(naked)
-void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                       uint16* dst_ptr, int src_width, int src_height) {
+void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   __asm {
-    push       esi
-    push       edi
-    push       ebx
-    push       ebp
-    mov        esi, [esp + 16 + 4]   // src_ptr
-    mov        edx, [esp + 16 + 8]   // src_stride
-    mov        edi, [esp + 16 + 12]  // dst_ptr
-    mov        ecx, [esp + 16 + 16]  // dst_width
-    mov        ebx, [esp + 16 + 20]  // height
-    mov        eax, esi          // row pointer
-    mov        ebp, ebx          // height
-    pxor       xmm0, xmm0        // clear accumulators
-    pxor       xmm1, xmm1
-    pxor       xmm4, xmm4
+    mov        eax, [esp + 4]   // src_ptr
+    mov        edx, [esp + 8]   // dst_ptr
+    mov        ecx, [esp + 12]  // src_width
+    pxor       xmm5, xmm5
 
   // sum rows
   xloop:
-    movdqu     xmm2, [eax]       // read 16 pixels
-    lea        eax, [eax + edx]  // advance to next row
-    movdqa     xmm3, xmm2
-    punpcklbw  xmm2, xmm4
-    punpckhbw  xmm3, xmm4
+    movdqu     xmm3, [eax]       // read 16 bytes
+    lea        eax, [eax + 16]
+    movdqu     xmm0, [edx]       // read 16 words from destination
+    movdqu     xmm1, [edx + 16]
+    movdqa     xmm2, xmm3
+    punpcklbw  xmm2, xmm5
+    punpckhbw  xmm3, xmm5
     paddusw    xmm0, xmm2        // sum 16 words
     paddusw    xmm1, xmm3
-    sub        ebp, 1
-    jg         xloop
-
-    movdqu     [edi], xmm0
-    movdqu     [edi + 16], xmm1
-    lea        edi, [edi + 32]   // dst_ptr += 16
-    lea        esi, [esi + 16]   // src_ptr += 16
-    mov        eax, esi          // row pointer
-    mov        ebp, ebx          // height
-    pxor       xmm0, xmm0        // clear accumulators
-    pxor       xmm1, xmm1
+    movdqu     [edx], xmm0       // write 16 words to destination
+    movdqu     [edx + 16], xmm1
+    lea        edx, [edx + 32]
     sub        ecx, 16
     jg         xloop
-
-    pop        ebp
-    pop        ebx
-    pop        edi
-    pop        esi
     ret
   }
 }
 
-// Reads 32xN bytes and produces 32 shorts at a time.
+// Reads 32 bytes and accumulates to 32 shorts at a time.
 __declspec(naked)
-void ScaleAddRows_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
-                       uint16* dst_ptr, int src_width, int src_height) {
+void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   __asm {
-    push        esi
-    push        edi
-    push        ebx
-    push        ebp
-    mov         esi, [esp + 16 + 4]   // src_ptr
-    mov         edx, [esp + 16 + 8]   // src_stride
-    mov         edi, [esp + 16 + 12]  // dst_ptr
-    mov         ecx, [esp + 16 + 16]  // dst_width
-    mov         ebx, [esp + 16 + 20]  // height
-    mov         eax, esi              // row pointer
-    mov         ebp, ebx              // height
-    vpxor       ymm0, ymm0, ymm0      // clear accumulators
-    vpxor       ymm1, ymm1, ymm1
-    vpxor       ymm4, ymm4, ymm4
+    mov         eax, [esp + 4]   // src_ptr
+    mov         edx, [esp + 8]   // dst_ptr
+    mov         ecx, [esp + 12]  // src_width
+    vpxor       ymm5, ymm5, ymm5
 
   // sum rows
   xloop:
-    vmovdqu     ymm2, [eax]       // read 16 pixels
-    vpermq      ymm2, ymm2, 0xd8  // unmutate for vpunpck
-    lea         eax, [eax + edx]  // advance to next row
-    vpunpckhbw  ymm3, ymm2, ymm4
-    vpunpcklbw  ymm2, ymm2, ymm4
+    vmovdqu     ymm3, [eax]       // read 32 bytes
+    vpermq      ymm3, ymm2, 0xd8  // unmutate for vpunpck
+    lea         eax, [eax + 32]
+    vmovdqu     ymm0, [edx]       // read 32 words from destination
+    vmovdqu     ymm1, [edx + 32]
+    vpunpcklbw  ymm2, ymm3, ymm5
+    vpunpckhbw  ymm3, ymm3, ymm5
     vpaddusw    ymm0, ymm0, ymm2  // sum 16 words
     vpaddusw    ymm1, ymm1, ymm3
-    sub         ebp, 1
-    jg          xloop
-
-    vmovdqu     [edi], ymm0
-    vmovdqu     [edi + 32], ymm1
-    lea         edi, [edi + 64]   // dst_ptr
-    lea         esi, [esi + 32]   // src_ptr
-    mov         eax, esi          // row pointer
-    mov         ebp, ebx          // height
-    vpxor       ymm0, ymm0, ymm0  // clear accumulators
-    vpxor       ymm1, ymm1, ymm1
+    vmovdqu     [edx], ymm0       // write 32 words to destination
+    vmovdqu     [edx + 32], ymm1
+    lea        edx, [edx + 64]
     sub         ecx, 32
     jg          xloop
 
-    pop         ebp
-    pop         ebx
-    pop         edi
-    pop         esi
     vzeroupper
     ret
   }
