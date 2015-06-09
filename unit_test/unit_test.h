@@ -58,8 +58,8 @@ static inline double get_time() {
 }
 #endif
 
-static inline void MemRandomize(uint8* dst, int len) {
-  int i;
+static inline void MemRandomize(uint8* dst, int64 len) {
+  int64 i;
   for (i = 0; i < len - 1; i += 2) {
     *reinterpret_cast<uint16*>(dst) = random();
     dst += 2;
