@@ -1,7 +1,7 @@
 vars = {
   # Override root_dir in your .gclient's custom_vars to specify a custom root
   # folder name.
-  "root_dir": "trunk",
+  "root_dir": "libyuv",
   "extra_gyp_flag": "-Dextra_gyp_flag=0",
 
   # Roll the Chromium Git hash to pick up newer versions of all the
