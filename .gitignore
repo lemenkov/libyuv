@@ -1,3 +1,4 @@
+*.pyc
 .gn
 build
 buildtools
