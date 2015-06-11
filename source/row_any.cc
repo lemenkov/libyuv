@@ -10,7 +10,10 @@
 
 #include "libyuv/row.h"
 
+#include <memory.h>  // for memcpy()
+
 #include "libyuv/basic_types.h"
+
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -18,107 +21,98 @@ extern "C" {
 #endif
 
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
-#define YANY(NAMEANY, I420TORGB_SIMD, I420TORGB_C, UV_SHIFT, BPP, MASK)        \
+#define YANY(NAMEANY, I420TORGB_SIMD, UVSHIFT, BPP, MASK)                      \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
                  uint8* rgb_buf, int width) {                                  \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
       }                                                                        \
-      I420TORGB_C(y_buf + n,                                                   \
-                  u_buf + (n >> UV_SHIFT),                                     \
-                  v_buf + (n >> UV_SHIFT),                                     \
-                  rgb_buf + n * BPP, width & MASK);                            \
+      if (width & MASK) {                                                      \
+        SIMD_ALIGNED(uint8 temp[64 * 4]);                                      \
+        memset(temp, 0, 64 * 4);                                               \
+        memcpy(temp, y_buf + n, width & MASK);                                 \
+        memcpy(temp + 64, u_buf + (n >> UVSHIFT), (width & MASK) >> UVSHIFT);  \
+        memcpy(temp + 128, v_buf + (n >> UVSHIFT), (width & MASK) >> UVSHIFT); \
+        I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);     \
+        memcpy(rgb_buf + n * BPP, temp + 192, (width & MASK) * BPP);           \
+      }                                                                        \
     }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
-YANY(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_SSSE3, I422ToARGBRow_C,
-     1, 4, 7)
+YANY(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_SSSE3, 1, 4, 7)
 #endif
 #ifdef HAS_I444TOARGBROW_SSSE3
-YANY(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_SSSE3, I444ToARGBRow_C,
-     0, 4, 7)
-YANY(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_SSSE3, I411ToARGBRow_C,
-     2, 4, 7)
-YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_SSSE3, I422ToBGRARow_C,
-     1, 4, 7)
-YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_SSSE3, I422ToABGRRow_C,
-     1, 4, 7)
-YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_SSSE3, I422ToRGBARow_C,
-     1, 4, 7)
-YANY(I422ToARGB4444Row_Any_SSSE3, I422ToARGB4444Row_SSSE3, I422ToARGB4444Row_C,
-     1, 2, 7)
-YANY(I422ToARGB1555Row_Any_SSSE3, I422ToARGB1555Row_SSSE3, I422ToARGB1555Row_C,
-     1, 2, 7)
-YANY(I422ToRGB565Row_Any_SSSE3, I422ToRGB565Row_SSSE3, I422ToRGB565Row_C,
-     1, 2, 7)
-YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, I422ToRGB24Row_C, 1, 3, 7)
-YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, I422ToRAWRow_C, 1, 3, 7)
-YANY(I422ToYUY2Row_Any_SSE2, I422ToYUY2Row_SSE2, I422ToYUY2Row_C, 1, 2, 15)
-YANY(I422ToUYVYRow_Any_SSE2, I422ToUYVYRow_SSE2, I422ToUYVYRow_C, 1, 2, 15)
+YANY(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_SSSE3, 0, 4, 7)
+YANY(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_SSSE3, 2, 4, 7)
+YANY(I422ToBGRARow_Any_SSSE3, I422ToBGRARow_SSSE3, 1, 4, 7)
+YANY(I422ToABGRRow_Any_SSSE3, I422ToABGRRow_SSSE3, 1, 4, 7)
+YANY(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_SSSE3, 1, 4, 7)
+YANY(I422ToARGB4444Row_Any_SSSE3, I422ToARGB4444Row_SSSE3, 1, 2, 7)
+YANY(I422ToARGB1555Row_Any_SSSE3, I422ToARGB1555Row_SSSE3, 1, 2, 7)
+YANY(I422ToRGB565Row_Any_SSSE3, I422ToRGB565Row_SSSE3, 1, 2, 7)
+YANY(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, 1, 3, 7)
+YANY(I422ToRAWRow_Any_SSSE3, I422ToRAWRow_SSSE3, 1, 3, 7)
+YANY(I422ToYUY2Row_Any_SSE2, I422ToYUY2Row_SSE2, 1, 2, 15)
+YANY(I422ToUYVYRow_Any_SSE2, I422ToUYVYRow_SSE2, 1, 2, 15)
 #endif  // HAS_I444TOARGBROW_SSSE3
 #ifdef HAS_I422TORGB24ROW_AVX2
-YANY(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, I422ToRGB24Row_C, 1, 3, 15)
+YANY(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, 1, 3, 15)
 #endif
 #ifdef HAS_I422TORAWROW_AVX2
-YANY(I422ToRAWRow_Any_AVX2, I422ToRAWRow_AVX2, I422ToRAWRow_C, 1, 3, 15)
+YANY(I422ToRAWRow_Any_AVX2, I422ToRAWRow_AVX2, 1, 3, 15)
 #endif
 #ifdef HAS_J422TOARGBROW_SSSE3
-YANY(J422ToARGBRow_Any_SSSE3, J422ToARGBRow_SSSE3, J422ToARGBRow_C, 1, 4, 7)
+YANY(J422ToARGBRow_Any_SSSE3, J422ToARGBRow_SSSE3, 1, 4, 7)
 #endif
 #ifdef HAS_J422TOARGBROW_AVX2
-YANY(J422ToARGBRow_Any_AVX2, J422ToARGBRow_AVX2, J422ToARGBRow_C, 1, 4, 15)
+YANY(J422ToARGBRow_Any_AVX2, J422ToARGBRow_AVX2, 1, 4, 15)
 #endif
 #ifdef HAS_I422TOARGBROW_AVX2
-YANY(I422ToARGBRow_Any_AVX2, I422ToARGBRow_AVX2, I422ToARGBRow_C, 1, 4, 15)
+YANY(I422ToARGBRow_Any_AVX2, I422ToARGBRow_AVX2, 1, 4, 15)
 #endif
 #ifdef HAS_I422TOBGRAROW_AVX2
-YANY(I422ToBGRARow_Any_AVX2, I422ToBGRARow_AVX2, I422ToBGRARow_C, 1, 4, 15)
+YANY(I422ToBGRARow_Any_AVX2, I422ToBGRARow_AVX2, 1, 4, 15)
 #endif
 #ifdef HAS_I422TORGBAROW_AVX2
-YANY(I422ToRGBARow_Any_AVX2, I422ToRGBARow_AVX2, I422ToRGBARow_C, 1, 4, 15)
+YANY(I422ToRGBARow_Any_AVX2, I422ToRGBARow_AVX2, 1, 4, 15)
 #endif
 #ifdef HAS_I422TOABGRROW_AVX2
-YANY(I422ToABGRRow_Any_AVX2, I422ToABGRRow_AVX2, I422ToABGRRow_C, 1, 4, 15)
+YANY(I422ToABGRRow_Any_AVX2, I422ToABGRRow_AVX2, 1, 4, 15)
 #endif
 #ifdef HAS_I444TOARGBROW_AVX2
-YANY(I444ToARGBRow_Any_AVX2, I444ToARGBRow_AVX2, I444ToARGBRow_C, 0, 4, 15)
+YANY(I444ToARGBRow_Any_AVX2, I444ToARGBRow_AVX2, 0, 4, 15)
 #endif
 #ifdef HAS_I411TOARGBROW_AVX2
-YANY(I411ToARGBRow_Any_AVX2, I411ToARGBRow_AVX2, I411ToARGBRow_C, 2, 4, 15)
+YANY(I411ToARGBRow_Any_AVX2, I411ToARGBRow_AVX2, 2, 4, 15)
 #endif
 #ifdef HAS_I422TOARGB4444ROW_AVX2
-YANY(I422ToARGB4444Row_Any_AVX2, I422ToARGB4444Row_AVX2, I422ToARGB4444Row_C,
-     1, 2, 7)
+YANY(I422ToARGB4444Row_Any_AVX2, I422ToARGB4444Row_AVX2, 1, 2, 7)
 #endif
 #ifdef HAS_I422TOARGB1555ROW_AVX2
-YANY(I422ToARGB1555Row_Any_AVX2, I422ToARGB1555Row_AVX2, I422ToARGB1555Row_C,
-     1, 2, 7)
+YANY(I422ToARGB1555Row_Any_AVX2, I422ToARGB1555Row_AVX2, 1, 2, 7)
 #endif
 #ifdef HAS_I422TORGB565ROW_AVX2
-YANY(I422ToRGB565Row_Any_AVX2, I422ToRGB565Row_AVX2, I422ToRGB565Row_C,
-     1, 2, 7)
+YANY(I422ToRGB565Row_Any_AVX2, I422ToRGB565Row_AVX2, 1, 2, 7)
 #endif
 #ifdef HAS_I422TOARGBROW_NEON
-YANY(I444ToARGBRow_Any_NEON, I444ToARGBRow_NEON, I444ToARGBRow_C, 0, 4, 7)
-YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, I422ToARGBRow_C, 1, 4, 7)
-YANY(I411ToARGBRow_Any_NEON, I411ToARGBRow_NEON, I411ToARGBRow_C, 2, 4, 7)
-YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, I422ToBGRARow_C, 1, 4, 7)
-YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, I422ToABGRRow_C, 1, 4, 7)
-YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, I422ToRGBARow_C, 1, 4, 7)
-YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, I422ToRGB24Row_C, 1, 3, 7)
-YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, I422ToRAWRow_C, 1, 3, 7)
-YANY(I422ToARGB4444Row_Any_NEON, I422ToARGB4444Row_NEON, I422ToARGB4444Row_C,
-     1, 2, 7)
-YANY(I422ToARGB1555Row_Any_NEON, I422ToARGB1555Row_NEON, I422ToARGB1555Row_C,
-     1, 2, 7)
-YANY(I422ToRGB565Row_Any_NEON, I422ToRGB565Row_NEON, I422ToRGB565Row_C, 1, 2, 7)
+YANY(I444ToARGBRow_Any_NEON, I444ToARGBRow_NEON, 0, 4, 7)
+YANY(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, 1, 4, 7)
+YANY(I411ToARGBRow_Any_NEON, I411ToARGBRow_NEON, 2, 4, 7)
+YANY(I422ToBGRARow_Any_NEON, I422ToBGRARow_NEON, 1, 4, 7)
+YANY(I422ToABGRRow_Any_NEON, I422ToABGRRow_NEON, 1, 4, 7)
+YANY(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, 1, 4, 7)
+YANY(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, 1, 3, 7)
+YANY(I422ToRAWRow_Any_NEON, I422ToRAWRow_NEON, 1, 3, 7)
+YANY(I422ToARGB4444Row_Any_NEON, I422ToARGB4444Row_NEON, 1, 2, 7)
+YANY(I422ToARGB1555Row_Any_NEON, I422ToARGB1555Row_NEON, 1, 2, 7)
+YANY(I422ToRGB565Row_Any_NEON, I422ToRGB565Row_NEON, 1, 2, 7)
 #endif
 #ifdef HAS_I422TOYUY2ROW_NEON
-YANY(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, I422ToYUY2Row_C, 1, 2, 15)
+YANY(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, 1, 2, 15)
 #endif
 #ifdef HAS_I422TOUYVYROW_NEON
-YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, I422ToUYVYRow_C, 1, 2, 15)
+YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 2, 15)
 #endif
 #undef YANY
 
