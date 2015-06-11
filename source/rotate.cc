@@ -838,7 +838,9 @@ void TransposePlane(const uint8* src, int src_stride,
     i -= 8;
   }
 
-  TransposeWxH_C(src, src_stride, dst, dst_stride, width, i);
+  if (i > 0) {
+    TransposeWxH_C(src, src_stride, dst, dst_stride, width, i);
+  }
 }
 
 LIBYUV_API
@@ -1037,10 +1039,12 @@ void TransposeUV(const uint8* src, int src_stride,
     i -= 8;
   }
 
-  TransposeUVWxH_C(src, src_stride,
-                   dst_a, dst_stride_a,
-                   dst_b, dst_stride_b,
-                   width, i);
+  if (i > 0) {
+    TransposeUVWxH_C(src, src_stride,
+                     dst_a, dst_stride_a,
+                     dst_b, dst_stride_b,
+                     width, i);
+  }
 }
 
 LIBYUV_API
