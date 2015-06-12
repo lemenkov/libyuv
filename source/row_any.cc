@@ -20,6 +20,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Subsampling source needs to be increase by 1 of not even.
+#define SS(width, shift) ((width) + (1 << shift) - 1) >> shift
+
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, UVSHIFT, BPP, MASK)                      \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
@@ -30,10 +33,10 @@ extern "C" {
       }                                                                        \
       if (width & MASK) {                                                      \
         SIMD_ALIGNED(uint8 temp[64 * 4]);                                      \
-        memset(temp, 0, 64 * 4);                                               \
+        memset(temp, 0, 64 * 4);  /* for valgrind */                           \
         memcpy(temp, y_buf + n, width & MASK);                                 \
-        memcpy(temp + 64, u_buf + (n >> UVSHIFT), (width & MASK) >> UVSHIFT);  \
-        memcpy(temp + 128, v_buf + (n >> UVSHIFT), (width & MASK) >> UVSHIFT); \
+        memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(width & MASK, UVSHIFT));  \
+        memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(width & MASK, UVSHIFT)); \
         I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);     \
         memcpy(rgb_buf + n * BPP, temp + 192, (width & MASK) * BPP);           \
       }                                                                        \
