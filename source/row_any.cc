@@ -19,25 +19,24 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// Subsampling source needs to be increase by 1 of not even.
+// Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, UVSHIFT, BPP, MASK)                      \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
                  uint8* rgb_buf, int width) {                                  \
+      SIMD_ALIGNED(uint8 temp[64 * 4]);                                        \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
       }                                                                        \
-      if (width & MASK) {                                                      \
-        SIMD_ALIGNED(uint8 temp[64 * 4]);                                      \
-        memcpy(temp, y_buf + n, width & MASK);                                 \
-        memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(width & MASK, UVSHIFT));  \
-        memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(width & MASK, UVSHIFT)); \
-        I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);     \
-        memcpy(rgb_buf + n * BPP, temp + 192, (width & MASK) * BPP);           \
-      }                                                                        \
+      memcpy(temp, y_buf + n, r);                                              \
+      memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
+      memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+      I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);       \
+      memcpy(rgb_buf + n * BPP, temp + 192, r * BPP);                          \
     }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
@@ -121,18 +120,17 @@ YANY(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 2, 15)
 #define BANY(NAMEANY, NV12TORGB_SIMD, UVSHIFT, BPP, MASK)                      \
     void NAMEANY(const uint8* y_buf, const uint8* uv_buf,                      \
                  uint8* rgb_buf, int width) {                                  \
+      SIMD_ALIGNED(uint8 temp[64 * 3]);                                        \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         NV12TORGB_SIMD(y_buf, uv_buf, rgb_buf, n);                             \
       }                                                                        \
-      if (width & MASK) {                                                      \
-        SIMD_ALIGNED(uint8 temp[64 * 3]);                                      \
-        memcpy(temp, y_buf + n, width & MASK);                                 \
-        memcpy(temp + 64, uv_buf + (n >> UVSHIFT) * 2,                         \
-               SS(width & MASK, UVSHIFT) * 2);                                 \
-        NV12TORGB_SIMD(temp, temp + 64, temp + 128, MASK + 1);                 \
-        memcpy(rgb_buf + n * BPP, temp + 128, (width & MASK) * BPP);           \
-      }                                                                        \
+      memcpy(temp, y_buf + n, r);                                              \
+      memcpy(temp + 64, uv_buf + (n >> UVSHIFT) * 2,                           \
+             SS(r, UVSHIFT) * 2);                                              \
+      NV12TORGB_SIMD(temp, temp + 64, temp + 128, MASK + 1);                   \
+      memcpy(rgb_buf + n * BPP, temp + 128, (r) * BPP);                        \
     }
 
 #ifdef HAS_NV12TOARGBROW_SSSE3
@@ -161,125 +159,128 @@ BANY(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, 1, 2, 7)
 #endif
 #undef BANY
 
-#define RGBANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)          \
+#define PANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)            \
     void NAMEANY(const uint8* src, uint8* dst, int width) {                    \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTORGB_SIMD(src, dst, n);                                           \
       }                                                                        \
-      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, width & MASK);                \
+      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, r);                           \
     }
 
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
-RGBANY(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, ARGBToRGB24Row_C,
-       4, 3, 15)
-RGBANY(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, ARGBToRAWRow_C,
-       4, 3, 15)
-RGBANY(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, ARGBToRGB565Row_C,
-       4, 2, 3)
-RGBANY(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, ARGBToARGB1555Row_C,
-       4, 2, 3)
-RGBANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
-       4, 2, 3)
+PANY(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, ARGBToRGB24Row_C,
+     4, 3, 15)
+PANY(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, ARGBToRAWRow_C,
+     4, 3, 15)
+PANY(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, ARGBToRGB565Row_C,
+     4, 2, 3)
+PANY(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, ARGBToARGB1555Row_C,
+     4, 2, 3)
+PANY(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, ARGBToARGB4444Row_C,
+     4, 2, 3)
 #endif
 #if defined(HAS_ARGBTOARGB4444ROW_AVX2)
-RGBANY(ARGBToRGB565Row_Any_AVX2, ARGBToRGB565Row_AVX2, ARGBToRGB565Row_C,
-       4, 2, 7)
-RGBANY(ARGBToARGB1555Row_Any_AVX2, ARGBToARGB1555Row_AVX2, ARGBToARGB1555Row_C,
-       4, 2, 7)
-RGBANY(ARGBToARGB4444Row_Any_AVX2, ARGBToARGB4444Row_AVX2, ARGBToARGB4444Row_C,
-       4, 2, 7)
+PANY(ARGBToRGB565Row_Any_AVX2, ARGBToRGB565Row_AVX2, ARGBToRGB565Row_C,
+     4, 2, 7)
+PANY(ARGBToARGB1555Row_Any_AVX2, ARGBToARGB1555Row_AVX2, ARGBToARGB1555Row_C,
+     4, 2, 7)
+PANY(ARGBToARGB4444Row_Any_AVX2, ARGBToARGB4444Row_AVX2, ARGBToARGB4444Row_C,
+     4, 2, 7)
 #endif
 
 #if defined(HAS_J400TOARGBROW_SSE2)
-RGBANY(J400ToARGBRow_Any_SSE2, J400ToARGBRow_SSE2, J400ToARGBRow_C, 1, 4, 7)
+PANY(J400ToARGBRow_Any_SSE2, J400ToARGBRow_SSE2, J400ToARGBRow_C, 1, 4, 7)
 #endif
 #if defined(HAS_J400TOARGBROW_AVX2)
-RGBANY(J400ToARGBRow_Any_AVX2, J400ToARGBRow_AVX2, J400ToARGBRow_C, 1, 4, 15)
+PANY(J400ToARGBRow_Any_AVX2, J400ToARGBRow_AVX2, J400ToARGBRow_C, 1, 4, 15)
 #endif
 #if defined(HAS_I400TOARGBROW_SSE2)
-RGBANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_SSE2, I400ToARGBRow_C, 1, 4, 7)
+PANY(I400ToARGBRow_Any_SSE2, I400ToARGBRow_SSE2, I400ToARGBRow_C, 1, 4, 7)
 #endif
 #if defined(HAS_I400TOARGBROW_AVX2)
-RGBANY(I400ToARGBRow_Any_AVX2, I400ToARGBRow_AVX2, I400ToARGBRow_C, 1, 4, 15)
+PANY(I400ToARGBRow_Any_AVX2, I400ToARGBRow_AVX2, I400ToARGBRow_C, 1, 4, 15)
 #endif
 #if defined(HAS_YUY2TOARGBROW_SSSE3)
-RGBANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_SSSE3, YUY2ToARGBRow_C, 2, 4, 15)
-RGBANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_SSSE3, UYVYToARGBRow_C, 2, 4, 15)
-RGBANY(RGB24ToARGBRow_Any_SSSE3, RGB24ToARGBRow_SSSE3, RGB24ToARGBRow_C,
-       3, 4, 15)
-RGBANY(RAWToARGBRow_Any_SSSE3, RAWToARGBRow_SSSE3, RAWToARGBRow_C, 3, 4, 15)
-RGBANY(RGB565ToARGBRow_Any_SSE2, RGB565ToARGBRow_SSE2, RGB565ToARGBRow_C,
-       2, 4, 7)
-RGBANY(ARGB1555ToARGBRow_Any_SSE2, ARGB1555ToARGBRow_SSE2, ARGB1555ToARGBRow_C,
-       2, 4, 7)
-RGBANY(ARGB4444ToARGBRow_Any_SSE2, ARGB4444ToARGBRow_SSE2, ARGB4444ToARGBRow_C,
-       2, 4, 7)
+PANY(YUY2ToARGBRow_Any_SSSE3, YUY2ToARGBRow_SSSE3, YUY2ToARGBRow_C, 2, 4, 15)
+PANY(UYVYToARGBRow_Any_SSSE3, UYVYToARGBRow_SSSE3, UYVYToARGBRow_C, 2, 4, 15)
+PANY(RGB24ToARGBRow_Any_SSSE3, RGB24ToARGBRow_SSSE3, RGB24ToARGBRow_C, 3, 4, 15)
+PANY(RAWToARGBRow_Any_SSSE3, RAWToARGBRow_SSSE3, RAWToARGBRow_C, 3, 4, 15)
+PANY(RGB565ToARGBRow_Any_SSE2, RGB565ToARGBRow_SSE2, RGB565ToARGBRow_C,
+     2, 4, 7)
+PANY(ARGB1555ToARGBRow_Any_SSE2, ARGB1555ToARGBRow_SSE2, ARGB1555ToARGBRow_C,
+     2, 4, 7)
+PANY(ARGB4444ToARGBRow_Any_SSE2, ARGB4444ToARGBRow_SSE2, ARGB4444ToARGBRow_C,
+     2, 4, 7)
 #endif
 #if defined(HAS_RGB565TOARGBROW_AVX2)
-RGBANY(RGB565ToARGBRow_Any_AVX2, RGB565ToARGBRow_AVX2, RGB565ToARGBRow_C,
-       2, 4, 15)
+PANY(RGB565ToARGBRow_Any_AVX2, RGB565ToARGBRow_AVX2, RGB565ToARGBRow_C,
+     2, 4, 15)
 #endif
 #if defined(HAS_ARGB1555TOARGBROW_AVX2)
-RGBANY(ARGB1555ToARGBRow_Any_AVX2, ARGB1555ToARGBRow_AVX2, ARGB1555ToARGBRow_C,
-       2, 4, 15)
+PANY(ARGB1555ToARGBRow_Any_AVX2, ARGB1555ToARGBRow_AVX2, ARGB1555ToARGBRow_C,
+     2, 4, 15)
 #endif
 #if defined(HAS_ARGB4444TOARGBROW_AVX2)
-RGBANY(ARGB4444ToARGBRow_Any_AVX2, ARGB4444ToARGBRow_AVX2, ARGB4444ToARGBRow_C,
-       2, 4, 15)
+PANY(ARGB4444ToARGBRow_Any_AVX2, ARGB4444ToARGBRow_AVX2, ARGB4444ToARGBRow_C,
+     2, 4, 15)
 #endif
 #if defined(HAS_YUY2TOARGBROW_AVX2)
-RGBANY(YUY2ToARGBRow_Any_AVX2, YUY2ToARGBRow_AVX2, YUY2ToARGBRow_C, 2, 4, 31)
-RGBANY(UYVYToARGBRow_Any_AVX2, UYVYToARGBRow_AVX2, UYVYToARGBRow_C, 2, 4, 31)
+PANY(YUY2ToARGBRow_Any_AVX2, YUY2ToARGBRow_AVX2, YUY2ToARGBRow_C, 2, 4, 31)
+PANY(UYVYToARGBRow_Any_AVX2, UYVYToARGBRow_AVX2, UYVYToARGBRow_C, 2, 4, 31)
 #endif
 #if defined(HAS_ARGBTORGB24ROW_NEON)
-RGBANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 4, 3, 7)
-RGBANY(ARGBToRAWRow_Any_NEON, ARGBToRAWRow_NEON, ARGBToRAWRow_C, 4, 3, 7)
-RGBANY(ARGBToRGB565Row_Any_NEON, ARGBToRGB565Row_NEON, ARGBToRGB565Row_C,
-       4, 2, 7)
-RGBANY(ARGBToARGB1555Row_Any_NEON, ARGBToARGB1555Row_NEON, ARGBToARGB1555Row_C,
-       4, 2, 7)
-RGBANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
-       4, 2, 7)
-RGBANY(J400ToARGBRow_Any_NEON, J400ToARGBRow_NEON, J400ToARGBRow_C, 1, 4, 7)
-RGBANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C, 1, 4, 7)
-RGBANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C, 2, 4, 7)
-RGBANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 2, 4, 7)
+PANY(ARGBToRGB24Row_Any_NEON, ARGBToRGB24Row_NEON, ARGBToRGB24Row_C, 4, 3, 7)
+PANY(ARGBToRAWRow_Any_NEON, ARGBToRAWRow_NEON, ARGBToRAWRow_C, 4, 3, 7)
+PANY(ARGBToRGB565Row_Any_NEON, ARGBToRGB565Row_NEON, ARGBToRGB565Row_C,
+     4, 2, 7)
+PANY(ARGBToARGB1555Row_Any_NEON, ARGBToARGB1555Row_NEON, ARGBToARGB1555Row_C,
+     4, 2, 7)
+PANY(ARGBToARGB4444Row_Any_NEON, ARGBToARGB4444Row_NEON, ARGBToARGB4444Row_C,
+     4, 2, 7)
+PANY(J400ToARGBRow_Any_NEON, J400ToARGBRow_NEON, J400ToARGBRow_C, 1, 4, 7)
+PANY(I400ToARGBRow_Any_NEON, I400ToARGBRow_NEON, I400ToARGBRow_C, 1, 4, 7)
+PANY(YUY2ToARGBRow_Any_NEON, YUY2ToARGBRow_NEON, YUY2ToARGBRow_C, 2, 4, 7)
+PANY(UYVYToARGBRow_Any_NEON, UYVYToARGBRow_NEON, UYVYToARGBRow_C, 2, 4, 7)
 #endif
-#undef RGBANY
+#undef PANY
 
-#define RGBDANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)         \
+#define DANY(NAMEANY, ARGBTORGB_SIMD, ARGBTORGB_C, SBPP, BPP, MASK)            \
     void NAMEANY(const uint8* src, uint8* dst,                                 \
                  const uint32 dither4, int width) {                            \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTORGB_SIMD(src, dst, dither4, n);                                  \
       }                                                                        \
-      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, dither4, width & MASK);       \
+      ARGBTORGB_C(src + n * SBPP, dst + n * BPP, dither4, r);                  \
     }
 
 #if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
-RGBDANY(ARGBToRGB565DitherRow_Any_SSE2, ARGBToRGB565DitherRow_SSE2,
-        ARGBToRGB565DitherRow_C, 4, 2, 3)
+DANY(ARGBToRGB565DitherRow_Any_SSE2, ARGBToRGB565DitherRow_SSE2,
+     ARGBToRGB565DitherRow_C, 4, 2, 3)
 #endif
 #if defined(HAS_ARGBTORGB565DITHERROW_AVX2)
-RGBDANY(ARGBToRGB565DitherRow_Any_AVX2, ARGBToRGB565DitherRow_AVX2,
-        ARGBToRGB565DitherRow_C, 4, 2, 7)
+DANY(ARGBToRGB565DitherRow_Any_AVX2, ARGBToRGB565DitherRow_AVX2,
+     ARGBToRGB565DitherRow_C, 4, 2, 7)
 #endif
 #if defined(HAS_ARGBTORGB565DITHERROW_NEON)
-RGBDANY(ARGBToRGB565DitherRow_Any_NEON, ARGBToRGB565DitherRow_NEON,
-        ARGBToRGB565DitherRow_C, 4, 2, 7)
+DANY(ARGBToRGB565DitherRow_Any_NEON, ARGBToRGB565DitherRow_NEON,
+     ARGBToRGB565DitherRow_C, 4, 2, 7)
 #endif
-#undef RGBDANY
+#undef DANY
 
+// TODO(fbarchard): use PANY
 #define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
     void NAMEANY(const uint8* src_argb, uint8* dst_y, int width) {             \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTOY_SIMD(src_argb, dst_y, n);                                      \
       }                                                                        \
       ARGBTOY_C(src_argb + n * SBPP,                                           \
-                dst_y  + n * BPP, width & MASK);                               \
+                dst_y  + n * BPP, r);                                          \
     }
 #ifdef HAS_ARGBTOYROW_AVX2
 YANY(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, ARGBToYRow_C, 4, 1, 31)
@@ -389,6 +390,7 @@ YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
 #define UVANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, MASK)                     \
     void NAMEANY(const uint8* src_argb, int src_stride_argb,                   \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_argb, src_stride_argb, dst_u, dst_v, n);              \
@@ -396,7 +398,7 @@ YANY(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, ARGBAttenuateRow_C,
       ANYTOUV_C(src_argb  + n * BPP, src_stride_argb,                          \
                 dst_u + (n >> 1),                                              \
                 dst_v + (n >> 1),                                              \
-                width & MASK);                                                 \
+                r);                                                            \
     }
 
 #ifdef HAS_ARGBTOUVROW_AVX2
@@ -455,8 +457,10 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
 #endif
 #undef UVANY
 
+// TODO(fbarchard): share with UVANY
 #define UV422ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, SHIFT, MASK)           \
     void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
@@ -464,7 +468,7 @@ UVANY(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
       ANYTOUV_C(src_uv  + n * BPP,                                             \
                 dst_u + (n >> SHIFT),                                          \
                 dst_v + (n >> SHIFT),                                          \
-                width & MASK);                                                 \
+                r);                                                            \
     }
 
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
@@ -503,6 +507,7 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
 
 #define SPLITUVROWANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
     void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
@@ -510,7 +515,7 @@ UV422ANY(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON,
       ANYTOUV_C(src_uv + n * 2,                                                \
                 dst_u + n,                                                     \
                 dst_v + n,                                                     \
-                width & MASK);                                                 \
+                r);                                                            \
     }
 
 #ifdef HAS_SPLITUVROW_SSE2
@@ -531,6 +536,7 @@ SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2,
 #define MERGEUVROW_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                 \
     void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
                  uint8* dst_uv, int width) {                                   \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_u, src_v, dst_uv, n);                                 \
@@ -538,7 +544,7 @@ SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2,
       ANYTOUV_C(src_u + n,                                                     \
                 src_v + n,                                                     \
                 dst_uv + n * 2,                                                \
-                width & MASK);                                                 \
+                r);                                                            \
     }
 
 #ifdef HAS_MERGEUVROW_SSE2
@@ -555,6 +561,7 @@ MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
 #define MATHROW_ANY(NAMEANY, ARGBMATH_SIMD, ARGBMATH_C, SBPP, DBPP, MASK)      \
     void NAMEANY(const uint8* src_argb0, const uint8* src_argb1,               \
                  uint8* dst_argb, int width) {                                 \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBMATH_SIMD(src_argb0, src_argb1, dst_argb, n);                      \
@@ -562,7 +569,7 @@ MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
       ARGBMATH_C(src_argb0 + n * SBPP,                                         \
                  src_argb1 + n * SBPP,                                         \
                  dst_argb + n * DBPP,                                          \
-                 width & MASK);                                                \
+                 r);                                                           \
     }
 
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
@@ -621,47 +628,49 @@ MATHROW_ANY(SobelXYRow_Any_NEON, SobelXYRow_NEON, SobelXYRow_C, 1, 4, 7)
 #undef MATHROW_ANY
 
 // Shuffle may want to work in place, so last16 method can not be used.
-#define YANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
+#define SANY(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, SBPP, BPP, MASK)                \
     void NAMEANY(const uint8* src_argb, uint8* dst_argb,                       \
                  const uint8* shuffler, int width) {                           \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTOY_SIMD(src_argb, dst_argb, shuffler, n);                         \
       }                                                                        \
       ARGBTOY_C(src_argb + n * SBPP,                                           \
-                dst_argb  + n * BPP, shuffler, width & MASK);                  \
+                dst_argb  + n * BPP, shuffler, r);                             \
     }
 
 #ifdef HAS_ARGBSHUFFLEROW_SSE2
-YANY(ARGBShuffleRow_Any_SSE2, ARGBShuffleRow_SSE2,
+SANY(ARGBShuffleRow_Any_SSE2, ARGBShuffleRow_SSE2,
      ARGBShuffleRow_C, 4, 4, 3)
 #endif
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
-YANY(ARGBShuffleRow_Any_SSSE3, ARGBShuffleRow_SSSE3,
+SANY(ARGBShuffleRow_Any_SSSE3, ARGBShuffleRow_SSSE3,
      ARGBShuffleRow_C, 4, 4, 7)
 #endif
 #ifdef HAS_ARGBSHUFFLEROW_AVX2
-YANY(ARGBShuffleRow_Any_AVX2, ARGBShuffleRow_AVX2,
+SANY(ARGBShuffleRow_Any_AVX2, ARGBShuffleRow_AVX2,
      ARGBShuffleRow_C, 4, 4, 15)
 #endif
 #ifdef HAS_ARGBSHUFFLEROW_NEON
-YANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
+SANY(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON,
      ARGBShuffleRow_C, 4, 4, 3)
 #endif
-#undef YANY
+#undef SANY
 
 // Interpolate may want to work in place, so last16 method can not be used.
 #define NANY(NAMEANY, TERP_SIMD, TERP_C, SBPP, BPP, MASK)                      \
     void NAMEANY(uint8* dst_ptr, const uint8* src_ptr,                         \
                  ptrdiff_t src_stride_ptr, int width,                          \
                  int source_y_fraction) {                                      \
+      int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         TERP_SIMD(dst_ptr, src_ptr, src_stride_ptr, n, source_y_fraction);     \
       }                                                                        \
       TERP_C(dst_ptr + n * BPP,                                                \
              src_ptr + n * SBPP, src_stride_ptr,                               \
-             width & MASK, source_y_fraction);                                 \
+             r, source_y_fraction);                                            \
     }
 
 #ifdef HAS_INTERPOLATEROW_AVX2
@@ -684,8 +693,8 @@ NANY(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, InterpolateRow_C,
 
 #define MANY(NAMEANY, MIRROR_SIMD, MIRROR_C, BPP, MASK)                        \
     void NAMEANY(const uint8* src_y, uint8* dst_y, int width) {                \
-      int n = width & ~MASK;                                                   \
       int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         MIRROR_SIMD(src_y, dst_y + r * BPP, n);                                \
       }                                                                        \
@@ -715,10 +724,10 @@ MANY(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
 #endif
 #undef MANY
 
-#define MANY(NAMEANY, COPY_SIMD, COPY_C, BPP, MASK)                            \
+#define CANY(NAMEANY, COPY_SIMD, COPY_C, BPP, MASK)                            \
     void NAMEANY(const uint8* src_y, uint8* dst_y, int width) {                \
-      int n = width & ~MASK;                                                   \
       int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         COPY_SIMD(src_y, dst_y, n);                                            \
       }                                                                        \
@@ -726,20 +735,20 @@ MANY(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
     }
 
 #ifdef HAS_COPYROW_AVX
-MANY(CopyRow_Any_AVX, CopyRow_AVX, CopyRow_C, 1, 63)
+CANY(CopyRow_Any_AVX, CopyRow_AVX, CopyRow_C, 1, 63)
 #endif
 #ifdef HAS_COPYROW_SSE2
-MANY(CopyRow_Any_SSE2, CopyRow_SSE2, CopyRow_C, 1, 31)
+CANY(CopyRow_Any_SSE2, CopyRow_SSE2, CopyRow_C, 1, 31)
 #endif
 #ifdef HAS_COPYROW_NEON
-MANY(CopyRow_Any_NEON, CopyRow_NEON, CopyRow_C, 1, 31)
+CANY(CopyRow_Any_NEON, CopyRow_NEON, CopyRow_C, 1, 31)
 #endif
-#undef MANY
+#undef CANY
 
 #define SETANY(NAMEANY, SET_SIMD, SET_C, T, BPP, MASK)                         \
     void NAMEANY(uint8* dst_y, T v8, int width) {                              \
-      int n = width & ~MASK;                                                   \
       int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         SET_SIMD(dst_y, v8, n);                                                \
       }                                                                        \
