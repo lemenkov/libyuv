@@ -491,6 +491,19 @@ ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, ARGBShuffleRow_C, 4, 4, 3)
                 r);                                                            \
     }
 
+#ifdef HAS_SPLITUVROW_SSE2
+ANY12(SplitUVRow_Any_SSE2, SplitUVRow_SSE2, SplitUVRow_C, 2, 0, 15)
+#endif
+#ifdef HAS_SPLITUVROW_AVX2
+ANY12(SplitUVRow_Any_AVX2, SplitUVRow_AVX2, SplitUVRow_C, 2, 0, 31)
+#endif
+#ifdef HAS_SPLITUVROW_NEON
+ANY12(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 2, 0, 15)
+#endif
+#ifdef HAS_SPLITUVROW_MIPS_DSPR2
+ANY12(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2, SplitUVRow_C, 2, 0, 15)
+#endif
+
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
 ANY12(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3,
       ARGBToUV444Row_C, 4, 0, 15)
@@ -595,35 +608,6 @@ ANY12S(YUY2ToUVRow_Any_NEON, YUY2ToUVRow_NEON, YUY2ToUVRow_C, 2, 15)
 ANY12S(UYVYToUVRow_Any_NEON, UYVYToUVRow_NEON, UYVYToUVRow_C, 2, 15)
 #endif
 #undef ANY12S
-
-// todo(fbarchard): share with any12
-#define SPLITUVROWANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                  \
-    void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
-      int r = width & MASK;                                                    \
-      int n = width & ~MASK;                                                   \
-      if (n > 0) {                                                             \
-        ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
-      }                                                                        \
-      ANYTOUV_C(src_uv + n * 2,                                                \
-                dst_u + n,                                                     \
-                dst_v + n,                                                     \
-                r);                                                            \
-    }
-
-#ifdef HAS_SPLITUVROW_SSE2
-SPLITUVROWANY(SplitUVRow_Any_SSE2, SplitUVRow_SSE2, SplitUVRow_C, 15)
-#endif
-#ifdef HAS_SPLITUVROW_AVX2
-SPLITUVROWANY(SplitUVRow_Any_AVX2, SplitUVRow_AVX2, SplitUVRow_C, 31)
-#endif
-#ifdef HAS_SPLITUVROW_NEON
-SPLITUVROWANY(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 15)
-#endif
-#ifdef HAS_SPLITUVROW_MIPS_DSPR2
-SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2,
-              SplitUVRow_C, 15)
-#endif
-#undef SPLITUVROWANY
 
 // Interpolate may want to work in place, so last16 method can not be used.
 #define ANY11T(NAMEANY, TERP_SIMD, TERP_C, SBPP, BPP, MASK)                    \
