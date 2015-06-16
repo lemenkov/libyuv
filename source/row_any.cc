@@ -165,6 +165,17 @@ ANY21(NV12ToRGB565Row_Any_NEON, NV12ToRGB565Row_NEON, 1, 1, 2, 2, 7)
 ANY21(NV21ToRGB565Row_Any_NEON, NV21ToRGB565Row_NEON, 1, 1, 2, 2, 7)
 #endif
 
+// Merge functions.
+#ifdef HAS_MERGEUVROW_SSE2
+ANY21(MergeUVRow_Any_SSE2, MergeUVRow_SSE2, 0, 1, 1, 2, 15)
+#endif
+#ifdef HAS_MERGEUVROW_AVX2
+ANY21(MergeUVRow_Any_AVX2, MergeUVRow_AVX2, 0, 1, 1, 2, 31)
+#endif
+#ifdef HAS_MERGEUVROW_NEON
+ANY21(MergeUVRow_Any_NEON, MergeUVRow_NEON, 0, 1, 1, 2, 15)
+#endif
+
 // Math functions.
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
 ANY21(ARGBMultiplyRow_Any_SSE2, ARGBMultiplyRow_SSE2, 0, 4, 4, 4, 3)
@@ -613,32 +624,6 @@ SPLITUVROWANY(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2,
               SplitUVRow_C, 15)
 #endif
 #undef SPLITUVROWANY
-
-// todo(fbarchard): share with any21
-#define MERGEUVROW_ANY(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, MASK)                 \
-    void NAMEANY(const uint8* src_u, const uint8* src_v,                       \
-                 uint8* dst_uv, int width) {                                   \
-      int r = width & MASK;                                                    \
-      int n = width & ~MASK;                                                   \
-      if (n > 0) {                                                             \
-        ANYTOUV_SIMD(src_u, src_v, dst_uv, n);                                 \
-      }                                                                        \
-      ANYTOUV_C(src_u + n,                                                     \
-                src_v + n,                                                     \
-                dst_uv + n * 2,                                                \
-                r);                                                            \
-    }
-
-#ifdef HAS_MERGEUVROW_SSE2
-MERGEUVROW_ANY(MergeUVRow_Any_SSE2, MergeUVRow_SSE2, MergeUVRow_C, 15)
-#endif
-#ifdef HAS_MERGEUVROW_AVX2
-MERGEUVROW_ANY(MergeUVRow_Any_AVX2, MergeUVRow_AVX2, MergeUVRow_C, 31)
-#endif
-#ifdef HAS_MERGEUVROW_NEON
-MERGEUVROW_ANY(MergeUVRow_Any_NEON, MergeUVRow_NEON, MergeUVRow_C, 15)
-#endif
-#undef MERGEUVROW_ANY
 
 // Interpolate may want to work in place, so last16 method can not be used.
 #define ANY11T(NAMEANY, TERP_SIMD, TERP_C, SBPP, BPP, MASK)                    \
