@@ -22,6 +22,11 @@ extern "C" {
 // Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
+// Debugable memcpy.  Remove once bug 448 is closed.
+static void fmemcpy(uint8* d, const uint8* s, int len) {
+  memcpy(d, s, len);
+}
+
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define YANY(NAMEANY, I420TORGB_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)            \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
@@ -32,11 +37,12 @@ extern "C" {
       if (n > 0) {                                                             \
         I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
       }                                                                        \
-      memcpy(temp, y_buf + n, r);                                              \
-      memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
-      memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+      fmemcpy(temp, y_buf + n, r);                                             \
+      fmemcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+      fmemcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));             \
       I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);       \
-      memcpy(rgb_buf + n * BPP, temp + 192, SS(r, DUVSHIFT) * BPP);            \
+      fmemcpy(rgb_buf + (n >> DUVSHIFT) * BPP, temp + 192,                     \
+              SS(r, DUVSHIFT) * BPP);                                          \
     }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
