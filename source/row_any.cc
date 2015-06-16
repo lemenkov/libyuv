@@ -38,6 +38,9 @@ static void fmemcpy(uint8* d, const uint8* s, int len) {
         I420TORGB_SIMD(y_buf, u_buf, v_buf, rgb_buf, n);                       \
       }                                                                        \
       fmemcpy(temp, y_buf + n, r);                                             \
+      if (width & 1) {                                                         \
+        temp[r] = temp[r - 1];  /* repeat last Y for subsampling */            \
+      }                                                                        \
       fmemcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
       fmemcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));             \
       I420TORGB_SIMD(temp, temp + 64, temp + 128, temp + 192, MASK + 1);       \
