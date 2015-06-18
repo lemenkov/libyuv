@@ -2128,7 +2128,7 @@ void I422ToYUY2Row_C(const uint8* src_y,
   if (width & 1) {
     dst_frame[0] = src_y[0];
     dst_frame[1] = src_u[0];
-    dst_frame[2] = src_y[0];  // duplicate last y
+    dst_frame[2] = 0;
     dst_frame[3] = src_v[0];
   }
 }
@@ -2152,7 +2152,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
     dst_frame[0] = src_u[0];
     dst_frame[1] = src_y[0];
     dst_frame[2] = src_v[0];
-    dst_frame[3] = src_y[0];  // duplicate last y
+    dst_frame[3] = 0;
   }
 }
 
