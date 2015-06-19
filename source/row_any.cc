@@ -447,53 +447,60 @@ ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, ARGBShuffleRow_C,
 #endif
 #undef ANY11P
 
-#define ANY12(NAMEANY, ANYTOUV_SIMD, ANYTOUV_C, BPP, SHIFT, MASK)              \
+// ARGB to UV subsamples 2 ARGB pixels to 1 set of U,V.
+// For odd width the last ARGB pixel needs to be duplicated.
+#define ANY12(NAMEANY, ANYTOUV_SIMD, UVSHIFT, BPP, DUVSHIFT, MASK)             \
     void NAMEANY(const uint8* src_uv, uint8* dst_u, uint8* dst_v, int width) { \
+      SIMD_ALIGNED(uint8 temp[64 * 3]);                                        \
+      memset(temp, 0, 64);  /* for msan */                                     \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
       }                                                                        \
-      ANYTOUV_C(src_uv  + n * BPP,                                             \
-                dst_u + (n >> SHIFT),                                          \
-                dst_v + (n >> SHIFT),                                          \
-                r);                                                            \
+      fmemcpy(temp, src_uv  + (n >> UVSHIFT) * BPP,                            \
+              SS(r, UVSHIFT) * BPP);                                           \
+      if ((width & 1) && BPP == 8) {                                           \
+        fmemcpy(temp + SS(r, UVSHIFT) * BPP - BPP / 2,                         \
+                temp + SS(r, UVSHIFT) * BPP - BPP, BPP / 2);                   \
+      }                                                                        \
+      ANYTOUV_SIMD(temp, temp + 64, temp + 128, MASK + 1);                     \
+      fmemcpy(dst_u + (n >> DUVSHIFT), temp + 64, SS(r, DUVSHIFT));            \
+      fmemcpy(dst_v + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));           \
     }
 
 #ifdef HAS_SPLITUVROW_SSE2
-ANY12(SplitUVRow_Any_SSE2, SplitUVRow_SSE2, SplitUVRow_C, 2, 0, 15)
+ANY12(SplitUVRow_Any_SSE2, SplitUVRow_SSE2, 0, 2, 0, 15)
 #endif
 #ifdef HAS_SPLITUVROW_AVX2
-ANY12(SplitUVRow_Any_AVX2, SplitUVRow_AVX2, SplitUVRow_C, 2, 0, 31)
+ANY12(SplitUVRow_Any_AVX2, SplitUVRow_AVX2, 0, 2, 0, 31)
 #endif
 #ifdef HAS_SPLITUVROW_NEON
-ANY12(SplitUVRow_Any_NEON, SplitUVRow_NEON, SplitUVRow_C, 2, 0, 15)
+ANY12(SplitUVRow_Any_NEON, SplitUVRow_NEON, 0, 2, 0, 15)
 #endif
 #ifdef HAS_SPLITUVROW_MIPS_DSPR2
-ANY12(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2, SplitUVRow_C, 2, 0, 15)
+ANY12(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2, 0, 2, 0, 15)
 #endif
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
-ANY12(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3,
-      ARGBToUV444Row_C, 4, 0, 15)
+ANY12(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3, 0, 4, 0, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_AVX2
-ANY12(YUY2ToUV422Row_Any_AVX2, YUY2ToUV422Row_AVX2, YUY2ToUV422Row_C, 2, 1, 31)
-ANY12(UYVYToUV422Row_Any_AVX2, UYVYToUV422Row_AVX2, UYVYToUV422Row_C, 2, 1, 31)
+ANY12(YUY2ToUV422Row_Any_AVX2, YUY2ToUV422Row_AVX2, 1, 4, 1, 31)
+ANY12(UYVYToUV422Row_Any_AVX2, UYVYToUV422Row_AVX2, 1, 4, 1, 31)
 #endif
 #ifdef HAS_ARGBTOUV422ROW_SSSE3
-ANY12(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_SSSE3,
-      ARGBToUV422Row_C, 4, 1, 15)
+ANY12(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_SSSE3, 1, 8, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_SSE2
-ANY12(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_SSE2, YUY2ToUV422Row_C, 2, 1, 15)
-ANY12(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2, UYVYToUV422Row_C, 2, 1, 15)
+ANY12(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_SSE2, 1, 4, 1, 15)
+ANY12(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2, 1, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
-ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, ARGBToUV444Row_C, 4, 0, 7)
-ANY12(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON, ARGBToUV422Row_C, 4, 1, 15)
-ANY12(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON, ARGBToUV411Row_C, 4, 2, 31)
-ANY12(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON, YUY2ToUV422Row_C, 2, 1, 15)
-ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, UYVYToUV422Row_C, 2, 1, 15)
+ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, 1, 8, 0, 7)
+ANY12(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON, 1, 8, 1, 15)
+ANY12(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON, 1, 8, 2, 31)
+ANY12(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON, 1, 4, 1, 15)
+ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
 #endif
 #undef ANY12
 
