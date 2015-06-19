@@ -645,24 +645,26 @@ ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
 #endif
 #undef ANY11M
 
-#define ANY1(NAMEANY, SET_SIMD, SET_C, T, BPP, MASK)                           \
-    void NAMEANY(uint8* dst_y, T v8, int width) {                              \
+#define ANY1(NAMEANY, SET_SIMD, T, BPP, MASK)                                  \
+    void NAMEANY(uint8* dst_y, T v32, int width) {                             \
+      SIMD_ALIGNED(uint8 temp[64]);                                            \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
-        SET_SIMD(dst_y, v8, n);                                                \
+        SET_SIMD(dst_y, v32, n);                                               \
       }                                                                        \
-      SET_C(dst_y + n * BPP, v8, r);                                           \
+      SET_SIMD(temp, v32, MASK + 1);                                           \
+      memcpy(dst_y + n * BPP, temp, r * BPP);                                  \
     }
 
 #ifdef HAS_SETROW_X86
-ANY1(SetRow_Any_X86, SetRow_X86, SetRow_ERMS, uint8, 1, 3)
+ANY1(SetRow_Any_X86, SetRow_X86, uint8, 1, 3)
 #endif
 #ifdef HAS_SETROW_NEON
-ANY1(SetRow_Any_NEON, SetRow_NEON, SetRow_C, uint8, 1, 15)
+ANY1(SetRow_Any_NEON, SetRow_NEON, uint8, 1, 15)
 #endif
 #ifdef HAS_ARGBSETROW_NEON
-ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, ARGBSetRow_C, uint32, 4, 3)
+ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
 #endif
 #undef ANY1
 
