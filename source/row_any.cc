@@ -22,11 +22,6 @@ extern "C" {
 // Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
-// Debugable memcpy.  Remove once bug 448 is closed.
-static void fmemcpy(uint8* d, const uint8* s, int len) {
-  memcpy(d, s, len);
-}
-
 // YUV to RGB does multiple of 8 with SIMD and remainder with C.
 #define ANY31(NAMEANY, I420TORGB_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)           \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
@@ -235,9 +230,9 @@ ANY21(SobelXYRow_Any_NEON, SobelXYRow_NEON, 0, 1, 1, 4, 7)
       if (n > 0) {                                                             \
         ARGBTORGB_SIMD(src, dst, n);                                           \
       }                                                                        \
-      fmemcpy(temp, src + (n >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);       \
+      memcpy(temp, src + (n >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);        \
       ARGBTORGB_SIMD(temp, temp + 64, MASK + 1);                               \
-      fmemcpy(dst + n * BPP, temp + 64, r * BPP);                              \
+      memcpy(dst + n * BPP, temp + 64, r * BPP);                               \
     }
 
 #ifdef HAS_COPYROW_AVX
@@ -458,15 +453,15 @@ ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, ARGBShuffleRow_C,
       if (n > 0) {                                                             \
         ANYTOUV_SIMD(src_uv, dst_u, dst_v, n);                                 \
       }                                                                        \
-      fmemcpy(temp, src_uv  + (n >> UVSHIFT) * BPP,                            \
+      memcpy(temp, src_uv  + (n >> UVSHIFT) * BPP,                             \
               SS(r, UVSHIFT) * BPP);                                           \
       if ((width & 1) && BPP == 8) {                                           \
-        fmemcpy(temp + SS(r, UVSHIFT) * BPP - BPP / 2,                         \
+        memcpy(temp + SS(r, UVSHIFT) * BPP - BPP / 2,                          \
                 temp + SS(r, UVSHIFT) * BPP - BPP, BPP / 2);                   \
       }                                                                        \
       ANYTOUV_SIMD(temp, temp + 64, temp + 128, MASK + 1);                     \
-      fmemcpy(dst_u + (n >> DUVSHIFT), temp + 64, SS(r, DUVSHIFT));            \
-      fmemcpy(dst_v + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));           \
+      memcpy(dst_u + (n >> DUVSHIFT), temp + 64, SS(r, DUVSHIFT));             \
+      memcpy(dst_v + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));            \
     }
 
 #ifdef HAS_SPLITUVROW_SSE2
