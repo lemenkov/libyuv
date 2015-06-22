@@ -403,13 +403,16 @@ ANY11(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, 0, 4, 4, 7)
 #define ANY11P(NAMEANY, ARGBTOY_SIMD, ARGBTOY_C, T, SBPP, BPP, MASK)           \
     void NAMEANY(const uint8* src_argb, uint8* dst_argb,                       \
                  T shuffler, int width) {                                      \
+      SIMD_ALIGNED(uint8 temp[64 * 2]);                                        \
+      memset(temp, 0, 64);  /* for YUY2 and msan */                            \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ARGBTOY_SIMD(src_argb, dst_argb, shuffler, n);                         \
       }                                                                        \
-      ARGBTOY_C(src_argb + n * SBPP,                                           \
-                dst_argb  + n * BPP, shuffler, r);                             \
+      memcpy(temp, src_argb + n * SBPP, r * SBPP);                             \
+      ARGBTOY_SIMD(temp, temp + 64, shuffler, MASK + 1);                       \
+      memcpy(dst_argb + n * BPP, temp + 64, r * BPP);                          \
     }
 
 #if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
