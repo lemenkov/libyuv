@@ -546,9 +546,9 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
       }                                                                        \
       memcpy(temp, src_uv  + (n >> UVSHIFT) * BPP,                             \
               SS(r, UVSHIFT) * BPP);                                           \
-      if ((width & 1) && BPP == 8) {                                           \
-        memcpy(temp + SS(r, UVSHIFT) * BPP - BPP / 2,                          \
-                temp + SS(r, UVSHIFT) * BPP - BPP, BPP / 2);                   \
+      if ((width & 1) && BPP == 4) {  /* repeat last 4 bytes for subsampler */ \
+        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
+               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
       }                                                                        \
       ANYTOUV_SIMD(temp, temp + 64, temp + 128, MASK + 1);                     \
       memcpy(dst_u + (n >> DUVSHIFT), temp + 64, SS(r, DUVSHIFT));             \
@@ -575,16 +575,16 @@ ANY12(YUY2ToUV422Row_Any_AVX2, YUY2ToUV422Row_AVX2, 1, 4, 1, 31)
 ANY12(UYVYToUV422Row_Any_AVX2, UYVYToUV422Row_AVX2, 1, 4, 1, 31)
 #endif
 #ifdef HAS_ARGBTOUV422ROW_SSSE3
-ANY12(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_SSSE3, 1, 8, 1, 15)
+ANY12(ARGBToUV422Row_Any_SSSE3, ARGBToUV422Row_SSSE3, 0, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_SSE2
 ANY12(YUY2ToUV422Row_Any_SSE2, YUY2ToUV422Row_SSE2, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2, 1, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
-ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, 1, 8, 0, 7)
-ANY12(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON, 1, 8, 1, 15)
-ANY12(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON, 1, 8, 2, 31)
+ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, 0, 4, 0, 7)
+ANY12(ARGBToUV422Row_Any_NEON, ARGBToUV422Row_NEON, 0, 4, 1, 15)
+ANY12(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON, 0, 4, 2, 31)
 ANY12(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
 #endif
