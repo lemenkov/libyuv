@@ -476,36 +476,40 @@ ANY11T(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, 1, 1, 3)
 #undef ANY11T
 
 // Any 1 to 1 mirror.
-#define ANY11M(NAMEANY, ANY_SIMD, MIRROR_C, BPP, MASK)                         \
+#define ANY11M(NAMEANY, ANY_SIMD, BPP, MASK)                                   \
     void NAMEANY(const uint8* src_ptr, uint8* dst_ptr, int width) {            \
+      SIMD_ALIGNED(uint8 temp[64 * 2]);                                        \
+      memset(temp, 0, 64);  /* for msan */                                     \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
-        ANY_SIMD(src_ptr, dst_ptr + r * BPP, n);                               \
+        ANY_SIMD(src_ptr + r * BPP, dst_ptr, n);                               \
       }                                                                        \
-      MIRROR_C(src_ptr + n * BPP, dst_ptr, r);                                 \
+      memcpy(temp, src_ptr, r * BPP);                                          \
+      ANY_SIMD(temp, temp + 64, MASK + 1);                                     \
+      memcpy(dst_ptr + n * BPP, temp + 64 + (MASK + 1 - r) * BPP, r * BPP);    \
     }
 
 #ifdef HAS_MIRRORROW_AVX2
-ANY11M(MirrorRow_Any_AVX2, MirrorRow_AVX2, MirrorRow_C, 1, 31)
+ANY11M(MirrorRow_Any_AVX2, MirrorRow_AVX2, 1, 31)
 #endif
 #ifdef HAS_MIRRORROW_SSSE3
-ANY11M(MirrorRow_Any_SSSE3, MirrorRow_SSSE3, MirrorRow_C, 1, 15)
+ANY11M(MirrorRow_Any_SSSE3, MirrorRow_SSSE3, 1, 15)
 #endif
 #ifdef HAS_MIRRORROW_SSE2
-ANY11M(MirrorRow_Any_SSE2, MirrorRow_SSE2, MirrorRow_C, 1, 15)
+ANY11M(MirrorRow_Any_SSE2, MirrorRow_SSE2, 1, 15)
 #endif
 #ifdef HAS_MIRRORROW_NEON
-ANY11M(MirrorRow_Any_NEON, MirrorRow_NEON, MirrorRow_C, 1, 15)
+ANY11M(MirrorRow_Any_NEON, MirrorRow_NEON, 1, 15)
 #endif
 #ifdef HAS_ARGBMIRRORROW_AVX2
-ANY11M(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, ARGBMirrorRow_C, 4, 7)
+ANY11M(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, 4, 7)
 #endif
 #ifdef HAS_ARGBMIRRORROW_SSE2
-ANY11M(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, ARGBMirrorRow_C, 4, 3)
+ANY11M(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, 4, 3)
 #endif
 #ifdef HAS_ARGBMIRRORROW_NEON
-ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, ARGBMirrorRow_C, 4, 3)
+ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, 4, 3)
 #endif
 #undef ANY11M
 
