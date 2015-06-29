@@ -1,20 +1,19 @@
 #!/usr/bin/env python
-# Copyright 2014 The LibYuv Project Authors. All rights reserved.
+# Copyright (c) 2014 The WebRTC project authors. All Rights Reserved.
 #
 # Use of this source code is governed by a BSD-style license
 # that can be found in the LICENSE file in the root of the source
 # tree. An additional intellectual property rights grant can be found
-# in the file PATENTS. All contributing project authors may
+# in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-"""Setup links to a Chromium checkout for Libyuv.
+"""Setup links to a Chromium checkout for WebRTC.
 
-Libyuv shares a lot of dependencies and build tools with Chromium.
+WebRTC standalone shares a lot of dependencies and build tools with Chromium.
 To do this, many of the paths of a Chromium checkout is emulated by creating
 symlinks to files and directories. This script handles the setup of symlinks to
 achieve this.
 
-It's a modified copy of the similar script that lives in WebRTC.
 It also handles cleanup of the legacy Subversion-based approach that was used
 before Chrome switched over their master repo from Subversion to Git.
 """
@@ -38,28 +37,70 @@ DIRECTORIES = [
   'google_apis',  # Needed by build/common.gypi.
   'net',
   'testing',
-  'third_party/android_testrunner',
-  'third_party/android_tools',
   'third_party/binutils',
+  'third_party/boringssl',
+  'third_party/colorama',
+  'third_party/drmemory',
+  'third_party/expat',
+  'third_party/icu',
+  'third_party/instrumented_libraries',
+  'third_party/jsoncpp',
   'third_party/libjpeg',
   'third_party/libjpeg_turbo',
+  'third_party/libsrtp',
   'third_party/libudev',
+  'third_party/libvpx',
+  'third_party/libyuv',
   'third_party/llvm-build',
   'third_party/nss',
+  'third_party/ocmock',
+  'third_party/openmax_dl',
+  'third_party/opus',
+  'third_party/protobuf',
+  'third_party/sqlite',
+  'third_party/syzygy',
+  'third_party/usrsctp',
   'third_party/yasm',
-  'tools/android',
+  'third_party/zlib',
   'tools/clang',
   'tools/generate_library_loader',
   'tools/gn',
   'tools/gyp',
   'tools/memory',
+  'tools/protoc_wrapper',
   'tools/python',
+  'tools/swarming_client',
   'tools/valgrind',
+  'tools/vim',
   'tools/win',
 ]
 
+from sync_chromium import get_target_os_list
+target_os = get_target_os_list()
+if 'android' in target_os:
+  DIRECTORIES += [
+    'base',
+    'third_party/android_platform',
+    'third_party/android_testrunner',
+    'third_party/android_tools',
+    'third_party/appurify-python',
+    'third_party/ashmem',
+    'third_party/jsr-305',
+    'third_party/junit',
+    'third_party/libevent',
+    'third_party/libxml',
+    'third_party/mockito',
+    'third_party/modp_b64',
+    'third_party/requests',
+    'third_party/robolectric',
+    'tools/android',
+    'tools/grit',
+    'tools/relocation_packer'
+  ]
+if 'ios' in target_os:
+  DIRECTORIES.append('third_party/class-dump')
+
 FILES = {
-  '.gn': None,
   'tools/find_depot_tools.py': None,
   'third_party/BUILD.gn': None,
 }
@@ -134,7 +175,7 @@ class Remove(Action):
     else:
       log('Removing %s: %s', filesystem_type, self._path)
 
-  def doit(self, _links_db):
+  def doit(self, _):
     os.remove(self._path)
 
 
@@ -150,7 +191,7 @@ class Rmtree(Action):
     else:
       logging.warn('Removing directory: %s', self._path)
 
-  def doit(self, _links_db):
+  def doit(self, _):
     if sys.platform.startswith('win'):
       # shutil.rmtree() doesn't work on Windows if any of the directories are
       # read-only, which svn repositories are.
@@ -165,7 +206,7 @@ class Makedirs(Action):
     self._priority = 1
     self._path = path
 
-  def doit(self, _links_db):
+  def doit(self, _):
     try:
       os.makedirs(self._path)
     except OSError as e:
@@ -221,7 +262,7 @@ if sys.platform.startswith('win'):
   os.symlink = symlink
 
 
-class LibyuvLinkSetup():
+class WebRTCLinkSetup(object):
   def __init__(self, links_db, force=False, dry_run=False, prompt=False):
     self._force = force
     self._dry_run = dry_run
@@ -270,7 +311,7 @@ class LibyuvLinkSetup():
         @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         Because chromium/src is transitioning to Git (from SVN), we needed to
-        change the way that the Libyuv standalone checkout works. Instead of
+        change the way that the WebRTC standalone checkout works. Instead of
         individually syncing subdirectories of Chromium in SVN, we're now
         syncing Chromium (and all of its DEPS, as defined by its own DEPS file),
         into the `chromium/src` directory.
@@ -315,7 +356,8 @@ class LibyuvLinkSetup():
         if not self._dry_run:
           if os.path.exists(link_path):
             if sys.platform.startswith('win') and os.path.isdir(link_path):
-              subprocess.check_call(['rmdir', '/q', link_path], shell=True)
+              subprocess.check_call(['rmdir', '/q', '/s', link_path],
+                                    shell=True)
             else:
               os.remove(link_path)
           del self._links_db[source]
@@ -444,7 +486,7 @@ def main():
       logging.error('On Windows, you now need to have administrator '
                     'privileges for the shell running %s (or '
                     '`gclient sync|runhooks`).\nPlease start another command '
-                    'prompt as Administrator and try again.' % sys.argv[0])
+                    'prompt as Administrator and try again.', sys.argv[0])
       return 1
 
   if not os.path.exists(CHROMIUM_CHECKOUT):
@@ -454,7 +496,7 @@ def main():
 
   links_database = _initialize_database(LINKS_DB)
   try:
-    symlink_creator = LibyuvLinkSetup(links_database, options.force,
+    symlink_creator = WebRTCLinkSetup(links_database, options.force,
                                       options.dry_run, options.prompt)
     symlink_creator.CleanupLinks()
     if not options.clean_only:
