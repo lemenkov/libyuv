@@ -817,22 +817,20 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
     src_stride_rgb24 = -src_stride_rgb24;
   }
 
+// Neon version does direct RGB24 to YUV.
 #if defined(HAS_RGB24TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
+    RGB24ToUVRow = RGB24ToUVRow_Any_NEON;
     RGB24ToYRow = RGB24ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RGB24ToYRow = RGB24ToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        RGB24ToUVRow = RGB24ToUVRow_NEON;
+      }
     }
   }
-#endif
-#if defined(HAS_RGB24TOUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    RGB24ToUVRow = RGB24ToUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      RGB24ToUVRow = RGB24ToUVRow_NEON;
-    }
-  }
-#endif
+// Other platforms do intermediate conversion from RGB24 to ARGB.
+#else
 #if defined(HAS_RGB24TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     RGB24ToARGBRow = RGB24ToARGBRow_Any_SSSE3;
@@ -861,7 +859,6 @@ int RGB24ToI420(const uint8* src_rgb24, int src_stride_rgb24,
     }
   }
 #endif
-#if !defined(HAS_RGB24TOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
@@ -934,22 +931,20 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
     src_stride_raw = -src_stride_raw;
   }
 
+// Neon version does direct RAW to YUV.
 #if defined(HAS_RAWTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
+    RAWToUVRow = RAWToUVRow_Any_NEON;
     RAWToYRow = RAWToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RAWToYRow = RAWToYRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        RAWToUVRow = RAWToUVRow_NEON;
+      }
     }
   }
-#endif
-#if defined(HAS_RAWTOUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    RAWToUVRow = RAWToUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      RAWToUVRow = RAWToUVRow_NEON;
-    }
-  }
-#endif
+// Other platforms do intermediate conversion from RAW to ARGB.
+#else
 #if defined(HAS_RAWTOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     RAWToARGBRow = RAWToARGBRow_Any_SSSE3;
@@ -978,7 +973,6 @@ int RAWToI420(const uint8* src_raw, int src_stride_raw,
     }
   }
 #endif
-#if !defined(HAS_RAWTOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
@@ -1051,18 +1045,20 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
     src_stride_rgb565 = -src_stride_rgb565;
   }
 
+// Neon version does direct RGB565 to YUV.
 #if defined(HAS_RGB565TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
+    RGB565ToUVRow = RGB565ToUVRow_Any_NEON;
     RGB565ToYRow = RGB565ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       RGB565ToYRow = RGB565ToYRow_NEON;
-    }
-    RGB565ToUVRow = RGB565ToUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      RGB565ToUVRow = RGB565ToUVRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        RGB565ToUVRow = RGB565ToUVRow_NEON;
+      }
     }
   }
-#endif
+// Other platforms do intermediate conversion from RGB565 to ARGB.
+#else
 #if defined(HAS_RGB565TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     RGB565ToARGBRow = RGB565ToARGBRow_Any_SSE2;
@@ -1099,7 +1095,6 @@ int RGB565ToI420(const uint8* src_rgb565, int src_stride_rgb565,
     }
   }
 #endif
-#if !defined(HAS_RGB565TOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
@@ -1172,19 +1167,20 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
     src_stride_argb1555 = -src_stride_argb1555;
   }
 
+// Neon version does direct ARGB1555 to YUV.
 #if defined(HAS_ARGB1555TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
+    ARGB1555ToUVRow = ARGB1555ToUVRow_Any_NEON;
     ARGB1555ToYRow = ARGB1555ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB1555ToYRow = ARGB1555ToYRow_NEON;
-    }
-    ARGB1555ToUVRow = ARGB1555ToUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      ARGB1555ToUVRow = ARGB1555ToUVRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGB1555ToUVRow = ARGB1555ToUVRow_NEON;
+      }
     }
   }
-#endif
-
+// Other platforms do intermediate conversion from ARGB1555 to ARGB.
+#else
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGB1555ToARGBRow = ARGB1555ToARGBRow_Any_SSE2;
@@ -1221,12 +1217,12 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
     }
   }
 #endif
-#if !defined(HAS_ARGB1555TOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
+
     for (y = 0; y < height - 1; y += 2) {
 #if defined(HAS_ARGB1555TOYROW_NEON)
       ARGB1555ToUVRow(src_argb1555, src_stride_argb1555, dst_u, dst_v, width);
@@ -1236,6 +1232,7 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
 #else
       ARGB1555ToARGBRow(src_argb1555, row, width);
       ARGB1555ToARGBRow(src_argb1555 + src_stride_argb1555, row + kRowSize,
+
                         width);
       ARGBToUVRow(row, kRowSize, dst_u, dst_v, width);
       ARGBToYRow(row, dst_y, width);
@@ -1295,19 +1292,20 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     src_stride_argb4444 = -src_stride_argb4444;
   }
 
+// Neon version does direct ARGB4444 to YUV.
 #if defined(HAS_ARGB4444TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
+    ARGB4444ToUVRow = ARGB4444ToUVRow_Any_NEON;
     ARGB4444ToYRow = ARGB4444ToYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGB4444ToYRow = ARGB4444ToYRow_NEON;
-    }
-    ARGB4444ToUVRow = ARGB4444ToUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      ARGB4444ToUVRow = ARGB4444ToUVRow_NEON;
+      if (IS_ALIGNED(width, 16)) {
+        ARGB4444ToUVRow = ARGB4444ToUVRow_NEON;
+      }
     }
   }
-#endif
-
+// Other platforms do intermediate conversion from ARGB4444 to ARGB.
+#else
 #if defined(HAS_ARGB4444TOARGBROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_SSE2;
@@ -1344,8 +1342,6 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     }
   }
 #endif
-
-#if !defined(HAS_ARGB4444TOYROW_NEON)
   {
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
