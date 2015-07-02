@@ -224,16 +224,16 @@ ANY21(SobelXYRow_Any_NEON, SobelXYRow_NEON, 0, 1, 1, 4, 7)
 // Any 1 to 1.
 #define ANY11(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                     \
     void NAMEANY(const uint8* src_ptr, uint8* dst_ptr, int width) {            \
-      SIMD_ALIGNED(uint8 temp[64 * 2]);                                        \
-      memset(temp, 0, 64);  /* for YUY2 and msan */                            \
+      SIMD_ALIGNED(uint8 temp[128 * 2]);                                       \
+      memset(temp, 0, 128);  /* for YUY2 and msan */                           \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANY_SIMD(src_ptr, dst_ptr, n);                                         \
       }                                                                        \
       memcpy(temp, src_ptr + (n >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);    \
-      ANY_SIMD(temp, temp + 64, MASK + 1);                                     \
-      memcpy(dst_ptr + n * BPP, temp + 64, r * BPP);                           \
+      ANY_SIMD(temp, temp + 128, MASK + 1);                                    \
+      memcpy(dst_ptr + n * BPP, temp + 128, r * BPP);                          \
     }
 
 #ifdef HAS_COPYROW_AVX
@@ -593,28 +593,29 @@ ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
 #undef ANY12
 
 // Any 1 to 2 with source stride (2 rows of source).  Outputs UV planes.
+// 128 byte row allows for 32 avx ARGB pixels.
 #define ANY12S(NAMEANY, ANY_SIMD, UVSHIFT, BPP, MASK)                          \
     void NAMEANY(const uint8* src_ptr, int src_stride_ptr,                     \
                  uint8* dst_u, uint8* dst_v, int width) {                      \
-      SIMD_ALIGNED(uint8 temp[64 * 4]);                                        \
-      memset(temp, 0, 64 * 2);  /* for msan */                                 \
+      SIMD_ALIGNED(uint8 temp[128 * 4]);                                       \
+      memset(temp, 0, 128 * 2);  /* for msan */                                \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
         ANY_SIMD(src_ptr, src_stride_ptr, dst_u, dst_v, n);                    \
       }                                                                        \
       memcpy(temp, src_ptr  + (n >> UVSHIFT) * BPP, SS(r, UVSHIFT) * BPP);     \
-      memcpy(temp + 64, src_ptr  + src_stride_ptr + (n >> UVSHIFT) * BPP,      \
+      memcpy(temp + 128, src_ptr  + src_stride_ptr + (n >> UVSHIFT) * BPP,     \
              SS(r, UVSHIFT) * BPP);                                            \
       if ((width & 1) && BPP == 4) {  /* repeat last 4 bytes for subsampler */ \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
                temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
-        memcpy(temp + 64 + SS(r, UVSHIFT) * BPP,                               \
-               temp + 64 + SS(r, UVSHIFT) * BPP - BPP, 4);                     \
+        memcpy(temp + 128 + SS(r, UVSHIFT) * BPP,                              \
+               temp + 128 + SS(r, UVSHIFT) * BPP - BPP, 4);                    \
       }                                                                        \
-      ANY_SIMD(temp, 64, temp + 128, temp + 192, MASK + 1);                    \
-      memcpy(dst_u + (n >> 1), temp + 128, SS(r, 1));                          \
-      memcpy(dst_v + (n >> 1), temp + 192, SS(r, 1));                          \
+      ANY_SIMD(temp, 128, temp + 256, temp + 384, MASK + 1);                   \
+      memcpy(dst_u + (n >> 1), temp + 256, SS(r, 1));                          \
+      memcpy(dst_v + (n >> 1), temp + 384, SS(r, 1));                          \
     }
 
 #ifdef HAS_ARGBTOUVROW_AVX2
