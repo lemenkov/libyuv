@@ -540,8 +540,8 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
 // Any 1 to 2.  Outputs UV planes.
 #define ANY12(NAMEANY, ANY_SIMD, UVSHIFT, BPP, DUVSHIFT, MASK)                 \
     void NAMEANY(const uint8* src_ptr, uint8* dst_u, uint8* dst_v, int width) {\
-      SIMD_ALIGNED(uint8 temp[64 * 3]);                                        \
-      memset(temp, 0, 64);  /* for msan */                                     \
+      SIMD_ALIGNED(uint8 temp[128 * 3]);                                       \
+      memset(temp, 0, 128);  /* for msan */                                    \
       int r = width & MASK;                                                    \
       int n = width & ~MASK;                                                   \
       if (n > 0) {                                                             \
@@ -552,9 +552,9 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
                temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
       }                                                                        \
-      ANY_SIMD(temp, temp + 64, temp + 128, MASK + 1);                         \
-      memcpy(dst_u + (n >> DUVSHIFT), temp + 64, SS(r, DUVSHIFT));             \
-      memcpy(dst_v + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));            \
+      ANY_SIMD(temp, temp + 128, temp + 256, MASK + 1);                        \
+      memcpy(dst_u + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));            \
+      memcpy(dst_v + (n >> DUVSHIFT), temp + 256, SS(r, DUVSHIFT));            \
     }
 
 #ifdef HAS_SPLITUVROW_SSE2
