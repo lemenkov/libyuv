@@ -1232,7 +1232,6 @@ int ARGB1555ToI420(const uint8* src_argb1555, int src_stride_argb1555,
 #else
       ARGB1555ToARGBRow(src_argb1555, row, width);
       ARGB1555ToARGBRow(src_argb1555 + src_stride_argb1555, row + kRowSize,
-
                         width);
       ARGBToUVRow(row, kRowSize, dst_u, dst_v, width);
       ARGBToYRow(row, dst_y, width);

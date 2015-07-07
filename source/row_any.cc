@@ -10,7 +10,7 @@
 
 #include "libyuv/row.h"
 
-#include <string.h>  // For memcpy and memset.
+#include <string.h>  // For memset.
 
 #include "libyuv/basic_types.h"
 

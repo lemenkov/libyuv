@@ -626,10 +626,10 @@ __declspec(naked)
 void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
                             int pix) {
   __asm {
-    mov        eax,  0x0f0f0f0f  // generate mask 0x0f0f0f0f
-    vmovd      xmm4, eax
+    mov       eax,  0x0f0f0f0f  // generate mask 0x0f0f0f0f
+    vmovd     xmm4, eax
     vbroadcastss ymm4, xmm4
-    vpslld     ymm5, ymm4, 4    // 0xf0f0f0f0 for high nibbles
+    vpslld    ymm5, ymm4, 4     // 0xf0f0f0f0 for high nibbles
     mov       eax,  [esp + 4]   // src_argb4444
     mov       edx,  [esp + 8]   // dst_argb
     mov       ecx,  [esp + 12]  // pix

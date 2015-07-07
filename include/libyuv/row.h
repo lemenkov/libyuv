@@ -186,8 +186,9 @@ extern "C" {
 
 // The following are available require VS2012.  Port to GCC.
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
-#define HAS_ARGB1555TOARGBROW_AVX2
-#define HAS_ARGB4444TOARGBROW_AVX2
+// Some AVX2 versions disabled. See libyuv bug 462.
+// #define HAS_ARGB1555TOARGBROW_AVX2
+// #define HAS_ARGB4444TOARGBROW_AVX2
 #define HAS_ARGBTOARGB1555ROW_AVX2
 #define HAS_ARGBTOARGB4444ROW_AVX2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
@@ -203,7 +204,7 @@ extern "C" {
 #define HAS_NV12TORGB565ROW_AVX2
 #define HAS_NV21TOARGBROW_AVX2
 #define HAS_NV21TORGB565ROW_AVX2
-#define HAS_RGB565TOARGBROW_AVX2
+// #define HAS_RGB565TOARGBROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
