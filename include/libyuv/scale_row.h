@@ -50,8 +50,7 @@ extern "C" {
 
 // The following are available on VS2012:
 #if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
-// Some AVX2 versions disabled. See libyuv bug 462.
-// #define HAS_SCALEADDROW_AVX2
+#define HAS_SCALEADDROW_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
 #define HAS_SCALEROWDOWN4_AVX2
 #endif

@@ -838,17 +838,15 @@ void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   // sum rows
   xloop:
     vmovdqu     ymm3, [eax]       // read 32 bytes
-    vpermq      ymm3, ymm2, 0xd8  // unmutate for vpunpck
     lea         eax, [eax + 32]
-    vmovdqu     ymm0, [edx]       // read 32 words from destination
-    vmovdqu     ymm1, [edx + 32]
+    vpermq      ymm3, ymm3, 0xd8  // unmutate for vpunpck
     vpunpcklbw  ymm2, ymm3, ymm5
     vpunpckhbw  ymm3, ymm3, ymm5
-    vpaddusw    ymm0, ymm0, ymm2  // sum 16 words
-    vpaddusw    ymm1, ymm1, ymm3
+    vpaddusw    ymm0, ymm2, [edx] // sum 16 words
+    vpaddusw    ymm1, ymm3, [edx + 32]
     vmovdqu     [edx], ymm0       // write 32 words to destination
     vmovdqu     [edx + 32], ymm1
-    lea        edx, [edx + 64]
+    lea         edx, [edx + 64]
     sub         ecx, 32
     jg          xloop
 
