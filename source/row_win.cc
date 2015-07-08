@@ -608,6 +608,8 @@ void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
     vpmulhuw   ymm0, ymm0, ymm6    // << 6 * (256 + 8)
     vpand      ymm2, ymm2, ymm7
     vpor       ymm0, ymm0, ymm2    // AG
+    vpermq     ymm0, ymm0, 0xd8    // mutate for unpack
+    vpermq     ymm1, ymm1, 0xd8
     vpunpckhbw ymm2, ymm1, ymm0
     vpunpcklbw ymm1, ymm1, ymm0
     vmovdqu    [eax * 2 + edx], ymm1  // store 8 pixels of ARGB
@@ -644,6 +646,8 @@ void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
     vpsllw     ymm1, ymm0, 4
     vpor       ymm2, ymm2, ymm3
     vpor       ymm0, ymm0, ymm1
+    vpermq     ymm0, ymm0, 0xd8    // mutate for unpack
+    vpermq     ymm2, ymm2, 0xd8
     vpunpckhbw ymm1, ymm0, ymm2
     vpunpcklbw ymm0, ymm0, ymm2
     vmovdqu    [eax * 2 + edx], ymm0  // store 8 pixels of ARGB
