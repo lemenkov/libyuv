@@ -20,8 +20,10 @@ LOCAL_SRC_FILES := \
     source/planar_functions.cc  \
     source/rotate.cc            \
     source/rotate_argb.cc       \
+    source/rotate_common.cc     \
     source/rotate_mips.cc       \
     source/rotate_neon64.cc     \
+    source/rotate_gcc.cc        \
     source/row_any.cc           \
     source/row_common.cc        \
     source/row_mips.cc          \

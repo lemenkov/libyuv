@@ -29,8 +29,11 @@ set(ly_source_files
   ${ly_src_dir}/planar_functions.cc
   ${ly_src_dir}/rotate.cc
   ${ly_src_dir}/rotate_argb.cc
+  ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_mips.cc
   ${ly_src_dir}/rotate_neon.cc
+  ${ly_src_dir}/rotate_gcc.cc
+  ${ly_src_dir}/rotate_win.cc
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
   ${ly_src_dir}/row_mips.cc
@@ -77,6 +80,7 @@ set(ly_header_files
   ${ly_inc_dir}/libyuv/planar_functions.h
   ${ly_inc_dir}/libyuv/rotate.h
   ${ly_inc_dir}/libyuv/rotate_argb.h
+  ${ly_inc_dir}/libyuv/rotate_row.h
   ${ly_inc_dir}/libyuv/row.h
   ${ly_inc_dir}/libyuv/scale.h
   ${ly_inc_dir}/libyuv/scale_argb.h

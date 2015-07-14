@@ -22,6 +22,7 @@ LOCAL_OBJ_FILES = \
 	source/planar_functions.o\
 	source/rotate.o\
 	source/rotate_argb.o\
+	source/rotate_common.o\
 	source/row_any.o\
 	source/row_common.o\
 	source/scale.o\
