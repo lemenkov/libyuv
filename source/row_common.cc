@@ -1378,23 +1378,23 @@ void I411ToARGBRow_C(const uint8* src_y,
 }
 
 void NV12ToARGBRow_C(const uint8* src_y,
-                     const uint8* usrc_v,
+                     const uint8* src_uv,
                      uint8* rgb_buf,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1],
+    YuvPixel(src_y[0], src_uv[0], src_uv[1],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
-    YuvPixel(src_y[1], usrc_v[0], usrc_v[1],
+    YuvPixel(src_y[1], src_uv[0], src_uv[1],
              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
     rgb_buf[7] = 255;
     src_y += 2;
-    usrc_v += 2;
+    src_uv += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1],
+    YuvPixel(src_y[0], src_uv[0], src_uv[1],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
     rgb_buf[3] = 255;
   }
@@ -1426,7 +1426,7 @@ void NV21ToARGBRow_C(const uint8* src_y,
 }
 
 void NV12ToRGB565Row_C(const uint8* src_y,
-                       const uint8* usrc_v,
+                       const uint8* src_uv,
                        uint8* dst_rgb565,
                        int width) {
   uint8 b0;
@@ -1437,8 +1437,8 @@ void NV12ToRGB565Row_C(const uint8* src_y,
   uint8 r1;
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
-    YuvPixel(src_y[1], usrc_v[0], usrc_v[1], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0);
+    YuvPixel(src_y[1], src_uv[0], src_uv[1], &b1, &g1, &r1);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1448,11 +1448,11 @@ void NV12ToRGB565Row_C(const uint8* src_y,
     *(uint32*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
         (b1 << 16) | (g1 << 21) | (r1 << 27);
     src_y += 2;
-    usrc_v += 2;
+    src_uv += 2;
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], usrc_v[0], usrc_v[1], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
