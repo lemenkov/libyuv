@@ -796,6 +796,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
 
 TESTATOBIPLANAR(ARGB, 4, NV12, 2, 2)
 TESTATOBIPLANAR(ARGB, 4, NV21, 2, 2)
+TESTATOBIPLANAR(YUY2, 2, NV12, 2, 2)
 TESTATOBIPLANAR(UYVY, 2, NV12, 2, 2)
 
 #define TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                            \
@@ -1530,72 +1531,76 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##Dither##N) {                         \
 
 TESTPLANARTOBD(I420, 2, 2, RGB565, 2, 2, 1, 9, ARGB, 4)
 
-TEST_F(libyuvTest, TestUYVYToNV12) {
-  const int kWidth = benchmark_width_;
-  const int kHeight = benchmark_height_;
-
-  align_buffer_64(orig_uyvy,
-                  2 * SUBSAMPLE(kWidth, 2) * kHeight);
-  align_buffer_64(orig_y, kWidth * kHeight);
-  align_buffer_64(orig_u,
-                  SUBSAMPLE(kWidth, 2) *
-                  SUBSAMPLE(kHeight, 2));
-  align_buffer_64(orig_v,
-                  SUBSAMPLE(kWidth, 2) *
-                  SUBSAMPLE(kHeight, 2));
-
-  align_buffer_64(dst_y_orig, kWidth * kHeight);
-  align_buffer_64(dst_uv_orig, 2 *
-                  SUBSAMPLE(kWidth, 2) *
-                  SUBSAMPLE(kHeight, 2));
-
-  align_buffer_64(dst_y, kWidth * kHeight);
-  align_buffer_64(dst_uv, 2 *
-                  SUBSAMPLE(kWidth, 2) *
-                  SUBSAMPLE(kHeight, 2));
-
-  srandom(time(NULL));
-  MemRandomize(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2) * kHeight);
-
-  /* Convert UYVY to NV12 in 2 steps for reference */
-  libyuv::UYVYToI420(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),
-                     orig_y, kWidth,
-                     orig_u, SUBSAMPLE(kWidth, 2),
-                     orig_v, SUBSAMPLE(kWidth, 2),
-                     kWidth, kHeight);
-  libyuv::I420ToNV12(orig_y, kWidth,
-                     orig_u, SUBSAMPLE(kWidth, 2),
-                     orig_v, SUBSAMPLE(kWidth, 2),
-                     dst_y_orig, kWidth,
-                     dst_uv_orig, 2 * SUBSAMPLE(kWidth, 2),
-                     kWidth, kHeight);
-
-  /* Convert to NV12 */
-  for (int i = 0; i < benchmark_iterations_; ++i) {
-    libyuv::UYVYToNV12(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),
-                       dst_y, kWidth,
-                       dst_uv, 2 * SUBSAMPLE(kWidth, 2),
-                       kWidth, kHeight);
-  }
-
-  for (int i = 0; i < kWidth * kHeight; ++i) {
-    EXPECT_EQ(orig_y[i], dst_y[i]);
-  }
-  for (int i = 0; i < kWidth * kHeight; ++i) {
-    EXPECT_EQ(dst_y_orig[i], dst_y[i]);
-  }
-  for (int i = 0; i < 2 * SUBSAMPLE(kWidth, 2) * SUBSAMPLE(kHeight, 2); ++i) {
-    EXPECT_EQ(dst_uv_orig[i], dst_uv[i]);
-  }
-
-  free_aligned_buffer_64(orig_uyvy);
-  free_aligned_buffer_64(orig_y);
-  free_aligned_buffer_64(orig_u);
-  free_aligned_buffer_64(orig_v);
-  free_aligned_buffer_64(dst_y_orig);
-  free_aligned_buffer_64(dst_uv_orig);
-  free_aligned_buffer_64(dst_y);
-  free_aligned_buffer_64(dst_uv);
+#define TESTPTOB(NAME, UYVYTOI420, UYVYTONV12)                                 \
+TEST_F(libyuvTest, NAME) {                                                     \
+  const int kWidth = benchmark_width_;                                         \
+  const int kHeight = benchmark_height_;                                       \
+                                                                               \
+  align_buffer_64(orig_uyvy,                                                   \
+                  2 * SUBSAMPLE(kWidth, 2) * kHeight);                         \
+  align_buffer_64(orig_y, kWidth * kHeight);                                   \
+  align_buffer_64(orig_u,                                                      \
+                  SUBSAMPLE(kWidth, 2) *                                       \
+                  SUBSAMPLE(kHeight, 2));                                      \
+  align_buffer_64(orig_v,                                                      \
+                  SUBSAMPLE(kWidth, 2) *                                       \
+                  SUBSAMPLE(kHeight, 2));                                      \
+                                                                               \
+  align_buffer_64(dst_y_orig, kWidth * kHeight);                               \
+  align_buffer_64(dst_uv_orig, 2 *                                             \
+                  SUBSAMPLE(kWidth, 2) *                                       \
+                  SUBSAMPLE(kHeight, 2));                                      \
+                                                                               \
+  align_buffer_64(dst_y, kWidth * kHeight);                                    \
+  align_buffer_64(dst_uv, 2 *                                                  \
+                  SUBSAMPLE(kWidth, 2) *                                       \
+                  SUBSAMPLE(kHeight, 2));                                      \
+                                                                               \
+  srandom(time(NULL));                                                         \
+  MemRandomize(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2) * kHeight);                 \
+                                                                               \
+  /* Convert UYVY to NV12 in 2 steps for reference */                          \
+  libyuv::UYVYTOI420(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),                      \
+                     orig_y, kWidth,                                           \
+                     orig_u, SUBSAMPLE(kWidth, 2),                             \
+                     orig_v, SUBSAMPLE(kWidth, 2),                             \
+                     kWidth, kHeight);                                         \
+  libyuv::I420ToNV12(orig_y, kWidth,                                           \
+                     orig_u, SUBSAMPLE(kWidth, 2),                             \
+                     orig_v, SUBSAMPLE(kWidth, 2),                             \
+                     dst_y_orig, kWidth,                                       \
+                     dst_uv_orig, 2 * SUBSAMPLE(kWidth, 2),                    \
+                     kWidth, kHeight);                                         \
+                                                                               \
+  /* Convert to NV12 */                                                        \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
+    libyuv::UYVYTONV12(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),                    \
+                       dst_y, kWidth,                                          \
+                       dst_uv, 2 * SUBSAMPLE(kWidth, 2),                       \
+                       kWidth, kHeight);                                       \
+  }                                                                            \
+                                                                               \
+  for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
+    EXPECT_EQ(orig_y[i], dst_y[i]);                                            \
+  }                                                                            \
+  for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
+    EXPECT_EQ(dst_y_orig[i], dst_y[i]);                                        \
+  }                                                                            \
+  for (int i = 0; i < 2 * SUBSAMPLE(kWidth, 2) * SUBSAMPLE(kHeight, 2); ++i) { \
+    EXPECT_EQ(dst_uv_orig[i], dst_uv[i]);                                      \
+  }                                                                            \
+                                                                               \
+  free_aligned_buffer_64(orig_uyvy);                                           \
+  free_aligned_buffer_64(orig_y);                                              \
+  free_aligned_buffer_64(orig_u);                                              \
+  free_aligned_buffer_64(orig_v);                                              \
+  free_aligned_buffer_64(dst_y_orig);                                          \
+  free_aligned_buffer_64(dst_uv_orig);                                         \
+  free_aligned_buffer_64(dst_y);                                               \
+  free_aligned_buffer_64(dst_uv);                                              \
 }
+
+TESTPTOB(TestYUY2ToNV12, YUY2ToI420, YUY2ToNV12)
+TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
 
 }  // namespace libyuv
