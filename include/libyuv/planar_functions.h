@@ -436,6 +436,12 @@ int ARGBSobelXY(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_argb, int dst_stride_argb,
                 int width, int height);
 
+LIBYUV_API
+int UYVYToNV12(const uint8* src_uyvy, int src_stride_uyvy,
+               uint8* dst_y, int dst_stride_y,
+               uint8* dst_uv, int dst_stride_uv,
+               int width, int height);
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
