@@ -1537,7 +1537,7 @@ TEST_F(libyuvTest, NAME) {                                                     \
   const int kHeight = benchmark_height_;                                       \
                                                                                \
   align_buffer_64(orig_uyvy,                                                   \
-                  2 * SUBSAMPLE(kWidth, 2) * kHeight);                         \
+                  4 * SUBSAMPLE(kWidth, 2) * kHeight);                         \
   align_buffer_64(orig_y, kWidth * kHeight);                                   \
   align_buffer_64(orig_u,                                                      \
                   SUBSAMPLE(kWidth, 2) *                                       \
@@ -1557,10 +1557,10 @@ TEST_F(libyuvTest, NAME) {                                                     \
                   SUBSAMPLE(kHeight, 2));                                      \
                                                                                \
   srandom(time(NULL));                                                         \
-  MemRandomize(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2) * kHeight);                 \
+  MemRandomize(orig_uyvy, 4 * SUBSAMPLE(kWidth, 2) * kHeight);                 \
                                                                                \
   /* Convert UYVY to NV12 in 2 steps for reference */                          \
-  libyuv::UYVYTOI420(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),                      \
+  libyuv::UYVYTOI420(orig_uyvy, 4 * SUBSAMPLE(kWidth, 2),                      \
                      orig_y, kWidth,                                           \
                      orig_u, SUBSAMPLE(kWidth, 2),                             \
                      orig_v, SUBSAMPLE(kWidth, 2),                             \
@@ -1574,7 +1574,7 @@ TEST_F(libyuvTest, NAME) {                                                     \
                                                                                \
   /* Convert to NV12 */                                                        \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
-    libyuv::UYVYTONV12(orig_uyvy, 2 * SUBSAMPLE(kWidth, 2),                    \
+    libyuv::UYVYTONV12(orig_uyvy, 4 * SUBSAMPLE(kWidth, 2),                    \
                        dst_y, kWidth,                                          \
                        dst_uv, 2 * SUBSAMPLE(kWidth, 2),                       \
                        kWidth, kHeight);                                       \
