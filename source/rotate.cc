@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/rotate.h"
+#include "libyuv/row.h"
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/convert.h"
