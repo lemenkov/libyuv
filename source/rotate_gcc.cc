@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/row.h"
+#include "libyuv/rotate_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -108,8 +109,7 @@ void TransposeWx8_SSSE3(const uint8* src, int src_stride,
 #if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)  && !defined(__clang__)
 void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
-                         uint8* dst_b, int dst_stride_b,
-                         int w);
+                         uint8* dst_b, int dst_stride_b, int width);
   asm (
     DECLARE_FUNCTION(TransposeUVWx8_SSE2)
     "push   %ebx                               \n"
@@ -376,8 +376,7 @@ void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
 
 void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
-                         uint8* dst_b, int dst_stride_b,
-                         int w) {
+                         uint8* dst_b, int dst_stride_b, int width) {
   asm volatile (
   // Read in the data from the source pointer.
   // First round of bit swap.
@@ -474,7 +473,7 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
   : "+r"(src),    // %0
     "+r"(dst_a),  // %1
     "+r"(dst_b),  // %2
-    "+r"(w)   // %3
+    "+r"(width)   // %3
   : "r"((intptr_t)(src_stride)),    // %4
     "r"((intptr_t)(dst_stride_a)),  // %5
     "r"((intptr_t)(dst_stride_b))   // %6
