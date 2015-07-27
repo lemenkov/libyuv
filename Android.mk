@@ -19,6 +19,7 @@ LOCAL_SRC_FILES := \
     source/cpu_id.cc            \
     source/planar_functions.cc  \
     source/rotate.cc            \
+    source/rotate_any.cc        \
     source/rotate_argb.cc       \
     source/rotate_common.cc     \
     source/rotate_mips.cc       \

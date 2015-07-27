@@ -28,6 +28,7 @@ set(ly_source_files
   ${ly_src_dir}/mjpeg_validate.cc
   ${ly_src_dir}/planar_functions.cc
   ${ly_src_dir}/rotate.cc
+  ${ly_src_dir}/rotate_any.cc
   ${ly_src_dir}/rotate_argb.cc
   ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_mips.cc

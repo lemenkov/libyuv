@@ -98,11 +98,19 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width);
 void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                         uint8* dst, int dst_stride, int width);
+void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
+                             uint8* dst, int dst_stride, int width);
 void TransposeWx8_MIPS_DSPR2(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width);
 
-void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
-                             uint8* dst, int dst_stride, int width);
+void TransposeWx8_Any_NEON(const uint8* src, int src_stride,
+                           uint8* dst, int dst_stride, int width);
+void TransposeWx8_Any_SSSE3(const uint8* src, int src_stride,
+                            uint8* dst, int dst_stride, int width);
+void TransposeWx8_FAST_Any_SSSE3(const uint8* src, int src_stride,
+                                 uint8* dst, int dst_stride, int width);
+void TransposeWx8_Any_MIPS_DSPR2(const uint8* src, int src_stride,
+                                 uint8* dst, int dst_stride, int width);
 
 void TransposeUVWxH_C(const uint8* src, int src_stride,
                       uint8* dst_a, int dst_stride_a,

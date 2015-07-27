@@ -1,4 +1,5 @@
 # This is a generic makefile for libyuv for Windows Arm.
+# call "c:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_arm\vcvarsx86_arm.bat"
 # nmake /f winarm.mk
 # make -f winarm.mk
 # nmake /f winarm.mk clean
@@ -21,11 +22,13 @@ LOCAL_OBJ_FILES = \
 	source/cpu_id.o\
 	source/planar_functions.o\
 	source/rotate.o\
+	source/rotate_any.o\
 	source/rotate_argb.o\
 	source/rotate_common.o\
 	source/row_any.o\
 	source/row_common.o\
 	source/scale.o\
+	source/scale_any.o\
 	source/scale_argb.o\
 	source/scale_common.o\
 	source/video_common.o
