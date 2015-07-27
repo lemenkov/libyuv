@@ -211,8 +211,8 @@ void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
                              const uint32 dither4, int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    int dither0 = ((unsigned char*)(&dither4))[x & 3];
-    int dither1 = ((unsigned char*)(&dither4))[(x + 1) & 3];
+    int dither0 = ((const unsigned char*)(&dither4))[x & 3];
+    int dither1 = ((const unsigned char*)(&dither4))[(x + 1) & 3];
     uint8 b0 = clamp255(src_argb[0] + dither0) >> 3;
     uint8 g0 = clamp255(src_argb[1] + dither0) >> 2;
     uint8 r0 = clamp255(src_argb[2] + dither0) >> 3;
@@ -225,7 +225,7 @@ void ARGBToRGB565DitherRow_C(const uint8* src_argb, uint8* dst_rgb,
     src_argb += 8;
   }
   if (width & 1) {
-    int dither0 = ((unsigned char*)(&dither4))[(width - 1) & 3];
+    int dither0 = ((const unsigned char*)(&dither4))[(width - 1) & 3];
     uint8 b0 = clamp255(src_argb[0] + dither0) >> 3;
     uint8 g0 = clamp255(src_argb[1] + dither0) >> 2;
     uint8 r0 = clamp255(src_argb[2] + dither0) >> 3;
