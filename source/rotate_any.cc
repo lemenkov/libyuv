@@ -29,16 +29,16 @@ extern "C" {
       TPOS_C(src + n, src_stride, dst + n * dst_stride, dst_stride, r);        \
     }
 
-#ifdef HAS_TRANSPOSE_WX8_NEON
+#ifdef HAS_TRANSPOSEWX8_NEON
 TANY(TransposeWx8_Any_NEON, TransposeWx8_NEON, TransposeWx8_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEWX8_SSSE3
 TANY(TransposeWx8_Any_SSSE3, TransposeWx8_SSSE3, TransposeWx8_C, 7)
 #endif
 #ifdef HAS_TRANSPOSEWX8_FAST_SSSE3
-TANY(TransposeWx8_FAST_Any_SSSE3, TransposeWx8_FAST_SSSE3, TransposeWx8_C, 15)
+TANY(TransposeWx8_Fast_Any_SSSE3, TransposeWx8_Fast_SSSE3, TransposeWx8_C, 15)
 #endif
-#ifdef HAS_TRANSPOSE_WX8_MIPS_DSPR2
+#ifdef HAS_TRANSPOSEWX8_MIPS_DSPR2
 TANY(TransposeWx8_Any_MIPS_DSPR2, TransposeWx8_MIPS_DSPR2, TransposeWx8_C, 7)
 #endif
 

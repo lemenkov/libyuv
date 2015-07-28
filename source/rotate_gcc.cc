@@ -236,7 +236,7 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
 #if !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
     defined(__x86_64__)
 // 64 bit version has enough registers to do 16x8 to 8x16 at a time.
-void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
+void TransposeWx8_Fast_SSSE3(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width) {
   asm volatile (
   // Read in the data from the source pointer.

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "libyuv/row.h"
+#include "libyuv/rotate.h"
 
 #include "libyuv/cpu_id.h"
 #include "libyuv/convert.h"
@@ -29,26 +29,26 @@ void TransposePlane(const uint8* src, int src_stride,
   void (*TransposeWx8)(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride,
                        int width) = TransposeWx8_C;
-#if defined(HAS_TRANSPOSE_WX8_NEON)
+#if defined(HAS_TRANSPOSEWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     TransposeWx8 = TransposeWx8_NEON;
   }
 #endif
-#if defined(HAS_TRANSPOSE_WX8_SSSE3)
+#if defined(HAS_TRANSPOSEWX8_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
     TransposeWx8 = TransposeWx8_SSSE3;
   }
 #endif
-#if defined(HAS_TRANSPOSE_WX8_FAST_SSSE3)
+#if defined(HAS_TRANSPOSEWX8_FAST_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    TransposeWx8 = TransposeWx8_FAST_SSSE3;
+    TransposeWx8 = TransposeWx8_Fast_SSSE3;
   }
 #endif
-#if defined(HAS_TRANSPOSE_WX8_MIPS_DSPR2)
+#if defined(HAS_TRANSPOSEWX8_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
     if (IS_ALIGNED(width, 4) &&
         IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
-      TransposeWx8 = TransposeWx8_FAST_MIPS_DSPR2;
+      TransposeWx8 = TransposeWx8_Fast_MIPS_DSPR2;
     } else {
       TransposeWx8 = TransposeWx8_MIPS_DSPR2;
     }
@@ -193,17 +193,17 @@ void TransposeUV(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b,
                          int width) = TransposeUVWx8_C;
-#if defined(HAS_TRANSPOSE_UVWX8_NEON)
+#if defined(HAS_TRANSPOSEUVWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     TransposeUVWx8 = TransposeUVWx8_NEON;
   }
 #endif
-#if defined(HAS_TRANSPOSE_UVWX8_SSE2)
+#if defined(HAS_TRANSPOSEUVWX8_SSE2)
   if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
     TransposeUVWx8 = TransposeUVWx8_SSE2;
   }
 #endif
-#if defined(HAS_TRANSPOSE_UVWx8_MIPS_DSPR2)
+#if defined(HAS_TRANSPOSEUVWx8_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
     TransposeUVWx8 = TransposeUVWx8_MIPS_DSPR2;

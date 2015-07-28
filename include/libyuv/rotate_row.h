@@ -78,20 +78,19 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
-#define HAS_TRANSPOSE_WX8_NEON
-#define HAS_TRANSPOSE_UVWX8_NEON
+#define HAS_TRANSPOSEWX8_NEON
+#define HAS_TRANSPOSEUVWX8_NEON
 #endif
 
 #if !defined(LIBYUV_DISABLE_MIPS) && !defined(__native_client__) && \
     defined(__mips__) && \
     defined(__mips_dsp) && (__mips_dsp_rev >= 2)
-#define HAS_TRANSPOSE_WX8_MIPS_DSPR2
-#define HAS_TRANSPOSE_UVWx8_MIPS_DSPR2
+#define HAS_TRANSPOSEWX8_MIPS_DSPR2
+#define HAS_TRANSPOSEUVWx8_MIPS_DSPR2
 #endif  // defined(__mips__)
 
 void TransposeWxH_C(const uint8* src, int src_stride,
-                    uint8* dst, int dst_stride,
-                    int width, int height);
+                    uint8* dst, int dst_stride, int width, int height);
 
 void TransposeWx8_C(const uint8* src, int src_stride,
                     uint8* dst, int dst_stride, int width);
@@ -99,7 +98,7 @@ void TransposeWx8_NEON(const uint8* src, int src_stride,
                        uint8* dst, int dst_stride, int width);
 void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                         uint8* dst, int dst_stride, int width);
-void TransposeWx8_FAST_SSSE3(const uint8* src, int src_stride,
+void TransposeWx8_Fast_SSSE3(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width);
 void TransposeWx8_MIPS_DSPR2(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width);
@@ -108,7 +107,7 @@ void TransposeWx8_Any_NEON(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride, int width);
 void TransposeWx8_Any_SSSE3(const uint8* src, int src_stride,
                             uint8* dst, int dst_stride, int width);
-void TransposeWx8_FAST_Any_SSSE3(const uint8* src, int src_stride,
+void TransposeWx8_Fast_Any_SSSE3(const uint8* src, int src_stride,
                                  uint8* dst, int dst_stride, int width);
 void TransposeWx8_Any_MIPS_DSPR2(const uint8* src, int src_stride,
                                  uint8* dst, int dst_stride, int width);
