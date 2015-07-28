@@ -211,7 +211,7 @@ ANY21(SobelRow_Any_NEON, SobelRow_NEON, 0, 1, 1, 4, 7)
 ANY21(SobelToPlaneRow_Any_SSE2, SobelToPlaneRow_SSE2, 0, 1, 1, 1, 15)
 #endif
 #ifdef HAS_SOBELTOPLANEROW_NEON
-ANY21(SobelToPlaneRow_Any_NEON, SobelToPlaneRow_NEON, 0, 1, 1, 1, 7)
+ANY21(SobelToPlaneRow_Any_NEON, SobelToPlaneRow_NEON, 0, 1, 1, 1, 15)
 #endif
 #ifdef HAS_SOBELXYROW_SSE2
 ANY21(SobelXYRow_Any_SSE2, SobelXYRow_SSE2, 0, 1, 1, 4, 15)
