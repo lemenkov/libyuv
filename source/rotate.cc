@@ -27,21 +27,26 @@ void TransposePlane(const uint8* src, int src_stride,
                     int width, int height) {
   int i = height;
   void (*TransposeWx8)(const uint8* src, int src_stride,
-                       uint8* dst, int dst_stride,
-                       int width) = TransposeWx8_C;
+                       uint8* dst, int dst_stride, int width) = TransposeWx8_C;
 #if defined(HAS_TRANSPOSEWX8_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     TransposeWx8 = TransposeWx8_NEON;
   }
 #endif
 #if defined(HAS_TRANSPOSEWX8_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 8)) {
-    TransposeWx8 = TransposeWx8_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    TransposeWx8 = TransposeWx8_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeWx8 = TransposeWx8_SSSE3;
+    }
   }
 #endif
 #if defined(HAS_TRANSPOSEWX8_FAST_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    TransposeWx8 = TransposeWx8_Fast_SSSE3;
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    TransposeWx8 = TransposeWx8_Fast_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx8 = TransposeWx8_Fast_SSSE3;
+    }
   }
 #endif
 #if defined(HAS_TRANSPOSEWX8_MIPS_DSPR2)
