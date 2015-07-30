@@ -1117,10 +1117,14 @@ TEST_F(libyuvTest, ValidateJpeg) {
   const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
     benchmark_width_ * benchmark_height_ : kMinJpeg;
   const int kSize = kImageSize + kOff;
-  align_buffer_64(orig_pixels, kSize);
+  align_buffer_page_end(orig_pixels, kSize);
 
   // No SOI or EOI. Expect fail.
   memset(orig_pixels, 0, kSize);
+  EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
+
+  // Test special value that matches marker start.
+  memset(orig_pixels, 0xff, kSize);
   EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
 
   // EOI, SOI. Expect pass.
@@ -1142,7 +1146,7 @@ TEST_F(libyuvTest, ValidateJpegLarge) {
   const int kSize = kImageSize + kOff;
   const int kMultiple = 10;
   const int kBufSize = kImageSize * kMultiple + kOff;
-  align_buffer_64(orig_pixels, kBufSize);
+  align_buffer_page_end(orig_pixels, kBufSize);
 
   // No SOI or EOI. Expect fail.
   memset(orig_pixels, 0, kBufSize);
@@ -1165,7 +1169,16 @@ TEST_F(libyuvTest, InvalidateJpeg) {
   const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
     benchmark_width_ * benchmark_height_ : kMinJpeg;
   const int kSize = kImageSize + kOff;
-  align_buffer_64(orig_pixels, kSize);
+  align_buffer_page_end(orig_pixels, kSize);
+
+  // NULL pointer. Expect fail.
+  EXPECT_FALSE(ValidateJpeg(NULL, kSize));
+
+  // Negative size. Expect fail.
+  EXPECT_FALSE(ValidateJpeg(orig_pixels, -1));
+
+  // Too large size. Expect fail.
+  EXPECT_FALSE(ValidateJpeg(orig_pixels, 0xfb000000ull));
 
   // No SOI or EOI. Expect fail.
   memset(orig_pixels, 0, kSize);
@@ -1177,6 +1190,7 @@ TEST_F(libyuvTest, InvalidateJpeg) {
   for (int times = 0; times < benchmark_iterations_; ++times) {
     EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
   }
+
   // EOI but no SOI. Expect fail.
   orig_pixels[0] = 0;
   orig_pixels[1] = 0;
@@ -1187,20 +1201,37 @@ TEST_F(libyuvTest, InvalidateJpeg) {
   free_aligned_buffer_page_end(orig_pixels);
 }
 
+TEST_F(libyuvTest, FuzzJpeg) {
+  srandom(time(NULL));
+  // SOI but no EOI. Expect fail.
+  for (int times = 0; times < benchmark_iterations_; ++times) {
+    const int kSize = random() % 5000 + 2;
+    align_buffer_page_end(orig_pixels, kSize);
+    MemRandomize(orig_pixels, kSize);
+
+    // Add SOI so frame will be scanned.
+    orig_pixels[0] = 0xff;
+    orig_pixels[1] = 0xd8;  // SOI.
+    orig_pixels[kSize - 1] = 0xff;
+    ValidateJpeg(orig_pixels, kSize);  // Failure normally expected.
+    free_aligned_buffer_page_end(orig_pixels);
+  }
+}
+
 TEST_F(libyuvTest, MJPGToI420) {
   const int kOff = 10;
   const int kMinJpeg = 64;
   const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
     benchmark_width_ * benchmark_height_ : kMinJpeg;
   const int kSize = kImageSize + kOff;
-  align_buffer_64(orig_pixels, kSize);
-  align_buffer_64(dst_y_opt, benchmark_width_ * benchmark_height_);
-  align_buffer_64(dst_u_opt,
-                  SUBSAMPLE(benchmark_width_, 2) *
-                  SUBSAMPLE(benchmark_height_, 2));
-  align_buffer_64(dst_v_opt,
-                  SUBSAMPLE(benchmark_width_, 2) *
-                  SUBSAMPLE(benchmark_height_, 2));
+  align_buffer_page_end(orig_pixels, kSize);
+  align_buffer_page_end(dst_y_opt, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(dst_u_opt,
+                        SUBSAMPLE(benchmark_width_, 2) *
+                        SUBSAMPLE(benchmark_height_, 2));
+  align_buffer_page_end(dst_v_opt,
+                        SUBSAMPLE(benchmark_width_, 2) *
+                        SUBSAMPLE(benchmark_height_, 2));
 
   // EOI, SOI to make MJPG appear valid.
   memset(orig_pixels, 0, kSize);
@@ -1232,8 +1263,8 @@ TEST_F(libyuvTest, MJPGToARGB) {
   const int kImageSize = benchmark_width_ * benchmark_height_ >= kMinJpeg ?
     benchmark_width_ * benchmark_height_ : kMinJpeg;
   const int kSize = kImageSize + kOff;
-  align_buffer_64(orig_pixels, kSize);
-  align_buffer_64(dst_argb_opt, benchmark_width_ * benchmark_height_ * 4);
+  align_buffer_page_end(orig_pixels, kSize);
+  align_buffer_page_end(dst_argb_opt, benchmark_width_ * benchmark_height_ * 4);
 
   // EOI, SOI to make MJPG appear valid.
   memset(orig_pixels, 0, kSize);
