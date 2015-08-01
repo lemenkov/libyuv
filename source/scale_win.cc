@@ -826,6 +826,7 @@ void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   }
 }
 
+#ifdef HAS_SCALEADDROW_AVX2
 // Reads 32 bytes and accumulates to 32 shorts at a time.
 __declspec(naked)
 void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
@@ -854,6 +855,7 @@ void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
     ret
   }
 }
+#endif  // HAS_SCALEADDROW_AVX2
 
 // Bilinear column filtering. SSSE3 version.
 __declspec(naked)
