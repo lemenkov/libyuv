@@ -29,28 +29,6 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
-// TODO(fbarchard): switch to standard form of inline; fails on clangcl.
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
-#if defined(__APPLE__) && defined(__i386__)
-#define DECLARE_FUNCTION(name)                                                 \
-    ".text                                     \n"                             \
-    ".private_extern _" #name "                \n"                             \
-    ".align 4,0x90                             \n"                             \
-"_" #name ":                                   \n"
-#elif defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
-#define DECLARE_FUNCTION(name)                                                 \
-    ".text                                     \n"                             \
-    ".align 4,0x90                             \n"                             \
-"_" #name ":                                   \n"
-#else
-#define DECLARE_FUNCTION(name)                                                 \
-    ".text                                     \n"                             \
-    ".align 4,0x90                             \n"                             \
-#name ":                                       \n"
-#endif
-#endif
-
 // The following are available for Visual C:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
     defined(_MSC_VER) && !defined(__clang__)
@@ -58,14 +36,14 @@ extern "C" {
 #define HAS_TRANSPOSEUVWX8_SSE2
 #endif
 
-// The following are available for GCC but not NaCL:
+// The following are available for GCC 32 or 64 bit but not NaCL for 64 bit:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__i386__) || (defined(__x86_64__) && !defined(__native_client__)))
 #define HAS_TRANSPOSEWX8_SSSE3
 #endif
 
-// The following are available for 32 bit GCC:
-#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)  && !defined(__clang__)
+// The following are available for 32 bit GCC but not clang.
+#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__) && !defined(__clang__)
 #define HAS_TRANSPOSEUVWX8_SSE2
 #endif
 

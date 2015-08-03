@@ -19,8 +19,8 @@ extern "C" {
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__i386__) || (defined(__x86_64__) && !defined(__native_client__)))
+// Transpose 8x8. 32 or 64 bit, but not NaCL for 64 bit.
+#if defined(HAS_TRANSPOSEWX8_SSSE3)
 void TransposeWx8_SSSE3(const uint8* src, int src_stride,
                         uint8* dst, int dst_stride, int width) {
   asm volatile (
@@ -105,137 +105,10 @@ void TransposeWx8_SSSE3(const uint8* src, int src_stride,
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
+#endif  // defined(HAS_TRANSPOSEWX8_SSSE3)
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__)  && !defined(__clang__)
-void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
-                         uint8* dst_a, int dst_stride_a,
-                         uint8* dst_b, int dst_stride_b, int width);
-  asm (
-    DECLARE_FUNCTION(TransposeUVWx8_SSE2)
-    "push   %ebx                               \n"
-    "push   %esi                               \n"
-    "push   %edi                               \n"
-    "push   %ebp                               \n"
-    "mov    0x14(%esp),%eax                    \n"
-    "mov    0x18(%esp),%edi                    \n"
-    "mov    0x1c(%esp),%edx                    \n"
-    "mov    0x20(%esp),%esi                    \n"
-    "mov    0x24(%esp),%ebx                    \n"
-    "mov    0x28(%esp),%ebp                    \n"
-    "mov    %esp,%ecx                          \n"
-    "sub    $0x14,%esp                         \n"
-    "and    $0xfffffff0,%esp                   \n"
-    "mov    %ecx,0x10(%esp)                    \n"
-    "mov    0x2c(%ecx),%ecx                    \n"
-
-"1:                                            \n"
-    "movdqu (%eax),%xmm0                       \n"
-    "movdqu (%eax,%edi,1),%xmm1                \n"
-    "lea    (%eax,%edi,2),%eax                 \n"
-    "movdqa %xmm0,%xmm7                        \n"
-    "punpcklbw %xmm1,%xmm0                     \n"
-    "punpckhbw %xmm1,%xmm7                     \n"
-    "movdqa %xmm7,%xmm1                        \n"
-    "movdqu (%eax),%xmm2                       \n"
-    "movdqu (%eax,%edi,1),%xmm3                \n"
-    "lea    (%eax,%edi,2),%eax                 \n"
-    "movdqa %xmm2,%xmm7                        \n"
-    "punpcklbw %xmm3,%xmm2                     \n"
-    "punpckhbw %xmm3,%xmm7                     \n"
-    "movdqa %xmm7,%xmm3                        \n"
-    "movdqu (%eax),%xmm4                       \n"
-    "movdqu (%eax,%edi,1),%xmm5                \n"
-    "lea    (%eax,%edi,2),%eax                 \n"
-    "movdqa %xmm4,%xmm7                        \n"
-    "punpcklbw %xmm5,%xmm4                     \n"
-    "punpckhbw %xmm5,%xmm7                     \n"
-    "movdqa %xmm7,%xmm5                        \n"
-    "movdqu (%eax),%xmm6                       \n"
-    "movdqu (%eax,%edi,1),%xmm7                \n"
-    "lea    (%eax,%edi,2),%eax                 \n"
-    "movdqu %xmm5,(%esp)                       \n"
-    "neg    %edi                               \n"
-    "movdqa %xmm6,%xmm5                        \n"
-    "punpcklbw %xmm7,%xmm6                     \n"
-    "punpckhbw %xmm7,%xmm5                     \n"
-    "movdqa %xmm5,%xmm7                        \n"
-    "lea    0x10(%eax,%edi,8),%eax             \n"
-    "neg    %edi                               \n"
-    "movdqa %xmm0,%xmm5                        \n"
-    "punpcklwd %xmm2,%xmm0                     \n"
-    "punpckhwd %xmm2,%xmm5                     \n"
-    "movdqa %xmm5,%xmm2                        \n"
-    "movdqa %xmm1,%xmm5                        \n"
-    "punpcklwd %xmm3,%xmm1                     \n"
-    "punpckhwd %xmm3,%xmm5                     \n"
-    "movdqa %xmm5,%xmm3                        \n"
-    "movdqa %xmm4,%xmm5                        \n"
-    "punpcklwd %xmm6,%xmm4                     \n"
-    "punpckhwd %xmm6,%xmm5                     \n"
-    "movdqa %xmm5,%xmm6                        \n"
-    "movdqu (%esp),%xmm5                       \n"
-    "movdqu %xmm6,(%esp)                       \n"
-    "movdqa %xmm5,%xmm6                        \n"
-    "punpcklwd %xmm7,%xmm5                     \n"
-    "punpckhwd %xmm7,%xmm6                     \n"
-    "movdqa %xmm6,%xmm7                        \n"
-    "movdqa %xmm0,%xmm6                        \n"
-    "punpckldq %xmm4,%xmm0                     \n"
-    "punpckhdq %xmm4,%xmm6                     \n"
-    "movdqa %xmm6,%xmm4                        \n"
-    "movdqu (%esp),%xmm6                       \n"
-    "movlpd %xmm0,(%edx)                       \n"
-    "movhpd %xmm0,(%ebx)                       \n"
-    "movlpd %xmm4,(%edx,%esi,1)                \n"
-    "lea    (%edx,%esi,2),%edx                 \n"
-    "movhpd %xmm4,(%ebx,%ebp,1)                \n"
-    "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "movdqa %xmm2,%xmm0                        \n"
-    "punpckldq %xmm6,%xmm2                     \n"
-    "movlpd %xmm2,(%edx)                       \n"
-    "movhpd %xmm2,(%ebx)                       \n"
-    "punpckhdq %xmm6,%xmm0                     \n"
-    "movlpd %xmm0,(%edx,%esi,1)                \n"
-    "lea    (%edx,%esi,2),%edx                 \n"
-    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
-    "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "movdqa %xmm1,%xmm0                        \n"
-    "punpckldq %xmm5,%xmm1                     \n"
-    "movlpd %xmm1,(%edx)                       \n"
-    "movhpd %xmm1,(%ebx)                       \n"
-    "punpckhdq %xmm5,%xmm0                     \n"
-    "movlpd %xmm0,(%edx,%esi,1)                \n"
-    "lea    (%edx,%esi,2),%edx                 \n"
-    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
-    "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "movdqa %xmm3,%xmm0                        \n"
-    "punpckldq %xmm7,%xmm3                     \n"
-    "movlpd %xmm3,(%edx)                       \n"
-    "movhpd %xmm3,(%ebx)                       \n"
-    "punpckhdq %xmm7,%xmm0                     \n"
-    "sub    $0x8,%ecx                          \n"
-    "movlpd %xmm0,(%edx,%esi,1)                \n"
-    "lea    (%edx,%esi,2),%edx                 \n"
-    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
-    "lea    (%ebx,%ebp,2),%ebx                 \n"
-    "jg     1b                                 \n"
-    "mov    0x10(%esp),%esp                    \n"
-    "pop    %ebp                               \n"
-    "pop    %edi                               \n"
-    "pop    %esi                               \n"
-    "pop    %ebx                               \n"
-#if defined(__native_client__)
-    "pop    %ecx                               \n"
-    "and    $0xffffffe0,%ecx                   \n"
-    "jmp    *%ecx                              \n"
-#else
-    "ret                                       \n"
-#endif
-);
-#endif
-#if !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
-    defined(__x86_64__)
-// 64 bit version has enough registers to do 16x8 to 8x16 at a time.
+// Transpose 16x8. 64 bit
+#if defined(HAS_TRANSPOSEWX8_FAST_SSSE3)
 void TransposeWx8_Fast_SSSE3(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width) {
   asm volatile (
@@ -373,7 +246,163 @@ void TransposeWx8_Fast_SSSE3(const uint8* src, int src_stride,
     "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13",  "xmm14",  "xmm15"
 );
 }
+#endif  // defined(HAS_TRANSPOSEWX8_FAST_SSSE3)
 
+// Transpose UV 8x8.
+#if defined(HAS_TRANSPOSEUVWX8_SSE2)
+
+// 32 bit version.
+#if defined(__i386__)
+
+// TODO(fbarchard): switch to standard form of inline; fails on clangcl.
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+#if defined(__APPLE__) && defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".private_extern _" #name "                \n"                             \
+    ".align 4,0x90                             \n"                             \
+"_" #name ":                                   \n"
+#elif defined(__MINGW32__) || defined(__CYGWIN__) && defined(__i386__)
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".align 4,0x90                             \n"                             \
+"_" #name ":                                   \n"
+#else
+#define DECLARE_FUNCTION(name)                                                 \
+    ".text                                     \n"                             \
+    ".align 4,0x90                             \n"                             \
+#name ":                                       \n"
+#endif
+#endif
+
+void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
+                         uint8* dst_a, int dst_stride_a,
+                         uint8* dst_b, int dst_stride_b, int width);
+  asm (
+    DECLARE_FUNCTION(TransposeUVWx8_SSE2)
+    "push   %ebx                               \n"
+    "push   %esi                               \n"
+    "push   %edi                               \n"
+    "push   %ebp                               \n"
+    "mov    0x14(%esp),%eax                    \n"
+    "mov    0x18(%esp),%edi                    \n"
+    "mov    0x1c(%esp),%edx                    \n"
+    "mov    0x20(%esp),%esi                    \n"
+    "mov    0x24(%esp),%ebx                    \n"
+    "mov    0x28(%esp),%ebp                    \n"
+    "mov    %esp,%ecx                          \n"
+    "sub    $0x14,%esp                         \n"
+    "and    $0xfffffff0,%esp                   \n"
+    "mov    %ecx,0x10(%esp)                    \n"
+    "mov    0x2c(%ecx),%ecx                    \n"
+
+"1:                                            \n"
+    "movdqu (%eax),%xmm0                       \n"
+    "movdqu (%eax,%edi,1),%xmm1                \n"
+    "lea    (%eax,%edi,2),%eax                 \n"
+    "movdqa %xmm0,%xmm7                        \n"
+    "punpcklbw %xmm1,%xmm0                     \n"
+    "punpckhbw %xmm1,%xmm7                     \n"
+    "movdqa %xmm7,%xmm1                        \n"
+    "movdqu (%eax),%xmm2                       \n"
+    "movdqu (%eax,%edi,1),%xmm3                \n"
+    "lea    (%eax,%edi,2),%eax                 \n"
+    "movdqa %xmm2,%xmm7                        \n"
+    "punpcklbw %xmm3,%xmm2                     \n"
+    "punpckhbw %xmm3,%xmm7                     \n"
+    "movdqa %xmm7,%xmm3                        \n"
+    "movdqu (%eax),%xmm4                       \n"
+    "movdqu (%eax,%edi,1),%xmm5                \n"
+    "lea    (%eax,%edi,2),%eax                 \n"
+    "movdqa %xmm4,%xmm7                        \n"
+    "punpcklbw %xmm5,%xmm4                     \n"
+    "punpckhbw %xmm5,%xmm7                     \n"
+    "movdqa %xmm7,%xmm5                        \n"
+    "movdqu (%eax),%xmm6                       \n"
+    "movdqu (%eax,%edi,1),%xmm7                \n"
+    "lea    (%eax,%edi,2),%eax                 \n"
+    "movdqu %xmm5,(%esp)                       \n"
+    "neg    %edi                               \n"
+    "movdqa %xmm6,%xmm5                        \n"
+    "punpcklbw %xmm7,%xmm6                     \n"
+    "punpckhbw %xmm7,%xmm5                     \n"
+    "movdqa %xmm5,%xmm7                        \n"
+    "lea    0x10(%eax,%edi,8),%eax             \n"
+    "neg    %edi                               \n"
+    "movdqa %xmm0,%xmm5                        \n"
+    "punpcklwd %xmm2,%xmm0                     \n"
+    "punpckhwd %xmm2,%xmm5                     \n"
+    "movdqa %xmm5,%xmm2                        \n"
+    "movdqa %xmm1,%xmm5                        \n"
+    "punpcklwd %xmm3,%xmm1                     \n"
+    "punpckhwd %xmm3,%xmm5                     \n"
+    "movdqa %xmm5,%xmm3                        \n"
+    "movdqa %xmm4,%xmm5                        \n"
+    "punpcklwd %xmm6,%xmm4                     \n"
+    "punpckhwd %xmm6,%xmm5                     \n"
+    "movdqa %xmm5,%xmm6                        \n"
+    "movdqu (%esp),%xmm5                       \n"
+    "movdqu %xmm6,(%esp)                       \n"
+    "movdqa %xmm5,%xmm6                        \n"
+    "punpcklwd %xmm7,%xmm5                     \n"
+    "punpckhwd %xmm7,%xmm6                     \n"
+    "movdqa %xmm6,%xmm7                        \n"
+    "movdqa %xmm0,%xmm6                        \n"
+    "punpckldq %xmm4,%xmm0                     \n"
+    "punpckhdq %xmm4,%xmm6                     \n"
+    "movdqa %xmm6,%xmm4                        \n"
+    "movdqu (%esp),%xmm6                       \n"
+    "movlpd %xmm0,(%edx)                       \n"
+    "movhpd %xmm0,(%ebx)                       \n"
+    "movlpd %xmm4,(%edx,%esi,1)                \n"
+    "lea    (%edx,%esi,2),%edx                 \n"
+    "movhpd %xmm4,(%ebx,%ebp,1)                \n"
+    "lea    (%ebx,%ebp,2),%ebx                 \n"
+    "movdqa %xmm2,%xmm0                        \n"
+    "punpckldq %xmm6,%xmm2                     \n"
+    "movlpd %xmm2,(%edx)                       \n"
+    "movhpd %xmm2,(%ebx)                       \n"
+    "punpckhdq %xmm6,%xmm0                     \n"
+    "movlpd %xmm0,(%edx,%esi,1)                \n"
+    "lea    (%edx,%esi,2),%edx                 \n"
+    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
+    "lea    (%ebx,%ebp,2),%ebx                 \n"
+    "movdqa %xmm1,%xmm0                        \n"
+    "punpckldq %xmm5,%xmm1                     \n"
+    "movlpd %xmm1,(%edx)                       \n"
+    "movhpd %xmm1,(%ebx)                       \n"
+    "punpckhdq %xmm5,%xmm0                     \n"
+    "movlpd %xmm0,(%edx,%esi,1)                \n"
+    "lea    (%edx,%esi,2),%edx                 \n"
+    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
+    "lea    (%ebx,%ebp,2),%ebx                 \n"
+    "movdqa %xmm3,%xmm0                        \n"
+    "punpckldq %xmm7,%xmm3                     \n"
+    "movlpd %xmm3,(%edx)                       \n"
+    "movhpd %xmm3,(%ebx)                       \n"
+    "punpckhdq %xmm7,%xmm0                     \n"
+    "sub    $0x8,%ecx                          \n"
+    "movlpd %xmm0,(%edx,%esi,1)                \n"
+    "lea    (%edx,%esi,2),%edx                 \n"
+    "movhpd %xmm0,(%ebx,%ebp,1)                \n"
+    "lea    (%ebx,%ebp,2),%ebx                 \n"
+    "jg     1b                                 \n"
+    "mov    0x10(%esp),%esp                    \n"
+    "pop    %ebp                               \n"
+    "pop    %edi                               \n"
+    "pop    %esi                               \n"
+    "pop    %ebx                               \n"
+#if defined(__native_client__)
+    "pop    %ecx                               \n"
+    "and    $0xffffffe0,%ecx                   \n"
+    "jmp    *%ecx                              \n"
+#else
+    "ret                                       \n"
+#endif
+);
+#else
+// 64 bit version.
 void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
                          uint8* dst_a, int dst_stride_a,
                          uint8* dst_b, int dst_stride_b, int width) {
@@ -482,9 +511,8 @@ void TransposeUVWx8_SSE2(const uint8* src, int src_stride,
     "xmm8", "xmm9"
 );
 }
-#endif
-#endif
-
+#endif  // defined(__i386__)
+#endif  // defined(HAS_TRANSPOSEUVWX8_SSE2)
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus
