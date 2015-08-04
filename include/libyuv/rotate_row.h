@@ -42,11 +42,6 @@ extern "C" {
 #define HAS_TRANSPOSEWX8_SSSE3
 #endif
 
-// The following are available for 32 bit GCC but not clang.
-#if !defined(LIBYUV_DISABLE_X86) && defined(__i386__) && !defined(__clang__)
-#define HAS_TRANSPOSEUVWX8_SSE2
-#endif
-
 // The following are available for 64 bit GCC but not NaCL:
 #if !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
     defined(__x86_64__)
