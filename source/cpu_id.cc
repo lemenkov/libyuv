@@ -216,8 +216,10 @@ int InitCpuFlags(void) {
               kCpuHasX86;
 
 #ifdef HAS_XGETBV
+  // Avoid call to xgetbv if AVX disabled for drmemory.
+  // TODO(fbarchard): check xsave before calling xgetbv.
   if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
-      TestOsSaveYmm()) {  // Saves YMM.
+      !TestEnv("LIBYUV_DISABLE_AVX") && TestOsSaveYmm()) {  // Saves YMM.
     cpu_info_ |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                  kCpuHasAVX;
   }
@@ -237,9 +239,6 @@ int InitCpuFlags(void) {
   }
   if (TestEnv("LIBYUV_DISABLE_SSE42")) {
     cpu_info_ &= ~kCpuHasSSE42;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX")) {
-    cpu_info_ &= ~kCpuHasAVX;
   }
   if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info_ &= ~kCpuHasAVX2;
