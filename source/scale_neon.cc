@@ -26,7 +26,6 @@ extern "C" {
 void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     // load even pixels into q0, odd into q1
     MEMACCESS(0)
@@ -47,7 +46,6 @@ void ScaleRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown2Linear_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {q0, q1}, [%0]!                \n"  // load pixels and post inc
@@ -73,7 +71,6 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     // change the stride to row 2 pointer
     "add        %1, %0                         \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {q0, q1}, [%0]!                \n"  // load row 1 and post inc
@@ -101,7 +98,6 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleRowDown4_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8     {d0, d1, d2, d3}, [%0]!        \n" // src line 0
@@ -123,7 +119,6 @@ void ScaleRowDown4Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   const uint8* src_ptr2 = src_ptr + src_stride * 2;
   const uint8* src_ptr3 = src_ptr + src_stride * 3;
 asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {q0}, [%0]!                    \n"   // load up 16x4
@@ -162,7 +157,6 @@ void ScaleRowDown34_NEON(const uint8* src_ptr,
                          ptrdiff_t src_stride,
                          uint8* dst_ptr, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8     {d0, d1, d2, d3}, [%0]!      \n" // src line 0
@@ -185,7 +179,6 @@ void ScaleRowDown34_0_Box_NEON(const uint8* src_ptr,
   asm volatile (
     "vmov.u8    d24, #3                        \n"
     "add        %3, %0                         \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
@@ -245,7 +238,6 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
   asm volatile (
     "vmov.u8    d24, #3                        \n"
     "add        %3, %0                         \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8       {d0, d1, d2, d3}, [%0]!      \n" // src line 0
@@ -300,7 +292,6 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
   asm volatile (
     MEMACCESS(3)
     "vld1.8     {q3}, [%3]                     \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {d0, d1, d2, d3}, [%0]!        \n"
@@ -334,7 +325,6 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
     MEMACCESS(7)
     "vld1.8     {q15}, [%7]                    \n"
     "add        %3, %0                         \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
 
     // d0 = 00 40 01 41 02 42 03 43
@@ -450,7 +440,6 @@ void ScaleRowDown38_2_Box_NEON(const uint8* src_ptr,
     MEMACCESS(5)
     "vld1.8     {q14}, [%5]                    \n"
     "add        %3, %0                         \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
 
     // d0 = 00 40 01 41 02 42 03 43
@@ -545,7 +534,6 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                     uint16* dst_ptr, int src_width, int src_height) {
   const uint8* src_tmp = NULL;
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     "mov       %0, %1                          \n"
     "mov       r12, %5                         \n"
@@ -590,7 +578,6 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
   int* tmp = dx_offset;
   const uint8* src_tmp = src_ptr;
   asm volatile (
-    ".p2align   2                              \n"
     "vdup.32    q0, %3                         \n"  // x
     "vdup.32    q1, %4                         \n"  // dx
     "vld1.32    {q2}, [%5]                     \n"  // 0 1 2 3
@@ -749,7 +736,6 @@ void ScaleFilterRows_NEON(uint8* dst_ptr,
 void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
                             uint8* dst, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     // load even pixels into q0, odd into q1
     MEMACCESS(0)
@@ -773,7 +759,6 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
 void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb, ptrdiff_t src_stride,
                                   uint8* dst_argb, int dst_width) {
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
@@ -804,7 +789,6 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
   asm volatile (
     // change the stride to row 2 pointer
     "add        %1, %1, %0                     \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
@@ -845,7 +829,6 @@ void ScaleARGBRowDownEven_NEON(const uint8* src_argb,  ptrdiff_t src_stride,
                                int src_stepx, uint8* dst_argb, int dst_width) {
   asm volatile (
     "mov        r12, %3, lsl #2                \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.32    {d0[0]}, [%0], r12             \n"
@@ -875,7 +858,6 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb, ptrdiff_t src_stride,
   asm volatile (
     "mov        r12, %4, lsl #2                \n"
     "add        %1, %1, %0                     \n"
-    ".p2align   2                              \n"
   "1:                                          \n"
     MEMACCESS(0)
     "vld1.8     {d0}, [%0], r12                \n"  // Read 4 2x2 blocks -> 2x1
@@ -930,7 +912,6 @@ void ScaleARGBCols_NEON(uint8* dst_argb, const uint8* src_argb,
   int tmp = 0;
   const uint8* src_tmp = src_argb;
   asm volatile (
-    ".p2align   2                              \n"
   "1:                                          \n"
     LOAD1_DATA32_LANE(d0, 0)
     LOAD1_DATA32_LANE(d0, 1)
@@ -974,7 +955,6 @@ void ScaleARGBFilterCols_NEON(uint8* dst_argb, const uint8* src_argb,
   int* tmp = dx_offset;
   const uint8* src_tmp = src_argb;
   asm volatile (
-    ".p2align   2                              \n"
     "vdup.32    q0, %3                         \n"  // x
     "vdup.32    q1, %4                         \n"  // dx
     "vld1.32    {q2}, [%5]                     \n"  // 0 1 2 3

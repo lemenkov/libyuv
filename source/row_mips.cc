@@ -389,7 +389,6 @@ void SplitUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            $t4, 2f                       \n"
     " andi           %[width], %[width], 0xf       \n"  // residual
 
-    ".p2align        2                             \n"
   "1:                                              \n"
     "addiu           $t4, $t4, -1                  \n"
     "lw              $t0, 0(%[src_uv])             \n"  // V1 | U1 | V0 | U0
@@ -457,7 +456,6 @@ void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width) {
     "blez      $t4, 2f                     \n"
     " addu     %[src], %[src], %[width]    \n"  // src += width
 
-    ".p2align  2                           \n"
    "1:                                     \n"
     "lw        $t0, -16(%[src])            \n"  // |3|2|1|0|
     "lw        $t1, -12(%[src])            \n"  // |7|6|5|4|
@@ -512,7 +510,6 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "blez            %[x], 2f                     \n"
     " addu           %[src_uv], %[src_uv], $t4    \n"
 
-    ".p2align        2                            \n"
    "1:                                            \n"
     "lw              $t0, -32(%[src_uv])          \n"  // |3|2|1|0|
     "lw              $t1, -28(%[src_uv])          \n"  // |7|6|5|4|
@@ -673,7 +670,6 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
     "lui               $s6, 0xff00            \n"
     "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|ff|
 
-    ".p2align          2                      \n"
    "1:                                        \n"
       I422ToTransientMipsRGB
 // Arranging into argb format
@@ -735,7 +731,6 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
     "lui               $s6, 0xff00            \n"
     "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|
 
-    ".p2align          2                       \n"
    "1:                                         \n"
       I422ToTransientMipsRGB
 // Arranging into abgr format
@@ -797,7 +792,6 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
     "lui               $s6, 0xff              \n"
     "ori               $s6, 0xff              \n"  // |00|ff|00|ff|
 
-    ".p2align          2                      \n"
    "1:                                        \n"
       I422ToTransientMipsRGB
       // Arranging into bgra format
@@ -857,7 +851,6 @@ void InterpolateRow_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
      "replv.ph          $t0, %[y0_fraction]               \n"
      "replv.ph          $t1, %[source_y_fraction]         \n"
 
-    ".p2align           2                                 \n"
    "1:                                                    \n"
      "lw                $t2, 0(%[src_ptr])                \n"
      "lw                $t3, 0(%[src_ptr1])               \n"
