@@ -204,11 +204,14 @@ void TransposeUV(const uint8* src, int src_stride,
   }
 #endif
 #if defined(HAS_TRANSPOSEUVWX8_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
-    TransposeUVWx8 = TransposeUVWx8_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    TransposeUVWx8 = TransposeUVWx8_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx8 = TransposeUVWx8_SSE2;
+    }
   }
 #endif
-#if defined(HAS_TRANSPOSEUVWx8_MIPS_DSPR2)
+#if defined(HAS_TRANSPOSEUVWX8_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
     TransposeUVWx8 = TransposeUVWx8_MIPS_DSPR2;
