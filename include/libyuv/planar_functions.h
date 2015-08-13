@@ -281,13 +281,13 @@ int ARGBCopy(const uint8* src_argb, int src_stride_argb,
              uint8* dst_argb, int dst_stride_argb,
              int width, int height);
 
-// Copy ARGB to ARGB.
+// Copy Alpha channel of ARGB to alpha of ARGB.
 LIBYUV_API
 int ARGBCopyAlpha(const uint8* src_argb, int src_stride_argb,
                   uint8* dst_argb, int dst_stride_argb,
                   int width, int height);
 
-// Copy ARGB to ARGB.
+// Copy Y channel to Alpha of ARGB.
 LIBYUV_API
 int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
                      uint8* dst_argb, int dst_stride_argb,

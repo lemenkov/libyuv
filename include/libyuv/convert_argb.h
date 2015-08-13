@@ -68,6 +68,15 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// Convert I420 with Alpha to preattenuated ARGB.
+LIBYUV_API
+int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
+                    const uint8* src_u, int src_stride_u,
+                    const uint8* src_v, int src_stride_v,
+                    const uint8* src_a, int src_stride_a,
+                    uint8* dst_argb, int dst_stride_argb,
+                    int width, int height);
+
 // Convert I400 (grey) to ARGB.  Reverse of ARGBToI400.
 LIBYUV_API
 int I400ToARGB(const uint8* src_y, int src_stride_y,
