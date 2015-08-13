@@ -816,10 +816,18 @@ void CopyRow_16_C(const uint16* src, uint16* dst, int count);
 void ARGBCopyAlphaRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBCopyAlphaRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBCopyAlphaRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
+void ARGBCopyAlphaRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
+                               int width);
+void ARGBCopyAlphaRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,
+                               int width);
 
 void ARGBCopyYToAlphaRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
+void ARGBCopyYToAlphaRow_Any_SSE2(const uint8* src_y, uint8* dst_argb,
+                                  int width);
+void ARGBCopyYToAlphaRow_Any_AVX2(const uint8* src_y, uint8* dst_argb,
+                                  int width);
 
 void SetRow_C(uint8* dst, uint8 v8, int count);
 void SetRow_X86(uint8* dst, uint8 v8, int count);

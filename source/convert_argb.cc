@@ -319,13 +319,19 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
   }
 #endif
 #if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2) && IS_ALIGNED(width, 8)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
+    }
   }
 #endif
 #if defined(HAS_ARGBCOPYYTOALPHAROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2) && IS_ALIGNED(width, 16)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
+    }
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_SSE2)
