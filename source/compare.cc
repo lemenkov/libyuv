@@ -37,7 +37,7 @@ uint32 HashDjb2_C(const uint8* src, int count, uint32 seed);
 #define HAS_HASHDJB2_SSE41
 uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed);
 
-#ifdef VISUALC_HAS_AVX2
+#if defined(_M_IX86) && (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_HASHDJB2_AVX2
 uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed);
 #endif

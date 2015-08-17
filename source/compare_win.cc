@@ -16,9 +16,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for Visual C x86.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+// This module is for 32 bit Visual C x86 and clangcl
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 
 __declspec(naked)
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
@@ -100,40 +99,31 @@ uint32 SumSquareError_AVX2(const uint8* src_a, const uint8* src_b, int count) {
 }
 #endif  // _MSC_VER >= 1700
 
-#define HAS_HASHDJB2_SSE41
-static uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
-static uvec32 kHashMul0 = {
+uvec32 kHash16x33 = { 0x92d9e201, 0, 0, 0 };  // 33 ^ 16
+uvec32 kHashMul0 = {
   0x0c3525e1,  // 33 ^ 15
   0xa3476dc1,  // 33 ^ 14
   0x3b4039a1,  // 33 ^ 13
   0x4f5f0981,  // 33 ^ 12
 };
-static uvec32 kHashMul1 = {
+uvec32 kHashMul1 = {
   0x30f35d61,  // 33 ^ 11
   0x855cb541,  // 33 ^ 10
   0x040a9121,  // 33 ^ 9
   0x747c7101,  // 33 ^ 8
 };
-static uvec32 kHashMul2 = {
+uvec32 kHashMul2 = {
   0xec41d4e1,  // 33 ^ 7
   0x4cfa3cc1,  // 33 ^ 6
   0x025528a1,  // 33 ^ 5
   0x00121881,  // 33 ^ 4
 };
-static uvec32 kHashMul3 = {
+uvec32 kHashMul3 = {
   0x00008c61,  // 33 ^ 3
   0x00000441,  // 33 ^ 2
   0x00000021,  // 33 ^ 1
   0x00000001,  // 33 ^ 0
 };
-
-// 27: 66 0F 38 40 C6     pmulld      xmm0,xmm6
-// 44: 66 0F 38 40 DD     pmulld      xmm3,xmm5
-// 59: 66 0F 38 40 E5     pmulld      xmm4,xmm5
-// 72: 66 0F 38 40 D5     pmulld      xmm2,xmm5
-// 83: 66 0F 38 40 CD     pmulld      xmm1,xmm5
-#define pmulld(reg) _asm _emit 0x66 _asm _emit 0x0F _asm _emit 0x38 \
-    _asm _emit 0x40 _asm _emit reg
 
 __declspec(naked)
 uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
@@ -148,25 +138,25 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
   wloop:
     movdqu     xmm1, [eax]       // src[0-15]
     lea        eax, [eax + 16]
-    pmulld(0xc6)                 // pmulld      xmm0,xmm6  hash *= 33 ^ 16
+    pmulld     xmm0, xmm6        // hash *= 33 ^ 16
     movdqa     xmm5, kHashMul0
     movdqa     xmm2, xmm1
     punpcklbw  xmm2, xmm7        // src[0-7]
     movdqa     xmm3, xmm2
     punpcklwd  xmm3, xmm7        // src[0-3]
-    pmulld(0xdd)                 // pmulld     xmm3, xmm5
+    pmulld     xmm3, xmm5
     movdqa     xmm5, kHashMul1
     movdqa     xmm4, xmm2
     punpckhwd  xmm4, xmm7        // src[4-7]
-    pmulld(0xe5)                 // pmulld     xmm4, xmm5
+    pmulld     xmm4, xmm5
     movdqa     xmm5, kHashMul2
     punpckhbw  xmm1, xmm7        // src[8-15]
     movdqa     xmm2, xmm1
     punpcklwd  xmm2, xmm7        // src[8-11]
-    pmulld(0xd5)                 // pmulld     xmm2, xmm5
+    pmulld     xmm2, xmm5
     movdqa     xmm5, kHashMul3
     punpckhwd  xmm1, xmm7        // src[12-15]
-    pmulld(0xcd)                 // pmulld     xmm1, xmm5
+    pmulld     xmm1, xmm5
     paddd      xmm3, xmm4        // add 16 results
     paddd      xmm1, xmm2
     paddd      xmm1, xmm3
@@ -195,13 +185,13 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
     movdqa     xmm6, kHash16x33
 
   wloop:
-    vpmovzxbd  xmm3, dword ptr [eax]  // src[0-3]
+    vpmovzxbd  xmm3, [eax]  // src[0-3]
     pmulld     xmm0, xmm6  // hash *= 33 ^ 16
-    vpmovzxbd  xmm4, dword ptr [eax + 4]  // src[4-7]
+    vpmovzxbd  xmm4, [eax + 4]  // src[4-7]
     pmulld     xmm3, kHashMul0
-    vpmovzxbd  xmm2, dword ptr [eax + 8]  // src[8-11]
+    vpmovzxbd  xmm2, [eax + 8]  // src[8-11]
     pmulld     xmm4, kHashMul1
-    vpmovzxbd  xmm1, dword ptr [eax + 12]  // src[12-15]
+    vpmovzxbd  xmm1, [eax + 12]  // src[12-15]
     pmulld     xmm2, kHashMul2
     lea        eax, [eax + 16]
     pmulld     xmm1, kHashMul3
@@ -221,6 +211,7 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
   }
 }
 #endif  // _MSC_VER >= 1700
+
 #endif  // !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 
 #ifdef __cplusplus
