@@ -9,6 +9,8 @@
  */
 
 #include "libyuv/basic_types.h"
+
+#include "libyuv/compare_row.h"
 #include "libyuv/row.h"
 
 #ifdef __cplusplus
@@ -133,28 +135,28 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     movd       xmm0, [esp + 12]  // seed
 
     pxor       xmm7, xmm7        // constant 0 for unpck
-    movdqa     xmm6, kHash16x33
+    movdqa     xmm6, xmmword ptr kHash16x33
 
   wloop:
     movdqu     xmm1, [eax]       // src[0-15]
     lea        eax, [eax + 16]
     pmulld     xmm0, xmm6        // hash *= 33 ^ 16
-    movdqa     xmm5, kHashMul0
+    movdqa     xmm5, xmmword ptr kHashMul0
     movdqa     xmm2, xmm1
     punpcklbw  xmm2, xmm7        // src[0-7]
     movdqa     xmm3, xmm2
     punpcklwd  xmm3, xmm7        // src[0-3]
     pmulld     xmm3, xmm5
-    movdqa     xmm5, kHashMul1
+    movdqa     xmm5, xmmword ptr kHashMul1
     movdqa     xmm4, xmm2
     punpckhwd  xmm4, xmm7        // src[4-7]
     pmulld     xmm4, xmm5
-    movdqa     xmm5, kHashMul2
+    movdqa     xmm5, xmmword ptr kHashMul2
     punpckhbw  xmm1, xmm7        // src[8-15]
     movdqa     xmm2, xmm1
     punpcklwd  xmm2, xmm7        // src[8-11]
     pmulld     xmm2, xmm5
-    movdqa     xmm5, kHashMul3
+    movdqa     xmm5, xmmword ptr kHashMul3
     punpckhwd  xmm1, xmm7        // src[12-15]
     pmulld     xmm1, xmm5
     paddd      xmm3, xmm4        // add 16 results
@@ -181,32 +183,32 @@ uint32 HashDjb2_AVX2(const uint8* src, int count, uint32 seed) {
   __asm {
     mov        eax, [esp + 4]    // src
     mov        ecx, [esp + 8]    // count
-    movd       xmm0, [esp + 12]  // seed
-    movdqa     xmm6, kHash16x33
+    vmovd      xmm0, [esp + 12]  // seed
 
   wloop:
     vpmovzxbd  xmm3, [eax]  // src[0-3]
-    pmulld     xmm0, xmm6  // hash *= 33 ^ 16
+    vpmulld    xmm0, xmm0, xmmword ptr kHash16x33  // hash *= 33 ^ 16
     vpmovzxbd  xmm4, [eax + 4]  // src[4-7]
-    pmulld     xmm3, kHashMul0
+    vpmulld    xmm3, xmm3, xmmword ptr kHashMul0
     vpmovzxbd  xmm2, [eax + 8]  // src[8-11]
-    pmulld     xmm4, kHashMul1
+    vpmulld    xmm4, xmm4, xmmword ptr kHashMul1
     vpmovzxbd  xmm1, [eax + 12]  // src[12-15]
-    pmulld     xmm2, kHashMul2
+    vpmulld    xmm2, xmm2, xmmword ptr kHashMul2
     lea        eax, [eax + 16]
-    pmulld     xmm1, kHashMul3
-    paddd      xmm3, xmm4        // add 16 results
-    paddd      xmm1, xmm2
-    paddd      xmm1, xmm3
-    pshufd     xmm2, xmm1, 0x0e  // upper 2 dwords
-    paddd      xmm1, xmm2
-    pshufd     xmm2, xmm1, 0x01
-    paddd      xmm1, xmm2
-    paddd      xmm0, xmm1
+    vpmulld    xmm1, xmm1, xmmword ptr kHashMul3
+    vpaddd     xmm3, xmm3, xmm4        // add 16 results
+    vpaddd     xmm1, xmm1, xmm2
+    vpaddd     xmm1, xmm1, xmm3
+    vpshufd    xmm2, xmm1, 0x0e  // upper 2 dwords
+    vpaddd     xmm1, xmm1,xmm2
+    vpshufd    xmm2, xmm1, 0x01
+    vpaddd     xmm1, xmm1, xmm2
+    vpaddd     xmm0, xmm0, xmm1
     sub        ecx, 16
     jg         wloop
 
-    movd       eax, xmm0         // return hash
+    vmovd      eax, xmm0         // return hash
+    vzeroupper
     ret
   }
 }

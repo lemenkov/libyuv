@@ -245,18 +245,6 @@ ANY11(CopyRow_Any_SSE2, CopyRow_SSE2, 0, 1, 1, 31)
 #ifdef HAS_COPYROW_NEON
 ANY11(CopyRow_Any_NEON, CopyRow_NEON, 0, 1, 1, 31)
 #endif
-#ifdef HAS_ARGBCOPYALPHAROW_AVX2
-ANY11(ARGBCopyAlphaRow_Any_AVX2, ARGBCopyAlphaRow_AVX2, 0, 1, 4, 15)
-#endif
-#ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
-ANY11(ARGBCopyAlphaRow_Any_SSE2, ARGBCopyAlphaRow_SSE2, 0, 1, 4, 7)
-#endif
-#ifdef HAS_ARGBCOPYYTOALPHAROW_AVX2
-ANY11(ARGBCopyYToAlphaRow_Any_AVX2, ARGBCopyYToAlphaRow_AVX2, 0, 1, 4, 15)
-#endif
-#ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
-ANY11(ARGBCopyYToAlphaRow_Any_SSE2, ARGBCopyYToAlphaRow_SSE2, 0, 1, 4, 7)
-#endif
 #if defined(HAS_ARGBTORGB24ROW_SSSE3)
 ANY11(ARGBToRGB24Row_Any_SSSE3, ARGBToRGB24Row_SSSE3, 0, 4, 3, 15)
 ANY11(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, 0, 4, 3, 15)
@@ -409,6 +397,36 @@ ANY11(ARGBUnattenuateRow_Any_AVX2, ARGBUnattenuateRow_AVX2, 0, 4, 4, 7)
 ANY11(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, 0, 4, 4, 7)
 #endif
 #undef ANY11
+
+// Any 1 to 1 blended.
+#define ANY11B(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                    \
+    void NAMEANY(const uint8* src_ptr, uint8* dst_ptr, int width) {            \
+      SIMD_ALIGNED(uint8 temp[128 * 2]);                                       \
+      memset(temp, 0, 128 * 2);  /* for YUY2 and msan */                       \
+      int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
+      if (n > 0) {                                                             \
+        ANY_SIMD(src_ptr, dst_ptr, n);                                         \
+      }                                                                        \
+      memcpy(temp, src_ptr + (n >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP);    \
+      memcpy(temp + 128, dst_ptr + n * BPP, r * BPP);                          \
+      ANY_SIMD(temp, temp + 128, MASK + 1);                                    \
+      memcpy(dst_ptr + n * BPP, temp + 128, r * BPP);                          \
+    }
+
+#ifdef HAS_ARGBCOPYALPHAROW_AVX2
+ANY11B(ARGBCopyAlphaRow_Any_AVX2, ARGBCopyAlphaRow_AVX2, 0, 4, 4, 15)
+#endif
+#ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
+ANY11B(ARGBCopyAlphaRow_Any_SSE2, ARGBCopyAlphaRow_SSE2, 0, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBCOPYYTOALPHAROW_AVX2
+ANY11B(ARGBCopyYToAlphaRow_Any_AVX2, ARGBCopyYToAlphaRow_AVX2, 0, 1, 4, 15)
+#endif
+#ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
+ANY11B(ARGBCopyYToAlphaRow_Any_SSE2, ARGBCopyYToAlphaRow_SSE2, 0, 1, 4, 7)
+#endif
+#undef ANY11B
 
 // Any 1 to 1 with parameter.
 #define ANY11P(NAMEANY, ANY_SIMD, T, SBPP, BPP, MASK)                          \
