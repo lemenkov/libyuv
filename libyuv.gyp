@@ -50,7 +50,7 @@
           ],
           'conditions': [
             # Disable LTO in libyuv_neon target due to gcc 4.9 compiler bug.
-            ['use_lto == 1', {
+            ['clang == 0 and use_lto == 1', {
               'cflags!': [
                 '-flto',
                 '-ffat-lto-objects',
