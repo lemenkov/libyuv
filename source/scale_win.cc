@@ -16,9 +16,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for Visual C x86.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    defined(_MSC_VER) && !defined(__clang__)
+// This module is for 32 bit Visual C x86 and clangcl
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 
 // Offsets for source bytes 0 to 9
 static uvec8 kShuf0 =
@@ -499,9 +498,9 @@ void ScaleRowDown34_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    movdqa     xmm3, kShuf0
-    movdqa     xmm4, kShuf1
-    movdqa     xmm5, kShuf2
+    movdqa     xmm3, xmmword ptr kShuf0
+    movdqa     xmm4, xmmword ptr kShuf1
+    movdqa     xmm5, xmmword ptr kShuf2
 
   wloop:
     movdqu     xmm0, [eax]
@@ -548,12 +547,12 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // dst_ptr
     mov        ecx, [esp + 4 + 16]   // dst_width
-    movdqa     xmm2, kShuf01
-    movdqa     xmm3, kShuf11
-    movdqa     xmm4, kShuf21
-    movdqa     xmm5, kMadd01
-    movdqa     xmm6, kMadd11
-    movdqa     xmm7, kRound34
+    movdqa     xmm2, xmmword ptr kShuf01
+    movdqa     xmm3, xmmword ptr kShuf11
+    movdqa     xmm4, xmmword ptr kShuf21
+    movdqa     xmm5, xmmword ptr kMadd01
+    movdqa     xmm6, xmmword ptr kMadd11
+    movdqa     xmm7, xmmword ptr kRound34
 
   wloop:
     movdqu     xmm0, [eax]           // pixels 0..7
@@ -579,7 +578,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     lea        eax, [eax + 32]
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
-    movdqa     xmm1, kMadd21
+    movdqa     xmm1, xmmword ptr kMadd21
     pmaddubsw  xmm0, xmm1
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
@@ -605,12 +604,12 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // dst_ptr
     mov        ecx, [esp + 4 + 16]   // dst_width
-    movdqa     xmm2, kShuf01
-    movdqa     xmm3, kShuf11
-    movdqa     xmm4, kShuf21
-    movdqa     xmm5, kMadd01
-    movdqa     xmm6, kMadd11
-    movdqa     xmm7, kRound34
+    movdqa     xmm2, xmmword ptr kShuf01
+    movdqa     xmm3, xmmword ptr kShuf11
+    movdqa     xmm4, xmmword ptr kShuf21
+    movdqa     xmm5, xmmword ptr kMadd01
+    movdqa     xmm6, xmmword ptr kMadd11
+    movdqa     xmm7, xmmword ptr kRound34
 
   wloop:
     movdqu     xmm0, [eax]           // pixels 0..7
@@ -639,7 +638,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
     pavgb      xmm1, xmm0
     pavgb      xmm0, xmm1
     pshufb     xmm0, xmm4
-    movdqa     xmm1, kMadd21
+    movdqa     xmm1, xmmword ptr kMadd21
     pmaddubsw  xmm0, xmm1
     paddsw     xmm0, xmm7
     psrlw      xmm0, 2
@@ -665,8 +664,8 @@ void ScaleRowDown38_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                                      // src_stride ignored
     mov        edx, [esp + 12]       // dst_ptr
     mov        ecx, [esp + 16]       // dst_width
-    movdqa     xmm4, kShuf38a
-    movdqa     xmm5, kShuf38b
+    movdqa     xmm4, xmmword ptr kShuf38a
+    movdqa     xmm5, xmmword ptr kShuf38b
 
   xloop:
     movdqu     xmm0, [eax]           // 16 pixels -> 0,1,2,3,4,5
@@ -698,9 +697,9 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // dst_ptr
     mov        ecx, [esp + 4 + 16]   // dst_width
-    movdqa     xmm2, kShufAc
-    movdqa     xmm3, kShufAc3
-    movdqa     xmm4, kScaleAc33
+    movdqa     xmm2, xmmword ptr kShufAc
+    movdqa     xmm3, xmmword ptr kShufAc3
+    movdqa     xmm4, xmmword ptr kScaleAc33
     pxor       xmm5, xmm5
 
   xloop:
@@ -763,10 +762,10 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     mov        esi, [esp + 4 + 8]    // src_stride
     mov        edx, [esp + 4 + 12]   // dst_ptr
     mov        ecx, [esp + 4 + 16]   // dst_width
-    movdqa     xmm2, kShufAb0
-    movdqa     xmm3, kShufAb1
-    movdqa     xmm4, kShufAb2
-    movdqa     xmm5, kScaleAb2
+    movdqa     xmm2, xmmword ptr kShufAb0
+    movdqa     xmm3, xmmword ptr kShufAb1
+    movdqa     xmm4, xmmword ptr kShufAb2
+    movdqa     xmm5, xmmword ptr kScaleAb2
 
   xloop:
     movdqu     xmm0, [eax]           // average 2 rows into xmm0
@@ -1233,8 +1232,8 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb, const uint8* src_argb,
     mov        ecx, [esp + 8 + 12]   // dst_width
     movd       xmm2, [esp + 8 + 16]  // x
     movd       xmm3, [esp + 8 + 20]  // dx
-    movdqa     xmm4, kShuffleColARGB
-    movdqa     xmm5, kShuffleFractions
+    movdqa     xmm4, xmmword ptr kShuffleColARGB
+    movdqa     xmm5, xmmword ptr kShuffleFractions
     pcmpeqb    xmm6, xmm6           // generate 0x007f for inverting fraction.
     psrlw      xmm6, 9
     pextrw     eax, xmm2, 1         // get x0 integer. preroll

@@ -23,12 +23,6 @@ extern "C" {
 #define LIBYUV_DISABLE_X86
 #endif
 
-// Visual C 2012 required for AVX2.
-#if defined(_M_IX86) && !defined(__clang__) && \
-    defined(_MSC_VER) && _MSC_VER >= 1700
-#define VISUALC_HAS_AVX2 1
-#endif  // VisualStudio >= 2012
-
 // The following are available for Visual C and clangcl 32 bit:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_TRANSPOSEWX8_SSSE3

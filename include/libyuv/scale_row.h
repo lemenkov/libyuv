@@ -30,6 +30,13 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
+// clang >= 3.4.0 required for AVX2.
+#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+#if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
+#define CLANG_HAS_AVX2 1
+#endif  // clang >= 3.4
+#endif  // __clang__
+
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
@@ -48,15 +55,16 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_SSE2
 #endif
 
-// The following are available on VS2012:
-#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+// The following are available for Visual C and clangcl 32 bit:
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
+    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_SCALEADDROW_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
 #define HAS_SCALEROWDOWN4_AVX2
 #endif
 
 // The following are available on Visual C:
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && !defined(__clang__)
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
 #define HAS_SCALEADDROW_SSE2
 #endif
 
