@@ -21,9 +21,9 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// This module is for Visual C.
-#if !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64)) && \
-    defined(_MSC_VER) && !defined(__clang__)
+// This module is for Visual C 32/64 bit and clangcl 32 bit
+#if !defined(LIBYUV_DISABLE_X86) && \
+   (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 
 struct YuvConstants {
   lvec8 kUVToB;     // 0

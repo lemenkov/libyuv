@@ -183,8 +183,9 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
-// The following are available require VS2012.  Port to GCC.
-#if !defined(LIBYUV_DISABLE_X86) && defined(VISUALC_HAS_AVX2)
+// The following are available for Visual C and clangcl 32 bit:
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
+    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_ARGB1555TOARGBROW_AVX2
 #define HAS_ARGB4444TOARGBROW_AVX2
 #define HAS_ARGBTOARGB1555ROW_AVX2
