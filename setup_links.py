@@ -81,7 +81,6 @@ if 'android' in target_os:
   DIRECTORIES += [
     'base',
     'third_party/android_platform',
-    'third_party/android_testrunner',
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
