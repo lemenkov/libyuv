@@ -381,6 +381,130 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
+// Convert I420 with Alpha to preattenuated ABGR.
+LIBYUV_API
+int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
+                    const uint8* src_u, int src_stride_u,
+                    const uint8* src_v, int src_stride_v,
+                    const uint8* src_a, int src_stride_a,
+                    uint8* dst_abgr, int dst_stride_abgr,
+                    int width, int height) {
+  int y;
+  void (*I422ToABGRRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = I422ToABGRRow_C;
+  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
+      ARGBCopyYToAlphaRow_C;
+  void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
+                           int width) = ARGBAttenuateRow_C;
+  if (!src_y || !src_u || !src_v || !dst_abgr ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
+    dst_stride_abgr = -dst_stride_abgr;
+  }
+#if defined(HAS_I422TOABGRROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I422ToABGRRow = I422ToABGRRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToABGRRow = I422ToABGRRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I422TOABGRROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I422ToABGRRow = I422ToABGRRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToABGRRow = I422ToABGRRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToABGRRow = I422ToABGRRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToABGRRow = I422ToABGRRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I422TOABGRROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_abgr, 4) && IS_ALIGNED(dst_stride_abgr, 4)) {
+    I422ToABGRRow = I422ToABGRRow_MIPS_DSPR2;
+  }
+#endif
+#if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBCOPYYTOALPHAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_ARGBATTENUATEROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    I422ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
+    ARGBCopyYToAlphaRow(src_a, dst_abgr, width);
+    ARGBAttenuateRow(dst_abgr, dst_abgr, width);
+    dst_abgr += dst_stride_abgr;
+    src_a += src_stride_a;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
 
 // Convert I400 to ARGB.
 LIBYUV_API

@@ -587,6 +587,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
         YALIGN, benchmark_width_, DIFF, _Opt, +, 0)
 
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1, 2)
+TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1, 2)
 
 #define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,       \
                          W1280, DIFF, N, NEG, OFF)                             \
