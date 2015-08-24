@@ -1,5 +1,6 @@
 *.pyc
 .gn
+pin-log.txt
 build
 buildtools
 chromium/.gclient.tmp
