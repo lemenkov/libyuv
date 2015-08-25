@@ -23,17 +23,25 @@ extern "C" {
 
 // This module is for Visual C 32/64 bit and clangcl 32 bit
 #if !defined(LIBYUV_DISABLE_X86) && \
-   (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
+    (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 
 struct YuvConstants {
-  lvec8 kUVToB;     // 0
-  lvec8 kUVToG;     // 32
-  lvec8 kUVToR;     // 64
-  lvec16 kUVBiasB;  // 96
-  lvec16 kUVBiasG;  // 128
-  lvec16 kUVBiasR;  // 160
-  lvec16 kYToRgb;   // 192
+  lvec8 kUVToB;
+  lvec8 kUVToG;
+  lvec8 kUVToR;
+  lvec16 kUVBiasB;
+  lvec16 kUVBiasG;
+  lvec16 kUVBiasR;
+  lvec16 kYToRgb;
 };
+
+#define KUVTOB   0
+#define KUVTOG   32
+#define KUVTOR   64
+#define KUVBIASB 96
+#define KUVBIASG 128
+#define KUVBIASR 160
+#define KYTORGB  192
 
 // BT.601 YUV to RGB reference
 //  R = (Y - 16) * 1.164              - V * -1.596
@@ -389,7 +397,7 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int pix) {
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
     pslld     xmm5, 24
-    movdqa    xmm4, kShuffleMaskRGB24ToARGB
+    movdqa    xmm4, xmmword ptr kShuffleMaskRGB24ToARGB
 
  convertloop:
     movdqu    xmm0, [eax]
@@ -428,7 +436,7 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
     mov       ecx, [esp + 12]  // pix
     pcmpeqb   xmm5, xmm5       // generate mask 0xff000000
     pslld     xmm5, 24
-    movdqa    xmm4, kShuffleMaskRAWToARGB
+    movdqa    xmm4, xmmword ptr kShuffleMaskRAWToARGB
 
  convertloop:
     movdqu    xmm0, [eax]
@@ -759,7 +767,7 @@ void ARGBToRGB24Row_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm6, kShuffleMaskARGBToRGB24
+    movdqa    xmm6, xmmword ptr kShuffleMaskARGBToRGB24
 
  convertloop:
     movdqu    xmm0, [eax]   // fetch 16 pixels of argb
@@ -797,7 +805,7 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
     mov       eax, [esp + 4]   // src_argb
     mov       edx, [esp + 8]   // dst_rgb
     mov       ecx, [esp + 12]  // pix
-    movdqa    xmm6, kShuffleMaskARGBToRAW
+    movdqa    xmm6, xmmword ptr kShuffleMaskARGBToRAW
 
  convertloop:
     movdqu    xmm0, [eax]   // fetch 16 pixels of argb
@@ -1142,8 +1150,8 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kARGBToY
-    movdqa     xmm5, kAddY16
+    movdqa     xmm4, xmmword ptr kARGBToY
+    movdqa     xmm5, xmmword ptr kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -1177,8 +1185,8 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kARGBToYJ
-    movdqa     xmm5, kAddYJ64
+    movdqa     xmm4, xmmword ptr kARGBToYJ
+    movdqa     xmm5, xmmword ptr kAddYJ64
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -1218,9 +1226,9 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    vbroadcastf128 ymm4, kARGBToY
-    vbroadcastf128 ymm5, kAddY16
-    vmovdqu    ymm6, kPermdARGBToY_AVX
+    vbroadcastf128 ymm4, xmmword ptr kARGBToY
+    vbroadcastf128 ymm5, xmmword ptr kAddY16
+    vmovdqu    ymm6, ymmword ptr kPermdARGBToY_AVX
 
  convertloop:
     vmovdqu    ymm0, [eax]
@@ -1257,9 +1265,9 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    vbroadcastf128 ymm4, kARGBToYJ
-    vbroadcastf128 ymm5, kAddYJ64
-    vmovdqu    ymm6, kPermdARGBToY_AVX
+    vbroadcastf128 ymm4, xmmword ptr kARGBToYJ
+    vbroadcastf128 ymm5, xmmword ptr kAddYJ64
+    vmovdqu    ymm6, ymmword ptr kPermdARGBToY_AVX
 
  convertloop:
     vmovdqu    ymm0, [eax]
@@ -1296,8 +1304,8 @@ void BGRAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kBGRAToY
-    movdqa     xmm5, kAddY16
+    movdqa     xmm4, xmmword ptr kBGRAToY
+    movdqa     xmm5, xmmword ptr kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -1329,8 +1337,8 @@ void ABGRToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kABGRToY
-    movdqa     xmm5, kAddY16
+    movdqa     xmm4, xmmword ptr kABGRToY
+    movdqa     xmm5, xmmword ptr kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -1362,8 +1370,8 @@ void RGBAToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int pix) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_y */
     mov        ecx, [esp + 12]  /* pix */
-    movdqa     xmm4, kRGBAToY
-    movdqa     xmm5, kAddY16
+    movdqa     xmm4, xmmword ptr kRGBAToY
+    movdqa     xmm5, xmmword ptr kAddY16
 
  convertloop:
     movdqu     xmm0, [eax]
@@ -1400,9 +1408,9 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kARGBToV
-    movdqa     xmm7, kARGBToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kARGBToV
+    movdqa     xmm7, xmmword ptr kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1470,9 +1478,9 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm5, kAddUVJ128
-    movdqa     xmm6, kARGBToVJ
-    movdqa     xmm7, kARGBToUJ
+    movdqa     xmm5, xmmword ptr kAddUVJ128
+    movdqa     xmm6, xmmword ptr kARGBToVJ
+    movdqa     xmm7, xmmword ptr kARGBToUJ
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1542,9 +1550,9 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    vbroadcastf128 ymm5, kAddUV128
-    vbroadcastf128 ymm6, kARGBToV
-    vbroadcastf128 ymm7, kARGBToU
+    vbroadcastf128 ymm5, xmmword ptr kAddUV128
+    vbroadcastf128 ymm6, xmmword ptr kARGBToV
+    vbroadcastf128 ymm7, xmmword ptr kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1578,7 +1586,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
     vpsraw     ymm0, ymm0, 8
     vpacksswb  ymm0, ymm1, ymm0  // mutates
     vpermq     ymm0, ymm0, 0xd8  // For vpacksswb
-    vpshufb    ymm0, ymm0, kShufARGBToUV_AVX  // For vshufps + vphaddw
+    vpshufb    ymm0, ymm0, ymmword ptr kShufARGBToUV_AVX  // for vshufps/vphaddw
     vpaddb     ymm0, ymm0, ymm5  // -> unsigned
 
     // step 3 - store 16 U and 16 V values
@@ -1605,9 +1613,9 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
     mov        edx, [esp + 4 + 8]   // dst_u
     mov        edi, [esp + 4 + 12]  // dst_v
     mov        ecx, [esp + 4 + 16]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kARGBToV
-    movdqa     xmm7, kARGBToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kARGBToV
+    movdqa     xmm7, xmmword ptr kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1662,9 +1670,9 @@ void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
     mov        edx, [esp + 4 + 8]   // dst_u
     mov        edi, [esp + 4 + 12]  // dst_v
     mov        ecx, [esp + 4 + 16]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kARGBToV
-    movdqa     xmm7, kARGBToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kARGBToV
+    movdqa     xmm7, xmmword ptr kARGBToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1722,9 +1730,9 @@ void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kBGRAToV
-    movdqa     xmm7, kBGRAToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kBGRAToV
+    movdqa     xmm7, xmmword ptr kBGRAToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1792,9 +1800,9 @@ void ABGRToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kABGRToV
-    movdqa     xmm7, kABGRToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kABGRToV
+    movdqa     xmm7, xmmword ptr kABGRToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1862,9 +1870,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     mov        edx, [esp + 8 + 12]  // dst_u
     mov        edi, [esp + 8 + 16]  // dst_v
     mov        ecx, [esp + 8 + 20]  // pix
-    movdqa     xmm5, kAddUV128
-    movdqa     xmm6, kRGBAToV
-    movdqa     xmm7, kRGBAToU
+    movdqa     xmm5, xmmword ptr kAddUV128
+    movdqa     xmm6, xmmword ptr kRGBAToV
+    movdqa     xmm7, xmmword ptr kRGBAToU
     sub        edi, edx             // stride from u to v
 
  convertloop:
@@ -1964,21 +1972,21 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
     /* Step 1: Find 8 UV contributions to 16 R,G,B values */                   \
-    __asm vpmaddubsw ymm2, ymm0, YuvConstants.kUVToR        /* scale R UV */   \
-    __asm vpmaddubsw ymm1, ymm0, YuvConstants.kUVToG        /* scale G UV */   \
-    __asm vpmaddubsw ymm0, ymm0, YuvConstants.kUVToB        /* scale B UV */   \
-    __asm vmovdqu    ymm3, YuvConstants.kUVBiasR                               \
+    __asm vpmaddubsw ymm2, ymm0, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
+    __asm vpmaddubsw ymm1, ymm0, ymmword ptr [YuvConstants + KUVTOG] /* G UV */\
+    __asm vpmaddubsw ymm0, ymm0, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
+    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASR]               \
     __asm vpsubw     ymm2, ymm3, ymm2                                          \
-    __asm vmovdqu    ymm3, YuvConstants.kUVBiasG                               \
+    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASG]               \
     __asm vpsubw     ymm1, ymm3, ymm1                                          \
-    __asm vmovdqu    ymm3, YuvConstants.kUVBiasB                               \
+    __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASB]               \
     __asm vpsubw     ymm0, ymm3, ymm0                                          \
     /* Step 2: Find Y contribution to 16 R,G,B values */                       \
     __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
     __asm lea        eax, [eax + 16]                                           \
     __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpunpcklbw ymm3, ymm3, ymm3                                          \
-    __asm vpmulhuw   ymm3, ymm3, YuvConstants.kYToRgb                          \
+    __asm vpmulhuw   ymm3, ymm3, ymmword ptr [YuvConstants + KYTORGB]          \
     __asm vpaddsw    ymm0, ymm0, ymm3           /* B += Y */                   \
     __asm vpaddsw    ymm1, ymm1, ymm3           /* G += Y */                   \
     __asm vpaddsw    ymm2, ymm2, ymm3           /* R += Y */                   \
@@ -2393,20 +2401,20 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
     __asm movdqa     xmm3, xmm0                                                \
-    __asm movdqa     xmm0, YuvConstants.kUVBiasB /* unbias back to signed */   \
-    __asm pmaddubsw  xmm1, YuvConstants.kUVToB   /* scale B UV */              \
+    __asm movdqa     xmm0, xmmword ptr [YuvConstants + KUVBIASB]               \
+    __asm pmaddubsw  xmm1, xmmword ptr [YuvConstants + KUVTOB]                 \
     __asm psubw      xmm0, xmm1                                                \
-    __asm movdqa     xmm1, YuvConstants.kUVBiasG                               \
-    __asm pmaddubsw  xmm2, YuvConstants.kUVToG   /* scale G UV */              \
+    __asm movdqa     xmm1, xmmword ptr [YuvConstants + KUVBIASG]               \
+    __asm pmaddubsw  xmm2, xmmword ptr [YuvConstants + KUVTOG]                 \
     __asm psubw      xmm1, xmm2                                                \
-    __asm movdqa     xmm2, YuvConstants.kUVBiasR                               \
-    __asm pmaddubsw  xmm3, YuvConstants.kUVToR   /* scale R UV */              \
+    __asm movdqa     xmm2, xmmword ptr [YuvConstants + KUVBIASR]               \
+    __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
     __asm psubw      xmm2, xmm3                                                \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm3                                                \
-    __asm pmulhuw    xmm3, YuvConstants.kYToRgb                                \
+    __asm pmulhuw    xmm3, xmmword ptr [YuvConstants + KYTORGB]                \
     __asm paddsw     xmm0, xmm3           /* B += Y */                         \
     __asm paddsw     xmm1, xmm3           /* G += Y */                         \
     __asm paddsw     xmm2, xmm3           /* R += Y */                         \
@@ -2592,8 +2600,8 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // rgb24
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    movdqa     xmm5, kShuffleMaskARGBToRGB24_0
-    movdqa     xmm6, kShuffleMaskARGBToRGB24
+    movdqa     xmm5, xmmword ptr kShuffleMaskARGBToRGB24_0
+    movdqa     xmm6, xmmword ptr kShuffleMaskARGBToRGB24
 
  convertloop:
     READYUV422
@@ -2626,8 +2634,8 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 8 + 16]  // raw
     mov        ecx, [esp + 8 + 20]  // width
     sub        edi, esi
-    movdqa     xmm5, kShuffleMaskARGBToRAW_0
-    movdqa     xmm6, kShuffleMaskARGBToRAW
+    movdqa     xmm5, xmmword ptr kShuffleMaskARGBToRAW_0
+    movdqa     xmm6, xmmword ptr kShuffleMaskARGBToRAW
 
  convertloop:
     READYUV422
@@ -3045,7 +3053,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    movdqa    xmm5, kShuffleMirror
+    movdqa    xmm5, xmmword ptr kShuffleMirror
 
  convertloop:
     movdqu    xmm0, [eax - 16 + ecx]
@@ -3066,7 +3074,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    vbroadcastf128 ymm5, kShuffleMirror
+    vbroadcastf128 ymm5, xmmword ptr kShuffleMirror
 
  convertloop:
     vmovdqu   ymm0, [eax - 32 + ecx]
@@ -3123,7 +3131,7 @@ void MirrorUVRow_SSSE3(const uint8* src, uint8* dst_u, uint8* dst_v,
     mov       edx, [esp + 4 + 8]   // dst_u
     mov       edi, [esp + 4 + 12]  // dst_v
     mov       ecx, [esp + 4 + 16]  // width
-    movdqa    xmm1, kShuffleMirrorUV
+    movdqa    xmm1, xmmword ptr kShuffleMirrorUV
     lea       eax, [eax + ecx * 2 - 16]
     sub       edi, edx
 
@@ -3177,7 +3185,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     mov       eax, [esp + 4]   // src
     mov       edx, [esp + 8]   // dst
     mov       ecx, [esp + 12]  // width
-    vmovdqu   ymm5, kARGBShuffleMirror_AVX2
+    vmovdqu   ymm5, ymmword ptr kARGBShuffleMirror_AVX2
 
  convertloop:
     vpermd    ymm0, ymm5, [eax - 32 + ecx * 4]  // permute dword order
@@ -4133,7 +4141,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
     movdqu     xmm2, [esi]      // _r_b
-    pshufb     xmm3, kShuffleAlpha // alpha
+    pshufb     xmm3, xmmword ptr kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -4162,7 +4170,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
     movdqa     xmm0, xmm3       // src argb
     pxor       xmm3, xmm4       // ~alpha
     movd       xmm2, [esi]      // _r_b
-    pshufb     xmm3, kShuffleAlpha // alpha
+    pshufb     xmm3, xmmword ptr kShuffleAlpha // alpha
     pand       xmm2, xmm6       // _r_b
     paddw      xmm3, xmm7       // 256 - alpha
     pmullw     xmm2, xmm3       // _r_b * alpha
@@ -4246,8 +4254,8 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        ecx, [esp + 12]  // width
     pcmpeqb    xmm3, xmm3       // generate mask 0xff000000
     pslld      xmm3, 24
-    movdqa     xmm4, kShuffleAlpha0
-    movdqa     xmm5, kShuffleAlpha1
+    movdqa     xmm4, xmmword ptr kShuffleAlpha0
+    movdqa     xmm5, xmmword ptr kShuffleAlpha1
 
  convertloop:
     movdqu     xmm0, [eax]      // read 4 pixels
@@ -4289,7 +4297,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vbroadcastf128 ymm4,kShuffleAlpha_AVX2
+    vbroadcastf128 ymm4, xmmword ptr kShuffleAlpha_AVX2
     vpcmpeqb   ymm5, ymm5, ymm5 // generate mask 0xff000000
     vpslld     ymm5, ymm5, 24
 
@@ -4381,7 +4389,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vbroadcastf128 ymm4, kUnattenShuffleAlpha_AVX2
+    vbroadcastf128 ymm4, xmmword ptr kUnattenShuffleAlpha_AVX2
 
  convertloop:
     vmovdqu    ymm6, [eax]       // read 8 pixels.
@@ -4416,7 +4424,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     mov        edx, [esp + 8]   // dst_argb
     mov        ecx, [esp + 12]  // width
     sub        edx, eax
-    vbroadcastf128 ymm5, kUnattenShuffleAlpha_AVX2
+    vbroadcastf128 ymm5, xmmword ptr kUnattenShuffleAlpha_AVX2
 
     push       esi
     push       edi
@@ -4480,8 +4488,8 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     mov        eax, [esp + 4]   /* src_argb */
     mov        edx, [esp + 8]   /* dst_argb */
     mov        ecx, [esp + 12]  /* width */
-    movdqa     xmm4, kARGBToYJ
-    movdqa     xmm5, kAddYJ64
+    movdqa     xmm4, xmmword ptr kARGBToYJ
+    movdqa     xmm5, xmmword ptr kAddYJ64
 
  convertloop:
     movdqu     xmm0, [eax]  // G
@@ -4538,9 +4546,9 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
   __asm {
     mov        eax, [esp + 4]   /* dst_argb */
     mov        ecx, [esp + 8]   /* width */
-    movdqa     xmm2, kARGBToSepiaB
-    movdqa     xmm3, kARGBToSepiaG
-    movdqa     xmm4, kARGBToSepiaR
+    movdqa     xmm2, xmmword ptr kARGBToSepiaB
+    movdqa     xmm3, xmmword ptr kARGBToSepiaG
+    movdqa     xmm4, xmmword ptr kARGBToSepiaR
 
  convertloop:
     movdqu     xmm0, [eax]  // B
@@ -6245,7 +6253,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 
     // 4 pixel loop.
   convertloop:
-    movdqu     xmm0, qword ptr [eax]      // generate luma ptr
+    movdqu     xmm0, xmmword ptr [eax]      // generate luma ptr
     pmaddubsw  xmm0, xmm3
     phaddw     xmm0, xmm0
     pand       xmm0, xmm4  // mask out low bits
