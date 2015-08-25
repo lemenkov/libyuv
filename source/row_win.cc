@@ -4334,8 +4334,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movzx      esi, byte ptr [eax + 3]  // first alpha
     movzx      edi, byte ptr [eax + 7]  // second alpha
     punpcklbw  xmm0, xmm0       // first 2
-    movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
-    movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
+    movd       xmm2, dword ptr [fixed_invtbl8 + esi * 4]
+    movd       xmm3, dword ptr [fixed_invtbl8 + edi * 4]
     pshuflw    xmm2, xmm2, 040h // first 4 inv_alpha words.  1, a, a, a
     pshuflw    xmm3, xmm3, 040h // next 4 inv_alpha words
     movlhps    xmm2, xmm3
@@ -4345,8 +4345,8 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb,
     movzx      esi, byte ptr [eax + 11]  // third alpha
     movzx      edi, byte ptr [eax + 15]  // forth alpha
     punpckhbw  xmm1, xmm1       // next 2
-    movd       xmm2, dword ptr fixed_invtbl8[esi * 4]
-    movd       xmm3, dword ptr fixed_invtbl8[edi * 4]
+    movd       xmm2, dword ptr [fixed_invtbl8 + esi * 4]
+    movd       xmm3, dword ptr [fixed_invtbl8 + edi * 4]
     pshuflw    xmm2, xmm2, 040h // first 4 inv_alpha words
     pshuflw    xmm3, xmm3, 040h // next 4 inv_alpha words
     movlhps    xmm2, xmm3
@@ -4425,23 +4425,23 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb,
     // replace VPGATHER
     movzx      esi, byte ptr [eax + 3]                 // alpha0
     movzx      edi, byte ptr [eax + 7]                 // alpha1
-    vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a0]
-    vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a1]
+    vmovd      xmm0, dword ptr [fixed_invtbl8 + esi * 4]  // [1,a0]
+    vmovd      xmm1, dword ptr [fixed_invtbl8 + edi * 4]  // [1,a1]
     movzx      esi, byte ptr [eax + 11]                // alpha2
     movzx      edi, byte ptr [eax + 15]                // alpha3
     vpunpckldq xmm6, xmm0, xmm1                        // [1,a1,1,a0]
-    vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a2]
-    vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a3]
+    vmovd      xmm2, dword ptr [fixed_invtbl8 + esi * 4]  // [1,a2]
+    vmovd      xmm3, dword ptr [fixed_invtbl8 + edi * 4]  // [1,a3]
     movzx      esi, byte ptr [eax + 19]                // alpha4
     movzx      edi, byte ptr [eax + 23]                // alpha5
     vpunpckldq xmm7, xmm2, xmm3                        // [1,a3,1,a2]
-    vmovd      xmm0, dword ptr fixed_invtbl8[esi * 4]  // [1,a4]
-    vmovd      xmm1, dword ptr fixed_invtbl8[edi * 4]  // [1,a5]
+    vmovd      xmm0, dword ptr [fixed_invtbl8 + esi * 4]  // [1,a4]
+    vmovd      xmm1, dword ptr [fixed_invtbl8 + edi * 4]  // [1,a5]
     movzx      esi, byte ptr [eax + 27]                // alpha6
     movzx      edi, byte ptr [eax + 31]                // alpha7
     vpunpckldq xmm0, xmm0, xmm1                        // [1,a5,1,a4]
-    vmovd      xmm2, dword ptr fixed_invtbl8[esi * 4]  // [1,a6]
-    vmovd      xmm3, dword ptr fixed_invtbl8[edi * 4]  // [1,a7]
+    vmovd      xmm2, dword ptr [fixed_invtbl8 + esi * 4]  // [1,a6]
+    vmovd      xmm3, dword ptr [fixed_invtbl8 + edi * 4]  // [1,a7]
     vpunpckldq xmm2, xmm2, xmm3                        // [1,a7,1,a6]
     vpunpcklqdq xmm3, xmm6, xmm7                       // [1,a3,1,a2,1,a1,1,a0]
     vpunpcklqdq xmm0, xmm0, xmm2                       // [1,a7,1,a6,1,a5,1,a4]
