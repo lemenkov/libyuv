@@ -2701,22 +2701,25 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
+    push       ebp
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ecx, [esp + 12 + 20]  // width
+    lea        ebp, kYuvConstants
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUV422
-    YUVTORGB(kYuvConstants)
+    YUVTORGB(ebp)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
+    pop        ebp
     pop        edi
     pop        esi
     ret
