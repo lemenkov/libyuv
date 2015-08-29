@@ -2378,14 +2378,12 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Read 2 UV from 411, upsample to 8 UV.
 #define READYUV411 __asm {                                                     \
-    __asm movzx      ebx, word ptr [esi]        /* U */           /* NOLINT */ \
-    __asm movd       xmm0, ebx                                                 \
-    __asm movzx      ebx, word ptr [esi + edi]  /* V */           /* NOLINT */ \
-    __asm movd       xmm1, ebx                                                 \
+    __asm pinsrw     xmm0, [esi], 0        /* U */                             \
+    __asm pinsrw     xmm1, [esi + edi], 0  /* V */                             \
     __asm lea        esi,  [esi + 2]                                           \
-    __asm punpcklbw  xmm0, xmm1           /* UV */                             \
-    __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
-    __asm punpckldq  xmm0, xmm0           /* UVUVUVUV (upsample) */            \
+    __asm punpcklbw  xmm0, xmm1            /* UV */                            \
+    __asm punpcklwd  xmm0, xmm0            /* UVUV (upsample) */               \
+    __asm punpckldq  xmm0, xmm0            /* UVUVUVUV (upsample) */           \
   }
 
 // Read 4 UV from NV12, upsample to 8 UV.
