@@ -169,6 +169,11 @@ if(TEST)
   if (JPEG_FOUND)
     target_link_libraries(libyuv_unittest ${JPEG_LIBRARY})
   endif()
+  enable_testing()
+  add_test(UnitTests libyuv_unittest)
+  # CMake doesn't let override or modify test target so we can't really add -V
+  # to ctest. So we have to define our new target.
+  add_custom_target(check ${CMAKE_CTEST_COMMAND} -V WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 endif()
 
 if(NACL AND NACL_LIBC STREQUAL "newlib")
