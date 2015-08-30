@@ -42,6 +42,16 @@ set(ly_neon_source_files
 add_definitions(-DLIBYUV_DISABLE_X86 -DLIBYUV_DISABLE_MIPS)
 endif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*")
 
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64")
+set(ly_neon64_source_files
+  ${ly_src_dir}/compare_neon64.cc
+  ${ly_src_dir}/rotate_neon64.cc
+  ${ly_src_dir}/row_neon64.cc
+  ${ly_src_dir}/scale_neon64.cc
+)
+add_definitions(-DLIBYUV_DISABLE_X86 -DLIBYUV_DISABLE_MIPS)
+endif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64")
+
 if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "mips.*")
 set(ly_mips_source_files
   ${ly_src_dir}/rotate_mips.cc
@@ -83,6 +93,7 @@ set(ly_source_files
   ${ly_windows_source_files}
   ${ly_unix_source_files}
   ${ly_neon_source_files}
+  ${ly_neon64_source_files}
   ${ly_mips_source_files}
 )
 
