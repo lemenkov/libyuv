@@ -73,7 +73,7 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
 // GCC version uses inline x86 assembly.
 #else  // (defined(_MSC_VER) && !defined(__clang__)) && !defined(__clang__)
   uint32 info_ebx, info_edx;
-  asm volatile (  // NOLINT
+  asm volatile (
 #if defined( __i386__) && defined(__PIC__)
     // Preserve ebx for fpic 32 bit.
     "mov %%ebx, %%edi                          \n"

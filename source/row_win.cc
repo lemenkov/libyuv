@@ -1932,8 +1932,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 // Read 16 UV from 444
 #define READYUV444_AVX2 __asm {                                                \
-    __asm vmovdqu    xmm0, [esi]                  /* U */         /* NOLINT */ \
-    __asm vmovdqu    xmm1, [esi + edi]            /* V */         /* NOLINT */ \
+    __asm vmovdqu    xmm0, [esi]                  /* U */                      \
+    __asm vmovdqu    xmm1, [esi + edi]            /* V */                      \
     __asm lea        esi,  [esi + 16]                                          \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
@@ -1942,8 +1942,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 __asm {                                                \
-    __asm vmovq      xmm0, qword ptr [esi]        /* U */         /* NOLINT */ \
-    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */         /* NOLINT */ \
+    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
+    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
     __asm lea        esi,  [esi + 8]                                           \
     __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
@@ -1952,8 +1952,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 // Read 4 UV from 411, upsample to 16 UV.
 #define READYUV411_AVX2 __asm {                                                \
-    __asm vmovd      xmm0, dword ptr [esi]        /* U */         /* NOLINT */ \
-    __asm vmovd      xmm1, dword ptr [esi + edi]  /* V */         /* NOLINT */ \
+    __asm vmovd      xmm0, dword ptr [esi]        /* U */                      \
+    __asm vmovd      xmm1, dword ptr [esi + edi]  /* V */                      \
     __asm lea        esi,  [esi + 4]                                           \
     __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
     __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
@@ -1982,7 +1982,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASB]               \
     __asm vpsubw     ymm0, ymm3, ymm0                                          \
     /* Step 2: Find Y contribution to 16 R,G,B values */                       \
-    __asm vmovdqu    xmm3, [eax]                  /* NOLINT */                 \
+    __asm vmovdqu    xmm3, [eax]                                               \
     __asm lea        eax, [eax + 16]                                           \
     __asm vpermq     ymm3, ymm3, 0xd8                                          \
     __asm vpunpcklbw ymm3, ymm3, ymm3                                          \
@@ -2361,8 +2361,8 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Read 8 UV from 444.
 #define READYUV444 __asm {                                                     \
-    __asm movq       xmm0, qword ptr [esi] /* U */                /* NOLINT */ \
-    __asm movq       xmm1, qword ptr [esi + edi] /* V */          /* NOLINT */ \
+    __asm movq       xmm0, qword ptr [esi] /* U */                             \
+    __asm movq       xmm1, qword ptr [esi + edi] /* V */                       \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
   }
@@ -2388,7 +2388,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Read 4 UV from NV12, upsample to 8 UV.
 #define READNV12 __asm {                                                       \
-    __asm movq       xmm0, qword ptr [esi] /* UV */               /* NOLINT */ \
+    __asm movq       xmm0, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
   }
@@ -2409,7 +2409,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
     __asm psubw      xmm2, xmm3                                                \
     /* Step 2: Find Y contribution to 8 R,G,B values */                        \
-    __asm movq       xmm3, qword ptr [eax]                        /* NOLINT */ \
+    __asm movq       xmm3, qword ptr [eax]                                     \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm3                                                \
     __asm pmulhuw    xmm3, xmmword ptr [YuvConstants + KYTORGB]                \

@@ -24,7 +24,7 @@ extern "C" {
 
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   uint32 sse;
-  asm volatile (  // NOLINT
+  asm volatile (
     "pxor      %%xmm0,%%xmm0                   \n"
     "pxor      %%xmm5,%%xmm5                   \n"
     LABELALIGN
@@ -58,7 +58,7 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     "+r"(count),      // %2
     "=g"(sse)         // %3
   :: "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
-  );  // NOLINT
+  );
   return sse;
 }
 
@@ -90,7 +90,7 @@ static uvec32 kHashMul3 = {
 
 uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
   uint32 hash;
-  asm volatile (  // NOLINT
+  asm volatile (
     "movd      %2,%%xmm0                       \n"
     "pxor      %%xmm7,%%xmm7                   \n"
     "movdqa    %4,%%xmm6                       \n"
@@ -139,7 +139,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     "m"(kHashMul3)    // %8
   : "memory", "cc"
     , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-  );  // NOLINT
+  );
   return hash;
 }
 #endif  // defined(__x86_64__) || (defined(__i386__) && !defined(__pic__)))
