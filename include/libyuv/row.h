@@ -420,9 +420,7 @@ typedef uint8 ulvec8[32];
 #endif
 
 // This struct is for Intel color conversion.
-#if defined(_M_IX86) || defined(_M_X64) || \
-    defined(__x86_64__) || defined(__i386__)
-
+// TODO(fnbarchard): Consider different struct for other platforms.
 struct YuvConstants {
   lvec8 kUVToB;
   lvec8 kUVToG;
@@ -432,7 +430,6 @@ struct YuvConstants {
   lvec16 kUVBiasR;
   lvec16 kYToRgb;
 };
-#endif
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
@@ -1247,12 +1244,6 @@ void I422ToARGBRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_v,
                             uint8* dst_argb,
                             int width);
-void I422ToARGBMatrixRow_Any_AVX2(const uint8* src_y,
-                                  const uint8* src_u,
-                                  const uint8* src_v,
-                                  uint8* dst_argb,
-                                  struct YuvConstants* YuvConstants,
-                                  int width);
 void I422ToBGRARow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
@@ -1283,12 +1274,6 @@ void I422ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* dst_argb,
                              int width);
-void I422ToARGBMatrixRow_Any_SSSE3(const uint8* src_y,
-                                   const uint8* src_u,
-                                   const uint8* src_v,
-                                   uint8* dst_argb,
-                                   struct YuvConstants* YuvConstants,
-                                   int width);
 void I411ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
@@ -1519,13 +1504,7 @@ void I422ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
-                            struct YuvConstants* YuvConstants,
                             int width);
-void I422ToARGBMatrixRow_Any_NEON(const uint8* src_y,
-                                  const uint8* src_u,
-                                  const uint8* src_v,
-                                  uint8* dst_argb,
-                                  int width);
 void I411ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
