@@ -25,16 +25,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 
-struct YuvConstants {
-  lvec8 kUVToB;
-  lvec8 kUVToG;
-  lvec8 kUVToR;
-  lvec16 kUVBiasB;
-  lvec16 kUVBiasG;
-  lvec16 kUVBiasR;
-  lvec16 kYToRgb;
-};
-
 #define KUVTOB   0
 #define KUVTOG   32
 #define KUVTOR   64
@@ -65,7 +55,7 @@ struct YuvConstants {
 #define BR            (VR * 128 + YGB)
 
 // BT601 constants for YUV to RGB.
-static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -79,7 +69,7 @@ static YuvConstants SIMD_ALIGNED(kYuvConstants) = {
 };
 
 // BT601 constants for NV21 where chroma plane is VU instead of UV.
-static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
+YuvConstants SIMD_ALIGNED(kYvuConstants) = {
   { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
     0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -124,7 +114,7 @@ static YuvConstants SIMD_ALIGNED(kYvuConstants) = {
 #define BRJ             (VRJ * 128 + YGBJ)
 
 // JPEG constants for YUV to RGB.
-static YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0,
     UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0 },
   { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
@@ -155,12 +145,13 @@ static YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 
 // 64 bit
 #if defined(_M_X64)
-#if defined(HAS_I422TOARGBROW_SSSE3)
-void I422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         int width) {
+#if defined(HAS_I422TOARGBMATRIXROW_SSSE3)
+void I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* YuvConstants,
+                               int width) {
   __m128i xmm0, xmm1, xmm2, xmm3;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
@@ -172,15 +163,15 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);
     xmm1 = _mm_loadu_si128(&xmm0);
     xmm2 = _mm_loadu_si128(&xmm0);
-    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)kYuvConstants.kUVToB);
-    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)kYuvConstants.kUVToG);
-    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)kYuvConstants.kUVToR);
-    xmm0 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasB, xmm0);
-    xmm1 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasG, xmm1);
-    xmm2 = _mm_sub_epi16(*(__m128i*)kYuvConstants.kUVBiasR, xmm2);
+    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)YuvConstants->kUVToB);
+    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)YuvConstants->kUVToG);
+    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)YuvConstants->kUVToR);
+    xmm0 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasB, xmm0);
+    xmm1 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasG, xmm1);
+    xmm2 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasR, xmm2);
     xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
     xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);
-    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)kYuvConstants.kYToRgb);
+    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)YuvConstants->kYToRgb);
     xmm0 = _mm_adds_epi16(xmm0, xmm3);
     xmm1 = _mm_adds_epi16(xmm1, xmm3);
     xmm2 = _mm_adds_epi16(xmm2, xmm3);
@@ -2012,77 +2003,45 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        edx,  [edx + 64]                                          \
   }
 
-#ifdef HAS_I422TOARGBROW_AVX2
+#ifdef HAS_I422TOARGBMATRIXROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
 __declspec(naked)
-void I422ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        int width) {
+void I422ToARGBMatrixRow_AVX2(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* dst_argb,
+                              struct YuvConstants* YuvConstants,
+                              int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
+    push       ebp
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ebp, [esp + 12 + 20]  // YuvConstants
+    mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(kYuvConstants)
+    YUVTORGB_AVX2(ebp)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
+    pop        ebp
     pop        edi
     pop        esi
     vzeroupper
     ret
   }
 }
-#endif  // HAS_I422TOARGBROW_AVX2
-
-#ifdef HAS_J422TOARGBROW_AVX2
-// 16 pixels
-// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
-__declspec(naked)
-void J422ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
-    sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-
- convertloop:
-    READYUV422_AVX2
-    YUVTORGB_AVX2(kYuvJConstants)
-    STOREARGB_AVX2
-
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_J422TOARGBROW_AVX2
+#endif  // HAS_I422TOARGBMATRIXROW_AVX2
 
 #ifdef HAS_I444TOARGBROW_AVX2
 // 16 pixels
@@ -2691,11 +2650,12 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
 // 8 pixels.
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
 __declspec(naked)
-void I422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         int width) {
+void I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* YuvConstants,
+                               int width) {
   __asm {
     push       esi
     push       edi
@@ -2704,8 +2664,9 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ecx, [esp + 12 + 20]  // width
-    lea        ebp, kYuvConstants
+    mov        ebp, [esp + 12 + 20]  // YuvConstants
+    mov        ecx, [esp + 12 + 24]  // width
+
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
@@ -2718,40 +2679,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
     jg         convertloop
 
     pop        ebp
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-// 8 pixels.
-// JPeg color space version of I422ToARGB
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
-__declspec(naked)
-void J422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         int width) {
-  __asm {
-    push       esi
-    push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
-    sub        edi, esi
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-
- convertloop:
-    READYUV422
-    YUVTORGB(kYuvJConstants)
-    STOREARGB
-
-    sub        ecx, 8
-    jg         convertloop
-
     pop        edi
     pop        esi
     ret
