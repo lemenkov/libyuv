@@ -1179,6 +1179,31 @@ void J422ToARGBRow_C(const uint8* src_y,
   }
 }
 
+void J422ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvJPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+    YuvJPixel(src_y[1], src_u[0], src_v[0],
+              rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvJPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+  }
+}
+
 void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
                       const uint8* src_v,
@@ -2156,49 +2181,33 @@ void I422ToUYVYRow_C(const uint8* src_y,
   }
 }
 
-#if defined(HAS_I422TOARGBMATRIXROW_SSSE3)
 extern struct YuvConstants kYuvConstants;
 extern struct YuvConstants kYuvJConstants;
 
-// JPeg color space version of I422ToARGB
-void J422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         int width) {
-  I422ToARGBMatrixRow_SSSE3(y_buf, u_buf, v_buf, dst_argb,
-                            &kYuvJConstants, width);
-}
+#define ANYYUV(NAMEANY, ANY_SIMD, YUVCONSTANTS)                                \
+    void NAMEANY(const uint8* y_buf,                                           \
+                 const uint8* u_buf,                                           \
+                 const uint8* v_buf,                                           \
+                 uint8* dst_argb,                                              \
+                 int width) {                                                  \
+      ANY_SIMD(y_buf, u_buf, v_buf, dst_argb, &YUVCONSTANTS, width);           \
+    }
 
-void I422ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         int width) {
-  I422ToARGBMatrixRow_SSSE3(y_buf, u_buf, v_buf, dst_argb,
-                            &kYuvConstants, width);
-}
-
-#if defined(HAS_I422TOARGBMATRIXROW_AVX2)
-// JPeg color space version of I422ToARGB
-void J422ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        int width) {
-  I422ToARGBMatrixRow_AVX2(y_buf, u_buf, v_buf, dst_argb,
-                           &kYuvJConstants, width);
-}
-
-void I422ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        int width) {
-  I422ToARGBMatrixRow_AVX2(y_buf, u_buf, v_buf, dst_argb,
-                           &kYuvConstants, width);
-}
+#ifdef HAS_I422TOARGBMATRIXROW_SSSE3
+ANYYUV(I422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvConstants)
+ANYYUV(J422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvJConstants)
 #endif
+#ifdef HAS_I422TOARGBMATRIXROW_AVX2
+ANYYUV(I422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvConstants)
+ANYYUV(J422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvJConstants)
+#endif
+#ifdef HAS_I422TOABGRMATRIXROW_SSSE3
+ANYYUV(I422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvConstants)
+ANYYUV(J422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvJConstants)
+#endif
+#ifdef HAS_I422TOABGRMATRIXROW_AVX2
+ANYYUV(I422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvConstants)
+ANYYUV(J422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvJConstants)
 #endif
 
 // Maximum temporary width for wrappers to process at a time, in pixels.

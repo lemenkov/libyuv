@@ -1669,7 +1669,7 @@ void OMITFP I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(YuvConstants)  // %[YuvConstants]
+  : [kYuvConstants]"r"(YuvConstants)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -1773,11 +1773,12 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
   );
 }
 
-void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
-                                const uint8* u_buf,
-                                const uint8* v_buf,
-                                uint8* dst_abgr,
-                                int width) {
+void OMITFP I422ToABGRMatrixRow_SSSE3(const uint8* y_buf,
+                                      const uint8* u_buf,
+                                      const uint8* v_buf,
+                                      uint8* dst_abgr,
+                                      struct YuvConstants* YuvConstants,
+                                      int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1793,7 +1794,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants.kUVToB) // %[kYuvConstants]
+  : [kYuvConstants]"r"(YuvConstants)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -1940,7 +1941,7 @@ void OMITFP I422ToARGBMatrixRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(YuvConstants)  // %[YuvConstants]
+  : [kYuvConstants]"r"(YuvConstants)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
@@ -1950,11 +1951,12 @@ void OMITFP I422ToARGBMatrixRow_AVX2(const uint8* y_buf,
 #if defined(HAS_I422TOABGRROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ABGR (64 bytes).
-void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               uint8* dst_argb,
-                               int width) {
+void OMITFP I422ToABGRMatrixRow_AVX2(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     uint8* dst_argb,
+                                     struct YuvConstants* YuvConstants,
+                                     int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
@@ -1981,7 +1983,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
-  : [kYuvConstants]"r"(&kYuvConstants.kUVToB)  // %[kYuvConstants]
+  : [kYuvConstants]"r"(YuvConstants)  // %[kYuvConstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );

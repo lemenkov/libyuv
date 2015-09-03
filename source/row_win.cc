@@ -145,6 +145,62 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 
 // 64 bit
 #if defined(_M_X64)
+
+// Read 4 UV from 422, upsample to 8 UV.
+#define READYUV422                                                             \
+    xmm0 = _mm_cvtsi32_si128(*(uint32*)u_buf);                                 \
+    xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));                      \
+    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
+    xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                                     \
+    u_buf += 4;
+
+// Convert 8 pixels: 8 UV and 8 Y.
+#define YUVTORGB(YuvConstants)                                                 \
+    xmm1 = _mm_loadu_si128(&xmm0);                                             \
+    xmm2 = _mm_loadu_si128(&xmm0);                                             \
+    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)YuvConstants->kUVToB);           \
+    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)YuvConstants->kUVToG);           \
+    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)YuvConstants->kUVToR);           \
+    xmm0 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasB, xmm0);             \
+    xmm1 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasG, xmm1);             \
+    xmm2 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasR, xmm2);             \
+    xmm3 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
+    y_buf += 8;                                                                \
+    xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);                                      \
+    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)YuvConstants->kYToRgb);            \
+    xmm0 = _mm_adds_epi16(xmm0, xmm3);                                         \
+    xmm1 = _mm_adds_epi16(xmm1, xmm3);                                         \
+    xmm2 = _mm_adds_epi16(xmm2, xmm3);                                         \
+    xmm0 = _mm_srai_epi16(xmm0, 6);                                            \
+    xmm1 = _mm_srai_epi16(xmm1, 6);                                            \
+    xmm2 = _mm_srai_epi16(xmm2, 6);                                            \
+    xmm0 = _mm_packus_epi16(xmm0, xmm0);                                       \
+    xmm1 = _mm_packus_epi16(xmm1, xmm1);                                       \
+    xmm2 = _mm_packus_epi16(xmm2, xmm2);
+
+// Store 8 ARGB values.
+#define STOREARGB                                                              \
+    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
+    xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);                                      \
+    xmm1 = _mm_loadu_si128(&xmm0);                                             \
+    xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);                                     \
+    xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);                                     \
+    _mm_storeu_si128((__m128i *)dst_argb, xmm0);                               \
+    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);                        \
+    dst_argb += 32;
+
+// Store 8 ABGR values.
+#define STOREABGR                                                              \
+    xmm2 = _mm_unpacklo_epi8(xmm2, xmm1);                                      \
+    xmm0 = _mm_unpacklo_epi8(xmm0, xmm5);                                      \
+    xmm1 = _mm_loadu_si128(&xmm2);                                             \
+    xmm2 = _mm_unpacklo_epi16(xmm2, xmm0);                                     \
+    xmm1 = _mm_unpackhi_epi16(xmm1, xmm0);                                     \
+    _mm_storeu_si128((__m128i *)dst_argb, xmm2);                               \
+    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);                        \
+    dst_argb += 32;
+
+
 #if defined(HAS_I422TOARGBMATRIXROW_SSSE3)
 void I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
                                const uint8* u_buf,
@@ -155,44 +211,29 @@ void I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
   __m128i xmm0, xmm1, xmm2, xmm3;
   const __m128i xmm5 = _mm_set1_epi8(-1);
   const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
-
   while (width > 0) {
-    xmm0 = _mm_cvtsi32_si128(*(uint32*)u_buf);
-    xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
-    xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);
-    xmm1 = _mm_loadu_si128(&xmm0);
-    xmm2 = _mm_loadu_si128(&xmm0);
-    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)YuvConstants->kUVToB);
-    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)YuvConstants->kUVToG);
-    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)YuvConstants->kUVToR);
-    xmm0 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasB, xmm0);
-    xmm1 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasG, xmm1);
-    xmm2 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasR, xmm2);
-    xmm3 = _mm_loadl_epi64((__m128i*)y_buf);
-    xmm3 = _mm_unpacklo_epi8(xmm3, xmm3);
-    xmm3 = _mm_mulhi_epu16(xmm3, *(__m128i*)YuvConstants->kYToRgb);
-    xmm0 = _mm_adds_epi16(xmm0, xmm3);
-    xmm1 = _mm_adds_epi16(xmm1, xmm3);
-    xmm2 = _mm_adds_epi16(xmm2, xmm3);
-    xmm0 = _mm_srai_epi16(xmm0, 6);
-    xmm1 = _mm_srai_epi16(xmm1, 6);
-    xmm2 = _mm_srai_epi16(xmm2, 6);
-    xmm0 = _mm_packus_epi16(xmm0, xmm0);
-    xmm1 = _mm_packus_epi16(xmm1, xmm1);
-    xmm2 = _mm_packus_epi16(xmm2, xmm2);
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);
-    xmm2 = _mm_unpacklo_epi8(xmm2, xmm5);
-    xmm1 = _mm_loadu_si128(&xmm0);
-    xmm0 = _mm_unpacklo_epi16(xmm0, xmm2);
-    xmm1 = _mm_unpackhi_epi16(xmm1, xmm2);
+    READYUV422
+    YUVTORGB(YuvConstants)
+    STOREARGB
+    width -= 8;
+  }
+}
+#endif
 
-    _mm_storeu_si128((__m128i *)dst_argb, xmm0);
-    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);
-
-    y_buf += 8;
-    u_buf += 4;
-    dst_argb += 32;
+#if defined(HAS_I422TOABGRMATRIXROW_SSSE3)
+void I422ToABGRMatrixRow_SSSE3(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* YuvConstants,
+                               int width) {
+  __m128i xmm0, xmm1, xmm2, xmm3;
+  const __m128i xmm5 = _mm_set1_epi8(-1);
+  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
+  while (width > 0) {
+    READYUV422
+    YUVTORGB(YuvConstants)
+    STOREABGR
     width -= 8;
   }
 }
@@ -1962,7 +2003,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
-    /* Step 1: Find 8 UV contributions to 16 R,G,B values */                   \
     __asm vpmaddubsw ymm2, ymm0, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
     __asm vpmaddubsw ymm1, ymm0, ymmword ptr [YuvConstants + KUVTOG] /* G UV */\
     __asm vpmaddubsw ymm0, ymm0, ymmword ptr [YuvConstants + KUVTOB] /* B UV */\
@@ -1991,7 +2031,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
 
 // Store 16 ARGB values.
 #define STOREARGB_AVX2 __asm {                                                 \
-    /* Step 3: Weave into ARGB */                                              \
     __asm vpunpcklbw ymm0, ymm0, ymm1           /* BG */                       \
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpunpcklbw ymm2, ymm2, ymm5           /* RA */                       \
@@ -2000,6 +2039,45 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpunpckhwd ymm0, ymm0, ymm2           /* BGRA next 8 pixels */       \
     __asm vmovdqu    0[edx], ymm1                                              \
     __asm vmovdqu    32[edx], ymm0                                             \
+    __asm lea        edx,  [edx + 64]                                          \
+  }
+
+// Store 16 ABGR values.
+#define STOREBGRA_AVX2 __asm {                                                 \
+    __asm vpunpcklbw ymm1, ymm1, ymm0           /* GB */                       \
+    __asm vpermq     ymm1, ymm1, 0xd8                                          \
+    __asm vpunpcklbw ymm2, ymm5, ymm2           /* AR */                       \
+    __asm vpermq     ymm2, ymm2, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm2, ymm1           /* ARGB first 8 pixels */      \
+    __asm vpunpckhwd ymm2, ymm2, ymm1           /* ARGB next 8 pixels */       \
+    __asm vmovdqu    [edx], ymm0                                               \
+    __asm vmovdqu    [edx + 32], ymm2                                          \
+    __asm lea        edx,  [edx + 64]                                          \
+  }
+
+// Store 16 RGBA values.
+#define STORERGBA_AVX2 __asm {                                                 \
+    __asm vpunpcklbw ymm1, ymm1, ymm2           /* GR */                       \
+    __asm vpermq     ymm1, ymm1, 0xd8                                          \
+    __asm vpunpcklbw ymm2, ymm5, ymm0           /* AB */                       \
+    __asm vpermq     ymm2, ymm2, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm2, ymm1           /* ABGR first 8 pixels */      \
+    __asm vpunpckhwd ymm1, ymm2, ymm1           /* ABGR next 8 pixels */       \
+    __asm vmovdqu    [edx], ymm0                                               \
+    __asm vmovdqu    [edx + 32], ymm1                                          \
+    __asm lea        edx,  [edx + 64]                                          \
+  }
+
+// Store 16 ABGR values.
+#define STOREABGR_AVX2 __asm {                                                 \
+    __asm vpunpcklbw ymm1, ymm2, ymm1           /* RG */                       \
+    __asm vpermq     ymm1, ymm1, 0xd8                                          \
+    __asm vpunpcklbw ymm2, ymm0, ymm5           /* BA */                       \
+    __asm vpermq     ymm2, ymm2, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm1, ymm2           /* RGBA first 8 pixels */      \
+    __asm vpunpckhwd ymm1, ymm1, ymm2           /* RGBA next 8 pixels */       \
+    __asm vmovdqu    [edx], ymm0                                               \
+    __asm vmovdqu    [edx + 32], ymm1                                          \
     __asm lea        edx,  [edx + 64]                                          \
   }
 
@@ -2201,17 +2279,8 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
  convertloop:
     READYUV422_AVX2
     YUVTORGB_AVX2(kYuvConstants)
+    STOREBGRA_AVX2
 
-    // Step 3: Weave into BGRA
-    vpunpcklbw ymm1, ymm1, ymm0           // GB
-    vpermq     ymm1, ymm1, 0xd8
-    vpunpcklbw ymm2, ymm5, ymm2           // AR
-    vpermq     ymm2, ymm2, 0xd8
-    vpunpcklwd ymm0, ymm2, ymm1           // ARGB first 8 pixels
-    vpunpckhwd ymm2, ymm2, ymm1           // ARGB next 8 pixels
-    vmovdqu    [edx], ymm0
-    vmovdqu    [edx + 32], ymm2
-    lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
 
@@ -2226,7 +2295,6 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
 #ifdef HAS_I422TORGBAROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 RGBA (64 bytes).
-// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
 __declspec(naked)
 void I422ToRGBARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
@@ -2247,17 +2315,8 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
  convertloop:
     READYUV422_AVX2
     YUVTORGB_AVX2(kYuvConstants)
+    STORERGBA_AVX2
 
-    // Step 3: Weave into RGBA
-    vpunpcklbw ymm1, ymm1, ymm2           // GR
-    vpermq     ymm1, ymm1, 0xd8
-    vpunpcklbw ymm2, ymm5, ymm0           // AB
-    vpermq     ymm2, ymm2, 0xd8
-    vpunpcklwd ymm0, ymm2, ymm1           // ABGR first 8 pixels
-    vpunpckhwd ymm1, ymm2, ymm1           // ABGR next 8 pixels
-    vmovdqu    [edx], ymm0
-    vmovdqu    [edx + 32], ymm1
-    lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
 
@@ -2272,41 +2331,35 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
 #ifdef HAS_I422TOABGRROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ABGR (64 bytes).
-// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
 __declspec(naked)
-void I422ToABGRRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        int width) {
+void I422ToABGRMatrixRow_AVX2(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              uint8* dst_argb,
+                              struct YuvConstants* YuvConstants,
+                              int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // argb
-    mov        ecx, [esp + 8 + 20]  // width
+    push       ebp
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ebp, [esp + 12 + 20]  // YuvConstants
+    mov        ecx, [esp + 12 + 20]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(kYuvConstants)
+    YUVTORGB_AVX2(ebp)
+    STOREABGR_AVX2
 
-    // Step 3: Weave into ABGR
-    vpunpcklbw ymm1, ymm2, ymm1           // RG
-    vpermq     ymm1, ymm1, 0xd8
-    vpunpcklbw ymm2, ymm0, ymm5           // BA
-    vpermq     ymm2, ymm2, 0xd8
-    vpunpcklwd ymm0, ymm1, ymm2           // RGBA first 8 pixels
-    vpunpckhwd ymm1, ymm1, ymm2           // RGBA next 8 pixels
-    vmovdqu    [edx], ymm0
-    vmovdqu    [edx + 32], ymm1
-    lea        edx,  [edx + 64]
     sub        ecx, 16
     jg         convertloop
 
+    pop        ebp
     pop        edi
     pop        esi
     vzeroupper
@@ -2354,7 +2407,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(YuvConstants) __asm {                                         \
-    /* Step 1: Find 4 UV contributions to 8 R,G,B values */                    \
     __asm movdqa     xmm1, xmm0                                                \
     __asm movdqa     xmm2, xmm0                                                \
     __asm movdqa     xmm3, xmm0                                                \
@@ -2367,7 +2419,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movdqa     xmm2, xmmword ptr [YuvConstants + KUVBIASR]               \
     __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
     __asm psubw      xmm2, xmm3                                                \
-    /* Step 2: Find Y contribution to 8 R,G,B values */                        \
     __asm movq       xmm3, qword ptr [eax]                                     \
     __asm lea        eax, [eax + 8]                                            \
     __asm punpcklbw  xmm3, xmm3                                                \
@@ -2385,7 +2436,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 ARGB values.
 #define STOREARGB __asm {                                                      \
-    /* Step 3: Weave into ARGB */                                              \
     __asm punpcklbw  xmm0, xmm1           /* BG */                             \
     __asm punpcklbw  xmm2, xmm5           /* RA */                             \
     __asm movdqa     xmm1, xmm0                                                \
@@ -2398,7 +2448,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 BGRA values.
 #define STOREBGRA __asm {                                                      \
-    /* Step 3: Weave into BGRA */                                              \
     __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
     __asm punpcklbw  xmm1, xmm0           /* GB */                             \
     __asm punpcklbw  xmm5, xmm2           /* AR */                             \
@@ -2412,7 +2461,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 ABGR values.
 #define STOREABGR __asm {                                                      \
-    /* Step 3: Weave into ABGR */                                              \
     __asm punpcklbw  xmm2, xmm1           /* RG */                             \
     __asm punpcklbw  xmm0, xmm5           /* BA */                             \
     __asm movdqa     xmm1, xmm2                                                \
@@ -2425,7 +2473,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 RGBA values.
 #define STORERGBA __asm {                                                      \
-    /* Step 3: Weave into RGBA */                                              \
     __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
     __asm punpcklbw  xmm1, xmm2           /* GR */                             \
     __asm punpcklbw  xmm5, xmm0           /* AB */                             \
@@ -2439,13 +2486,13 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 RGB24 values.
 #define STORERGB24 __asm {                                                     \
-    /* Step 3: Weave into RRGB */                                              \
+    /* Weave into RRGB */                                                      \
     __asm punpcklbw  xmm0, xmm1           /* BG */                             \
     __asm punpcklbw  xmm2, xmm2           /* RR */                             \
     __asm movdqa     xmm1, xmm0                                                \
     __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
     __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
-    /* Step 4: RRGB -> RGB24 */                                                \
+    /* RRGB -> RGB24 */                                                        \
     __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
     __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
     __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
@@ -2456,7 +2503,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 RAW values.
 #define STORERAW __asm {                                                       \
-    /* Step 3: Weave into RRGB */                                              \
+    /* Weave into RRGB */                                                      \
     __asm punpcklbw  xmm0, xmm1           /* BG */                             \
     __asm punpcklbw  xmm2, xmm2           /* RR */                             \
     __asm movdqa     xmm1, xmm0                                                \
@@ -2473,13 +2520,13 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
 
 // Store 8 RGB565 values.
 #define STORERGB565 __asm {                                                    \
-    /* Step 3: Weave into RRGB */                                              \
+    /* Weave into RRGB */                                                      \
     __asm punpcklbw  xmm0, xmm1           /* BG */                             \
     __asm punpcklbw  xmm2, xmm2           /* RR */                             \
     __asm movdqa     xmm1, xmm0                                                \
     __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
     __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
-    /* Step 4: RRGB -> RGB565 */                                               \
+    /* RRGB -> RGB565 */                                                       \
     __asm movdqa     xmm3, xmm0    /* B  first 4 pixels of argb */             \
     __asm movdqa     xmm2, xmm0    /* G */                                     \
     __asm pslld      xmm0, 8       /* R */                                     \
@@ -2666,7 +2713,6 @@ void I422ToARGBMatrixRow_SSSE3(const uint8* y_buf,
     mov        edx, [esp + 12 + 16]  // argb
     mov        ebp, [esp + 12 + 20]  // YuvConstants
     mov        ecx, [esp + 12 + 24]  // width
-
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
@@ -2808,30 +2854,34 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
 }
 
 __declspec(naked)
-void I422ToABGRRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_abgr,
-                         int width) {
+void I422ToABGRMatrixRow_SSSE3(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               uint8* dst_abgr,
+                               struct YuvConstants* YuvConstants,
+                               int width) {
   __asm {
     push       esi
     push       edi
-    mov        eax, [esp + 8 + 4]   // Y
-    mov        esi, [esp + 8 + 8]   // U
-    mov        edi, [esp + 8 + 12]  // V
-    mov        edx, [esp + 8 + 16]  // abgr
-    mov        ecx, [esp + 8 + 20]  // width
+    push       ebp
+    mov        eax, [esp + 12 + 4]   // Y
+    mov        esi, [esp + 12 + 8]   // U
+    mov        edi, [esp + 12 + 12]  // V
+    mov        edx, [esp + 12 + 16]  // argb
+    mov        ebp, [esp + 12 + 20]  // YuvConstants
+    mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUV422
-    YUVTORGB(kYuvConstants)
+    YUVTORGB(ebp)
     STOREABGR
 
     sub        ecx, 8
     jg         convertloop
 
+    pop        ebp
     pop        edi
     pop        esi
     ret

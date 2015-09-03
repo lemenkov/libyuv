@@ -89,6 +89,7 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOARGBMATRIXROW_SSSE3
+#define HAS_I422TOABGRMATRIXROW_SSSE3
 #define HAS_I422TOBGRAROW_SSSE3
 #define HAS_I422TORAWROW_SSSE3
 #define HAS_I422TORGB24ROW_SSSE3
@@ -99,6 +100,7 @@ extern "C" {
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_J400TOARGBROW_SSE2
 #define HAS_J422TOARGBROW_SSSE3
+#define HAS_J422TOABGRROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSE2
 #define HAS_MIRRORROW_SSSE3
@@ -162,7 +164,9 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422TOARGBROW_SSSE3
+#define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBMATRIXROW_SSSE3
+#define HAS_I422TOABGRMATRIXROW_SSSE3
 #endif
 
 // GCC >= 4.7.0 required for AVX2.
@@ -226,12 +230,14 @@ extern "C" {
 #define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOARGBMATRIXROW_AVX2
+#define HAS_I422TOABGRMATRIXROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORAWROW_AVX2
 #define HAS_I422TORGB24ROW_AVX2
 #define HAS_I422TORGBAROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
+#define HAS_J422TOABGRROW_AVX2
 #define HAS_MERGEUVROW_AVX2
 #define HAS_MIRRORROW_AVX2
 #define HAS_SPLITUVROW_AVX2
@@ -294,7 +300,8 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_NEON
 #define HAS_I422TOARGBROW_NEON
 // TODO(fbarchard): Implement NEON version
-#define HAS_I422TOARGBMATRIXROW_NEON
+// #define HAS_I422TOARGBMATRIXROW_NEON
+// #define HAS_I422TOABGRMATRIXROW_NEON
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TORAWROW_NEON
 #define HAS_I422TORGB24ROW_NEON
@@ -527,6 +534,12 @@ void I422ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width);
 void I422ToARGBMatrixRow_NEON(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_argb,
+                              struct YuvConstants* YuvConstants,
+                              int width);
+void I422ToABGRMatrixRow_NEON(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
                               uint8* dst_argb,
@@ -991,6 +1004,12 @@ void I422ToARGBMatrixRow_C(const uint8* src_y,
                            uint8* dst_argb,
                            struct YuvConstants* YuvConstants,
                            int width);
+void I422ToABGRMatrixRow_C(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_argb,
+                           struct YuvConstants* YuvConstants,
+                           int width);
 void I411ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
@@ -1019,6 +1038,11 @@ void UYVYToARGBRow_C(const uint8* src_uyvy,
                      uint8* dst_argb,
                      int width);
 void J422ToARGBRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_argb,
+                     int width);
+void J422ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* dst_argb,
@@ -1074,6 +1098,12 @@ void I422ToARGBMatrixRow_AVX2(const uint8* src_y,
                               uint8* dst_argb,
                               struct YuvConstants* YuvConstants,
                               int width);
+void I422ToABGRMatrixRow_AVX2(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_argb,
+                              struct YuvConstants* YuvConstants,
+                              int width);
 void I422ToBGRARow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -1105,6 +1135,12 @@ void I422ToARGBRow_SSSE3(const uint8* src_y,
                          uint8* dst_argb,
                          int width);
 void I422ToARGBMatrixRow_SSSE3(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_argb,
+                               struct YuvConstants* YuvConstants,
+                               int width);
+void I422ToABGRMatrixRow_SSSE3(const uint8* src_y,
                                const uint8* src_u,
                                const uint8* src_v,
                                uint8* dst_argb,
@@ -1169,7 +1205,17 @@ void J422ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_v,
                          uint8* dst_argb,
                          int width);
+void J422ToABGRRow_SSSE3(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_argb,
+                         int width);
 void J422ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
+void J422ToABGRRow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
@@ -1333,7 +1379,17 @@ void J422ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_v,
                              uint8* dst_argb,
                              int width);
+void J422ToABGRRow_Any_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb,
+                             int width);
 void J422ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
+void J422ToABGRRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,

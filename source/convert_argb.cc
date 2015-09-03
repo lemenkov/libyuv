@@ -1398,6 +1398,152 @@ int J422ToARGB(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Convert J420 to ABGR.
+LIBYUV_API
+int J420ToABGR(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_abgr, int dst_stride_abgr,
+               int width, int height) {
+  int y;
+  void (*J422ToABGRRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = J422ToABGRRow_C;
+  if (!src_y || !src_u || !src_v || !dst_abgr ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
+    dst_stride_abgr = -dst_stride_abgr;
+  }
+#if defined(HAS_J422TOABGRROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    J422ToABGRRow = J422ToABGRRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      J422ToABGRRow = J422ToABGRRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    J422ToABGRRow = J422ToABGRRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      J422ToABGRRow = J422ToABGRRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    J422ToABGRRow = J422ToABGRRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      J422ToABGRRow = J422ToABGRRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_abgr, 4) && IS_ALIGNED(dst_stride_abgr, 4)) {
+    J422ToABGRRow = J422ToABGRRow_MIPS_DSPR2;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    J422ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
+    dst_abgr += dst_stride_abgr;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  return 0;
+}
+
+// Convert J422 to ABGR.
+LIBYUV_API
+int J422ToABGR(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_abgr, int dst_stride_abgr,
+               int width, int height) {
+  int y;
+  void (*J422ToABGRRow)(const uint8* y_buf,
+                        const uint8* u_buf,
+                        const uint8* v_buf,
+                        uint8* rgb_buf,
+                        int width) = J422ToABGRRow_C;
+  if (!src_y || !src_u || !src_v ||
+      !dst_abgr ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
+    dst_stride_abgr = -dst_stride_abgr;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width &&
+      src_stride_u * 2 == width &&
+      src_stride_v * 2 == width &&
+      dst_stride_abgr == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_y = src_stride_u = src_stride_v = dst_stride_abgr = 0;
+  }
+#if defined(HAS_J422TOABGRROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    J422ToABGRRow = J422ToABGRRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      J422ToABGRRow = J422ToABGRRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    J422ToABGRRow = J422ToABGRRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      J422ToABGRRow = J422ToABGRRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    J422ToABGRRow = J422ToABGRRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      J422ToABGRRow = J422ToABGRRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_J422TOABGRROW_MIPS_DSPR2)
+  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
+      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
+      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
+      IS_ALIGNED(dst_abgr, 4) && IS_ALIGNED(dst_stride_abgr, 4)) {
+    J422ToABGRRow = J422ToABGRRow_MIPS_DSPR2;
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    J422ToABGRRow(src_y, src_u, src_v, dst_abgr, width);
+    dst_abgr += dst_stride_abgr;
+    src_y += src_stride_y;
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
