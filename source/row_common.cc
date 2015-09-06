@@ -1010,7 +1010,7 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define VG 52 /* round(0.813 * 64) */
 #define VR -102 /* round(-1.596 * 64) */
 
-// Bias values to subtract 16 from Y and 128 from U and V.
+// Bias values to subtract 16 from Y and 128 from U and V, with rounding.
 #define BB (UB * 128 + YGB)
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR (VR * 128 + YGB)
@@ -1058,7 +1058,7 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 #define VGJ 46 /* round(0.71414  * 64) */
 #define VRJ -90 /* round(-1.40200 * 64) */
 
-// Bias values to subtract 16 from Y and 128 from U and V.
+// Bias values to round Y and subtract 128 from U and V.
 #define BBJ (UBJ * 128 + YGBJ)
 #define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
 #define BRJ (VRJ * 128 + YGBJ)
@@ -1081,6 +1081,46 @@ static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
 #undef BBJ
 #undef BGJ
 #undef BRJ
+
+// BT.709 YUV to RGB reference
+// *  R = Y                - V * -1.28033
+// *  G = Y - U *  0.21482 - V *  0.38059
+// *  B = Y - U * -2.12798
+
+// Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
+#define YGH 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
+#define YGBH 32  /* 64 / 2 */
+
+// U and V contributions to R,G,B.
+#define UBH -128 /* max(-128, round(-2.12798 * 64)) */
+#define UGH 14 /* round(0.21482 * 64) */
+#define VGH 24 /* round(0.38059  * 64) */
+#define VRH -82 /* round(-1.28033 * 64) */
+
+// Bias values to round, and subtract 128 from U and V.
+#define BBH (UBH * 128 + YGBH)
+#define BGH (UGH * 128 + VGH * 128 + YGBH)
+#define BRH (VRH * 128 + YGBH)
+
+// C reference code that mimics the YUV assembly.
+static __inline void YuvHPixel(uint8 y, uint8 u, uint8 v,
+                               uint8* b, uint8* g, uint8* r) {
+  uint32 y1 = (uint32)(y * 0x0101 * YGH) >> 16;
+  *b = Clamp((int32)(-(u * UBH) + y1 + BBH) >> 6);
+  *g = Clamp((int32)(-(v * VGH + u * UGH) + y1 + BGH) >> 6);
+  *r = Clamp((int32)(-(v * VRH) + y1 + BRH) >> 6);
+}
+
+#undef YGH
+#undef YGBH
+#undef UBH
+#undef UGH
+#undef VGH
+#undef VRH
+#undef BBH
+#undef BGH
+#undef BRH
 
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(__aarch64__) || defined(LIBYUV_NEON))
@@ -1203,6 +1243,58 @@ void J422ToABGRRow_C(const uint8* src_y,
     rgb_buf[3] = 255;
   }
 }
+
+// TODO(fbarchard): replace with common matrix function.
+void H422ToARGBRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvHPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    YuvHPixel(src_y[1], src_u[0], src_v[0],
+              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvHPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+  }
+}
+
+void H422ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvHPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+    YuvHPixel(src_y[1], src_u[0], src_v[0],
+              rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvHPixel(src_y[0], src_u[0], src_v[0],
+              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+  }
+}
+
 
 void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
@@ -2183,6 +2275,7 @@ void I422ToUYVYRow_C(const uint8* src_y,
 
 extern struct YuvConstants kYuvConstants;
 extern struct YuvConstants kYuvJConstants;
+extern struct YuvConstants kYuvHConstants;
 
 #define ANYYUV(NAMEANY, ANY_SIMD, YUVCONSTANTS)                                \
     void NAMEANY(const uint8* y_buf,                                           \
@@ -2196,18 +2289,22 @@ extern struct YuvConstants kYuvJConstants;
 #ifdef HAS_I422TOARGBMATRIXROW_SSSE3
 ANYYUV(I422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvConstants)
 ANYYUV(J422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvJConstants)
+ANYYUV(H422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvHConstants)
 #endif
 #ifdef HAS_I422TOARGBMATRIXROW_AVX2
 ANYYUV(I422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvConstants)
 ANYYUV(J422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvJConstants)
+ANYYUV(H422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvHConstants)
 #endif
 #ifdef HAS_I422TOABGRMATRIXROW_SSSE3
 ANYYUV(I422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvConstants)
 ANYYUV(J422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvJConstants)
+ANYYUV(H422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvHConstants)
 #endif
 #ifdef HAS_I422TOABGRMATRIXROW_AVX2
 ANYYUV(I422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvConstants)
 ANYYUV(J422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvJConstants)
+ANYYUV(H422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvHConstants)
 #endif
 
 // Maximum temporary width for wrappers to process at a time, in pixels.
