@@ -2151,7 +2151,7 @@ void I422ToARGBMatrixRow_AVX2(const uint8* y_buf,
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
     mov        ebp, [esp + 12 + 20]  // YuvConstants
-    mov        ecx, [esp + 12 + 20]  // width
+    mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
@@ -2398,7 +2398,7 @@ void I422ToABGRMatrixRow_AVX2(const uint8* y_buf,
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
     mov        ebp, [esp + 12 + 20]  // YuvConstants
-    mov        ecx, [esp + 12 + 20]  // width
+    mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
