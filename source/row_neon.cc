@@ -150,6 +150,13 @@ extern "C" {
 #define BG (UG * 128 + VG * 128 - YGB)
 #define BR            (VR * 128 - YGB)
 
+YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
+  { 128, 128, 128, 128, 102, 102, 102, 102, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { 25, 25, 25, 25, 52, 52, 52, 52, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
+
 static uvec8 kUVToRB  = { 128, 128, 128, 128, 102, 102, 102, 102,
                           0, 0, 0, 0, 0, 0, 0, 0 };
 static uvec8 kUVToG = { 25, 25, 25, 25, 52, 52, 52, 52,
@@ -196,11 +203,12 @@ void I444ToARGBRow_NEON(const uint8* src_y,
   );
 }
 
-void I422ToARGBRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        int width) {
+void I422ToARGBMatrixRow_NEON(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_argb,
+                              struct YuvConstantsNEON* YuvConstants,
+                              int width) {
   asm volatile (
     YUV422TORGB_SETUP_REG
   "1:                                          \n"
@@ -216,10 +224,10 @@ void I422ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&YuvConstants->kUVToRB),   // %5
+      [kUVToG]"r"(&YuvConstants->kUVToG),     // %6
+      [kUVBiasBGR]"r"(&YuvConstants->kUVBiasBGR),
+      [kYToRgb]"r"(&YuvConstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );

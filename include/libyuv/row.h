@@ -304,7 +304,9 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_NEON
 #define HAS_I422TOARGBROW_NEON
 // TODO(fbarchard): Implement NEON version
-// #define HAS_I422TOARGBMATRIXROW_NEON
+#ifndef __aarch64__
+#define HAS_I422TOARGBMATRIXROW_NEON
+#endif
 // #define HAS_I422TOABGRMATRIXROW_NEON
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TORAWROW_NEON
@@ -442,6 +444,13 @@ struct YuvConstants {
   lvec16 kYToRgb;
 };
 
+struct YuvConstantsNEON {
+    uvec8 kUVToRB;
+    uvec8 kUVToG;
+    vec16 kUVBiasBGR;
+    vec32 kYToRgb;
+};
+
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
 #else
@@ -541,7 +550,7 @@ void I422ToARGBMatrixRow_NEON(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
                               uint8* dst_argb,
-                              struct YuvConstants* YuvConstants,
+                              struct YuvConstantsNEON* YuvConstants,
                               int width);
 void I422ToABGRMatrixRow_NEON(const uint8* src_y,
                               const uint8* src_u,
