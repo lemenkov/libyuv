@@ -42,6 +42,7 @@ static LIBYUV_BOOL ScanEOI(const uint8* sample, size_t sample_size) {
 LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
   // Maximum size that ValidateJpeg will consider valid.
   const size_t kMaxJpegSize = 0x7fffffffull;
+  const size_t kBackSearchSize = 1024;
   if (sample_size < 64 || sample_size > kMaxJpegSize || !sample) {
     // ERROR: Invalid jpeg size: sample_size
     return LIBYUV_FALSE;
@@ -49,6 +50,15 @@ LIBYUV_BOOL ValidateJpeg(const uint8* sample, size_t sample_size) {
   if (sample[0] != 0xff || sample[1] != 0xd8) {  // SOI marker
     // ERROR: Invalid jpeg initial start code
     return LIBYUV_FALSE;
+  }
+
+  // Look for the End Of Image (EOI) marker near the end of the buffer.
+  if (sample_size > kBackSearchSize) {
+    if (ScanEOI(sample + sample_size - kBackSearchSize, kBackSearchSize)) {
+      return LIBYUV_TRUE;  // Success: Valid jpeg.
+    }
+    // Reduce search size for forward search.
+    sample_size = sample_size - kBackSearchSize + 1;
   }
   // Step over SOI marker and scan for EOI.
   return ScanEOI(sample + 2, sample_size - 2);
