@@ -134,32 +134,39 @@ extern "C" {
     "vqshrun.s16 d22, q9, #6                   \n" /* R */                     \
     "vqshrun.s16 d21, q0, #6                   \n" /* G */
 
-// YUV to RGB conversion constants.
+
+// BT.601 YUV to RGB reference
+//  R = (Y - 16) * 1.164              - V * -1.596
+//  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813
+//  B = (Y - 16) * 1.164 - U * -2.018
+
 // Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
-#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
 // U and V contributions to R,G,B.
-#define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UG 25 /* -round(-0.391 * 64) */
-#define VG 52 /* -round(-0.813 * 64) */
-#define VR -102 /* -round(1.596 * 64) */
+#define UB -128 /* max(-128, round(-2.018 * 64)) */
+#define UG 25 /* round(0.391 * 64) */
+#define VG 52 /* round(0.813 * 64) */
+#define VR -102 /* round(-1.596 * 64) */
 
 // Bias values to subtract 16 from Y and 128 from U and V.
-#define BB (UB * 128            - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR            (VR * 128 - YGB)
+#define BB (UB * 128            + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR            (VR * 128 + YGB)
 
 YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
-  { 128, 128, 128, 128, 102, 102, 102, 102, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { 25, 25, 25, 25, 52, 52, 52, 52, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 
-static uvec8 kUVToRB  = { 128, 128, 128, 128, 102, 102, 102, 102,
-                          0, 0, 0, 0, 0, 0, 0, 0 };
-static uvec8 kUVToG = { 25, 25, 25, 25, 52, 52, 52, 52,
+// TODO(fbarchard): replace these with structure.
+static uvec8 kUVToRB  = { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR,
+                          0, 0, 0, 0, 0, 0, 0, 0 },
+static uvec8 kUVToG = { UG, UG, UG, UG, VG, VG, VG, VG,
                         0, 0, 0, 0, 0, 0, 0, 0 };
 static vec16 kUVBiasBGR = { BB, BG, BR, 0, 0, 0, 0, 0 };
 static vec32 kYToRgb = { 0x0101 * YG, 0, 0, 0 };
