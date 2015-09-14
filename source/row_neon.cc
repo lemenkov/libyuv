@@ -134,7 +134,6 @@ extern "C" {
     "vqshrun.s16 d22, q9, #6                   \n" /* R */                     \
     "vqshrun.s16 d21, q0, #6                   \n" /* G */
 
-
 // BT.601 YUV to RGB reference
 //  R = (Y - 16) * 1.164              - V * -1.596
 //  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813

@@ -129,24 +129,33 @@ extern "C" {
     "sqshrun    " #vG ".8b, " #vG ".8h, #6     \n" /* G */                     \
     "sqshrun    " #vR ".8b, " #vR ".8h, #6     \n" /* R */                     \
 
-// YUV to RGB conversion constants.
+// BT.601 YUV to RGB reference
+//  R = (Y - 16) * 1.164              - V * -1.596
+//  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813
+//  B = (Y - 16) * 1.164 - U * -2.018
+
 // Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
-#define YGB 1160 /* 1.164 * 64 * 16 - adjusted for even error distribution */
+#define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
 // U and V contributions to R,G,B.
-#define UB -128 /* -min(128, round(2.018 * 64)) */
-#define UG 25 /* -round(-0.391 * 64) */
-#define VG 52 /* -round(-0.813 * 64) */
-#define VR -102 /* -round(1.596 * 64) */
+#define UB -128 /* max(-128, round(-2.018 * 64)) */
+#define UG 25 /* round(0.391 * 64) */
+#define VG 52 /* round(0.813 * 64) */
+#define VR -102 /* round(-1.596 * 64) */
 
 // Bias values to subtract 16 from Y and 128 from U and V.
-#define BB (UB * 128            - YGB)
-#define BG (UG * 128 + VG * 128 - YGB)
-#define BR            (VR * 128 - YGB)
+#define BB (UB * 128            + YGB)
+#define BG (UG * 128 + VG * 128 + YGB)
+#define BR            (VR * 128 + YGB)
 
-static vec16 kUVBiasBGR = { BB, BG, BR, 0, 0, 0, 0, 0 };
-static vec32 kYToRgb = { 0x0101 * YG, 0, 0, 0 };
+YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
+  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
 
 #undef YG
 #undef YGB
@@ -158,6 +167,7 @@ static vec32 kYToRgb = { 0x0101 * YG, 0, 0, 0 };
 #undef BG
 #undef BR
 
+// TODO(fbarchard): Use structure for constants like 32 bit code.
 #define RGBTOUV_SETUP_REG                                                      \
     "movi       v20.8h, #56, lsl #0  \n"  /* UB/VR coefficient (0.875) / 2 */  \
     "movi       v21.8h, #37, lsl #0  \n"  /* UG coefficient (-0.5781) / 2  */  \
@@ -165,7 +175,6 @@ static vec32 kYToRgb = { 0x0101 * YG, 0, 0, 0 };
     "movi       v23.8h, #9,  lsl #0  \n"  /* VB coefficient (-0.1406) / 2  */  \
     "movi       v24.8h, #47, lsl #0  \n"  /* VG coefficient (-0.7344) / 2  */  \
     "movi       v25.16b, #0x80       \n"  /* 128.5 (0x8080 in 16-bit)      */
-
 
 #ifdef HAS_I444TOARGBROW_NEON
 void I444ToARGBRow_NEON(const uint8* src_y,
@@ -178,7 +187,7 @@ void I444ToARGBRow_NEON(const uint8* src_y,
   "1:                                          \n"
     READYUV444
     YUV422TORGB(v22, v21, v20)
-    "subs       %w4, %w4, #8                 \n"
+    "subs       %w4, %w4, #8                   \n"
     "movi       v23.8b, #255                   \n" /* A */
     MEMACCESS(3)
     "st4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%3], #32 \n"
@@ -188,8 +197,8 @@ void I444ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -217,8 +226,8 @@ void I422ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -246,8 +255,8 @@ void I411ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -275,8 +284,8 @@ void I422ToBGRARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_bgra),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -304,8 +313,8 @@ void I422ToABGRRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_abgr),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -333,8 +342,8 @@ void I422ToRGBARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_rgba),  // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -361,8 +370,8 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_rgb24), // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -389,8 +398,8 @@ void I422ToRAWRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_raw),   // %3
       "+r"(width)      // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -425,8 +434,8 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_rgb565),  // %3
       "+r"(width)     // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -464,8 +473,8 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb1555),  // %3
       "+r"(width)     // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -505,8 +514,8 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb4444),  // %3
       "+r"(width)     // %4
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -531,8 +540,8 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width64)    // %2
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -582,8 +591,8 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -609,8 +618,8 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -636,8 +645,8 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_rgb565),  // %2
       "+r"(width)      // %3
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -663,8 +672,8 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_rgb565),  // %2
       "+r"(width)      // %3
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -689,8 +698,8 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width64)    // %2
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
@@ -715,8 +724,8 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width64)    // %2
-    : [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );
