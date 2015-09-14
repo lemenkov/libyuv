@@ -163,14 +163,6 @@ YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 
-// TODO(fbarchard): replace these with structure.
-static uvec8 kUVToRB  = { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR,
-                          0, 0, 0, 0, 0, 0, 0, 0 },
-static uvec8 kUVToG = { UG, UG, UG, UG, VG, VG, VG, VG,
-                        0, 0, 0, 0, 0, 0, 0, 0 };
-static vec16 kUVBiasBGR = { BB, BG, BR, 0, 0, 0, 0, 0 };
-static vec32 kYToRgb = { 0x0101 * YG, 0, 0, 0 };
-
 #undef YG
 #undef YGB
 #undef UB
@@ -201,10 +193,10 @@ void I444ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -260,10 +252,10 @@ void I411ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -290,10 +282,10 @@ void I422ToBGRARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_bgra),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -320,10 +312,10 @@ void I422ToABGRRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_abgr),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -349,10 +341,10 @@ void I422ToRGBARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_rgba),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -377,10 +369,10 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
       "+r"(src_v),      // %2
       "+r"(dst_rgb24),  // %3
       "+r"(width)       // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -406,10 +398,10 @@ void I422ToRAWRow_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_raw),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -447,10 +439,10 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_rgb565),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -492,10 +484,10 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb1555),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -532,10 +524,10 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb4444),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kUVToRB),   // %5
-      [kUVToG]"r"(&kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -557,10 +549,10 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kUVToRB),   // %3
-      [kUVToG]"r"(&kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -606,10 +598,10 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kUVToRB),   // %4
-      [kUVToG]"r"(&kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -633,10 +625,10 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kUVToRB),   // %4
-      [kUVToG]"r"(&kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -660,10 +652,10 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_rgb565),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kUVToRB),   // %4
-      [kUVToG]"r"(&kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -687,10 +679,10 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_rgb565),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kUVToRB),   // %4
-      [kUVToG]"r"(&kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -712,10 +704,10 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kUVToRB),   // %3
-      [kUVToG]"r"(&kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -737,10 +729,10 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kUVToRB),   // %3
-      [kUVToG]"r"(&kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kUVBiasBGR),
-      [kYToRgb]"r"(&kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
+      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
+      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
