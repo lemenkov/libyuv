@@ -316,6 +316,7 @@ extern "C" {
 #define HAS_I422TOUYVYROW_NEON
 #define HAS_I422TOYUY2ROW_NEON
 #define HAS_I444TOARGBROW_NEON
+#define HAS_J422TOARGBROW_NEON
 #define HAS_MERGEUVROW_NEON
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORUVROW_NEON
@@ -603,6 +604,11 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
                             const uint8* src_v,
                             uint8* dst_argb4444,
                             int width);
+void J422ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
 void NV12ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_uv,
                         uint8* dst_argb,
@@ -1669,6 +1675,11 @@ void I422ToRGB565Row_Any_NEON(const uint8* src_y,
                               const uint8* src_v,
                               uint8* dst_argb,
                               int width);
+void J422ToARGBRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
 void NV12ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_uv,
                             uint8* dst_argb,
