@@ -205,6 +205,7 @@ void I444ToARGBRow_NEON(const uint8* src_y,
 }
 #endif  // HAS_I444TOARGBROW_NEON
 
+// TODO(fbarchard): Switch to Matrix version of this function.
 #ifdef HAS_I422TOARGBROW_NEON
 void I422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
@@ -292,6 +293,7 @@ void I422ToBGRARow_NEON(const uint8* src_y,
 }
 #endif  // HAS_I422TOBGRAROW_NEON
 
+// TODO(fbarchard): Switch to Matrix version of this function.
 #ifdef HAS_I422TOABGRROW_NEON
 void I422ToABGRRow_NEON(const uint8* src_y,
                         const uint8* src_u,
