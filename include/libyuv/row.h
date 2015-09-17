@@ -312,7 +312,6 @@ extern "C" {
 #define HAS_H422TOARGBROW_NEON
 #define HAS_H422TOABGRROW_NEON
 #endif
-// #define HAS_I422TOABGRMATRIXROW_NEON
 #define HAS_I422TOBGRAROW_NEON
 #define HAS_I422TORAWROW_NEON
 #define HAS_I422TORGB24ROW_NEON
@@ -561,7 +560,7 @@ void I422ToABGRMatrixRow_NEON(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
                               uint8* dst_argb,
-                              struct YuvConstants* YuvConstants,
+                              struct YuvConstantsNEON* YuvConstants,
                               int width);
 void I411ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
