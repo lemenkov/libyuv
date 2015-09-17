@@ -211,6 +211,44 @@ YuvConstantsNEON SIMD_ALIGNED(kYuvJConstantsNEON) = {
 #undef BGJ
 #undef BRJ
 
+// BT.709 YUV to RGB reference
+// *  R = Y                - V * -1.28033
+// *  G = Y - U *  0.21482 - V *  0.38059
+// *  B = Y - U * -2.12798
+
+// Y contribution to R,G,B.  Scale and bias.
+// TODO(fbarchard): Consider moving constants into a common header.
+#define YGH 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
+#define YGBH 32  /* 64 / 2 */
+
+// U and V contributions to R,G,B.
+#define UBH -128 /* max(-128, round(-2.12798 * 64)) */
+#define UGH 14 /* round(0.21482 * 64) */
+#define VGH 24 /* round(0.38059  * 64) */
+#define VRH -82 /* round(-1.28033 * 64) */
+
+// Bias values to round, and subtract 128 from U and V.
+#define BBH (UBH * 128 + YGBH)
+#define BGH (UGH * 128 + VGH * 128 + YGBH)
+#define BRH (VRH * 128 + YGBH)
+
+// BT.709 constants for YUV to RGB.
+YuvConstantsNEON SIMD_ALIGNED(kYuvHConstantsNEON) = {
+  { -UBH, -UBH, -UBH, -UBH, -VRH, -VRH, -VRH, -VRH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UGH, UGH, UGH, UGH, VGH, VGH, VGH, VGH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGH, 0, 0, 0 }
+};
+
+#undef YGH
+#undef YGBH
+#undef UBH
+#undef UGH
+#undef VGH
+#undef VRH
+#undef BBH
+#undef BGH
+#undef BRH
 
 void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,

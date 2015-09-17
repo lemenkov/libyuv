@@ -2278,6 +2278,7 @@ extern struct YuvConstants kYuvJConstants;
 extern struct YuvConstants kYuvHConstants;
 extern struct YuvConstantsNEON kYuvConstantsNEON;
 extern struct YuvConstantsNEON kYuvJConstantsNEON;
+extern struct YuvConstantsNEON kYuvHConstantsNEON;
 
 #define ANYYUV(NAMEANY, ANY_SIMD, YUVCONSTANTS)                                \
     void NAMEANY(const uint8* y_buf,                                           \
@@ -2291,7 +2292,7 @@ extern struct YuvConstantsNEON kYuvJConstantsNEON;
 #ifdef HAS_I422TOARGBMATRIXROW_NEON
 ANYYUV(I422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvConstantsNEON)
 ANYYUV(J422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvJConstantsNEON)
-//ANYYUV(H422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvHConstantsNEON)
+ANYYUV(H422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvHConstantsNEON)
 #endif
 
 #ifdef HAS_I422TOARGBMATRIXROW_SSSE3

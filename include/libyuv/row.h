@@ -303,10 +303,11 @@ extern "C" {
 #define HAS_I422TOARGB1555ROW_NEON
 #define HAS_I422TOARGB4444ROW_NEON
 #define HAS_I422TOARGBROW_NEON
-// TODO(fbarchard): Implement NEON version
+// TODO(fbarchard): Implement aarch64 neon version
 #ifndef __aarch64__
 #define HAS_I422TOARGBMATRIXROW_NEON
 #define HAS_J422TOARGBROW_NEON
+#define HAS_H422TOARGBROW_NEON
 #endif
 // #define HAS_I422TOABGRMATRIXROW_NEON
 #define HAS_I422TOBGRAROW_NEON
@@ -605,6 +606,11 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
                             uint8* dst_argb4444,
                             int width);
 void J422ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        int width);
+void H422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
@@ -1676,6 +1682,11 @@ void I422ToRGB565Row_Any_NEON(const uint8* src_y,
                               uint8* dst_argb,
                               int width);
 void J422ToARGBRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb,
+                            int width);
+void H422ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
