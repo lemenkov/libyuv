@@ -617,6 +617,16 @@ void H422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_v,
                         uint8* dst_argb,
                         int width);
+void J422ToABGRRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_abgr,
+                        int width);
+void H422ToABGRRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_abgr,
+                        int width);
 void NV12ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_uv,
                         uint8* dst_argb,
@@ -1692,6 +1702,16 @@ void H422ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
+                            int width);
+void J422ToABGRRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_abgr,
+                            int width);
+void H422ToABGRRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_abgr,
                             int width);
 void NV12ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_uv,
