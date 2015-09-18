@@ -1149,6 +1149,30 @@ void I444ToARGBRow_C(const uint8* src_y,
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
   }
 }
+
+void I444ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
+    uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
+    YuvPixel(src_y[0], u, v, rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], u, v, rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 2;
+    src_v += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+  }
+}
 #else
 void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
@@ -1159,6 +1183,23 @@ void I444ToARGBRow_C(const uint8* src_y,
   for (x = 0; x < width; ++x) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    rgb_buf[3] = 255;
+    src_y += 1;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 4;  // Advance 1 pixel.
+  }
+}
+
+void I444ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
     rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;
@@ -2318,6 +2359,19 @@ ANYYUV(H422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvHConstants)
 ANYYUV(I422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvConstants)
 ANYYUV(J422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvJConstants)
 ANYYUV(H422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvHConstants)
+#endif
+// TODO(fbarchard): Neon, J444, H444 versions.
+#ifdef HAS_I444TOARGBMATRIXROW_SSSE3
+ANYYUV(I444ToARGBRow_SSSE3, I444ToARGBMatrixRow_SSSE3, kYuvConstants)
+#endif
+#ifdef HAS_I444TOARGBMATRIXROW_AVX2
+ANYYUV(I444ToARGBRow_AVX2, I444ToARGBMatrixRow_AVX2, kYuvConstants)
+#endif
+#ifdef HAS_I444TOABGRMATRIXROW_SSSE3
+ANYYUV(I444ToABGRRow_SSSE3, I444ToABGRMatrixRow_SSSE3, kYuvConstants)
+#endif
+#ifdef HAS_I444TOABGRMATRIXROW_AVX2
+ANYYUV(I444ToABGRRow_AVX2, I444ToABGRMatrixRow_AVX2, kYuvConstants)
 #endif
 
 // Maximum temporary width for wrappers to process at a time, in pixels.

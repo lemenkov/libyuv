@@ -56,6 +56,26 @@ extern "C" {
 #endif  // clang >= 3.5
 #endif  // __clang__
 
+// GCC >= 4.7.0 required for AVX2.
+#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
+#if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
+#define GCC_HAS_AVX2 1
+#endif  // GNUC >= 4.7
+#endif  // __GNUC__
+
+// clang >= 3.4.0 required for AVX2.
+#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+#if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
+#define CLANG_HAS_AVX2 1
+#endif  // clang >= 3.4
+#endif  // __clang__
+
+// Visual C 2012 required for AVX2.
+#if defined(_M_IX86) && !defined(__clang__) && \
+    defined(_MSC_VER) && _MSC_VER >= 1700
+#define VISUALC_HAS_AVX2 1
+#endif  // VisualStudio >= 2012
+
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
@@ -163,6 +183,7 @@ extern "C" {
 #endif
 
 // The following are available on x64 Visual C and clangcl.
+// TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422TOARGBROW_SSSE3
@@ -171,27 +192,17 @@ extern "C" {
 #define HAS_I422TOABGRMATRIXROW_SSSE3
 #endif
 
-// GCC >= 4.7.0 required for AVX2.
-#if defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__))
-#if (__GNUC__ > 4) || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 7))
-#define GCC_HAS_AVX2 1
-#endif  // GNUC >= 4.7
-#endif  // __GNUC__
-
-// clang >= 3.4.0 required for AVX2.
-#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
-#if (__clang_major__ > 3) || (__clang_major__ == 3 && (__clang_minor__ >= 4))
-#define CLANG_HAS_AVX2 1
-#endif  // clang >= 3.4
-#endif  // __clang__
-
-// Visual C 2012 required for AVX2.
-#if defined(_M_IX86) && !defined(__clang__) && \
-    defined(_MSC_VER) && _MSC_VER >= 1700
-#define VISUALC_HAS_AVX2 1
-#endif  // VisualStudio >= 2012
-
 // The following are available for Visual C and clangcl 32 bit:
+// TODO(fbarchard): Port to gcc.
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
+    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
+#define HAS_I444TOABGRROW_SSSE3
+#define HAS_I444TOARGBMATRIXROW_SSSE3
+#define HAS_I444TOABGRMATRIXROW_SSSE3
+#endif
+
+// The following are available for AVX2 Visual C and clangcl 32 bit:
+// TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
 #define HAS_ARGB1555TOARGBROW_AVX2
@@ -206,12 +217,15 @@ extern "C" {
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I422TORGB565ROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
+#define HAS_I444TOABGRROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
 #define HAS_NV21TOARGBROW_AVX2
 #define HAS_NV21TORGB565ROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
+#define HAS_I444TOARGBMATRIXROW_AVX2
+#define HAS_I444TOABGRMATRIXROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -1030,6 +1044,11 @@ void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_v,
                      uint8* dst_argb,
                      int width);
+void I444ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_argb,
+                     int width);
 void I422ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
@@ -1166,6 +1185,18 @@ void I422ToABGRRow_AVX2(const uint8* src_y,
                         const uint8* src_v,
                         uint8* dst_argb,
                         int width);
+void I444ToARGBMatrixRow_SSSE3(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_argb,
+                               struct YuvConstants* YuvConstants,
+                               int width);
+void I444ToARGBMatrixRow_AVX2(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_argb,
+                              struct YuvConstants* YuvConstants,
+                              int width);
 void I444ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1175,6 +1206,28 @@ void I444ToARGBRow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
+                        int width);
+void I444ToABGRMatrixRow_SSSE3(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_abgr,
+                               struct YuvConstants* YuvConstants,
+                               int width);
+void I444ToABGRMatrixRow_AVX2(const uint8* src_y,
+                              const uint8* src_u,
+                              const uint8* src_v,
+                              uint8* dst_abgr,
+                              struct YuvConstants* YuvConstants,
+                              int width);
+void I444ToABGRRow_SSSE3(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_abgr,
+                         int width);
+void I444ToABGRRow_AVX2(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_abgr,
                         int width);
 void I422ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
@@ -1381,6 +1434,16 @@ void I444ToARGBRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
+                            int width);
+void I444ToABGRRow_Any_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_abgr,
+                             int width);
+void I444ToABGRRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_abgr,
                             int width);
 void I422ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
