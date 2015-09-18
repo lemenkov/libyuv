@@ -1000,7 +1000,6 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 //  B = (Y - 16) * 1.164 - U * -2.018
 
 // Y contribution to R,G,B.  Scale and bias.
-// TODO(fbarchard): Consider moving constants into a common header.
 #define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
 #define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
 
@@ -1010,10 +1009,45 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define VG 52 /* round(0.813 * 64) */
 #define VR -102 /* round(-1.596 * 64) */
 
-// Bias values to subtract 16 from Y and 128 from U and V, with rounding.
-#define BB (UB * 128 + YGB)
+// Bias values to subtract 16 from Y and 128 from U and V.
+#define BB (UB * 128            + YGB)
 #define BG (UG * 128 + VG * 128 + YGB)
-#define BR (VR * 128 + YGB)
+#define BR            (VR * 128 + YGB)
+
+// BT601 constants for YUV to RGB.
+YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+  { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
+    UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
+  { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
+    UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
+  { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
+    0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
+};
+
+// BT601 constants for NV21 where chroma plane is VU instead of UV.
+YuvConstants SIMD_ALIGNED(kYvuConstants) = {
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
+    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
+  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
+    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
+};
+
+YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
+  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
@@ -1031,7 +1065,6 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
   *g = Clamp((int32)(y1 + YGB) >> 6);
   *r = Clamp((int32)(y1 + YGB) >> 6);
 }
-
 #undef YG
 #undef YGB
 #undef UB
@@ -1048,7 +1081,6 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 // *  B = Y - U * -1.77200
 
 // Y contribution to R,G,B.  Scale and bias.
-// TODO(fbarchard): Consider moving constants into a common header.
 #define YGJ 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
 #define YGBJ 32  /* 64 / 2 */
 
@@ -1058,10 +1090,38 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 #define VGJ 46 /* round(0.71414  * 64) */
 #define VRJ -90 /* round(-1.40200 * 64) */
 
-// Bias values to round Y and subtract 128 from U and V.
-#define BBJ (UBJ * 128 + YGBJ)
+// Bias values to round, and subtract 128 from U and V.
+#define BBJ (UBJ * 128             + YGBJ)
 #define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
-#define BRJ (VRJ * 128 + YGBJ)
+#define BRJ             (VRJ * 128 + YGBJ)
+
+// JPEG constants for YUV to RGB.
+YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+  { UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0,
+    UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0 },
+  { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
+    UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ },
+  { 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ,
+    0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ, 0, VRJ },
+  { BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ,
+    BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ, BBJ },
+  { BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ,
+    BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ, BGJ },
+  { BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ,
+    BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ, BRJ },
+  { YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ,
+    YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ }
+};
+
+// JPEG constants for YUV to RGB.
+YuvConstantsNEON SIMD_ALIGNED(kYuvJConstantsNEON) = {
+  { -UBJ, -UBJ, -UBJ, -UBJ, -VRJ, -VRJ, -VRJ, -VRJ, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UGJ, UGJ, UGJ, UGJ, VGJ, VGJ, VGJ, VGJ, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGJ, 0, 0, 0 }
+};
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
@@ -1088,7 +1148,6 @@ static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
 // *  B = Y - U * -2.12798
 
 // Y contribution to R,G,B.  Scale and bias.
-// TODO(fbarchard): Consider moving constants into a common header.
 #define YGH 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
 #define YGBH 32  /* 64 / 2 */
 
@@ -1102,6 +1161,34 @@ static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
 #define BBH (UBH * 128 + YGBH)
 #define BGH (UGH * 128 + VGH * 128 + YGBH)
 #define BRH (VRH * 128 + YGBH)
+
+// BT.709 constants for YUV to RGB.
+YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+  { UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0,
+    UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0 },
+  { UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH,
+    UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH,
+    UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH,
+    UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH },
+  { 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH,
+    0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH, 0, VRH },
+  { BBH, BBH, BBH, BBH, BBH, BBH, BBH, BBH,
+    BBH, BBH, BBH, BBH, BBH, BBH, BBH, BBH },
+  { BGH, BGH, BGH, BGH, BGH, BGH, BGH, BGH,
+    BGH, BGH, BGH, BGH, BGH, BGH, BGH, BGH },
+  { BRH, BRH, BRH, BRH, BRH, BRH, BRH, BRH,
+    BRH, BRH, BRH, BRH, BRH, BRH, BRH, BRH },
+  { YGH, YGH, YGH, YGH, YGH, YGH, YGH, YGH,
+    YGH, YGH, YGH, YGH, YGH, YGH, YGH, YGH }
+};
+
+// BT.709 constants for YUV to RGB.
+YuvConstantsNEON SIMD_ALIGNED(kYuvHConstantsNEON) = {
+  { -UBH, -UBH, -UBH, -UBH, -VRH, -VRH, -VRH, -VRH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UGH, UGH, UGH, UGH, VGH, VGH, VGH, VGH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGH, 0, 0, 0 }
+};
 
 // C reference code that mimics the YUV assembly.
 static __inline void YuvHPixel(uint8 y, uint8 u, uint8 v,
@@ -2313,13 +2400,6 @@ void I422ToUYVYRow_C(const uint8* src_y,
     dst_frame[3] = 0;
   }
 }
-
-extern struct YuvConstants kYuvConstants;
-extern struct YuvConstants kYuvJConstants;
-extern struct YuvConstants kYuvHConstants;
-extern struct YuvConstantsNEON kYuvConstantsNEON;
-extern struct YuvConstantsNEON kYuvJConstantsNEON;
-extern struct YuvConstantsNEON kYuvHConstantsNEON;
 
 #define ANYYUV(NAMEANY, ANY_SIMD, YUVCONSTANTS)                                \
     void NAMEANY(const uint8* y_buf,                                           \

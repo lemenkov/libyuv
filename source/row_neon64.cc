@@ -129,44 +129,6 @@ extern "C" {
     "sqshrun    " #vG ".8b, " #vG ".8h, #6     \n" /* G */                     \
     "sqshrun    " #vR ".8b, " #vR ".8h, #6     \n" /* R */                     \
 
-// BT.601 YUV to RGB reference
-//  R = (Y - 16) * 1.164              - V * -1.596
-//  G = (Y - 16) * 1.164 - U *  0.391 - V *  0.813
-//  B = (Y - 16) * 1.164 - U * -2.018
-
-// Y contribution to R,G,B.  Scale and bias.
-// TODO(fbarchard): Consider moving constants into a common header.
-#define YG 18997 /* round(1.164 * 64 * 256 * 256 / 257) */
-#define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
-
-// U and V contributions to R,G,B.
-#define UB -128 /* max(-128, round(-2.018 * 64)) */
-#define UG 25 /* round(0.391 * 64) */
-#define VG 52 /* round(0.813 * 64) */
-#define VR -102 /* round(-1.596 * 64) */
-
-// Bias values to subtract 16 from Y and 128 from U and V.
-#define BB (UB * 128            + YGB)
-#define BG (UG * 128 + VG * 128 + YGB)
-#define BR            (VR * 128 + YGB)
-
-YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
-  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { BB, BG, BR, 0, 0, 0, 0, 0 },
-  { 0x0101 * YG, 0, 0, 0 }
-};
-
-#undef YG
-#undef YGB
-#undef UB
-#undef UG
-#undef VG
-#undef VR
-#undef BB
-#undef BG
-#undef BR
-
 // TODO(fbarchard): Use structure for constants like 32 bit code.
 #define RGBTOUV_SETUP_REG                                                      \
     "movi       v20.8h, #56, lsl #0  \n"  /* UB/VR coefficient (0.875) / 2 */  \

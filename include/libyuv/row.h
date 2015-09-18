@@ -456,12 +456,29 @@ struct YuvConstants {
   lvec16 kYToRgb;
 };
 
+// Offsets into YuvConstants structure
+#define KUVTOB   0
+#define KUVTOG   32
+#define KUVTOR   64
+#define KUVBIASB 96
+#define KUVBIASG 128
+#define KUVBIASR 160
+#define KYTORGB  192
+
 struct YuvConstantsNEON {
     uvec8 kUVToRB;
     uvec8 kUVToG;
     vec16 kUVBiasBGR;
     vec32 kYToRgb;
 };
+
+extern struct YuvConstants kYuvConstants;
+extern struct YuvConstants kYvuConstants;
+extern struct YuvConstants kYuvJConstants;
+extern struct YuvConstants kYuvHConstants;
+extern struct YuvConstantsNEON kYuvConstantsNEON;
+extern struct YuvConstantsNEON kYuvJConstantsNEON;
+extern struct YuvConstantsNEON kYuvHConstantsNEON;
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
