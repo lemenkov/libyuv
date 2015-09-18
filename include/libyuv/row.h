@@ -117,7 +117,6 @@ extern "C" {
 #define HAS_I422TORGBAROW_SSSE3
 #define HAS_I422TOUYVYROW_SSE2
 #define HAS_I422TOYUY2ROW_SSE2
-#define HAS_I444TOARGBROW_SSSE3
 #define HAS_J400TOARGBROW_SSE2
 #define HAS_J422TOARGBROW_SSSE3
 #define HAS_J422TOABGRROW_SSSE3
@@ -150,6 +149,10 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
+#define HAS_I444TOARGBROW_SSSE3
+#define HAS_I444TOABGRROW_SSSE3
+#define HAS_I444TOARGBMATRIXROW_SSSE3
+#define HAS_I444TOABGRMATRIXROW_SSSE3
 
 // Effects:
 #define HAS_ARGBADDROW_SSE2
@@ -190,15 +193,6 @@ extern "C" {
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBMATRIXROW_SSSE3
 #define HAS_I422TOABGRMATRIXROW_SSSE3
-#endif
-
-// The following are available for Visual C and clangcl 32 bit:
-// TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
-#define HAS_I444TOABGRROW_SSSE3
-#define HAS_I444TOARGBMATRIXROW_SSSE3
-#define HAS_I444TOABGRMATRIXROW_SSSE3
 #endif
 
 // The following are available for AVX2 Visual C and clangcl 32 bit:
