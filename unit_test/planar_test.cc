@@ -114,9 +114,8 @@ static int TestAttenuateI(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb[i + off] = (random() & 0xff);
+    src_argb[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -180,9 +179,8 @@ static int TestUnattenuateI(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb[i + off] = (random() & 0xff);
+    src_argb[i + off] = (fastrand() & 0xff);
   }
   ARGBAttenuate(src_argb + off, kStride,
                 src_argb + off, kStride,
@@ -936,10 +934,9 @@ TEST_F(libyuvTest, ARGBInterpolate##TERP##N) {                                 \
   align_buffer_64(src_argb_b, kStrideA * kHeight + OFF);                       \
   align_buffer_64(dst_argb_c, kStrideB * kHeight);                             \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight);                           \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kStrideA * kHeight; ++i) {                               \
-    src_argb_a[i + OFF] = (random() & 0xff);                                   \
-    src_argb_b[i + OFF] = (random() & 0xff);                                   \
+    src_argb_a[i + OFF] = (fastrand() & 0xff);                                   \
+    src_argb_b[i + OFF] = (fastrand() & 0xff);                                   \
   }                                                                            \
   MaskCpuFlags(disable_cpu_flags_);                                                             \
   ARGBInterpolate(src_argb_a + OFF, kStrideA,                                  \
@@ -998,10 +995,9 @@ static int TestBlend(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
-    src_argb_b[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
   }
   ARGBAttenuate(src_argb_a + off, kStride, src_argb_a + off, kStride, width,
                 height);
@@ -1304,7 +1300,6 @@ TEST_F(libyuvTest, TestCopyPlane) {
   int i, j;
 
   int y_plane_size = (yw + b * 2) * (yh + b * 2);
-  srandom(time(NULL));
   align_buffer_64(orig_y, y_plane_size);
   align_buffer_64(dst_c, y_plane_size);
   align_buffer_64(dst_opt, y_plane_size);
@@ -1316,13 +1311,13 @@ TEST_F(libyuvTest, TestCopyPlane) {
   // Fill image buffers with random data.
   for (i = b; i < (yh + b); ++i) {
     for (j = b; j < (yw + b); ++j) {
-      orig_y[i * (yw + b * 2) + j] = random() & 0xff;
+      orig_y[i * (yw + b * 2) + j] = fastrand() & 0xff;
     }
   }
 
   // Fill destination buffers with random data.
   for (i = 0; i < y_plane_size; ++i) {
-    uint8 random_number = random() & 0x7f;
+    uint8 random_number = fastrand() & 0x7f;
     dst_c[i] = random_number;
     dst_opt[i] = dst_c[i];
   }
@@ -1371,10 +1366,9 @@ static int TestMultiply(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
-    src_argb_b[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -1442,10 +1436,9 @@ static int TestAdd(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
-    src_argb_b[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -1513,10 +1506,9 @@ static int TestSubtract(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
-    src_argb_b[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -1584,9 +1576,8 @@ static int TestSobel(int width, int height, int benchmark_iterations,
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
   memset(src_argb_a, 0, kStride * height + off);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -1653,9 +1644,8 @@ static int TestSobelToPlane(int width, int height, int benchmark_iterations,
   align_buffer_64(dst_argb_c, kDstStride * height);
   align_buffer_64(dst_argb_opt, kDstStride * height);
   memset(src_argb_a, 0, kSrcStride * height + off);
-  srandom(time(NULL));
   for (int i = 0; i < kSrcStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kDstStride * height);
   memset(dst_argb_opt, 0, kDstStride * height);
@@ -1720,9 +1710,8 @@ static int TestSobelXY(int width, int height, int benchmark_iterations,
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
   memset(src_argb_a, 0, kStride * height + off);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
   }
   memset(dst_argb_c, 0, kStride * height);
   memset(dst_argb_opt, 0, kStride * height);
@@ -1787,9 +1776,8 @@ static int TestBlur(int width, int height, int benchmark_iterations,
   align_buffer_64(dst_cumsum, width * height * 16);
   align_buffer_64(dst_argb_c, kStride * height);
   align_buffer_64(dst_argb_opt, kStride * height);
-  srandom(time(NULL));
   for (int i = 0; i < kStride * height; ++i) {
-    src_argb_a[i + off] = (random() & 0xff);
+    src_argb_a[i + off] = (fastrand() & 0xff);
   }
   memset(dst_cumsum, 0, width * height * 16);
   memset(dst_argb_c, 0, kStride * height);
@@ -2105,7 +2093,7 @@ static int TestARGBRect(int width, int height, int benchmark_iterations,
   }
   const int kStride = width * bpp;
   const int kSize = kStride * height;
-  const uint32 v32 = random() & (bpp == 4 ? 0xffffffff : 0xff);
+  const uint32 v32 = fastrand() & (bpp == 4 ? 0xffffffff : 0xff);
 
   align_buffer_64(dst_argb_c, kSize + off);
   align_buffer_64(dst_argb_opt, kSize + off);

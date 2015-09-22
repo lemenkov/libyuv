@@ -46,9 +46,6 @@ static inline double get_time() {
   QueryPerformanceFrequency(&f);
   return static_cast<double>(t.QuadPart) / static_cast<double>(f.QuadPart);
 }
-
-#define random rand
-#define srandom srand
 #else
 static inline double get_time() {
   struct timeval t;
@@ -58,14 +55,20 @@ static inline double get_time() {
 }
 #endif
 
+extern int fastrand_seed;
+inline int fastrand() {
+  fastrand_seed = fastrand_seed * 214013 + 2531011;
+  return (fastrand_seed >> 16) & 0xffff;
+}
+
 static inline void MemRandomize(uint8* dst, int64 len) {
   int64 i;
   for (i = 0; i < len - 1; i += 2) {
-    *reinterpret_cast<uint16*>(dst) = random();
+    *reinterpret_cast<uint16*>(dst) = fastrand();
     dst += 2;
   }
   for (; i < len; ++i) {
-    *dst++ = random();
+    *dst++ = fastrand();
   }
 }
 

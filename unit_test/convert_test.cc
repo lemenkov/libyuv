@@ -56,16 +56,15 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   align_buffer_64(dst_v_opt,                                                   \
                   SUBSAMPLE(kWidth, SUBSAMP_X) *                               \
                   SUBSAMPLE(kHeight, SUBSAMP_Y));                              \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[i * kWidth + j + OFF] = (random() & 0xff);                         \
+      src_y[i * kWidth + j + OFF] = (fastrand() & 0xff);                       \
   for (int i = 0; i < SUBSAMPLE(kHeight, SRC_SUBSAMP_Y); ++i) {                \
     for (int j = 0; j < SUBSAMPLE(kWidth, SRC_SUBSAMP_X); ++j) {               \
       src_u[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
       src_v[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
     }                                                                          \
   }                                                                            \
   memset(dst_y_c, 1, kWidth * kHeight);                                        \
@@ -193,16 +192,15 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   align_buffer_64(dst_y_opt, kWidth * kHeight);                                \
   align_buffer_64(dst_uv_opt, SUBSAMPLE(kWidth * 2, SUBSAMP_X) *               \
                   SUBSAMPLE(kHeight, SUBSAMP_Y));                              \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[i * kWidth + j + OFF] = (random() & 0xff);                         \
+      src_y[i * kWidth + j + OFF] = (fastrand() & 0xff);                       \
   for (int i = 0; i < SUBSAMPLE(kHeight, SRC_SUBSAMP_Y); ++i) {                \
     for (int j = 0; j < SUBSAMPLE(kWidth, SRC_SUBSAMP_X); ++j) {               \
       src_u[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
       src_v[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
     }                                                                          \
   }                                                                            \
   memset(dst_y_c, 1, kWidth * kHeight);                                        \
@@ -306,14 +304,13 @@ TEST_F(libyuvTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                        \
   align_buffer_64(dst_v_opt,                                                   \
                   SUBSAMPLE(kWidth, SUBSAMP_X) *                               \
                   SUBSAMPLE(kHeight, SUBSAMP_Y));                              \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[i * kWidth + j + OFF] = (random() & 0xff);                         \
+      src_y[i * kWidth + j + OFF] = (fastrand() & 0xff);                       \
   for (int i = 0; i < SUBSAMPLE(kHeight, SRC_SUBSAMP_Y); ++i) {                \
     for (int j = 0; j < 2 * SUBSAMPLE(kWidth, SRC_SUBSAMP_X); ++j) {           \
       src_uv[(i * 2 * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =           \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
     }                                                                          \
   }                                                                            \
   memset(dst_y_c, 1, kWidth * kHeight);                                        \
@@ -425,13 +422,12 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   align_buffer_64(src_v, kSizeUV + OFF);                                       \
   align_buffer_64(dst_argb_c, kStrideB * kHeight + OFF);                       \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight + OFF);                     \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
-    src_y[i + OFF] = (random() & 0xff);                                        \
+    src_y[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   for (int i = 0; i < kSizeUV; ++i) {                                          \
-    src_u[i + OFF] = (random() & 0xff);                                        \
-    src_v[i + OFF] = (random() & 0xff);                                        \
+    src_u[i + OFF] = (fastrand() & 0xff);                                      \
+    src_v[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
   memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
@@ -535,14 +531,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   align_buffer_64(src_a, kWidth * kHeight + OFF);                              \
   align_buffer_64(dst_argb_c, kStrideB * kHeight + OFF);                       \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight + OFF);                     \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
-    src_y[i + OFF] = (random() & 0xff);                                        \
-    src_a[i + OFF] = (random() & 0xff);                                        \
+    src_y[i + OFF] = (fastrand() & 0xff);                                      \
+    src_a[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   for (int i = 0; i < kSizeUV; ++i) {                                          \
-    src_u[i + OFF] = (random() & 0xff);                                        \
-    src_v[i + OFF] = (random() & 0xff);                                        \
+    src_u[i + OFF] = (fastrand() & 0xff);                                      \
+    src_v[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
   memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
@@ -606,14 +601,13 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
                   SUBSAMPLE(kHeight, SUBSAMP_Y) * 2 + OFF);                    \
   align_buffer_64(dst_argb_c, kStrideB * kHeight);                             \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight);                           \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
-      src_y[i * kWidth + j + OFF] = (random() & 0xff);                         \
+      src_y[i * kWidth + j + OFF] = (fastrand() & 0xff);                       \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X) * 2; ++j) {               \
       src_uv[i * SUBSAMPLE(kWidth, SUBSAMP_X) * 2 + j + OFF] =                 \
-          (random() & 0xff);                                                   \
+          (fastrand() & 0xff);                                                 \
     }                                                                          \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeight);                                   \
@@ -708,10 +702,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
   memset(dst_v_opt, 103,                                                       \
          SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y));        \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kStride; ++j)                                          \
-      src_argb[(i * kStride) + j + OFF] = (random() & 0xff);                   \
+      src_argb[(i * kStride) + j + OFF] = (fastrand() & 0xff);                 \
   MaskCpuFlags(disable_cpu_flags_);                                            \
   FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                               \
                         dst_y_c, kWidth,                                       \
@@ -810,10 +803,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_PLANAR##N) {                                 \
   align_buffer_64(dst_uv_opt,                                                  \
                   SUBSAMPLE(kWidth, SUBSAMP_X) * 2 *                           \
                   SUBSAMPLE(kHeight, SUBSAMP_Y));                              \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kStride; ++j)                                          \
-      src_argb[(i * kStride) + j + OFF] = (random() & 0xff);                   \
+      src_argb[(i * kStride) + j + OFF] = (fastrand() & 0xff);                 \
   memset(dst_y_c, 1, kWidth * kHeight);                                        \
   memset(dst_uv_c, 2, SUBSAMPLE(kWidth, SUBSAMP_X) * 2 *                       \
                       SUBSAMPLE(kHeight, SUBSAMP_Y));                          \
@@ -892,9 +884,8 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
   align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
   align_buffer_64(dst_argb_c, kStrideB * kHeightB);                            \
   align_buffer_64(dst_argb_opt, kStrideB * kHeightB);                          \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
-    src_argb[i + OFF] = (random() & 0xff);                                     \
+    src_argb[i + OFF] = (fastrand() & 0xff);                                   \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
   memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
@@ -926,10 +917,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##N) {                                      \
 #define TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                       \
                        FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                 \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
-  srandom(time(NULL));                                                         \
   for (int times = 0; times < benchmark_iterations_; ++times) {                \
-    const int kWidth = (random() & 63) + 1;                                    \
-    const int kHeight = (random() & 31) + 1;                                   \
+    const int kWidth = (fastrand() & 63) + 1;                                  \
+    const int kHeight = (fastrand() & 31) + 1;                                 \
     const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;       \
     const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;       \
     const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;\
@@ -938,7 +928,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##_Random) {                                \
     align_buffer_page_end(dst_argb_c, kStrideB * kHeightB);                    \
     align_buffer_page_end(dst_argb_opt, kStrideB * kHeightB);                  \
     for (int i = 0; i < kStrideA * kHeightA; ++i) {                            \
-      src_argb[i] = (random() & 0xff);                                         \
+      src_argb[i] = (fastrand() & 0xff);                                       \
     }                                                                          \
     memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
     memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
@@ -1026,9 +1016,8 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither##N) {                              \
   align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
   align_buffer_64(dst_argb_c, kStrideB * kHeightB);                            \
   align_buffer_64(dst_argb_opt, kStrideB * kHeightB);                          \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
-    src_argb[i + OFF] = (random() & 0xff);                                     \
+    src_argb[i + OFF] = (fastrand() & 0xff);                                   \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideB * kHeightB);                                  \
   memset(dst_argb_opt, 101, kStrideB * kHeightB);                              \
@@ -1060,10 +1049,9 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither##N) {                              \
 #define TESTATOBDRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                      \
                        FMT_B, BPP_B, STRIDE_B, HEIGHT_B, DIFF)                 \
 TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither_Random) {                          \
-  srandom(time(NULL));                                                         \
   for (int times = 0; times < benchmark_iterations_; ++times) {                \
-    const int kWidth = (random() & 63) + 1;                                    \
-    const int kHeight = (random() & 31) + 1;                                   \
+    const int kWidth = (fastrand() & 63) + 1;                                  \
+    const int kHeight = (fastrand() & 31) + 1;                                 \
     const int kHeightA = (kHeight + HEIGHT_A - 1) / HEIGHT_A * HEIGHT_A;       \
     const int kHeightB = (kHeight + HEIGHT_B - 1) / HEIGHT_B * HEIGHT_B;       \
     const int kStrideA = (kWidth * BPP_A + STRIDE_A - 1) / STRIDE_A * STRIDE_A;\
@@ -1072,7 +1060,7 @@ TEST_F(libyuvTest, FMT_A##To##FMT_B##Dither_Random) {                          \
     align_buffer_page_end(dst_argb_c, kStrideB * kHeightB);                    \
     align_buffer_page_end(dst_argb_opt, kStrideB * kHeightB);                  \
     for (int i = 0; i < kStrideA * kHeightA; ++i) {                            \
-      src_argb[i] = (random() & 0xff);                                         \
+      src_argb[i] = (fastrand() & 0xff);                                       \
     }                                                                          \
     memset(dst_argb_c, 123, kStrideB * kHeightB);                              \
     memset(dst_argb_opt, 123, kStrideB * kHeightB);                            \
@@ -1129,9 +1117,8 @@ TEST_F(libyuvTest, FMT_ATOB##_Symetric##N) {                                   \
   align_buffer_64(src_argb, kStrideA * kHeightA + OFF);                        \
   align_buffer_64(dst_argb_c, kStrideA * kHeightA);                            \
   align_buffer_64(dst_argb_opt, kStrideA * kHeightA);                          \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kStrideA * kHeightA; ++i) {                              \
-    src_argb[i + OFF] = (random() & 0xff);                                     \
+    src_argb[i + OFF] = (fastrand() & 0xff);                                   \
   }                                                                            \
   memset(dst_argb_c, 1, kStrideA * kHeightA);                                  \
   memset(dst_argb_opt, 101, kStrideA * kHeightA);                              \
@@ -1282,10 +1269,9 @@ TEST_F(libyuvTest, InvalidateJpeg) {
 }
 
 TEST_F(libyuvTest, FuzzJpeg) {
-  srandom(time(NULL));
   // SOI but no EOI. Expect fail.
   for (int times = 0; times < benchmark_iterations_; ++times) {
-    const int kSize = random() % 5000 + 2;
+    const int kSize = fastrand() % 5000 + 2;
     align_buffer_page_end(orig_pixels, kSize);
     MemRandomize(orig_pixels, kSize);
 
@@ -1399,13 +1385,12 @@ TEST_F(libyuvTest, CropNV12) {
                   SUBSAMPLE(kDestWidth, SUBSAMP_X) *
                   SUBSAMPLE(kDestHeight, SUBSAMP_Y));
 
-  srandom(time(NULL));
   for (int i = 0; i < kHeight * kWidth; ++i) {
-    src_y[i] = (random() & 0xff);
+    src_y[i] = (fastrand() & 0xff);
   }
   for (int i = 0; i < (SUBSAMPLE(kHeight, SUBSAMP_Y) *
        SUBSAMPLE(kWidth, SUBSAMP_X)) * 2; ++i) {
-    src_uv[i] = (random() & 0xff);
+    src_uv[i] = (fastrand() & 0xff);
   }
   memset(dst_y, 1, kDestWidth * kDestHeight);
   memset(dst_u, 2, SUBSAMPLE(kDestWidth, SUBSAMP_X) *
@@ -1575,13 +1560,12 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##Dither##N) {                         \
   align_buffer_64(src_v, kSizeUV + OFF);                                       \
   align_buffer_64(dst_argb_c, kStrideB * kHeight + OFF);                       \
   align_buffer_64(dst_argb_opt, kStrideB * kHeight + OFF);                     \
-  srandom(time(NULL));                                                         \
   for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
-    src_y[i + OFF] = (random() & 0xff);                                        \
+    src_y[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   for (int i = 0; i < kSizeUV; ++i) {                                          \
-    src_u[i + OFF] = (random() & 0xff);                                        \
-    src_v[i + OFF] = (random() & 0xff);                                        \
+    src_u[i + OFF] = (fastrand() & 0xff);                                      \
+    src_v[i + OFF] = (fastrand() & 0xff);                                      \
   }                                                                            \
   memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                             \
   memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                         \
@@ -1667,7 +1651,6 @@ TEST_F(libyuvTest, NAME) {                                                     \
                   SUBSAMPLE(kWidth, 2) *                                       \
                   SUBSAMPLE(kHeight, 2));                                      \
                                                                                \
-  srandom(time(NULL));                                                         \
   MemRandomize(orig_uyvy, 4 * SUBSAMPLE(kWidth, 2) * kHeight);                 \
                                                                                \
   /* Convert UYVY to NV12 in 2 steps for reference */                          \

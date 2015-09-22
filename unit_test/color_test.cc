@@ -66,7 +66,7 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
   uint8* p = orig_y;                                                           \
   for (int y = 0; y < benchmark_height_ - HS1; y += HS) {                      \
     for (int x = 0; x < benchmark_width_ - 1; x += 2) {                        \
-      uint8 r = static_cast<uint8>(random());                                  \
+      uint8 r = static_cast<uint8>(fastrand());                                \
       p[0] = r;                                                                \
       p[1] = r;                                                                \
       p[HN] = r;                                                               \
@@ -74,7 +74,7 @@ TEST_F(libyuvTest, TESTNAME) {                                                 \
       p += 2;                                                                  \
     }                                                                          \
     if (benchmark_width_ & 1) {                                                \
-      uint8 r = static_cast<uint8>(random());                                  \
+      uint8 r = static_cast<uint8>(fastrand());                                \
       p[0] = r;                                                                \
       p[HN] = r;                                                               \
       p += 1;                                                                  \

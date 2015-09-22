@@ -37,7 +37,6 @@ static int ARGBTestFilter(int src_width, int src_height,
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
   }
-  srandom(time(NULL));
   MemRandomize(src_argb, src_argb_plane_size);
 
   int64 dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4LL;
@@ -157,12 +156,10 @@ static int ARGBClipTestFilter(int src_width, int src_height,
   int64 dst_argb_plane_size = (dst_width + b * 2) * (dst_height + b * 2) * 4;
   int dst_stride_argb = (b * 2 + dst_width) * 4;
 
-  srandom(time(NULL));
-
   int i, j;
   for (i = b; i < (Abs(src_height) + b); ++i) {
     for (j = b; j < (Abs(src_width) + b) * 4; ++j) {
-      src_argb[(i * src_stride_argb) + j] = (random() & 0xff);
+      src_argb[(i * src_stride_argb) + j] = (fastrand() & 0xff);
     }
   }
 

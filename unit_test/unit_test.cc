@@ -18,6 +18,8 @@
 // TODO(fbarchard): Add command line parsing to pass this as option.
 #define BENCHMARK_ITERATIONS 1
 
+int fastrand_seed = 0xfb;
+
 libyuvTest::libyuvTest() : rotate_max_w_(128), rotate_max_h_(128),
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {

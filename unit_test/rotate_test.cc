@@ -38,7 +38,7 @@ static void I420TestRotate(int src_width, int src_height,
   int src_i420_size = src_i420_y_size + src_i420_uv_size * 2;
   align_buffer_64(src_i420, src_i420_size);
   for (int i = 0; i < src_i420_size; ++i) {
-    src_i420[i] = random() & 0xff;
+    src_i420[i] = fastrand() & 0xff;
   }
 
   int dst_i420_y_size = dst_width * dst_height;
@@ -151,7 +151,7 @@ static void NV12TestRotate(int src_width, int src_height,
   int src_nv12_size = src_nv12_y_size + src_nv12_uv_size;
   align_buffer_64(src_nv12, src_nv12_size);
   for (int i = 0; i < src_nv12_size; ++i) {
-    src_nv12[i] = random() & 0xff;
+    src_nv12[i] = fastrand() & 0xff;
   }
 
   int dst_i420_y_size = dst_width * dst_height;

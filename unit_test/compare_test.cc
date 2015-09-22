@@ -45,8 +45,8 @@ TEST_F(libyuvTest, Djb2_Test) {
   EXPECT_EQ(kExpectedFoxHash, foxhash);
 
   for (int i = 0; i < kMaxTest; ++i) {
-    src_a[i] = (random() & 0xff);
-    src_b[i] = (random() & 0xff);
+    src_a[i] = (fastrand() & 0xff);
+    src_b[i] = (fastrand() & 0xff);
   }
   // Compare different buffers. Expect hash is different.
   uint32 h1 = HashDjb2(src_a, kMaxTest, 5381);
@@ -256,11 +256,9 @@ TEST_F(libyuvTest, SumSquareError) {
 
   EXPECT_EQ(kMaxWidth * 3 * 3, err);
 
-  srandom(time(NULL));
-
   for (int i = 0; i < kMaxWidth; ++i) {
-    src_a[i] = (random() & 0xff);
-    src_b[i] = (random() & 0xff);
+    src_a[i] = (fastrand() & 0xff);
+    src_b[i] = (fastrand() & 0xff);
   }
 
   MaskCpuFlags(disable_cpu_flags_);
@@ -373,15 +371,13 @@ TEST_F(libyuvTest, Psnr) {
     EXPECT_LT(err, 6.0);
   }
 
-  srandom(time(NULL));
-
   memset(src_a, 0, kSrcPlaneSize);
   memset(src_b, 0, kSrcPlaneSize);
 
   for (int i = b; i < (kSrcHeight + b); ++i) {
     for (int j = b; j < (kSrcWidth + b); ++j) {
-      src_a[(i * kSrcStride) + j] = (random() & 0xff);
-      src_b[(i * kSrcStride) + j] = (random() & 0xff);
+      src_a[(i * kSrcStride) + j] = (fastrand() & 0xff);
+      src_b[(i * kSrcStride) + j] = (fastrand() & 0xff);
     }
   }
 
@@ -487,11 +483,10 @@ TEST_F(libyuvTest, Ssim) {
     EXPECT_LT(err, 0.01);
   }
 
-  srandom(time(NULL));
   for (int i = b; i < (kSrcHeight + b); ++i) {
     for (int j = b; j < (kSrcWidth + b); ++j) {
-      src_a[(i * kSrcStride) + j] = (random() & 0xff);
-      src_b[(i * kSrcStride) + j] = (random() & 0xff);
+      src_a[(i * kSrcStride) + j] = (fastrand() & 0xff);
+      src_b[(i * kSrcStride) + j] = (fastrand() & 0xff);
     }
   }
 

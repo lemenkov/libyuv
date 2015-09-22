@@ -38,7 +38,7 @@ void TestRotateBpp(int src_width, int src_height,
   int src_argb_plane_size = src_stride_argb * abs(src_height);
   align_buffer_64(src_argb, src_argb_plane_size);
   for (int i = 0; i < src_argb_plane_size; ++i) {
-    src_argb[i] = random() & 0xff;
+    src_argb[i] = fastrand() & 0xff;
   }
 
   int dst_stride_argb = dst_width * kBpp;

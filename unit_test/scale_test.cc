@@ -43,7 +43,6 @@ static int TestFilter(int src_width, int src_height,
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
   }
-  srandom(time(NULL));
   MemRandomize(src_y, src_y_plane_size);
   MemRandomize(src_u, src_uv_plane_size);
   MemRandomize(src_v, src_uv_plane_size);
@@ -171,7 +170,6 @@ static int TestFilter_16(int src_width, int src_height,
   uint16* p_src_u_16 = reinterpret_cast<uint16*>(src_u_16);
   uint16* p_src_v_16 = reinterpret_cast<uint16*>(src_v_16);
 
-  srandom(time(NULL));
   MemRandomize(src_y, src_y_plane_size);
   MemRandomize(src_u, src_uv_plane_size);
   MemRandomize(src_v, src_uv_plane_size);
