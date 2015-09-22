@@ -1324,7 +1324,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movq       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
     MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
-    "punpcklbw  %%xmm1,%%xmm0                                   \n"
+    "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from 422, upsample to 8 UV
 #define READYUV422                                                             \
@@ -1332,7 +1334,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        " MEMLEA(0x4, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
-    "punpcklwd  %%xmm0,%%xmm0                                   \n"
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 2 UV from 411, upsample to 8 UV
 #define READYUV411                                                             \
@@ -1341,13 +1345,17 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "punpckldq  %%xmm0,%%xmm0                                   \n"
+    "punpckldq  %%xmm0,%%xmm0                                   \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from NV12, upsample to 8 UV
 #define READNV12                                                               \
     "movq       " MEMACCESS([uv_buf]) ",%%xmm0                  \n"            \
     "lea        " MEMLEA(0x8, [uv_buf]) ",%[uv_buf]             \n"            \
-    "punpcklwd  %%xmm0,%%xmm0                                   \n"
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB(yuvconstants)                                                 \
@@ -1363,13 +1371,11 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movdqa     " MEMACCESS2(160, [yuvconstants]) ",%%xmm2      \n"            \
     "pmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%xmm3       \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm3                   \n"            \
-    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
-    "punpcklbw  %%xmm3,%%xmm3                                   \n"            \
-    "pmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%xmm3      \n"            \
-    "paddsw     %%xmm3,%%xmm0                                   \n"            \
-    "paddsw     %%xmm3,%%xmm1                                   \n"            \
-    "paddsw     %%xmm3,%%xmm2                                   \n"            \
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+    "pmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%xmm4      \n"            \
+    "paddsw     %%xmm4,%%xmm0                                   \n"            \
+    "paddsw     %%xmm4,%%xmm1                                   \n"            \
+    "paddsw     %%xmm4,%%xmm2                                   \n"            \
     "psraw      $0x6,%%xmm0                                     \n"            \
     "psraw      $0x6,%%xmm1                                     \n"            \
     "psraw      $0x6,%%xmm2                                     \n"            \
