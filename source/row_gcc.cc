@@ -1326,10 +1326,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
-<<<<<<< HEAD
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
-=======
->>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from 422, upsample to 8 UV
@@ -1340,10 +1337,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
-<<<<<<< HEAD
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
-=======
->>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 2 UV from 411, upsample to 8 UV
@@ -1355,10 +1349,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "punpckldq  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
-<<<<<<< HEAD
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
-=======
->>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from NV12, upsample to 8 UV
@@ -1367,7 +1358,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "lea        " MEMLEA(0x8, [uv_buf]) ",%[uv_buf]             \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
-<<<<<<< HEAD
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
@@ -1406,9 +1396,6 @@ static const vec8 kShuffleUYVYUV = {
     "movdqu     " MEMACCESS([uyvy_buf]) ",%%xmm0                \n"            \
     "pshufb     %[kShuffleUYVYUV], %%xmm0                       \n"            \
     "lea        " MEMLEA(0x10, [uyvy_buf]) ",%[uyvy_buf]        \n"
-=======
-    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
->>>>>>> refs/remotes/origin/master
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB(yuvconstants)                                                 \
@@ -1424,10 +1411,6 @@ static const vec8 kShuffleUYVYUV = {
     "movdqa     " MEMACCESS2(160, [yuvconstants]) ",%%xmm2      \n"            \
     "pmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%xmm3       \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
-<<<<<<< HEAD
-=======
-    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
->>>>>>> refs/remotes/origin/master
     "pmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%xmm4      \n"            \
     "paddsw     %%xmm4,%%xmm0                                   \n"            \
     "paddsw     %%xmm4,%%xmm1                                   \n"            \

@@ -36,10 +36,7 @@ extern "C" {
     xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                                     \
     u_buf += 4;                                                                \
     xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
-<<<<<<< HEAD
     xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
-=======
->>>>>>> refs/remotes/origin/master
     y_buf += 8;                                                                \
 
 // Convert 8 pixels: 8 UV and 8 Y.
@@ -52,10 +49,6 @@ extern "C" {
     xmm0 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasB, xmm0);             \
     xmm1 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasG, xmm1);             \
     xmm2 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasR, xmm2);             \
-<<<<<<< HEAD
-=======
-    xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
->>>>>>> refs/remotes/origin/master
     xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)YuvConstants->kYToRgb);            \
     xmm0 = _mm_adds_epi16(xmm0, xmm4);                                         \
     xmm1 = _mm_adds_epi16(xmm1, xmm4);                                         \
@@ -1860,11 +1853,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm1, ymm1, 0xd8                                          \
     __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
     __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-<<<<<<< HEAD
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 16]                                           \
   }
 
@@ -1877,11 +1867,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
     __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-<<<<<<< HEAD
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 16]                                           \
   }
 
@@ -1895,11 +1882,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpunpckldq ymm0, ymm0, ymm0             /* UVUVUVUV (upsample) */    \
     __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-<<<<<<< HEAD
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 16]                                           \
   }
 
@@ -1910,11 +1894,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm0, ymm0, 0xd8                                          \
     __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
     __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-<<<<<<< HEAD
     __asm vpermq     ymm4, ymm4, 0xd8                                          \
     __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 16]                                           \
   }
 
@@ -1930,11 +1911,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vmovdqu    ymm3, ymmword ptr [YuvConstants + KUVBIASB]               \
     __asm vpsubw     ymm0, ymm3, ymm0                                          \
     /* Step 2: Find Y contribution to 16 R,G,B values */                       \
-<<<<<<< HEAD
-=======
-    __asm vpermq     ymm4, ymm4, 0xd8                                          \
-    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
->>>>>>> refs/remotes/origin/master
     __asm vpmulhuw   ymm4, ymm4, ymmword ptr [YuvConstants + KYTORGB]          \
     __asm vpaddsw    ymm0, ymm0, ymm4           /* B += Y */                   \
     __asm vpaddsw    ymm1, ymm1, ymm4           /* G += Y */                   \
@@ -2323,10 +2299,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
     __asm movq       xmm4, qword ptr [eax]                                     \
-<<<<<<< HEAD
     __asm punpcklbw  xmm4, xmm4                                                \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 8]                                            \
   }
 
@@ -2338,10 +2311,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm punpcklbw  xmm0, xmm1           /* UV */                             \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
-<<<<<<< HEAD
     __asm punpcklbw  xmm4, xmm4                                                \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 8]                                            \
   }
 
@@ -2354,10 +2324,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm punpcklwd  xmm0, xmm0            /* UVUV (upsample) */               \
     __asm punpckldq  xmm0, xmm0            /* UVUVUVUV (upsample) */           \
     __asm movq       xmm4, qword ptr [eax]                                     \
-<<<<<<< HEAD
     __asm punpcklbw  xmm4, xmm4                                                \
-=======
->>>>>>> refs/remotes/origin/master
     __asm lea        eax, [eax + 8]                                            \
   }
 
@@ -2367,7 +2334,6 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
     __asm movq       xmm4, qword ptr [eax]                                     \
-<<<<<<< HEAD
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]                                            \
   }
@@ -2408,9 +2374,7 @@ static const vec8 kShuffleUYVYUV = {
     __asm movdqu     xmm0, [eax]          /* UV */                             \
     __asm pshufb     xmm0, xmmword ptr kShuffleUYVYUV                          \
     __asm lea        eax, [eax + 16]                                           \
-=======
     __asm lea        eax, [eax + 8]                                            \
->>>>>>> refs/remotes/origin/master
   }
 
 // Convert 8 pixels: 8 UV and 8 Y.
@@ -2427,10 +2391,6 @@ static const vec8 kShuffleUYVYUV = {
     __asm movdqa     xmm2, xmmword ptr [YuvConstants + KUVBIASR]               \
     __asm pmaddubsw  xmm3, xmmword ptr [YuvConstants + KUVTOR]                 \
     __asm psubw      xmm2, xmm3                                                \
-<<<<<<< HEAD
-=======
-    __asm punpcklbw  xmm4, xmm4                                                \
->>>>>>> refs/remotes/origin/master
     __asm pmulhuw    xmm4, xmmword ptr [YuvConstants + KYTORGB]                \
     __asm paddsw     xmm0, xmm4           /* B += Y */                         \
     __asm paddsw     xmm1, xmm4           /* G += Y */                         \
