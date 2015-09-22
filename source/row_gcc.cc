@@ -1326,6 +1326,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+<<<<<<< HEAD
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+=======
+>>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from 422, upsample to 8 UV
@@ -1336,6 +1340,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+<<<<<<< HEAD
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+=======
+>>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 2 UV from 411, upsample to 8 UV
@@ -1347,6 +1355,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "punpckldq  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+<<<<<<< HEAD
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+=======
+>>>>>>> refs/remotes/origin/master
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from NV12, upsample to 8 UV
@@ -1355,7 +1367,48 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "lea        " MEMLEA(0x8, [uv_buf]) ",%[uv_buf]             \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+<<<<<<< HEAD
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
+
+// YUY2 shuf 8 Y to 16 Y.
+static const vec8 kShuffleYUY2Y = {
+  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
+};
+
+// YUY2 shuf 4 UV to 8 UV.
+static const vec8 kShuffleYUY2UV = {
+  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
+};
+
+// Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
+#define READYUY2                                                               \
+    "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm4                \n"            \
+    "pshufb     %[kShuffleYUY2Y], %%xmm4                        \n"            \
+    "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm0                \n"            \
+    "pshufb     %[kShuffleYUY2UV], %%xmm0                       \n"            \
+    "lea        " MEMLEA(0x10, [yuy2_buf]) ",%[yuy2_buf]        \n"
+
+// UYVY shuf 8 Y to 16 Y.
+static const vec8 kShuffleUYVYY = {
+  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
+};
+
+// UYVY shuf 4 UV to 8 UV.
+static const vec8 kShuffleUYVYUV = {
+  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
+};
+
+// Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
+#define READUYVY                                                               \
+    "movdqu     " MEMACCESS([uyvy_buf]) ",%%xmm4                \n"            \
+    "pshufb     %[kShuffleUYVYY], %%xmm4                        \n"            \
+    "movdqu     " MEMACCESS([uyvy_buf]) ",%%xmm0                \n"            \
+    "pshufb     %[kShuffleUYVYUV], %%xmm0                       \n"            \
+    "lea        " MEMLEA(0x10, [uyvy_buf]) ",%[uyvy_buf]        \n"
+=======
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
+>>>>>>> refs/remotes/origin/master
 
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB(yuvconstants)                                                 \
@@ -1371,7 +1424,10 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movdqa     " MEMACCESS2(160, [yuvconstants]) ",%%xmm2      \n"            \
     "pmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%xmm3       \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
+<<<<<<< HEAD
+=======
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+>>>>>>> refs/remotes/origin/master
     "pmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%xmm4      \n"            \
     "paddsw     %%xmm4,%%xmm0                                   \n"            \
     "paddsw     %%xmm4,%%xmm1                                   \n"            \
@@ -1452,7 +1508,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1479,7 +1535,7 @@ void OMITFP I444ToABGRRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1525,7 +1581,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
     [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 
@@ -1570,7 +1626,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     [kShuffleMaskARGBToRAW_0]"m"(kShuffleMaskARGBToRAW_0),
     [kShuffleMaskARGBToRAW]"m"(kShuffleMaskARGBToRAW)
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
 
@@ -1597,7 +1653,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1624,7 +1680,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1648,7 +1704,55 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   // Does not use r14.
-  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+void OMITFP YUY2ToARGBRow_SSSE3(const uint8* yuy2_buf,
+                                uint8* dst_argb,
+                                struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUY2
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [yuy2_buf]"+r"(yuy2_buf),    // %[yuy2_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleYUY2Y]"m"(kShuffleYUY2Y),
+    [kShuffleYUY2UV]"m"(kShuffleYUY2UV)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+void OMITFP UYVYToARGBRow_SSSE3(const uint8* uyvy_buf,
+                                uint8* dst_argb,
+                                struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    LABELALIGN
+  "1:                                          \n"
+    READUYVY
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [uyvy_buf]"+r"(uyvy_buf),    // %[uyvy_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleUYVYY]"m"(kShuffleUYVYY),
+    [kShuffleUYVYUV]"m"(kShuffleUYVYUV)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1675,7 +1779,7 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1702,7 +1806,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1729,7 +1833,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 
@@ -1808,7 +1912,7 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_I422TOBGRAROW_AVX2
@@ -1851,7 +1955,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_I422TOARGBROW_AVX2
@@ -1893,7 +1997,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_I422TOABGRROW_AVX2
@@ -1935,7 +2039,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_I422TORGBAROW_AVX2

@@ -127,8 +127,6 @@ extern "C" {
 #define HAS_MIRRORUVROW_SSSE3
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV12TORGB565ROW_SSSE3
-#define HAS_NV21TOARGBROW_SSSE3
-#define HAS_NV21TORGB565ROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
@@ -209,8 +207,6 @@ extern "C" {
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
-#define HAS_NV21TOARGBROW_AVX2
-#define HAS_NV21TORGB565ROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
 #endif
 
@@ -321,8 +317,6 @@ extern "C" {
 #define HAS_MIRRORUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
-#define HAS_NV21TOARGBROW_NEON
-#define HAS_NV21TORGB565ROW_NEON
 #define HAS_RAWTOARGBROW_NEON
 #define HAS_RAWTOUVROW_NEON
 #define HAS_RAWTOYROW_NEON
@@ -1068,11 +1062,6 @@ void NV12ToARGBRow_C(const uint8* src_y,
                      uint8* dst_argb,
                      struct YuvConstants* yuvconstants,
                      int width);
-void NV21ToRGB565Row_C(const uint8* src_y,
-                       const uint8* src_vu,
-                       uint8* dst_argb,
-                       struct YuvConstants* yuvconstants,
-                       int width);
 void NV12ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_uv,
                        uint8* dst_argb,
@@ -1433,18 +1422,8 @@ void NV12ToARGBRow_Any_SSSE3(const uint8* src_y,
                              uint8* dst_argb,
                              struct YuvConstants* yuvconstants,
                              int width);
-void NV21ToARGBRow_Any_SSSE3(const uint8* src_y,
-                             const uint8* src_vu,
-                             uint8* dst_argb,
-                             struct YuvConstants* yuvconstants,
-                             int width);
 void NV12ToARGBRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_uv,
-                            uint8* dst_argb,
-                            struct YuvConstants* yuvconstants,
-                            int width);
-void NV21ToARGBRow_Any_AVX2(const uint8* src_y,
-                            const uint8* src_vu,
                             uint8* dst_argb,
                             struct YuvConstants* yuvconstants,
                             int width);
