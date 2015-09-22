@@ -93,7 +93,7 @@ extern "C" {
     "vuzp.u8    d2, d3                         \n"                             \
     "vtrn.u32   d2, d3                         \n"
 
-#define YUV422TORGB_SETUP_REG                                                  \
+#define YUVTORGB_SETUP                                                         \
     MEMACCESS([kUVToRB])                                                       \
     "vld1.8     {d24}, [%[kUVToRB]]            \n"                             \
     MEMACCESS([kUVToG])                                                        \
@@ -107,7 +107,7 @@ extern "C" {
     MEMACCESS([kYToRgb])                                                       \
     "vld1.32    {d30[], d31[]}, [%[kYToRgb]]     \n"
 
-#define YUV422TORGB                                                            \
+#define YUVTORGB                                                               \
     "vmull.u8   q8, d2, d24                    \n" /* u/v B/R component      */\
     "vmull.u8   q9, d2, d25                    \n" /* u/v G component        */\
     "vmovl.u8   q0, d0                         \n" /* Y                      */\
@@ -138,12 +138,13 @@ void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV444
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(3)
@@ -154,26 +155,26 @@ void I444ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 
-void I422ToARGBMatrixRow_NEON(const uint8* src_y,
-                              const uint8* src_u,
-                              const uint8* src_v,
-                              uint8* dst_argb,
-                              struct YuvConstantsNEON* YuvConstants,
-                              int width) {
+void I422ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(3)
@@ -184,10 +185,10 @@ void I422ToARGBMatrixRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&YuvConstants->kUVToRB),   // %5
-      [kUVToG]"r"(&YuvConstants->kUVToG),     // %6
-      [kUVBiasBGR]"r"(&YuvConstants->kUVBiasBGR),
-      [kYToRgb]"r"(&YuvConstants->kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -197,12 +198,13 @@ void I411ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV411
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(3)
@@ -213,10 +215,10 @@ void I411ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_argb),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -226,12 +228,13 @@ void I422ToBGRARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_bgra,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vswp.u8    d20, d22                       \n"
     "vmov.u8    d19, #255                      \n"
@@ -243,26 +246,26 @@ void I422ToBGRARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_bgra),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 
-void I422ToABGRMatrixRow_NEON(const uint8* src_y,
-                              const uint8* src_u,
-                              const uint8* src_v,
-                              uint8* dst_abgr,
-                              struct YuvConstantsNEON* YuvConstants,
-                              int width) {
+void I422ToABGRRow_NEON(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* dst_abgr,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vswp.u8    d20, d22                       \n"
     "vmov.u8    d23, #255                      \n"
@@ -274,10 +277,10 @@ void I422ToABGRMatrixRow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_abgr),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&YuvConstants->kUVToRB),   // %5
-      [kUVToG]"r"(&YuvConstants->kUVToG),     // %6
-      [kUVBiasBGR]"r"(&YuvConstants->kUVBiasBGR),
-      [kYToRgb]"r"(&YuvConstants->kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -287,12 +290,13 @@ void I422ToRGBARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_rgba,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d19, #255                      \n"
     MEMACCESS(3)
@@ -303,10 +307,10 @@ void I422ToRGBARow_NEON(const uint8* src_y,
       "+r"(src_v),     // %2
       "+r"(dst_rgba),  // %3
       "+r"(width)      // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -316,12 +320,13 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_rgb24,
+                         struct YuvConstants* yuvconstants,
                          int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     MEMACCESS(3)
     "vst3.8     {d20, d21, d22}, [%3]!         \n"
@@ -331,10 +336,10 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
       "+r"(src_v),      // %2
       "+r"(dst_rgb24),  // %3
       "+r"(width)       // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -344,12 +349,13 @@ void I422ToRAWRow_NEON(const uint8* src_y,
                        const uint8* src_u,
                        const uint8* src_v,
                        uint8* dst_raw,
+                       struct YuvConstants* yuvconstants,
                        int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vswp.u8    d20, d22                       \n"
     MEMACCESS(3)
@@ -360,10 +366,10 @@ void I422ToRAWRow_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_raw),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -385,12 +391,13 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_u,
                           const uint8* src_v,
                           uint8* dst_rgb565,
+                          struct YuvConstants* yuvconstants,
                           int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     ARGBTORGB565
     MEMACCESS(3)
@@ -401,10 +408,10 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_rgb565),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -429,12 +436,13 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb1555,
+                            struct YuvConstants* yuvconstants,
                             int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     ARGBTOARGB1555
@@ -446,10 +454,10 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb1555),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -468,13 +476,14 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb4444,
+                            struct YuvConstants* yuvconstants,
                             int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
     "vmov.u8    d4, #0x0f                      \n"  // bits to clear with vbic.
   "1:                                          \n"
     READYUV422
-    YUV422TORGB
+    YUVTORGB
     "subs       %4, %4, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     ARGBTOARGB4444
@@ -486,10 +495,10 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
       "+r"(src_v),    // %2
       "+r"(dst_argb4444),  // %3
       "+r"(width)     // %4
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %5
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %6
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -499,10 +508,10 @@ void I400ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUV400
-    YUV422TORGB
+    YUVTORGB
     "subs       %2, %2, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(1)
@@ -511,10 +520,10 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&kYuvConstants.kUVToRB),
+      [kUVToG]"r"(&kYuvConstants.kUVToG),
+      [kUVBiasBGR]"r"(&kYuvConstants.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstants.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -545,12 +554,13 @@ void J400ToARGBRow_NEON(const uint8* src_y,
 void NV12ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_uv,
                         uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READNV12
-    YUV422TORGB
+    YUVTORGB
     "subs       %3, %3, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(2)
@@ -560,37 +570,10 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_argb),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
-  );
-}
-
-void NV21ToARGBRow_NEON(const uint8* src_y,
-                        const uint8* src_uv,
-                        uint8* dst_argb,
-                        int width) {
-  asm volatile (
-    YUV422TORGB_SETUP_REG
-  "1:                                          \n"
-    READNV21
-    YUV422TORGB
-    "subs       %3, %3, #8                     \n"
-    "vmov.u8    d23, #255                      \n"
-    MEMACCESS(2)
-    "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
-    "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_uv),    // %1
-      "+r"(dst_argb),  // %2
-      "+r"(width)      // %3
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -599,12 +582,13 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
 void NV12ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_uv,
                           uint8* dst_rgb565,
+                          struct YuvConstants* yuvconstants,
                           int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READNV12
-    YUV422TORGB
+    YUVTORGB
     "subs       %3, %3, #8                     \n"
     ARGBTORGB565
     MEMACCESS(2)
@@ -614,37 +598,10 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
       "+r"(src_uv),    // %1
       "+r"(dst_rgb565),  // %2
       "+r"(width)      // %3
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
-  );
-}
-
-void NV21ToRGB565Row_NEON(const uint8* src_y,
-                          const uint8* src_uv,
-                          uint8* dst_rgb565,
-                          int width) {
-  asm volatile (
-    YUV422TORGB_SETUP_REG
-  "1:                                          \n"
-    READNV21
-    YUV422TORGB
-    "subs       %3, %3, #8                     \n"
-    ARGBTORGB565
-    MEMACCESS(2)
-    "vst1.8     {q0}, [%2]!                    \n"  // store 8 pixels RGB565.
-    "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_uv),    // %1
-      "+r"(dst_rgb565),  // %2
-      "+r"(width)      // %3
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %4
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %5
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -652,12 +609,13 @@ void NV21ToRGB565Row_NEON(const uint8* src_y,
 
 void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READYUY2
-    YUV422TORGB
+    YUVTORGB
     "subs       %2, %2, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(1)
@@ -666,10 +624,10 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -677,12 +635,13 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
 
 void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
-    YUV422TORGB_SETUP_REG
+    YUVTORGB_SETUP
   "1:                                          \n"
     READUYVY
-    YUV422TORGB
+    YUVTORGB
     "subs       %2, %2, #8                     \n"
     "vmov.u8    d23, #255                      \n"
     MEMACCESS(1)
@@ -691,10 +650,10 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kYuvConstantsNEON.kUVToRB),   // %3
-      [kUVToG]"r"(&kYuvConstantsNEON.kUVToG),     // %4
-      [kUVBiasBGR]"r"(&kYuvConstantsNEON.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstantsNEON.kYToRgb)
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );

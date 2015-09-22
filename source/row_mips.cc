@@ -593,7 +593,7 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
 // t8 = | 0 | G1 | 0 | g1 |
 // t2 = | 0 | R0 | 0 | r0 |
 // t1 = | 0 | R1 | 0 | r1 |
-#define I422ToTransientMipsRGB                                                 \
+#define YUVTORGB                                                               \
       "lw                $t0, 0(%[y_buf])       \n"                            \
       "lhu               $t1, 0(%[u_buf])       \n"                            \
       "lhu               $t2, 0(%[v_buf])       \n"                            \
@@ -652,10 +652,12 @@ void MirrorUVRow_MIPS_DSPR2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
       "addu.ph           $t2, $t2, $s5          \n"                            \
       "addu.ph           $t1, $t1, $s5          \n"
 
+// TODO(fbarchard): accept yuv conversion constants.
 void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
+                              struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
@@ -671,7 +673,7 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
     "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|ff|
 
    "1:                                        \n"
-      I422ToTransientMipsRGB
+      YUVTORGB
 // Arranging into argb format
     "precr.qb.ph       $t4, $t8, $t4          \n"  // |G1|g1|B1|b1|
     "precr.qb.ph       $t5, $t9, $t5          \n"  // |G0|g0|B0|b0|
@@ -717,6 +719,7 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
+                              struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
@@ -732,7 +735,7 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
     "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|
 
    "1:                                         \n"
-      I422ToTransientMipsRGB
+      YUVTORGB
 // Arranging into abgr format
     "precr.qb.ph      $t0, $t8, $t1           \n"  // |G1|g1|R1|r1|
     "precr.qb.ph      $t3, $t9, $t2           \n"  // |G0|g0|R0|r0|
@@ -778,6 +781,7 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
+                              struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
@@ -793,7 +797,7 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
     "ori               $s6, 0xff              \n"  // |00|ff|00|ff|
 
    "1:                                        \n"
-      I422ToTransientMipsRGB
+      YUVTORGB
       // Arranging into bgra format
     "precr.qb.ph       $t4, $t4, $t8          \n"  // |B1|b1|G1|g1|
     "precr.qb.ph       $t5, $t5, $t9          \n"  // |B0|b0|G0|g0|

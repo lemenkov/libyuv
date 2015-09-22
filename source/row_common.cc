@@ -1014,6 +1014,22 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
 
+#if defined(__arm__) || defined(__aarch64__)
+YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
+
+YuvConstants SIMD_ALIGNED(kYvuConstants) = {
+  { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
+
+#else
 // BT601 constants for YUV to RGB.
 YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
@@ -1041,22 +1057,7 @@ YuvConstants SIMD_ALIGNED(kYvuConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-
-YuvConstantsNEON SIMD_ALIGNED(kYuvConstantsNEON) = {
-  { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { BB, BG, BR, 0, 0, 0, 0, 0 },
-  { 0x0101 * YG, 0, 0, 0 }
-};
-
-// C reference code that mimics the YUV assembly.
-static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
-                              uint8* b, uint8* g, uint8* r) {
-  uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
-  *b = Clamp((int32)(-(u * UB) + y1 + BB) >> 6);
-  *g = Clamp((int32)(-(v * VG + u * UG) + y1 + BG) >> 6);
-  *r = Clamp((int32)(-(v * VR)+ y1 + BR) >> 6);
-}
+#endif
 
 // C reference code that mimics the YUV assembly.
 static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
@@ -1065,15 +1066,50 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
   *g = Clamp((int32)(y1 + YGB) >> 6);
   *r = Clamp((int32)(y1 + YGB) >> 6);
 }
-#undef YG
+
+#undef BB
+#undef BG
+#undef BR
 #undef YGB
 #undef UB
 #undef UG
 #undef VG
 #undef VR
-#undef BB
-#undef BG
-#undef BR
+#undef YG
+
+// C reference code that mimics the YUV assembly.
+static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
+                              uint8* b, uint8* g, uint8* r,
+                              struct YuvConstants* yuvconstants) {
+#if defined(__arm__) || defined(__aarch64__)
+
+  int UB = -yuvconstants->kUVToRB[0];
+  int VB = 0;
+  int UG = yuvconstants->kUVToG[0];
+  int VG = yuvconstants->kUVToG[4];
+  int UR = 0;
+  int VR = -yuvconstants->kUVToRB[4];
+  int BB = yuvconstants->kUVBiasBGR[0];
+  int BG = yuvconstants->kUVBiasBGR[1];
+  int BR = yuvconstants->kUVBiasBGR[2];
+  int YG = yuvconstants->kYToRgb[0];
+#else
+  int UB = yuvconstants->kUVToB[0];
+  int VB = yuvconstants->kUVToB[1];  // usually 0
+  int UG = yuvconstants->kUVToG[0];
+  int VG = yuvconstants->kUVToG[1];
+  int UR = yuvconstants->kUVToR[0];  // usually 0
+  int VR = yuvconstants->kUVToR[1];
+  int BB = yuvconstants->kUVBiasB[0];
+  int BG = yuvconstants->kUVBiasG[0];
+  int BR = yuvconstants->kUVBiasR[0];
+  int YG = yuvconstants->kYToRgb[0];
+#endif
+  uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
+  *b = Clamp((int32)(-(u * UB + v * VB) + y1 + BB) >> 6);
+  *g = Clamp((int32)(-(u * UG + v * VG) + y1 + BG) >> 6);
+  *r = Clamp((int32)(-(u * UR + v * VR) + y1 + BR) >> 6);
+}
 
 // JPEG YUV to RGB reference
 // *  R = Y                - V * -1.40200
@@ -1095,6 +1131,15 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 #define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
 #define BRJ             (VRJ * 128 + YGBJ)
 
+#if defined(__arm__) || defined(__aarch64__)
+// JPEG constants for YUV to RGB.
+YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+  { -UBJ, -UBJ, -UBJ, -UBJ, -VRJ, -VRJ, -VRJ, -VRJ, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UGJ, UGJ, UGJ, UGJ, VGJ, VGJ, VGJ, VGJ, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGJ, 0, 0, 0 }
+};
+#else
 // JPEG constants for YUV to RGB.
 YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0,
@@ -1114,23 +1159,7 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ,
     YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ, YGJ }
 };
-
-// JPEG constants for YUV to RGB.
-YuvConstantsNEON SIMD_ALIGNED(kYuvJConstantsNEON) = {
-  { -UBJ, -UBJ, -UBJ, -UBJ, -VRJ, -VRJ, -VRJ, -VRJ, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { UGJ, UGJ, UGJ, UGJ, VGJ, VGJ, VGJ, VGJ, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
-  { 0x0101 * YGJ, 0, 0, 0 }
-};
-
-// C reference code that mimics the YUV assembly.
-static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
-                               uint8* b, uint8* g, uint8* r) {
-  uint32 y1 = (uint32)(y * 0x0101 * YGJ) >> 16;
-  *b = Clamp((int32)(-(u * UBJ) + y1 + BBJ) >> 6);
-  *g = Clamp((int32)(-(v * VGJ + u * UGJ) + y1 + BGJ) >> 6);
-  *r = Clamp((int32)(-(v * VRJ) + y1 + BRJ) >> 6);
-}
+#endif
 
 #undef YGJ
 #undef YGBJ
@@ -1162,6 +1191,15 @@ static __inline void YuvJPixel(uint8 y, uint8 u, uint8 v,
 #define BGH (UGH * 128 + VGH * 128 + YGBH)
 #define BRH (VRH * 128 + YGBH)
 
+#if defined(__arm__) || defined(__aarch64__)
+// BT.709 constants for YUV to RGB.
+YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+  { -UBH, -UBH, -UBH, -UBH, -VRH, -VRH, -VRH, -VRH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { UGH, UGH, UGH, UGH, VGH, VGH, VGH, VGH, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGH, 0, 0, 0 }
+};
+#else
 // BT.709 constants for YUV to RGB.
 YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0,
@@ -1181,23 +1219,7 @@ YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { YGH, YGH, YGH, YGH, YGH, YGH, YGH, YGH,
     YGH, YGH, YGH, YGH, YGH, YGH, YGH, YGH }
 };
-
-// BT.709 constants for YUV to RGB.
-YuvConstantsNEON SIMD_ALIGNED(kYuvHConstantsNEON) = {
-  { -UBH, -UBH, -UBH, -UBH, -VRH, -VRH, -VRH, -VRH, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { UGH, UGH, UGH, UGH, VGH, VGH, VGH, VGH, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
-  { 0x0101 * YGH, 0, 0, 0 }
-};
-
-// C reference code that mimics the YUV assembly.
-static __inline void YuvHPixel(uint8 y, uint8 u, uint8 v,
-                               uint8* b, uint8* g, uint8* r) {
-  uint32 y1 = (uint32)(y * 0x0101 * YGH) >> 16;
-  *b = Clamp((int32)(-(u * UBH) + y1 + BBH) >> 6);
-  *g = Clamp((int32)(-(v * VGH + u * UGH) + y1 + BGH) >> 6);
-  *r = Clamp((int32)(-(v * VRH) + y1 + BRH) >> 6);
-}
+#endif
 
 #undef YGH
 #undef YGBH
@@ -1217,14 +1239,17 @@ void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
     uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
-    YuvPixel(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+    YuvPixel(src_y[0], u, v, rgb_buf + 0, rgb_buf + 1, rgb_buf + 2,
+             yuvconstants);
     rgb_buf[3] = 255;
-    YuvPixel(src_y[1], u, v, rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+    YuvPixel(src_y[1], u, v, rgb_buf + 4, rgb_buf + 5, rgb_buf + 6,
+             yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 2;
@@ -1233,7 +1258,7 @@ void I444ToARGBRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
   }
 }
 
@@ -1241,14 +1266,17 @@ void I444ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
     uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
-    YuvPixel(src_y[0], u, v, rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+    YuvPixel(src_y[0], u, v, rgb_buf + 2, rgb_buf + 1, rgb_buf + 0,
+             yuvconstants);
     rgb_buf[3] = 255;
-    YuvPixel(src_y[1], u, v, rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+    YuvPixel(src_y[1], u, v, rgb_buf + 6, rgb_buf + 5, rgb_buf + 4,
+             yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 2;
@@ -1257,7 +1285,7 @@ void I444ToABGRRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
   }
 }
 #else
@@ -1265,11 +1293,12 @@ void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width; ++x) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;
@@ -1282,11 +1311,12 @@ void I444ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width; ++x) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
     rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;
@@ -1301,14 +1331,15 @@ void I422ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 1;
@@ -1317,124 +1348,23 @@ void I422ToARGBRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
-
-void J422ToARGBRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvJPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-    YuvJPixel(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvJPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-  }
-}
-
-void J422ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvJPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
-    rgb_buf[3] = 255;
-    YuvJPixel(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvJPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
-    rgb_buf[3] = 255;
-  }
-}
-
-// TODO(fbarchard): replace with common matrix function.
-void H422ToARGBRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvHPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-    YuvHPixel(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvHPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-  }
-}
-
-void H422ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvHPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
-    rgb_buf[3] = 255;
-    YuvHPixel(src_y[1], src_u[0], src_v[0],
-              rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvHPixel(src_y[0], src_u[0], src_v[0],
-              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
-    rgb_buf[3] = 255;
-  }
-}
-
 
 void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
                       const uint8* src_v,
                       uint8* rgb_buf,
+                      struct YuvConstants* yuvconstants,
                       int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 3, rgb_buf + 4, rgb_buf + 5);
+             rgb_buf + 3, rgb_buf + 4, rgb_buf + 5, yuvconstants);
     src_y += 2;
     src_u += 1;
     src_v += 1;
@@ -1442,7 +1372,7 @@ void I422ToRGB24Row_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
   }
 }
 
@@ -1450,13 +1380,14 @@ void I422ToRAWRow_C(const uint8* src_y,
                     const uint8* src_u,
                     const uint8* src_v,
                     uint8* rgb_buf,
+                    struct YuvConstants* yuvconstants,
                     int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 5, rgb_buf + 4, rgb_buf + 3);
+             rgb_buf + 5, rgb_buf + 4, rgb_buf + 3, yuvconstants);
     src_y += 2;
     src_u += 1;
     src_v += 1;
@@ -1464,7 +1395,7 @@ void I422ToRAWRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
   }
 }
 
@@ -1472,6 +1403,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_argb4444,
+                         struct YuvConstants* yuvconstants,
                          int width) {
   uint8 b0;
   uint8 g0;
@@ -1481,8 +1413,8 @@ void I422ToARGB4444Row_C(const uint8* src_y,
   uint8 r1;
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1, yuvconstants);
     b0 = b0 >> 4;
     g0 = g0 >> 4;
     r0 = r0 >> 4;
@@ -1497,7 +1429,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
     dst_argb4444 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
     b0 = b0 >> 4;
     g0 = g0 >> 4;
     r0 = r0 >> 4;
@@ -1510,6 +1442,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_argb1555,
+                         struct YuvConstants* yuvconstants,
                          int width) {
   uint8 b0;
   uint8 g0;
@@ -1519,8 +1452,8 @@ void I422ToARGB1555Row_C(const uint8* src_y,
   uint8 r1;
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 3;
     r0 = r0 >> 3;
@@ -1535,7 +1468,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
     dst_argb1555 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 3;
     r0 = r0 >> 3;
@@ -1548,6 +1481,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_u,
                        const uint8* src_v,
                        uint8* dst_rgb565,
+                       struct YuvConstants* yuvconstants,
                        int width) {
   uint8 b0;
   uint8 g0;
@@ -1557,8 +1491,8 @@ void I422ToRGB565Row_C(const uint8* src_y,
   uint8 r1;
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
-    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
+    YuvPixel(src_y[1], src_u[0], src_v[0], &b1, &g1, &r1, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1573,7 +1507,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_u[0], src_v[0], &b0, &g0, &r0, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1585,20 +1519,21 @@ void I411ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 3; x += 4) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     YuvPixel(src_y[2], src_u[0], src_v[0],
-             rgb_buf + 8, rgb_buf + 9, rgb_buf + 10);
+             rgb_buf + 8, rgb_buf + 9, rgb_buf + 10, yuvconstants);
     rgb_buf[11] = 255;
     YuvPixel(src_y[3], src_u[0], src_v[0],
-             rgb_buf + 12, rgb_buf + 13, rgb_buf + 14);
+             rgb_buf + 12, rgb_buf + 13, rgb_buf + 14, yuvconstants);
     rgb_buf[15] = 255;
     src_y += 4;
     src_u += 1;
@@ -1607,17 +1542,17 @@ void I411ToARGBRow_C(const uint8* src_y,
   }
   if (width & 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
@@ -1625,14 +1560,15 @@ void I411ToARGBRow_C(const uint8* src_y,
 void NV12ToARGBRow_C(const uint8* src_y,
                      const uint8* src_uv,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_uv[0], src_uv[1],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_uv[0], src_uv[1],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     src_uv += 2;
@@ -1640,32 +1576,7 @@ void NV12ToARGBRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_uv[0], src_uv[1],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-  }
-}
-
-void NV21ToARGBRow_C(const uint8* src_y,
-                     const uint8* src_vu,
-                     uint8* rgb_buf,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_vu[1], src_vu[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
-    rgb_buf[3] = 255;
-
-    YuvPixel(src_y[1], src_vu[1], src_vu[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
-    rgb_buf[7] = 255;
-
-    src_y += 2;
-    src_vu += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_vu[1], src_vu[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
@@ -1673,6 +1584,7 @@ void NV21ToARGBRow_C(const uint8* src_y,
 void NV12ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_uv,
                        uint8* dst_rgb565,
+                       struct YuvConstants* yuvconstants,
                        int width) {
   uint8 b0;
   uint8 g0;
@@ -1682,8 +1594,8 @@ void NV12ToRGB565Row_C(const uint8* src_y,
   uint8 r1;
   int x;
   for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0);
-    YuvPixel(src_y[1], src_uv[0], src_uv[1], &b1, &g1, &r1);
+    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0, yuvconstants);
+    YuvPixel(src_y[1], src_uv[0], src_uv[1], &b1, &g1, &r1, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1697,42 +1609,7 @@ void NV12ToRGB565Row_C(const uint8* src_y,
     dst_rgb565 += 4;  // Advance 2 pixels.
   }
   if (width & 1) {
-    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0);
-    b0 = b0 >> 3;
-    g0 = g0 >> 2;
-    r0 = r0 >> 3;
-    *(uint16*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
-  }
-}
-
-void NV21ToRGB565Row_C(const uint8* src_y,
-                       const uint8* vsrc_u,
-                       uint8* dst_rgb565,
-                       int width) {
-  uint8 b0;
-  uint8 g0;
-  uint8 r0;
-  uint8 b1;
-  uint8 g1;
-  uint8 r1;
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
-    YuvPixel(src_y[1], vsrc_u[1], vsrc_u[0], &b1, &g1, &r1);
-    b0 = b0 >> 3;
-    g0 = g0 >> 2;
-    r0 = r0 >> 3;
-    b1 = b1 >> 3;
-    g1 = g1 >> 2;
-    r1 = r1 >> 3;
-    *(uint32*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11) |
-        (b1 << 16) | (g1 << 21) | (r1 << 27);
-    src_y += 2;
-    vsrc_u += 2;
-    dst_rgb565 += 4;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], vsrc_u[1], vsrc_u[0], &b0, &g0, &r0);
+    YuvPixel(src_y[0], src_uv[0], src_uv[1], &b0, &g0, &r0, yuvconstants);
     b0 = b0 >> 3;
     g0 = g0 >> 2;
     r0 = r0 >> 3;
@@ -1742,42 +1619,44 @@ void NV21ToRGB565Row_C(const uint8* src_y,
 
 void YUY2ToARGBRow_C(const uint8* src_yuy2,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_yuy2[2], src_yuy2[1], src_yuy2[3],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     src_yuy2 += 4;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
     YuvPixel(src_yuy2[0], src_yuy2[1], src_yuy2[3],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
 
 void UYVYToARGBRow_C(const uint8* src_uyvy,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_uyvy[3], src_uyvy[0], src_uyvy[2],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6);
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
     rgb_buf[7] = 255;
     src_uyvy += 4;
     rgb_buf += 8;  // Advance 2 pixels.
   }
   if (width & 1) {
     YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2);
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
@@ -1786,14 +1665,15 @@ void I422ToBGRARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1);
+             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1, yuvconstants);
     rgb_buf[0] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 7, rgb_buf + 6, rgb_buf + 5);
+             rgb_buf + 7, rgb_buf + 6, rgb_buf + 5, yuvconstants);
     rgb_buf[4] = 255;
     src_y += 2;
     src_u += 1;
@@ -1802,7 +1682,7 @@ void I422ToBGRARow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1);
+             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1, yuvconstants);
     rgb_buf[0] = 255;
   }
 }
@@ -1811,14 +1691,15 @@ void I422ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
     rgb_buf[3] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4);
+             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4, yuvconstants);
     rgb_buf[7] = 255;
     src_y += 2;
     src_u += 1;
@@ -1827,7 +1708,7 @@ void I422ToABGRRow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0);
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
     rgb_buf[3] = 255;
   }
 }
@@ -1836,14 +1717,15 @@ void I422ToRGBARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3);
+             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3, yuvconstants);
     rgb_buf[0] = 255;
     YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 5, rgb_buf + 6, rgb_buf + 7);
+             rgb_buf + 5, rgb_buf + 6, rgb_buf + 7, yuvconstants);
     rgb_buf[4] = 255;
     src_y += 2;
     src_u += 1;
@@ -1852,7 +1734,7 @@ void I422ToRGBARow_C(const uint8* src_y,
   }
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3);
+             rgb_buf + 1, rgb_buf + 2, rgb_buf + 3, yuvconstants);
     rgb_buf[0] = 255;
   }
 }
@@ -2401,374 +2283,10 @@ void I422ToUYVYRow_C(const uint8* src_y,
   }
 }
 
-#define ANYYUV(NAMEANY, ANY_SIMD, YUVCONSTANTS)                                \
-    void NAMEANY(const uint8* y_buf,                                           \
-                 const uint8* u_buf,                                           \
-                 const uint8* v_buf,                                           \
-                 uint8* dst_argb,                                              \
-                 int width) {                                                  \
-      ANY_SIMD(y_buf, u_buf, v_buf, dst_argb, &YUVCONSTANTS, width);           \
-    }
-
-#ifdef HAS_I422TOARGBMATRIXROW_NEON
-ANYYUV(I422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvConstantsNEON)
-ANYYUV(J422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvJConstantsNEON)
-ANYYUV(H422ToARGBRow_NEON, I422ToARGBMatrixRow_NEON, kYuvHConstantsNEON)
-#endif
-#ifdef HAS_I422TOABGRMATRIXROW_NEON
-ANYYUV(I422ToABGRRow_NEON, I422ToABGRMatrixRow_NEON, kYuvConstantsNEON)
-ANYYUV(J422ToABGRRow_NEON, I422ToABGRMatrixRow_NEON, kYuvJConstantsNEON)
-ANYYUV(H422ToABGRRow_NEON, I422ToABGRMatrixRow_NEON, kYuvHConstantsNEON)
-#endif
-#ifdef HAS_I422TOARGBMATRIXROW_SSSE3
-ANYYUV(I422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvConstants)
-ANYYUV(J422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvJConstants)
-ANYYUV(H422ToARGBRow_SSSE3, I422ToARGBMatrixRow_SSSE3, kYuvHConstants)
-#endif
-#ifdef HAS_I422TOARGBMATRIXROW_AVX2
-ANYYUV(I422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvConstants)
-ANYYUV(J422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvJConstants)
-ANYYUV(H422ToARGBRow_AVX2, I422ToARGBMatrixRow_AVX2, kYuvHConstants)
-#endif
-#ifdef HAS_I422TOABGRMATRIXROW_SSSE3
-ANYYUV(I422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvConstants)
-ANYYUV(J422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvJConstants)
-ANYYUV(H422ToABGRRow_SSSE3, I422ToABGRMatrixRow_SSSE3, kYuvHConstants)
-#endif
-#ifdef HAS_I422TOABGRMATRIXROW_AVX2
-ANYYUV(I422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvConstants)
-ANYYUV(J422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvJConstants)
-ANYYUV(H422ToABGRRow_AVX2, I422ToABGRMatrixRow_AVX2, kYuvHConstants)
-#endif
-// TODO(fbarchard): Neon, J444, H444 versions.
-#ifdef HAS_I444TOARGBMATRIXROW_SSSE3
-ANYYUV(I444ToARGBRow_SSSE3, I444ToARGBMatrixRow_SSSE3, kYuvConstants)
-#endif
-#ifdef HAS_I444TOARGBMATRIXROW_AVX2
-ANYYUV(I444ToARGBRow_AVX2, I444ToARGBMatrixRow_AVX2, kYuvConstants)
-#endif
-#ifdef HAS_I444TOABGRMATRIXROW_SSSE3
-ANYYUV(I444ToABGRRow_SSSE3, I444ToABGRMatrixRow_SSSE3, kYuvConstants)
-#endif
-#ifdef HAS_I444TOABGRMATRIXROW_AVX2
-ANYYUV(I444ToABGRRow_AVX2, I444ToABGRMatrixRow_AVX2, kYuvConstants)
-#endif
-
-// Maximum temporary width for wrappers to process at a time, in pixels.
-#define MAXTWIDTH 2048
-
-#if !(defined(_MSC_VER) && defined(_M_IX86)) && \
-    defined(HAS_I422TORGB565ROW_SSSE3)
-// row_win.cc has asm version, but GCC uses 2 step wrapper.
-void I422ToRGB565Row_SSSE3(const uint8* src_y,
-                           const uint8* src_u,
-                           const uint8* src_v,
-                           uint8* dst_rgb565,
-                           int width) {
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TOARGB1555ROW_SSSE3)
-void I422ToARGB1555Row_SSSE3(const uint8* src_y,
-                             const uint8* src_u,
-                             const uint8* src_v,
-                             uint8* dst_argb1555,
-                             int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB1555Row_SSE2(row, dst_argb1555, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_argb1555 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TOARGB4444ROW_SSSE3)
-void I422ToARGB4444Row_SSSE3(const uint8* src_y,
-                             const uint8* src_u,
-                             const uint8* src_v,
-                             uint8* dst_argb4444,
-                             int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB4444Row_SSE2(row, dst_argb4444, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_argb4444 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_NV12TORGB565ROW_SSSE3)
-void NV12ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_uv,
-                           uint8* dst_rgb565, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    NV12ToARGBRow_SSSE3(src_y, src_uv, row, twidth);
-    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_uv += twidth;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_NV21TORGB565ROW_SSSE3)
-void NV21ToRGB565Row_SSSE3(const uint8* src_y, const uint8* src_vu,
-                           uint8* dst_rgb565, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    NV21ToARGBRow_SSSE3(src_y, src_vu, row, twidth);
-    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_vu += twidth;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_YUY2TOARGBROW_SSSE3)
-void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    YUY2ToUV422Row_SSE2(src_yuy2, row_u, row_v, twidth);
-    YUY2ToYRow_SSE2(src_yuy2, row_y, twidth);
-    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, twidth);
-    src_yuy2 += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_UYVYTOARGBROW_SSSE3)
-void UYVYToARGBRow_SSSE3(const uint8* src_uyvy, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, twidth);
-    UYVYToYRow_SSE2(src_uyvy, row_y, twidth);
-    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, twidth);
-    src_uyvy += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif  // !defined(LIBYUV_DISABLE_X86)
-
-#if defined(HAS_I422TORGB565ROW_AVX2)
-void I422ToRGB565Row_AVX2(const uint8* src_y,
-                          const uint8* src_u,
-                          const uint8* src_v,
-                          uint8* dst_rgb565,
-                          int width) {
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
-    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TOARGB1555ROW_AVX2)
-void I422ToARGB1555Row_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_argb1555,
-                            int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_argb1555 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TOARGB4444ROW_AVX2)
-void I422ToARGB4444Row_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_argb4444,
-                            int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
-    ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_argb4444 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TORGB24ROW_AVX2)
-void I422ToRGB24Row_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_rgb24,
-                            int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
-    // TODO(fbarchard): ARGBToRGB24Row_AVX2
-    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_rgb24 += twidth * 3;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TORAWROW_AVX2)
-void I422ToRAWRow_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_raw,
-                            int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, twidth);
-    // TODO(fbarchard): ARGBToRAWRow_AVX2
-    ARGBToRAWRow_SSSE3(row, dst_raw, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_raw += twidth * 3;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_NV12TORGB565ROW_AVX2)
-void NV12ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_uv,
-                          uint8* dst_rgb565, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    NV12ToARGBRow_AVX2(src_y, src_uv, row, twidth);
-    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_uv += twidth;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_NV21TORGB565ROW_AVX2)
-void NV21ToRGB565Row_AVX2(const uint8* src_y, const uint8* src_vu,
-                          uint8* dst_rgb565, int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    NV21ToARGBRow_AVX2(src_y, src_vu, row, twidth);
-    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
-    src_y += twidth;
-    src_vu += twidth;
-    dst_rgb565 += twidth * 2;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_YUY2TOARGBROW_AVX2)
-void YUY2ToARGBRow_AVX2(const uint8* src_yuy2, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
-    YUY2ToYRow_AVX2(src_yuy2, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, twidth);
-    src_yuy2 += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_UYVYTOARGBROW_AVX2)
-void UYVYToARGBRow_AVX2(const uint8* src_uyvy, uint8* dst_argb, int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);
-    UYVYToYRow_AVX2(src_uyvy, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, twidth);
-    src_uyvy += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif  // !defined(LIBYUV_DISABLE_X86)
 
 void ARGBPolynomialRow_C(const uint8* src_argb,
-                         uint8* dst_argb, const float* poly,
+                         uint8* dst_argb,
+                         const float* poly,
                          int width) {
   int i;
   for (i = 0; i < width; ++i) {
@@ -2867,6 +2385,311 @@ void ARGBCopyYToAlphaRow_C(const uint8* src, uint8* dst, int width) {
     dst[3] = src[0];
   }
 }
+
+// Maximum temporary width for wrappers to process at a time, in pixels.
+#define MAXTWIDTH 2048
+
+#if !(defined(_MSC_VER) && defined(_M_IX86)) && \
+    defined(HAS_I422TORGB565ROW_SSSE3)
+// row_win.cc has asm version, but GCC uses 2 step wrapper.
+void I422ToRGB565Row_SSSE3(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_rgb565,
+                           struct YuvConstants* yuvconstants,
+                           int width) {
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB1555ROW_SSSE3)
+void I422ToARGB1555Row_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb1555,
+                             struct YuvConstants* yuvconstants,
+                             int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToARGB1555Row_SSE2(row, dst_argb1555, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb1555 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB4444ROW_SSSE3)
+void I422ToARGB4444Row_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb4444,
+                             struct YuvConstants* yuvconstants,
+                             int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_SSSE3(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToARGB4444Row_SSE2(row, dst_argb4444, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb4444 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_NV12TORGB565ROW_SSSE3)
+void NV12ToRGB565Row_SSSE3(const uint8* src_y,
+                           const uint8* src_uv,
+                           uint8* dst_rgb565,
+                           struct YuvConstants* yuvconstants,
+                           int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV12ToARGBRow_SSSE3(src_y, src_uv, row, yuvconstants, twidth);
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_uv += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_YUY2TOARGBROW_SSSE3)
+void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
+                         uint8* dst_argb,
+                         struct YuvConstants* yuvconstants,
+                         int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    YUY2ToUV422Row_SSE2(src_yuy2, row_u, row_v, twidth);
+    YUY2ToYRow_SSE2(src_yuy2, row_y, twidth);
+    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
+    src_yuy2 += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_UYVYTOARGBROW_SSSE3)
+void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
+                         uint8* dst_argb,
+                         struct YuvConstants* yuvconstants,
+                         int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    UYVYToUV422Row_SSE2(src_uyvy, row_u, row_v, twidth);
+    UYVYToYRow_SSE2(src_uyvy, row_y, twidth);
+    I422ToARGBRow_SSSE3(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
+    src_uyvy += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
+}
+#endif  // !defined(LIBYUV_DISABLE_X86)
+
+#if defined(HAS_I422TORGB565ROW_AVX2)
+void I422ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          uint8* dst_rgb565,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB1555ROW_AVX2)
+void I422ToARGB1555Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb1555,
+                            struct YuvConstants* yuvconstants,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb1555 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TOARGB4444ROW_AVX2)
+void I422ToARGB4444Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_argb4444,
+                            struct YuvConstants* yuvconstants,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+    ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_argb4444 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TORGB24ROW_AVX2)
+void I422ToRGB24Row_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_rgb24,
+                            struct YuvConstants* yuvconstants,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+    // TODO(fbarchard): ARGBToRGB24Row_AVX2
+    ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_rgb24 += twidth * 3;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_I422TORAWROW_AVX2)
+void I422ToRAWRow_AVX2(const uint8* src_y,
+                            const uint8* src_u,
+                            const uint8* src_v,
+                            uint8* dst_raw,
+                            struct YuvConstants* yuvconstants,
+                            int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+    // TODO(fbarchard): ARGBToRAWRow_AVX2
+    ARGBToRAWRow_SSSE3(row, dst_raw, twidth);
+    src_y += twidth;
+    src_u += twidth / 2;
+    src_v += twidth / 2;
+    dst_raw += twidth * 3;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_NV12TORGB565ROW_AVX2)
+void NV12ToRGB565Row_AVX2(const uint8* src_y,
+                          const uint8* src_uv,
+                          uint8* dst_rgb565,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);
+    ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+    src_y += twidth;
+    src_uv += twidth;
+    dst_rgb565 += twidth * 2;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_YUY2TOARGBROW_AVX2)
+void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
+    YUY2ToYRow_AVX2(src_yuy2, row_y, twidth);
+    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
+    src_yuy2 += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
+}
+#endif
+
+#if defined(HAS_UYVYTOARGBROW_AVX2)
+void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  // Row buffers for intermediate YUV pixels.
+  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
+  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
+  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);
+    UYVYToYRow_AVX2(src_uyvy, row_y, twidth);
+    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
+    src_uyvy += twidth * 2;
+    dst_argb += twidth * 4;
+    width -= twidth;
+  }
+}
+#endif  // !defined(LIBYUV_DISABLE_X86)
 
 #ifdef __cplusplus
 }  // extern "C"
