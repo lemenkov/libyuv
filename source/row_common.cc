@@ -2607,48 +2607,6 @@ void NV12ToRGB565Row_AVX2(const uint8* src_y,
 }
 #endif
 
-#if defined(HAS_YUY2TOARGBROW_AVX2)
-void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
-                        uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
-                        int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    YUY2ToUV422Row_AVX2(src_yuy2, row_u, row_v, twidth);
-    YUY2ToYRow_AVX2(src_yuy2, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
-    src_yuy2 += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_UYVYTOARGBROW_AVX2)
-void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
-                        uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
-                        int width) {
-  // Row buffers for intermediate YUV pixels.
-  SIMD_ALIGNED32(uint8 row_y[MAXTWIDTH]);
-  SIMD_ALIGNED32(uint8 row_u[MAXTWIDTH / 2]);
-  SIMD_ALIGNED32(uint8 row_v[MAXTWIDTH / 2]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    UYVYToUV422Row_AVX2(src_uyvy, row_u, row_v, twidth);
-    UYVYToYRow_AVX2(src_uyvy, row_y, twidth);
-    I422ToARGBRow_AVX2(row_y, row_u, row_v, dst_argb, yuvconstants, twidth);
-    src_uyvy += twidth * 2;
-    dst_argb += twidth * 4;
-    width -= twidth;
-  }
-}
-#endif  // !defined(LIBYUV_DISABLE_X86)
-
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

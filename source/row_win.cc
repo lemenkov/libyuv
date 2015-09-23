@@ -243,6 +243,30 @@ static const uvec8 kShuffleMaskARGBToRAW_0 = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
 };
 
+// YUY2 shuf 16 Y to 32 Y.
+static const lvec8 kShuffleYUY2Y = {
+  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14,
+  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
+};
+
+// YUY2 shuf 8 UV to 16 UV.
+static const lvec8 kShuffleYUY2UV = {
+  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15,
+  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
+};
+
+// UYVY shuf 16 Y to 32 Y.
+static const lvec8 kShuffleUYVYY = {
+  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15,
+  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
+};
+
+// UYVY shuf 8 UV to 16 UV.
+static const lvec8 kShuffleUYVYUV = {
+  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14,
+  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
+};
+
 // Duplicates gray value 3 times and fills in alpha opaque.
 __declspec(naked)
 void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -1899,6 +1923,24 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        eax, [eax + 16]                                           \
   }
 
+// Read 8 YUY2 with 16 Y and upsample 8 UV to 16 UV.
+#define READYUY2_AVX2 __asm {                                                  \
+    __asm vmovdqu    ymm4, [eax]          /* YUY2 */                           \
+    __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleYUY2Y                     \
+    __asm vmovdqu    ymm0, [eax]          /* UV */                             \
+    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleYUY2UV                    \
+    __asm lea        eax, [eax + 32]                                           \
+  }
+
+// Read 8 UYVY with 16 Y and upsample 8 UV to 16 UV.
+#define READUYVY_AVX2 __asm {                                                  \
+    __asm vmovdqu    ymm4, [eax]          /* UYVY */                           \
+    __asm vpshufb    ymm4, ymm4, ymmword ptr kShuffleUYVYY                     \
+    __asm vmovdqu    ymm0, [eax]          /* UV */                             \
+    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleUYVYUV                    \
+    __asm lea        eax, [eax + 32]                                           \
+  }
+
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants) __asm {                                    \
     __asm vpmaddubsw ymm2, ymm0, ymmword ptr [YuvConstants + KUVTOR] /* R UV */\
@@ -2168,6 +2210,65 @@ void NV12ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_NV12TOARGBROW_AVX2
 
+// 16 pixels.
+// 8 YUY2 values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
+__declspec(naked)
+void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  __asm {
+    push       ebp
+    mov        eax, [esp + 4 + 4]   // yuy2
+    mov        edx, [esp + 4 + 8]   // argb
+    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ecx, [esp + 4 + 16]  // width
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READYUY2_AVX2
+    YUVTORGB_AVX2(ebp)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        ebp
+    vzeroupper
+    ret
+  }
+}
+
+// 16 pixels.
+// 8 UYVY values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
+__declspec(naked)
+void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  __asm {
+    push       ebp
+    mov        eax, [esp + 4 + 4]   // uyvy
+    mov        edx, [esp + 4 + 8]   // argb
+    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ecx, [esp + 4 + 16]  // width
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READUYVY_AVX2
+    YUVTORGB_AVX2(ebp)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        ebp
+    vzeroupper
+    ret
+  }
+}
+
+
 #ifdef HAS_I422TOBGRAROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 BGRA (64 bytes).
@@ -2338,17 +2439,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm lea        eax, [eax + 8]                                            \
   }
 
-// YUY2 shuf 8 Y to 16 Y.
-static const vec8 kShuffleYUY2Y = {
-  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
-};
-
-// YUY2 shuf 4 UV to 8 UV.
-static const vec8 kShuffleYUY2UV = {
-  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
-};
-
-// Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
+// Read 4 YUY2 with 8 Y and upsample 4 UV to 8 UV.
 #define READYUY2 __asm {                                                       \
     __asm movdqu     xmm4, [eax]          /* YUY2 */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleYUY2Y                           \
@@ -2357,24 +2448,13 @@ static const vec8 kShuffleYUY2UV = {
     __asm lea        eax, [eax + 16]                                           \
   }
 
-// UYVY shuf 8 Y to 16 Y.
-static const vec8 kShuffleUYVYY = {
-  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
-};
-
-// UYVY shuf 4 UV to 8 UV.
-static const vec8 kShuffleUYVYUV = {
-  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
-};
-
-// Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
+// Read 4 UYVY with 8 Y and upsample 4 UV to 8 UV.
 #define READUYVY __asm {                                                       \
     __asm movdqu     xmm4, [eax]          /* UYVY */                           \
     __asm pshufb     xmm4, xmmword ptr kShuffleUYVYY                           \
     __asm movdqu     xmm0, [eax]          /* UV */                             \
     __asm pshufb     xmm0, xmmword ptr kShuffleUYVYUV                          \
     __asm lea        eax, [eax + 16]                                           \
-    __asm lea        eax, [eax + 8]                                            \
   }
 
 // Convert 8 pixels: 8 UV and 8 Y.

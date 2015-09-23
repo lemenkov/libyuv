@@ -140,6 +140,30 @@ static uvec8 kShuffleMaskARGBToRGB24_0 = {
 static uvec8 kShuffleMaskARGBToRAW_0 = {
   2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
 };
+
+// YUY2 shuf 16 Y to 32 Y.
+static const lvec8 kShuffleYUY2Y = {
+  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14,
+  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
+};
+
+// YUY2 shuf 8 UV to 16 UV.
+static const lvec8 kShuffleYUY2UV = {
+  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15,
+  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
+};
+
+// UYVY shuf 16 Y to 32 Y.
+static const lvec8 kShuffleUYVYY = {
+  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15,
+  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
+};
+
+// UYVY shuf 8 UV to 16 UV.
+static const lvec8 kShuffleUYVYUV = {
+  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14,
+  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
+};
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
 #ifdef HAS_J400TOARGBROW_SSE2
@@ -1361,16 +1385,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
-// YUY2 shuf 8 Y to 16 Y.
-static const vec8 kShuffleYUY2Y = {
-  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14
-};
-
-// YUY2 shuf 4 UV to 8 UV.
-static const vec8 kShuffleYUY2UV = {
-  1, 3, 1, 3, 5, 7, 5, 7, 9, 11, 9, 11, 13, 15, 13, 15
-};
-
 // Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
 #define READYUY2                                                               \
     "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm4                \n"            \
@@ -1378,16 +1392,6 @@ static const vec8 kShuffleYUY2UV = {
     "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm0                \n"            \
     "pshufb     %[kShuffleYUY2UV], %%xmm0                       \n"            \
     "lea        " MEMLEA(0x10, [yuy2_buf]) ",%[yuy2_buf]        \n"
-
-// UYVY shuf 8 Y to 16 Y.
-static const vec8 kShuffleUYVYY = {
-  1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11, 11, 13, 13, 15, 15
-};
-
-// UYVY shuf 4 UV to 8 UV.
-static const vec8 kShuffleUYVYUV = {
-  0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
-};
 
 // Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
 #define READUYVY                                                               \
@@ -1422,7 +1426,7 @@ static const vec8 kShuffleUYVYUV = {
     "packuswb   %%xmm1,%%xmm1                                   \n"            \
     "packuswb   %%xmm2,%%xmm2                                   \n"
 
-// Store 8 ARGB values. Assumes XMM5 is zero.
+// Store 8 ARGB values. Assumes XMM5 is set.
 #define STOREARGB                                                              \
     "punpcklbw  %%xmm1,%%xmm0                                    \n"           \
     "punpcklbw  %%xmm5,%%xmm2                                    \n"           \
@@ -1433,7 +1437,7 @@ static const vec8 kShuffleUYVYUV = {
     "movdqu     %%xmm1," MEMACCESS2(0x10, [dst_argb]) "          \n"           \
     "lea        " MEMLEA(0x20, [dst_argb]) ", %[dst_argb]        \n"
 
-// Store 8 BGRA values. Assumes XMM5 is zero.
+// Store 8 BGRA values.
 #define STOREBGRA                                                              \
     "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
     "punpcklbw %%xmm0,%%xmm1                                     \n"           \
@@ -1445,7 +1449,7 @@ static const vec8 kShuffleUYVYUV = {
     "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_bgra]) "           \n"           \
     "lea       " MEMLEA(0x20, [dst_bgra]) ", %[dst_bgra]         \n"
 
-// Store 8 ABGR values. Assumes XMM5 is zero.
+// Store 8 ABGR values. Assumes XMM5 is set.
 #define STOREABGR                                                              \
     "punpcklbw %%xmm1,%%xmm2                                     \n"           \
     "punpcklbw %%xmm5,%%xmm0                                     \n"           \
@@ -1456,7 +1460,7 @@ static const vec8 kShuffleUYVYUV = {
     "movdqu    %%xmm1," MEMACCESS2(0x10, [dst_abgr]) "           \n"           \
     "lea       " MEMLEA(0x20, [dst_abgr]) ", %[dst_abgr]         \n"
 
-// Store 8 RGBA values. Assumes XMM5 is zero.
+// Store 8 RGBA values. Assumes XMM5 is set.
 #define STORERGBA                                                              \
     "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
     "punpcklbw %%xmm2,%%xmm1                                     \n"           \
@@ -1522,7 +1526,6 @@ void OMITFP I444ToABGRRow_SSSE3(const uint8* y_buf,
   );
 }
 
-// TODO(fbarchard): Consider putting masks into constants.
 void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
                                  const uint8* u_buf,
                                  const uint8* v_buf,
@@ -1829,7 +1832,27 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]                   \n"        \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
-    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"
+    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
+    "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm4                      \n"        \
+    "vpermq      $0xd8,%%ymm4,%%ymm4                                \n"        \
+    "vpunpcklbw  %%ymm4,%%ymm4,%%ymm4                               \n"        \
+    "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"
+
+// Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
+#define READYUY2_AVX2                                                          \
+    "vmovdqu    " MEMACCESS([yuy2_buf]) ",%%ymm4                    \n"        \
+    "vpshufb    %[kShuffleYUY2Y], %%ymm4, %%ymm4                    \n"        \
+    "vmovdqu    " MEMACCESS([yuy2_buf]) ",%%ymm0                    \n"        \
+    "vpshufb    %[kShuffleYUY2UV], %%ymm0, %%ymm0                   \n"        \
+    "lea        " MEMLEA(0x20, [yuy2_buf]) ",%[yuy2_buf]            \n"
+
+// Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
+#define READUYVY_AVX2                                                          \
+    "vmovdqu     " MEMACCESS([uyvy_buf]) ",%%ymm4                   \n"        \
+    "vpshufb     %[kShuffleUYVYY], %%ymm4, %%ymm4                   \n"        \
+    "vmovdqu     " MEMACCESS([uyvy_buf]) ",%%ymm0                   \n"        \
+    "vpshufb     %[kShuffleUYVYUV], %%ymm0, %%ymm0                  \n"        \
+    "lea        " MEMLEA(0x20, [uyvy_buf]) ",%[uyvy_buf]            \n"
 
 // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_AVX2(YuvConstants)                                            \
@@ -1842,20 +1865,28 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpsubw      %%ymm1,%%ymm3,%%ymm1                               \n"        \
     "vmovdqu     " MEMACCESS2(96, [YuvConstants]) ",%%ymm3          \n"        \
     "vpsubw      %%ymm0,%%ymm3,%%ymm0                               \n"        \
-    "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm3                      \n"        \
-    "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"        \
-    "vpermq      $0xd8,%%ymm3,%%ymm3                                \n"        \
-    "vpunpcklbw  %%ymm3,%%ymm3,%%ymm3                               \n"        \
-    "vpmulhuw    " MEMACCESS2(192, [YuvConstants]) ",%%ymm3,%%ymm3  \n"        \
-    "vpaddsw     %%ymm3,%%ymm0,%%ymm0           \n"                            \
-    "vpaddsw     %%ymm3,%%ymm1,%%ymm1           \n"                            \
-    "vpaddsw     %%ymm3,%%ymm2,%%ymm2           \n"                            \
-    "vpsraw      $0x6,%%ymm0,%%ymm0             \n"                            \
-    "vpsraw      $0x6,%%ymm1,%%ymm1             \n"                            \
-    "vpsraw      $0x6,%%ymm2,%%ymm2             \n"                            \
-    "vpackuswb   %%ymm0,%%ymm0,%%ymm0           \n"                            \
-    "vpackuswb   %%ymm1,%%ymm1,%%ymm1           \n"                            \
-    "vpackuswb   %%ymm2,%%ymm2,%%ymm2           \n"
+    "vpmulhuw    " MEMACCESS2(192, [YuvConstants]) ",%%ymm4,%%ymm4  \n"        \
+    "vpaddsw     %%ymm4,%%ymm0,%%ymm0                               \n"        \
+    "vpaddsw     %%ymm4,%%ymm1,%%ymm1                               \n"        \
+    "vpaddsw     %%ymm4,%%ymm2,%%ymm2                               \n"        \
+    "vpsraw      $0x6,%%ymm0,%%ymm0                                 \n"        \
+    "vpsraw      $0x6,%%ymm1,%%ymm1                                 \n"        \
+    "vpsraw      $0x6,%%ymm2,%%ymm2                                 \n"        \
+    "vpackuswb   %%ymm0,%%ymm0,%%ymm0                               \n"        \
+    "vpackuswb   %%ymm1,%%ymm1,%%ymm1                               \n"        \
+    "vpackuswb   %%ymm2,%%ymm2,%%ymm2                               \n"
+
+// Store 16 ARGB values. Assumes XMM5 is set.
+#define STOREARGB_AVX2                                                         \
+    "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
+    "vpunpcklbw %%ymm5,%%ymm2,%%ymm2                                \n"        \
+    "vpermq     $0xd8,%%ymm2,%%ymm2                                 \n"        \
+    "vpunpcklwd %%ymm2,%%ymm0,%%ymm1                                \n"        \
+    "vpunpckhwd %%ymm2,%%ymm0,%%ymm0                                \n"        \
+    "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "                    \n"        \
+    "vmovdqu    %%ymm0," MEMACCESS2(0x20,[dst_argb]) "              \n"        \
+    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb]              \n"
 
 #if defined(HAS_I422TOBGRAROW_AVX2)
 // 16 pixels
@@ -1916,18 +1947,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
   "1:                                          \n"
     READYUV422_AVX2
     YUVTORGB_AVX2(yuvconstants)
-
-    // Step 3: Weave into ARGB
-    "vpunpcklbw %%ymm1,%%ymm0,%%ymm0           \n"  // BG
-    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
-    "vpunpcklbw %%ymm5,%%ymm2,%%ymm2           \n"  // RA
-    "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
-    "vpunpcklwd %%ymm2,%%ymm0,%%ymm1           \n"  // BGRA first 8 pixels
-    "vpunpckhwd %%ymm2,%%ymm0,%%ymm0           \n"  // BGRA next 8 pixels
-
-    "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "\n"
-    "vmovdqu    %%ymm0," MEMACCESS2(0x20,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb] \n"
+    STOREARGB_AVX2
     "sub       $0x10,%[width]                  \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
@@ -2026,6 +2046,66 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422TORGBAROW_AVX2
+
+#if defined(HAS_YUY2TOARGBROW_AVX2)
+// 16 pixels.
+// 8 YUY2 values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
+void OMITFP YUY2ToARGBRow_AVX2(const uint8* yuy2_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+
+  asm volatile (
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUY2_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [yuy2_buf]"+r"(yuy2_buf),    // %[yuy2_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleYUY2Y]"m"(kShuffleYUY2Y),
+    [kShuffleYUY2UV]"m"(kShuffleYUY2UV)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_YUY2TOARGBROW_AVX2
+
+#if defined(HAS_UYVYTOARGBROW_AVX2)
+// 16 pixels.
+// 8 UYVY values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
+void OMITFP UYVYToARGBRow_AVX2(const uint8* uyvy_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+
+  asm volatile (
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READUYVY_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [uyvy_buf]"+r"(uyvy_buf),    // %[uyvy_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleUYVYY]"m"(kShuffleUYVYY),
+    [kShuffleUYVYUV]"m"(kShuffleUYVYUV)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_UYVYTOARGBROW_AVX2
 
 #ifdef HAS_I400TOARGBROW_SSE2
 void I400ToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
