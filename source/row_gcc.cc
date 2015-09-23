@@ -1827,18 +1827,29 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2                                                        \
-    "vmovq       " MEMACCESS([u_buf]) ",%%xmm0                      \n"        \
+    "vmovq      " MEMACCESS([u_buf]) ",%%xmm0                       \n"        \
     MEMOPREG(vmovq, 0x00, [u_buf], [v_buf], 1, xmm1)                           \
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]                   \n"        \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu     " MEMACCESS([y_buf]) ",%%xmm4                      \n"        \
-    "vpermq      $0xd8,%%ymm4,%%ymm4                                \n"        \
-    "vpunpcklbw  %%ymm4,%%ymm4,%%ymm4                               \n"        \
-    "lea         " MEMLEA(0x10, [y_buf]) ",%[y_buf]                 \n"
+    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
+    "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"
 
-// Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
+// Read 8 UV from NV12, upsample to 16 UV.
+#define READNV12_AVX2                                                          \
+    "vmovdqu    " MEMACCESS([uv_buf]) ",%%xmm0                      \n"        \
+    "lea        " MEMLEA(0x16, [uv_buf]) ",%[uv_buf]                \n"        \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
+    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
+    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
+    "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"
+
+// Read 8 YUY2 with 16 Y and upsample 8 UV to 16 UV.
 #define READYUY2_AVX2                                                          \
     "vmovdqu    " MEMACCESS([yuy2_buf]) ",%%ymm4                    \n"        \
     "vpshufb    %[kShuffleYUY2Y], %%ymm4, %%ymm4                    \n"        \
@@ -1846,7 +1857,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpshufb    %[kShuffleYUY2UV], %%ymm0, %%ymm0                   \n"        \
     "lea        " MEMLEA(0x20, [yuy2_buf]) ",%[yuy2_buf]            \n"
 
-// Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
+// Read 8 UYVY with 16 Y and upsample 8 UV to 16 UV.
 #define READUYVY_AVX2                                                          \
     "vmovdqu     " MEMACCESS([uyvy_buf]) ",%%ymm4                   \n"        \
     "vpshufb     %[kShuffleUYVYY], %%ymm4, %%ymm4                   \n"        \
@@ -1855,17 +1866,17 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "lea        " MEMLEA(0x20, [uyvy_buf]) ",%[uyvy_buf]            \n"
 
 // Convert 16 pixels: 16 UV and 16 Y.
-#define YUVTORGB_AVX2(YuvConstants)                                            \
-    "vpmaddubsw  " MEMACCESS2(64, [YuvConstants]) ",%%ymm0,%%ymm2   \n"        \
-    "vpmaddubsw  " MEMACCESS2(32, [YuvConstants]) ",%%ymm0,%%ymm1   \n"        \
-    "vpmaddubsw  " MEMACCESS([YuvConstants]) ",%%ymm0,%%ymm0        \n"        \
-    "vmovdqu     " MEMACCESS2(160, [YuvConstants]) ",%%ymm3         \n"        \
+#define YUVTORGB_AVX2(yuvconstants)                                            \
+    "vpmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%ymm0,%%ymm2   \n"        \
+    "vpmaddubsw  " MEMACCESS2(32, [yuvconstants]) ",%%ymm0,%%ymm1   \n"        \
+    "vpmaddubsw  " MEMACCESS([yuvconstants]) ",%%ymm0,%%ymm0        \n"        \
+    "vmovdqu     " MEMACCESS2(160, [yuvconstants]) ",%%ymm3         \n"        \
     "vpsubw      %%ymm2,%%ymm3,%%ymm2                               \n"        \
-    "vmovdqu     " MEMACCESS2(128, [YuvConstants]) ",%%ymm3         \n"        \
+    "vmovdqu     " MEMACCESS2(128, [yuvconstants]) ",%%ymm3         \n"        \
     "vpsubw      %%ymm1,%%ymm3,%%ymm1                               \n"        \
-    "vmovdqu     " MEMACCESS2(96, [YuvConstants]) ",%%ymm3          \n"        \
+    "vmovdqu     " MEMACCESS2(96, [yuvconstants]) ",%%ymm3          \n"        \
     "vpsubw      %%ymm0,%%ymm3,%%ymm0                               \n"        \
-    "vpmulhuw    " MEMACCESS2(192, [YuvConstants]) ",%%ymm4,%%ymm4  \n"        \
+    "vpmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%ymm4,%%ymm4  \n"        \
     "vpaddsw     %%ymm4,%%ymm0,%%ymm0                               \n"        \
     "vpaddsw     %%ymm4,%%ymm1,%%ymm1                               \n"        \
     "vpaddsw     %%ymm4,%%ymm2,%%ymm2                               \n"        \
@@ -2046,6 +2057,37 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422TORGBAROW_AVX2
+
+#if defined(HAS_NV12TOARGBROW_AVX2)
+// 16 pixels.
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
+                               const uint8* uv_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+
+  asm volatile (
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READNV12_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [uv_buf]"+r"(uv_buf),    // %[uv_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_YUY2TOARGBROW_AVX2
+
 
 #if defined(HAS_YUY2TOARGBROW_AVX2)
 // 16 pixels.

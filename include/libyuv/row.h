@@ -205,9 +205,8 @@ extern "C" {
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_I444TOABGRROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
-#define HAS_NV12TOARGBROW_AVX2
-#define HAS_NV12TORGB565ROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
+#define HAS_NV12TORGB565ROW_AVX2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -247,6 +246,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_NV12TOARGBROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
