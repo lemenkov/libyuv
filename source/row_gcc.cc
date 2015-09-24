@@ -1841,7 +1841,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2                                                          \
     "vmovdqu    " MEMACCESS([uv_buf]) ",%%xmm0                      \n"        \
-    "lea        " MEMLEA(0x16, [uv_buf]) ",%[uv_buf]                \n"        \
+    "lea        " MEMLEA(0x10, [uv_buf]) ",%[uv_buf]                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
     "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
