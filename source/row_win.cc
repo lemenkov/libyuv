@@ -1896,6 +1896,23 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        eax, [eax + 16]                                           \
   }
 
+// Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
+#define READYUVA422_AVX2 __asm {                                               \
+    __asm vmovq      xmm0, qword ptr [esi]        /* U */                      \
+    __asm vmovq      xmm1, qword ptr [esi + edi]  /* V */                      \
+    __asm lea        esi,  [esi + 8]                                           \
+    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
+    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpermq     ymm4, ymm4, 0xd8                                          \
+    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
+    __asm lea        eax, [eax + 16]                                           \
+    __asm vmovdqu    xmm5, [ebp]                  /* A */                      \
+    __asm vpermq     ymm5, ymm5, 0xd8                                          \
+    __asm lea        ebp, [ebp + 16]                                           \
+  }
+
 // Read 4 UV from 411, upsample to 16 UV.
 #define READYUV411_AVX2 __asm {                                                \
     __asm vmovd      xmm0, dword ptr [esi]        /* U */                      \
@@ -2056,6 +2073,92 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
   }
 }
 #endif  // HAS_I422TOARGBROW_AVX2
+
+#ifdef HAS_I422ALPHATOARGBROW_AVX2
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ARGB.
+__declspec(naked)
+void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_argb,
+                             struct YuvConstants* yuvconstants,
+                             int width) {
+  __asm {
+    push       esi
+    push       edi
+    push       ebx
+    push       ebp
+    mov        eax, [esp + 16 + 4]   // Y
+    mov        esi, [esp + 16 + 8]   // U
+    mov        edi, [esp + 16 + 12]  // V
+    mov        ebp, [esp + 16 + 16]  // A
+    mov        edx, [esp + 16 + 20]  // argb
+    mov        ebx, [esp + 16 + 24]  // yuvconstants
+    mov        ecx, [esp + 16 + 28]  // width
+    sub        edi, esi
+
+ convertloop:
+    READYUVA422_AVX2
+    YUVTORGB_AVX2(ebx)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        ebp
+    pop        ebx
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_I422ALPHATOARGBROW_AVX2
+
+#ifdef HAS_I422ALPHATOABGRROW_AVX2
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ABGR.
+__declspec(naked)
+void I422AlphaToABGRRow_AVX2(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_abgr,
+                             struct YuvConstants* yuvconstants,
+                             int width) {
+  __asm {
+    push       esi
+    push       edi
+    push       ebx
+    push       ebp
+    mov        eax, [esp + 16 + 4]   // Y
+    mov        esi, [esp + 16 + 8]   // U
+    mov        edi, [esp + 16 + 12]  // V
+    mov        ebp, [esp + 16 + 16]  // A
+    mov        edx, [esp + 16 + 20]  // abgr
+    mov        ebx, [esp + 16 + 24]  // yuvconstants
+    mov        ecx, [esp + 16 + 28]  // width
+    sub        edi, esi
+
+ convertloop:
+    READYUVA422_AVX2
+    YUVTORGB_AVX2(ebx)
+    STOREABGR_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        ebp
+    pop        ebx
+    pop        edi
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_I422ALPHATOABGRROW_AVX2
 
 #ifdef HAS_I444TOARGBROW_AVX2
 // 16 pixels
@@ -2848,7 +2951,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y and 8 A producing 8 ARGB (32 bytes).
+// 4 UV values upsampled to 8 UV, mixed with 8 Y and 8 A producing 8 ARGB.
 __declspec(naked)
 void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                               const uint8* u_buf,
@@ -2870,7 +2973,6 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     mov        ebx, [esp + 16 + 24]  // yuvconstants
     mov        ecx, [esp + 16 + 28]  // width
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUVA422
@@ -2889,7 +2991,7 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
 }
 
 // 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y and 8 A producing 8 ABGR (32 bytes).
+// 4 UV values upsampled to 8 UV, mixed with 8 Y and 8 A producing 8 ABGR.
 __declspec(naked)
 void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
                               const uint8* u_buf,
@@ -2911,7 +3013,6 @@ void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
     mov        ebx, [esp + 16 + 24]  // yuvconstants
     mov        ecx, [esp + 16 + 28]  // width
     sub        edi, esi
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUVA422

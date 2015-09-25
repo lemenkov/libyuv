@@ -48,6 +48,10 @@ extern "C" {
 ANY41C(I422AlphaToARGBRow_Any_SSSE3, I422AlphaToARGBRow_SSSE3, 1, 0, 4, 7)
 ANY41C(I422AlphaToABGRRow_Any_SSSE3, I422AlphaToABGRRow_SSSE3, 1, 0, 4, 7)
 #endif
+#ifdef HAS_I422ALPHATOARGBROW_AVX2
+ANY41C(I422AlphaToARGBRow_Any_AVX2, I422AlphaToARGBRow_AVX2, 1, 0, 4, 7)
+ANY41C(I422AlphaToABGRRow_Any_AVX2, I422AlphaToABGRRow_AVX2, 1, 0, 4, 7)
+#endif
 #undef ANY41C
 
 // Any 3 planes to 1.

@@ -1364,6 +1364,19 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
+// Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
+#define READYUVA422                                                            \
+    "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
+    MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    "lea        " MEMLEA(0x4, [u_buf]) ",%[u_buf]               \n"            \
+    "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"            \
+    "movq       " MEMACCESS([a_buf]) ",%%xmm5                   \n"            \
+    "lea        " MEMLEA(0x8, [a_buf]) ",%[a_buf]               \n"
+
 // Read 2 UV from 411, upsample to 8 UV
 #define READYUV411                                                             \
     "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
@@ -1426,7 +1439,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "packuswb   %%xmm1,%%xmm1                                   \n"            \
     "packuswb   %%xmm2,%%xmm2                                   \n"
 
-// Store 8 ARGB values. Assumes XMM5 is set.
+// Store 8 ARGB values.
 #define STOREARGB                                                              \
     "punpcklbw  %%xmm1,%%xmm0                                    \n"           \
     "punpcklbw  %%xmm5,%%xmm2                                    \n"           \
@@ -1449,7 +1462,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_bgra]) "           \n"           \
     "lea       " MEMLEA(0x20, [dst_bgra]) ", %[dst_bgra]         \n"
 
-// Store 8 ABGR values. Assumes XMM5 is set.
+// Store 8 ABGR values.
 #define STOREABGR                                                              \
     "punpcklbw %%xmm1,%%xmm2                                     \n"           \
     "punpcklbw %%xmm5,%%xmm0                                     \n"           \
@@ -1460,7 +1473,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movdqu    %%xmm1," MEMACCESS2(0x10, [dst_abgr]) "           \n"           \
     "lea       " MEMLEA(0x20, [dst_abgr]) ", %[dst_abgr]         \n"
 
-// Store 8 RGBA values. Assumes XMM5 is set.
+// Store 8 RGBA values.
 #define STORERGBA                                                              \
     "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
     "punpcklbw %%xmm2,%%xmm1                                     \n"           \
@@ -1636,6 +1649,62 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     const uint8* a_buf,
+                                     uint8* dst_argb,
+                                     struct YuvConstants* yuvconstants,
+                                     int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUVA422
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+void OMITFP I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
+                                     const uint8* u_buf,
+                                     const uint8* v_buf,
+                                     const uint8* a_buf,
+                                     uint8* dst_abgr,
+                                     struct YuvConstants* yuvconstants,
+                                     int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUVA422
+    YUVTORGB(yuvconstants)
+    STOREABGR
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
@@ -1838,6 +1907,22 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"
 
+// Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
+#define READYUVA422_AVX2                                                       \
+    "vmovq      " MEMACCESS([u_buf]) ",%%xmm0                       \n"        \
+    MEMOPREG(vmovq, 0x00, [u_buf], [v_buf], 1, xmm1)                           \
+    "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]                   \n"        \
+    "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
+    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
+    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
+    "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"        \
+    "vmovdqu    " MEMACCESS([a_buf]) ",%%xmm5                       \n"        \
+    "vpermq     $0xd8,%%ymm5,%%ymm5                                 \n"        \
+    "lea        " MEMLEA(0x10, [a_buf]) ",%[a_buf]                  \n"
+
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2                                                          \
     "vmovdqu    " MEMACCESS([uv_buf]) ",%%xmm0                      \n"        \
@@ -1887,7 +1972,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpackuswb   %%ymm1,%%ymm1,%%ymm1                               \n"        \
     "vpackuswb   %%ymm2,%%ymm2,%%ymm2                               \n"
 
-// Store 16 ARGB values. Assumes XMM5 is set.
+// Store 16 ARGB values.
 #define STOREARGB_AVX2                                                         \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
@@ -1898,6 +1983,18 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "                    \n"        \
     "vmovdqu    %%ymm0," MEMACCESS2(0x20,[dst_argb]) "              \n"        \
     "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb]              \n"
+
+// Store 16 ABGR values.
+#define STOREABGR_AVX2                                                         \
+    "vpunpcklbw %%ymm1,%%ymm2,%%ymm1                                \n"        \
+    "vpermq     $0xd8,%%ymm1,%%ymm1                                 \n"        \
+    "vpunpcklbw %%ymm5,%%ymm0,%%ymm2                                \n"        \
+    "vpermq     $0xd8,%%ymm2,%%ymm2                                 \n"        \
+    "vpunpcklwd %%ymm2,%%ymm1,%%ymm0                                \n"        \
+    "vpunpckhwd %%ymm2,%%ymm1,%%ymm1                                \n"        \
+    "vmovdqu    %%ymm0," MEMACCESS([dst_abgr]) "                    \n"        \
+    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_abgr]) "              \n"        \
+    "lea       " MEMLEA(0x40,[dst_abgr]) ",%[dst_abgr]              \n"
 
 #if defined(HAS_I422TOBGRAROW_AVX2)
 // 16 pixels
@@ -1974,13 +2071,79 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TOARGBROW_AVX2
 
+#if defined(HAS_I422ALPHATOARGBROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ARGB.
+void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               const uint8* a_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUVA422_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I422ALPHATOARGBROW_AVX2
+
+#if defined(HAS_I422ALPHATOABGRROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ABGR.
+void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
+                               const uint8* u_buf,
+                               const uint8* v_buf,
+                               const uint8* a_buf,
+                               uint8* dst_abgr,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    "sub       %[u_buf],%[v_buf]               \n"
+    LABELALIGN
+  "1:                                          \n"
+    READYUVA422_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREABGR_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [a_buf]"+r"(a_buf),    // %[a_buf]
+    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I422ALPHATOABGRROW_AVX2
+
 #if defined(HAS_I422TOABGRROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ABGR (64 bytes).
 void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
-                               uint8* dst_argb,
+                               uint8* dst_abgr,
                                struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
@@ -1990,24 +2153,14 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
   "1:                                          \n"
     READYUV422_AVX2
     YUVTORGB_AVX2(yuvconstants)
-
-    // Step 3: Weave into ABGR
-    "vpunpcklbw %%ymm1,%%ymm2,%%ymm1           \n"  // RG
-    "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
-    "vpunpcklbw %%ymm5,%%ymm0,%%ymm2           \n"  // BA
-    "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
-    "vpunpcklwd %%ymm2,%%ymm1,%%ymm0           \n"  // RGBA first 8 pixels
-    "vpunpckhwd %%ymm2,%%ymm1,%%ymm1           \n"  // RGBA next 8 pixels
-    "vmovdqu    %%ymm0," MEMACCESS([dst_argb]) "\n"
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_argb]) "\n"
-    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb] \n"
+    STOREABGR_AVX2
     "sub       $0x10,%[width]                  \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
-    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14

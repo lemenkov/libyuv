@@ -147,6 +147,8 @@ extern "C" {
 #define HAS_YUY2TOYROW_SSE2
 #define HAS_I444TOARGBROW_SSSE3
 #define HAS_I444TOABGRROW_SSSE3
+#define HAS_I422ALPHATOARGBROW_SSSE3
+#define HAS_I422ALPHATOABGRROW_SSSE3
 
 // Effects:
 #define HAS_ARGBADDROW_SSE2
@@ -186,14 +188,6 @@ extern "C" {
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
 #endif
-
-
-// The following are available on 32 bit x86 Visual C and clangcl.
-// TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined (_M_IX86) 
-#define HAS_I422ALPHATOARGBROW_SSSE3
-#define HAS_I422ALPHATOABGRROW_SSSE3
-#endif    
 
 // The following are available for AVX2 Visual C and clangcl 32 bit:
 // TODO(fbarchard): Port to gcc.
@@ -255,6 +249,8 @@ extern "C" {
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
+#define HAS_I422ALPHATOARGBROW_AVX2
+#define HAS_I422ALPHATOABGRROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -1250,6 +1246,20 @@ void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
                               uint8* dst_argb,
                               struct YuvConstants* yuvconstants,
                               int width);
+void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_argb,
+                             struct YuvConstants* yuvconstants,
+                             int width);
+void I422AlphaToABGRRow_AVX2(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_argb,
+                             struct YuvConstants* yuvconstants,
+                             int width);
 void I422ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1456,6 +1466,20 @@ void I422AlphaToABGRRow_Any_SSSE3(const uint8* y_buf,
                                   uint8* dst_abgr,
                                   struct YuvConstants* yuvconstants,
                                   int width);
+void I422AlphaToARGBRow_Any_AVX2(const uint8* y_buf,
+                                 const uint8* u_buf,
+                                 const uint8* v_buf,
+                                 const uint8* a_buf,
+                                 uint8* dst_argb,
+                                 struct YuvConstants* yuvconstants,
+                                 int width);
+void I422AlphaToABGRRow_Any_AVX2(const uint8* y_buf,
+                                 const uint8* u_buf,
+                                 const uint8* v_buf,
+                                 const uint8* a_buf,
+                                 uint8* dst_abgr,
+                                 struct YuvConstants* yuvconstants,
+                                 int width);
 void I411ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
