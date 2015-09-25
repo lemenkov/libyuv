@@ -336,16 +336,15 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
                     const uint8* src_v, int src_stride_v,
                     const uint8* src_a, int src_stride_a,
                     uint8* dst_argb, int dst_stride_argb,
-                    int width, int height) {
+                    int width, int height, int attenuate) {
   int y;
-  void (*I422ToARGBRow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
-                        int width) = I422ToARGBRow_C;
-  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
-      ARGBCopyYToAlphaRow_C;
+  void (*I422AlphaToARGBRow)(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_argb,
+                             struct YuvConstants* yuvconstants,
+                             int width) = I422AlphaToARGBRow_C;
   void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
                            int width) = ARGBAttenuateRow_C;
   if (!src_y || !src_u || !src_v || !dst_argb ||
@@ -358,53 +357,37 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
-#if defined(HAS_I422TOARGBROW_SSSE3)
+#if defined(HAS_I422ALPHATOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_SSSE3;
+      I422AlphaToARGBRow = I422AlphaToARGBRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_I422TOARGBROW_AVX2)
+#if defined(HAS_I422ALPHATOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    I422ToARGBRow = I422ToARGBRow_Any_AVX2;
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      I422ToARGBRow = I422ToARGBRow_AVX2;
+      I422AlphaToARGBRow = I422AlphaToARGBRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_I422TOARGBROW_NEON)
+#if defined(HAS_I422ALPHATOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    I422ToARGBRow = I422ToARGBRow_Any_NEON;
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_NEON;
+      I422AlphaToARGBRow = I422AlphaToARGBRow_NEON;
     }
   }
 #endif
-#if defined(HAS_I422TOARGBROW_MIPS_DSPR2)
+#if defined(HAS_I422ALPHATOARGBROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
       IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
       IS_ALIGNED(dst_argb, 4) && IS_ALIGNED(dst_stride_argb, 4)) {
-    I422ToARGBRow = I422ToARGBRow_MIPS_DSPR2;
-  }
-#endif
-#if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBCOPYYTOALPHAROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
-    }
+    I422AlphaToARGBRow = I422AlphaToARGBRow_MIPS_DSPR2;
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_SSE2)
@@ -441,9 +424,10 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToARGBRow(src_y, src_u, src_v, dst_argb, &kYuvConstants, width);
-    ARGBCopyYToAlphaRow(src_a, dst_argb, width);
-    ARGBAttenuateRow(dst_argb, dst_argb, width);
+    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, &kYuvConstants, width);
+    if (attenuate) {
+      ARGBAttenuateRow(dst_argb, dst_argb, width);
+    }
     dst_argb += dst_stride_argb;
     src_a += src_stride_a;
     src_y += src_stride_y;
@@ -454,24 +438,24 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
-// Convert I420 with Alpha to preattenuated ABGR.
+
+// Convert I420 with Alpha to preattenuated ARGB.
 LIBYUV_API
 int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
                     const uint8* src_u, int src_stride_u,
                     const uint8* src_v, int src_stride_v,
                     const uint8* src_a, int src_stride_a,
                     uint8* dst_abgr, int dst_stride_abgr,
-                    int width, int height) {
+                    int width, int height, int attenuate) {
   int y;
-  void (*I422ToABGRRow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
-                        int width) = I422ToABGRRow_C;
-  void (*ARGBCopyYToAlphaRow)(const uint8* src_y, uint8* dst_argb, int width) =
-      ARGBCopyYToAlphaRow_C;
-  void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
+  void (*I422AlphaToABGRRow)(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_abgr,
+                             struct YuvConstants* yuvconstants,
+                             int width) = I422AlphaToABGRRow_C;
+  void (*ARGBAttenuateRow)(const uint8* src_abgr, uint8* dst_abgr,
                            int width) = ARGBAttenuateRow_C;
   if (!src_y || !src_u || !src_v || !dst_abgr ||
       width <= 0 || height == 0) {
@@ -483,53 +467,37 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
     dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
     dst_stride_abgr = -dst_stride_abgr;
   }
-#if defined(HAS_I422TOABGRROW_SSSE3)
+#if defined(HAS_I422ALPHATOABGRROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    I422ToABGRRow = I422ToABGRRow_Any_SSSE3;
+    I422AlphaToABGRRow = I422AlphaToABGRRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I422ToABGRRow = I422ToABGRRow_SSSE3;
+      I422AlphaToABGRRow = I422AlphaToABGRRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_I422TOABGRROW_AVX2)
+#if defined(HAS_I422ALPHATOABGRROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    I422ToABGRRow = I422ToABGRRow_Any_AVX2;
+    I422AlphaToABGRRow = I422AlphaToABGRRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      I422ToABGRRow = I422ToABGRRow_AVX2;
+      I422AlphaToABGRRow = I422AlphaToABGRRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_I422TOABGRROW_NEON)
+#if defined(HAS_I422ALPHATOABGRROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    I422ToABGRRow = I422ToABGRRow_Any_NEON;
+    I422AlphaToABGRRow = I422AlphaToABGRRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      I422ToABGRRow = I422ToABGRRow_NEON;
+      I422AlphaToABGRRow = I422AlphaToABGRRow_NEON;
     }
   }
 #endif
-#if defined(HAS_I422TOABGRROW_MIPS_DSPR2)
+#if defined(HAS_I422ALPHATOABGRROW_MIPS_DSPR2)
   if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
       IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
       IS_ALIGNED(dst_abgr, 4) && IS_ALIGNED(dst_stride_abgr, 4)) {
-    I422ToABGRRow = I422ToABGRRow_MIPS_DSPR2;
-  }
-#endif
-#if defined(HAS_ARGBCOPYYTOALPHAROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_SSE2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_ARGBCOPYYTOALPHAROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBCopyYToAlphaRow = ARGBCopyYToAlphaRow_AVX2;
-    }
+    I422AlphaToABGRRow = I422AlphaToABGRRow_MIPS_DSPR2;
   }
 #endif
 #if defined(HAS_ARGBATTENUATEROW_SSE2)
@@ -566,9 +534,10 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToABGRRow(src_y, src_u, src_v, dst_abgr, &kYuvConstants, width);
-    ARGBCopyYToAlphaRow(src_a, dst_abgr, width);
-    ARGBAttenuateRow(dst_abgr, dst_abgr, width);
+    I422AlphaToABGRRow(src_y, src_u, src_v, src_a, dst_abgr, &kYuvConstants, width);
+    if (attenuate) {
+      ARGBAttenuateRow(dst_abgr, dst_abgr, width);
+    }
     dst_abgr += dst_stride_abgr;
     src_a += src_stride_a;
     src_y += src_stride_y;

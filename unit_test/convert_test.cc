@@ -518,7 +518,7 @@ TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 1, 0, ARGB, 4)
 TESTPLANARTOB(J420, 2, 2, J400, 1, 1, 1, 0, ARGB, 4)
 
 #define TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
-                       YALIGN, W1280, DIFF, N, NEG, OFF)                       \
+                       YALIGN, W1280, DIFF, N, NEG, OFF, ATTEN)                \
 TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                     \
@@ -547,7 +547,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
                         src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                         src_a + OFF, kWidth,                                   \
                         dst_argb_c + OFF, kStrideB,                            \
-                        kWidth, NEG kHeight);                                  \
+                        kWidth, NEG kHeight, ATTEN);                           \
   MaskCpuFlags(-1);                                                            \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                 \
@@ -555,7 +555,7 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
                           src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
                           src_a + OFF, kWidth,                                 \
                           dst_argb_opt + OFF, kStrideB,                        \
-                          kWidth, NEG kHeight);                                \
+                          kWidth, NEG kHeight, ATTEN);                         \
   }                                                                            \
   int max_diff = 0;                                                            \
   for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                         \
@@ -578,13 +578,15 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 #define TESTQPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,  \
                        YALIGN, DIFF)                                           \
     TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
-        YALIGN, benchmark_width_ - 4, DIFF, _Any, +, 0)                        \
+        YALIGN, benchmark_width_ - 4, DIFF, _Any, +, 0, 0)                     \
     TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
-        YALIGN, benchmark_width_, DIFF, _Unaligned, +, 1)                      \
+        YALIGN, benchmark_width_, DIFF, _Unaligned, +, 1, 0)                   \
     TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
-        YALIGN, benchmark_width_, DIFF, _Invert, -, 0)                         \
+        YALIGN, benchmark_width_, DIFF, _Invert, -, 0, 0)                      \
     TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
-        YALIGN, benchmark_width_, DIFF, _Opt, +, 0)
+        YALIGN, benchmark_width_, DIFF, _Opt, +, 0, 0)                         \
+    TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,     \
+        YALIGN, benchmark_width_, DIFF, _Premult, +, 0, 1)
 
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1, 2)
 TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1, 2)

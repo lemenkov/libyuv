@@ -83,7 +83,7 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
                     const uint8* src_v, int src_stride_v,
                     const uint8* src_a, int src_stride_a,
                     uint8* dst_argb, int dst_stride_argb,
-                    int width, int height);
+                    int width, int height, int attenuate);
 
 // Convert I420 with Alpha to preattenuated ABGR.
 LIBYUV_API
@@ -92,7 +92,7 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
                     const uint8* src_v, int src_stride_v,
                     const uint8* src_a, int src_stride_a,
                     uint8* dst_abgr, int dst_stride_abgr,
-                    int width, int height);
+                    int width, int height, int attenuate);
 
 // Convert I400 (grey) to ARGB.  Reverse of ARGBToI400.
 LIBYUV_API

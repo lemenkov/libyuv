@@ -22,6 +22,34 @@ extern "C" {
 // Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
+// Any 4 planes to 1 with yuvconstants
+#define ANY41C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \
+    void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
+                 const uint8* a_buf, uint8* dst_ptr,                           \
+                 struct YuvConstants* yuvconstants,  int width) {              \
+      SIMD_ALIGNED(uint8 temp[64 * 5]);                                        \
+      memset(temp, 0, 64 * 4);  /* for msan */                                 \
+      int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
+      if (n > 0) {                                                             \
+        ANY_SIMD(y_buf, u_buf, v_buf, a_buf, dst_ptr, yuvconstants, n);        \
+      }                                                                        \
+      memcpy(temp, y_buf + n, r);                                              \
+      memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
+      memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+      memcpy(temp + 192, a_buf + n, r);                                        \
+      ANY_SIMD(temp, temp + 64, temp + 128, temp + 192, temp + 256,            \
+               yuvconstants, MASK + 1);                                        \
+      memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 256,                      \
+             SS(r, DUVSHIFT) * BPP);                                           \
+    }
+
+#ifdef HAS_I422ALPHATOARGBROW_SSSE3
+ANY41C(I422AlphaToARGBRow_Any_SSSE3, I422AlphaToARGBRow_SSSE3, 1, 0, 4, 7)
+ANY41C(I422AlphaToABGRRow_Any_SSSE3, I422AlphaToABGRRow_SSSE3, 1, 0, 4, 7)
+#endif
+#undef ANY41C
+
 // Any 3 planes to 1.
 #define ANY31(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                 \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
@@ -50,7 +78,7 @@ ANY31(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, 1, 1, 4, 15)
 #ifdef HAS_I422TOUYVYROW_NEON
 ANY31(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 1, 4, 15)
 #endif
-#undef ANY31C
+#undef ANY31
 
 // Any 3 planes to 1 with yuvconstants
 #define ANY31C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \

@@ -2412,6 +2412,29 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
 }
 #endif
 
+void I422AlphaToARGBRow_C(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          const uint8* src_a,
+                          uint8* dst_argb,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+
+    I422ToARGBRow_C(src_y, src_u, src_v, dst_argb, &kYuvConstants, width);
+    ARGBCopyYToAlphaRow_C(src_a, dst_argb, width);
+}
+
+void I422AlphaToABGRRow_C(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          const uint8* src_a,
+                          uint8* dst_abgr,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+    I422ToABGRRow_C(src_y, src_u, src_v, dst_abgr, &kYuvConstants, width);
+    ARGBCopyYToAlphaRow_C(src_a, dst_abgr, width);
+}
+
 #if defined(HAS_I422TOARGB1555ROW_SSSE3)
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
