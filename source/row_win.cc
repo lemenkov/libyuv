@@ -40,16 +40,16 @@ extern "C" {
     y_buf += 8;                                                                \
 
 // Convert 8 pixels: 8 UV and 8 Y.
-#define YUVTORGB(YuvConstants)                                                 \
+#define YUVTORGB(yuvconstants)                                                 \
     xmm1 = _mm_loadu_si128(&xmm0);                                             \
     xmm2 = _mm_loadu_si128(&xmm0);                                             \
-    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)YuvConstants->kUVToB);           \
-    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)YuvConstants->kUVToG);           \
-    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)YuvConstants->kUVToR);           \
-    xmm0 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasB, xmm0);             \
-    xmm1 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasG, xmm1);             \
-    xmm2 = _mm_sub_epi16(*(__m128i*)YuvConstants->kUVBiasR, xmm2);             \
-    xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)YuvConstants->kYToRgb);            \
+    xmm0 = _mm_maddubs_epi16(xmm0, *(__m128i*)yuvconstants->kUVToB);           \
+    xmm1 = _mm_maddubs_epi16(xmm1, *(__m128i*)yuvconstants->kUVToG);           \
+    xmm2 = _mm_maddubs_epi16(xmm2, *(__m128i*)yuvconstants->kUVToR);           \
+    xmm0 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasB, xmm0);             \
+    xmm1 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasG, xmm1);             \
+    xmm2 = _mm_sub_epi16(*(__m128i*)yuvconstants->kUVBiasR, xmm2);             \
+    xmm4 = _mm_mulhi_epu16(xmm4, *(__m128i*)yuvconstants->kYToRgb);            \
     xmm0 = _mm_adds_epi16(xmm0, xmm4);                                         \
     xmm1 = _mm_adds_epi16(xmm1, xmm4);                                         \
     xmm2 = _mm_adds_epi16(xmm2, xmm4);                                         \
@@ -2030,25 +2030,25 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2070,24 +2070,24 @@ void I444ToARGBRow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
  convertloop:
     READYUV444_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2109,24 +2109,24 @@ void I444ToABGRRow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
  convertloop:
     READYUV444_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREABGR_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2148,25 +2148,25 @@ void I411ToARGBRow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV411_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2186,23 +2186,23 @@ void NV12ToARGBRow_AVX2(const uint8* y_buf,
                         int width) {
   __asm {
     push       esi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 8 + 4]   // Y
     mov        esi, [esp + 8 + 8]   // UV
     mov        edx, [esp + 8 + 12]  // argb
-    mov        ebp, [esp + 8 + 16]  // yuvconstants
+    mov        ebx, [esp + 8 + 16]  // yuvconstants
     mov        ecx, [esp + 8 + 20]  // width
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READNV12_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        esi
     vzeroupper
     ret
@@ -2218,22 +2218,22 @@ void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
                         struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
-    push       ebp
+    push       ebx
     mov        eax, [esp + 4 + 4]   // yuy2
     mov        edx, [esp + 4 + 8]   // argb
-    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ebx, [esp + 4 + 12]  // yuvconstants
     mov        ecx, [esp + 4 + 16]  // width
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUY2_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     vzeroupper
     ret
   }
@@ -2247,22 +2247,22 @@ void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
                         struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
-    push       ebp
+    push       ebx
     mov        eax, [esp + 4 + 4]   // uyvy
     mov        edx, [esp + 4 + 8]   // argb
-    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ebx, [esp + 4 + 12]  // yuvconstants
     mov        ecx, [esp + 4 + 16]  // width
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READUYVY_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREARGB_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     vzeroupper
     ret
   }
@@ -2283,25 +2283,25 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREBGRA_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2323,25 +2323,25 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STORERGBA_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2363,25 +2363,25 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
 
  convertloop:
     READYUV422_AVX2
-    YUVTORGB_AVX2(ebp)
+    YUVTORGB_AVX2(ebx)
     STOREABGR_AVX2
 
     sub        ecx, 16
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     vzeroupper
@@ -2615,25 +2615,25 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
 
  convertloop:
     READYUV444
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2652,25 +2652,25 @@ void I444ToABGRRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
 
  convertloop:
     READYUV444
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREABGR
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2689,12 +2689,12 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     movdqa     xmm5, xmmword ptr kShuffleMaskARGBToRGB24_0
@@ -2702,13 +2702,13 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STORERGB24
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2727,12 +2727,12 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     movdqa     xmm5, xmmword ptr kShuffleMaskARGBToRAW_0
@@ -2740,13 +2740,13 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STORERAW
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2765,12 +2765,12 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5       // generate mask 0x0000001f
@@ -2783,13 +2783,13 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STORERGB565
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2808,25 +2808,25 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2846,25 +2846,25 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
 
  convertloop:
     READYUV411
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -2881,23 +2881,23 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
                          int width) {
   __asm {
     push       esi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 8 + 4]   // Y
     mov        esi, [esp + 8 + 8]   // UV
     mov        edx, [esp + 8 + 12]  // argb
-    mov        ebp, [esp + 8 + 16]  // yuvconstants
+    mov        ebx, [esp + 8 + 16]  // yuvconstants
     mov        ecx, [esp + 8 + 20]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READNV12
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        esi
     ret
   }
@@ -2911,22 +2911,22 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
-    push       ebp
+    push       ebx
     mov        eax, [esp + 4 + 4]   // yuy2
     mov        edx, [esp + 4 + 8]   // argb
-    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ebx, [esp + 4 + 12]  // yuvconstants
     mov        ecx, [esp + 4 + 16]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUY2
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     ret
   }
 }
@@ -2939,22 +2939,22 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
-    push       ebp
+    push       ebx
     mov        eax, [esp + 4 + 4]   // uyvy
     mov        edx, [esp + 4 + 8]   // argb
-    mov        ebp, [esp + 4 + 12]  // yuvconstants
+    mov        ebx, [esp + 4 + 12]  // yuvconstants
     mov        ecx, [esp + 4 + 16]  // width
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READUYVY
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     ret
   }
 }
@@ -2969,24 +2969,24 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREBGRA
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -3003,25 +3003,25 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STOREABGR
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
@@ -3038,24 +3038,24 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
   __asm {
     push       esi
     push       edi
-    push       ebp
+    push       ebx
     mov        eax, [esp + 12 + 4]   // Y
     mov        esi, [esp + 12 + 8]   // U
     mov        edi, [esp + 12 + 12]  // V
     mov        edx, [esp + 12 + 16]  // argb
-    mov        ebp, [esp + 12 + 20]  // yuvconstants
+    mov        ebx, [esp + 12 + 20]  // yuvconstants
     mov        ecx, [esp + 12 + 24]  // width
     sub        edi, esi
 
  convertloop:
     READYUV422
-    YUVTORGB(ebp)
+    YUVTORGB(ebx)
     STORERGBA
 
     sub        ecx, 8
     jg         convertloop
 
-    pop        ebp
+    pop        ebx
     pop        edi
     pop        esi
     ret
