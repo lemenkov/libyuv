@@ -1570,7 +1570,6 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
-// TODO(fbarchard): Make width a register for 32 bit.
 #if defined(__i386__) && defined(__pic__)
     [width]"+m"(width)     // %[width]
 #else
@@ -1615,7 +1614,6 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_raw]"+r"(dst_raw),  // %[dst_raw]
-// TODO(fbarchard): Make width a register for 32 bit.
 #if defined(__i386__) && defined(__pic__)
     [width]"+m"(width)    // %[width]
 #else
@@ -1670,14 +1668,18 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     READYUVA422
     YUVTORGB(yuvconstants)
     STOREARGB
-    "sub       $0x8,%[width]                   \n"
+    "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+#if defined(__i386__) && defined(__pic__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif        
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -1698,14 +1700,18 @@ void OMITFP I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
     READYUVA422
     YUVTORGB(yuvconstants)
     STOREABGR
-    "sub       $0x8,%[width]                   \n"
+    "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
+#if defined(__i386__) && defined(__pic__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif    
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -2088,7 +2094,7 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
     READYUVA422_AVX2
     YUVTORGB_AVX2(yuvconstants)
     STOREARGB_AVX2
-    "sub       $0x10,%[width]                  \n"
+    "subl      $0x10,%[width]                  \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -2096,7 +2102,11 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+#if defined(__i386__) && defined(__pic__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif    
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -2121,7 +2131,7 @@ void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
     READYUVA422_AVX2
     YUVTORGB_AVX2(yuvconstants)
     STOREABGR_AVX2
-    "sub       $0x10,%[width]                  \n"
+    "subl      $0x10,%[width]                  \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
@@ -2129,7 +2139,11 @@ void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
+#if defined(__i386__) && defined(__pic__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif    
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
