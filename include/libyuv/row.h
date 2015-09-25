@@ -187,6 +187,8 @@ extern "C" {
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422TOARGBROW_SSSE3
 #define HAS_I422TOABGRROW_SSSE3
+#define HAS_I422ALPHATOARGBROW_SSSE3
+#define HAS_I422ALPHATOABGRROW_SSSE3
 #endif
 
 // The following are available for AVX2 Visual C and clangcl 32 bit:

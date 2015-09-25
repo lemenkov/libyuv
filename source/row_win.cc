@@ -37,7 +37,20 @@ extern "C" {
     u_buf += 4;                                                                \
     xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
     xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
+    y_buf += 8;
+
+// Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
+#define READYUVA422                                                            \
+    xmm0 = _mm_cvtsi32_si128(*(uint32*)u_buf);                                 \
+    xmm1 = _mm_cvtsi32_si128(*(uint32*)(u_buf + offset));                      \
+    xmm0 = _mm_unpacklo_epi8(xmm0, xmm1);                                      \
+    xmm0 = _mm_unpacklo_epi16(xmm0, xmm0);                                     \
+    u_buf += 4;                                                                \
+    xmm4 = _mm_loadl_epi64((__m128i*)y_buf);                                   \
+    xmm4 = _mm_unpacklo_epi8(xmm4, xmm4);                                      \
     y_buf += 8;                                                                \
+    xmm5 = _mm_loadl_epi64((__m128i*)a_buf);                                   \
+    a_buf += 8;
 
 // Convert 8 pixels: 8 UV and 8 Y.
 #define YUVTORGB(yuvconstants)                                                 \
@@ -78,9 +91,9 @@ extern "C" {
     xmm1 = _mm_loadu_si128(&xmm2);                                             \
     xmm2 = _mm_unpacklo_epi16(xmm2, xmm0);                                     \
     xmm1 = _mm_unpackhi_epi16(xmm1, xmm0);                                     \
-    _mm_storeu_si128((__m128i *)dst_argb, xmm2);                               \
-    _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);                        \
-    dst_argb += 32;
+    _mm_storeu_si128((__m128i *)dst_abgr, xmm2);                               \
+    _mm_storeu_si128((__m128i *)(dst_abgr + 16), xmm1);                        \
+    dst_abgr += 32;
 
 
 #if defined(HAS_I422TOARGBROW_SSSE3)
@@ -106,7 +119,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 void I422ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
-                         uint8* dst_argb,
+                         uint8* dst_abgr,
                          struct YuvConstants* yuvconstants,
                          int width) {
   __m128i xmm0, xmm1, xmm2, xmm4;
@@ -120,6 +133,45 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
   }
 }
 #endif
+
+#if defined(HAS_I422ALPHATOARGBROW_SSSE3)
+void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              const uint8* a_buf,
+                              uint8* dst_argb,
+                              struct YuvConstants* yuvconstants,
+                              int width) {
+  __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
+  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
+  while (width > 0) {
+    READYUVA422
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    width -= 8;
+  }
+}
+#endif
+
+#if defined(HAS_I422ALPHATOABGRROW_SSSE3)
+void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
+                              const uint8* u_buf,
+                              const uint8* v_buf,
+                              const uint8* a_buf,
+                              uint8* dst_abgr,
+                              struct YuvConstants* yuvconstants,
+                              int width) {
+  __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
+  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
+  while (width > 0) {
+    READYUVA422
+    YUVTORGB(yuvconstants)
+    STOREABGR
+    width -= 8;
+  }
+}
+#endif
+
 // 32 bit
 #else  // defined(_M_X64)
 #ifdef HAS_ARGBTOYROW_SSSE3

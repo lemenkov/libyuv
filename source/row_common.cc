@@ -1353,6 +1353,88 @@ void I422ToARGBRow_C(const uint8* src_y,
   }
 }
 
+void I422AlphaToARGBRow_C(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          const uint8* src_a,
+                          uint8* rgb_buf,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
+    rgb_buf[3] = src_a[0];
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
+    rgb_buf[7] = src_a[1];
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    src_a += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
+    rgb_buf[3] = src_a[0];
+  }
+}
+
+void I422ToABGRRow_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     struct YuvConstants* yuvconstants,
+                     int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
+    rgb_buf[3] = 255;
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4, yuvconstants);
+    rgb_buf[7] = 255;
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
+    rgb_buf[3] = 255;
+  }
+}
+
+void I422AlphaToABGRRow_C(const uint8* src_y,
+                          const uint8* src_u,
+                          const uint8* src_v,
+                          const uint8* src_a,
+                          uint8* rgb_buf,
+                          struct YuvConstants* yuvconstants,
+                          int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
+    rgb_buf[3] = src_a[0];
+    YuvPixel(src_y[1], src_u[0], src_v[0],
+             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4, yuvconstants);
+    rgb_buf[7] = src_a[1];
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    src_a += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel(src_y[0], src_u[0], src_v[0],
+             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
+    rgb_buf[3] = src_a[0];
+  }
+}
+
 void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
                       const uint8* src_v,
@@ -1684,32 +1766,6 @@ void I422ToBGRARow_C(const uint8* src_y,
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 3, rgb_buf + 2, rgb_buf + 1, yuvconstants);
     rgb_buf[0] = 255;
-  }
-}
-
-void I422ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    rgb_buf[3] = 255;
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4, yuvconstants);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    rgb_buf[3] = 255;
   }
 }
 
@@ -2411,29 +2467,6 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
   }
 }
 #endif
-
-void I422AlphaToARGBRow_C(const uint8* src_y,
-                          const uint8* src_u,
-                          const uint8* src_v,
-                          const uint8* src_a,
-                          uint8* dst_argb,
-                          struct YuvConstants* yuvconstants,
-                          int width) {
-
-    I422ToARGBRow_C(src_y, src_u, src_v, dst_argb, &kYuvConstants, width);
-    ARGBCopyYToAlphaRow_C(src_a, dst_argb, width);
-}
-
-void I422AlphaToABGRRow_C(const uint8* src_y,
-                          const uint8* src_u,
-                          const uint8* src_v,
-                          const uint8* src_a,
-                          uint8* dst_abgr,
-                          struct YuvConstants* yuvconstants,
-                          int width) {
-    I422ToABGRRow_C(src_y, src_u, src_v, dst_abgr, &kYuvConstants, width);
-    ARGBCopyYToAlphaRow_C(src_a, dst_abgr, width);
-}
 
 #if defined(HAS_I422TOARGB1555ROW_SSSE3)
 void I422ToARGB1555Row_SSSE3(const uint8* src_y,
