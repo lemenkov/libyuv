@@ -121,7 +121,6 @@ extern "C" {
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_H422TOABGRROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
-#define HAS_MIRRORROW_SSE2
 #define HAS_MIRRORROW_SSSE3
 #define HAS_MIRRORROW_UV_SSSE3
 #define HAS_MIRRORUVROW_SSSE3
@@ -181,8 +180,7 @@ extern "C" {
 #define HAS_SOBELYROW_SSE2
 #endif
 
-// The following are available on x64 Visual C and clangcl.
-// TODO(fbarchard): Port to gcc.
+// The following are also available on x64 Visual C.
 #if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422TOARGBROW_SSSE3
@@ -260,16 +258,6 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
-#endif
-
-// The following are disabled when SSSE3 is available:
-// TODO(fbarchard): remove sse2.  ssse3 is faster and well supported.
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__)) && \
-    !defined(LIBYUV_SSSE3_ONLY)
-#define HAS_ARGBATTENUATEROW_SSE2
-#define HAS_ARGBBLENDROW_SSE2
-#define HAS_MIRRORROW_SSE2
 #endif
 
 // The following are available on Neon platforms:
@@ -822,7 +810,6 @@ void ARGBToUVJ422Row_C(const uint8* src_argb,
 
 void MirrorRow_AVX2(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
-void MirrorRow_SSE2(const uint8* src, uint8* dst, int width);
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void MirrorRow_MIPS_DSPR2(const uint8* src, uint8* dst, int width);
 void MirrorRow_C(const uint8* src, uint8* dst, int width);
@@ -1620,8 +1607,6 @@ void I400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int width);
 // ARGB preattenuated alpha blend.
 void ARGBBlendRow_SSSE3(const uint8* src_argb, const uint8* src_argb1,
                         uint8* dst_argb, int width);
-void ARGBBlendRow_SSE2(const uint8* src_argb, const uint8* src_argb1,
-                       uint8* dst_argb, int width);
 void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
@@ -1941,7 +1926,6 @@ void I422ToUYVYRow_Any_NEON(const uint8* src_y,
 
 // Effects related row functions.
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width);

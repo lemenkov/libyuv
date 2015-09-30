@@ -3460,32 +3460,6 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_MIRRORROW_AVX2
 
-#ifdef HAS_MIRRORROW_SSE2
-__declspec(naked)
-void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
-  __asm {
-    mov       eax, [esp + 4]   // src
-    mov       edx, [esp + 8]   // dst
-    mov       ecx, [esp + 12]  // width
-
- convertloop:
-    movdqu    xmm0, [eax - 16 + ecx]
-    movdqa    xmm1, xmm0        // swap bytes
-    psllw     xmm0, 8
-    psrlw     xmm1, 8
-    por       xmm0, xmm1
-    pshuflw   xmm0, xmm0, 0x1b  // swap words
-    pshufhw   xmm0, xmm0, 0x1b
-    pshufd    xmm0, xmm0, 0x4e  // swap qwords
-    movdqu    [edx], xmm0
-    lea       edx, [edx + 16]
-    sub       ecx, 16
-    jg        convertloop
-    ret
-  }
-}
-#endif  // HAS_MIRRORROW_SSE2
-
 #ifdef HAS_MIRRORROW_UV_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
 static const uvec8 kShuffleMirrorUV = {
@@ -4382,107 +4356,14 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 }
 #endif  // HAS_YUY2TOYROW_SSE2
 
-#ifdef HAS_ARGBBLENDROW_SSE2
-// Blend 8 pixels at a time.
-__declspec(naked)
-void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                       uint8* dst_argb, int width) {
-  __asm {
-    push       esi
-    mov        eax, [esp + 4 + 4]   // src_argb0
-    mov        esi, [esp + 4 + 8]   // src_argb1
-    mov        edx, [esp + 4 + 12]  // dst_argb
-    mov        ecx, [esp + 4 + 16]  // width
-    pcmpeqb    xmm7, xmm7       // generate constant 1
-    psrlw      xmm7, 15
-    pcmpeqb    xmm6, xmm6       // generate mask 0x00ff00ff
-    psrlw      xmm6, 8
-    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
-    psllw      xmm5, 8
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-    sub        ecx, 4
-    jl         convertloop4b    // less than 4 pixels?
-
-    // 4 pixel loop.
-  convertloop4:
-    movdqu     xmm3, [eax]      // src argb
-    lea        eax, [eax + 16]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movdqu     xmm2, [esi]      // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
-    pshuflw    xmm3, xmm3, 0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movdqu     xmm1, [esi]      // _a_g
-    lea        esi, [esi + 16]
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jge        convertloop4
-
-  convertloop4b:
-    add        ecx, 4 - 1
-    jl         convertloop1b
-
-    // 1 pixel loop.
-  convertloop1:
-    movd       xmm3, [eax]      // src argb
-    lea        eax, [eax + 4]
-    movdqa     xmm0, xmm3       // src argb
-    pxor       xmm3, xmm4       // ~alpha
-    movd       xmm2, [esi]      // _r_b
-    psrlw      xmm3, 8          // alpha
-    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
-    pshuflw    xmm3, xmm3, 0F5h
-    pand       xmm2, xmm6       // _r_b
-    paddw      xmm3, xmm7       // 256 - alpha
-    pmullw     xmm2, xmm3       // _r_b * alpha
-    movd       xmm1, [esi]      // _a_g
-    lea        esi, [esi + 4]
-    psrlw      xmm1, 8          // _a_g
-    por        xmm0, xmm4       // set alpha to 255
-    pmullw     xmm1, xmm3       // _a_g * alpha
-    psrlw      xmm2, 8          // _r_b convert to 8 bits again
-    paddusb    xmm0, xmm2       // + src argb
-    pand       xmm1, xmm5       // a_g_ convert to 8 bits again
-    paddusb    xmm0, xmm1       // + src argb
-    movd       [edx], xmm0
-    lea        edx, [edx + 4]
-    sub        ecx, 1
-    jge        convertloop1
-
-  convertloop1b:
-    pop        esi
-    ret
-  }
-}
-#endif  // HAS_ARGBBLENDROW_SSE2
-
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for isolating alpha.
 static const uvec8 kShuffleAlpha = {
   3u, 0x80, 3u, 0x80, 7u, 0x80, 7u, 0x80,
   11u, 0x80, 11u, 0x80, 15u, 0x80, 15u, 0x80
 };
-// Same as SSE2, but replaces:
-//    psrlw      xmm3, 8          // alpha
-//    pshufhw    xmm3, xmm3, 0F5h // 8 alpha words
-//    pshuflw    xmm3, xmm3, 0F5h
-// with..
-//    pshufb     xmm3, kShuffleAlpha // alpha
-// Blend 8 pixels at a time.
 
+// Blend 8 pixels at a time.
 __declspec(naked)
 void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width) {
@@ -4563,48 +4444,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
-
-#ifdef HAS_ARGBATTENUATEROW_SSE2
-// Attenuate 4 pixels at a time.
-__declspec(naked)
-void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  __asm {
-    mov        eax, [esp + 4]   // src_argb0
-    mov        edx, [esp + 8]   // dst_argb
-    mov        ecx, [esp + 12]  // width
-    pcmpeqb    xmm4, xmm4       // generate mask 0xff000000
-    pslld      xmm4, 24
-    pcmpeqb    xmm5, xmm5       // generate mask 0x00ffffff
-    psrld      xmm5, 8
-
- convertloop:
-    movdqu     xmm0, [eax]      // read 4 pixels
-    punpcklbw  xmm0, xmm0       // first 2
-    pshufhw    xmm2, xmm0, 0FFh // 8 alpha words
-    pshuflw    xmm2, xmm2, 0FFh
-    pmulhuw    xmm0, xmm2       // rgb * a
-    movdqu     xmm1, [eax]      // read 4 pixels
-    punpckhbw  xmm1, xmm1       // next 2 pixels
-    pshufhw    xmm2, xmm1, 0FFh // 8 alpha words
-    pshuflw    xmm2, xmm2, 0FFh
-    pmulhuw    xmm1, xmm2       // rgb * a
-    movdqu     xmm2, [eax]      // alphas
-    lea        eax, [eax + 16]
-    psrlw      xmm0, 8
-    pand       xmm2, xmm4
-    psrlw      xmm1, 8
-    packuswb   xmm0, xmm1
-    pand       xmm0, xmm5       // keep original alphas
-    por        xmm0, xmm2
-    movdqu     [edx], xmm0
-    lea        edx, [edx + 16]
-    sub        ecx, 4
-    jg         convertloop
-
-    ret
-  }
-}
-#endif  // HAS_ARGBATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha.

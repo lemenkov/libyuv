@@ -117,14 +117,6 @@ void RotatePlane180(const uint8* src, int src_stride,
     }
   }
 #endif
-#if defined(HAS_MIRRORROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    MirrorRow = MirrorRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      MirrorRow = MirrorRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     MirrorRow = MirrorRow_Any_SSSE3;

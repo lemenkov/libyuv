@@ -237,14 +237,6 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
-#if defined(HAS_MIRRORROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    MirrorRow = MirrorRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      MirrorRow = MirrorRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_MIRRORROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     MirrorRow = MirrorRow_Any_SSSE3;
@@ -539,11 +531,6 @@ ARGBBlendRow GetARGBBlend() {
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBBlendRow = ARGBBlendRow_SSSE3;
     return ARGBBlendRow;
-  }
-#endif
-#if defined(HAS_ARGBBLENDROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBBlendRow = ARGBBlendRow_SSE2;
   }
 #endif
 #if defined(HAS_ARGBBLENDROW_NEON)
@@ -1267,14 +1254,6 @@ int ARGBAttenuate(const uint8* src_argb, int src_stride_argb,
     height = 1;
     src_stride_argb = dst_stride_argb = 0;
   }
-#if defined(HAS_ARGBATTENUATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_ARGBATTENUATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;

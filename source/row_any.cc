@@ -443,9 +443,6 @@ ANY11(ARGB4444ToARGBRow_Any_NEON, ARGB4444ToARGBRow_NEON, 0, 2, 4, 7)
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 ANY11(ARGBAttenuateRow_Any_SSSE3, ARGBAttenuateRow_SSSE3, 0, 4, 4, 3)
 #endif
-#ifdef HAS_ARGBATTENUATEROW_SSE2
-ANY11(ARGBAttenuateRow_Any_SSE2, ARGBAttenuateRow_SSE2, 0, 4, 4, 3)
-#endif
 #ifdef HAS_ARGBUNATTENUATEROW_SSE2
 ANY11(ARGBUnattenuateRow_Any_SSE2, ARGBUnattenuateRow_SSE2, 0, 4, 4, 3)
 #endif
@@ -616,9 +613,6 @@ ANY11M(MirrorRow_Any_AVX2, MirrorRow_AVX2, 1, 31)
 #endif
 #ifdef HAS_MIRRORROW_SSSE3
 ANY11M(MirrorRow_Any_SSSE3, MirrorRow_SSSE3, 1, 15)
-#endif
-#ifdef HAS_MIRRORROW_SSE2
-ANY11M(MirrorRow_Any_SSE2, MirrorRow_SSE2, 1, 15)
 #endif
 #ifdef HAS_MIRRORROW_NEON
 ANY11M(MirrorRow_Any_NEON, MirrorRow_NEON, 1, 15)

@@ -1679,7 +1679,7 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
-#endif        
+#endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -1711,7 +1711,7 @@ void OMITFP I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
-#endif    
+#endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -1987,8 +1987,8 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpunpcklwd %%ymm2,%%ymm0,%%ymm1                                \n"        \
     "vpunpckhwd %%ymm2,%%ymm0,%%ymm0                                \n"        \
     "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "                    \n"        \
-    "vmovdqu    %%ymm0," MEMACCESS2(0x20,[dst_argb]) "              \n"        \
-    "lea       " MEMLEA(0x40,[dst_argb]) ",%[dst_argb]              \n"
+    "vmovdqu    %%ymm0," MEMACCESS2(0x20, [dst_argb]) "             \n"        \
+    "lea       " MEMLEA(0x40, [dst_argb]) ", %[dst_argb]            \n"
 
 // Store 16 ABGR values.
 #define STOREABGR_AVX2                                                         \
@@ -1999,8 +1999,8 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpunpcklwd %%ymm2,%%ymm1,%%ymm0                                \n"        \
     "vpunpckhwd %%ymm2,%%ymm1,%%ymm1                                \n"        \
     "vmovdqu    %%ymm0," MEMACCESS([dst_abgr]) "                    \n"        \
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_abgr]) "              \n"        \
-    "lea       " MEMLEA(0x40,[dst_abgr]) ",%[dst_abgr]              \n"
+    "vmovdqu    %%ymm1," MEMACCESS2(0x20, [dst_abgr]) "             \n"        \
+    "lea       " MEMLEA(0x40, [dst_abgr]) ", %[dst_abgr]            \n"
 
 #if defined(HAS_I422TOBGRAROW_AVX2)
 // 16 pixels
@@ -2026,7 +2026,6 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
     "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
     "vpunpcklwd %%ymm1,%%ymm2,%%ymm0           \n"  // ARGB first 8 pixels
     "vpunpckhwd %%ymm1,%%ymm2,%%ymm2           \n"  // ARGB next 8 pixels
-
     "vmovdqu    %%ymm0," MEMACCESS([dst_bgra]) "\n"
     "vmovdqu    %%ymm2," MEMACCESS2(0x20,[dst_bgra]) "\n"
     "lea       " MEMLEA(0x40,[dst_bgra]) ",%[dst_bgra] \n"
@@ -2106,7 +2105,7 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
-#endif    
+#endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -2143,7 +2142,7 @@ void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
-#endif    
+#endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
@@ -2233,7 +2232,6 @@ void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
                                uint8* dst_argb,
                                struct YuvConstants* yuvconstants,
                                int width) {
-
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
     LABELALIGN
@@ -2263,7 +2261,6 @@ void OMITFP YUY2ToARGBRow_AVX2(const uint8* yuy2_buf,
                                uint8* dst_argb,
                                struct YuvConstants* yuvconstants,
                                int width) {
-
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
     LABELALIGN
@@ -2293,7 +2290,6 @@ void OMITFP UYVYToARGBRow_AVX2(const uint8* uyvy_buf,
                                uint8* dst_argb,
                                struct YuvConstants* yuvconstants,
                                int width) {
-
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
     LABELALIGN
@@ -2460,34 +2456,6 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
   );
 }
 #endif  // HAS_MIRRORROW_AVX2
-
-#ifdef HAS_MIRRORROW_SSE2
-void MirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
-  intptr_t temp_width = (intptr_t)(width);
-  asm volatile (
-    LABELALIGN
-  "1:                                          \n"
-    MEMOPREG(movdqu,-0x10,0,2,1,xmm0)          //  movdqu -0x10(%0,%2),%%xmm0
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "psllw     $0x8,%%xmm0                     \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm1,%%xmm0                   \n"
-    "pshuflw   $0x1b,%%xmm0,%%xmm0             \n"
-    "pshufhw   $0x1b,%%xmm0,%%xmm0             \n"
-    "pshufd    $0x4e,%%xmm0,%%xmm0             \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x10,1)",%1            \n"
-    "sub       $0x10,%2                        \n"
-    "jg        1b                              \n"
-  : "+r"(src),  // %0
-    "+r"(dst),  // %1
-    "+r"(temp_width)  // %2
-  :
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1"
-  );
-}
-#endif  // HAS_MIRRORROW_SSE2
 
 #ifdef HAS_MIRRORROW_UV_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
@@ -3333,92 +3301,6 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
 }
 #endif  // HAS_YUY2TOYROW_AVX2
 
-#ifdef HAS_ARGBBLENDROW_SSE2
-// Blend 8 pixels at a time.
-void ARGBBlendRow_SSE2(const uint8* src_argb0, const uint8* src_argb1,
-                       uint8* dst_argb, int width) {
-  asm volatile (
-    "pcmpeqb   %%xmm7,%%xmm7                   \n"
-    "psrlw     $0xf,%%xmm7                     \n"
-    "pcmpeqb   %%xmm6,%%xmm6                   \n"
-    "psrlw     $0x8,%%xmm6                     \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psllw     $0x8,%%xmm5                     \n"
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
-    "sub       $0x4,%3                         \n"
-    "jl        49f                             \n"
-
-    // 4 pixel loop.
-    LABELALIGN
-  "41:                                         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm3         \n"
-    "lea       " MEMLEA(0x10,0) ",%0           \n"
-    "movdqa    %%xmm3,%%xmm0                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
-    "psrlw     $0x8,%%xmm3                     \n"
-    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
-    "lea       " MEMLEA(0x10,2) ",%2           \n"
-    "sub       $0x4,%3                         \n"
-    "jge       41b                             \n"
-
-  "49:                                         \n"
-    "add       $0x3,%3                         \n"
-    "jl        99f                             \n"
-
-    // 1 pixel loop.
-  "91:                                         \n"
-    "movd      " MEMACCESS(0) ",%%xmm3         \n"
-    "lea       " MEMLEA(0x4,0) ",%0            \n"
-    "movdqa    %%xmm3,%%xmm0                   \n"
-    "pxor      %%xmm4,%%xmm3                   \n"
-    "movd      " MEMACCESS(1) ",%%xmm2         \n"
-    "psrlw     $0x8,%%xmm3                     \n"
-    "pshufhw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pshuflw   $0xf5,%%xmm3,%%xmm3             \n"
-    "pand      %%xmm6,%%xmm2                   \n"
-    "paddw     %%xmm7,%%xmm3                   \n"
-    "pmullw    %%xmm3,%%xmm2                   \n"
-    "movd      " MEMACCESS(1) ",%%xmm1         \n"
-    "lea       " MEMLEA(0x4,1) ",%1            \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "por       %%xmm4,%%xmm0                   \n"
-    "pmullw    %%xmm3,%%xmm1                   \n"
-    "psrlw     $0x8,%%xmm2                     \n"
-    "paddusb   %%xmm2,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm1                   \n"
-    "paddusb   %%xmm1,%%xmm0                   \n"
-    "movd      %%xmm0," MEMACCESS(2) "         \n"
-    "lea       " MEMLEA(0x4,2) ",%2            \n"
-    "sub       $0x1,%3                         \n"
-    "jge       91b                             \n"
-  "99:                                         \n"
-  : "+r"(src_argb0),    // %0
-    "+r"(src_argb1),    // %1
-    "+r"(dst_argb),     // %2
-    "+r"(width)         // %3
-  :
-  : "memory", "cc"
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
-  );
-}
-#endif  // HAS_ARGBBLENDROW_SSE2
-
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for isolating alpha.
 static uvec8 kShuffleAlpha = {
@@ -3427,15 +3309,6 @@ static uvec8 kShuffleAlpha = {
 };
 
 // Blend 8 pixels at a time
-// Shuffle table for reversing the bytes.
-
-// Same as SSE2, but replaces
-//    psrlw      xmm3, 8          // alpha
-//    pshufhw    xmm3, xmm3,0F5h  // 8 alpha words
-//    pshuflw    xmm3, xmm3,0F5h
-// with..
-//    pshufb     xmm3, kShuffleAlpha // alpha
-
 void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
                         uint8* dst_argb, int width) {
   asm volatile (
@@ -3515,50 +3388,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
   );
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
-
-#ifdef HAS_ARGBATTENUATEROW_SSE2
-// Attenuate 4 pixels at a time.
-void ARGBAttenuateRow_SSE2(const uint8* src_argb, uint8* dst_argb, int width) {
-  asm volatile (
-    "pcmpeqb   %%xmm4,%%xmm4                   \n"
-    "pslld     $0x18,%%xmm4                    \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrld     $0x8,%%xmm5                     \n"
-
-    // 4 pixel loop.
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "punpcklbw %%xmm0,%%xmm0                   \n"
-    "pshufhw   $0xff,%%xmm0,%%xmm2             \n"
-    "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
-    "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
-    "punpckhbw %%xmm1,%%xmm1                   \n"
-    "pshufhw   $0xff,%%xmm1,%%xmm2             \n"
-    "pshuflw   $0xff,%%xmm2,%%xmm2             \n"
-    "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
-    "lea       " MEMLEA(0x10,0) ",%0           \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "pand      %%xmm4,%%xmm2                   \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    "pand      %%xmm5,%%xmm0                   \n"
-    "por       %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x4,%2                         \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb),    // %0
-    "+r"(dst_argb),    // %1
-    "+r"(width)        // %2
-  :
-  : "memory", "cc"
-    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
-}
-#endif  // HAS_ARGBATTENUATEROW_SSE2
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha

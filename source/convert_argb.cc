@@ -390,14 +390,6 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
     I422AlphaToARGBRow = I422AlphaToARGBRow_MIPS_DSPR2;
   }
 #endif
-#if defined(HAS_ARGBATTENUATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_ARGBATTENUATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
@@ -424,7 +416,8 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, &kYuvConstants, width);
+    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, &kYuvConstants,
+                       width);
     if (attenuate) {
       ARGBAttenuateRow(dst_argb, dst_argb, width);
     }
@@ -500,14 +493,6 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
     I422AlphaToABGRRow = I422AlphaToABGRRow_MIPS_DSPR2;
   }
 #endif
-#if defined(HAS_ARGBATTENUATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBAttenuateRow = ARGBAttenuateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBAttenuateRow = ARGBAttenuateRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_ARGBATTENUATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
@@ -534,7 +519,8 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422AlphaToABGRRow(src_y, src_u, src_v, src_a, dst_abgr, &kYuvConstants, width);
+    I422AlphaToABGRRow(src_y, src_u, src_v, src_a, dst_abgr, &kYuvConstants,
+                       width);
     if (attenuate) {
       ARGBAttenuateRow(dst_abgr, dst_abgr, width);
     }
