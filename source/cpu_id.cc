@@ -216,9 +216,8 @@ int InitCpuFlags(void) {
               kCpuHasX86;
 
 #ifdef HAS_XGETBV
-  // Avoid call to xgetbv if AVX disabled for drmemory.
-  // TODO(fbarchard): check xsave before calling xgetbv.
-  if ((cpu_info1[2] & 0x18000000) == 0x18000000 &&  // AVX and OSSave
+  // AVX requires CPU has AVX, XSAVE and OSXSave for xgetbv
+  if ((cpu_info1[2] & 0x1c000000) == 0x1c000000 &&  // AVX and OSXSave
       !TestEnv("LIBYUV_DISABLE_AVX") && TestOsSaveYmm()) {  // Saves YMM.
     cpu_info_ |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
                  kCpuHasAVX;
