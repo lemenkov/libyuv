@@ -223,13 +223,13 @@ static void YJToRGB(int y, int* r, int* g, int* b) {
 }
 
 // Pick a method for clamping.
-#define CLAMPMETHOD_IF 1
+//  #define CLAMPMETHOD_IF 1
 //  #define CLAMPMETHOD_TABLE 1
-//  #define CLAMPMETHOD_TERNARY 1
+#define CLAMPMETHOD_TERNARY 1
 //  #define CLAMPMETHOD_MASK 1
 
 // Pick a method for rounding.
-#define ROUND(f) static_cast<int>(f + 0.5)
+#define ROUND(f) static_cast<int>(f + 0.5f)
 //  #define ROUND(f) lrintf(f)
 //  #define ROUND(f) static_cast<int>(round(f))
 //  #define ROUND(f) _mm_cvt_ss2si(_mm_load_ss(&f))
@@ -314,15 +314,13 @@ static int RoundToByte(float f) {
 
 TEST_F(libyuvTest, TestRoundToByte) {
   int allb = 0;
+  int count = benchmark_width_ * benchmark_height_;
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    for (int u2 = 0; u2 < 256; ++u2) {
-      for (int v2 = 0; v2 < 256; ++v2) {
-        for (int y2 = 0; y2 < 256; ++y2) {
-          int y = RANDOM256(y2);
-          int b = RoundToByte(y * 810.33 - 257);
-          allb |= b;
-        }
-      }
+    float f = (fastrand() & 255) * 3.14f - 260.f;
+    for (int j = 0; j < count; ++j) {
+      int b = RoundToByte(f);
+      f += 0.91f;
+      allb |= b;
     }
   }
   EXPECT_GE(allb, 0);
