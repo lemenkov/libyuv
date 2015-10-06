@@ -53,6 +53,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_SSSE3
 #define HAS_SCALEROWDOWN38_SSSE3
 #define HAS_SCALEROWDOWN4_SSE2
+#define HAS_SCALEADDROW_SSE2
 #endif
 
 // The following are available for Visual C and clangcl 32 bit:
@@ -61,11 +62,6 @@ extern "C" {
 #define HAS_SCALEADDROW_AVX2
 #define HAS_SCALEROWDOWN2_AVX2
 #define HAS_SCALEROWDOWN4_AVX2
-#endif
-
-// The following are available on Visual C:
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
-#define HAS_SCALEADDROW_SSE2
 #endif
 
 // The following are available on Neon platforms:

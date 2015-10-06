@@ -575,47 +575,31 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
 }
 
 // Reads 16xN bytes and produces 16 shorts at a time.
-void ScaleAddRows_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                       uint16* dst_ptr, int src_width, int src_height) {
-  int tmp_height = 0;
-  intptr_t tmp_src = 0;
+void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   asm volatile (
-    "mov       %0,%3                           \n"  // row pointer
-    "mov       %5,%2                           \n"  // height
-    "pxor      %%xmm0,%%xmm0                   \n"  // clear accumulators
-    "pxor      %%xmm1,%%xmm1                   \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
+    "pxor      %%xmm5,%%xmm5                   \n"
 
     LABELALIGN
   "1:                                          \n"
-    "movdqu    " MEMACCESS(3) ",%%xmm2         \n"
-    "add       %6,%3                           \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
-    "punpcklbw %%xmm4,%%xmm2                   \n"
-    "punpckhbw %%xmm4,%%xmm3                   \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm3         \n"
+    "lea       " MEMLEA(0x10,0) ",%0           \n"  // src_ptr += 16
+    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x10,1) ",%%xmm1   \n"
+    "movdqa    %%xmm3,%%xmm2                   \n"
+    "punpcklbw %%xmm5,%%xmm2                   \n"
+    "punpckhbw %%xmm5,%%xmm3                   \n"
     "paddusw   %%xmm2,%%xmm0                   \n"
     "paddusw   %%xmm3,%%xmm1                   \n"
-    "sub       $0x1,%2                         \n"
-    "jg        1b                              \n"
-
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
-    "lea       " MEMLEA(0x10,0) ",%0           \n"  // src_ptr += 16
-    "mov       %0,%3                           \n"  // row pointer
-    "mov       %5,%2                           \n"  // height
-    "pxor      %%xmm0,%%xmm0                   \n"  // clear accumulators
-    "pxor      %%xmm1,%%xmm1                   \n"
-    "sub       $0x10,%4                        \n"
+    "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
   : "+r"(src_ptr),     // %0
     "+r"(dst_ptr),     // %1
-    "+r"(tmp_height),  // %2
-    "+r"(tmp_src),     // %3
-    "+r"(src_width),   // %4
-    "+rm"(src_height)  // %5
-  : "rm"((intptr_t)(src_stride))  // %6
-  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
+    "+r"(src_width)    // %2
+  :
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
 
