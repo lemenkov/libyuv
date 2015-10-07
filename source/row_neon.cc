@@ -579,6 +579,34 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
   );
 }
 
+void NV21ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_vu,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  asm volatile (
+    YUVTORGB_SETUP
+  "1:                                          \n"
+    READNV21
+    YUVTORGB
+    "subs       %3, %3, #8                     \n"
+    "vmov.u8    d23, #255                      \n"
+    MEMACCESS(2)
+    "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_vu),    // %1
+      "+r"(dst_argb),  // %2
+      "+r"(width)      // %3
+    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
+      [kUVToG]"r"(&yuvconstants->kUVToG),
+      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
+      [kYToRgb]"r"(&yuvconstants->kYToRgb)
+    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
+      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
+  );
+}
+
 void NV12ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_uv,
                           uint8* dst_rgb565,

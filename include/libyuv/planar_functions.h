@@ -145,13 +145,6 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height);
 
-// Convert NV21 to RGB565.
-LIBYUV_API
-int NV21ToRGB565(const uint8* src_y, int src_stride_y,
-                 const uint8* src_uv, int src_stride_uv,
-                 uint8* dst_rgb565, int dst_stride_rgb565,
-                 int width, int height);
-
 // I422ToARGB is in convert_argb.h
 // Convert I422 to BGRA.
 LIBYUV_API

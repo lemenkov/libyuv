@@ -164,6 +164,12 @@ static const lvec8 kShuffleUYVYUV = {
   0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14,
   0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
 };
+
+// NV21 shuf 8 VU to 16 UV.
+static const lvec8 kShuffleNV21 = {
+  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+};
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
 #ifdef HAS_J400TOARGBROW_SSE2
@@ -1398,6 +1404,15 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
+// Read 4 VU from NV21, upsample to 8 UV
+#define READNV21                                                               \
+    "movq       " MEMACCESS([vu_buf]) ",%%xmm0                  \n"            \
+    "lea        " MEMLEA(0x8, [vu_buf]) ",%[vu_buf]             \n"            \
+    "pshufb     %[kShuffleNV21], %%xmm0                         \n"            \
+    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
+    "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
+
 // Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
 #define READYUY2                                                               \
     "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm4                \n"            \
@@ -1769,6 +1784,31 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
   );
 }
 
+void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
+                                const uint8* vu_buf,
+                                uint8* dst_argb,
+                                struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+    LABELALIGN
+  "1:                                          \n"
+    READNV21
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [vu_buf]"+r"(vu_buf),    // %[vu_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleNV21]"m"(kShuffleNV21)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
 void OMITFP YUY2ToARGBRow_SSSE3(const uint8* yuy2_buf,
                                 uint8* dst_argb,
                                 struct YuvConstants* yuvconstants,
@@ -1935,6 +1975,17 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "lea        " MEMLEA(0x10, [uv_buf]) ",%[uv_buf]                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
+    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
+    "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"
+
+// Read 8 VU from NV21, upsample to 16 UV.
+#define READNV21_AVX2                                                          \
+    "vmovdqu    " MEMACCESS([vu_buf]) ",%%xmm0                      \n"        \
+    "lea        " MEMLEA(0x10, [vu_buf]) ",%[vu_buf]                \n"        \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
+    "vpshufb     %[kShuffleNV21], %%ymm0, %%ymm0                    \n"        \
     "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
@@ -2251,8 +2302,37 @@ void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
   : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
-#endif  // HAS_YUY2TOARGBROW_AVX2
+#endif  // HAS_NV12TOARGBROW_AVX2
 
+#if defined(HAS_NV21TOARGBROW_AVX2)
+// 16 pixels.
+// 8 VU values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP NV21ToARGBRow_AVX2(const uint8* y_buf,
+                               const uint8* vu_buf,
+                               uint8* dst_argb,
+                               struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    LABELALIGN
+  "1:                                          \n"
+    READNV21_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [vu_buf]"+r"(vu_buf),    // %[vu_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
+    [kShuffleNV21]"m"(kShuffleNV21)
+  // Does not use r14.
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_NV21TOARGBROW_AVX2
 
 #if defined(HAS_YUY2TOARGBROW_AVX2)
 // 16 pixels.

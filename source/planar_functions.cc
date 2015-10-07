@@ -1039,64 +1039,6 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
-// Convert NV21 to RGB565.
-LIBYUV_API
-int NV21ToRGB565(const uint8* src_y, int src_stride_y,
-                 const uint8* src_vu, int src_stride_vu,
-                 uint8* dst_rgb565, int dst_stride_rgb565,
-                 int width, int height) {
-  int y;
-  void (*NV12ToRGB565Row)(const uint8* y_buf,
-                          const uint8* src_vu,
-                          uint8* rgb_buf,
-                          struct YuvConstants* yuvconstants,
-                          int width) = NV12ToRGB565Row_C;
-  if (!src_y || !src_vu || !dst_rgb565 ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_rgb565 = dst_rgb565 + (height - 1) * dst_stride_rgb565;
-    dst_stride_rgb565 = -dst_stride_rgb565;
-  }
-#if defined(HAS_NV12TORGB565ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    NV12ToRGB565Row = NV12ToRGB565Row_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      NV12ToRGB565Row = NV12ToRGB565Row_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_NV12TORGB565ROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    NV12ToRGB565Row = NV12ToRGB565Row_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      NV12ToRGB565Row = NV12ToRGB565Row_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_NV12TORGB565ROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    NV12ToRGB565Row = NV12ToRGB565Row_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      NV12ToRGB565Row = NV12ToRGB565Row_NEON;
-    }
-  }
-#endif
-
-  for (y = 0; y < height; ++y) {
-    NV12ToRGB565Row(src_y, src_vu, dst_rgb565, &kYvuConstants, width);
-    dst_rgb565 += dst_stride_rgb565;
-    src_y += src_stride_y;
-    if (y & 1) {
-      src_vu += src_stride_vu;
-    }
-  }
-  return 0;
-}
-
 LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,

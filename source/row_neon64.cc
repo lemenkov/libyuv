@@ -576,6 +576,34 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
 }
 #endif  // HAS_NV12TOARGBROW_NEON
 
+#ifdef HAS_NV12TOARGBROW_NEON
+void NV21ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_vu,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  asm volatile (
+    YUVTORGB_SETUP
+  "1:                                          \n"
+    READNV21
+    YUVTORGB(v22, v21, v20)
+    "subs       %w3, %w3, #8                   \n"
+    "movi       v23.8b, #255                   \n"
+    MEMACCESS(2)
+    "st4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%2], #32     \n"
+    "b.gt       1b                             \n"
+    : "+r"(src_y),     // %0
+      "+r"(src_vu),    // %1
+      "+r"(dst_argb),  // %2
+      "+r"(width)      // %3
+    : [kUVBiasBGR]"r"(&kYuvConstants.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvConstants.kYToRgb)
+    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
+      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
+  );
+}
+#endif  // HAS_NV12TOARGBROW_NEON
+
 #ifdef HAS_NV12TORGB565ROW_NEON
 void NV12ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_uv,

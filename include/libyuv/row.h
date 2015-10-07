@@ -126,6 +126,7 @@ extern "C" {
 #define HAS_MIRRORUVROW_SSSE3
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV12TORGB565ROW_SSSE3
+#define HAS_NV21TOARGBROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
 #define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
@@ -249,6 +250,7 @@ extern "C" {
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
 #define HAS_NV12TOARGBROW_AVX2
+#define HAS_NV21TOARGBROW_AVX2
 #define HAS_I422ALPHATOARGBROW_AVX2
 #define HAS_I422ALPHATOABGRROW_AVX2
 
@@ -312,6 +314,7 @@ extern "C" {
 #define HAS_MIRRORUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
+#define HAS_NV21TOARGBROW_NEON
 #define HAS_RAWTOARGBROW_NEON
 #define HAS_RAWTOUVROW_NEON
 #define HAS_RAWTOYROW_NEON
@@ -632,6 +635,11 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
                           uint8* dst_rgb565,
                           struct YuvConstants* yuvconstants,
                           int width);
+void NV21ToARGBRow_NEON(const uint8* src_y,
+                        const uint8* src_vu,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width);
 void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
                         struct YuvConstants* yuvconstants,
@@ -1075,6 +1083,11 @@ void NV12ToRGB565Row_C(const uint8* src_y,
                        uint8* dst_argb,
                        struct YuvConstants* yuvconstants,
                        int width);
+void NV21ToARGBRow_C(const uint8* src_y,
+                     const uint8* src_uv,
+                     uint8* dst_argb,
+                     struct YuvConstants* yuvconstants,
+                     int width);
 void YUY2ToARGBRow_C(const uint8* src_yuy2,
                      uint8* dst_argb,
                      struct YuvConstants* yuvconstants,
@@ -1293,6 +1306,16 @@ void NV12ToRGB565Row_AVX2(const uint8* src_y,
                           uint8* dst_argb,
                           struct YuvConstants* yuvconstants,
                           int width);
+void NV21ToARGBRow_SSSE3(const uint8* src_y,
+                         const uint8* src_uv,
+                         uint8* dst_argb,
+                         struct YuvConstants* yuvconstants,
+                         int width);
+void NV21ToARGBRow_AVX2(const uint8* src_y,
+                        const uint8* src_uv,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width);
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
                          struct YuvConstants* yuvconstants,
@@ -1488,6 +1511,16 @@ void NV12ToARGBRow_Any_SSSE3(const uint8* src_y,
                              int width);
 void NV12ToARGBRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_uv,
+                            uint8* dst_argb,
+                            struct YuvConstants* yuvconstants,
+                            int width);
+void NV21ToARGBRow_Any_SSSE3(const uint8* src_y,
+                             const uint8* src_vu,
+                             uint8* dst_argb,
+                             struct YuvConstants* yuvconstants,
+                             int width);
+void NV21ToARGBRow_Any_AVX2(const uint8* src_y,
+                            const uint8* src_vu,
                             uint8* dst_argb,
                             struct YuvConstants* yuvconstants,
                             int width);
@@ -1753,6 +1786,11 @@ void I422ToRGB565Row_Any_NEON(const uint8* src_y,
                               int width);
 void NV12ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_uv,
+                            uint8* dst_argb,
+                            struct YuvConstants* yuvconstants,
+                            int width);
+void NV21ToARGBRow_Any_NEON(const uint8* src_y,
+                            const uint8* src_vu,
                             uint8* dst_argb,
                             struct YuvConstants* yuvconstants,
                             int width);

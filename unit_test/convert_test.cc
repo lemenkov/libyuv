@@ -671,7 +671,6 @@ TEST_F(libyuvTest, FMT_PLANAR##To##FMT_B##N) {                                 \
 TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4, 2)
 TESTBIPLANARTOB(NV21, 2, 2, ARGB, 4, 2)
 TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2, 9)
-TESTBIPLANARTOB(NV21, 2, 2, RGB565, 2, 9)
 
 #define TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, \
                        W1280, DIFF, N, NEG, OFF)                               \

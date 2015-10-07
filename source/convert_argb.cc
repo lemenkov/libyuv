@@ -1093,11 +1093,11 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height) {
   int y;
-  void (*NV12ToARGBRow)(const uint8* y_buf,
+  void (*NV21ToARGBRow)(const uint8* y_buf,
                         const uint8* uv_buf,
                         uint8* rgb_buf,
                         struct YuvConstants* yuvconstants,
-                        int width) = NV12ToARGBRow_C;
+                        int width) = NV21ToARGBRow_C;
   if (!src_y || !src_uv || !dst_argb ||
       width <= 0 || height == 0) {
     return -1;
@@ -1108,33 +1108,33 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
     dst_argb = dst_argb + (height - 1) * dst_stride_argb;
     dst_stride_argb = -dst_stride_argb;
   }
-#if defined(HAS_NV12TOARGBROW_SSSE3)
+#if defined(HAS_NV21TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    NV12ToARGBRow = NV12ToARGBRow_Any_SSSE3;
+    NV21ToARGBRow = NV21ToARGBRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      NV12ToARGBRow = NV12ToARGBRow_SSSE3;
+      NV21ToARGBRow = NV21ToARGBRow_SSSE3;
     }
   }
 #endif
-#if defined(HAS_NV12TOARGBROW_AVX2)
+#if defined(HAS_NV21TOARGBROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    NV12ToARGBRow = NV12ToARGBRow_Any_AVX2;
+    NV21ToARGBRow = NV21ToARGBRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      NV12ToARGBRow = NV12ToARGBRow_AVX2;
+      NV21ToARGBRow = NV21ToARGBRow_AVX2;
     }
   }
 #endif
-#if defined(HAS_NV12TOARGBROW_NEON)
+#if defined(HAS_NV21TOARGBROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    NV12ToARGBRow = NV12ToARGBRow_Any_NEON;
+    NV21ToARGBRow = NV21ToARGBRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      NV12ToARGBRow = NV12ToARGBRow_NEON;
+      NV21ToARGBRow = NV21ToARGBRow_NEON;
     }
   }
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV12ToARGBRow(src_y, src_uv, dst_argb, &kYvuConstants, width);
+    NV21ToARGBRow(src_y, src_uv, dst_argb, &kYuvConstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {

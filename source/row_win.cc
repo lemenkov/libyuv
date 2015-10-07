@@ -319,6 +319,12 @@ static const lvec8 kShuffleUYVYUV = {
   0, 2, 0, 2, 4, 6, 4, 6, 8, 10, 8, 10, 12, 14, 12, 14
 };
 
+// NV21 shuf 8 VU to 16 UV.
+static const lvec8 kShuffleNV21 = {
+  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+  1, 0, 1, 0, 3, 2, 3, 2, 5, 4, 5, 4, 7, 6, 7, 6,
+};
+
 // Duplicates gray value 3 times and fills in alpha opaque.
 __declspec(naked)
 void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int pix) {
@@ -1992,6 +1998,18 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        eax, [eax + 16]                                           \
   }
 
+// Read 8 UV from NV21, upsample to 16 UV.
+#define READNV21_AVX2 __asm {                                                  \
+    __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
+    __asm lea        esi,  [esi + 16]                                          \
+    __asm vpermq     ymm0, ymm0, 0xd8                                          \
+    __asm vpshufb    ymm0, ymm0, ymmword ptr kShuffleNV21                      \
+    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
+    __asm vpermq     ymm4, ymm4, 0xd8                                          \
+    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
+    __asm lea        eax, [eax + 16]                                           \
+  }
+
 // Read 8 YUY2 with 16 Y and upsample 8 UV to 16 UV.
 #define READYUY2_AVX2 __asm {                                                  \
     __asm vmovdqu    ymm4, [eax]          /* YUY2 */                           \
@@ -2365,6 +2383,41 @@ void NV12ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_NV12TOARGBROW_AVX2
 
+#ifdef HAS_NV21TOARGBROW_AVX2
+// 16 pixels.
+// 8 VU values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+__declspec(naked)
+void NV21ToARGBRow_AVX2(const uint8* y_buf,
+                        const uint8* vu_buf,
+                        uint8* dst_argb,
+                        struct YuvConstants* yuvconstants,
+                        int width) {
+  __asm {
+    push       esi
+    push       ebx
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // VU
+    mov        edx, [esp + 8 + 12]  // argb
+    mov        ebx, [esp + 8 + 16]  // yuvconstants
+    mov        ecx, [esp + 8 + 20]  // width
+    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
+
+ convertloop:
+    READNV21_AVX2
+    YUVTORGB_AVX2(ebx)
+    STOREARGB_AVX2
+
+    sub        ecx, 16
+    jg         convertloop
+
+    pop        ebx
+    pop        esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_NV21TOARGBROW_AVX2
+
 // 16 pixels.
 // 8 YUY2 values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
 __declspec(naked)
@@ -2603,6 +2656,16 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
     __asm movq       xmm0, qword ptr [esi] /* UV */                            \
     __asm lea        esi,  [esi + 8]                                           \
     __asm punpcklwd  xmm0, xmm0           /* UVUV (upsample) */                \
+    __asm movq       xmm4, qword ptr [eax]                                     \
+    __asm punpcklbw  xmm4, xmm4                                                \
+    __asm lea        eax, [eax + 8]                                            \
+  }
+
+// Read 4 VU from NV21, upsample to 8 UV.
+#define READNV21 __asm {                                                       \
+    __asm movq       xmm0, qword ptr [esi] /* UV */                            \
+    __asm lea        esi,  [esi + 8]                                           \
+    __asm pshufb     xmm0, xmmword ptr kShuffleNV21                            \
     __asm movq       xmm4, qword ptr [eax]                                     \
     __asm punpcklbw  xmm4, xmm4                                                \
     __asm lea        eax, [eax + 8]                                            \
@@ -3140,6 +3203,38 @@ void NV12ToARGBRow_SSSE3(const uint8* y_buf,
 
  convertloop:
     READNV12
+    YUVTORGB(ebx)
+    STOREARGB
+
+    sub        ecx, 8
+    jg         convertloop
+
+    pop        ebx
+    pop        esi
+    ret
+  }
+}
+
+// 8 pixels.
+// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
+__declspec(naked)
+void NV21ToARGBRow_SSSE3(const uint8* y_buf,
+                         const uint8* vu_buf,
+                         uint8* dst_argb,
+                         struct YuvConstants* yuvconstants,
+                         int width) {
+  __asm {
+    push       esi
+    push       ebx
+    mov        eax, [esp + 8 + 4]   // Y
+    mov        esi, [esp + 8 + 8]   // VU
+    mov        edx, [esp + 8 + 12]  // argb
+    mov        ebx, [esp + 8 + 16]  // yuvconstants
+    mov        ecx, [esp + 8 + 20]  // width
+    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
+
+ convertloop:
+    READNV21
     YUVTORGB(ebx)
     STOREARGB
 

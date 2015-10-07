@@ -9,6 +9,7 @@
  */
 
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -608,12 +609,12 @@ void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
 // Reads 32 bytes and accumulates to 32 shorts at a time.
 void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   asm volatile (
-    "vpxor      %%xmm5,%%xmm5                  \n"
+    "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
 
     LABELALIGN
   "1:                                          \n"
     "vmovdqu    " MEMACCESS(0) ",%%ymm3        \n"
-    "lea        " MEMLEA(0x20,0) ",%0          \n"  // src_ptr += 16
+    "lea        " MEMLEA(0x20,0) ",%0          \n"  // src_ptr += 32
     "vpermq     $0xd8,%%ymm3,%%ymm3            \n"
     "vpunpcklbw %%ymm5,%%ymm3,%%ymm2           \n"
     "vpunpckhbw %%ymm5,%%ymm3,%%ymm3           \n"
