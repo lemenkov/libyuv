@@ -60,6 +60,14 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
                uint8* dst_argb, int dst_stride_argb,
                int width, int height);
 
+// Convert J444 to ARGB.
+LIBYUV_API
+int J444ToARGB(const uint8* src_y, int src_stride_y,
+               const uint8* src_u, int src_stride_u,
+               const uint8* src_v, int src_stride_v,
+               uint8* dst_argb, int dst_stride_argb,
+               int width, int height);
+
 // Convert I444 to ABGR.
 LIBYUV_API
 int I444ToABGR(const uint8* src_y, int src_stride_y,
