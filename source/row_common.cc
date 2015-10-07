@@ -1014,21 +1014,21 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
 
-#if defined(__arm__) || defined(__aarch64__)
+#if defined(__aarch64__)
+YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+  { -UB, 0, -UB, 0, -UB, 0, -UB, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0 },
+  { UG, 0, UG, 0, UG, 0, UG, 0, VG, 0, VG, 0, VG, 0, VG, 0 },
+  { BB, BG, BR, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+ };
+
+#elif defined(__arm__)
 YuvConstants SIMD_ALIGNED(kYuvConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-
-YuvConstants SIMD_ALIGNED(kYvuConstants) = {
-  { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { BB, BG, BR, 0, 0, 0, 0, 0 },
-  { 0x0101 * YG, 0, 0, 0 }
-};
-
 #else
 // BT601 constants for YUV to RGB.
 YuvConstants SIMD_ALIGNED(kYuvConstants) = {
@@ -1081,13 +1081,19 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r,
                               struct YuvConstants* yuvconstants) {
-#if defined(__arm__) || defined(__aarch64__)
-
+#if defined(__aarch64__)
   int UB = -yuvconstants->kUVToRB[0];
-  int VB = 0;
+  int UG = yuvconstants->kUVToG[0];
+  int VG = yuvconstants->kUVToG[8];
+  int VR = -yuvconstants->kUVToRB[8];
+  int BB = yuvconstants->kUVBiasBGR[0];
+  int BG = yuvconstants->kUVBiasBGR[1];
+  int BR = yuvconstants->kUVBiasBGR[2];
+  int YG = yuvconstants->kYToRgb[0];
+#elif defined(__arm__)
+  int UB = -yuvconstants->kUVToRB[0];
   int UG = yuvconstants->kUVToG[0];
   int VG = yuvconstants->kUVToG[4];
-  int UR = 0;
   int VR = -yuvconstants->kUVToRB[4];
   int BB = yuvconstants->kUVBiasBGR[0];
   int BG = yuvconstants->kUVBiasBGR[1];
@@ -1095,10 +1101,8 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
   int YG = yuvconstants->kYToRgb[0];
 #else
   int UB = yuvconstants->kUVToB[0];
-  int VB = yuvconstants->kUVToB[1];  // usually 0
   int UG = yuvconstants->kUVToG[0];
   int VG = yuvconstants->kUVToG[1];
-  int UR = yuvconstants->kUVToR[0];  // usually 0
   int VR = yuvconstants->kUVToR[1];
   int BB = yuvconstants->kUVBiasB[0];
   int BG = yuvconstants->kUVBiasG[0];
@@ -1106,9 +1110,9 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
   int YG = yuvconstants->kYToRgb[0];
 #endif
   uint32 y1 = (uint32)(y * 0x0101 * YG) >> 16;
-  *b = Clamp((int32)(-(u * UB + v * VB) + y1 + BB) >> 6);
+  *b = Clamp((int32)(-(u * UB         ) + y1 + BB) >> 6);
   *g = Clamp((int32)(-(u * UG + v * VG) + y1 + BG) >> 6);
-  *r = Clamp((int32)(-(u * UR + v * VR) + y1 + BR) >> 6);
+  *r = Clamp((int32)(-(         v * VR) + y1 + BR) >> 6);
 }
 
 // JPEG YUV to RGB reference

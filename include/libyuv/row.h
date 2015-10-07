@@ -428,10 +428,10 @@ typedef uint8 ulvec8[32];
 
 // This struct is for Arm color conversion.
 struct YuvConstants {
-    uvec8 kUVToRB;
-    uvec8 kUVToG;
-    vec16 kUVBiasBGR;
-    vec32 kYToRgb;
+  uvec8 kUVToRB;
+  uvec8 kUVToG;
+  vec16 kUVBiasBGR;
+  vec32 kYToRgb;
 };
 
 #else
@@ -458,7 +458,6 @@ struct YuvConstants {
 #endif
 
 extern struct YuvConstants kYuvConstants;
-extern struct YuvConstants kYvuConstants;
 extern struct YuvConstants kYuvJConstants;
 extern struct YuvConstants kYuvHConstants;
 
