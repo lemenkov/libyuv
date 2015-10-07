@@ -603,6 +603,37 @@ void ScaleAddRow_SSE2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
   );
 }
 
+
+#ifdef HAS_SCALEADDROW_AVX2
+// Reads 32 bytes and accumulates to 32 shorts at a time.
+void ScaleAddRow_AVX2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
+  asm volatile (
+    "vpxor      %%xmm5,%%xmm5                  \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm3        \n"
+    "lea        " MEMLEA(0x20,0) ",%0          \n"  // src_ptr += 16
+    "vpermq     $0xd8,%%ymm3,%%ymm3            \n"
+    "vpunpcklbw %%ymm5,%%ymm3,%%ymm2           \n"
+    "vpunpckhbw %%ymm5,%%ymm3,%%ymm3           \n"
+    "vpaddusw   " MEMACCESS(1) ",%%ymm2,%%ymm0 \n"
+    "vpaddusw   " MEMACCESS2(0x10,1) ",%%ymm3,%%ymm1 \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm1," MEMACCESS2(0x10,1) "  \n"
+    "lea       " MEMLEA(0x40,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_ptr),     // %0
+    "+r"(dst_ptr),     // %1
+    "+r"(src_width)    // %2
+  :
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+  );
+}
+#endif  // HAS_SCALEADDROW_AVX2
+
 // Bilinear column filtering. SSSE3 version.
 void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                            int dst_width, int x, int dx) {
