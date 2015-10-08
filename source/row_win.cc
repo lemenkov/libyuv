@@ -833,7 +833,6 @@ void ARGBToRAWRow_SSSE3(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
-// 4 pixels
 __declspec(naked)
 void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
   __asm {
@@ -871,7 +870,6 @@ void ARGBToRGB565Row_SSE2(const uint8* src_argb, uint8* dst_rgb, int pix) {
   }
 }
 
-// 8 pixels
 __declspec(naked)
 void ARGBToRGB565DitherRow_SSE2(const uint8* src_argb, uint8* dst_rgb,
                                 const uint32 dither4, int pix) {

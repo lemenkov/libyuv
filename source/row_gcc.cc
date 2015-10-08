@@ -526,6 +526,52 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int pix) {
   );
 }
 
+void ARGBToRGB565DitherRow_SSE2(const uint8* src, uint8* dst,
+                                const uint32 dither4, int pix) {
+  asm volatile (
+    "movd       %3,%%xmm6                      \n"
+    "punpcklbw  %%xmm6,%%xmm6                  \n"
+    "movdqa     %%xmm6,%%xmm7                  \n"
+    "punpcklwd  %%xmm6,%%xmm6                  \n"
+    "punpckhwd  %%xmm7,%%xmm7                  \n"
+    "pcmpeqb    %%xmm3,%%xmm3                  \n"
+    "psrld      $0x1b,%%xmm3                   \n"
+    "pcmpeqb    %%xmm4,%%xmm4                  \n"
+    "psrld      $0x1a,%%xmm4                   \n"
+    "pslld      $0x5,%%xmm4                    \n"
+    "pcmpeqb    %%xmm5,%%xmm5                  \n"
+    "pslld      $0xb,%%xmm5                    \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "paddusb    %%xmm6,%%xmm0                  \n"
+    "movdqa     %%xmm0,%%xmm1                  \n"
+    "movdqa     %%xmm0,%%xmm2                  \n"
+    "pslld      $0x8,%%xmm0                    \n"
+    "psrld      $0x3,%%xmm1                    \n"
+    "psrld      $0x5,%%xmm2                    \n"
+    "psrad      $0x10,%%xmm0                   \n"
+    "pand       %%xmm3,%%xmm1                  \n"
+    "pand       %%xmm4,%%xmm2                  \n"
+    "pand       %%xmm5,%%xmm0                  \n"
+    "por        %%xmm2,%%xmm1                  \n"
+    "por        %%xmm1,%%xmm0                  \n"
+    "packssdw   %%xmm0,%%xmm0                  \n"
+    "lea        0x10(%0),%0                    \n"
+    "movq       %%xmm0,(%1)                    \n"
+    "lea        0x8(%1),%1                     \n"
+    "sub        $0x4,%2                        \n"
+    "jg        1b                              \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(pix)   // %2
+  : "m"(dither4) // %3
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+  );
+}
+
 void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
   asm volatile (
     "pcmpeqb   %%xmm4,%%xmm4                   \n"
