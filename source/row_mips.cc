@@ -657,7 +657,7 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
@@ -719,7 +719,7 @@ void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"
@@ -781,7 +781,7 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
                               uint8* rgb_buf,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __asm__ __volatile__ (
     ".set push                                \n"

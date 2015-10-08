@@ -1596,7 +1596,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1623,7 +1623,7 @@ void OMITFP I444ToABGRRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_abgr,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1650,7 +1650,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
                                  const uint8* u_buf,
                                  const uint8* v_buf,
                                  uint8* dst_rgb24,
-                                 struct YuvConstants* yuvconstants,
+                                 const struct YuvConstants* yuvconstants,
                                  int width) {
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRGB24_0],%%xmm5 \n"
@@ -1694,7 +1694,7 @@ void OMITFP I422ToRAWRow_SSSE3(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
                                uint8* dst_raw,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "movdqa    %[kShuffleMaskARGBToRAW_0],%%xmm5 \n"
@@ -1738,7 +1738,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1766,7 +1766,7 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                                      const uint8* v_buf,
                                      const uint8* a_buf,
                                      uint8* dst_argb,
-                                     struct YuvConstants* yuvconstants,
+                                     const struct YuvConstants* yuvconstants,
                                      int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1798,7 +1798,7 @@ void OMITFP I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
                                      const uint8* v_buf,
                                      const uint8* a_buf,
                                      uint8* dst_abgr,
-                                     struct YuvConstants* yuvconstants,
+                                     const struct YuvConstants* yuvconstants,
                                      int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1829,7 +1829,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1855,7 +1855,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
 void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* uv_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1879,7 +1879,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
 void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* vu_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1903,7 +1903,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
 
 void OMITFP YUY2ToARGBRow_SSSE3(const uint8* yuy2_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1927,7 +1927,7 @@ void OMITFP YUY2ToARGBRow_SSSE3(const uint8* yuy2_buf,
 
 void OMITFP UYVYToARGBRow_SSSE3(const uint8* uyvy_buf,
                                 uint8* dst_argb,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
@@ -1953,7 +1953,7 @@ void OMITFP I422ToBGRARow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_bgra,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -1980,7 +1980,7 @@ void OMITFP I422ToABGRRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_abgr,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2007,7 +2007,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
                                 uint8* dst_rgba,
-                                struct YuvConstants* yuvconstants,
+                                const struct YuvConstants* yuvconstants,
                                 int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2152,7 +2152,7 @@ void OMITFP I422ToBGRARow_AVX2(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
                                uint8* dst_bgra,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2194,7 +2194,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2227,7 +2227,7 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
                                const uint8* v_buf,
                                const uint8* a_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2264,7 +2264,7 @@ void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
                                const uint8* v_buf,
                                const uint8* a_buf,
                                uint8* dst_abgr,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2300,7 +2300,7 @@ void OMITFP I422ToABGRRow_AVX2(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
                                uint8* dst_abgr,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2332,7 +2332,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
                                const uint8* u_buf,
                                const uint8* v_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "sub       %[u_buf],%[v_buf]               \n"
@@ -2373,7 +2373,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
 void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
                                const uint8* uv_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
@@ -2402,7 +2402,7 @@ void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
 void OMITFP NV21ToARGBRow_AVX2(const uint8* y_buf,
                                const uint8* vu_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
@@ -2431,7 +2431,7 @@ void OMITFP NV21ToARGBRow_AVX2(const uint8* y_buf,
 // 8 YUY2 values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
 void OMITFP YUY2ToARGBRow_AVX2(const uint8* yuy2_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
@@ -2460,7 +2460,7 @@ void OMITFP YUY2ToARGBRow_AVX2(const uint8* yuy2_buf,
 // 8 UYVY values with 16 Y and 8 UV producing 16 ARGB (64 bytes).
 void OMITFP UYVYToARGBRow_AVX2(const uint8* uyvy_buf,
                                uint8* dst_argb,
-                               struct YuvConstants* yuvconstants,
+                               const struct YuvConstants* yuvconstants,
                                int width) {
   asm volatile (
     "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"

@@ -50,14 +50,14 @@ static int I444ToARGBMatrix(const uint8* src_y, int src_stride_y,
                             const uint8* src_u, int src_stride_u,
                             const uint8* src_v, int src_stride_v,
                             uint8* dst_argb, int dst_stride_argb,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width, int height) {
   int y;
   void (*I444ToARGBRow)(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I444ToARGBRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
@@ -125,7 +125,7 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
                           src_u, src_stride_u,
                           src_v, src_stride_v,
                           dst_argb, dst_stride_argb,
-                          &kYuvConstants,
+                          &kYuvIConstants,
                           width, height);
 }
 
@@ -158,7 +158,7 @@ int I444ToABGR(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I444ToABGRRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_abgr ||
@@ -206,7 +206,7 @@ int I444ToABGR(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I444ToABGRRow(src_y, src_u, src_v, dst_abgr, &kYuvConstants, width);
+    I444ToABGRRow(src_y, src_u, src_v, dst_abgr, &kYuvIConstants, width);
     dst_abgr += dst_stride_abgr;
     src_y += src_stride_y;
     src_u += src_stride_u;
@@ -227,7 +227,7 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToARGBRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
@@ -284,7 +284,7 @@ int I422ToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToARGBRow(src_y, src_u, src_v, dst_argb, &kYuvConstants, width);
+    I422ToARGBRow(src_y, src_u, src_v, dst_argb, &kYuvIConstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     src_u += src_stride_u;
@@ -305,7 +305,7 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I411ToARGBRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
@@ -353,7 +353,7 @@ int I411ToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I411ToARGBRow(src_y, src_u, src_v, dst_argb, &kYuvConstants, width);
+    I411ToARGBRow(src_y, src_u, src_v, dst_argb, &kYuvIConstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     src_u += src_stride_u;
@@ -376,7 +376,7 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
                              const uint8* v_buf,
                              const uint8* a_buf,
                              uint8* dst_argb,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) = I422AlphaToARGBRow_C;
   void (*ARGBAttenuateRow)(const uint8* src_argb, uint8* dst_argb,
                            int width) = ARGBAttenuateRow_C;
@@ -449,7 +449,7 @@ int I420AlphaToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, &kYuvConstants,
+    I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, &kYuvIConstants,
                        width);
     if (attenuate) {
       ARGBAttenuateRow(dst_argb, dst_argb, width);
@@ -479,7 +479,7 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
                              const uint8* v_buf,
                              const uint8* a_buf,
                              uint8* dst_abgr,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) = I422AlphaToABGRRow_C;
   void (*ARGBAttenuateRow)(const uint8* src_abgr, uint8* dst_abgr,
                            int width) = ARGBAttenuateRow_C;
@@ -552,7 +552,7 @@ int I420AlphaToABGR(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422AlphaToABGRRow(src_y, src_u, src_v, src_a, dst_abgr, &kYuvConstants,
+    I422AlphaToABGRRow(src_y, src_u, src_v, src_a, dst_abgr, &kYuvIConstants,
                        width);
     if (attenuate) {
       ARGBAttenuateRow(dst_abgr, dst_abgr, width);
@@ -1038,7 +1038,7 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
   void (*NV12ToARGBRow)(const uint8* y_buf,
                         const uint8* uv_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = NV12ToARGBRow_C;
   if (!src_y || !src_uv || !dst_argb ||
       width <= 0 || height == 0) {
@@ -1076,7 +1076,7 @@ int NV12ToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV12ToARGBRow(src_y, src_uv, dst_argb, &kYuvConstants, width);
+    NV12ToARGBRow(src_y, src_uv, dst_argb, &kYuvIConstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
@@ -1096,7 +1096,7 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
   void (*NV21ToARGBRow)(const uint8* y_buf,
                         const uint8* uv_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = NV21ToARGBRow_C;
   if (!src_y || !src_uv || !dst_argb ||
       width <= 0 || height == 0) {
@@ -1134,7 +1134,7 @@ int NV21ToARGB(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV21ToARGBRow(src_y, src_uv, dst_argb, &kYuvConstants, width);
+    NV21ToARGBRow(src_y, src_uv, dst_argb, &kYuvIConstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
@@ -1153,7 +1153,7 @@ int M420ToARGB(const uint8* src_m420, int src_stride_m420,
   void (*NV12ToARGBRow)(const uint8* y_buf,
                         const uint8* uv_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = NV12ToARGBRow_C;
   if (!src_m420 || !dst_argb ||
       width <= 0 || height == 0) {
@@ -1192,15 +1192,15 @@ int M420ToARGB(const uint8* src_m420, int src_stride_m420,
 
   for (y = 0; y < height - 1; y += 2) {
     NV12ToARGBRow(src_m420, src_m420 + src_stride_m420 * 2, dst_argb,
-                  &kYuvConstants, width);
+                  &kYuvIConstants, width);
     NV12ToARGBRow(src_m420 + src_stride_m420, src_m420 + src_stride_m420 * 2,
-                  dst_argb + dst_stride_argb, &kYuvConstants, width);
+                  dst_argb + dst_stride_argb, &kYuvIConstants, width);
     dst_argb += dst_stride_argb * 2;
     src_m420 += src_stride_m420 * 3;
   }
   if (height & 1) {
     NV12ToARGBRow(src_m420, src_m420 + src_stride_m420 * 2, dst_argb,
-                  &kYuvConstants, width);
+                  &kYuvIConstants, width);
   }
   return 0;
 }
@@ -1213,7 +1213,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   int y;
   void (*YUY2ToARGBRow)(const uint8* src_yuy2,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) =
       YUY2ToARGBRow_C;
   if (!src_yuy2 || !dst_argb ||
@@ -1258,7 +1258,7 @@ int YUY2ToARGB(const uint8* src_yuy2, int src_stride_yuy2,
   }
 #endif
   for (y = 0; y < height; ++y) {
-    YUY2ToARGBRow(src_yuy2, dst_argb, &kYuvConstants, width);
+    YUY2ToARGBRow(src_yuy2, dst_argb, &kYuvIConstants, width);
     src_yuy2 += src_stride_yuy2;
     dst_argb += dst_stride_argb;
   }
@@ -1273,7 +1273,7 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   int y;
   void (*UYVYToARGBRow)(const uint8* src_uyvy,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) =
       UYVYToARGBRow_C;
   if (!src_uyvy || !dst_argb ||
@@ -1318,7 +1318,7 @@ int UYVYToARGB(const uint8* src_uyvy, int src_stride_uyvy,
   }
 #endif
   for (y = 0; y < height; ++y) {
-    UYVYToARGBRow(src_uyvy, dst_argb, &kYuvConstants, width);
+    UYVYToARGBRow(src_uyvy, dst_argb, &kYuvIConstants, width);
     src_uyvy += src_stride_uyvy;
     dst_argb += dst_stride_argb;
   }
@@ -1337,7 +1337,7 @@ int J420ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToARGBRow_C;
   if (!src_y || !src_u || !src_v || !dst_argb ||
       width <= 0 || height == 0) {
@@ -1407,7 +1407,7 @@ int J422ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToARGBRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
@@ -1485,7 +1485,7 @@ int J420ToABGR(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToABGRRow_C;
   if (!src_y || !src_u || !src_v || !dst_abgr ||
       width <= 0 || height == 0) {
@@ -1555,7 +1555,7 @@ int J422ToABGR(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToABGRRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_abgr ||
@@ -1633,7 +1633,7 @@ int H420ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToARGBRow_C;
   if (!src_y || !src_u || !src_v || !dst_argb ||
       width <= 0 || height == 0) {
@@ -1703,7 +1703,7 @@ int H422ToARGB(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToARGBRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_argb ||
@@ -1781,7 +1781,7 @@ int H420ToABGR(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToABGRRow_C;
   if (!src_y || !src_u || !src_v || !dst_abgr ||
       width <= 0 || height == 0) {
@@ -1851,7 +1851,7 @@ int H422ToABGR(const uint8* src_y, int src_stride_y,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* rgb_buf,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) = I422ToABGRRow_C;
   if (!src_y || !src_u || !src_v ||
       !dst_abgr ||

@@ -26,7 +26,7 @@ extern "C" {
 #define ANY41C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
                  const uint8* a_buf, uint8* dst_ptr,                           \
-                 struct YuvConstants* yuvconstants,  int width) {              \
+                 const struct YuvConstants* yuvconstants,  int width) {        \
       SIMD_ALIGNED(uint8 temp[64 * 5]);                                        \
       memset(temp, 0, 64 * 4);  /* for msan */                                 \
       int r = width & MASK;                                                    \
@@ -87,7 +87,7 @@ ANY31(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 1, 4, 15)
 // Any 3 planes to 1 with yuvconstants
 #define ANY31C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
-                 uint8* dst_ptr, struct YuvConstants* yuvconstants,            \
+                 uint8* dst_ptr, const struct YuvConstants* yuvconstants,      \
                  int width) {                                                  \
       SIMD_ALIGNED(uint8 temp[64 * 4]);                                        \
       memset(temp, 0, 64 * 3);  /* for YUY2 and msan */                        \
@@ -254,7 +254,7 @@ ANY21(SobelXYRow_Any_NEON, SobelXYRow_NEON, 0, 1, 1, 4, 7)
 // Any 2 planes to 1 with yuvconstants
 #define ANY21C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)             \
     void NAMEANY(const uint8* y_buf, const uint8* uv_buf,                      \
-                 uint8* dst_ptr, struct YuvConstants* yuvconstants,            \
+                 uint8* dst_ptr, const struct YuvConstants* yuvconstants,      \
                  int width) {                                                  \
       SIMD_ALIGNED(uint8 temp[64 * 3]);                                        \
       memset(temp, 0, 64 * 2);  /* for msan */                                 \
@@ -469,7 +469,7 @@ ANY11(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, 0, 4, 4, 7)
 // Any 1 to 1 with yuvconstants
 #define ANY11C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                    \
     void NAMEANY(const uint8* src_ptr, uint8* dst_ptr,                         \
-                 struct YuvConstants* yuvconstants, int width) {               \
+                 const struct YuvConstants* yuvconstants, int width) {         \
       SIMD_ALIGNED(uint8 temp[128 * 2]);                                       \
       memset(temp, 0, 128);  /* for YUY2 and msan */                           \
       int r = width & MASK;                                                    \

@@ -138,7 +138,7 @@ void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -168,7 +168,7 @@ void I422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -198,7 +198,7 @@ void I411ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -228,7 +228,7 @@ void I422ToBGRARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_bgra,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -259,7 +259,7 @@ void I422ToABGRRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_abgr,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -290,7 +290,7 @@ void I422ToRGBARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_rgba,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -320,7 +320,7 @@ void I422ToRGB24Row_NEON(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_rgb24,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -349,7 +349,7 @@ void I422ToRAWRow_NEON(const uint8* src_y,
                        const uint8* src_u,
                        const uint8* src_v,
                        uint8* dst_raw,
-                       struct YuvConstants* yuvconstants,
+                       const struct YuvConstants* yuvconstants,
                        int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -391,7 +391,7 @@ void I422ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_u,
                           const uint8* src_v,
                           uint8* dst_rgb565,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -436,7 +436,7 @@ void I422ToARGB1555Row_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb1555,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -476,7 +476,7 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb4444,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -520,10 +520,10 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width)      // %2
-    : [kUVToRB]"r"(&kYuvConstants.kUVToRB),
-      [kUVToG]"r"(&kYuvConstants.kUVToG),
-      [kUVBiasBGR]"r"(&kYuvConstants.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvConstants.kYToRgb)
+    : [kUVToRB]"r"(&kYuvIConstants.kUVToRB),
+      [kUVToG]"r"(&kYuvIConstants.kUVToG),
+      [kUVBiasBGR]"r"(&kYuvIConstants.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvIConstants.kYToRgb)
     : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
       "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
@@ -554,7 +554,7 @@ void J400ToARGBRow_NEON(const uint8* src_y,
 void NV12ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_uv,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -582,7 +582,7 @@ void NV12ToARGBRow_NEON(const uint8* src_y,
 void NV21ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_vu,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -610,7 +610,7 @@ void NV21ToARGBRow_NEON(const uint8* src_y,
 void NV12ToRGB565Row_NEON(const uint8* src_y,
                           const uint8* src_uv,
                           uint8* dst_rgb565,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -637,7 +637,7 @@ void NV12ToRGB565Row_NEON(const uint8* src_y,
 
 void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
@@ -663,7 +663,7 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
 
 void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP

@@ -1014,8 +1014,11 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
 
+// BT.601 constants for YUV to RGB.
+// TODO(fbarchard): Unify these structures to be platform independent.
+// TODO(fbarchard): Generate SIMD structures from float matrix.
 #if defined(__aarch64__)
-YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { -UB, 0, -UB, 0, -UB, 0, -UB, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0 },
   { UG, 0, UG, 0, UG, 0, UG, 0, VG, 0, VG, 0, VG, 0, VG, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
@@ -1023,35 +1026,20 @@ YuvConstants SIMD_ALIGNED(kYuvConstants) = {
  };
 
 #elif defined(__arm__)
-YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-// BT601 constants for YUV to RGB.
-YuvConstants SIMD_ALIGNED(kYuvConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
     UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG },
   { 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR,
     0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR },
-  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
-  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
-  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
-  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
-};
-
-// BT601 constants for NV21 where chroma plane is VU instead of UV.
-YuvConstants SIMD_ALIGNED(kYvuConstants) = {
-  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
-    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB },
-  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
-    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
-  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
-    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
   { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
@@ -1080,7 +1068,7 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
 // C reference code that mimics the YUV assembly.
 static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
                               uint8* b, uint8* g, uint8* r,
-                              struct YuvConstants* yuvconstants) {
+                              const struct YuvConstants* yuvconstants) {
 #if defined(__aarch64__)
   int UB = -yuvconstants->kUVToRB[0];
   int UG = yuvconstants->kUVToG[0];
@@ -1135,17 +1123,24 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 #define BGJ (UGJ * 128 + VGJ * 128 + YGBJ)
 #define BRJ             (VRJ * 128 + YGBJ)
 
-#if defined(__arm__) || defined(__aarch64__)
 // JPEG constants for YUV to RGB.
-YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+#if defined(__aarch64__)
+const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+  { -UBJ, 0, -UBJ, 0, -UBJ, 0, -UBJ, 0, -VRJ, 0, -VRJ, 0, -VRJ, 0, -VRJ, 0 },
+  { UGJ, 0, UGJ, 0, UGJ, 0, UGJ, 0, VGJ, 0, VGJ, 0, VGJ, 0, VGJ, 0 },
+  { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGJ, 0, 0, 0 }
+ };
+
+#elif defined(__arm__)
+const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { -UBJ, -UBJ, -UBJ, -UBJ, -VRJ, -VRJ, -VRJ, -VRJ, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UGJ, UGJ, UGJ, UGJ, VGJ, VGJ, VGJ, VGJ, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
   { 0x0101 * YGJ, 0, 0, 0 }
 };
 #else
-// JPEG constants for YUV to RGB.
-YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0,
     UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0, UBJ, 0 },
   { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ,
@@ -1184,6 +1179,7 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 #define YGH 16320 /* round(1.000 * 64 * 256 * 256 / 257) */
 #define YGBH 32  /* 64 / 2 */
 
+// TODO(fbarchard): Find way to express 2.12 instead of 2.0.
 // U and V contributions to R,G,B.
 #define UBH -128 /* max(-128, round(-2.12798 * 64)) */
 #define UGH 14 /* round(0.21482 * 64) */
@@ -1195,17 +1191,24 @@ YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 #define BGH (UGH * 128 + VGH * 128 + YGBH)
 #define BRH (VRH * 128 + YGBH)
 
-#if defined(__arm__) || defined(__aarch64__)
 // BT.709 constants for YUV to RGB.
-YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+#if defined(__aarch64__)
+const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+  { -UBH, 0, -UBH, 0, -UBH, 0, -UBH, 0, -VRH, 0, -VRH, 0, -VRH, 0, -VRH, 0 },
+  { UGH, 0, UGH, 0, UGH, 0, UGH, 0, VGH, 0, VGH, 0, VGH, 0, VGH, 0 },
+  { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
+  { 0x0101 * YGH, 0, 0, 0 }
+ };
+
+#elif defined(__arm__)
+const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { -UBH, -UBH, -UBH, -UBH, -VRH, -VRH, -VRH, -VRH, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UGH, UGH, UGH, UGH, VGH, VGH, VGH, VGH, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
   { 0x0101 * YGH, 0, 0, 0 }
 };
 #else
-// BT.709 constants for YUV to RGB.
-YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0,
     UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0, UBH, 0 },
   { UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH,
@@ -1243,7 +1246,7 @@ void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1270,7 +1273,7 @@ void I444ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1297,7 +1300,7 @@ void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -1315,7 +1318,7 @@ void I444ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -1335,7 +1338,7 @@ void I422ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1362,7 +1365,7 @@ void I422AlphaToARGBRow_C(const uint8* src_y,
                           const uint8* src_v,
                           const uint8* src_a,
                           uint8* rgb_buf,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1389,7 +1392,7 @@ void I422ToABGRRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1416,7 +1419,7 @@ void I422AlphaToABGRRow_C(const uint8* src_y,
                           const uint8* src_v,
                           const uint8* src_a,
                           uint8* rgb_buf,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1443,7 +1446,7 @@ void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
                       const uint8* src_v,
                       uint8* rgb_buf,
-                      struct YuvConstants* yuvconstants,
+                      const struct YuvConstants* yuvconstants,
                       int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1466,7 +1469,7 @@ void I422ToRAWRow_C(const uint8* src_y,
                     const uint8* src_u,
                     const uint8* src_v,
                     uint8* rgb_buf,
-                    struct YuvConstants* yuvconstants,
+                    const struct YuvConstants* yuvconstants,
                     int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1489,7 +1492,7 @@ void I422ToARGB4444Row_C(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_argb4444,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   uint8 b0;
   uint8 g0;
@@ -1528,7 +1531,7 @@ void I422ToARGB1555Row_C(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_argb1555,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   uint8 b0;
   uint8 g0;
@@ -1567,7 +1570,7 @@ void I422ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_u,
                        const uint8* src_v,
                        uint8* dst_rgb565,
-                       struct YuvConstants* yuvconstants,
+                       const struct YuvConstants* yuvconstants,
                        int width) {
   uint8 b0;
   uint8 g0;
@@ -1605,7 +1608,7 @@ void I411ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 3; x += 4) {
@@ -1646,7 +1649,7 @@ void I411ToARGBRow_C(const uint8* src_y,
 void NV12ToARGBRow_C(const uint8* src_y,
                      const uint8* src_uv,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1670,7 +1673,7 @@ void NV12ToARGBRow_C(const uint8* src_y,
 void NV21ToARGBRow_C(const uint8* src_y,
                      const uint8* src_vu,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1694,7 +1697,7 @@ void NV21ToARGBRow_C(const uint8* src_y,
 void NV12ToRGB565Row_C(const uint8* src_y,
                        const uint8* src_uv,
                        uint8* dst_rgb565,
-                       struct YuvConstants* yuvconstants,
+                       const struct YuvConstants* yuvconstants,
                        int width) {
   uint8 b0;
   uint8 g0;
@@ -1729,7 +1732,7 @@ void NV12ToRGB565Row_C(const uint8* src_y,
 
 void YUY2ToARGBRow_C(const uint8* src_yuy2,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1751,7 +1754,7 @@ void YUY2ToARGBRow_C(const uint8* src_yuy2,
 
 void UYVYToARGBRow_C(const uint8* src_uyvy,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1775,7 +1778,7 @@ void I422ToBGRARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -1801,7 +1804,7 @@ void I422ToRGBARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* rgb_buf,
-                     struct YuvConstants* yuvconstants,
+                     const struct YuvConstants* yuvconstants,
                      int width) {
   int x;
   for (x = 0; x < width - 1; x += 2) {
@@ -2480,7 +2483,7 @@ void I422ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
                            uint8* dst_rgb565,
-                           struct YuvConstants* yuvconstants,
+                           const struct YuvConstants* yuvconstants,
                            int width) {
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
@@ -2501,7 +2504,7 @@ void I422ToARGB1555Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
                              uint8* dst_argb1555,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
@@ -2523,7 +2526,7 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
                              uint8* dst_argb4444,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
@@ -2544,7 +2547,7 @@ void I422ToARGB4444Row_SSSE3(const uint8* src_y,
 void NV12ToRGB565Row_SSSE3(const uint8* src_y,
                            const uint8* src_uv,
                            uint8* dst_rgb565,
-                           struct YuvConstants* yuvconstants,
+                           const struct YuvConstants* yuvconstants,
                            int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED(uint8 row[MAXTWIDTH * 4]);
@@ -2565,7 +2568,7 @@ void I422ToRGB565Row_AVX2(const uint8* src_y,
                           const uint8* src_u,
                           const uint8* src_v,
                           uint8* dst_rgb565,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
   while (width > 0) {
@@ -2586,7 +2589,7 @@ void I422ToARGB1555Row_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb1555,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
@@ -2608,7 +2611,7 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb4444,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
@@ -2630,7 +2633,7 @@ void I422ToRGB24Row_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_rgb24,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
@@ -2653,7 +2656,7 @@ void I422ToRAWRow_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_raw,
-                            struct YuvConstants* yuvconstants,
+                            const struct YuvConstants* yuvconstants,
                             int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
@@ -2675,7 +2678,7 @@ void I422ToRAWRow_AVX2(const uint8* src_y,
 void NV12ToRGB565Row_AVX2(const uint8* src_y,
                           const uint8* src_uv,
                           uint8* dst_rgb565,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   // Row buffer for intermediate ARGB pixels.
   SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);

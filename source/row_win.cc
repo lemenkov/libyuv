@@ -101,7 +101,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __m128i xmm0, xmm1, xmm2, xmm4;
   const __m128i xmm5 = _mm_set1_epi8(-1);
@@ -120,7 +120,7 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_abgr,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __m128i xmm0, xmm1, xmm2, xmm4;
   const __m128i xmm5 = _mm_set1_epi8(-1);
@@ -140,7 +140,7 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                               const uint8* v_buf,
                               const uint8* a_buf,
                               uint8* dst_argb,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
   const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
@@ -159,7 +159,7 @@ void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
                               const uint8* v_buf,
                               const uint8* a_buf,
                               uint8* dst_abgr,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __m128i xmm0, xmm1, xmm2, xmm4, xmm5;
   const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
@@ -2110,7 +2110,7 @@ void I422ToARGBRow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2151,7 +2151,7 @@ void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
                              const uint8* v_buf,
                              const uint8* a_buf,
                              uint8* dst_argb,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) {
   __asm {
     push       esi
@@ -2194,7 +2194,7 @@ void I422AlphaToABGRRow_AVX2(const uint8* y_buf,
                              const uint8* v_buf,
                              const uint8* a_buf,
                              uint8* dst_abgr,
-                             struct YuvConstants* yuvconstants,
+                             const struct YuvConstants* yuvconstants,
                              int width) {
   __asm {
     push       esi
@@ -2236,7 +2236,7 @@ void I444ToARGBRow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2275,7 +2275,7 @@ void I444ToABGRRow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_abgr,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2314,7 +2314,7 @@ void I411ToARGBRow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2353,7 +2353,7 @@ __declspec(naked)
 void NV12ToARGBRow_AVX2(const uint8* y_buf,
                         const uint8* uv_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2388,7 +2388,7 @@ __declspec(naked)
 void NV21ToARGBRow_AVX2(const uint8* y_buf,
                         const uint8* vu_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2421,7 +2421,7 @@ void NV21ToARGBRow_AVX2(const uint8* y_buf,
 __declspec(naked)
 void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       ebx
@@ -2450,7 +2450,7 @@ void YUY2ToARGBRow_AVX2(const uint8* src_yuy2,
 __declspec(naked)
 void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       ebx
@@ -2484,7 +2484,7 @@ void I422ToBGRARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2524,7 +2524,7 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2564,7 +2564,7 @@ void I422ToABGRRow_AVX2(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_argb,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2840,7 +2840,7 @@ void I444ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -2877,7 +2877,7 @@ void I444ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_abgr,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -2914,7 +2914,7 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
                           const uint8* u_buf,
                           const uint8* v_buf,
                           uint8* dst_rgb24,
-                          struct YuvConstants* yuvconstants,
+                          const struct YuvConstants* yuvconstants,
                           int width) {
   __asm {
     push       esi
@@ -2952,7 +2952,7 @@ void I422ToRAWRow_SSSE3(const uint8* y_buf,
                         const uint8* u_buf,
                         const uint8* v_buf,
                         uint8* dst_raw,
-                        struct YuvConstants* yuvconstants,
+                        const struct YuvConstants* yuvconstants,
                         int width) {
   __asm {
     push       esi
@@ -2990,7 +2990,7 @@ void I422ToRGB565Row_SSSE3(const uint8* y_buf,
                            const uint8* u_buf,
                            const uint8* v_buf,
                            uint8* rgb565_buf,
-                           struct YuvConstants* yuvconstants,
+                           const struct YuvConstants* yuvconstants,
                            int width) {
   __asm {
     push       esi
@@ -3033,7 +3033,7 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3071,7 +3071,7 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                               const uint8* v_buf,
                               const uint8* a_buf,
                               uint8* dst_argb,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __asm {
     push       esi
@@ -3111,7 +3111,7 @@ void I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
                               const uint8* v_buf,
                               const uint8* a_buf,
                               uint8* dst_abgr,
-                              struct YuvConstants* yuvconstants,
+                              const struct YuvConstants* yuvconstants,
                               int width) {
   __asm {
     push       esi
@@ -3151,7 +3151,7 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3187,7 +3187,7 @@ __declspec(naked)
 void NV12ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* uv_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3219,7 +3219,7 @@ __declspec(naked)
 void NV21ToARGBRow_SSSE3(const uint8* y_buf,
                          const uint8* vu_buf,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3250,7 +3250,7 @@ void NV21ToARGBRow_SSSE3(const uint8* y_buf,
 __declspec(naked)
 void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       ebx
@@ -3278,7 +3278,7 @@ void YUY2ToARGBRow_SSSE3(const uint8* src_yuy2,
 __declspec(naked)
 void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
                          uint8* dst_argb,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       ebx
@@ -3306,7 +3306,7 @@ void I422ToBGRARow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_bgra,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3340,7 +3340,7 @@ void I422ToABGRRow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_abgr,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
@@ -3375,7 +3375,7 @@ void I422ToRGBARow_SSSE3(const uint8* y_buf,
                          const uint8* u_buf,
                          const uint8* v_buf,
                          uint8* dst_rgba,
-                         struct YuvConstants* yuvconstants,
+                         const struct YuvConstants* yuvconstants,
                          int width) {
   __asm {
     push       esi
