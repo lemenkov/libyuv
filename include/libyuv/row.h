@@ -182,36 +182,6 @@ extern "C" {
 #define HAS_SOBELYROW_SSE2
 #endif
 
-// The following are also available on x64 Visual C.
-#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
-    (!defined(__clang__) || defined(__SSSE3__))
-#define HAS_I422ALPHATOABGRROW_SSSE3
-#define HAS_I422ALPHATOARGBROW_SSSE3
-#define HAS_I422TOABGRROW_SSSE3
-#define HAS_I422TOARGBROW_SSSE3
-#endif
-
-// The following are available for AVX2 Visual C and clangcl 32 bit:
-// TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
-    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
-#define HAS_ARGB1555TOARGBROW_AVX2
-#define HAS_ARGB4444TOARGBROW_AVX2
-#define HAS_ARGBTOARGB1555ROW_AVX2
-#define HAS_ARGBTOARGB4444ROW_AVX2
-#define HAS_ARGBTORGB565DITHERROW_AVX2
-#define HAS_ARGBTORGB565ROW_AVX2
-#define HAS_I411TOARGBROW_AVX2
-#define HAS_I422TOARGB1555ROW_AVX2
-#define HAS_I422TOARGB4444ROW_AVX2
-#define HAS_I422TORGB565ROW_AVX2
-#define HAS_I444TOABGRROW_AVX2
-#define HAS_I444TOARGBROW_AVX2
-#define HAS_J400TOARGBROW_AVX2
-#define HAS_NV12TORGB565ROW_AVX2
-#define HAS_RGB565TOARGBROW_AVX2
-#endif
-
 // The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
 // The code supports NaCL but requires a new compiler and validator.
@@ -222,6 +192,7 @@ extern "C" {
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
+#define HAS_ARGBTORGB565DITHERROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
@@ -260,6 +231,35 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
+#endif
+
+// The following are available for AVX2 Visual C and clangcl 32 bit:
+// TODO(fbarchard): Port to gcc.
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
+    (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
+#define HAS_ARGB1555TOARGBROW_AVX2
+#define HAS_ARGB4444TOARGBROW_AVX2
+#define HAS_ARGBTOARGB1555ROW_AVX2
+#define HAS_ARGBTOARGB4444ROW_AVX2
+#define HAS_ARGBTORGB565ROW_AVX2
+#define HAS_I411TOARGBROW_AVX2
+#define HAS_I422TOARGB1555ROW_AVX2
+#define HAS_I422TOARGB4444ROW_AVX2
+#define HAS_I422TORGB565ROW_AVX2
+#define HAS_I444TOABGRROW_AVX2
+#define HAS_I444TOARGBROW_AVX2
+#define HAS_J400TOARGBROW_AVX2
+#define HAS_NV12TORGB565ROW_AVX2
+#define HAS_RGB565TOARGBROW_AVX2
+#endif
+
+// The following are also available on x64 Visual C.
+#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
+    (!defined(__clang__) || defined(__SSSE3__))
+#define HAS_I422ALPHATOABGRROW_SSSE3
+#define HAS_I422ALPHATOARGBROW_SSSE3
+#define HAS_I422TOABGRROW_SSSE3
+#define HAS_I422TOARGBROW_SSSE3
 #endif
 
 // The following are available on Neon platforms:

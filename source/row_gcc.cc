@@ -566,11 +566,57 @@ void ARGBToRGB565DitherRow_SSE2(const uint8* src, uint8* dst,
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  : "m"(dither4) // %3
+  : "rm"(dither4) // %3
   : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
+
+#ifdef HAS_ARGBTORGB565DITHERROW_AVX2
+void ARGBToRGB565DitherRow_AVX2(const uint8* src, uint8* dst,
+                                const uint32 dither4, int pix) {
+  asm volatile (
+    "vbroadcastss %3,%%xmm6                    \n"
+    "vpunpcklbw %%xmm6,%%xmm6,%%xmm6           \n"
+    "vpermq     $0xd8,%%ymm6,%%ymm6            \n"
+    "vpunpcklwd %%ymm6,%%ymm6,%%ymm6           \n"
+    "vpcmpeqb   %%ymm3,%%ymm3,%%ymm3           \n"
+    "vpsrld     $0x1b,%%ymm3,%%ymm3            \n"
+    "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpsrld     $0x1a,%%ymm4,%%ymm4            \n"
+    "vpslld     $0x5,%%ymm4,%%ymm4             \n"
+    "vpslld     $0xb,%%ymm3,%%ymm5             \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vpaddusb   %%ymm6,%%ymm0,%%ymm0           \n"
+    "vpsrld     $0x5,%%ymm0,%%ymm2             \n"
+    "vpsrld     $0x3,%%ymm0,%%ymm1             \n"
+    "vpsrld     $0x8,%%ymm0,%%ymm0             \n"
+    "vpand      %%ymm4,%%ymm2,%%ymm2           \n"
+    "vpand      %%ymm3,%%ymm1,%%ymm1           \n"
+    "vpand      %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpor       %%ymm2,%%ymm1,%%ymm1           \n"
+    "vpor       %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpackusdw  %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "lea        0x20(%0),%0                    \n"
+    "vmovdqu    %%xmm0,(%1)                    \n"
+    "lea        0x10(%1),%1                    \n"
+    "sub        $0x8,%2                        \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(pix)   // %2
+  : "rm"(dither4) // %3
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+  );
+}
+#endif  // HAS_ARGBTORGB565DITHERROW_AVX2
+
 
 void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int pix) {
   asm volatile (
