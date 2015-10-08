@@ -33,16 +33,22 @@
        }],
     ],
   },
-  'conditions': [
-    ['build_neon != 0', {
-      'targets': [
-        # The NEON-specific components.
-        {
-          'target_name': 'libyuv_neon',
-          'type': 'static_library',
-          'standalone_static_library': 1,
-          # TODO(noahric): This should remove whatever mfpu is set, not
-          # just vfpv3-d16.
+
+  'targets': [
+    {
+      'target_name': 'libyuv',
+      # Change type to 'shared_library' to build .so or .dll files.
+      'type': 'static_library',
+      'variables': {
+        'optimize': 'max',  # enable O2 and ltcg.
+      },
+      # Allows libyuv.a redistributable library without external dependencies.
+      'standalone_static_library': 1,
+      'conditions': [
+        ['build_neon != 0', {
+          'defines': [
+            'LIBYUV_NEON',
+          ],
           'cflags!': [
             '-mfpu=vfp',
             '-mfpu=vfpv3',
@@ -63,42 +69,7 @@
               ],
             }],
           ],
-          'include_dirs': [
-            'include',
-            '.',
-          ],
-          'direct_dependent_settings': {
-            'include_dirs': [
-              'include',
-              '.',
-            ],
-          },
-          'sources': [
-            # sources.
-            'source/compare_neon.cc',
-            'source/compare_neon64.cc',
-            'source/rotate_neon.cc',
-            'source/rotate_neon64.cc',
-            'source/row_neon.cc',
-            'source/row_neon64.cc',
-            'source/scale_neon.cc',
-            'source/scale_neon64.cc',
-          ],
-        },
-      ],
-    }],
-  ],
-  'targets': [
-    {
-      'target_name': 'libyuv',
-      # Change type to 'shared_library' to build .so or .dll files.
-      'type': 'static_library',
-      'variables': {
-        'optimize': 'max',  # enable O2 and ltcg.
-      },
-      # Allows libyuv.a redistributable library without external dependencies.
-      'standalone_static_library': 1,
-      'conditions': [
+        }],
         ['OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG'
@@ -121,14 +92,6 @@
                 ],
               }
             }],
-          ],
-        }],
-        ['build_neon != 0', {
-          'dependencies': [
-            'libyuv_neon',
-          ],
-          'defines': [
-            'LIBYUV_NEON',
           ],
         }],
         # MemorySanitizer does not support assembly code yet.

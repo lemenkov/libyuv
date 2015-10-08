@@ -14,6 +14,7 @@ set(ly_source_files
   ${ly_src_dir}/compare.cc
   ${ly_src_dir}/compare_common.cc
   ${ly_src_dir}/compare_neon.cc
+  ${ly_src_dir}/compare_neon64.cc
   ${ly_src_dir}/compare_gcc.cc
   ${ly_src_dir}/compare_win.cc
   ${ly_src_dir}/convert.cc
@@ -33,12 +34,14 @@ set(ly_source_files
   ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_mips.cc
   ${ly_src_dir}/rotate_neon.cc
+  ${ly_src_dir}/rotate_neon64.cc
   ${ly_src_dir}/rotate_gcc.cc
   ${ly_src_dir}/rotate_win.cc
   ${ly_src_dir}/row_any.cc
   ${ly_src_dir}/row_common.cc
   ${ly_src_dir}/row_mips.cc
   ${ly_src_dir}/row_neon.cc
+  ${ly_src_dir}/row_neon64.cc
   ${ly_src_dir}/row_gcc.cc
   ${ly_src_dir}/row_win.cc
   ${ly_src_dir}/scale.cc
@@ -47,6 +50,7 @@ set(ly_source_files
   ${ly_src_dir}/scale_common.cc
   ${ly_src_dir}/scale_mips.cc
   ${ly_src_dir}/scale_neon.cc
+  ${ly_src_dir}/scale_neon64.cc
   ${ly_src_dir}/scale_gcc.cc
   ${ly_src_dir}/scale_win.cc
   ${ly_src_dir}/video_common.cc
