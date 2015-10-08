@@ -2230,17 +2230,17 @@ void ARGBAffineRow_C(const uint8* src_argb, int src_argb_stride,
 
 // Blend 2 rows into 1.
 static void HalfRow_C(const uint8* src_uv, int src_uv_stride,
-                      uint8* dst_uv, int pix) {
+                      uint8* dst_uv, int width) {
   int x;
-  for (x = 0; x < pix; ++x) {
+  for (x = 0; x < width; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
   }
 }
 
 static void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
-                         uint16* dst_uv, int pix) {
+                         uint16* dst_uv, int width) {
   int x;
-  for (x = 0; x < pix; ++x) {
+  for (x = 0; x < width; ++x) {
     dst_uv[x] = (src_uv[x] + src_uv[src_uv_stride + x] + 1) >> 1;
   }
 }
@@ -2302,14 +2302,14 @@ void InterpolateRow_16_C(uint16* dst_ptr, const uint16* src_ptr,
 
 // Use first 4 shuffler values to reorder ARGB channels.
 void ARGBShuffleRow_C(const uint8* src_argb, uint8* dst_argb,
-                      const uint8* shuffler, int pix) {
+                      const uint8* shuffler, int width) {
   int index0 = shuffler[0];
   int index1 = shuffler[1];
   int index2 = shuffler[2];
   int index3 = shuffler[3];
   // Shuffle a row of ARGB.
   int x;
-  for (x = 0; x < pix; ++x) {
+  for (x = 0; x < width; ++x) {
     // To support in-place conversion.
     uint8 b = src_argb[index0];
     uint8 g = src_argb[index1];

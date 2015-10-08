@@ -28,10 +28,10 @@ int ARGBToI444(const uint8* src_argb, int src_stride_argb,
                uint8* dst_v, int dst_stride_v,
                int width, int height) {
   int y;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   void (*ARGBToUV444Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUV444Row_C;
+      int width) = ARGBToUV444Row_C;
   if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
   }
@@ -110,8 +110,8 @@ int ARGBToI422(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUV422Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUV422Row_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      int width) = ARGBToUV422Row_C;
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
@@ -191,8 +191,8 @@ int ARGBToI411(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUV411Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUV411Row_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      int width) = ARGBToUV411Row_C;
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
@@ -264,7 +264,7 @@ int ARGBToNV12(const uint8* src_argb, int src_stride_argb,
   int halfwidth = (width + 1) >> 1;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
@@ -373,7 +373,7 @@ int ARGBToNV21(const uint8* src_argb, int src_stride_argb,
   int halfwidth = (width + 1) >> 1;
   void (*ARGBToUVRow)(const uint8* src_argb0, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width) = ARGBToUVRow_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
                       int width) = MergeUVRow_C;
@@ -479,8 +479,8 @@ int ARGBToYUY2(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUV422Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUV422Row_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      int width) = ARGBToUV422Row_C;
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   void (*I422ToYUY2Row)(const uint8* src_y, const uint8* src_u,
       const uint8* src_v, uint8* dst_yuy2, int width) = I422ToYUY2Row_C;
@@ -586,8 +586,8 @@ int ARGBToUYVY(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUV422Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUV422Row_C;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      int width) = ARGBToUV422Row_C;
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   void (*I422ToUYVYRow)(const uint8* src_y, const uint8* src_u,
       const uint8* src_v, uint8* dst_uyvy, int width) = I422ToUYVYRow_C;
@@ -692,7 +692,7 @@ int ARGBToI400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_y, int dst_stride_y,
                int width, int height) {
   int y;
-  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+  void (*ARGBToYRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYRow_C;
   if (!src_argb || !dst_y || width <= 0 || height == 0) {
     return -1;
@@ -764,7 +764,7 @@ int ARGBToRGB24(const uint8* src_argb, int src_stride_argb,
                 uint8* dst_rgb24, int dst_stride_rgb24,
                 int width, int height) {
   int y;
-  void (*ARGBToRGB24Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+  void (*ARGBToRGB24Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
       ARGBToRGB24Row_C;
   if (!src_argb || !dst_rgb24 || width <= 0 || height == 0) {
     return -1;
@@ -812,7 +812,7 @@ int ARGBToRAW(const uint8* src_argb, int src_stride_argb,
               uint8* dst_raw, int dst_stride_raw,
               int width, int height) {
   int y;
-  void (*ARGBToRAWRow)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+  void (*ARGBToRAWRow)(const uint8* src_argb, uint8* dst_rgb, int width) =
       ARGBToRAWRow_C;
   if (!src_argb || !dst_raw || width <= 0 || height == 0) {
     return -1;
@@ -869,7 +869,7 @@ int ARGBToRGB565Dither(const uint8* src_argb, int src_stride_argb,
                        const uint8* dither4x4, int width, int height) {
   int y;
   void (*ARGBToRGB565DitherRow)(const uint8* src_argb, uint8* dst_rgb,
-      const uint32 dither4, int pix) = ARGBToRGB565DitherRow_C;
+      const uint32 dither4, int width) = ARGBToRGB565DitherRow_C;
   if (!src_argb || !dst_rgb565 || width <= 0 || height == 0) {
     return -1;
   }
@@ -921,7 +921,7 @@ int ARGBToRGB565(const uint8* src_argb, int src_stride_argb,
                  uint8* dst_rgb565, int dst_stride_rgb565,
                  int width, int height) {
   int y;
-  void (*ARGBToRGB565Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+  void (*ARGBToRGB565Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
       ARGBToRGB565Row_C;
   if (!src_argb || !dst_rgb565 || width <= 0 || height == 0) {
     return -1;
@@ -977,7 +977,7 @@ int ARGBToARGB1555(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb1555, int dst_stride_argb1555,
                    int width, int height) {
   int y;
-  void (*ARGBToARGB1555Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+  void (*ARGBToARGB1555Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
       ARGBToARGB1555Row_C;
   if (!src_argb || !dst_argb1555 || width <= 0 || height == 0) {
     return -1;
@@ -1033,7 +1033,7 @@ int ARGBToARGB4444(const uint8* src_argb, int src_stride_argb,
                    uint8* dst_argb4444, int dst_stride_argb4444,
                    int width, int height) {
   int y;
-  void (*ARGBToARGB4444Row)(const uint8* src_argb, uint8* dst_rgb, int pix) =
+  void (*ARGBToARGB4444Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
       ARGBToARGB4444Row_C;
   if (!src_argb || !dst_argb4444 || width <= 0 || height == 0) {
     return -1;
@@ -1093,7 +1093,7 @@ int ARGBToJ420(const uint8* src_argb, int src_stride_argb,
   int y;
   void (*ARGBToUVJRow)(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) = ARGBToUVJRow_C;
-  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int width) =
       ARGBToYJRow_C;
   if (!src_argb ||
       !dst_yj || !dst_u || !dst_v ||
@@ -1166,8 +1166,8 @@ int ARGBToJ422(const uint8* src_argb, int src_stride_argb,
                int width, int height) {
   int y;
   void (*ARGBToUVJ422Row)(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-      int pix) = ARGBToUVJ422Row_C;
-  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_y, int pix) =
+      int width) = ARGBToUVJ422Row_C;
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_y, int width) =
       ARGBToYJRow_C;
   if (!src_argb || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
     return -1;
@@ -1245,7 +1245,7 @@ int ARGBToJ400(const uint8* src_argb, int src_stride_argb,
                uint8* dst_yj, int dst_stride_yj,
                int width, int height) {
   int y;
-  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int pix) =
+  void (*ARGBToYJRow)(const uint8* src_argb, uint8* dst_yj, int width) =
       ARGBToYJRow_C;
   if (!src_argb || !dst_yj || width <= 0 || height == 0) {
     return -1;
