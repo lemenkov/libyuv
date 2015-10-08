@@ -566,7 +566,7 @@ void ARGBToRGB565DitherRow_SSE2(const uint8* src, uint8* dst,
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  : "rm"(dither4) // %3
+  : "m"(dither4) // %3
   : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
@@ -610,7 +610,7 @@ void ARGBToRGB565DitherRow_AVX2(const uint8* src, uint8* dst,
   : "+r"(src),  // %0
     "+r"(dst),  // %1
     "+r"(pix)   // %2
-  : "rm"(dither4) // %3
+  : "m"(dither4) // %3
   : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
