@@ -102,6 +102,12 @@ source_set("libyuv") {
   if (use_neon) {
     deps += [ ":libyuv_neon" ]
   }
+
+  if (is_nacl) {
+    # Always enable optimization under NaCl to workaround crbug.com/538243 .
+    configs -= [ "//build/config/compiler:default_optimization" ]
+    configs += [ "//build/config/compiler:optimize_max" ]
+  }
 }
 
 if (use_neon) {
