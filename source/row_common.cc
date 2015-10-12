@@ -1017,13 +1017,17 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 // BT.601 constants for YUV to RGB.
 // TODO(fbarchard): Unify these structures to be platform independent.
 // TODO(fbarchard): Generate SIMD structures from float matrix.
+
+// BT601 constants for YUV to RGB.
 #if defined(__aarch64__)
 const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
-  { -UB, 0, -UB, 0, -UB, 0, -UB, 0, -VR, 0, -VR, 0, -VR, 0, -VR, 0 },
-  { UG, 0, UG, 0, UG, 0, UG, 0, VG, 0, VG, 0, VG, 0, VG, 0 },
+  { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
+  { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
+  { UG, VG, UG, VG, UG, VG, UG, VG },
+  { UG, VG, UG, VG, UG, VG, UG, VG },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
- };
+};
 
 #elif defined(__arm__)
 const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
@@ -1072,8 +1076,8 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 #if defined(__aarch64__)
   int UB = -yuvconstants->kUVToRB[0];
   int UG = yuvconstants->kUVToG[0];
-  int VG = yuvconstants->kUVToG[8];
-  int VR = -yuvconstants->kUVToRB[8];
+  int VG = yuvconstants->kUVToG[1];
+  int VR = -yuvconstants->kUVToRB[1];
   int BB = yuvconstants->kUVBiasBGR[0];
   int BG = yuvconstants->kUVBiasBGR[1];
   int BR = yuvconstants->kUVBiasBGR[2];
@@ -1126,11 +1130,13 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 // JPEG constants for YUV to RGB.
 #if defined(__aarch64__)
 const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
-  { -UBJ, 0, -UBJ, 0, -UBJ, 0, -UBJ, 0, -VRJ, 0, -VRJ, 0, -VRJ, 0, -VRJ, 0 },
-  { UGJ, 0, UGJ, 0, UGJ, 0, UGJ, 0, VGJ, 0, VGJ, 0, VGJ, 0, VGJ, 0 },
+  { -UBJ, -VRJ, -UBJ, -VRJ, -UBJ, -VRJ, -UBJ, -VRJ },
+  { -UBJ, -VRJ, -UBJ, -VRJ, -UBJ, -VRJ, -UBJ, -VRJ },
+  { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ },
+  { UGJ, VGJ, UGJ, VGJ, UGJ, VGJ, UGJ, VGJ },
   { BBJ, BGJ, BRJ, 0, 0, 0, 0, 0 },
   { 0x0101 * YGJ, 0, 0, 0 }
- };
+};
 
 #elif defined(__arm__)
 const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
@@ -1194,11 +1200,13 @@ const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
 // BT.709 constants for YUV to RGB.
 #if defined(__aarch64__)
 const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
-  { -UBH, 0, -UBH, 0, -UBH, 0, -UBH, 0, -VRH, 0, -VRH, 0, -VRH, 0, -VRH, 0 },
-  { UGH, 0, UGH, 0, UGH, 0, UGH, 0, VGH, 0, VGH, 0, VGH, 0, VGH, 0 },
+  { -UBH, -VRH, -UBH, -VRH, -UBH, -VRH, -UBH, -VRH },
+  { -UBH, -VRH, -UBH, -VRH, -UBH, -VRH, -UBH, -VRH },
+  { UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH },
+  { UGH, VGH, UGH, VGH, UGH, VGH, UGH, VGH },
   { BBH, BGH, BRH, 0, 0, 0, 0, 0 },
   { 0x0101 * YGH, 0, 0, 0 }
- };
+};
 
 #elif defined(__arm__)
 const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {

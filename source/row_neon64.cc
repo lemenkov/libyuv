@@ -96,8 +96,8 @@ extern "C" {
     "ld1r       {v25.8h}, [%[kUVBiasBGR]], #2  \n"                             \
     "ld1r       {v26.8h}, [%[kUVBiasBGR]]      \n"                             \
     "ld1r       {v31.4s}, [%[kYToRgb]]         \n"                             \
-    "ld1        {v27.8h, v28.8h}, [%[kUVToRB]] \n"                             \
-    "ld1        {v29.8h, v30.8h}, [%[kUVToG]]  \n"
+    "ld2        {v27.8h, v28.8h}, [%[kUVToRB]] \n"                             \
+    "ld2        {v29.8h, v30.8h}, [%[kUVToG]]  \n"
 
 #define YUVTORGB(vR, vG, vB)                                                   \
     "uxtl       v0.8h, v0.8b                   \n" /* Extract Y    */          \
