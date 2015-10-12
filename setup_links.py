@@ -49,13 +49,15 @@ DIRECTORIES = [
   'third_party/libjpeg_turbo',
   'third_party/libsrtp',
   'third_party/libudev',
-  'third_party/libvpx',
+  'third_party/libvpx_new',
   'third_party/libyuv',
   'third_party/llvm-build',
+  'third_party/lss',
   'third_party/nss',
   'third_party/ocmock',
   'third_party/openmax_dl',
   'third_party/opus',
+  'third_party/proguard',
   'third_party/protobuf',
   'third_party/sqlite',
   'third_party/syzygy',
@@ -81,9 +83,11 @@ if 'android' in target_os:
   DIRECTORIES += [
     'base',
     'third_party/android_platform',
+    'third_party/android_testrunner',
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
+    'third_party/ijar',
     'third_party/jsr-305',
     'third_party/junit',
     'third_party/libevent',
@@ -101,6 +105,7 @@ if 'ios' in target_os:
 
 FILES = {
   'tools/find_depot_tools.py': None,
+  'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
 

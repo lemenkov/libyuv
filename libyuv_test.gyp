@@ -14,12 +14,10 @@
   'targets': [
     {
       'target_name': 'libyuv_unittest',
-      'type': 'executable',
+      'type': '<(gtest_target_type)',
       'dependencies': [
         'libyuv.gyp:libyuv',
-        # The tests are based on gtest
         'testing/gtest.gyp:gtest',
-        'testing/gtest.gyp:gtest_main',
       ],
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.
@@ -75,6 +73,11 @@
         [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG',
+          ],
+        }],
+        ['OS=="android"', {
+          'dependencies': [
+            '<(DEPTH)/testing/android/native_test.gyp:native_test_native_code',
           ],
         }],
         # TODO(YangZhang): These lines can be removed when high accuracy
@@ -166,6 +169,40 @@
       ],
     },
   ], # targets
+  'conditions': [
+    ['OS=="android"', {
+      'targets': [
+        {
+          # TODO(kjellander): Figure out what to change in build/apk_test.gypi
+          # to it can be used instead of the copied code below. Using it in its
+          # current version was not possible, since the target starts with 'lib', 
+          # which somewhere confuses the variables.
+          'target_name': 'libyuv_unittest_apk',
+          'type': 'none',
+          'variables': {
+            # These are used to configure java_apk.gypi included below.
+            'test_type': 'gtest',
+            'apk_name': 'libyuv_unittest',
+            'intermediate_dir': '<(PRODUCT_DIR)/libyuv_unittest_apk',
+            'final_apk_path': '<(intermediate_dir)/libyuv_unittest-debug.apk',
+            'java_in_dir': '<(DEPTH)/testing/android/native_test/java',
+            'native_lib_target': 'libyuv_unittest',
+            'gyp_managed_install': 0,
+          },
+          'includes': [ 'build/java_apk.gypi' ],
+          'dependencies': [
+            '<(DEPTH)/base/base.gyp:base_java',
+            '<(DEPTH)/build/android/pylib/device/commands/commands.gyp:chromium_commands',
+            '<(DEPTH)/build/android/pylib/remote/device/dummy/dummy.gyp:remote_device_dummy_apk',
+            '<(DEPTH)/testing/android/appurify_support.gyp:appurify_support_java',
+            '<(DEPTH)/testing/android/on_device_instrumentation.gyp:reporter_java',
+            '<(DEPTH)/tools/android/android_tools.gyp:android_tools',
+            'libyuv_unittest',
+          ],
+        },
+      ],
+    }],
+  ],
 }
 
 # Local Variables:
