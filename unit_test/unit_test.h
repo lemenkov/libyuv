@@ -72,9 +72,69 @@ static inline void MemRandomize(uint8* dst, int64 len) {
   }
 }
 
-class libyuvTest : public ::testing::Test {
+class LibYUVConvertTest : public ::testing::Test {
  protected:
-  libyuvTest();
+  LibYUVConvertTest();
+
+  const int rotate_max_w_;
+  const int rotate_max_h_;
+
+  int benchmark_iterations_;  // Default 1. Use 1000 for benchmarking.
+  int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
+  int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
+  int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
+  int benchmark_pixels_div1280_;  // Total pixels to benchmark / 1280.
+  int disable_cpu_flags_;  // Default 0.  Use -1 for benchmarking.
+};
+
+class LibYUVScaleTest : public ::testing::Test {
+ protected:
+  LibYUVScaleTest();
+
+  const int rotate_max_w_;
+  const int rotate_max_h_;
+
+  int benchmark_iterations_;  // Default 1. Use 1000 for benchmarking.
+  int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
+  int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
+  int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
+  int benchmark_pixels_div1280_;  // Total pixels to benchmark / 1280.
+  int disable_cpu_flags_;  // Default 0.  Use -1 for benchmarking.
+};
+
+class LibYUVRotateTest : public ::testing::Test {
+ protected:
+  LibYUVRotateTest();
+
+  const int rotate_max_w_;
+  const int rotate_max_h_;
+
+  int benchmark_iterations_;  // Default 1. Use 1000 for benchmarking.
+  int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
+  int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
+  int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
+  int benchmark_pixels_div1280_;  // Total pixels to benchmark / 1280.
+  int disable_cpu_flags_;  // Default 0.  Use -1 for benchmarking.
+};
+
+class LibYUVPlanarTest : public ::testing::Test {
+ protected:
+  LibYUVPlanarTest();
+
+  const int rotate_max_w_;
+  const int rotate_max_h_;
+
+  int benchmark_iterations_;  // Default 1. Use 1000 for benchmarking.
+  int benchmark_width_;  // Default 1280.  Use 640 for benchmarking VGA.
+  int benchmark_height_;  // Default 720.  Use 360 for benchmarking VGA.
+  int benchmark_pixels_div256_;  // Total pixels to benchmark / 256.
+  int benchmark_pixels_div1280_;  // Total pixels to benchmark / 1280.
+  int disable_cpu_flags_;  // Default 0.  Use -1 for benchmarking.
+};
+
+class LibYUVBaseTest : public ::testing::Test {
+ protected:
+  LibYUVBaseTest();
 
   const int rotate_max_w_;
   const int rotate_max_h_;

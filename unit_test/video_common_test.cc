@@ -41,7 +41,7 @@ static bool TestValidFourCC(uint32 fourcc, int bpp) {
   return true;
 }
 
-TEST_F(libyuvTest, TestCanonicalFourCC) {
+TEST_F(LibYUVBaseTest, TestCanonicalFourCC) {
   EXPECT_EQ(FOURCC_I420, CanonicalFourCC(FOURCC_IYUV));
   EXPECT_EQ(FOURCC_I422, CanonicalFourCC(FOURCC_YU16));
   EXPECT_EQ(FOURCC_I444, CanonicalFourCC(FOURCC_YU24));
@@ -60,7 +60,7 @@ TEST_F(libyuvTest, TestCanonicalFourCC) {
   EXPECT_EQ(FOURCC_RGBO, CanonicalFourCC(FOURCC_5551));
 }
 
-TEST_F(libyuvTest, TestFourCC) {
+TEST_F(LibYUVBaseTest, TestFourCC) {
   EXPECT_TRUE(TestValidFourCC(FOURCC_I420, FOURCC_BPP_I420));
   EXPECT_TRUE(TestValidFourCC(FOURCC_I420, FOURCC_BPP_I420));
   EXPECT_TRUE(TestValidFourCC(FOURCC_I422, FOURCC_BPP_I422));

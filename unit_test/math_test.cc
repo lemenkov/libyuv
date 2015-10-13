@@ -21,7 +21,7 @@
 
 namespace libyuv {
 
-TEST_F(libyuvTest, TestFixedDiv) {
+TEST_F(LibYUVBaseTest, TestFixedDiv) {
   int num[1280];
   int div[1280];
   int result_opt[1280];
@@ -85,7 +85,7 @@ TEST_F(libyuvTest, TestFixedDiv) {
   }
 }
 
-TEST_F(libyuvTest, TestFixedDiv_Opt) {
+TEST_F(LibYUVBaseTest, TestFixedDiv_Opt) {
   int num[1280];
   int div[1280];
   int result_opt[1280];
@@ -119,7 +119,7 @@ TEST_F(libyuvTest, TestFixedDiv_Opt) {
   }
 }
 
-TEST_F(libyuvTest, TestFixedDiv1_Opt) {
+TEST_F(LibYUVBaseTest, TestFixedDiv1_Opt) {
   int num[1280];
   int div[1280];
   int result_opt[1280];

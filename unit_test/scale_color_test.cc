@@ -37,7 +37,7 @@ namespace libyuv {
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF)              \
-TEST_F(libyuvTest, TESTNAME) {                                                 \
+TEST_F(LibYUVScaleTest, TESTNAME) {                                            \
   const int kPixels = benchmark_width_ * benchmark_height_;                    \
   const int kHalfPixels = ((benchmark_width_ + 1) / 2) *                       \
       ((benchmark_height_ + HS1) / HS);                                        \
@@ -251,7 +251,7 @@ static void YUVJToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *b = RoundToByte(y - (u - 128) * -1.77200);
 }
 
-TEST_F(libyuvTest, ScaleTestYUV) {
+TEST_F(LibYUVScaleTest, ScaleTestYUV) {
   int r0, g0, b0, r1, g1, b1;
 
   // cyan (less red)
@@ -297,7 +297,7 @@ TEST_F(libyuvTest, ScaleTestYUV) {
   }
 }
 
-TEST_F(libyuvTest, ScaleTestGreyYUV) {
+TEST_F(LibYUVScaleTest, ScaleTestGreyYUV) {
   int r0, g0, b0, r1, g1, b1, r2, g2, b2;
 
   // black
@@ -376,7 +376,7 @@ static void ScalePrintHistogram(int rh[256], int gh[256], int bh[256]) {
   printf("\n");
 }
 
-TEST_F(libyuvTest, ScaleTestFullYUV) {
+TEST_F(LibYUVScaleTest, ScaleTestFullYUV) {
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -397,7 +397,7 @@ TEST_F(libyuvTest, ScaleTestFullYUV) {
   ScalePrintHistogram(rh, gh, bh);
 }
 
-TEST_F(libyuvTest, ScaleTestFullYUVJ) {
+TEST_F(LibYUVScaleTest, ScaleTestFullYUVJ) {
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -418,7 +418,7 @@ TEST_F(libyuvTest, ScaleTestFullYUVJ) {
   ScalePrintHistogram(rh, gh, bh);
 }
 
-TEST_F(libyuvTest, ScaleTestGreyYUVJ) {
+TEST_F(LibYUVScaleTest, ScaleTestGreyYUVJ) {
   int r0, g0, b0, r1, g1, b1, r2, g2, b2;
 
   // black

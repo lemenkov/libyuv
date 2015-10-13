@@ -20,7 +20,7 @@ namespace libyuv {
 // Tests SVN version against include/libyuv/version.h
 // SVN version is bumped by documentation changes as well as code.
 // Although the versions should match, once checked in, a tolerance is allowed.
-TEST_F(libyuvTest, DISABLED_TestVersion) {
+TEST_F(LibYUVBaseTest, DISABLED_TestVersion) {
   EXPECT_GE(LIBYUV_VERSION, 169);  // 169 is first version to support version.
   printf("LIBYUV_VERSION %d\n", LIBYUV_VERSION);
 #ifdef LIBYUV_SVNREVISION

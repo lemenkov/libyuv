@@ -93,49 +93,49 @@ static void ARGBTestRotate(int src_width, int src_height,
                 mode, benchmark_iterations, disable_cpu_flags, 4);
 }
 
-TEST_F(libyuvTest, ARGBRotate0) {
+TEST_F(LibYUVRotateTest, ARGBRotate0) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_width_, benchmark_height_,
                  kRotate0, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate90) {
+TEST_F(LibYUVRotateTest, ARGBRotate90) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_height_, benchmark_width_,
                  kRotate90, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate180) {
+TEST_F(LibYUVRotateTest, ARGBRotate180) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_width_, benchmark_height_,
                  kRotate180, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate270) {
+TEST_F(LibYUVRotateTest, ARGBRotate270) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_height_, benchmark_width_,
                  kRotate270, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate0_Odd) {
+TEST_F(LibYUVRotateTest, ARGBRotate0_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_width_ - 3, benchmark_height_ - 1,
                  kRotate0, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate90_Odd) {
+TEST_F(LibYUVRotateTest, ARGBRotate90_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_height_ - 1, benchmark_width_ - 3,
                  kRotate90, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate180_Odd) {
+TEST_F(LibYUVRotateTest, ARGBRotate180_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_width_ - 3, benchmark_height_ - 1,
                  kRotate180, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, ARGBRotate270_Odd) {
+TEST_F(LibYUVRotateTest, ARGBRotate270_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_height_ - 1, benchmark_width_ - 3,
                  kRotate270, benchmark_iterations_, disable_cpu_flags_);
@@ -150,49 +150,49 @@ static void TestRotatePlane(int src_width, int src_height,
                 mode, benchmark_iterations, disable_cpu_flags, 1);
 }
 
-TEST_F(libyuvTest, RotatePlane0) {
+TEST_F(LibYUVRotateTest, RotatePlane0) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_width_, benchmark_height_,
                   kRotate0, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane90) {
+TEST_F(LibYUVRotateTest, RotatePlane90) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_height_, benchmark_width_,
                   kRotate90, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane180) {
+TEST_F(LibYUVRotateTest, RotatePlane180) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_width_, benchmark_height_,
                   kRotate180, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane270) {
+TEST_F(LibYUVRotateTest, RotatePlane270) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_height_, benchmark_width_,
                   kRotate270, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane0_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane0_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_width_ - 3, benchmark_height_ - 1,
                   kRotate0, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane90_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane90_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_height_ - 1, benchmark_width_ - 3,
                   kRotate90, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane180_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane180_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_width_ - 3, benchmark_height_ - 1,
                   kRotate180, benchmark_iterations_, disable_cpu_flags_);
 }
 
-TEST_F(libyuvTest, RotatePlane270_Odd) {
+TEST_F(LibYUVRotateTest, RotatePlane270_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_height_ - 1, benchmark_width_ - 3,
                   kRotate270, benchmark_iterations_, disable_cpu_flags_);
