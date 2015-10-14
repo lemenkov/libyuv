@@ -37,7 +37,7 @@ namespace libyuv {
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF)              \
-TEST_F(LibYUVConvertTest, TESTNAME) {                                          \
+TEST_F(LibYUVColorTest, TESTNAME) {                                            \
   const int kPixels = benchmark_width_ * benchmark_height_;                    \
   const int kHalfPixels = ((benchmark_width_ + 1) / 2) *                       \
       ((benchmark_height_ + HS1) / HS);                                        \
@@ -312,7 +312,7 @@ static int RoundToByte(float f) {
 
 #define RANDOM256(s) ((s & 1) ? ((s >> 1) ^ 0xb8) : (s >> 1))
 
-TEST_F(LibYUVConvertTest, TestRoundToByte) {
+TEST_F(LibYUVColorTest, TestRoundToByte) {
   int allb = 0;
   int count = benchmark_width_ * benchmark_height_;
   for (int i = 0; i < benchmark_iterations_; ++i) {
@@ -339,7 +339,7 @@ static void YUVJToRGBReference(int y, int u, int v, int* r, int* g, int* b) {
   *b = RoundToByte(y - (u - 128) * -1.77200);
 }
 
-TEST_F(LibYUVConvertTest, TestYUV) {
+TEST_F(LibYUVColorTest, TestYUV) {
   int r0, g0, b0, r1, g1, b1;
 
   // cyan (less red)
@@ -385,7 +385,7 @@ TEST_F(LibYUVConvertTest, TestYUV) {
   }
 }
 
-TEST_F(LibYUVConvertTest, TestGreyYUV) {
+TEST_F(LibYUVColorTest, TestGreyYUV) {
   int r0, g0, b0, r1, g1, b1, r2, g2, b2;
 
   // black
@@ -464,7 +464,7 @@ static void PrintHistogram(int rh[256], int gh[256], int bh[256]) {
   printf("\n");
 }
 
-TEST_F(LibYUVConvertTest, TestFullYUV) {
+TEST_F(LibYUVColorTest, TestFullYUV) {
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -485,7 +485,7 @@ TEST_F(LibYUVConvertTest, TestFullYUV) {
   PrintHistogram(rh, gh, bh);
 }
 
-TEST_F(LibYUVConvertTest, TestFullYUVJ) {
+TEST_F(LibYUVColorTest, TestFullYUVJ) {
   int rh[256] = { 0, }, gh[256] = { 0, }, bh[256] = { 0, };
   for (int u = 0; u < 256; ++u) {
     for (int v = 0; v < 256; ++v) {
@@ -506,7 +506,7 @@ TEST_F(LibYUVConvertTest, TestFullYUVJ) {
   PrintHistogram(rh, gh, bh);
 }
 
-TEST_F(LibYUVConvertTest, TestGreyYUVJ) {
+TEST_F(LibYUVColorTest, TestGreyYUVJ) {
   int r0, g0, b0, r1, g1, b1, r2, g2, b2;
 
   // black

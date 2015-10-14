@@ -20,7 +20,7 @@
 
 int fastrand_seed = 0xfb;
 
-LibYUVConvertTest::LibYUVConvertTest() : rotate_max_w_(128), rotate_max_h_(128),
+LibYUVConvertTest::LibYUVConvertTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
@@ -55,7 +55,7 @@ LibYUVConvertTest::LibYUVConvertTest() : rotate_max_w_(128), rotate_max_h_(128),
         static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
 }
 
-LibYUVScaleTest::LibYUVScaleTest() : rotate_max_w_(128), rotate_max_h_(128),
+LibYUVColorTest::LibYUVColorTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
@@ -90,7 +90,7 @@ LibYUVScaleTest::LibYUVScaleTest() : rotate_max_w_(128), rotate_max_h_(128),
         static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
 }
 
-LibYUVRotateTest::LibYUVRotateTest() : rotate_max_w_(128), rotate_max_h_(128),
+LibYUVScaleTest::LibYUVScaleTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
@@ -125,7 +125,7 @@ LibYUVRotateTest::LibYUVRotateTest() : rotate_max_w_(128), rotate_max_h_(128),
         static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
 }
 
-LibYUVPlanarTest::LibYUVPlanarTest() : rotate_max_w_(128), rotate_max_h_(128),
+LibYUVRotateTest::LibYUVRotateTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
@@ -160,7 +160,42 @@ LibYUVPlanarTest::LibYUVPlanarTest() : rotate_max_w_(128), rotate_max_h_(128),
         static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
 }
 
-LibYUVBaseTest::LibYUVBaseTest() : rotate_max_w_(128), rotate_max_h_(128),
+LibYUVPlanarTest::LibYUVPlanarTest() :
+    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
+    benchmark_height_(72), disable_cpu_flags_(0) {
+    const char* repeat = getenv("LIBYUV_REPEAT");
+    if (repeat) {
+      benchmark_iterations_ = atoi(repeat);  // NOLINT
+      // For quicker unittests, default is 128 x 72.  But when benchmarking,
+      // default to 720p.  Allow size to specify.
+      if (benchmark_iterations_ > 1) {
+        benchmark_width_ = 1280;
+        benchmark_height_ = 720;
+      }
+    }
+    const char* width = getenv("LIBYUV_WIDTH");
+    if (width) {
+      benchmark_width_ = atoi(width);  // NOLINT
+    }
+    const char* height = getenv("LIBYUV_HEIGHT");
+    if (height) {
+      benchmark_height_ = atoi(height);  // NOLINT
+    }
+    const char* cpu_flags = getenv("LIBYUV_FLAGS");
+    if (cpu_flags) {
+      disable_cpu_flags_ = atoi(cpu_flags);  // NOLINT
+    }
+    benchmark_pixels_div256_ = static_cast<int>((
+        static_cast<double>(Abs(benchmark_width_)) *
+        static_cast<double>(Abs(benchmark_height_)) *
+        static_cast<double>(benchmark_iterations_)  + 255.0) / 256.0);
+    benchmark_pixels_div1280_ = static_cast<int>((
+        static_cast<double>(Abs(benchmark_width_)) *
+        static_cast<double>(Abs(benchmark_height_)) *
+        static_cast<double>(benchmark_iterations_)  + 1279.0) / 1280.0);
+}
+
+LibYUVBaseTest::LibYUVBaseTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(0) {
     const char* repeat = getenv("LIBYUV_REPEAT");
