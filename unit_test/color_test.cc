@@ -37,7 +37,7 @@ namespace libyuv {
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF)              \
-TEST_F(LibYUVColorTest, TESTNAME) {                                            \
+	TEST_F(LibYUVColorTest, DISABLED_ ## TESTNAME) {                           \
   const int kPixels = benchmark_width_ * benchmark_height_;                    \
   const int kHalfPixels = ((benchmark_width_ + 1) / 2) *                       \
       ((benchmark_height_ + HS1) / HS);                                        \
