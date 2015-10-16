@@ -1448,14 +1448,6 @@ TEST_F(LibYUVConvertTest, CropNV12) {
   free_aligned_buffer_64(src_y);
 }
 
-TEST_F(LibYUVConvertTest, HaveJPEG) {
-#ifdef HAVE_JPEG
-  printf("JPEG enabled\n.");
-#else
-  printf("JPEG disabled\n.");
-#endif
-}
-
 TEST_F(LibYUVConvertTest, TestYToARGB) {
   uint8 y[32];
   uint8 expectedg[32];
