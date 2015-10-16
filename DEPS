@@ -9,16 +9,6 @@ vars = {
   'chromium_revision': 'bb79186c63ff4eff7a2a318a21731005c53f269b',
 }
 
-# NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
-# https; the latter can cause problems for users behind proxies.
-deps = {
-  'src/third_party/gflags/src':
-    Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
-}
-
-# Define rules for which include paths are allowed in our source.
-include_rules = [ '+gflags' ]
-
 hooks = [
   {
     # Clone chromium and its deps.
