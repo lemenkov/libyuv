@@ -18,6 +18,15 @@
       'dependencies': [
         'libyuv.gyp:libyuv',
         'testing/gtest.gyp:gtest',
+        'third_party/gflags/gflags.gyp:gflags',
+      ],
+      'direct_dependent_settings': {
+        'defines': [
+          'GTEST_RELATIVE_PATH',
+        ],
+      },
+      'export_dependent_settings': [
+        '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.
