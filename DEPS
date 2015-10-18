@@ -13,7 +13,7 @@ vars = {
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
 # https; the latter can cause problems for users behind proxies.
 deps = {
-  'src/third_party/gflags/src':
+  Var('root_dir') + '/third_party/gflags/src':
     Var('chromium_git') + '/external/gflags/src@e7390f9185c75f8d902c05ed7d20bb94eb914d0c', # from svn revision 82
 }
 
