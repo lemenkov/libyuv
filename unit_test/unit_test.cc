@@ -304,6 +304,9 @@ LibYUVBaseTest::LibYUVBaseTest() :
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  // AllowCommandLineParsing allows us to ignore flags passed on to us by
+  // Chromium build bots without having to explicitly disable them.
+  google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, true);
   return RUN_ALL_TESTS();
 }
