@@ -197,8 +197,8 @@ static LIBYUV_BOOL TestEnv(const char*) {
 
 LIBYUV_API SAFEBUFFERS
 int InitCpuFlags(void) {
-#if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
   int cpu_info;
+#if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
   uint32 cpu_info0[4] = { 0, 0, 0, 0 };
   uint32 cpu_info1[4] = { 0, 0, 0, 0 };
   uint32 cpu_info7[4] = { 0, 0, 0, 0 };
