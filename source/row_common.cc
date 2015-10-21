@@ -679,10 +679,11 @@ void ARGBToUV411Row_C(const uint8* src_argb,
     dst_u += 1;
     dst_v += 1;
   }
+  // Odd width handling mimics 'any' function which replicates last pixel.
   if ((width & 3) == 3) {
-    uint8 ab = (src_argb[0] + src_argb[4] + src_argb[8]) / 3;
-    uint8 ag = (src_argb[1] + src_argb[5] + src_argb[9]) / 3;
-    uint8 ar = (src_argb[2] + src_argb[6] + src_argb[10]) / 3;
+    uint8 ab = (src_argb[0] + src_argb[4] + src_argb[8] + src_argb[8]) >> 2;
+    uint8 ag = (src_argb[1] + src_argb[5] + src_argb[9] + src_argb[9]) >> 2;
+    uint8 ar = (src_argb[2] + src_argb[6] + src_argb[10] + src_argb[10]) >> 2;
     dst_u[0] = RGBToU(ar, ag, ab);
     dst_v[0] = RGBToV(ar, ag, ab);
   } else if ((width & 3) == 2) {

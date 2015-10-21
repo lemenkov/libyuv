@@ -672,7 +672,23 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
         ANY_SIMD(src_ptr, dst_u, dst_v, n);                                    \
       }                                                                        \
       memcpy(temp, src_ptr  + (n >> UVSHIFT) * BPP, SS(r, UVSHIFT) * BPP);     \
-      if ((width & 1) && BPP == 4) {  /* repeat last 4 bytes for subsampler */ \
+      /* repeat last 4 bytes for 422 subsampler */                             \
+      if ((width & 1) && BPP == 4 && DUVSHIFT == 1) {                          \
+        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
+               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
+      }                                                                        \
+      /* repeat last 4 - 12 bytes for 411 subsampler */                        \
+      if (((width & 1) == 1) && BPP == 4 && DUVSHIFT == 2) {                   \
+        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
+               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
+        memcpy(temp + SS(r, UVSHIFT) * BPP + 4,                                \
+                   temp + SS(r, UVSHIFT) * BPP - BPP, 8);                      \
+      }                                                                        \
+      if (((width & 1) == 2) && BPP == 4 && DUVSHIFT == 2) {                   \
+        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
+               temp + SS(r, UVSHIFT) * BPP - BPP * 2, 8);                      \
+      }                                                                        \
+      if (((width & 1) == 3) && BPP == 4 && DUVSHIFT == 2) {                   \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
                temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
       }                                                                        \
