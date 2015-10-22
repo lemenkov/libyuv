@@ -675,22 +675,22 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
       /* repeat last 4 bytes for 422 subsampler */                             \
       if ((width & 1) && BPP == 4 && DUVSHIFT == 1) {                          \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
+               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
       }                                                                        \
       /* repeat last 4 - 12 bytes for 411 subsampler */                        \
       if (((width & 3) == 1) && BPP == 4 && DUVSHIFT == 2) {                   \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
-        memcpy(temp + SS(r, UVSHIFT) * BPP + 4,                                \
-                   temp + SS(r, UVSHIFT) * BPP - BPP, 8);                      \
+               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
+        memcpy(temp + SS(r, UVSHIFT) * BPP + BPP,                              \
+               temp + SS(r, UVSHIFT) * BPP - BPP, BPP * 2);                    \
       }                                                                        \
       if (((width & 3) == 2) && BPP == 4 && DUVSHIFT == 2) {                   \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP * 2, 8);                      \
+               temp + SS(r, UVSHIFT) * BPP - BPP * 2, BPP * 2);                \
       }                                                                        \
       if (((width & 3) == 3) && BPP == 4 && DUVSHIFT == 2) {                   \
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
+               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
       }                                                                        \
       ANY_SIMD(temp, temp + 128, temp + 256, MASK + 1);                        \
       memcpy(dst_u + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));            \
@@ -747,11 +747,11 @@ ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
       memcpy(temp, src_ptr  + (n >> UVSHIFT) * BPP, SS(r, UVSHIFT) * BPP);     \
       memcpy(temp + 128, src_ptr  + src_stride_ptr + (n >> UVSHIFT) * BPP,     \
              SS(r, UVSHIFT) * BPP);                                            \
-      if ((width & 1) && BPP == 4) {  /* repeat last 4 bytes for subsampler */ \
+      if ((width & 1) && UVSHIFT == 0) {  /* repeat last pixel for subsample */\
         memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, 4);                          \
+               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
         memcpy(temp + 128 + SS(r, UVSHIFT) * BPP,                              \
-               temp + 128 + SS(r, UVSHIFT) * BPP - BPP, 4);                    \
+               temp + 128 + SS(r, UVSHIFT) * BPP - BPP, BPP);                  \
       }                                                                        \
       ANY_SIMD(temp, 128, temp + 256, temp + 384, MASK + 1);                   \
       memcpy(dst_u + (n >> 1), temp + 256, SS(r, 1));                          \
