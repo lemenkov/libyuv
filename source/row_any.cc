@@ -84,6 +84,8 @@ ANY31(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 1, 4, 15)
 #endif
 #undef ANY31
 
+// Note that odd width replication includes 444 due to implementation
+// on arm that subsamples 444 to 422 internally.
 // Any 3 planes to 1 with yuvconstants
 #define ANY31C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \
     void NAMEANY(const uint8* y_buf, const uint8* u_buf, const uint8* v_buf,   \
@@ -99,6 +101,10 @@ ANY31(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 1, 4, 15)
       memcpy(temp, y_buf + n, r);                                              \
       memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));               \
       memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));              \
+      if (width & 1) {                                                         \
+        temp[64 + SS(r, UVSHIFT)] = temp[64 + SS(r, UVSHIFT) - 1];             \
+        temp[128 + SS(r, UVSHIFT)] = temp[128 + SS(r, UVSHIFT) - 1];           \
+      }                                                                        \
       ANY_SIMD(temp, temp + 64, temp + 128, temp + 192,                        \
                yuvconstants, MASK + 1);                                        \
       memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 192,                      \

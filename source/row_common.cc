@@ -1276,6 +1276,7 @@ void I444ToARGBRow_C(const uint8* src_y,
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
+    rgb_buf[3] = 255;
   }
 }
 
@@ -1303,6 +1304,7 @@ void I444ToABGRRow_C(const uint8* src_y,
   if (width & 1) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
+    rgb_buf[3] = 255;
   }
 }
 #else
