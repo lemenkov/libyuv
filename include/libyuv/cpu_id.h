@@ -37,6 +37,7 @@ static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
 static const int kCpuHasFMA3 = 0x1000;
+static const int kCpuHasAVX3 = 0x2000;  // TODO(fbarchard): implement detect.
 // 0x2000, 0x4000, 0x8000 reserved for future X86 flags.
 
 // These flags are only valid on MIPS processors.
