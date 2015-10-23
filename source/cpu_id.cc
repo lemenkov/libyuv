@@ -174,7 +174,7 @@ static int MipsCpuCaps(const char* search_string) {
 
 // CPU detect function for SIMD instruction sets.
 LIBYUV_API
-int cpu_info_ = kCpuInit;  // cpu_info is not initialized yet.
+int cpu_info_ = 0;  // cpu_info is not initialized yet.
 
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.
@@ -291,8 +291,9 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_ASM")) {
     cpu_info = 0;
   }
+  cpu_info  |= kCpuInitialized;
   cpu_info_ = cpu_info;
-  return cpu_info_;
+  return cpu_info;
 }
 
 // Note that use of this function is not thread safe.

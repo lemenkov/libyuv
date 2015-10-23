@@ -18,9 +18,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
-// TODO(fbarchard): Consider overlapping bits for different architectures.
 // Internal flag to indicate cpuid requires initialization.
-#define kCpuInit 0x1
+static const int kCpuInitialized = 0x1;
 
 // These flags are only valid on ARM processors.
 static const int kCpuHasARM = 0x2;
@@ -58,7 +57,7 @@ int ArmCpuCaps(const char* cpuinfo_name);
 // returns non-zero if instruction set is detected
 static __inline int TestCpuFlag(int test_flag) {
   LIBYUV_API extern int cpu_info_;
-  return (cpu_info_ == kCpuInit ? InitCpuFlags() : cpu_info_) & test_flag;
+  return (!cpu_info_ ? InitCpuFlags() : cpu_info_) & test_flag;
 }
 
 // For testing, allow CPU flags to be disabled.
