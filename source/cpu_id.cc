@@ -104,7 +104,7 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
     !defined(__pnacl__) && !defined(__CLR_VER) && !defined(__native_client__)
 #define HAS_XGETBV
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
-int TestOsSaveYmm() {
+int GetXCR0() {
   uint32 xcr0 = 0u;
 #if (defined(_MSC_VER) && !defined(__clang__)) && (_MSC_FULL_VER >= 160040219)
   xcr0 = (uint32)(_xgetbv(0));  // VS2010 SP1 required.
@@ -117,7 +117,7 @@ int TestOsSaveYmm() {
 #elif defined(__i386__) || defined(__x86_64__)
   asm(".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx");
 #endif  // defined(__i386__) || defined(__x86_64__)
-  return((xcr0 & 6) == 6);  // Is ymm saved?
+  return xcr0;
 }
 #endif  // defined(_M_IX86) || defined(_M_X64) ..
 
@@ -219,10 +219,16 @@ int InitCpuFlags(void) {
 #ifdef HAS_XGETBV
   // AVX requires CPU has AVX, XSAVE and OSXSave for xgetbv
   if ((cpu_info1[2] & 0x1c000000) == 0x1c000000 &&  // AVX and OSXSave
-      !TestEnv("LIBYUV_DISABLE_AVX") && TestOsSaveYmm()) {  // Saves YMM.
+      (GetXCR0() & 6) == 6) {  // Test OD saves YMM registers
     cpu_info |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) | kCpuHasAVX;
+
+    // Detect AVX512bw
+    if ((GetXCR0() & 0xe0) == 0xe0) {
+      cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX3 : 0;
+    }
   }
 #endif
+
   // Environment variable overrides for testing.
   if (TestEnv("LIBYUV_DISABLE_X86")) {
     cpu_info &= ~kCpuHasX86;
@@ -239,6 +245,9 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_SSE42")) {
     cpu_info &= ~kCpuHasSSE42;
   }
+  if (TestEnv("LIBYUV_DISABLE_AVX")) {
+    cpu_info &= ~kCpuHasAVX;
+  }
   if (TestEnv("LIBYUV_DISABLE_AVX2")) {
     cpu_info &= ~kCpuHasAVX2;
   }
@@ -247,6 +256,9 @@ int InitCpuFlags(void) {
   }
   if (TestEnv("LIBYUV_DISABLE_FMA3")) {
     cpu_info &= ~kCpuHasFMA3;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AVX3")) {
+    cpu_info &= ~kCpuHasAVX3;
   }
 #endif
 #if defined(__mips__) && defined(__linux__)
