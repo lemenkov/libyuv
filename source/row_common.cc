@@ -1018,8 +1018,6 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 // BT.601 constants for YUV to RGB.
 // TODO(fbarchard): Unify these structures to be platform independent.
 // TODO(fbarchard): Generate SIMD structures from float matrix.
-
-// BT601 constants for YUV to RGB.
 #if defined(__aarch64__)
 const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
@@ -1029,7 +1027,6 @@ const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-
 #elif defined(__arm__)
 const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -1098,6 +1095,42 @@ static __inline void YPixel(uint8 y, uint8* b, uint8* g, uint8* r) {
   *g = Clamp((int32)(y1 + YGB) >> 6);
   *r = Clamp((int32)(y1 + YGB) >> 6);
 }
+
+// BT.601 constants for YVU to BGR.
+// Allows YUV TO RGB code to implement YUV to BGR by swapping UV and using this
+// matrix.
+
+#if defined(__aarch64__)
+const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+  { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
+  { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
+  { VG, UG, VG, UG, VG, UG, VG, UG },
+  { VG, UG, VG, UG, VG, UG, VG, UG },
+  { BR, BG, BB, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
+
+#elif defined(__arm__)
+const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+  { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { BR, BG, BB, 0, 0, 0, 0, 0 },
+  { 0x0101 * YG, 0, 0, 0 }
+};
+#else
+const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+  { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
+    VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, UB, 0 },
+  { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
+    VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG },
+  { 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB,
+    0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, VR },
+  { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
+  { BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG, BG },
+  { BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB, BB },
+  { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
+};
+#endif
 
 #undef BB
 #undef BG
@@ -1279,34 +1312,6 @@ void I444ToARGBRow_C(const uint8* src_y,
     rgb_buf[3] = 255;
   }
 }
-
-void I444ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     const struct YuvConstants* yuvconstants,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    uint8 u = (src_u[0] + src_u[1] + 1) >> 1;
-    uint8 v = (src_v[0] + src_v[1] + 1) >> 1;
-    YuvPixel(src_y[0], u, v, rgb_buf + 2, rgb_buf + 1, rgb_buf + 0,
-             yuvconstants);
-    rgb_buf[3] = 255;
-    YuvPixel(src_y[1], u, v, rgb_buf + 6, rgb_buf + 5, rgb_buf + 4,
-             yuvconstants);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    src_u += 2;
-    src_v += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    rgb_buf[3] = 255;
-  }
-}
 #else
 void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
@@ -1318,24 +1323,6 @@ void I444ToARGBRow_C(const uint8* src_y,
   for (x = 0; x < width; ++x) {
     YuvPixel(src_y[0], src_u[0], src_v[0],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
-    src_y += 1;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 4;  // Advance 1 pixel.
-  }
-}
-
-void I444ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     const struct YuvConstants* yuvconstants,
-                     int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
     rgb_buf[3] = 255;
     src_y += 1;
     src_u += 1;

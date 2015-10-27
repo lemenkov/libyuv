@@ -129,7 +129,6 @@ int I444ToARGB(const uint8* src_y, int src_stride_y,
                           width, height);
 }
 
-
 // Convert J444 to ARGB.
 LIBYUV_API
 int J444ToARGB(const uint8* src_y, int src_stride_y,
@@ -145,7 +144,6 @@ int J444ToARGB(const uint8* src_y, int src_stride_y,
                           width, height);
 }
 
-
 // Convert I444 to ABGR.
 LIBYUV_API
 int I444ToABGR(const uint8* src_y, int src_stride_y,
@@ -153,66 +151,12 @@ int I444ToABGR(const uint8* src_y, int src_stride_y,
                const uint8* src_v, int src_stride_v,
                uint8* dst_abgr, int dst_stride_abgr,
                int width, int height) {
-  int y;
-  void (*I444ToABGRRow)(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* rgb_buf,
-                        const struct YuvConstants* yuvconstants,
-                        int width) = I444ToABGRRow_C;
-  if (!src_y || !src_u || !src_v ||
-      !dst_abgr ||
-      width <= 0 || height == 0) {
-    return -1;
-  }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_abgr = dst_abgr + (height - 1) * dst_stride_abgr;
-    dst_stride_abgr = -dst_stride_abgr;
-  }
-  // Coalesce rows.
-  if (src_stride_y == width &&
-      src_stride_u == width &&
-      src_stride_v == width &&
-      dst_stride_abgr == width * 4) {
-    width *= height;
-    height = 1;
-    src_stride_y = src_stride_u = src_stride_v = dst_stride_abgr = 0;
-  }
-#if defined(HAS_I444TOABGRROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    I444ToABGRRow = I444ToABGRRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      I444ToABGRRow = I444ToABGRRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_I444TOABGRROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    I444ToABGRRow = I444ToABGRRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      I444ToABGRRow = I444ToABGRRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_I444TOABGRROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    I444ToABGRRow = I444ToABGRRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      I444ToABGRRow = I444ToABGRRow_NEON;
-    }
-  }
-#endif
-
-  for (y = 0; y < height; ++y) {
-    I444ToABGRRow(src_y, src_u, src_v, dst_abgr, &kYuvIConstants, width);
-    dst_abgr += dst_stride_abgr;
-    src_y += src_stride_y;
-    src_u += src_stride_u;
-    src_v += src_stride_v;
-  }
-  return 0;
+  return I444ToARGBMatrix(src_y, src_stride_y,
+                          src_v, src_stride_v,
+                          src_u, src_stride_u,
+                          dst_abgr, dst_stride_abgr,
+                          &kYvuIConstants,
+                          width, height);
 }
 
 // Convert I422 to ARGB.

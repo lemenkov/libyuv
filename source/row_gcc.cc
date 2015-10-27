@@ -1619,33 +1619,6 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
   );
 }
 
-void OMITFP I444ToABGRRow_SSSE3(const uint8* y_buf,
-                                const uint8* u_buf,
-                                const uint8* v_buf,
-                                uint8* dst_abgr,
-                                const struct YuvConstants* yuvconstants,
-                                int width) {
-  asm volatile (
-    "sub       %[u_buf],%[v_buf]               \n"
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    LABELALIGN
-  "1:                                          \n"
-    READYUV444
-    YUVTORGB(yuvconstants)
-    STOREABGR
-    "sub       $0x8,%[width]                   \n"
-    "jg        1b                              \n"
-  : [y_buf]"+r"(y_buf),    // %[y_buf]
-    [u_buf]"+r"(u_buf),    // %[u_buf]
-    [v_buf]"+r"(v_buf),    // %[v_buf]
-    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
-    [width]"+rm"(width)    // %[width]
-  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
-}
-
 void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
                                  const uint8* u_buf,
                                  const uint8* v_buf,
