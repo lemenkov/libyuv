@@ -1766,38 +1766,6 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
   );
 }
 
-void OMITFP I422AlphaToABGRRow_SSSE3(const uint8* y_buf,
-                                     const uint8* u_buf,
-                                     const uint8* v_buf,
-                                     const uint8* a_buf,
-                                     uint8* dst_abgr,
-                                     const struct YuvConstants* yuvconstants,
-                                     int width) {
-  asm volatile (
-    "sub       %[u_buf],%[v_buf]               \n"
-    LABELALIGN
-  "1:                                          \n"
-    READYUVA422
-    YUVTORGB(yuvconstants)
-    STOREABGR
-    "subl      $0x8,%[width]                   \n"
-    "jg        1b                              \n"
-  : [y_buf]"+r"(y_buf),    // %[y_buf]
-    [u_buf]"+r"(u_buf),    // %[u_buf]
-    [v_buf]"+r"(v_buf),    // %[v_buf]
-    [a_buf]"+r"(a_buf),    // %[a_buf]
-    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
-#if defined(__i386__) && defined(__pic__)
-    [width]"+m"(width)     // %[width]
-#else
-    [width]"+rm"(width)    // %[width]
-#endif
-  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
-}
-
 void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
                                 const uint8* v_buf,
@@ -2228,43 +2196,6 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422ALPHATOARGBROW_AVX2
-
-#if defined(HAS_I422ALPHATOABGRROW_AVX2)
-// 16 pixels
-// 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ABGR.
-void OMITFP I422AlphaToABGRRow_AVX2(const uint8* y_buf,
-                               const uint8* u_buf,
-                               const uint8* v_buf,
-                               const uint8* a_buf,
-                               uint8* dst_abgr,
-                               const struct YuvConstants* yuvconstants,
-                               int width) {
-  asm volatile (
-    "sub       %[u_buf],%[v_buf]               \n"
-    LABELALIGN
-  "1:                                          \n"
-    READYUVA422_AVX2
-    YUVTORGB_AVX2(yuvconstants)
-    STOREABGR_AVX2
-    "subl      $0x10,%[width]                  \n"
-    "jg        1b                              \n"
-    "vzeroupper                                \n"
-  : [y_buf]"+r"(y_buf),    // %[y_buf]
-    [u_buf]"+r"(u_buf),    // %[u_buf]
-    [v_buf]"+r"(v_buf),    // %[v_buf]
-    [a_buf]"+r"(a_buf),    // %[a_buf]
-    [dst_abgr]"+r"(dst_abgr),  // %[dst_abgr]
-#if defined(__i386__) && defined(__pic__)
-    [width]"+m"(width)     // %[width]
-#else
-    [width]"+rm"(width)    // %[width]
-#endif
-  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
-}
-#endif  // HAS_I422ALPHATOABGRROW_AVX2
 
 #if defined(HAS_I422TOABGRROW_AVX2)
 // 16 pixels

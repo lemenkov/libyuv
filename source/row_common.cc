@@ -1413,34 +1413,6 @@ void I422ToABGRRow_C(const uint8* src_y,
   }
 }
 
-void I422AlphaToABGRRow_C(const uint8* src_y,
-                          const uint8* src_u,
-                          const uint8* src_v,
-                          const uint8* src_a,
-                          uint8* rgb_buf,
-                          const struct YuvConstants* yuvconstants,
-                          int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    rgb_buf[3] = src_a[0];
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 6, rgb_buf + 5, rgb_buf + 4, yuvconstants);
-    rgb_buf[7] = src_a[1];
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    src_a += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    rgb_buf[3] = src_a[0];
-  }
-}
-
 void I422ToRGB24Row_C(const uint8* src_y,
                       const uint8* src_u,
                       const uint8* src_v,
