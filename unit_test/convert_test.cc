@@ -1691,4 +1691,39 @@ TEST_F(LibYUVConvertTest, NAME) {                                              \
 TESTPTOB(TestYUY2ToNV12, YUY2ToI420, YUY2ToNV12)
 TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
 
+TEST_F(LibYUVConvertTest, TestI444ToABGRvsARGB) {
+  align_buffer_64(src_y, benchmark_width_ * benchmark_height_);
+  align_buffer_64(src_u, benchmark_width_ * benchmark_height_);
+  align_buffer_64(src_v, benchmark_width_ * benchmark_height_);
+  align_buffer_64(dst_argb, benchmark_width_ * benchmark_height_ * 4);
+  align_buffer_64(dst_abgr, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(src_y, benchmark_width_ * benchmark_height_);
+  MemRandomize(src_u, benchmark_width_ * benchmark_height_);
+  MemRandomize(src_v, benchmark_width_ * benchmark_height_);
+  MemRandomize(dst_argb, benchmark_width_ * benchmark_height_ * 4);
+  MemRandomize(dst_abgr, benchmark_width_ * benchmark_height_ * 4);
+  libyuv::I444ToARGB(src_y, benchmark_width_,
+                     src_u, benchmark_width_,
+                     src_v, benchmark_width_,
+                     dst_argb, benchmark_width_ * 4,
+                     benchmark_width_, benchmark_height_);
+  libyuv::I444ToABGR(src_y, benchmark_width_,
+                     src_u, benchmark_width_,
+                     src_v, benchmark_width_,
+                     dst_abgr, benchmark_width_ * 4,
+                     benchmark_width_, benchmark_height_);
+  // swap in place.
+  libyuv::ABGRToARGB(dst_abgr, benchmark_width_ * 4,
+                     dst_abgr, benchmark_width_ * 4,
+                     benchmark_width_, benchmark_height_);
+  for (int i = 0; i < benchmark_width_ * benchmark_height_ * 4; ++i) {
+    EXPECT_EQ(dst_abgr[i], dst_argb[i]);
+  }
+  free_aligned_buffer_64(src_y);
+  free_aligned_buffer_64(src_u);
+  free_aligned_buffer_64(src_v);
+  free_aligned_buffer_64(dst_argb);
+  free_aligned_buffer_64(dst_abgr);
+}
+
 }  // namespace libyuv
