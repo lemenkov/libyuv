@@ -107,7 +107,11 @@ extern "C" {
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I411TOARGBROW_SSSE3
-#define HAS_I422ALPHATOARGBROW_SSSE3
+
+// TODO(fbarchard): fix build error on android_full_debug=1
+// https://code.google.com/p/libyuv/issues/detail?id=517
+// #define HAS_I422ALPHATOARGBROW_SSSE3
+
 #define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
@@ -198,7 +202,11 @@ extern "C" {
 #define HAS_H422TOABGRROW_AVX2
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_I400TOARGBROW_AVX2
-#define HAS_I422ALPHATOARGBROW_AVX2
+
+// TODO(fbarchard): fix build error on android_full_debug=1
+// https://code.google.com/p/libyuv/issues/detail?id=517
+// #define HAS_I422ALPHATOARGBROW_AVX2
+
 #define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2

@@ -1734,6 +1734,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
   );
 }
 
+#ifdef HAS_I422ALPHATOARGBROW_SSSE3
 void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                                      const uint8* u_buf,
                                      const uint8* v_buf,
@@ -1765,6 +1766,7 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
+#endif  // HAS_I422ALPHATOARGBROW_SSSE3
 
 void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
                                 const uint8* u_buf,
