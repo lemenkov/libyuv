@@ -63,6 +63,18 @@
         }],
         # TODO(andrew): Look into fixing this warning upstream:
         # http://code.google.com/p/webrtc/issues/detail?id=760
+        ['OS=="win" and clang==1', {
+          'msvs_settings': {
+            'VCCLCompilerTool': {
+              'AdditionalOptions!': [
+                '-Wheader-hygiene',  # Suppress warning about using namespace.
+              ],
+              'AdditionalOptions': [
+                '-Wno-unused-local-typedef',  # Suppress unused private typedef.
+              ],
+            },
+          },
+        }],
         ['clang==1', {
           'cflags!': ['-Wheader-hygiene',],
           'xcode_settings': {
