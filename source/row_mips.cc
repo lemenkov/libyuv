@@ -715,68 +715,6 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* y_buf,
   );
 }
 
-void I422ToABGRRow_MIPS_DSPR2(const uint8* y_buf,
-                              const uint8* u_buf,
-                              const uint8* v_buf,
-                              uint8* rgb_buf,
-                              const struct YuvConstants* yuvconstants,
-                              int width) {
-  __asm__ __volatile__ (
-    ".set push                                \n"
-    ".set noreorder                           \n"
-    "beqz              %[width], 2f           \n"
-    " repl.ph          $s0, 74                \n"  // |YG|YG| = |74|74|
-    "repl.ph           $s1, -25               \n"  // |UG|UG| = |-25|-25|
-    "repl.ph           $s2, -52               \n"  // |VG|VG| = |-52|-52|
-    "repl.ph           $s3, 102               \n"  // |VR|VR| = |102|102|
-    "repl.ph           $s4, 16                \n"  // |0|16|0|16|
-    "repl.ph           $s5, 128               \n"  // |128|128|
-    "lui               $s6, 0xff00            \n"
-    "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|
-
-   "1:                                         \n"
-      YUVTORGB
-// Arranging into abgr format
-    "precr.qb.ph      $t0, $t8, $t1           \n"  // |G1|g1|R1|r1|
-    "precr.qb.ph      $t3, $t9, $t2           \n"  // |G0|g0|R0|r0|
-    "precrq.qb.ph     $t8, $t0, $t3           \n"  // |G1|R1|G0|R0|
-    "precr.qb.ph      $t9, $t0, $t3           \n"  // |g1|r1|g0|r0|
-
-    "precr.qb.ph       $t2, $t4, $t5          \n"  // |B1|b1|B0|b0|
-    "addiu             %[width], -4           \n"
-    "addiu             %[y_buf], 4            \n"
-    "preceu.ph.qbla    $t1, $t2               \n"  // |0 |B1|0 |B0|
-    "preceu.ph.qbra    $t2, $t2               \n"  // |0 |b1|0 |b0|
-    "or                $t1, $t1, $s6          \n"  // |ff|B1|ff|B0|
-    "or                $t2, $t2, $s6          \n"  // |ff|b1|ff|b0|
-    "precrq.ph.w       $t0, $t2, $t9          \n"  // |ff|b1|g1|r1|
-    "precrq.ph.w       $t3, $t1, $t8          \n"  // |ff|B1|G1|R1|
-    "sll               $t9, $t9, 16           \n"
-    "sll               $t8, $t8, 16           \n"
-    "packrl.ph         $t2, $t2, $t9          \n"  // |ff|b0|g0|r0|
-    "packrl.ph         $t1, $t1, $t8          \n"  // |ff|B0|G0|R0|
-// Store results.
-    "sw                $t2, 0(%[rgb_buf])     \n"
-    "sw                $t0, 4(%[rgb_buf])     \n"
-    "sw                $t1, 8(%[rgb_buf])     \n"
-    "sw                $t3, 12(%[rgb_buf])    \n"
-    "bnez              %[width], 1b           \n"
-    " addiu            %[rgb_buf], 16         \n"
-   "2:                                        \n"
-    ".set pop                                 \n"
-      :[y_buf] "+r" (y_buf),
-       [u_buf] "+r" (u_buf),
-       [v_buf] "+r" (v_buf),
-       [width] "+r" (width),
-       [rgb_buf] "+r" (rgb_buf)
-      :
-      : "t0", "t1",  "t2", "t3",  "t4", "t5",
-      "t6", "t7", "t8", "t9",
-      "s0", "s1", "s2", "s3",
-      "s4", "s5", "s6"
-  );
-}
-
 void I422ToBGRARow_MIPS_DSPR2(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,

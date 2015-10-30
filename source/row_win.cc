@@ -115,25 +115,6 @@ void I422ToARGBRow_SSSE3(const uint8* y_buf,
 }
 #endif
 
-#if defined(HAS_I422TOABGRROW_SSSE3)
-void I422ToABGRRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_abgr,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
-  __m128i xmm0, xmm1, xmm2, xmm4;
-  const __m128i xmm5 = _mm_set1_epi8(-1);
-  const ptrdiff_t offset = (uint8*)v_buf - (uint8*)u_buf;
-  while (width > 0) {
-    READYUV422
-    YUVTORGB(yuvconstants)
-    STOREABGR
-    width -= 8;
-  }
-}
-#endif
-
 #if defined(HAS_I422ALPHATOARGBROW_SSSE3)
 void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                               const uint8* u_buf,
@@ -2455,48 +2436,9 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I422TORGBAROW_AVX2
 
-#ifdef HAS_I422TOABGRROW_AVX2
-// 16 pixels
-// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ABGR (64 bytes).
-__declspec(naked)
-void I422ToABGRRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // argb
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-
- convertloop:
-    READYUV422_AVX2
-    YUVTORGB_AVX2(ebx)
-    STOREABGR_AVX2
-
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_I422TOABGRROW_AVX2
-
 #if defined(HAS_I422TOARGBROW_SSSE3)
 // TODO(fbarchard): Read that does half size on Y and treats 420 as 444.
+// Allows a conversion with half size scaling.
 
 // Read 8 UV from 444.
 #define READYUV444 __asm {                                                     \

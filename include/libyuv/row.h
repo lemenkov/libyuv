@@ -112,7 +112,6 @@ extern "C" {
 // https://code.google.com/p/libyuv/issues/detail?id=517
 #define HAS_I422ALPHATOARGBROW_SSSE3
 #endif
-#define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
@@ -207,7 +206,6 @@ extern "C" {
 // https://code.google.com/p/libyuv/issues/detail?id=517
 #define HAS_I422ALPHATOARGBROW_AVX2
 #endif
-#define HAS_I422TOABGRROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
 #define HAS_I422TOBGRAROW_AVX2
 #define HAS_I422TORAWROW_AVX2
@@ -261,7 +259,6 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422ALPHATOARGBROW_SSSE3
-#define HAS_I422TOABGRROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
 #endif
 
@@ -295,7 +292,6 @@ extern "C" {
 #define HAS_COPYROW_NEON
 #define HAS_I400TOARGBROW_NEON
 #define HAS_I411TOARGBROW_NEON
-#define HAS_I422TOABGRROW_NEON
 #define HAS_I422TOARGB1555ROW_NEON
 #define HAS_I422TOARGB4444ROW_NEON
 #define HAS_I422TOARGBROW_NEON
@@ -362,7 +358,6 @@ extern "C" {
     (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
 #define HAS_COPYROW_MIPS
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
-#define HAS_I422TOABGRROW_MIPS_DSPR2
 #define HAS_I422TOARGBROW_MIPS_DSPR2
 #define HAS_I422TOBGRAROW_MIPS_DSPR2
 #define HAS_INTERPOLATEROW_MIPS_DSPR2
@@ -460,10 +455,15 @@ struct YuvConstants {
 #define KYTORGB  192
 #endif
 
+// Conversion matrix for YUV to RGB
 extern const struct YuvConstants kYuvIConstants;  // BT.601
 extern const struct YuvConstants kYuvJConstants;  // JPeg color space
 extern const struct YuvConstants kYuvHConstants;  // BT.709
-extern const struct YuvConstants kYvuIConstants;  // YVU to BGR BT.601
+
+// Conversion matrix for YVU to BGR.
+extern const struct YuvConstants kYvuIConstants;  // BT.601
+extern const struct YuvConstants kYvuJConstants;  // JPeg color space
+extern const struct YuvConstants kYvuHConstants;  // BT.709
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP
@@ -568,12 +568,6 @@ void I422ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
-void I422ToABGRRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
 void I411ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -584,12 +578,6 @@ void I422ToBGRARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_bgra,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void I422ToABGRRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_abgr,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I422ToRGBARow_NEON(const uint8* src_y,
@@ -1058,12 +1046,6 @@ void I422AlphaToARGBRow_C(const uint8* y_buf,
                           uint8* dst_argb,
                           const struct YuvConstants* yuvconstants,
                           int width);
-void I422ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* dst_argb,
-                     const struct YuvConstants* yuvconstants,
-                     int width);
 void I411ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
@@ -1097,12 +1079,6 @@ void I422ToBGRARow_C(const uint8* src_y,
                      const uint8* src_u,
                      const uint8* src_v,
                      uint8* dst_bgra,
-                     const struct YuvConstants* yuvconstants,
-                     int width);
-void I422ToABGRRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* dst_abgr,
                      const struct YuvConstants* yuvconstants,
                      int width);
 void I422ToRGBARow_C(const uint8* src_y,
@@ -1153,12 +1129,6 @@ void I422ToARGBRow_AVX2(const uint8* src_y,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
-void I422ToABGRRow_AVX2(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
 void I422ToBGRARow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -1166,12 +1136,6 @@ void I422ToBGRARow_AVX2(const uint8* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width);
 void I422ToRGBARow_AVX2(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
-void I422ToABGRRow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
                         uint8* dst_argb,
@@ -1222,12 +1186,6 @@ void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
                              const struct YuvConstants* yuvconstants,
                              int width);
 void I422ToARGBRow_SSSE3(const uint8* src_y,
-                         const uint8* src_u,
-                         const uint8* src_v,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width);
-void I422ToABGRRow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_argb,
@@ -1295,12 +1253,6 @@ void I422ToBGRARow_SSSE3(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
                          uint8* dst_bgra,
-                         const struct YuvConstants* yuvconstants,
-                         int width);
-void I422ToABGRRow_SSSE3(const uint8* src_y,
-                         const uint8* src_u,
-                         const uint8* src_v,
-                         uint8* dst_abgr,
                          const struct YuvConstants* yuvconstants,
                          int width);
 void I422ToRGBARow_SSSE3(const uint8* src_y,
@@ -1382,12 +1334,6 @@ void I422ToBGRARow_Any_AVX2(const uint8* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width);
 void I422ToRGBARow_Any_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_argb,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
-void I422ToABGRRow_Any_AVX2(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_argb,
@@ -1487,12 +1433,6 @@ void I422ToBGRARow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
                              uint8* dst_bgra,
-                             const struct YuvConstants* yuvconstants,
-                             int width);
-void I422ToABGRRow_Any_SSSE3(const uint8* src_y,
-                             const uint8* src_u,
-                             const uint8* src_v,
-                             uint8* dst_abgr,
                              const struct YuvConstants* yuvconstants,
                              int width);
 void I422ToRGBARow_Any_SSSE3(const uint8* src_y,
@@ -1681,12 +1621,6 @@ void I422ToBGRARow_Any_NEON(const uint8* src_y,
                             uint8* dst_argb,
                             const struct YuvConstants* yuvconstants,
                             int width);
-void I422ToABGRRow_Any_NEON(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_argb,
-                            const struct YuvConstants* yuvconstants,
-                            int width);
 void I422ToRGBARow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
@@ -1758,12 +1692,6 @@ void I422ToBGRARow_MIPS_DSPR2(const uint8* src_y,
                               uint8* dst_argb,
                               const struct YuvConstants* yuvconstants,
                               int width);
-void I422ToABGRRow_MIPS_DSPR2(const uint8* src_y,
-                              const uint8* src_u,
-                              const uint8* src_v,
-                              uint8* dst_argb,
-                              const struct YuvConstants* yuvconstants,
-                              int width);
 void I422ToARGBRow_MIPS_DSPR2(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
@@ -1771,12 +1699,6 @@ void I422ToARGBRow_MIPS_DSPR2(const uint8* src_y,
                               const struct YuvConstants* yuvconstants,
                               int width);
 void I422ToBGRARow_MIPS_DSPR2(const uint8* src_y,
-                              const uint8* src_u,
-                              const uint8* src_v,
-                              uint8* dst_argb,
-                              const struct YuvConstants* yuvconstants,
-                              int width);
-void I422ToABGRRow_MIPS_DSPR2(const uint8* src_y,
                               const uint8* src_u,
                               const uint8* src_v,
                               uint8* dst_argb,

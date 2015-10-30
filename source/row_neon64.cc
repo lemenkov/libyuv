@@ -265,39 +265,6 @@ void I422ToBGRARow_NEON(const uint8* src_y,
 }
 #endif  // HAS_I422TOBGRAROW_NEON
 
-// TODO(fbarchard): Switch to Matrix version of this function.
-#ifdef HAS_I422TOABGRROW_NEON
-void I422ToABGRRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_abgr,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  asm volatile (
-    YUVTORGB_SETUP
-  "1:                                          \n"
-    READYUV422
-    YUVTORGB(v20, v21, v22)
-    "subs       %w4, %w4, #8                   \n"
-    "movi       v23.8b, #255                   \n" /* A */
-    MEMACCESS(3)
-    "st4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%3], #32     \n"
-    "b.gt       1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_abgr),  // %3
-      "+r"(width)      // %4
-    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
-      [kUVToG]"r"(&yuvconstants->kUVToG),
-      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
-      [kYToRgb]"r"(&yuvconstants->kYToRgb)
-    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
-      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
-  );
-}
-#endif  // HAS_I422TOABGRROW_NEON
-
 #ifdef HAS_I422TORGBAROW_NEON
 void I422ToRGBARow_NEON(const uint8* src_y,
                         const uint8* src_u,

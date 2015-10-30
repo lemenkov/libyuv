@@ -255,37 +255,6 @@ void I422ToBGRARow_NEON(const uint8* src_y,
   );
 }
 
-void I422ToABGRRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_abgr,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  asm volatile (
-    YUVTORGB_SETUP
-  "1:                                          \n"
-    READYUV422
-    YUVTORGB
-    "subs       %4, %4, #8                     \n"
-    "vswp.u8    d20, d22                       \n"
-    "vmov.u8    d23, #255                      \n"
-    MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
-    "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_abgr),  // %3
-      "+r"(width)      // %4
-    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
-      [kUVToG]"r"(&yuvconstants->kUVToG),
-      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
-      [kYToRgb]"r"(&yuvconstants->kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
-  );
-}
-
 void I422ToRGBARow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
