@@ -1443,29 +1443,6 @@ void I422ToRGB24Row_C(const uint8* src_y,
   }
 }
 
-void I422ToRAWRow_C(const uint8* src_y,
-                    const uint8* src_u,
-                    const uint8* src_v,
-                    uint8* rgb_buf,
-                    const struct YuvConstants* yuvconstants,
-                    int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 5, rgb_buf + 4, rgb_buf + 3, yuvconstants);
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 6;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 2, rgb_buf + 1, rgb_buf + 0, yuvconstants);
-  }
-}
-
 void I422ToARGB4444Row_C(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -1749,32 +1726,6 @@ void UYVYToARGBRow_C(const uint8* src_uyvy,
     YuvPixel(src_uyvy[1], src_uyvy[0], src_uyvy[2],
              rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
-  }
-}
-
-void I422ToBGRARow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     const struct YuvConstants* yuvconstants,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 1; x += 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1, yuvconstants);
-    rgb_buf[0] = 255;
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 7, rgb_buf + 6, rgb_buf + 5, yuvconstants);
-    rgb_buf[4] = 255;
-    src_y += 2;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 3, rgb_buf + 2, rgb_buf + 1, yuvconstants);
-    rgb_buf[0] = 255;
   }
 }
 
@@ -2624,29 +2575,6 @@ void I422ToRGB24Row_AVX2(const uint8* src_y,
     src_u += twidth / 2;
     src_v += twidth / 2;
     dst_rgb24 += twidth * 3;
-    width -= twidth;
-  }
-}
-#endif
-
-#if defined(HAS_I422TORAWROW_AVX2)
-void I422ToRAWRow_AVX2(const uint8* src_y,
-                            const uint8* src_u,
-                            const uint8* src_v,
-                            uint8* dst_raw,
-                            const struct YuvConstants* yuvconstants,
-                            int width) {
-  // Row buffer for intermediate ARGB pixels.
-  SIMD_ALIGNED32(uint8 row[MAXTWIDTH * 4]);
-  while (width > 0) {
-    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
-    I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-    // TODO(fbarchard): ARGBToRAWRow_AVX2
-    ARGBToRAWRow_SSSE3(row, dst_raw, twidth);
-    src_y += twidth;
-    src_u += twidth / 2;
-    src_v += twidth / 2;
-    dst_raw += twidth * 3;
     width -= twidth;
   }
 }

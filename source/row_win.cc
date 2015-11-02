@@ -2354,48 +2354,6 @@ void UYVYToARGBRow_AVX2(const uint8* src_uyvy,
   }
 }
 
-
-#ifdef HAS_I422TOBGRAROW_AVX2
-// 16 pixels
-// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 BGRA (64 bytes).
-// TODO(fbarchard): Use macros to reduce duplicate code.  See SSSE3.
-__declspec(naked)
-void I422ToBGRARow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-
- convertloop:
-    READYUV422_AVX2
-    YUVTORGB_AVX2(ebx)
-    STOREBGRA_AVX2
-
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_I422TOBGRAROW_AVX2
-
 #ifdef HAS_I422TORGBAROW_AVX2
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 RGBA (64 bytes).
@@ -2749,44 +2707,6 @@ void I422ToRGB24Row_SSSE3(const uint8* y_buf,
   }
 }
 
-// 8 pixels.
-// 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 RAW (24 bytes).
-__declspec(naked)
-void I422ToRAWRow_SSSE3(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_raw,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // argb
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-    movdqa     xmm5, xmmword ptr kShuffleMaskARGBToRAW_0
-    movdqa     xmm6, xmmword ptr kShuffleMaskARGBToRAW
-
- convertloop:
-    READYUV422
-    YUVTORGB(ebx)
-    STORERAW
-
-    sub        ecx, 8
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
 // 8 pixels
 // 4 UV values upsampled to 8 UV, mixed with 8 Y producing 8 RGB565 (16 bytes).
 __declspec(naked)
@@ -3061,75 +2981,6 @@ void UYVYToARGBRow_SSSE3(const uint8* src_uyvy,
     jg         convertloop
 
     pop        ebx
-    ret
-  }
-}
-
-__declspec(naked)
-void I422ToBGRARow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_bgra,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // argb
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-
- convertloop:
-    READYUV422
-    YUVTORGB(ebx)
-    STOREBGRA
-
-    sub        ecx, 8
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-__declspec(naked)
-void I422ToABGRRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_abgr,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // argb
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-    pcmpeqb    xmm5, xmm5           // generate 0xffffffff for alpha
-
- convertloop:
-    READYUV422
-    YUVTORGB(ebx)
-    STOREABGR
-
-    sub        ecx, 8
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
     ret
   }
 }
