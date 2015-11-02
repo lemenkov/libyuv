@@ -84,17 +84,6 @@ extern "C" {
     _mm_storeu_si128((__m128i *)(dst_argb + 16), xmm1);                        \
     dst_argb += 32;
 
-// Store 8 ABGR values.
-#define STOREABGR                                                              \
-    xmm2 = _mm_unpacklo_epi8(xmm2, xmm1);                                      \
-    xmm0 = _mm_unpacklo_epi8(xmm0, xmm5);                                      \
-    xmm1 = _mm_loadu_si128(&xmm2);                                             \
-    xmm2 = _mm_unpacklo_epi16(xmm2, xmm0);                                     \
-    xmm1 = _mm_unpackhi_epi16(xmm1, xmm0);                                     \
-    _mm_storeu_si128((__m128i *)dst_abgr, xmm2);                               \
-    _mm_storeu_si128((__m128i *)(dst_abgr + 16), xmm1);                        \
-    dst_abgr += 32;
-
 
 #if defined(HAS_I422TOARGBROW_SSSE3)
 void I422ToARGBRow_SSSE3(const uint8* y_buf,
@@ -2025,19 +2014,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        edx,  [edx + 64]                                          \
   }
 
-// Store 16 ABGR values.
-#define STOREBGRA_AVX2 __asm {                                                 \
-    __asm vpunpcklbw ymm1, ymm1, ymm0           /* GB */                       \
-    __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm2, ymm5, ymm2           /* AR */                       \
-    __asm vpermq     ymm2, ymm2, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm2, ymm1           /* ARGB first 8 pixels */      \
-    __asm vpunpckhwd ymm2, ymm2, ymm1           /* ARGB next 8 pixels */       \
-    __asm vmovdqu    [edx], ymm0                                               \
-    __asm vmovdqu    [edx + 32], ymm2                                          \
-    __asm lea        edx,  [edx + 64]                                          \
-  }
-
 // Store 16 RGBA values.
 #define STORERGBA_AVX2 __asm {                                                 \
     __asm vpunpcklbw ymm1, ymm1, ymm2           /* GR */                       \
@@ -2046,19 +2022,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm vpermq     ymm2, ymm2, 0xd8                                          \
     __asm vpunpcklwd ymm0, ymm2, ymm1           /* ABGR first 8 pixels */      \
     __asm vpunpckhwd ymm1, ymm2, ymm1           /* ABGR next 8 pixels */       \
-    __asm vmovdqu    [edx], ymm0                                               \
-    __asm vmovdqu    [edx + 32], ymm1                                          \
-    __asm lea        edx,  [edx + 64]                                          \
-  }
-
-// Store 16 ABGR values.
-#define STOREABGR_AVX2 __asm {                                                 \
-    __asm vpunpcklbw ymm1, ymm2, ymm1           /* RG */                       \
-    __asm vpermq     ymm1, ymm1, 0xd8                                          \
-    __asm vpunpcklbw ymm2, ymm0, ymm5           /* BA */                       \
-    __asm vpermq     ymm2, ymm2, 0xd8                                          \
-    __asm vpunpcklwd ymm0, ymm1, ymm2           /* RGBA first 8 pixels */      \
-    __asm vpunpckhwd ymm1, ymm1, ymm2           /* RGBA next 8 pixels */       \
     __asm vmovdqu    [edx], ymm0                                               \
     __asm vmovdqu    [edx + 32], ymm1                                          \
     __asm lea        edx,  [edx + 64]                                          \
@@ -2537,18 +2500,6 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     __asm lea        edx,  [edx + 32]                                          \
   }
 
-// Store 8 ABGR values.
-#define STOREABGR __asm {                                                      \
-    __asm punpcklbw  xmm2, xmm1           /* RG */                             \
-    __asm punpcklbw  xmm0, xmm5           /* BA */                             \
-    __asm movdqa     xmm1, xmm2                                                \
-    __asm punpcklwd  xmm2, xmm0           /* RGBA first 4 pixels */            \
-    __asm punpckhwd  xmm1, xmm0           /* RGBA next 4 pixels */             \
-    __asm movdqu     0[edx], xmm2                                              \
-    __asm movdqu     16[edx], xmm1                                             \
-    __asm lea        edx,  [edx + 32]                                          \
-  }
-
 // Store 8 RGBA values.
 #define STORERGBA __asm {                                                      \
     __asm pcmpeqb    xmm5, xmm5           /* generate 0xffffffff for alpha */  \
@@ -2571,23 +2522,6 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
     __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
     /* RRGB -> RGB24 */                                                        \
-    __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
-    __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
-    __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \
-    __asm movq       qword ptr 0[edx], xmm0  /* First 8 bytes */               \
-    __asm movdqu     8[edx], xmm1         /* Last 16 bytes */                  \
-    __asm lea        edx,  [edx + 24]                                          \
-  }
-
-// Store 8 RAW values.
-#define STORERAW __asm {                                                       \
-    /* Weave into RRGB */                                                      \
-    __asm punpcklbw  xmm0, xmm1           /* BG */                             \
-    __asm punpcklbw  xmm2, xmm2           /* RR */                             \
-    __asm movdqa     xmm1, xmm0                                                \
-    __asm punpcklwd  xmm0, xmm2           /* BGRR first 4 pixels */            \
-    __asm punpckhwd  xmm1, xmm2           /* BGRR next 4 pixels */             \
-    /* Step 4: RRGB -> RAW */                                                  \
     __asm pshufb     xmm0, xmm5           /* Pack first 8 and last 4 bytes. */ \
     __asm pshufb     xmm1, xmm6           /* Pack first 12 bytes. */           \
     __asm palignr    xmm1, xmm0, 12       /* last 4 bytes of xmm0 + 12 xmm1 */ \

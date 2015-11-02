@@ -136,11 +136,6 @@ static uvec8 kShuffleMaskARGBToRGB24_0 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
 };
 
-// Shuffle table for converting ARGB to RAW.
-static uvec8 kShuffleMaskARGBToRAW_0 = {
-  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
-};
-
 // YUY2 shuf 16 Y to 32 Y.
 static const lvec8 kShuffleYUY2Y = {
   0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10, 12, 12, 14, 14,
@@ -1557,29 +1552,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movdqu     %%xmm1," MEMACCESS2(0x10, [dst_argb]) "          \n"           \
     "lea        " MEMLEA(0x20, [dst_argb]) ", %[dst_argb]        \n"
 
-// Store 8 BGRA values.
-#define STOREBGRA                                                              \
-    "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
-    "punpcklbw %%xmm0,%%xmm1                                     \n"           \
-    "punpcklbw %%xmm2,%%xmm5                                     \n"           \
-    "movdqa    %%xmm5,%%xmm0                                     \n"           \
-    "punpcklwd %%xmm1,%%xmm5                                     \n"           \
-    "punpckhwd %%xmm1,%%xmm0                                     \n"           \
-    "movdqu    %%xmm5," MEMACCESS([dst_bgra]) "                  \n"           \
-    "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_bgra]) "           \n"           \
-    "lea       " MEMLEA(0x20, [dst_bgra]) ", %[dst_bgra]         \n"
-
-// Store 8 ABGR values.
-#define STOREABGR                                                              \
-    "punpcklbw %%xmm1,%%xmm2                                     \n"           \
-    "punpcklbw %%xmm5,%%xmm0                                     \n"           \
-    "movdqa    %%xmm2,%%xmm1                                     \n"           \
-    "punpcklwd %%xmm0,%%xmm2                                     \n"           \
-    "punpckhwd %%xmm0,%%xmm1                                     \n"           \
-    "movdqu    %%xmm2," MEMACCESS([dst_abgr]) "                  \n"           \
-    "movdqu    %%xmm1," MEMACCESS2(0x10, [dst_abgr]) "           \n"           \
-    "lea       " MEMLEA(0x20, [dst_abgr]) ", %[dst_abgr]         \n"
-
 // Store 8 RGBA values.
 #define STORERGBA                                                              \
     "pcmpeqb   %%xmm5,%%xmm5                                     \n"           \
@@ -1977,18 +1949,6 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "                    \n"        \
     "vmovdqu    %%ymm0," MEMACCESS2(0x20, [dst_argb]) "             \n"        \
     "lea       " MEMLEA(0x40, [dst_argb]) ", %[dst_argb]            \n"
-
-// Store 16 ABGR values.
-#define STOREABGR_AVX2                                                         \
-    "vpunpcklbw %%ymm1,%%ymm2,%%ymm1                                \n"        \
-    "vpermq     $0xd8,%%ymm1,%%ymm1                                 \n"        \
-    "vpunpcklbw %%ymm5,%%ymm0,%%ymm2                                \n"        \
-    "vpermq     $0xd8,%%ymm2,%%ymm2                                 \n"        \
-    "vpunpcklwd %%ymm2,%%ymm1,%%ymm0                                \n"        \
-    "vpunpckhwd %%ymm2,%%ymm1,%%ymm1                                \n"        \
-    "vmovdqu    %%ymm0," MEMACCESS([dst_abgr]) "                    \n"        \
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20, [dst_abgr]) "             \n"        \
-    "lea       " MEMLEA(0x40, [dst_abgr]) ", %[dst_abgr]            \n"
 
 #if defined(HAS_I422TOARGBROW_AVX2)
 // 16 pixels
