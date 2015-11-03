@@ -920,6 +920,56 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// Convert RAW to RGB24.
+LIBYUV_API
+int RAWToRGB24(const uint8* src_raw, int src_stride_raw,
+               uint8* dst_rgb24, int dst_stride_rgb24,
+               int width, int height) {
+  int y;
+  void (*RAWToRGB24Row)(const uint8* src_rgb, uint8* dst_rgb24, int width) =
+      RAWToRGB24Row_C;
+  if (!src_raw || !dst_rgb24 ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
+  }
+  // Coalesce rows.
+  if (src_stride_raw == width * 3 &&
+      dst_stride_rgb24 == width * 3) {
+    width *= height;
+    height = 1;
+    src_stride_raw = dst_stride_rgb24 = 0;
+  }
+#if defined(HAS_RAWTORGB24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      RAWToRGB24Row = RAWToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RAWToRGB24Row = RAWToRGB24Row_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    RAWToRGB24Row(src_raw, dst_rgb24, width);
+    src_raw += src_stride_raw;
+    dst_rgb24 += dst_stride_rgb24;
+  }
+  return 0;
+}
+
 LIBYUV_API
 void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,

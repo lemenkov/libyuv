@@ -130,6 +130,7 @@ extern "C" {
 #define HAS_NV12TORGB565ROW_SSSE3
 #define HAS_NV21TOARGBROW_SSSE3
 #define HAS_RAWTOARGBROW_SSSE3
+#define HAS_RAWTORGB24ROW_SSSE3
 #define HAS_RAWTOYROW_SSSE3
 #define HAS_RGB24TOARGBROW_SSSE3
 #define HAS_RGB24TOYROW_SSSE3
@@ -301,6 +302,7 @@ extern "C" {
 #define HAS_NV12TORGB565ROW_NEON
 #define HAS_NV21TOARGBROW_NEON
 #define HAS_RAWTOARGBROW_NEON
+#define HAS_RAWTORGB24ROW_NEON
 #define HAS_RAWTOUVROW_NEON
 #define HAS_RAWTOYROW_NEON
 #define HAS_RGB24TOARGBROW_NEON
@@ -908,6 +910,7 @@ void ARGBShuffleRow_Any_NEON(const uint8* src_argb, uint8* dst_argb,
 
 void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width);
 void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int width);
+void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width);
 void RGB565ToARGBRow_SSE2(const uint8* src_rgb565, uint8* dst_argb, int width);
 void ARGB1555ToARGBRow_SSE2(const uint8* src_argb1555, uint8* dst_argb,
                             int width);
@@ -921,6 +924,7 @@ void ARGB4444ToARGBRow_AVX2(const uint8* src_argb4444, uint8* dst_argb,
 
 void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int width);
 void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int width);
+void RAWToRGB24Row_NEON(const uint8* src_raw, uint8* dst_rgb24, int width);
 void RGB565ToARGBRow_NEON(const uint8* src_rgb565, uint8* dst_argb, int width);
 void ARGB1555ToARGBRow_NEON(const uint8* src_argb1555, uint8* dst_argb,
                             int width);
@@ -928,12 +932,14 @@ void ARGB4444ToARGBRow_NEON(const uint8* src_argb4444, uint8* dst_argb,
                             int width);
 void RGB24ToARGBRow_C(const uint8* src_rgb24, uint8* dst_argb, int width);
 void RAWToARGBRow_C(const uint8* src_raw, uint8* dst_argb, int width);
+void RAWToRGB24Row_C(const uint8* src_raw, uint8* dst_rgb24, int width);
 void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width);
 void ARGB1555ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGB4444ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void RGB24ToARGBRow_Any_SSSE3(const uint8* src_rgb24, uint8* dst_argb,
                               int width);
 void RAWToARGBRow_Any_SSSE3(const uint8* src_raw, uint8* dst_argb, int width);
+void RAWToRGB24Row_Any_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width);
 
 void RGB565ToARGBRow_Any_SSE2(const uint8* src_rgb565, uint8* dst_argb,
                               int width);
@@ -951,6 +957,7 @@ void ARGB4444ToARGBRow_Any_AVX2(const uint8* src_argb4444, uint8* dst_argb,
 void RGB24ToARGBRow_Any_NEON(const uint8* src_rgb24, uint8* dst_argb,
                              int width);
 void RAWToARGBRow_Any_NEON(const uint8* src_raw, uint8* dst_argb, int width);
+void RAWToRGB24Row_Any_NEON(const uint8* src_raw, uint8* dst_rgb24, int width);
 void RGB565ToARGBRow_Any_NEON(const uint8* src_rgb565, uint8* dst_argb,
                               int width);
 void ARGB1555ToARGBRow_Any_NEON(const uint8* src_argb1555, uint8* dst_argb,

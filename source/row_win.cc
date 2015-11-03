@@ -226,6 +226,24 @@ static const uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
+// Shuffle table for converting RAW to RGB24.  First 8.
+static const uvec8 kShuffleMaskRAWToRGB24_0 = {
+  2u, 1u, 0u, 5u, 4u, 3u, 8u, 7u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
+// Shuffle table for converting RAW to RGB24.  Middle 8.
+static const uvec8 kShuffleMaskRAWToRGB24_1 = {
+  2u, 7u, 6u, 5u, 10u, 9u, 8u, 13u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
+// Shuffle table for converting RAW to RGB24.  Last 8.
+static const uvec8 kShuffleMaskRAWToRGB24_2 = {
+  8u, 7u, 12u, 11u, 10u, 15u, 14u, 13u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
 // Shuffle table for converting ARGB to RGB24.
 static const uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -239,11 +257,6 @@ static const uvec8 kShuffleMaskARGBToRAW = {
 // Shuffle table for converting ARGBToRGB24 for I422ToRGB24.  First 8 + next 4
 static const uvec8 kShuffleMaskARGBToRGB24_0 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 128u, 128u, 128u, 128u, 10u, 12u, 13u, 14u
-};
-
-// Shuffle table for converting ARGB to RAW.
-static const uvec8 kShuffleMaskARGBToRAW_0 = {
-  2u, 1u, 0u, 6u, 5u, 4u, 10u, 9u, 128u, 128u, 128u, 128u, 8u, 14u, 13u, 12u
 };
 
 // YUY2 shuf 16 Y to 32 Y.
@@ -408,6 +421,34 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb,
     movdqu    [edx + 48], xmm3
     lea       edx, [edx + 64]
     sub       ecx, 16
+    jg        convertloop
+    ret
+  }
+}
+
+__declspec(naked)
+void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width) {
+  __asm {
+    mov       eax, [esp + 4]   // src_raw
+    mov       edx, [esp + 8]   // dst_rgb24
+    mov       ecx, [esp + 12]  // width
+    movdqa    xmm3, xmmword ptr kShuffleMaskRAWToRGB24_0
+    movdqa    xmm4, xmmword ptr kShuffleMaskRAWToRGB24_1
+    movdqa    xmm5, xmmword ptr kShuffleMaskRAWToRGB24_2
+
+ convertloop:
+    movdqu    xmm0, [eax]
+    movdqu    xmm1, [eax + 4]
+    movdqu    xmm2, [eax + 8]
+    lea       eax, [eax + 24]
+    pshufb    xmm0, xmm3
+    pshufb    xmm1, xmm4
+    pshufb    xmm2, xmm5
+    movq      qword ptr [edx], xmm0
+    movq      qword ptr [edx + 8], xmm1
+    movq      qword ptr [edx + 16], xmm2
+    lea       edx, [edx + 24]
+    sub       ecx, 8
     jg        convertloop
     ret
   }

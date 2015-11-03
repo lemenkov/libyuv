@@ -847,6 +847,25 @@ void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int width) {
 }
 #endif  // HAS_RAWTOARGBROW_NEON
 
+void RAWToRGB24Row_NEON(const uint8* src_raw, uint8* dst_rgb24, int width) {
+  asm volatile (
+  "1:                                          \n"
+    MEMACCESS(0)
+    "ld3        {v0.8b,v1.8b,v2.8b}, [%0], #24 \n"  // read r g b
+    "subs       %w2, %w2, #8                   \n"  // 8 processed per loop.
+    "orr        v3.8b, v1.8b, v1.8b            \n"  // move g
+    "orr        v4.8b, v0.8b, v0.8b            \n"  // move r
+    MEMACCESS(1)
+    "st3        {v2.8b,v3.8b,v4.8b}, [%1], #24 \n"  // store b g r
+    "b.gt       1b                             \n"
+  : "+r"(src_raw),    // %0
+    "+r"(dst_rgb24),  // %1
+    "+r"(width)       // %2
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4"  // Clobber List
+  );
+}
+
 #define RGB565TOARGB                                                           \
     "shrn       v6.8b, v0.8h, #5               \n"  /* G xxGGGGGG           */ \
     "shl        v6.8b, v6.8b, #2               \n"  /* G GGGGGG00 upper 6   */ \

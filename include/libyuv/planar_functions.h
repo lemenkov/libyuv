@@ -170,6 +170,14 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
                uint8* dst_rgba, int dst_stride_rgba,
                int width, int height);
 
+// Alias
+#define RGB24ToRAW RAWToRGB24
+
+LIBYUV_API
+int RAWToRGB24(const uint8* src_raw, int src_stride_raw,
+               uint8* dst_rgb24, int dst_stride_rgb24,
+               int width, int height);
+
 // Draw a rectangle into I420.
 LIBYUV_API
 int I420Rect(uint8* dst_y, int dst_stride_y,

@@ -121,6 +121,24 @@ static uvec8 kShuffleMaskRAWToARGB = {
   2u, 1u, 0u, 12u, 5u, 4u, 3u, 13u, 8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u
 };
 
+// Shuffle table for converting RAW to RGB24.  First 8.
+static const uvec8 kShuffleMaskRAWToRGB24_0 = {
+  2u, 1u, 0u, 5u, 4u, 3u, 8u, 7u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
+// Shuffle table for converting RAW to RGB24.  Middle 8.
+static const uvec8 kShuffleMaskRAWToRGB24_1 = {
+  2u, 7u, 6u, 5u, 10u, 9u, 8u, 13u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
+// Shuffle table for converting RAW to RGB24.  Last 8.
+static const uvec8 kShuffleMaskRAWToRGB24_2 = {
+  8u, 7u, 12u, 11u, 10u, 15u, 14u, 13u,
+  128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u
+};
+
 // Shuffle table for converting ARGB to RGB24.
 static uvec8 kShuffleMaskARGBToRGB24 = {
   0u, 1u, 2u, 4u, 5u, 6u, 8u, 9u, 10u, 12u, 13u, 14u, 128u, 128u, 128u, 128u
@@ -268,6 +286,36 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int width) {
     "+r"(dst_argb),  // %1
     "+r"(width)        // %2
   : "m"(kShuffleMaskRAWToARGB)  // %3
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width) {
+  asm volatile (
+   "movdqa     %3,%%xmm3                       \n"
+   "movdqa     %4,%%xmm4                       \n"
+   "movdqa     %5,%%xmm5                       \n"
+    LABELALIGN
+  "1:                                          \n"
+    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    " MEMACCESS2(0x4,0) ",%%xmm1    \n"
+    "movdqu    " MEMACCESS2(0x8,0) ",%%xmm2    \n"
+    "lea       " MEMLEA(0x18,0) ",%0           \n"
+    "pshufb    %%xmm3,%%xmm0                   \n"
+    "pshufb    %%xmm4,%%xmm1                   \n"
+    "pshufb    %%xmm5,%%xmm2                   \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm1," MEMACCESS2(0x8,1) "    \n"
+    "movq      %%xmm2," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x18,1) ",%1           \n"
+    "sub       $0x8,%2                         \n"
+    "jg        1b                              \n"
+  : "+r"(src_raw),    // %0
+    "+r"(dst_rgb24),  // %1
+    "+r"(width)       // %2
+  : "m"(kShuffleMaskRAWToRGB24_0),  // %3
+    "m"(kShuffleMaskRAWToRGB24_1),  // %4
+    "m"(kShuffleMaskRAWToRGB24_2)   // %5
   : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
