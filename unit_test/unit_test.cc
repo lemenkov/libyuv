@@ -36,7 +36,7 @@ DEFINE_int32(libyuv_cpu_info, -1,
 
 LibYUVConvertTest::LibYUVConvertTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(130),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -88,7 +88,7 @@ LibYUVConvertTest::LibYUVConvertTest() :
 
 LibYUVColorTest::LibYUVColorTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -140,7 +140,7 @@ LibYUVColorTest::LibYUVColorTest() :
 
 LibYUVScaleTest::LibYUVScaleTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -192,7 +192,7 @@ LibYUVScaleTest::LibYUVScaleTest() :
 
 LibYUVRotateTest::LibYUVRotateTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -244,7 +244,7 @@ LibYUVRotateTest::LibYUVRotateTest() :
 
 LibYUVPlanarTest::LibYUVPlanarTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
@@ -296,7 +296,7 @@ LibYUVPlanarTest::LibYUVPlanarTest() :
 
 LibYUVBaseTest::LibYUVBaseTest() :
     benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
-    benchmark_height_(72), disable_cpu_flags_(0), benchmark_cpu_info_(-1) {
+    benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
     benchmark_iterations_ = atoi(repeat);  // NOLINT
