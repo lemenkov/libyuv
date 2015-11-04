@@ -52,7 +52,16 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
 }
 
-TEST_F(LibYUVBaseTest, TestCompilerHasAVX2) {
+TEST_F(LibYUVBaseTest, TestCpuCompilerEnabled) {
+#if defined(__aarch64__)
+  printf("Arm64 build\n");
+#endif
+#if defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON)
+  printf("Neon build enabled\n");
+#endif
+#if defined(__x86_64__) || defined(_M_X64)
+  printf("x64 build\n");
+#endif
 #ifdef _MSC_VER
 printf("_MSC_VER %d\n", _MSC_VER);
 #endif

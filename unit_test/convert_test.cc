@@ -87,7 +87,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                                  dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  dst_v_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  kWidth, NEG kHeight);                         \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
                                    src_u + OFF,                                \
@@ -218,7 +218,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                                  dst_y_c, kWidth,                              \
                                  dst_uv_c, SUBSAMPLE(kWidth * 2, SUBSAMP_X),   \
                                  kWidth, NEG kHeight);                         \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
                                    src_u + OFF,                                \
@@ -331,7 +331,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                                  dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  dst_v_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  kWidth, NEG kHeight);                         \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
                                    src_uv + OFF,                               \
@@ -437,7 +437,7 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                          \
                         src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                         dst_argb_c + OFF, kStrideB,                            \
                         kWidth, NEG kHeight);                                  \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                 \
                           src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
@@ -549,7 +549,7 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                          \
                         src_a + OFF, kWidth,                                   \
                         dst_argb_c + OFF, kStrideB,                            \
                         kWidth, NEG kHeight, ATTEN);                           \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                 \
                           src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
@@ -620,7 +620,7 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                          \
                         src_uv + OFF, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,        \
                         dst_argb_c, kWidth * BPP_B,                            \
                         kWidth, NEG kHeight);                                  \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                 \
                           src_uv + OFF, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,      \
@@ -713,7 +713,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
                         dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),                 \
                         dst_v_c, SUBSAMPLE(kWidth, SUBSAMP_X),                 \
                         kWidth, NEG kHeight);                                  \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                             \
                           dst_y_opt, kWidth,                                   \
@@ -819,7 +819,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
                         dst_y_c, kWidth,                                       \
                         dst_uv_c, SUBSAMPLE(kWidth, SUBSAMP_X) * 2,            \
                         kWidth, NEG kHeight);                                  \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_PLANAR(src_argb + OFF, kStride,                             \
                           dst_y_opt, kWidth,                                   \
@@ -895,7 +895,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##N) {                               \
   FMT_A##To##FMT_B(src_argb + OFF, kStrideA,                                   \
                    dst_argb_c, kStrideB,                                       \
                    kWidth, NEG kHeight);                                       \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_B(src_argb + OFF, kStrideA,                                 \
                      dst_argb_opt, kStrideB,                                   \
@@ -938,7 +938,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##_Random) {                         \
     FMT_A##To##FMT_B(src_argb, kStrideA,                                       \
                      dst_argb_c, kStrideB,                                     \
                      kWidth, kHeight);                                         \
-    MaskCpuFlags(-1);                                                          \
+    MaskCpuFlags(benchmark_cpu_info_);                                                          \
     FMT_A##To##FMT_B(src_argb, kStrideA,                                       \
                      dst_argb_opt, kStrideB,                                   \
                      kWidth, kHeight);                                         \
@@ -1028,7 +1028,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##Dither##N) {                       \
   FMT_A##To##FMT_B##Dither(src_argb + OFF, kStrideA,                           \
                            dst_argb_c, kStrideB,                               \
                            NULL, kWidth, NEG kHeight);                         \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_A##To##FMT_B##Dither(src_argb + OFF, kStrideA,                         \
                              dst_argb_opt, kStrideB,                           \
@@ -1071,7 +1071,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##Dither_Random) {                   \
     FMT_A##To##FMT_B##Dither(src_argb, kStrideA,                               \
                              dst_argb_c, kStrideB,                             \
                              NULL, kWidth, kHeight);                           \
-    MaskCpuFlags(-1);                                                          \
+    MaskCpuFlags(benchmark_cpu_info_);                                                          \
     FMT_A##To##FMT_B##Dither(src_argb, kStrideA,                               \
                              dst_argb_opt, kStrideB,                           \
                              NULL, kWidth, kHeight);                           \
@@ -1129,7 +1129,7 @@ TEST_F(LibYUVConvertTest, FMT_ATOB##_Symetric##N) {                            \
   FMT_ATOB(src_argb + OFF, kStrideA,                                           \
            dst_argb_c, kStrideA,                                               \
            kWidth, NEG kHeight);                                               \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_ATOB(src_argb + OFF, kStrideA,                                         \
              dst_argb_opt, kStrideA,                                           \
@@ -1139,7 +1139,7 @@ TEST_F(LibYUVConvertTest, FMT_ATOB##_Symetric##N) {                            \
   FMT_ATOB(dst_argb_c, kStrideA,                                               \
            dst_argb_c, kStrideA,                                               \
            kWidth, NEG kHeight);                                               \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   FMT_ATOB(dst_argb_opt, kStrideA,                                             \
            dst_argb_opt, kStrideA,                                             \
            kWidth, NEG kHeight);                                               \
@@ -1570,7 +1570,7 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##Dither##N) {                  \
                         src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
                         dst_argb_c + OFF, kStrideB,                            \
                         NULL, kWidth, NEG kHeight);                            \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     FMT_PLANAR##To##FMT_B##Dither(src_y + OFF, kWidth,                         \
                           src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \

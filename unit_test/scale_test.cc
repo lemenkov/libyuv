@@ -24,7 +24,7 @@ namespace libyuv {
 static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
                       FilterMode f, int benchmark_iterations,
-                      int disable_cpu_flags) {
+                      int disable_cpu_flags, int benchmark_cpu_info) {
   int i, j;
   const int b = 0;  // 128 to test for padding/stride.
   int src_width_uv = (Abs(src_width) + 1) >> 1;
@@ -80,7 +80,7 @@ static int TestFilter(int src_width, int src_height,
             dst_width, dst_height, f);
   c_time = (get_time() - c_time);
 
-  MaskCpuFlags(-1);  // Enable all CPU optimization.
+  MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
   double opt_time = get_time();
   for (i = 0; i < benchmark_iterations; ++i) {
     I420Scale(src_y + (src_stride_y * b) + b, src_stride_y,
@@ -284,7 +284,7 @@ static int TestFilter_16(int src_width, int src_height,
                             DX(benchmark_width_, nom, denom),                  \
                             DX(benchmark_height_, nom, denom),                 \
                             kFilter##filter, benchmark_iterations_,            \
-                            disable_cpu_flags_);                               \
+                            disable_cpu_flags_, benchmark_cpu_info_);          \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
     TEST_F(LibYUVScaleTest, DISABLED_ScaleDownBy##name##_##filter##_16) {      \
@@ -320,14 +320,14 @@ TEST_FACTOR(3, 1, 3)
       int diff = TestFilter(benchmark_width_, benchmark_height_,               \
                             width, height,                                     \
                             kFilter##filter, benchmark_iterations_,            \
-                            disable_cpu_flags_);                               \
+                            disable_cpu_flags_, benchmark_cpu_info_);          \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
     TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {         \
       int diff = TestFilter(width, height,                                     \
                             Abs(benchmark_width_), Abs(benchmark_height_),     \
                             kFilter##filter, benchmark_iterations_,            \
-                            disable_cpu_flags_);                               \
+                            disable_cpu_flags_, benchmark_cpu_info_);          \
       EXPECT_LE(diff, max_diff);                                               \
     }                                                                          \
     TEST_F(LibYUVScaleTest,                                                    \

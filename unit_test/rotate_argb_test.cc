@@ -20,7 +20,9 @@ namespace libyuv {
 void TestRotateBpp(int src_width, int src_height,
                    int dst_width, int dst_height,
                    libyuv::RotationMode mode,
-                   int benchmark_iterations, int disable_cpu_flags,
+                   int benchmark_iterations,
+                   int disable_cpu_flags,
+                   int benchmark_cpu_info,
                    const int kBpp) {
   if (src_width < 1) {
     src_width = 1;
@@ -54,7 +56,7 @@ void TestRotateBpp(int src_width, int src_height,
                 dst_argb_c, dst_stride_argb,
                 src_width, src_height, mode);
 
-    MaskCpuFlags(-1);  // Enable all CPU optimization.
+    MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
     for (int i = 0; i < benchmark_iterations; ++i) {
       RotatePlane(src_argb, src_stride_argb,
                   dst_argb_opt, dst_stride_argb,
@@ -66,7 +68,7 @@ void TestRotateBpp(int src_width, int src_height,
                dst_argb_c, dst_stride_argb,
                src_width, src_height, mode);
 
-    MaskCpuFlags(-1);  // Enable all CPU optimization.
+    MaskCpuFlags(benchmark_cpu_info);  // Enable all CPU optimization.
     for (int i = 0; i < benchmark_iterations; ++i) {
       ARGBRotate(src_argb, src_stride_argb,
                  dst_argb_opt, dst_stride_argb,
@@ -87,115 +89,137 @@ void TestRotateBpp(int src_width, int src_height,
 static void ARGBTestRotate(int src_width, int src_height,
                            int dst_width, int dst_height,
                            libyuv::RotationMode mode,
-                           int benchmark_iterations, int disable_cpu_flags) {
+                           int benchmark_iterations,
+                           int disable_cpu_flags,
+                           int benchmark_cpu_info) {
   TestRotateBpp(src_width, src_height,
                 dst_width, dst_height,
-                mode, benchmark_iterations, disable_cpu_flags, 4);
+                mode, benchmark_iterations,
+                disable_cpu_flags, benchmark_cpu_info, 4);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate0) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_width_, benchmark_height_,
-                 kRotate0, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate0, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate90) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_height_, benchmark_width_,
-                 kRotate90, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate90, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate180) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_width_, benchmark_height_,
-                 kRotate180, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate180, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate270) {
   ARGBTestRotate(benchmark_width_, benchmark_height_,
                  benchmark_height_, benchmark_width_,
-                 kRotate270, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate270, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate0_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_width_ - 3, benchmark_height_ - 1,
-                 kRotate0, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate0, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate90_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_height_ - 1, benchmark_width_ - 3,
-                 kRotate90, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate90, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate180_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_width_ - 3, benchmark_height_ - 1,
-                 kRotate180, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate180, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, ARGBRotate270_Odd) {
   ARGBTestRotate(benchmark_width_ - 3, benchmark_height_ - 1,
                  benchmark_height_ - 1, benchmark_width_ - 3,
-                 kRotate270, benchmark_iterations_, disable_cpu_flags_);
+                 kRotate270, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 static void TestRotatePlane(int src_width, int src_height,
                             int dst_width, int dst_height,
                             libyuv::RotationMode mode,
-                            int benchmark_iterations, int disable_cpu_flags) {
+                            int benchmark_iterations,
+                            int disable_cpu_flags,
+                            int benchmark_cpu_info) {
   TestRotateBpp(src_width, src_height,
                 dst_width, dst_height,
-                mode, benchmark_iterations, disable_cpu_flags, 1);
+                mode, benchmark_iterations,
+                disable_cpu_flags, benchmark_cpu_info, 1);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane0) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_width_, benchmark_height_,
-                  kRotate0, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate0, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane90) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_height_, benchmark_width_,
-                  kRotate90, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate90, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane180) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_width_, benchmark_height_,
-                  kRotate180, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate180, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane270) {
   TestRotatePlane(benchmark_width_, benchmark_height_,
                   benchmark_height_, benchmark_width_,
-                  kRotate270, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate270, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane0_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_width_ - 3, benchmark_height_ - 1,
-                  kRotate0, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate0, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane90_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_height_ - 1, benchmark_width_ - 3,
-                  kRotate90, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate90, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane180_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_width_ - 3, benchmark_height_ - 1,
-                  kRotate180, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate180, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 TEST_F(LibYUVRotateTest, RotatePlane270_Odd) {
   TestRotatePlane(benchmark_width_ - 3, benchmark_height_ - 1,
                   benchmark_height_ - 1, benchmark_width_ - 3,
-                  kRotate270, benchmark_iterations_, disable_cpu_flags_);
+                  kRotate270, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_);
 }
 
 }  // namespace libyuv

@@ -37,7 +37,7 @@ namespace libyuv {
 #endif
 
 #define TESTCS(TESTNAME, YUVTOARGB, ARGBTOYUV, HS1, HS, HN, DIFF)              \
-	TEST_F(LibYUVColorTest, TESTNAME) {                                          \
+  TEST_F(LibYUVColorTest, TESTNAME) {                                          \
   const int kPixels = benchmark_width_ * benchmark_height_;                    \
   const int kHalfPixels = ((benchmark_width_ + 1) / 2) *                       \
       ((benchmark_height_ + HS1) / HS);                                        \
@@ -101,7 +101,7 @@ namespace libyuv {
             temp_v, (benchmark_width_ + 1) / 2,                                \
             dst_pixels_c, benchmark_width_ * 4,                                \
             benchmark_width_, benchmark_height_);                              \
-  MaskCpuFlags(-1);                                                            \
+  MaskCpuFlags(benchmark_cpu_info_);                                           \
                                                                                \
   for (int i = 0; i < benchmark_iterations_; ++i) {                            \
     YUVTOARGB(temp_y, benchmark_width_,                                        \

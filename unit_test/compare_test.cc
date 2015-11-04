@@ -264,7 +264,7 @@ TEST_F(LibYUVBaseTest, SumSquareError) {
   MaskCpuFlags(disable_cpu_flags_);
   uint64 c_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
   uint64 opt_err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
   EXPECT_EQ(c_err, opt_err);
@@ -281,7 +281,7 @@ TEST_F(LibYUVBaseTest, BenchmarkPsnr_Opt) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -306,7 +306,7 @@ TEST_F(LibYUVBaseTest, BenchmarkPsnr_Unaligned) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -388,7 +388,7 @@ TEST_F(LibYUVBaseTest, Psnr) {
                         src_b + kSrcStride * b + b, kSrcStride,
                         kSrcWidth, kSrcHeight);
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   opt_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
                           src_b + kSrcStride * b + b, kSrcStride,
@@ -408,7 +408,7 @@ TEST_F(LibYUVBaseTest, DISABLED_BenchmarkSsim_Opt) {
     src_b[i] = i;
   }
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
@@ -497,7 +497,7 @@ TEST_F(LibYUVBaseTest, Ssim) {
                         src_b + kSrcStride * b + b, kSrcStride,
                         kSrcWidth, kSrcHeight);
 
-  MaskCpuFlags(-1);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   opt_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
                           src_b + kSrcStride * b + b, kSrcStride,
