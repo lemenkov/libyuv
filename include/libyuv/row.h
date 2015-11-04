@@ -258,6 +258,7 @@ extern "C" {
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
+#define HAS_I422ALPHATOARGBROW_NEON
 #define HAS_ABGRTOUVROW_NEON
 #define HAS_ABGRTOYROW_NEON
 #define HAS_ARGB1555TOARGBROW_NEON
@@ -553,6 +554,13 @@ void I422ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422AlphaToARGBRow_NEON(const uint8* y_buf,
+                             const uint8* u_buf,
+                             const uint8* v_buf,
+                             const uint8* a_buf,
+                             uint8* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void I422ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -1533,6 +1541,13 @@ void I422ToARGBRow_Any_NEON(const uint8* src_y,
                             uint8* dst_argb,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422AlphaToARGBRow_Any_NEON(const uint8* src_y,
+                                 const uint8* src_u,
+                                 const uint8* src_v,
+                                 const uint8* src_a,
+                                 uint8* dst_argb,
+                                 const struct YuvConstants* yuvconstants,
+                                 int width);
 void I411ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
