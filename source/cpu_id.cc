@@ -151,27 +151,6 @@ int ArmCpuCaps(const char* cpuinfo_name) {
   return 0;
 }
 
-#if defined(__mips__) && defined(__linux__)
-static int MipsCpuCaps(const char* search_string) {
-  char cpuinfo_line[512];
-  const char* file_name = "/proc/cpuinfo";
-  FILE* f = fopen(file_name, "r");
-  if (!f) {
-    // Assume DSP if /proc/cpuinfo is unavailable.
-    // This will occur for Chrome sandbox for Pepper or Render process.
-    return kCpuHasMIPS_DSP;
-  }
-  while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f) != NULL) {
-    if (strstr(cpuinfo_line, search_string) != NULL) {
-      fclose(f);
-      return kCpuHasMIPS_DSP;
-    }
-  }
-  fclose(f);
-  return 0;
-}
-#endif
-
 // CPU detect function for SIMD instruction sets.
 LIBYUV_API
 int cpu_info_ = 0;  // cpu_info is not initialized yet.
@@ -262,8 +241,6 @@ int InitCpuFlags(void) {
   }
 #endif
 #if defined(__mips__) && defined(__linux__)
-  // Linux mips parse text file for dsp detect.
-  cpu_info = MipsCpuCaps("dsp");  // set kCpuHasMIPS_DSP.
 #if defined(__mips_dspr2)
   cpu_info |= kCpuHasMIPS_DSPR2;
 #endif
@@ -271,9 +248,6 @@ int InitCpuFlags(void) {
 
   if (getenv("LIBYUV_DISABLE_MIPS")) {
     cpu_info &= ~kCpuHasMIPS;
-  }
-  if (getenv("LIBYUV_DISABLE_MIPS_DSP")) {
-    cpu_info &= ~kCpuHasMIPS_DSP;
   }
   if (getenv("LIBYUV_DISABLE_MIPS_DSPR2")) {
     cpu_info &= ~kCpuHasMIPS_DSPR2;
