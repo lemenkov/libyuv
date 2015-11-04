@@ -439,10 +439,10 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
       "+r"(width64)    // %2
-    : [kUVToRB]"r"(&kYuvIConstants.kUVToRB),
-      [kUVToG]"r"(&kYuvIConstants.kUVToG),
-      [kUVBiasBGR]"r"(&kYuvIConstants.kUVBiasBGR),
-      [kYToRgb]"r"(&kYuvIConstants.kYToRgb)
+    : [kUVToRB]"r"(&kYuvI601Constants.kUVToRB),
+      [kUVToG]"r"(&kYuvI601Constants.kUVToG),
+      [kUVBiasBGR]"r"(&kYuvI601Constants.kUVBiasBGR),
+      [kYToRgb]"r"(&kYuvI601Constants.kYToRgb)
     : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
       "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
   );

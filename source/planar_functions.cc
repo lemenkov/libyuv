@@ -843,7 +843,7 @@ int I422ToRGBA(const uint8* src_y, int src_stride_y,
                           src_u, src_stride_u,
                           src_v, src_stride_v,
                           dst_rgba, dst_stride_rgba,
-                          &kYuvIConstants,
+                          &kYuvI601Constants,
                           width, height);
 }
 
@@ -858,7 +858,7 @@ int I422ToBGRA(const uint8* src_y, int src_stride_y,
                           src_v, src_stride_v,  // Swap U and V
                           src_u, src_stride_u,
                           dst_bgra, dst_stride_bgra,
-                          &kYvuIConstants,  // Use Yvu matrix
+                          &kYvuI601Constants,  // Use Yvu matrix
                           width, height);
 }
 
@@ -910,7 +910,7 @@ int NV12ToRGB565(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV12ToRGB565Row(src_y, src_uv, dst_rgb565, &kYuvIConstants, width);
+    NV12ToRGB565Row(src_y, src_uv, dst_rgb565, &kYuvI601Constants, width);
     dst_rgb565 += dst_stride_rgb565;
     src_y += src_stride_y;
     if (y & 1) {

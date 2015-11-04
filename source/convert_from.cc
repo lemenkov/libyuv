@@ -531,7 +531,7 @@ int I420ToRGBA(const uint8* src_y, int src_stride_y,
                           src_u, src_stride_u,
                           src_v, src_stride_v,
                           dst_rgba, dst_stride_rgba,
-                          &kYuvIConstants,
+                          &kYuvI601Constants,
                           width, height);
 }
 
@@ -546,7 +546,7 @@ int I420ToBGRA(const uint8* src_y, int src_stride_y,
                           src_v, src_stride_v,  // Swap U and V
                           src_u, src_stride_u,
                           dst_bgra, dst_stride_bgra,
-                          &kYvuIConstants,  // Use Yvu matrix
+                          &kYvuI601Constants,  // Use Yvu matrix
                           width, height);
 }
 
@@ -622,7 +622,7 @@ int I420ToRGB24(const uint8* src_y, int src_stride_y,
                            src_u, src_stride_u,
                            src_v, src_stride_v,
                            dst_rgb24, dst_stride_rgb24,
-                           &kYuvIConstants,
+                           &kYuvI601Constants,
                            width, height);
 }
 
@@ -637,7 +637,7 @@ int I420ToRAW(const uint8* src_y, int src_stride_y,
                            src_v, src_stride_v,  // Swap U and V
                            src_u, src_stride_u,
                            dst_raw, dst_stride_raw,
-                           &kYvuIConstants,  // Use Yvu matrix
+                           &kYvuI601Constants,  // Use Yvu matrix
                            width, height);
 }
 
@@ -691,7 +691,7 @@ int I420ToARGB1555(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToARGB1555Row(src_y, src_u, src_v, dst_argb1555, &kYuvIConstants,
+    I422ToARGB1555Row(src_y, src_u, src_v, dst_argb1555, &kYuvI601Constants,
                       width);
     dst_argb1555 += dst_stride_argb1555;
     src_y += src_stride_y;
@@ -754,7 +754,7 @@ int I420ToARGB4444(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToARGB4444Row(src_y, src_u, src_v, dst_argb4444, &kYuvIConstants,
+    I422ToARGB4444Row(src_y, src_u, src_v, dst_argb4444, &kYuvI601Constants,
                       width);
     dst_argb4444 += dst_stride_argb4444;
     src_y += src_stride_y;
@@ -816,7 +816,7 @@ int I420ToRGB565(const uint8* src_y, int src_stride_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    I422ToRGB565Row(src_y, src_u, src_v, dst_rgb565, &kYuvIConstants, width);
+    I422ToRGB565Row(src_y, src_u, src_v, dst_rgb565, &kYuvI601Constants, width);
     dst_rgb565 += dst_stride_rgb565;
     src_y += src_stride_y;
     if (y & 1) {
@@ -924,7 +924,7 @@ int I420ToRGB565Dither(const uint8* src_y, int src_stride_y,
     // Allocate a row of argb.
     align_buffer_64(row_argb, width * 4);
     for (y = 0; y < height; ++y) {
-      I422ToARGBRow(src_y, src_u, src_v, row_argb, &kYuvIConstants, width);
+      I422ToARGBRow(src_y, src_u, src_v, row_argb, &kYuvI601Constants, width);
       ARGBToRGB565DitherRow(row_argb, dst_rgb565,
                             *(uint32*)(dither4x4 + ((y & 3) << 2)), width);
       dst_rgb565 += dst_stride_rgb565;

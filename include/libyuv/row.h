@@ -447,14 +447,14 @@ struct YuvConstants {
 #endif
 
 // Conversion matrix for YUV to RGB
-extern const struct YuvConstants kYuvIConstants;  // BT.601
-extern const struct YuvConstants kYuvJConstants;  // JPeg color space
-extern const struct YuvConstants kYuvHConstants;  // BT.709
+extern const struct YuvConstants kYuvI601Constants;  // BT.601
+extern const struct YuvConstants kYuvJPEGConstants;  // JPeg color space
+extern const struct YuvConstants kYuvH709Constants;  // BT.709
 
-// Conversion matrix for YVU to BGR.
-extern const struct YuvConstants kYvuIConstants;  // BT.601
-extern const struct YuvConstants kYvuJConstants;  // JPeg color space
-extern const struct YuvConstants kYvuHConstants;  // BT.709
+// Conversion matrix for YVU to BGR
+extern const struct YuvConstants kYvuI601Constants;  // BT.601
+extern const struct YuvConstants kYvuJPEGConstants;  // JPeg color space
+extern const struct YuvConstants kYvuH709Constants;  // BT.709
 
 #if defined(__APPLE__) || defined(__x86_64__) || defined(__llvm__)
 #define OMITFP

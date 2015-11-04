@@ -1033,7 +1033,7 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1041,7 +1041,7 @@ const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1050,20 +1050,20 @@ const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1075,7 +1075,7 @@ const YuvConstants SIMD_ALIGNED(kYuvIConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, UB, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1120,7 +1120,7 @@ const YuvConstants SIMD_ALIGNED(kYvuIConstants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1128,7 +1128,7 @@ const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1137,20 +1137,20 @@ const YuvConstants SIMD_ALIGNED(kYvuJConstants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1162,7 +1162,7 @@ const YuvConstants SIMD_ALIGNED(kYuvJConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, UB, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1208,7 +1208,7 @@ const YuvConstants SIMD_ALIGNED(kYvuJConstants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1216,7 +1216,7 @@ const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1225,20 +1225,20 @@ const YuvConstants SIMD_ALIGNED(kYvuHConstants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1250,7 +1250,7 @@ const YuvConstants SIMD_ALIGNED(kYuvHConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED(kYvuHConstants) = {
+const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, UB, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
