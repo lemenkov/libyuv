@@ -1,5 +1,4 @@
 *.pyc
-.gn
 pin-log.txt
 /base
 /build
