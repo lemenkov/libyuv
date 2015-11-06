@@ -265,11 +265,11 @@ void I422ToRGBARow_NEON(const uint8* src_y,
                         int width) {
   asm volatile (
     YUVTORGB_SETUP
-    "vmov.u8    d19, #255                      \n"
   "1:                                          \n"
     READYUV422
     YUVTORGB
     "subs       %4, %4, #8                     \n"
+    "vmov.u8    d19, #255                      \n"  // d19 modified by YUVTORGB
     MEMACCESS(3)
     "vst4.8     {d19, d20, d21, d22}, [%3]!    \n"
     "bgt        1b                             \n"
