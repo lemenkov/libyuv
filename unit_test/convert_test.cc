@@ -1792,4 +1792,78 @@ TESTPLANARTOE(I422, 2, 1, UYVY, 2, ARGB, 4)
 // TESTPLANARTOE(I420, 2, 2, ARGB, 4, I400, 1)
 // TESTPLANARTOE(J420, 2, 2, ARGB, 4, J400, 1)
 
+#define TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,        \
+                       W1280, N, NEG, OFF, FMT_C, BPP_C, ATTEN)                \
+TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
+  const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
+  const int kHeight = benchmark_height_;                                       \
+  const int kStrideB = kWidth * BPP_B;                                         \
+  const int kSizeUV =                                                          \
+    SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y);              \
+  align_buffer_64(src_y, kWidth * kHeight + OFF);                              \
+  align_buffer_64(src_u, kSizeUV + OFF);                                       \
+  align_buffer_64(src_v, kSizeUV + OFF);                                       \
+  align_buffer_64(src_a, kWidth * kHeight + OFF);                              \
+  align_buffer_64(dst_argb_b, kStrideB * kHeight + OFF);                       \
+  for (int i = 0; i < kWidth * kHeight; ++i) {                                 \
+    src_y[i + OFF] = (fastrand() & 0xff);                                      \
+    src_a[i + OFF] = (fastrand() & 0xff);                                      \
+  }                                                                            \
+  for (int i = 0; i < kSizeUV; ++i) {                                          \
+    src_u[i + OFF] = (fastrand() & 0xff);                                      \
+    src_v[i + OFF] = (fastrand() & 0xff);                                      \
+  }                                                                            \
+  memset(dst_argb_b + OFF, 1, kStrideB * kHeight);                             \
+  for (int i = 0; i < benchmark_iterations_; ++i) {                            \
+    FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth,                                 \
+                          src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
+                          src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),           \
+                          src_a + OFF, kWidth,                                 \
+                          dst_argb_b + OFF, kStrideB,                          \
+                          kWidth, NEG kHeight, ATTEN);                         \
+  }                                                                            \
+  int max_diff = 0;                                                            \
+  /* Convert to a 3rd format in 1 step and 2 steps and compare  */             \
+  const int kStrideC = kWidth * BPP_C;                                         \
+  align_buffer_64(dst_argb_c, kStrideC * kHeight + OFF);                       \
+  align_buffer_64(dst_argb_bc, kStrideC * kHeight + OFF);                      \
+  memset(dst_argb_c + OFF, 2, kStrideC * kHeight);                             \
+  memset(dst_argb_bc + OFF, 3, kStrideC * kHeight);                            \
+  FMT_PLANAR##To##FMT_C(src_y + OFF, kWidth,                                   \
+                        src_u + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
+                        src_v + OFF, SUBSAMPLE(kWidth, SUBSAMP_X),             \
+                        src_a + OFF, kWidth,                                   \
+                        dst_argb_c + OFF, kStrideC,                            \
+                        kWidth, NEG kHeight, ATTEN);                           \
+  /* Convert B to C */                                                         \
+  FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB,                                 \
+                   dst_argb_bc + OFF, kStrideC,                                \
+                   kWidth, kHeight);                                           \
+  for (int i = 0; i < kStrideC * kHeight; ++i) {                               \
+    EXPECT_EQ(dst_argb_c[i + OFF], dst_argb_bc[i + OFF]);                      \
+  }                                                                            \
+  free_aligned_buffer_64(src_y);                                               \
+  free_aligned_buffer_64(src_u);                                               \
+  free_aligned_buffer_64(src_v);                                               \
+  free_aligned_buffer_64(dst_argb_b);                                          \
+  free_aligned_buffer_64(dst_argb_c);                                          \
+  free_aligned_buffer_64(dst_argb_bc);                                         \
+}
+
+#define TESTQPLANARTOE(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,         \
+                      FMT_C, BPP_C)                                            \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+        benchmark_width_ - 4, _Any, +, 0, FMT_C, BPP_C, 0)                     \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+        benchmark_width_, _Unaligned, +, 1, FMT_C, BPP_C, 0)                   \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+        benchmark_width_, _Invert, -, 0, FMT_C, BPP_C, 0)                      \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+        benchmark_width_, _Opt, +, 0, FMT_C, BPP_C, 0)                         \
+      TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,          \
+          benchmark_width_, _Premult, +, 0, FMT_C, BPP_C, 1)
+
+TESTQPLANARTOE(I420Alpha, 2, 2, ARGB, 4, ABGR, 4)
+TESTQPLANARTOE(I420Alpha, 2, 2, ABGR, 4, ARGB, 4)
+
 }  // namespace libyuv

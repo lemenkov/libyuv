@@ -200,13 +200,11 @@ extern "C" {
 #if !(defined(_DEBUG) && defined(__i386__))
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
-// AVX2 versions fail on gcc.  b/522
-// #define HAS_I422ALPHATOARGBROW_AVX2
+#define HAS_I422ALPHATOARGBROW_AVX2
 #endif
-// AVX2 versions fail on gcc.  b/522
-// #define HAS_I422TOARGBROW_AVX2
-// #define HAS_I422TORGB24ROW_AVX2
-// #define HAS_I422TORGBAROW_AVX2
+#define HAS_I422TOARGBROW_AVX2
+#define HAS_I422TORGB24ROW_AVX2
+#define HAS_I422TORGBAROW_AVX2
 #define HAS_INTERPOLATEROW_AVX2
 #define HAS_J422TOARGBROW_AVX2
 #define HAS_MERGEUVROW_AVX2
@@ -241,9 +239,9 @@ extern "C" {
 #define HAS_ARGBTOARGB4444ROW_AVX2
 #define HAS_ARGBTORGB565ROW_AVX2
 #define HAS_I411TOARGBROW_AVX2
-// #define HAS_I422TOARGB1555ROW_AVX2
-// #define HAS_I422TOARGB4444ROW_AVX2
-// #define HAS_I422TORGB565ROW_AVX2
+#define HAS_I422TOARGB1555ROW_AVX2
+#define HAS_I422TOARGB4444ROW_AVX2
+#define HAS_I422TORGB565ROW_AVX2
 #define HAS_I444TOARGBROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
