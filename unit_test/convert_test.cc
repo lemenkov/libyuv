@@ -1845,6 +1845,7 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
   free_aligned_buffer_64(src_y);                                               \
   free_aligned_buffer_64(src_u);                                               \
   free_aligned_buffer_64(src_v);                                               \
+  free_aligned_buffer_64(src_a);                                               \
   free_aligned_buffer_64(dst_argb_b);                                          \
   free_aligned_buffer_64(dst_argb_c);                                          \
   free_aligned_buffer_64(dst_argb_bc);                                         \
