@@ -3376,8 +3376,23 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     mov        eax, [esp + 4]   // src
     mov        edx, [esp + 8]   // dst
     mov        ecx, [esp + 12]  // count
+    test       eax, 15
+    jne        convertloopu
+    test       edx, 15
+    jne        convertloopu
 
-  convertloop:
+  convertloopa:
+    movdqa     xmm0, [eax]
+    movdqa     xmm1, [eax + 16]
+    lea        eax, [eax + 32]
+    movdqa     [edx], xmm0
+    movdqa     [edx + 16], xmm1
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    jg         convertloopa
+    ret
+
+  convertloopu:
     movdqu     xmm0, [eax]
     movdqu     xmm1, [eax + 16]
     lea        eax, [eax + 32]
@@ -3385,7 +3400,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     movdqu     [edx + 16], xmm1
     lea        edx, [edx + 32]
     sub        ecx, 32
-    jg         convertloop
+    jg         convertloopu
     ret
   }
 }

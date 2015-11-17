@@ -2726,8 +2726,23 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
 #ifdef HAS_COPYROW_SSE2
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
   asm volatile (
+    "test       $0xf,%0                        \n"
+    "jne        2f                             \n"
+    "test       $0xf,%1                        \n"
+    "jne        2f                             \n"
     LABELALIGN
   "1:                                          \n"
+    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "lea       " MEMLEA(0x20,0) ",%0           \n"
+    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqa    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "jmp       9f                              \n"
+    LABELALIGN
+  "2:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
@@ -2735,7 +2750,8 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
     "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
-    "jg        1b                              \n"
+    "jg        2b                              \n"
+  "9:                                          \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(count)  // %2
