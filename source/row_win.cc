@@ -2440,9 +2440,14 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
   }
 
 // Read 2 UV from 411, upsample to 8 UV.
-#define READYUV411 __asm {                                                     \
-    __asm pinsrw     xmm0, [esi], 0        /* U */                             \
-    __asm pinsrw     xmm1, [esi + edi], 0  /* V */                             \
+// drmemory fails with memory fault if pinsrw used. libyuv bug: 525
+//  __asm pinsrw     xmm0, [esi], 0        /* U */
+//  __asm pinsrw     xmm1, [esi + edi], 0  /* V */
+#define READYUV411_EBX __asm {                                                 \
+    __asm movzx      ebx, word ptr [esi]        /* U */                        \
+    __asm movd       xmm0, ebx                                                 \
+    __asm movzx      ebx, word ptr [esi + edi]  /* V */                        \
+    __asm movd       xmm1, ebx                                                 \
     __asm lea        esi,  [esi + 2]                                           \
     __asm punpcklbw  xmm0, xmm1            /* UV */                            \
     __asm punpcklwd  xmm0, xmm0            /* UVUV (upsample) */               \
@@ -2816,23 +2821,25 @@ void I411ToARGBRow_SSSE3(const uint8* y_buf,
     push       esi
     push       edi
     push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
+    push       ebp
+    mov        eax, [esp + 16 + 4]   // Y
+    mov        esi, [esp + 16 + 8]   // U
+    mov        edi, [esp + 16 + 12]  // V
+    mov        edx, [esp + 16 + 16]  // abgr
+    mov        ebp, [esp + 16 + 20]  // yuvconstants
+    mov        ecx, [esp + 16 + 24]  // width
     sub        edi, esi
     pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
 
  convertloop:
-    READYUV411
-    YUVTORGB(ebx)
+    READYUV411_EBX
+    YUVTORGB(ebp)
     STOREARGB
 
     sub        ecx, 8
     jg         convertloop
 
+    pop        ebp
     pop        ebx
     pop        edi
     pop        esi
