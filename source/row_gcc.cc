@@ -1526,9 +1526,9 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 //  __asm pinsrw     xmm0, [esi], 0        /* U */
 //  __asm pinsrw     xmm1, [esi + edi], 0  /* V */
 #define READYUV411_EBX                                                         \
-    "movzw      " MEMACCESS([u_buf]) ",%%ebx                    \n"            \
+    "movzwl     " MEMACCESS([u_buf]) ",%%ebx                    \n"            \
     "movd       %%ebx,%%xmm0                                    \n"            \
-    MEMOPREG(movzw,0x00,[u_buf],[v_buf],1,ebx) "                \n"            \
+    MEMOPREG(movzwl,0x00,[u_buf],[v_buf],1,ebx) "               \n"            \
     "movd       %%ebx,%%xmm1                                    \n"            \
     "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
