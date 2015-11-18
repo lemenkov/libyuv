@@ -1518,10 +1518,18 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
     "movq       " MEMACCESS([a_buf]) ",%%xmm5                   \n"            \
     "lea        " MEMLEA(0x8, [a_buf]) ",%[a_buf]               \n"
 
-// Read 2 UV from 411, upsample to 8 UV
-#define READYUV411                                                             \
-    "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"            \
-    MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+// Read 2 UV from 411, upsample to 8 UV.
+// reading 4 bytes is an msan violation.
+//    "movd       " MEMACCESS([u_buf]) ",%%xmm0                   \n"
+//    MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)
+// pinsrw fails with drmemory
+//  __asm pinsrw     xmm0, [esi], 0        /* U */
+//  __asm pinsrw     xmm1, [esi + edi], 0  /* V */
+#define READYUV411_EBX                                                         \
+    "movzw      " MEMACCESS([u_buf]) ",%%ebx                    \n"            \
+    "movd       %%ebx,%%xmm0                                    \n"            \
+    MEMOPREG(movzw,0x00,[u_buf],[v_buf],1,ebx) "                \n"            \
+    "movd       %%ebx,%%xmm1                                    \n"            \
     "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
@@ -1800,7 +1808,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     LABELALIGN
   "1:                                          \n"
-    READYUV411
+    READYUV411_EBX
     YUVTORGB(yuvconstants)
     STOREARGB
     "sub       $0x8,%[width]                   \n"
@@ -1811,7 +1819,7 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", "ebx", NACL_R14 YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
