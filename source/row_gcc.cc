@@ -1525,11 +1525,11 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 // pinsrw fails with drmemory
 //  __asm pinsrw     xmm0, [esi], 0        /* U */
 //  __asm pinsrw     xmm1, [esi + edi], 0  /* V */
-#define READYUV411_EBX                                                         \
-    "movzwl     " MEMACCESS([u_buf]) ",%%ebx                    \n"            \
-    "movd       %%ebx,%%xmm0                                    \n"            \
-    MEMOPREG(movzwl,0x00,[u_buf],[v_buf],1,ebx) "               \n"            \
-    "movd       %%ebx,%%xmm1                                    \n"            \
+#define READYUV411_TEMP                                                        \
+    "movzwl     " MEMACCESS([u_buf]) ",%[temp]                  \n"            \
+    "movd       %[temp],%%xmm0                                  \n"            \
+    MEMOPARG(movzwl,0x00,[u_buf],[v_buf],1,[temp]) "            \n"            \
+    "movd       %[temp],%%xmm1                                  \n"            \
     "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
@@ -1802,13 +1802,14 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
                                 uint8* dst_argb,
                                 const struct YuvConstants* yuvconstants,
                                 int width) {
+  int temp = 0;
   asm volatile (
     YUVTORGB_SETUP(yuvconstants)
     "sub       %[u_buf],%[v_buf]               \n"
     "pcmpeqb   %%xmm5,%%xmm5                   \n"
     LABELALIGN
   "1:                                          \n"
-    READYUV411_EBX
+    READYUV411_TEMP
     YUVTORGB(yuvconstants)
     STOREARGB
     "sub       $0x8,%[width]                   \n"
@@ -1817,9 +1818,10 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [temp]"+r"(temp),       // %[temp]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", "ebx", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", NACL_R14 YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
