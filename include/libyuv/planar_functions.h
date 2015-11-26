@@ -390,16 +390,37 @@ int ARGBShade(const uint8* src_argb, int src_stride_argb,
               uint8* dst_argb, int dst_stride_argb,
               int width, int height, uint32 value);
 
-// Interpolate between two ARGB images using specified amount of interpolation
+// Interpolate between two images using specified amount of interpolation
 // (0 to 255) and store to destination.
-// 'interpolation' is specified as 8 bit fraction where 0 means 100% src_argb0
-// and 255 means 1% src_argb0 and 99% src_argb1.
-// Internally uses ARGBScale bilinear filtering.
-// Caveat: This function will write up to 16 bytes beyond the end of dst_argb.
+// 'interpolation' is specified as 8 bit fraction where 0 means 100% src0
+// and 255 means 1% src0 and 99% src1.
+LIBYUV_API
+int InterpolatePlane(const uint8* src0, int src_stride0,
+                     const uint8* src1, int src_stride1,
+                     uint8* dst, int dst_stride,
+                     int width, int height, int interpolation);
+
+// Interpolate between two ARGB images using specified amount of interpolation
+// Internally calls InterpolatePlane with width * 4 (bpp).
 LIBYUV_API
 int ARGBInterpolate(const uint8* src_argb0, int src_stride_argb0,
                     const uint8* src_argb1, int src_stride_argb1,
                     uint8* dst_argb, int dst_stride_argb,
+                    int width, int height, int interpolation);
+
+// Interpolate between two YUV images using specified amount of interpolation
+// Internally calls InterpolatePlane on each plane where the U and V planes
+// are half width and half height.
+LIBYUV_API
+int I420Interpolate(const uint8* src0_y, int src0_stride_y,
+                    const uint8* src0_u, int src0_stride_u,
+                    const uint8* src0_v, int src0_stride_v,
+                    const uint8* src1_y, int src1_stride_y,
+                    const uint8* src1_u, int src1_stride_u,
+                    const uint8* src1_v, int src1_stride_v,
+                    uint8* dst_y, int dst_stride_y,
+                    uint8* dst_u, int dst_stride_u,
+                    uint8* dst_v, int dst_stride_v,
                     int width, int height, int interpolation);
 
 #if defined(__pnacl__) || defined(__CLR_VER) || \

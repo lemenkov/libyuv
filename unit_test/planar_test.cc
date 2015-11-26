@@ -859,7 +859,7 @@ TEST_F(LibYUVPlanarTest, TestShade) {
   }
 }
 
-TEST_F(LibYUVPlanarTest, TestInterpolate) {
+TEST_F(LibYUVPlanarTest, TestARGBInterpolate) {
   SIMD_ALIGNED(uint8 orig_pixels_0[1280][4]);
   SIMD_ALIGNED(uint8 orig_pixels_1[1280][4]);
   SIMD_ALIGNED(uint8 interpolate_pixels[1280][4]);
@@ -937,6 +937,88 @@ TEST_F(LibYUVPlanarTest, TestInterpolate) {
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                     &interpolate_pixels[0][0], 0, 1280, 1, 128);
+  }
+}
+
+
+TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
+  SIMD_ALIGNED(uint8 orig_pixels_0[1280]);
+  SIMD_ALIGNED(uint8 orig_pixels_1[1280]);
+  SIMD_ALIGNED(uint8 interpolate_pixels[1280]);
+  memset(orig_pixels_0, 0, sizeof(orig_pixels_0));
+  memset(orig_pixels_1, 0, sizeof(orig_pixels_1));
+
+  orig_pixels_0[0] = 16u;
+  orig_pixels_0[1] = 32u;
+  orig_pixels_0[2] = 64u;
+  orig_pixels_0[3] = 128u;
+  orig_pixels_0[4] = 0u;
+  orig_pixels_0[5] = 0u;
+  orig_pixels_0[6] = 0u;
+  orig_pixels_0[7] = 255u;
+  orig_pixels_0[8] = 0u;
+  orig_pixels_0[9] = 0u;
+  orig_pixels_0[10] = 0u;
+  orig_pixels_0[11] = 0u;
+  orig_pixels_0[12] = 0u;
+  orig_pixels_0[13] = 0u;
+  orig_pixels_0[14] = 0u;
+  orig_pixels_0[15] = 0u;
+
+  orig_pixels_1[0] = 0u;
+  orig_pixels_1[1] = 0u;
+  orig_pixels_1[2] = 0u;
+  orig_pixels_1[3] = 0u;
+  orig_pixels_1[4] = 0u;
+  orig_pixels_1[5] = 0u;
+  orig_pixels_1[6] = 0u;
+  orig_pixels_1[7] = 0u;
+  orig_pixels_1[8] = 0u;
+  orig_pixels_1[9] = 0u;
+  orig_pixels_1[10] = 0u;
+  orig_pixels_1[11] = 0u;
+  orig_pixels_1[12] = 255u;
+  orig_pixels_1[13] = 255u;
+  orig_pixels_1[14] = 255u;
+  orig_pixels_1[15] = 255u;
+
+  InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                   &interpolate_pixels[0], 0, 16, 1, 128);
+  EXPECT_EQ(8u, interpolate_pixels[0]);
+  EXPECT_EQ(16u, interpolate_pixels[1]);
+  EXPECT_EQ(32u, interpolate_pixels[2]);
+  EXPECT_EQ(64u, interpolate_pixels[3]);
+  EXPECT_EQ(0u, interpolate_pixels[4]);
+  EXPECT_EQ(0u, interpolate_pixels[5]);
+  EXPECT_EQ(0u, interpolate_pixels[6]);
+  EXPECT_NEAR(128u, interpolate_pixels[7], 1);  // C = 127, SSE = 128.
+  EXPECT_EQ(0u, interpolate_pixels[8]);
+  EXPECT_EQ(0u, interpolate_pixels[9]);
+  EXPECT_EQ(0u, interpolate_pixels[10]);
+  EXPECT_EQ(0u, interpolate_pixels[11]);
+  EXPECT_NEAR(128u, interpolate_pixels[12], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[13], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[14], 1);
+  EXPECT_NEAR(128u, interpolate_pixels[15], 1);
+
+  InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                   &interpolate_pixels[0], 0, 16, 1, 0);
+  EXPECT_EQ(16u, interpolate_pixels[0]);
+  EXPECT_EQ(32u, interpolate_pixels[1]);
+  EXPECT_EQ(64u, interpolate_pixels[2]);
+  EXPECT_EQ(128u, interpolate_pixels[3]);
+
+  InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                   &interpolate_pixels[0], 0, 16, 1, 192);
+
+  EXPECT_EQ(4u, interpolate_pixels[0]);
+  EXPECT_EQ(8u, interpolate_pixels[1]);
+  EXPECT_EQ(16u,interpolate_pixels[2]);
+  EXPECT_EQ(32u, interpolate_pixels[3]);
+
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
+                     &interpolate_pixels[0], 0, 1280, 1, 128);
   }
 }
 
