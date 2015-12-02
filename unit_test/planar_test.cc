@@ -1163,6 +1163,87 @@ TEST_F(LibYUVPlanarTest, ARGBBlend_Opt) {
   EXPECT_LE(max_diff, 1);
 }
 
+#ifdef HAS_BLENDPLANEROW_SSSE3
+// TODO(fbarchard): Switch to I420Blend.
+static void TestBlendPlane(int width, int height, int benchmark_iterations,
+                          int invert, int off) {
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  width = width * height;
+  height = 1;
+  if (width < 1) {
+    width = 1;
+  }
+  if (width < 256) {
+    width = 256;
+  }
+  const int kBpp = 1;
+  const int kStride = width * kBpp;
+  align_buffer_64(src_argb_a, kStride * height + off);
+  align_buffer_64(src_argb_b, kStride * height + off);
+  align_buffer_64(src_argb_alpha, kStride * height + off);
+  align_buffer_64(dst_argb_c, kStride * height);
+  align_buffer_64(dst_argb_opt, kStride * height);
+
+  if (has_ssse3) {
+    for (int i = 0; i < 255; ++i) {
+      src_argb_a[i] = i;
+      src_argb_b[i] = 255 - i;
+      src_argb_alpha[i] = 255;
+    }
+    memset(dst_argb_opt, 0xfb, kStride * height);
+    BlendPlaneRow_SSSE3(src_argb_a + off,
+                        src_argb_b + off,
+                        src_argb_alpha + off,
+                        dst_argb_opt,
+                        width * height);
+    for (int i = 0; i < kStride * height; ++i) {
+      EXPECT_EQ(src_argb_a[i], dst_argb_opt[i]);
+    }
+  }
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
+    src_argb_alpha[i + off] = (fastrand() & 0xff);
+  }
+  memset(dst_argb_c, 255, kStride * height);
+  memset(dst_argb_opt, 255, kStride * height);
+
+  BlendPlaneRow_C(src_argb_a + off,
+                  src_argb_b + off,
+                  src_argb_alpha + off,
+                  dst_argb_c,
+                  width * height);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    if (has_ssse3) {
+      BlendPlaneRow_SSSE3(src_argb_a + off,
+                          src_argb_b + off,
+                          src_argb_alpha + off,
+                          dst_argb_opt,
+                          width * height);
+    } else {
+      BlendPlaneRow_C(src_argb_a + off,
+                      src_argb_b + off,
+                      src_argb_alpha + off,
+                      dst_argb_opt,
+                      width * height);
+    }
+  }
+  for (int i = 0; i < kStride * height; ++i) {
+    EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);
+  }
+  free_aligned_buffer_64(src_argb_a);
+  free_aligned_buffer_64(src_argb_b);
+  free_aligned_buffer_64(dst_argb_c);
+  free_aligned_buffer_64(dst_argb_opt);
+  return;
+}
+
+TEST_F(LibYUVPlanarTest, BlendPlane_Opt) {
+  TestBlendPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 +1, 0);
+}
+#endif
+
 TEST_F(LibYUVPlanarTest, TestAffine) {
   SIMD_ALIGNED(uint8 orig_pixels_0[1280][4]);
   SIMD_ALIGNED(uint8 interpolate_pixels_C[1280][4]);

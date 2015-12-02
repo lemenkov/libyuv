@@ -252,6 +252,12 @@ extern "C" {
 #define HAS_RGB565TOARGBROW_AVX2
 #endif
 
+// The following are available for 32 bit Visual C and clangcl 32 bit:
+// TODO(fbarchard): Port to gcc.
+#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
+#define HAS_BLENDPLANEROW_SSSE3
+#endif
+
 // The following are also available on x64 Visual C.
 #if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
@@ -1453,6 +1459,12 @@ void ARGBBlendRow_NEON(const uint8* src_argb, const uint8* src_argb1,
                        uint8* dst_argb, int width);
 void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
                     uint8* dst_argb, int width);
+
+// Unattenuated planar alpha blend.
+void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
+                         const uint8* alpha, uint8* dst, int width);
+void BlendPlaneRow_C(const uint8* src0, const uint8* src1,
+                     const uint8* alpha, uint8* dst, int width);
 
 // ARGB multiply images. Same API as Blend, but these require
 // pointer and width alignment for SSE2.

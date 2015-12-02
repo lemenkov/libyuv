@@ -2016,6 +2016,18 @@ void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
   }
 }
 #undef BLEND
+
+void BlendPlaneRow_C(const uint8* src0, const uint8* src1,
+                     const uint8* alpha, uint8* dst, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint32 f = *src0++;
+    uint32 b = *src1++;
+    uint32 a = *alpha++;
+    *dst++ = (((a) * f) + ((255 - a) * b) + 255) >> 8;
+  }
+}
+
 #define ATTENUATE(f, a) (a | (a << 8)) * (f | (f << 8)) >> 24
 
 // Multiply source RGB by alpha and store to destination.

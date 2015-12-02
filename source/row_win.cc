@@ -4063,6 +4063,58 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 }
 #endif  // HAS_YUY2TOYROW_SSE2
 
+#ifdef HAS_BLENDPLANEROW_SSSE3
+// Blend 8 pixels at a time.
+// =((G2*C2)+(H2*(D2))+32768+127)/256
+__declspec(naked)
+void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
+                         const uint8* alpha, uint8* dst, int width) {
+  __asm {
+    push       esi
+    push       edi
+    pcmpeqb    xmm5, xmm5       // generate mask 0xff00ff00
+    psllw      xmm5, 8
+    mov        eax, 0x80808080  // 128 for biasing image to signed.
+    movd       xmm6, eax
+    pshufd     xmm6, xmm6, 0x00
+
+    mov        eax, 0x807f807f  // 32768 + 127 for unbias and round.
+    movd       xmm7, eax
+    pshufd     xmm7, xmm7, 0x00
+    mov        eax, [esp + 8 + 4]   // src0
+    mov        edx, [esp + 8 + 8]   // src1
+    mov        esi, [esp + 8 + 12]  // alpha
+    mov        edi, [esp + 8 + 16]  // dst
+    mov        ecx, [esp + 8 + 20]  // width
+    sub        eax, esi
+    sub        edx, esi
+    sub        edi, esi
+
+    // 8 pixel loop.
+  convertloop8:
+    movq       xmm0, qword ptr [esi]        // alpha
+    punpcklbw  xmm0, xmm0
+    pxor       xmm0, xmm5         // a, 255-a
+    movq       xmm1, qword ptr [eax + esi]  // src0
+    movq       xmm2, qword ptr [edx + esi]  // src1
+    punpcklbw  xmm1, xmm2
+    psubb      xmm1, xmm6         // bias src0/1 - 128
+    pmaddubsw  xmm0, xmm1
+    paddw      xmm0, xmm7         // unbias result - 32768 and round.
+    psrlw      xmm0, 8
+    packuswb   xmm0, xmm0
+    movq       qword ptr [edi + esi], xmm0
+    lea        esi, [esi + 8]
+    sub        ecx, 8
+    jge        convertloop8
+
+    pop        edi
+    pop        esi
+    ret
+  }
+}
+#endif  // HAS_BLENDPLANEROW_SSSE3
+
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for isolating alpha.
 static const uvec8 kShuffleAlpha = {
