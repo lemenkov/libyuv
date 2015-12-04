@@ -3467,6 +3467,54 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
+
+#ifdef HAS_BLENDPLANEROW_SSSE3
+// Blend 8 pixels at a time.
+// =((G2*C2)+(H2*(D2))+32768+127)/256
+void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
+                         const uint8* alpha, uint8* dst, int width) {
+  asm volatile (
+    "pcmpeqb    %%xmm5,%%xmm5                  \n"
+    "psllw      $0x8,%%xmm5                    \n"
+    "mov        $0x80808080,%%eax              \n"
+    "movd       %%eax,%%xmm6                   \n"
+    "pshufd     $0x0,%%xmm6,%%xmm6             \n"
+    "mov        $0x807f807f,%%eax              \n"
+    "movd       %%eax,%%xmm7                   \n"
+    "pshufd     $0x0,%%xmm7,%%xmm7             \n"
+    "sub        %2,%0                          \n"
+    "sub        %2,%1                          \n"
+    "sub        %2,%3                          \n"
+
+    // 8 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "movq       (%2),%%xmm0                    \n"
+    "punpcklbw  %%xmm0,%%xmm0                  \n"
+    "pxor       %%xmm5,%%xmm0                  \n"
+    "movq       (%0,%2,1),%%xmm1               \n"
+    "movq       (%1,%2,1),%%xmm2               \n"
+    "punpcklbw  %%xmm2,%%xmm1                  \n"
+    "psubb      %%xmm6,%%xmm1                  \n"
+    "pmaddubsw  %%xmm1,%%xmm0                  \n"
+    "paddw      %%xmm7,%%xmm0                  \n"
+    "psrlw      $0x8,%%xmm0                    \n"
+    "packuswb   %%xmm0,%%xmm0                  \n"
+    "movq       %%xmm0,(%3,%2,1)               \n"
+    "lea        0x8(%2),%2                     \n"
+    "sub        $0x8,%4                        \n"
+    "jg        1b                              \n"
+  : "+r"(src0),       // %0
+    "+r"(src1),       // %1
+    "+r"(alpha),      // %2
+    "+r"(dst),        // %3
+    "+r"(width)       // %4
+  :: "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm5", "xmm6", "xmm7"
+  );
+}
+#endif  // HAS_BLENDPLANEROW_SSSE3
+
+
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
 static uvec8 kShuffleAlpha0 = {

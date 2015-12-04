@@ -182,6 +182,7 @@ extern "C" {
 #define HAS_SOBELXROW_SSE2
 #define HAS_SOBELXYROW_SSE2
 #define HAS_SOBELYROW_SSE2
+#define HAS_BLENDPLANEROW_SSSE3
 #endif
 
 // The following are available on all x86 platforms, but
