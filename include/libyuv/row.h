@@ -233,6 +233,7 @@ extern "C" {
 #define HAS_ARGBMULTIPLYROW_AVX2
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
+#define HAS_BLENDPLANEROW_AVX2
 #endif
 
 // The following are available for AVX2 Visual C and clangcl 32 bit:
@@ -251,12 +252,6 @@ extern "C" {
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_NV12TORGB565ROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
-#endif
-
-// The following are available for 32 bit Visual C and clangcl 32 bit:
-// TODO(fbarchard): Port to gcc.
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86)
-#define HAS_BLENDPLANEROW_SSSE3
 #endif
 
 // The following are also available on x64 Visual C.
@@ -1464,6 +1459,12 @@ void ARGBBlendRow_C(const uint8* src_argb, const uint8* src_argb1,
 // Unattenuated planar alpha blend.
 void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
                          const uint8* alpha, uint8* dst, int width);
+void BlendPlaneRow_Any_SSSE3(const uint8* src0, const uint8* src1,
+                             const uint8* alpha, uint8* dst, int width);
+void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
+                        const uint8* alpha, uint8* dst, int width);
+void BlendPlaneRow_Any_AVX2(const uint8* src0, const uint8* src1,
+                            const uint8* alpha, uint8* dst, int width);
 void BlendPlaneRow_C(const uint8* src0, const uint8* src1,
                      const uint8* alpha, uint8* dst, int width);
 

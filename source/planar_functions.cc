@@ -17,6 +17,7 @@
 #include "libyuv/mjpeg_decoder.h"
 #endif
 #include "libyuv/row.h"
+#include "libyuv/scale_row.h"  // for ScaleRowDown2
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -574,6 +575,167 @@ int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
     src_argb1 += src_stride_argb1;
     dst_argb += dst_stride_argb;
   }
+  return 0;
+}
+
+// Alpha Blend plane and store to destination.
+LIBYUV_API
+int BlendPlane(const uint8* src_y0, int src_stride_y0,
+               const uint8* src_y1, int src_stride_y1,
+               const uint8* alpha, int alpha_stride,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height) {
+  int y;
+  void (*BlendPlaneRow)(const uint8* src0, const uint8* src1,
+      const uint8* alpha, uint8* dst, int width) = BlendPlaneRow_C;
+  if (!src_y0 || !src_y1 || !alpha || !dst_y || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
+
+  // Coalesce rows for Y plane.
+  if (src_stride_y0 == width &&
+      src_stride_y1 == width &&
+      alpha_stride == width &&
+      dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y0 = src_stride_y1 = alpha_stride = dst_stride_y = 0;
+  }
+
+#if defined(HAS_BLENDPLANEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+// TODO(fbarchard): Implement any versions for odd width.
+//  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      BlendPlaneRow = BlendPlaneRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+//  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      BlendPlaneRow = BlendPlaneRow_AVX2;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    BlendPlaneRow(src_y0, src_y1, alpha, dst_y, width);
+    src_y0 += src_stride_y0;
+    src_y1 += src_stride_y1;
+    alpha += alpha_stride;
+    dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
+#define MAXTWIDTH 2048
+// Alpha Blend YUV images and store to destination.
+LIBYUV_API
+int I420Blend(const uint8* src_y0, int src_stride_y0,
+              const uint8* src_u0, int src_stride_u0,
+              const uint8* src_v0, int src_stride_v0,
+              const uint8* src_y1, int src_stride_y1,
+              const uint8* src_u1, int src_stride_u1,
+              const uint8* src_v1, int src_stride_v1,
+              const uint8* alpha, int alpha_stride,
+              uint8* dst_y, int dst_stride_y,
+              uint8* dst_u, int dst_stride_u,
+              uint8* dst_v, int dst_stride_v,
+              int width, int height) {
+  int y;
+  void (*BlendPlaneRow)(const uint8* src0, const uint8* src1,
+      const uint8* alpha, uint8* dst, int width) = BlendPlaneRow_C;
+  void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst_ptr, int dst_width) = ScaleRowDown2Box_C;
+  if (!src_y0 || !src_u0 || !src_v0 || !src_y1 || !src_u1 || !src_v1 ||
+      !alpha || !dst_y || !dst_u || !dst_v || width <= 0 || height == 0) {
+    return -1;
+  }
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
+
+  // Blend Y plane.
+  BlendPlane(src_y0, src_stride_y0,
+             src_y1, src_stride_y1,
+             alpha, alpha_stride,
+             dst_y, dst_stride_y,
+             width, height);
+
+  // Half width/height for UV.
+  width = (width + 1) >> 1;
+  height = (height + 1) >> 1;
+
+#if defined(HAS_BLENDPLANEROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+// TODO(fbarchard): Implement any versions for odd width.
+//  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      BlendPlaneRow = BlendPlaneRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_BLENDPLANEROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+//  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      BlendPlaneRow = BlendPlaneRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN2_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      ScaleRowDown2 = ScaleRowDown2Box_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN2_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      ScaleRowDown2 = ScaleRowDown2Box_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN2_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      ScaleRowDown2 = ScaleRowDown2Box_AVX2;
+    }
+  }
+#endif
+
+  // Row buffer for intermediate alpha pixels.
+  align_buffer_64(halfalpha, width);
+  for (y = 0; y < height; ++y) {
+    // Subsample 2 rows of UV to half width and half height.
+    ScaleRowDown2(alpha, alpha_stride, halfalpha, width);
+    alpha += alpha_stride * 2;
+    BlendPlaneRow(src_u0, src_u1, halfalpha, dst_u, width);
+    BlendPlaneRow(src_v0, src_v1, halfalpha, dst_v, width);
+    src_u0 += src_stride_u0;
+    src_u1 += src_stride_u1;
+    dst_u += dst_stride_u;
+    src_v0 += src_stride_v0;
+    src_v1 += src_stride_v1;
+    dst_v += dst_stride_v;
+  }
+  free_aligned_buffer_64(halfalpha);
   return 0;
 }
 

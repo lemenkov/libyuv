@@ -302,11 +302,37 @@ LIBYUV_API
 ARGBBlendRow GetARGBBlend();
 
 // Alpha Blend ARGB images and store to destination.
+// Source is pre-multiplied by alpha using ARGBAttenuate.
 // Alpha of destination is set to 255.
 LIBYUV_API
 int ARGBBlend(const uint8* src_argb0, int src_stride_argb0,
               const uint8* src_argb1, int src_stride_argb1,
               uint8* dst_argb, int dst_stride_argb,
+              int width, int height);
+
+// Alpha Blend plane and store to destination.
+// Source is not pre-multiplied by alpha.
+LIBYUV_API
+int BlendPlane(const uint8* src_y0, int src_stride_y0,
+               const uint8* src_y1, int src_stride_y1,
+               const uint8* alpha, int alpha_stride,
+               uint8* dst_y, int dst_stride_y,
+               int width, int height);
+
+// Alpha Blend YUV images and store to destination.
+// Source is not pre-multiplied by alpha.
+// Alpha is full width x height and subsampled to half size to apply to UV.
+LIBYUV_API
+int I420Blend(const uint8* src_y0, int src_stride_y0,
+              const uint8* src_u0, int src_stride_u0,
+              const uint8* src_v0, int src_stride_v0,
+              const uint8* src_y1, int src_stride_y1,
+              const uint8* src_u1, int src_stride_u1,
+              const uint8* src_v1, int src_stride_v1,
+              const uint8* alpha, int alpha_stride,
+              uint8* dst_y, int dst_stride_y,
+              uint8* dst_u, int dst_stride_u,
+              uint8* dst_v, int dst_stride_v,
               int width, int height);
 
 // Multiply ARGB image by ARGB image. Shifted down by 8. Saturates to 255.

@@ -1163,16 +1163,14 @@ TEST_F(LibYUVPlanarTest, ARGBBlend_Opt) {
   EXPECT_LE(max_diff, 1);
 }
 
-#ifdef HAS_BLENDPLANEROW_SSSE3
+#ifdef HAS_BLENDPLANEROW_AVX2
 // TODO(fbarchard): Switch to I420Blend.
-static void TestBlendPlane(int width, int height, int benchmark_iterations,
-                          int invert, int off) {
+static void TestBlendPlaneRow(int width, int height, int benchmark_iterations,
+                              int invert, int off) {
   int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
   width = width * height;
   height = 1;
-  if (width < 1) {
-    width = 1;
-  }
   if (width < 256) {
     width = 256;
   }
@@ -1181,23 +1179,39 @@ static void TestBlendPlane(int width, int height, int benchmark_iterations,
   align_buffer_64(src_argb_a, kStride * height + off);
   align_buffer_64(src_argb_b, kStride * height + off);
   align_buffer_64(src_argb_alpha, kStride * height + off);
-  align_buffer_64(dst_argb_c, kStride * height);
-  align_buffer_64(dst_argb_opt, kStride * height);
+  align_buffer_64(dst_argb_c, kStride * height + off);
+  align_buffer_64(dst_argb_opt, kStride * height + off);
+  memset(dst_argb_c, 255, kStride * height + off);
+  memset(dst_argb_opt, 255, kStride * height + off);
 
   if (has_ssse3) {
-    for (int i = 0; i < 255; ++i) {
-      src_argb_a[i] = i;
-      src_argb_b[i] = 255 - i;
-      src_argb_alpha[i] = 255;
+    // Test source is maintained exactly if alpha is 255.
+    for (int i = 0; i < 256; ++i) {
+      src_argb_a[i + off] = i;
+      src_argb_b[i + off] = 255 - i;
+      src_argb_alpha[i + off] = 255;
     }
-    memset(dst_argb_opt, 0xfb, kStride * height);
     BlendPlaneRow_SSSE3(src_argb_a + off,
                         src_argb_b + off,
                         src_argb_alpha + off,
-                        dst_argb_opt,
-                        width * height);
-    for (int i = 0; i < kStride * height; ++i) {
-      EXPECT_EQ(src_argb_a[i], dst_argb_opt[i]);
+                        dst_argb_opt + off,
+                        256);
+    for (int i = 0; i < 256; ++i) {
+      EXPECT_EQ(src_argb_a[i + off], dst_argb_opt[i + off]);
+    }
+    // Test destination is maintained exactly if alpha is 0.
+    for (int i = 0; i < 256; ++i) {
+      src_argb_a[i + off] = i;
+      src_argb_b[i + off] = 255 - i;
+      src_argb_alpha[i + off] = 0;
+    }
+    BlendPlaneRow_SSSE3(src_argb_a + off,
+                        src_argb_b + off,
+                        src_argb_alpha + off,
+                        dst_argb_opt + off,
+                        256);
+    for (int i = 0; i < 256; ++i) {
+      EXPECT_EQ(src_argb_b[i + off], dst_argb_opt[i + off]);
     }
   }
   for (int i = 0; i < kStride * height; ++i) {
@@ -1205,34 +1219,122 @@ static void TestBlendPlane(int width, int height, int benchmark_iterations,
     src_argb_b[i + off] = (fastrand() & 0xff);
     src_argb_alpha[i + off] = (fastrand() & 0xff);
   }
-  memset(dst_argb_c, 255, kStride * height);
-  memset(dst_argb_opt, 255, kStride * height);
 
   BlendPlaneRow_C(src_argb_a + off,
                   src_argb_b + off,
                   src_argb_alpha + off,
-                  dst_argb_c,
+                  dst_argb_c + off,
                   width * height);
   for (int i = 0; i < benchmark_iterations; ++i) {
-    if (has_ssse3) {
-      BlendPlaneRow_SSSE3(src_argb_a + off,
-                          src_argb_b + off,
-                          src_argb_alpha + off,
-                          dst_argb_opt,
-                          width * height);
+    if (has_avx2) {
+      BlendPlaneRow_AVX2(src_argb_a + off,
+                         src_argb_b + off,
+                         src_argb_alpha + off,
+                         dst_argb_opt + off,
+                         width * height);
     } else {
-      BlendPlaneRow_C(src_argb_a + off,
-                      src_argb_b + off,
-                      src_argb_alpha + off,
-                      dst_argb_opt,
-                      width * height);
+      if (has_ssse3) {
+        BlendPlaneRow_SSSE3(src_argb_a + off,
+                            src_argb_b + off,
+                            src_argb_alpha + off,
+                            dst_argb_opt + off,
+                            width * height);
+      } else {
+        BlendPlaneRow_C(src_argb_a + off,
+                        src_argb_b + off,
+                        src_argb_alpha + off,
+                        dst_argb_opt + off,
+                        width * height);
+      }
     }
   }
   for (int i = 0; i < kStride * height; ++i) {
-    EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);
+    EXPECT_EQ(dst_argb_c[i + off], dst_argb_opt[i + off]);
   }
   free_aligned_buffer_64(src_argb_a);
   free_aligned_buffer_64(src_argb_b);
+  free_aligned_buffer_64(src_argb_alpha);
+  free_aligned_buffer_64(dst_argb_c);
+  free_aligned_buffer_64(dst_argb_opt);
+  return;
+}
+
+TEST_F(LibYUVPlanarTest, BlendPlaneRow_Opt) {
+  TestBlendPlaneRow(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                    +1, 0);
+}
+TEST_F(LibYUVPlanarTest, BlendPlaneRow_Unaligned) {
+  TestBlendPlaneRow(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                    +1, 1);
+}
+#endif
+
+static void TestBlendPlane(int width, int height, int benchmark_iterations,
+                           int disable_cpu_flags, int benchmark_cpu_info,
+                           int invert, int off) {
+  if (width < 1) {
+    width = 1;
+  }
+  const int kBpp = 1;
+  const int kStride = width * kBpp;
+  align_buffer_64(src_argb_a, kStride * height + off);
+  align_buffer_64(src_argb_b, kStride * height + off);
+  align_buffer_64(src_argb_alpha, kStride * height + off);
+  align_buffer_64(dst_argb_c, kStride * height + off);
+  align_buffer_64(dst_argb_opt, kStride * height + off);
+  memset(dst_argb_c, 255, kStride * height + off);
+  memset(dst_argb_opt, 255, kStride * height + off);
+
+  // Test source is maintained exactly if alpha is 255.
+  for (int i = 0; i < width; ++i) {
+    src_argb_a[i + off] = i & 255;
+    src_argb_b[i + off] = 255 - (i & 255);
+  }
+  memset(src_argb_alpha + off, 255, width);
+  BlendPlane(src_argb_a + off, width,
+             src_argb_b + off, width,
+             src_argb_alpha + off, width,
+             dst_argb_opt + off, width,
+             width, 1);
+  for (int i = 0; i < width; ++i) {
+    EXPECT_EQ(src_argb_a[i + off], dst_argb_opt[i + off]);
+  }
+  // Test destination is maintained exactly if alpha is 0.
+  memset(src_argb_alpha + off, 0, width);
+  BlendPlane(src_argb_a + off, width,
+             src_argb_b + off, width,
+             src_argb_alpha + off, width,
+             dst_argb_opt + off, width,
+             width, 1);
+  for (int i = 0; i < width; ++i) {
+    EXPECT_EQ(src_argb_b[i + off], dst_argb_opt[i + off]);
+  }
+  for (int i = 0; i < kStride * height; ++i) {
+    src_argb_a[i + off] = (fastrand() & 0xff);
+    src_argb_b[i + off] = (fastrand() & 0xff);
+    src_argb_alpha[i + off] = (fastrand() & 0xff);
+  }
+
+  MaskCpuFlags(disable_cpu_flags);
+  BlendPlane(src_argb_a + off, width,
+             src_argb_b + off, width,
+             src_argb_alpha + off, width,
+             dst_argb_c + off, width,
+             width, height);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    BlendPlane(src_argb_a + off, width,
+               src_argb_b + off, width,
+               src_argb_alpha + off, width,
+               dst_argb_opt + off, width,
+               width, height);
+  }
+  for (int i = 0; i < kStride * height; ++i) {
+    EXPECT_EQ(dst_argb_c[i + off], dst_argb_opt[i + off]);
+  }
+  free_aligned_buffer_64(src_argb_a);
+  free_aligned_buffer_64(src_argb_b);
+  free_aligned_buffer_64(src_argb_alpha);
   free_aligned_buffer_64(dst_argb_c);
   free_aligned_buffer_64(dst_argb_opt);
   return;
@@ -1240,9 +1342,106 @@ static void TestBlendPlane(int width, int height, int benchmark_iterations,
 
 TEST_F(LibYUVPlanarTest, BlendPlane_Opt) {
   TestBlendPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
-                 +1, 0);
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
 }
-#endif
+TEST_F(LibYUVPlanarTest, BlendPlane_Unaligned) {
+  TestBlendPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+}
+
+#define SUBSAMPLE(v, a) ((((v) + (a) - 1)) / (a))
+
+static void TestI420Blend(int width, int height, int benchmark_iterations,
+                          int disable_cpu_flags, int benchmark_cpu_info,
+                          int invert, int off) {
+  width = ((width) > 0) ? (width) : 1;
+  const int kStrideUV = SUBSAMPLE(width, 2);
+  const int kSizeUV = kStrideUV * SUBSAMPLE(height, 2);
+  align_buffer_64(src_y0, width * height + off);
+  align_buffer_64(src_u0, kSizeUV + off);
+  align_buffer_64(src_v0, kSizeUV + off);
+  align_buffer_64(src_y1, width * height + off);
+  align_buffer_64(src_u1, kSizeUV + off);
+  align_buffer_64(src_v1, kSizeUV + off);
+  align_buffer_64(src_a, width * height + off);
+  align_buffer_64(dst_y_c, width * height + off);
+  align_buffer_64(dst_u_c, kSizeUV + off);
+  align_buffer_64(dst_v_c, kSizeUV + off);
+  align_buffer_64(dst_y_opt, width * height + off);
+  align_buffer_64(dst_u_opt, kSizeUV + off);
+  align_buffer_64(dst_v_opt, kSizeUV + off);
+
+  MemRandomize(src_y0, width * height + off);
+  MemRandomize(src_u0, kSizeUV + off);
+  MemRandomize(src_v0, kSizeUV + off);
+  MemRandomize(src_y1, width * height + off);
+  MemRandomize(src_u1, kSizeUV + off);
+  MemRandomize(src_v1, kSizeUV + off);
+  MemRandomize(src_a, width * height + off);
+  memset(dst_y_c, 255, width * height + off);
+  memset(dst_u_c, 255, kSizeUV + off);
+  memset(dst_v_c, 255, kSizeUV + off);
+  memset(dst_y_opt, 255, width * height + off);
+  memset(dst_u_opt, 255, kSizeUV + off);
+  memset(dst_v_opt, 255, kSizeUV + off);
+
+  MaskCpuFlags(disable_cpu_flags);
+  I420Blend(src_y0 + off, width,
+            src_u0 + off, kStrideUV,
+            src_v0 + off, kStrideUV,
+            src_y1 + off, width,
+            src_u1 + off, kStrideUV,
+            src_v1 + off, kStrideUV,
+            src_a + off, width,
+            dst_y_c + off, width,
+            dst_u_c + off, kStrideUV,
+            dst_v_c + off, kStrideUV,
+            width, height);
+  MaskCpuFlags(benchmark_cpu_info);
+  for (int i = 0; i < benchmark_iterations; ++i) {
+    I420Blend(src_y0 + off, width,
+              src_u0 + off, kStrideUV,
+              src_v0 + off, kStrideUV,
+              src_y1 + off, width,
+              src_u1 + off, kStrideUV,
+              src_v1 + off, kStrideUV,
+              src_a + off, width,
+              dst_y_opt + off, width,
+              dst_u_opt + off, kStrideUV,
+              dst_v_opt + off, kStrideUV,
+              width, height);
+  }
+  for (int i = 0; i < width * height; ++i) {
+    EXPECT_EQ(dst_y_c[i + off], dst_y_opt[i + off]);
+  }
+  for (int i = 0; i < kSizeUV; ++i) {
+    EXPECT_NEAR(dst_u_c[i + off], dst_u_opt[i + off], 1);  // Subsample off by 1
+    EXPECT_NEAR(dst_v_c[i + off], dst_v_opt[i + off], 1);
+  }
+  free_aligned_buffer_64(src_y0);
+  free_aligned_buffer_64(src_u0);
+  free_aligned_buffer_64(src_v0);
+  free_aligned_buffer_64(src_y1);
+  free_aligned_buffer_64(src_u1);
+  free_aligned_buffer_64(src_v1);
+  free_aligned_buffer_64(src_a);
+  free_aligned_buffer_64(dst_y_c);
+  free_aligned_buffer_64(dst_u_c);
+  free_aligned_buffer_64(dst_v_c);
+  free_aligned_buffer_64(dst_y_opt);
+  free_aligned_buffer_64(dst_u_opt);
+  free_aligned_buffer_64(dst_v_opt);
+  return;
+}
+
+TEST_F(LibYUVPlanarTest, I420Blend_Opt) {
+  TestI420Blend(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
+}
+TEST_F(LibYUVPlanarTest, I420Blend_Unaligned) {
+  TestI420Blend(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+}
 
 TEST_F(LibYUVPlanarTest, TestAffine) {
   SIMD_ALIGNED(uint8 orig_pixels_0[1280][4]);

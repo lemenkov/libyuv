@@ -525,7 +525,7 @@ void RGB565ToARGBRow_AVX2(const uint8* src_rgb565, uint8* dst_argb,
     vmovd      xmm5, eax
     vbroadcastss ymm5, xmm5
     mov        eax, 0x20802080  // multiplier shift by 5 and then repeat 6 bits
-    movd       xmm6, eax
+    vmovd      xmm6, eax
     vbroadcastss ymm6, xmm6
     vpcmpeqb   ymm3, ymm3, ymm3       // generate mask 0xf800f800 for Red
     vpsllw     ymm3, ymm3, 11
@@ -576,7 +576,7 @@ void ARGB1555ToARGBRow_AVX2(const uint8* src_argb1555, uint8* dst_argb,
     vmovd      xmm5, eax
     vbroadcastss ymm5, xmm5
     mov        eax, 0x42004200  // multiplier shift by 6 and then repeat 5 bits
-    movd       xmm6, eax
+    vmovd      xmm6, eax
     vbroadcastss ymm6, xmm6
     vpcmpeqb   ymm3, ymm3, ymm3 // generate mask 0xf800f800 for Red
     vpsllw     ymm3, ymm3, 11
@@ -4106,7 +4106,7 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
     movq       qword ptr [edi + esi], xmm0
     lea        esi, [esi + 8]
     sub        ecx, 8
-    jge        convertloop8
+    jg         convertloop8
 
     pop        edi
     pop        esi
@@ -4114,6 +4114,62 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
   }
 }
 #endif  // HAS_BLENDPLANEROW_SSSE3
+
+#ifdef HAS_BLENDPLANEROW_AVX2
+// Blend 16 pixels at a time.
+// =((G2*C2)+(H2*(D2))+32768+127)/256
+__declspec(naked)
+void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
+                         const uint8* alpha, uint8* dst, int width) {
+  __asm {
+    push        esi
+    push        edi
+    vpcmpeqb    ymm5, ymm5, ymm5       // generate mask 0xff00ff00
+    vpsllw      ymm5, ymm5, 8
+    mov         eax, 0x80808080  // 128 for biasing image to signed.
+    vmovd       xmm6, eax
+    vbroadcastss ymm6, xmm6
+    mov         eax, 0x807f807f  // 32768 + 127 for unbias and round.
+    vmovd       xmm7, eax
+    vbroadcastss ymm7, xmm7
+    mov         eax, [esp + 8 + 4]   // src0
+    mov         edx, [esp + 8 + 8]   // src1
+    mov         esi, [esp + 8 + 12]  // alpha
+    mov         edi, [esp + 8 + 16]  // dst
+    mov         ecx, [esp + 8 + 20]  // width
+    sub         eax, esi
+    sub         edx, esi
+    sub         edi, esi
+
+    // 16 pixel loop.
+  convertloop16:
+    vmovdqu     xmm0, [esi]        // alpha
+    vpermq      ymm0, ymm0, 0xd8
+    vpunpcklbw  ymm0, ymm0, ymm0
+    vpxor       ymm0, ymm0, ymm5   // a, 255-a
+    vmovdqu     xmm1, [eax + esi]  // src0
+    vmovdqu     xmm2, [edx + esi]  // src1
+    vpermq      ymm1, ymm1, 0xd8
+    vpermq      ymm2, ymm2, 0xd8
+    vpunpcklbw  ymm1, ymm1, ymm2
+    vpsubb      ymm1, ymm1, ymm6   // bias src0/1 - 128
+    vpmaddubsw  ymm0, ymm0, ymm1
+    vpaddw      ymm0, ymm0, ymm7   // unbias result - 32768 and round.
+    vpsrlw      ymm0, ymm0, 8
+    vpackuswb   ymm0, ymm0, ymm0
+    vpermq      ymm0, ymm0, 0xd8
+    vmovdqu     [edi + esi], xmm0
+    lea         esi, [esi + 16]
+    sub         ecx, 16
+    jg          convertloop16
+
+    pop         edi
+    pop         esi
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_BLENDPLANEROW_AVX2
 
 #ifdef HAS_ARGBBLENDROW_SSSE3
 // Shuffle table for isolating alpha.

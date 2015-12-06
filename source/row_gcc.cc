@@ -3467,7 +3467,6 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0, const uint8* src_argb1,
 }
 #endif  // HAS_ARGBBLENDROW_SSSE3
 
-
 #ifdef HAS_BLENDPLANEROW_SSSE3
 // Blend 8 pixels at a time.
 // =((G2*C2)+(H2*(D2))+32768+127)/256
@@ -3514,6 +3513,56 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
 }
 #endif  // HAS_BLENDPLANEROW_SSSE3
 
+#ifdef HAS_BLENDPLANEROW_AVX2
+// Blend 16 pixels at a time.
+// =((G2*C2)+(H2*(D2))+32768+127)/256
+void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
+                        const uint8* alpha, uint8* dst, int width) {
+  asm volatile (
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"
+    "vpsllw     $0x8,%%ymm5,%%ymm5             \n"
+    "mov        $0x80808080,%%eax              \n"
+    "vmovd      %%eax,%%xmm6                   \n"
+    "vbroadcastss %%xmm6,%%ymm6                \n"
+    "mov        $0x807f807f,%%eax              \n"
+    "vmovd      %%eax,%%xmm7                   \n"
+    "vbroadcastss %%xmm7,%%ymm7                \n"
+    "sub        %2,%0                          \n"
+    "sub        %2,%1                          \n"
+    "sub        %2,%3                          \n"
+
+    // 16 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    (%2),%%xmm0                    \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpxor      %%ymm5,%%ymm0,%%ymm0           \n"
+    "vmovdqu    (%0,%2,1),%%xmm1               \n"
+    "vmovdqu    (%1,%2,1),%%xmm2               \n"
+    "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
+    "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
+    "vpunpcklbw %%ymm2,%%ymm1,%%ymm1           \n"
+    "vpsubb     %%ymm6,%%ymm1,%%ymm1           \n"
+    "vpmaddubsw %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpaddw     %%ymm7,%%ymm0,%%ymm0           \n"
+    "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"
+    "vpackuswb  %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vmovdqu    %%xmm0,(%3,%2,1)               \n"
+    "lea        0x10(%2),%2                    \n"
+    "sub        $0x10,%4                       \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src0),       // %0
+    "+r"(src1),       // %1
+    "+r"(alpha),      // %2
+    "+r"(dst),        // %3
+    "+r"(width)       // %4
+  :: "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm5", "xmm6", "xmm7"
+  );
+}
+#endif  // HAS_BLENDPLANEROW_AVX2
 
 #ifdef HAS_ARGBATTENUATEROW_SSSE3
 // Shuffle table duplicating alpha
