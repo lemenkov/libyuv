@@ -2517,7 +2517,7 @@ int YUY2ToNV12(const uint8* src_yuy2, int src_stride_yuy2,
     }
     if (height & 1) {
       // Split Y from UV.
-      SplitUVRow(src_yuy2, dst_y, dst_uv, width);
+      SplitUVRow(src_yuy2, dst_y, dst_uv, awidth);
     }
     free_aligned_buffer_64(rows);
   }
@@ -2621,7 +2621,7 @@ int UYVYToNV12(const uint8* src_uyvy, int src_stride_uyvy,
     }
     if (height & 1) {
       // Split Y from UV.
-      SplitUVRow(src_uyvy, dst_y, dst_uv, width);
+      SplitUVRow(src_uyvy, dst_uv, dst_y, awidth);
     }
     free_aligned_buffer_64(rows);
   }
