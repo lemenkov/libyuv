@@ -2017,16 +2017,23 @@ void ARGBBlendRow_C(const uint8* src_argb0, const uint8* src_argb1,
 }
 #undef BLEND
 
+#define UBLEND(f, b, a) (((a) * f) + ((255 - a) * b) + 255) >> 8
 void BlendPlaneRow_C(const uint8* src0, const uint8* src1,
                      const uint8* alpha, uint8* dst, int width) {
   int x;
-  for (x = 0; x < width; ++x) {
-    uint32 f = *src0++;
-    uint32 b = *src1++;
-    uint32 a = *alpha++;
-    *dst++ = (((a) * f) + ((255 - a) * b) + 255) >> 8;
+  for (x = 0; x < width - 1; x += 2) {
+    dst[0] = UBLEND(src0[0], src1[0], alpha[0]);
+    dst[1] = UBLEND(src0[1], src1[1], alpha[1]);
+    src0 += 2;
+    src1 += 2;
+    alpha += 2;
+    dst += 2;
+  }
+  if (width & 1) {
+    dst[0] = UBLEND(src0[0], src1[0], alpha[0]);
   }
 }
+#undef UBLEND
 
 #define ATTENUATE(f, a) (a | (a << 8)) * (f | (f << 8)) >> 24
 
