@@ -1164,7 +1164,6 @@ TEST_F(LibYUVPlanarTest, ARGBBlend_Opt) {
 }
 
 #ifdef HAS_BLENDPLANEROW_AVX2
-// TODO(fbarchard): Switch to I420Blend.
 static void TestBlendPlaneRow(int width, int height, int benchmark_iterations,
                               int invert, int off) {
   int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
@@ -1348,6 +1347,14 @@ TEST_F(LibYUVPlanarTest, BlendPlane_Unaligned) {
   TestBlendPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
 }
+TEST_F(LibYUVPlanarTest, BlendPlane_Any) {
+  TestBlendPlane(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+}
+TEST_F(LibYUVPlanarTest, BlendPlane_Invert) {
+  TestBlendPlane(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, -1, 1);
+}
 
 #define SUBSAMPLE(v, a) ((((v) + (a) - 1)) / (a))
 
@@ -1441,6 +1448,14 @@ TEST_F(LibYUVPlanarTest, I420Blend_Opt) {
 TEST_F(LibYUVPlanarTest, I420Blend_Unaligned) {
   TestI420Blend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
+}
+TEST_F(LibYUVPlanarTest, I420Blend_Any) {
+  TestI420Blend(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
+}
+TEST_F(LibYUVPlanarTest, I420Blend_Invert) {
+  TestI420Blend(benchmark_width_, benchmark_height_, benchmark_iterations_,
+                 disable_cpu_flags_, benchmark_cpu_info_, -1, 0);
 }
 
 TEST_F(LibYUVPlanarTest, TestAffine) {

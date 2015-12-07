@@ -651,6 +651,8 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
               uint8* dst_v, int dst_stride_v,
               int width, int height) {
   int y;
+  // Half width/height for UV.
+  int halfwidth = (width + 1) >> 1;
   void (*BlendPlaneRow)(const uint8* src0, const uint8* src1,
       const uint8* alpha, uint8* dst, int width) = BlendPlaneRow_C;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
@@ -674,15 +676,11 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
              dst_y, dst_stride_y,
              width, height);
 
-  // Half width/height for UV.
-  width = (width + 1) >> 1;
-  height = (height + 1) >> 1;
-
 #if defined(HAS_BLENDPLANEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
 // TODO(fbarchard): Implement any versions for odd width.
 //  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
+    if (IS_ALIGNED(halfwidth, 8)) {
       BlendPlaneRow = BlendPlaneRow_SSSE3;
     }
   }
@@ -690,7 +688,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
 //  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
   }
@@ -698,7 +696,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ScaleRowDown2 = ScaleRowDown2Box_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       ScaleRowDown2 = ScaleRowDown2Box_NEON;
     }
   }
@@ -706,7 +704,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_SCALEROWDOWN2_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleRowDown2 = ScaleRowDown2Box_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(halfwidth, 16)) {
       ScaleRowDown2 = ScaleRowDown2Box_SSE2;
     }
   }
@@ -714,20 +712,24 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_SCALEROWDOWN2_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
+    if (IS_ALIGNED(halfwidth, 32)) {
       ScaleRowDown2 = ScaleRowDown2Box_AVX2;
     }
   }
 #endif
 
   // Row buffer for intermediate alpha pixels.
-  align_buffer_64(halfalpha, width);
-  for (y = 0; y < height; ++y) {
+  align_buffer_64(halfalpha, halfwidth);
+  for (y = 0; y < height; y += 2) {
+    // last row of odd height image use 1 row of alpha instead of 2.
+    if (y == (height - 1)) {
+      alpha_stride = 0;
+    }
     // Subsample 2 rows of UV to half width and half height.
-    ScaleRowDown2(alpha, alpha_stride, halfalpha, width);
+    ScaleRowDown2(alpha, alpha_stride, halfalpha, halfwidth);
     alpha += alpha_stride * 2;
-    BlendPlaneRow(src_u0, src_u1, halfalpha, dst_u, width);
-    BlendPlaneRow(src_v0, src_v1, halfalpha, dst_v, width);
+    BlendPlaneRow(src_u0, src_u1, halfalpha, dst_u, halfwidth);
+    BlendPlaneRow(src_v0, src_v1, halfalpha, dst_v, halfwidth);
     src_u0 += src_stride_u0;
     src_u1 += src_stride_u1;
     dst_u += dst_stride_u;
