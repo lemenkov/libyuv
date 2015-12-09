@@ -4065,7 +4065,10 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 
 #ifdef HAS_BLENDPLANEROW_SSSE3
 // Blend 8 pixels at a time.
-// =((G2*C2)+(H2*(D2))+32768+127)/256
+// unsigned version of math
+// =((A2*C2)+(B2*(255-C2))+255)/256
+// signed version of math
+// =(((A2-128)*C2)+((B2-128)*(255-C2))+32768+127)/256
 __declspec(naked)
 void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
                          const uint8* alpha, uint8* dst, int width) {
@@ -4116,8 +4119,11 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
 #endif  // HAS_BLENDPLANEROW_SSSE3
 
 #ifdef HAS_BLENDPLANEROW_AVX2
-// Blend 16 pixels at a time.
-// =((G2*C2)+(H2*(D2))+32768+127)/256
+// Blend 32 pixels at a time.
+// unsigned version of math
+// =((A2*C2)+(B2*(255-C2))+255)/256
+// signed version of math
+// =(((A2-128)*C2)+((B2-128)*(255-C2))+32768+127)/256
 __declspec(naked)
 void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
                          const uint8* alpha, uint8* dst, int width) {
@@ -4141,27 +4147,30 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
     sub         edx, esi
     sub         edi, esi
 
-    // 16 pixel loop.
-  convertloop16:
-    vmovdqu     xmm0, [esi]        // alpha
-    vpermq      ymm0, ymm0, 0xd8
-    vpunpcklbw  ymm0, ymm0, ymm0
+    // 32 pixel loop.
+  convertloop32:
+    vmovdqu     ymm0, [esi]        // alpha
+    vpunpckhbw  ymm3, ymm0, ymm0   // 8..15, 24..31
+    vpunpcklbw  ymm0, ymm0, ymm0   // 0..7, 16..23
+    vpxor       ymm3, ymm3, ymm5   // a, 255-a
     vpxor       ymm0, ymm0, ymm5   // a, 255-a
-    vmovdqu     xmm1, [eax + esi]  // src0
-    vmovdqu     xmm2, [edx + esi]  // src1
-    vpermq      ymm1, ymm1, 0xd8
-    vpermq      ymm2, ymm2, 0xd8
+    vmovdqu     ymm1, [eax + esi]  // src0
+    vmovdqu     ymm2, [edx + esi]  // src1
+    vpunpckhbw  ymm4, ymm1, ymm2
     vpunpcklbw  ymm1, ymm1, ymm2
+    vpsubb      ymm4, ymm4, ymm6   // bias src0/1 - 128
     vpsubb      ymm1, ymm1, ymm6   // bias src0/1 - 128
+    vpmaddubsw  ymm3, ymm3, ymm4
     vpmaddubsw  ymm0, ymm0, ymm1
+    vpaddw      ymm3, ymm3, ymm7   // unbias result - 32768 and round.
     vpaddw      ymm0, ymm0, ymm7   // unbias result - 32768 and round.
+    vpsrlw      ymm3, ymm3, 8
     vpsrlw      ymm0, ymm0, 8
-    vpackuswb   ymm0, ymm0, ymm0
-    vpermq      ymm0, ymm0, 0xd8
-    vmovdqu     [edi + esi], xmm0
-    lea         esi, [esi + 16]
-    sub         ecx, 16
-    jg          convertloop16
+    vpackuswb   ymm0, ymm0, ymm3
+    vmovdqu     [edi + esi], ymm0
+    lea         esi, [esi + 32]
+    sub         ecx, 32
+    jg          convertloop32
 
     pop         edi
     pop         esi

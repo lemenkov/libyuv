@@ -620,7 +620,7 @@ int BlendPlane(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
 //  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
   }
@@ -688,7 +688,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
 //  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 16)) {
+    if (IS_ALIGNED(halfwidth, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
   }

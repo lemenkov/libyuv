@@ -10,7 +10,7 @@
 
 #include "libyuv/cpu_id.h"
 
-#if (defined(_MSC_VER) && !defined(__clang__)) && !defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__)
 #include <intrin.h>  // For __cpuidex()
 #endif
 #if !defined(__pnacl__) && !defined(__CLR_VER) && \
@@ -207,8 +207,8 @@ int InitCpuFlags(void) {
 
 #ifdef HAS_XGETBV
   // AVX requires CPU has AVX, XSAVE and OSXSave for xgetbv
-  if ((cpu_info1[2] & 0x1c000000) == 0x1c000000 &&  // AVX and OSXSave
-      (GetXCR0() & 6) == 6) {  // Test OD saves YMM registers
+  if (((cpu_info1[2] & 0x1c000000) == 0x1c000000) &&  // AVX and OSXSave
+      ((GetXCR0() & 6) == 6)) {  // Test OS saves YMM registers
     cpu_info |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) | kCpuHasAVX;
 
     // Detect AVX512bw
