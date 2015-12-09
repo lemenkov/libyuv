@@ -3549,7 +3549,7 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
     "vmovdqu    (%1,%2,1),%%ymm2               \n"
     "vpunpckhbw %%ymm2,%%ymm1,%%ymm4           \n"
     "vpunpcklbw %%ymm2,%%ymm1,%%ymm1           \n"
-    "vpsubb     %%ymm6,%%ymm1,%%ymm4           \n"
+    "vpsubb     %%ymm6,%%ymm4,%%ymm4           \n"
     "vpsubb     %%ymm6,%%ymm1,%%ymm1           \n"
     "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
     "vpmaddubsw %%ymm1,%%ymm0,%%ymm0           \n"
