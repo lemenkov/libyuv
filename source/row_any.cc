@@ -83,6 +83,12 @@ ANY31(I422ToYUY2Row_Any_NEON, I422ToYUY2Row_NEON, 1, 1, 4, 15)
 #ifdef HAS_I422TOUYVYROW_NEON
 ANY31(I422ToUYVYRow_Any_NEON, I422ToUYVYRow_NEON, 1, 1, 4, 15)
 #endif
+#ifdef HAS_BLENDPLANEROW_AVX2
+ANY31(BlendPlaneRow_Any_AVX2, BlendPlaneRow_AVX2, 0, 0, 1, 31)
+#endif
+#ifdef HAS_BLENDPLANEROW_SSSE3
+ANY31(BlendPlaneRow_Any_SSSE3, BlendPlaneRow_SSSE3, 0, 0, 1, 7)
+#endif
 #undef ANY31
 
 // Note that odd width replication includes 444 due to implementation

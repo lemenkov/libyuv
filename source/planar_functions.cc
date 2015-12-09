@@ -610,8 +610,7 @@ int BlendPlane(const uint8* src_y0, int src_stride_y0,
 
 #if defined(HAS_BLENDPLANEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-// TODO(fbarchard): Implement any versions for odd width.
-//  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
+  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
       BlendPlaneRow = BlendPlaneRow_SSSE3;
     }
@@ -619,7 +618,7 @@ int BlendPlane(const uint8* src_y0, int src_stride_y0,
 #endif
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-//  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
+  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
     if (IS_ALIGNED(width, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
@@ -678,8 +677,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 
 #if defined(HAS_BLENDPLANEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-// TODO(fbarchard): Implement any versions for odd width.
-//  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
+  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
     if (IS_ALIGNED(halfwidth, 8)) {
       BlendPlaneRow = BlendPlaneRow_SSSE3;
     }
@@ -687,7 +685,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #endif
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-//  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
+  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
