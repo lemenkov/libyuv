@@ -48,7 +48,7 @@ extern "C" {
     !defined(__pnacl__) && !defined(__CLR_VER)
 LIBYUV_API
 void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
-#if (defined(_MSC_VER) && !defined(__clang__)) && !defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__)
 // Visual C version uses intrinsic or inline x86 assembly.
 #if (_MSC_FULL_VER >= 160040219)
   __cpuidex((int*)(cpu_info), info_eax, info_ecx);
@@ -63,7 +63,7 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
     mov        [edi + 8], ecx
     mov        [edi + 12], edx
   }
-#else
+#else  // Visual C but not x86
   if (info_ecx == 0) {
     __cpuid((int*)(cpu_info), info_eax);
   } else {
@@ -71,7 +71,7 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
   }
 #endif
 // GCC version uses inline x86 assembly.
-#else  // (defined(_MSC_VER) && !defined(__clang__)) && !defined(__clang__)
+#else  // defined(_MSC_VER) && !defined(__clang__)
   uint32 info_ebx, info_edx;
   asm volatile (
 #if defined( __i386__) && defined(__PIC__)
@@ -89,7 +89,7 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
   cpu_info[1] = info_ebx;
   cpu_info[2] = info_ecx;
   cpu_info[3] = info_edx;
-#endif  // (defined(_MSC_VER) && !defined(__clang__)) && !defined(__clang__)
+#endif  // defined(_MSC_VER) && !defined(__clang__)
 }
 #else  // (defined(_M_IX86) || defined(_M_X64) ...
 LIBYUV_API
@@ -98,7 +98,18 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 }
 #endif
 
-// TODO(fbarchard): Enable xgetbv when validator supports it.
+// For VS2010 and earlier emit can be used:
+//   _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // For VS2010 and earlier.
+//  __asm {
+//    xor        ecx, ecx    // xcr 0
+//    xgetbv
+//    mov        xcr0, eax
+//  }
+// For VS2013 and earlier 32 bit, the _xgetbv(0) optimizer produces bad code.
+// https://code.google.com/p/libyuv/issues/detail?id=529
+#if defined(_M_IX86) && (_MSC_VER < 1900)
+#pragma optimize("g", off)
+#endif
 #if (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__)) && \
     !defined(__pnacl__) && !defined(__CLR_VER) && !defined(__native_client__)
@@ -106,20 +117,19 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
 int GetXCR0() {
   uint32 xcr0 = 0u;
-#if (defined(_MSC_VER) && !defined(__clang__)) && (_MSC_FULL_VER >= 160040219)
+#if (_MSC_FULL_VER >= 160040219)
   xcr0 = (uint32)(_xgetbv(0));  // VS2010 SP1 required.
-#elif defined(_M_IX86) && defined(_MSC_VER) && !defined(__clang__)
-  __asm {
-    xor        ecx, ecx    // xcr 0
-    _asm _emit 0x0f _asm _emit 0x01 _asm _emit 0xd0  // For VS2010 and earlier.
-    mov        xcr0, eax
-  }
 #elif defined(__i386__) || defined(__x86_64__)
+  uint32 xcr0 = 0u;
   asm(".byte 0x0f, 0x01, 0xd0" : "=a" (xcr0) : "c" (0) : "%edx");
 #endif  // defined(__i386__) || defined(__x86_64__)
   return xcr0;
 }
 #endif  // defined(_M_IX86) || defined(_M_X64) ..
+// Return optimization to previous setting.
+#if defined(_M_IX86) && (_MSC_VER < 1900)
+#pragma optimize("g", on)
+#endif
 
 // based on libvpx arm_cpudetect.c
 // For Arm, but public to allow testing on any CPU
