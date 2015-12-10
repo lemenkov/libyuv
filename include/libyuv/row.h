@@ -105,12 +105,12 @@ extern "C" {
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
-#if !defined(__i386__)
+// The following functions fail on gcc/clang 32 bit.
+// caveat: clangcl uses row_win.cc which works.
+#if !defined(__i386__) || !defined(DEBUG) || defined(_MSC_VER)
 // TODO(fbarchard): fix build error on x86 debug
 // https://code.google.com/p/libyuv/issues/detail?id=524
 #define HAS_I411TOARGBROW_SSSE3
-#endif
-#if !(defined(_DEBUG) && defined(__i386__))
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
 #define HAS_I422ALPHATOARGBROW_SSSE3
