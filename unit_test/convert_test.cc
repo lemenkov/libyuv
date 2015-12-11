@@ -1709,7 +1709,6 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
                           dst_argb_b + OFF, kStrideB,                          \
                           kWidth, NEG kHeight);                                \
   }                                                                            \
-  int max_diff = 0;                                                            \
   /* Convert to a 3rd format in 1 step and 2 steps and compare  */             \
   const int kStrideC = kWidth * BPP_C;                                         \
   align_buffer_64(dst_argb_c, kStrideC * kHeight + OFF);                       \

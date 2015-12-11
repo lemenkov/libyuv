@@ -15,7 +15,6 @@
 #include <cstring>
 
 #include "gflags/gflags.h"
-#include "testing/gtest/include/gtest/gtest.h"
 
 // Change this to 1000 for benchmarking.
 // TODO(fbarchard): Add command line parsing to pass this as option.
