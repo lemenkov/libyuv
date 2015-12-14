@@ -16,7 +16,7 @@ config("libyuv_config") {
   ]
 }
 
-use_neon = current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon)
+use_neon = current_cpu == "arm64" || (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon))
 
 source_set("libyuv") {
   sources = [
@@ -125,7 +125,9 @@ if (use_neon) {
 
     public_configs = [ ":libyuv_config" ]
 
-    configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-    cflags = [ "-mfpu=neon" ]
+    if (current_cpu != "arm64") {
+      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
+      cflags = [ "-mfpu=neon" ]
+    }
   }
 }
