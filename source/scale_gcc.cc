@@ -188,6 +188,104 @@ void ScaleRowDown2Box_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
+#ifdef HAS_SCALEROWDOWN2_AVX2
+void ScaleRowDown2_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                        uint8* dst_ptr, int dst_width) {
+  asm volatile (
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
+    "lea        " MEMLEA(0x40,0) ",%0          \n"
+    "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x8,%%ymm1,%%ymm1             \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "sub        $0x20,%2                       \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  :: "memory", "cc", "xmm0", "xmm1"
+  );
+}
+
+void ScaleRowDown2Linear_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                              uint8* dst_ptr, int dst_width) {
+  asm volatile (
+    "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpsrlw     $0xf,%%ymm4,%%ymm4             \n"
+    "vpackuswb  %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x20, 0) ",%%ymm1 \n"
+    "lea        " MEMLEA(0x40,0) ",%0          \n"
+    "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpavgw     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpavgw     %%ymm5,%%ymm1,%%ymm1           \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "sub        $0x20,%2                       \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  :: "memory", "cc", "xmm0", "xmm1", "xmm4", "xmm5"
+  );
+}
+
+void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
+                           uint8* dst_ptr, int dst_width) {
+  asm volatile (
+    "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpsrlw     $0xf,%%ymm4,%%ymm4             \n"
+    "vpackuswb  %%ymm4,%%ymm4,%%ymm4           \n"
+    "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
+
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
+    MEMOPREG(vmovdqu,0x00,0,3,1,ymm2)          //  vmovdqu  (%0,%3,1),%%ymm2
+    MEMOPREG(vmovdqu,0x20,0,3,1,ymm3)          //  vmovdqu  0x20(%0,%3,1),%%ymm3
+    "lea        " MEMLEA(0x40,0) ",%0          \n"
+    "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
+    "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
+    "vpaddw     %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpaddw     %%ymm3,%%ymm1,%%ymm1           \n"
+    "vpsrlw     $0x1,%%ymm0,%%ymm0             \n"
+    "vpsrlw     $0x1,%%ymm1,%%ymm1             \n"
+    "vpavgw     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpavgw     %%ymm5,%%ymm1,%%ymm1           \n"
+    "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "sub        $0x20,%2                       \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src_ptr),    // %0
+    "+r"(dst_ptr),    // %1
+    "+r"(dst_width)   // %2
+  : "r"((intptr_t)(src_stride))   // %3
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
+  );
+}
+#endif  // HAS_SCALEROWDOWN2_AVX2
+
 void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   asm volatile (

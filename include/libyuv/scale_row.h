@@ -69,12 +69,12 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && (defined(VISUALC_HAS_AVX2) || \
     defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_SCALEADDROW_AVX2
+#define HAS_SCALEROWDOWN2_AVX2
 #endif
 
 // The following are available for Visual C and clangcl 32 bit:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
-#define HAS_SCALEROWDOWN2_AVX2
 #define HAS_SCALEROWDOWN4_AVX2
 #endif
 
