@@ -107,7 +107,8 @@ extern "C" {
 #define HAS_I400TOARGBROW_SSE2
 // The following functions fail on gcc/clang 32 bit.
 // caveat: clangcl uses row_win.cc which works.
-#if !defined(__i386__) || !defined(DEBUG) || defined(_MSC_VER)
+#if !(defined(DEBUG) || defined(_DEBUG)) || !defined(__i386__) || \
+    defined(_MSC_VER)
 // TODO(fbarchard): fix build error on x86 debug
 // https://code.google.com/p/libyuv/issues/detail?id=524
 #define HAS_I411TOARGBROW_SSSE3
