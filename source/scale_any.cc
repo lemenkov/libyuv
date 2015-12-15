@@ -55,11 +55,11 @@ CANY(ScaleARGBFilterCols_Any_NEON, ScaleARGBFilterCols_NEON,
                      dst_ptr + n * BPP, r);                                    \
     }
 
-#ifdef HAS_SCALEROWDOWN2_SSE2
-SDANY(ScaleRowDown2_Any_SSE2, ScaleRowDown2_SSE2, ScaleRowDown2_C, 2, 1, 15)
-SDANY(ScaleRowDown2Linear_Any_SSE2, ScaleRowDown2Linear_SSE2,
+#ifdef HAS_SCALEROWDOWN2_SSSE3
+SDANY(ScaleRowDown2_Any_SSSE3, ScaleRowDown2_SSSE3, ScaleRowDown2_C, 2, 1, 15)
+SDANY(ScaleRowDown2Linear_Any_SSSE3, ScaleRowDown2Linear_SSSE3,
       ScaleRowDown2Linear_C, 2, 1, 15)
-SDANY(ScaleRowDown2Box_Any_SSE2, ScaleRowDown2Box_SSE2, ScaleRowDown2Box_C,
+SDANY(ScaleRowDown2Box_Any_SSSE3, ScaleRowDown2Box_SSSE3, ScaleRowDown2Box_C,
       2, 1, 15)
 #endif
 #ifdef HAS_SCALEROWDOWN2_AVX2

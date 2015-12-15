@@ -699,11 +699,11 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Any_SSE2;
+#if defined(HAS_SCALEROWDOWN2_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Any_SSSE3;
     if (IS_ALIGNED(halfwidth, 16)) {
-      ScaleRowDown2 = ScaleRowDown2Box_SSE2;
+      ScaleRowDown2 = ScaleRowDown2Box_SSSE3;
     }
   }
 #endif

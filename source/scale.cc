@@ -61,15 +61,15 @@ static void ScalePlaneDown2(int src_width, int src_height,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_SSE2 :
-        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_SSE2 :
-        ScaleRowDown2Box_Any_SSE2);
+#if defined(HAS_SCALEROWDOWN2_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_Any_SSSE3 :
+        (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_SSSE3 :
+        ScaleRowDown2Box_Any_SSSE3);
     if (IS_ALIGNED(dst_width, 16)) {
-      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSE2 :
-          (filtering == kFilterLinear ? ScaleRowDown2Linear_SSE2 :
-          ScaleRowDown2Box_SSE2);
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_SSSE3 :
+          (filtering == kFilterLinear ? ScaleRowDown2Linear_SSSE3 :
+          ScaleRowDown2Box_SSSE3);
     }
   }
 #endif

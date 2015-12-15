@@ -98,8 +98,8 @@ static uvec16 kScaleAb2 =
 // Generated using gcc disassembly on Visual C object file:
 // objdump -D yuvscaler.obj >yuvscaler.txt
 
-void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                        uint8* dst_ptr, int dst_width) {
+void ScaleRowDown2_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
+                         uint8* dst_ptr, int dst_width) {
   asm volatile (
     LABELALIGN
   "1:                                          \n"
@@ -120,26 +120,24 @@ void ScaleRowDown2_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   );
 }
 
-void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                              uint8* dst_ptr, int dst_width) {
+void ScaleRowDown2Linear_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
+                               uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlw     $0x8,%%xmm5                     \n"
+    "pcmpeqb    %%xmm4,%%xmm4                  \n"
+    "psrlw      $0xf,%%xmm4                    \n"
+    "packuswb   %%xmm4,%%xmm4                  \n"
+    "pxor       %%xmm5,%%xmm5                  \n"
 
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10, 0) ",%%xmm1  \n"
     "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "movdqa    %%xmm0,%%xmm2                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "movdqa    %%xmm1,%%xmm3                   \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "pand      %%xmm5,%%xmm2                   \n"
-    "pand      %%xmm5,%%xmm3                   \n"
-    "pavgw     %%xmm2,%%xmm0                   \n"
-    "pavgw     %%xmm3,%%xmm1                   \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
+    "pmaddubsw  %%xmm4,%%xmm0                  \n"
+    "pmaddubsw  %%xmm4,%%xmm1                  \n"
+    "pavgw      %%xmm5,%%xmm0                  \n"
+    "pavgw      %%xmm5,%%xmm1                  \n"
+    "packuswb   %%xmm1,%%xmm0                  \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
@@ -147,15 +145,17 @@ void ScaleRowDown2Linear_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
   : "+r"(src_ptr),    // %0
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
-  :: "memory", "cc", "xmm0", "xmm1", "xmm5"
+  :: "memory", "cc", "xmm0", "xmm1", "xmm4", "xmm5"
   );
 }
 
-void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
-                           uint8* dst_ptr, int dst_width) {
+void ScaleRowDown2Box_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
+                            uint8* dst_ptr, int dst_width) {
   asm volatile (
-    "pcmpeqb   %%xmm5,%%xmm5                   \n"
-    "psrlw     $0x8,%%xmm5                     \n"
+    "pcmpeqb    %%xmm4,%%xmm4                  \n"
+    "psrlw      $0xf,%%xmm4                    \n"
+    "packuswb   %%xmm4,%%xmm4                  \n"
+    "pxor       %%xmm5,%%xmm5                  \n"
 
     LABELALIGN
   "1:                                          \n"
@@ -164,17 +164,17 @@ void ScaleRowDown2Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     MEMOPREG(movdqu,0x00,0,3,1,xmm2)           //  movdqu  (%0,%3,1),%%xmm2
     MEMOPREG(movdqu,0x10,0,3,1,xmm3)           //  movdqu  0x10(%0,%3,1),%%xmm3
     "lea       " MEMLEA(0x20,0) ",%0           \n"
-    "pavgb     %%xmm2,%%xmm0                   \n"
-    "pavgb     %%xmm3,%%xmm1                   \n"
-    "movdqa    %%xmm0,%%xmm2                   \n"
-    "psrlw     $0x8,%%xmm0                     \n"
-    "movdqa    %%xmm1,%%xmm3                   \n"
-    "psrlw     $0x8,%%xmm1                     \n"
-    "pand      %%xmm5,%%xmm2                   \n"
-    "pand      %%xmm5,%%xmm3                   \n"
-    "pavgw     %%xmm2,%%xmm0                   \n"
-    "pavgw     %%xmm3,%%xmm1                   \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
+    "pmaddubsw  %%xmm4,%%xmm0                  \n"
+    "pmaddubsw  %%xmm4,%%xmm1                  \n"
+    "pmaddubsw  %%xmm4,%%xmm2                  \n"
+    "pmaddubsw  %%xmm4,%%xmm3                  \n"
+    "paddw      %%xmm2,%%xmm0                  \n"
+    "paddw      %%xmm3,%%xmm1                  \n"
+    "psrlw      $0x1,%%xmm0                    \n"
+    "psrlw      $0x1,%%xmm1                    \n"
+    "pavgw      %%xmm5,%%xmm0                  \n"
+    "pavgw      %%xmm5,%%xmm1                  \n"
+    "packuswb   %%xmm1,%%xmm0                  \n"
     "movdqu    %%xmm0," MEMACCESS(1) "         \n"
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"

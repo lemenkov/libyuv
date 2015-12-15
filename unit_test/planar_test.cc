@@ -1422,8 +1422,8 @@ static void TestI420Blend(int width, int height, int benchmark_iterations,
     EXPECT_EQ(dst_y_c[i + off], dst_y_opt[i + off]);
   }
   for (int i = 0; i < kSizeUV; ++i) {
-    EXPECT_NEAR(dst_u_c[i + off], dst_u_opt[i + off], 1);  // Subsample off by 1
-    EXPECT_NEAR(dst_v_c[i + off], dst_v_opt[i + off], 1);
+    EXPECT_EQ(dst_u_c[i + off], dst_u_opt[i + off]);
+    EXPECT_EQ(dst_v_c[i + off], dst_v_opt[i + off]);
   }
   free_aligned_buffer_64(src_y0);
   free_aligned_buffer_64(src_u0);
