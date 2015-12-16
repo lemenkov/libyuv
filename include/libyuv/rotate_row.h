@@ -68,6 +68,8 @@ void TransposeWx8_Fast_SSSE3(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width);
 void TransposeWx8_MIPS_DSPR2(const uint8* src, int src_stride,
                              uint8* dst, int dst_stride, int width);
+void TransposeWx8_Fast_MIPS_DSPR2(const uint8* src, int src_stride,
+                                  uint8* dst, int dst_stride, int width);
 
 void TransposeWx8_Any_NEON(const uint8* src, int src_stride,
                            uint8* dst, int dst_stride, int width);
