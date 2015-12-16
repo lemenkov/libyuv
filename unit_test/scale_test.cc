@@ -298,17 +298,17 @@ static int TestFilter_16(int src_width, int src_height,
 
 // Test a scale factor with all 4 filters.  Expect unfiltered to be exact, but
 // filtering is different fixed point implementations for SSSE3, Neon and C.
-#define TEST_FACTOR(name, nom, denom, maxdiff)                                 \
+#define TEST_FACTOR(name, nom, denom, boxdiff)                                 \
     TEST_FACTOR1(name, None, nom, denom, 0)                                    \
-    TEST_FACTOR1(name, Linear, nom, denom, maxdiff)                            \
-    TEST_FACTOR1(name, Bilinear, nom, denom, maxdiff)                          \
-    TEST_FACTOR1(name, Box, nom, denom, maxdiff)
+    TEST_FACTOR1(name, Linear, nom, denom, 3)                                  \
+    TEST_FACTOR1(name, Bilinear, nom, denom, 3)                                \
+    TEST_FACTOR1(name, Box, nom, denom, boxdiff)
 
 TEST_FACTOR(2, 1, 2, 0)
-TEST_FACTOR(4, 1, 4, 3)
+TEST_FACTOR(4, 1, 4, 0)
 TEST_FACTOR(8, 1, 8, 3)
-TEST_FACTOR(3by4, 3, 4, 3)
-TEST_FACTOR(3by8, 3, 8, 3)
+TEST_FACTOR(3by4, 3, 4, 1)
+TEST_FACTOR(3by8, 3, 8, 1)
 TEST_FACTOR(3, 1, 3, 3)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR

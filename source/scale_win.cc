@@ -309,7 +309,7 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 // Point samples 32 pixels to 8 pixels.
 __declspec(naked)
-void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown4_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) {
   __asm {
     mov        eax, [esp + 4]        // src_ptr
@@ -340,7 +340,7 @@ void ScaleRowDown4_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
 
 // Blends 32x4 rectangle to 8x1.
 __declspec(naked)
-void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
+void ScaleRowDown4Box_SSSE3(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width) {
   __asm {
     push       esi
@@ -350,42 +350,40 @@ void ScaleRowDown4Box_SSE2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov        edx, [esp + 8 + 12]   // dst_ptr
     mov        ecx, [esp + 8 + 16]   // dst_width
     lea        edi, [esi + esi * 2]  // src_stride * 3
-    pcmpeqb    xmm7, xmm7            // generate mask 0x00ff00ff
-    psrlw      xmm7, 8
+    pcmpeqb    xmm4, xmm4            // constant 0x0101
+    psrlw      xmm4, 15
+    movdqa     xmm5, xmm4
+    packuswb   xmm4, xmm4
+    psllw      xmm5, 3               // constant 0x0008
 
   wloop:
     movdqu     xmm0, [eax]           // average rows
     movdqu     xmm1, [eax + 16]
     movdqu     xmm2, [eax + esi]
     movdqu     xmm3, [eax + esi + 16]
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
+    pmaddubsw  xmm0, xmm4      // horizontal add
+    pmaddubsw  xmm1, xmm4
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2      // vertical add rows 0, 1
+    paddw      xmm1, xmm3
     movdqu     xmm2, [eax + esi * 2]
     movdqu     xmm3, [eax + esi * 2 + 16]
-    movdqu     xmm4, [eax + edi]
-    movdqu     xmm5, [eax + edi + 16]
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2      // add row 2
+    paddw      xmm1, xmm3
+    movdqu     xmm2, [eax + edi]
+    movdqu     xmm3, [eax + edi + 16]
     lea        eax, [eax + 32]
-    pavgb      xmm2, xmm4
-    pavgb      xmm3, xmm5
-    pavgb      xmm0, xmm2
-    pavgb      xmm1, xmm3
-
-    movdqa     xmm2, xmm0            // average columns (32 to 16 pixels)
-    psrlw      xmm0, 8
-    movdqa     xmm3, xmm1
-    psrlw      xmm1, 8
-    pand       xmm2, xmm7
-    pand       xmm3, xmm7
-    pavgw      xmm0, xmm2
-    pavgw      xmm1, xmm3
-    packuswb   xmm0, xmm1
-
-    movdqa     xmm2, xmm0            // average columns (16 to 8 pixels)
-    psrlw      xmm0, 8
-    pand       xmm2, xmm7
-    pavgw      xmm0, xmm2
+    pmaddubsw  xmm2, xmm4
+    pmaddubsw  xmm3, xmm4
+    paddw      xmm0, xmm2      // add row 3
+    paddw      xmm1, xmm3
+    phaddw     xmm0, xmm1
+    paddw      xmm0, xmm5      // + 8 for round
+    psrlw      xmm0, 4         // /16 for average of 4 * 4
     packuswb   xmm0, xmm0
-
     movq       qword ptr [edx], xmm0
     lea        edx, [edx + 8]
     sub        ecx, 8
@@ -444,37 +442,41 @@ void ScaleRowDown4Box_AVX2(const uint8* src_ptr, ptrdiff_t src_stride,
     mov         edx, [esp + 8 + 12]   // dst_ptr
     mov         ecx, [esp + 8 + 16]   // dst_width
     lea         edi, [esi + esi * 2]  // src_stride * 3
-    vpcmpeqb    ymm7, ymm7, ymm7      // generate mask 0x00ff00ff
-    vpsrlw      ymm7, ymm7, 8
+    vpcmpeqb    ymm4, ymm4, ymm4            // constant 0x0101
+    vpsrlw      ymm4, ymm4, 15
+    vpsllw      ymm5, ymm4, 3               // constant 0x0008
+    vpackuswb   ymm4, ymm4, ymm4
 
   wloop:
     vmovdqu     ymm0, [eax]           // average rows
     vmovdqu     ymm1, [eax + 32]
-    vpavgb      ymm0, ymm0, [eax + esi]
-    vpavgb      ymm1, ymm1, [eax + esi + 32]
+    vmovdqu     ymm2, [eax + esi]
+    vmovdqu     ymm3, [eax + esi + 32]
+    vpmaddubsw  ymm0, ymm0, ymm4      // horizontal add
+    vpmaddubsw  ymm1, ymm1, ymm4
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2      // vertical add rows 0, 1
+    vpaddw      ymm1, ymm1, ymm3
     vmovdqu     ymm2, [eax + esi * 2]
     vmovdqu     ymm3, [eax + esi * 2 + 32]
-    vpavgb      ymm2, ymm2, [eax + edi]
-    vpavgb      ymm3, ymm3, [eax + edi + 32]
-    lea         eax, [eax + 64]
-    vpavgb      ymm0, ymm0, ymm2
-    vpavgb      ymm1, ymm1, ymm3
-
-    vpand       ymm2, ymm0, ymm7      // average columns (64 to 32 pixels)
-    vpand       ymm3, ymm1, ymm7
-    vpsrlw      ymm0, ymm0, 8
-    vpsrlw      ymm1, ymm1, 8
-    vpavgw      ymm0, ymm0, ymm2
-    vpavgw      ymm1, ymm1, ymm3
-    vpackuswb   ymm0, ymm0, ymm1
-    vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
-
-    vpand       ymm2, ymm0, ymm7      // average columns (32 to 16 pixels)
-    vpsrlw      ymm0, ymm0, 8
-    vpavgw      ymm0, ymm0, ymm2
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2      // add row 2
+    vpaddw      ymm1, ymm1, ymm3
+    vmovdqu     ymm2, [eax + edi]
+    vmovdqu     ymm3, [eax + edi + 32]
+    lea         eax,  [eax + 64]
+    vpmaddubsw  ymm2, ymm2, ymm4
+    vpmaddubsw  ymm3, ymm3, ymm4
+    vpaddw      ymm0, ymm0, ymm2      // add row 3
+    vpaddw      ymm1, ymm1, ymm3
+    vphaddw     ymm0, ymm0, ymm1      // mutates
+    vpermq      ymm0, ymm0, 0xd8      // unmutate vphaddw
+    vpaddw      ymm0, ymm0, ymm5      // + 8 for round
+    vpsrlw      ymm0, ymm0, 4         // /32 for average of 4 * 4
     vpackuswb   ymm0, ymm0, ymm0
     vpermq      ymm0, ymm0, 0xd8      // unmutate vpackuswb
-
     vmovdqu     [edx], xmm0
     lea         edx, [edx + 16]
     sub         ecx, 16

@@ -76,9 +76,9 @@ SDANY(ScaleRowDown2Linear_Any_NEON, ScaleRowDown2Linear_NEON,
 SDANY(ScaleRowDown2Box_Any_NEON, ScaleRowDown2Box_NEON,
       ScaleRowDown2Box_C, 2, 1, 15)
 #endif
-#ifdef HAS_SCALEROWDOWN4_SSE2
-SDANY(ScaleRowDown4_Any_SSE2, ScaleRowDown4_SSE2, ScaleRowDown4_C, 4, 1, 7)
-SDANY(ScaleRowDown4Box_Any_SSE2, ScaleRowDown4Box_SSE2, ScaleRowDown4Box_C,
+#ifdef HAS_SCALEROWDOWN4_SSSE3
+SDANY(ScaleRowDown4_Any_SSSE3, ScaleRowDown4_SSSE3, ScaleRowDown4_C, 4, 1, 7)
+SDANY(ScaleRowDown4Box_Any_SSSE3, ScaleRowDown4Box_SSSE3, ScaleRowDown4Box_C,
       4, 1, 7)
 #endif
 #ifdef HAS_SCALEROWDOWN4_AVX2

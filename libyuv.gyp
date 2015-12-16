@@ -47,7 +47,7 @@
       # Change type to 'shared_library' to build .so or .dll files.
       'type': 'static_library',
       'variables': {
-        'optimize': 'max',  # enable O2 and ltcg.
+ #       'optimize': 'max',  # enable O2 and ltcg.
       },
       # Allows libyuv.a redistributable library without external dependencies.
       'standalone_static_library': 1,

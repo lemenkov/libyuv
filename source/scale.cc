@@ -182,12 +182,12 @@ static void ScalePlaneDown4(int src_width, int src_height,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN4_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
+#if defined(HAS_SCALEROWDOWN4_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
     ScaleRowDown4 = filtering ?
-        ScaleRowDown4Box_Any_SSE2 : ScaleRowDown4_Any_SSE2;
+        ScaleRowDown4Box_Any_SSSE3 : ScaleRowDown4_Any_SSSE3;
     if (IS_ALIGNED(dst_width, 8)) {
-      ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSE2 : ScaleRowDown4_SSE2;
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_SSSE3 : ScaleRowDown4_SSSE3;
     }
   }
 #endif
