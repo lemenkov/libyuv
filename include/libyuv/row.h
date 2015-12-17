@@ -175,7 +175,6 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_SSE2
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
-#define HAS_INTERPOLATEROW_SSE2
 #define HAS_INTERPOLATEROW_SSSE3
 #define HAS_RGBCOLORTABLEROW_X86
 #define HAS_SOBELROW_SSE2
@@ -1838,9 +1837,6 @@ void ARGBAffineRow_SSE2(const uint8* src_argb, int src_argb_stride,
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride_ptr,
                       int width, int source_y_fraction);
-void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                         ptrdiff_t src_stride_ptr, int width,
-                         int source_y_fraction);
 void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                           ptrdiff_t src_stride_ptr, int width,
                           int source_y_fraction);
@@ -1854,9 +1850,6 @@ void InterpolateRow_MIPS_DSPR2(uint8* dst_ptr, const uint8* src_ptr,
                                ptrdiff_t src_stride_ptr, int width,
                                int source_y_fraction);
 void InterpolateRow_Any_NEON(uint8* dst_ptr, const uint8* src_ptr,
-                             ptrdiff_t src_stride_ptr, int width,
-                             int source_y_fraction);
-void InterpolateRow_Any_SSE2(uint8* dst_ptr, const uint8* src_ptr,
                              ptrdiff_t src_stride_ptr, int width,
                              int source_y_fraction);
 void InterpolateRow_Any_SSSE3(uint8* dst_ptr, const uint8* src_ptr,

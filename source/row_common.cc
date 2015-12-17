@@ -2211,27 +2211,30 @@ static void HalfRow_16_C(const uint16* src_uv, int src_uv_stride,
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
                       int width, int source_y_fraction) {
-  int y1_fraction = source_y_fraction;
-  int y0_fraction = 256 - y1_fraction;
+  int y1_fraction = source_y_fraction >> 1;
+  int y0_fraction = 128 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
   int x;
-  if (source_y_fraction == 0) {
+  if (y1_fraction == 0) {
     memcpy(dst_ptr, src_ptr, width);
     return;
   }
-  if (source_y_fraction == 128) {
+  if (y1_fraction == 64) {
     HalfRow_C(src_ptr, (int)(src_stride), dst_ptr, width);
     return;
   }
   for (x = 0; x < width - 1; x += 2) {
-    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
-    dst_ptr[1] = (src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction) >> 8;
+    dst_ptr[0] = 
+		(src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction + 64) >> 7;
+    dst_ptr[1] = 
+		(src_ptr[1] * y0_fraction + src_ptr1[1] * y1_fraction + 64) >> 7;
     src_ptr += 2;
     src_ptr1 += 2;
     dst_ptr += 2;
   }
   if (width & 1) {
-    dst_ptr[0] = (src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction) >> 8;
+    dst_ptr[0] = 
+		(src_ptr[0] * y0_fraction + src_ptr1[0] * y1_fraction + 64) >> 7;
   }
 }
 

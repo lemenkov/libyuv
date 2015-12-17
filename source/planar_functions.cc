@@ -1870,14 +1870,6 @@ int InterpolatePlane(const uint8* src0, int src_stride0,
     height = 1;
     src_stride0 = src_stride1 = dst_stride = 0;
   }
-#if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
@@ -2467,14 +2459,6 @@ int YUY2ToNV12(const uint8* src_yuy2, int src_stride_yuy2,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     InterpolateRow = InterpolateRow_Any_SSSE3;
@@ -2568,14 +2552,6 @@ int UYVYToNV12(const uint8* src_uyvy, int src_stride_uyvy,
     SplitUVRow = SplitUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       SplitUVRow = SplitUVRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    InterpolateRow = InterpolateRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      InterpolateRow = InterpolateRow_SSE2;
     }
   }
 #endif

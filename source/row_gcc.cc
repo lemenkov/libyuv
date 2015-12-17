@@ -4794,12 +4794,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
     "je        100f                            \n"
-    "cmp       $0x20,%3                        \n"
-    "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
     "je        50f                             \n"
-    "cmp       $0x60,%3                        \n"
-    "je        25f                             \n"
 
     "movd      %3,%%xmm0                       \n"
     "neg       %3                              \n"
@@ -4808,6 +4804,9 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "punpcklbw %%xmm0,%%xmm5                   \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
+    "mov       $0x400040,%%eax                 \n"
+    "movd      %%eax,%%xmm4                    \n"
+    "pshufd    $0x0,%%xmm4,%%xmm4              \n"
 
     // General purpose row blend.
     LABELALIGN
@@ -4819,6 +4818,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "punpckhbw %%xmm2,%%xmm1                   \n"
     "pmaddubsw %%xmm5,%%xmm0                   \n"
     "pmaddubsw %%xmm5,%%xmm1                   \n"
+    "paddw     %%xmm4,%%xmm0                   \n"
+    "paddw     %%xmm4,%%xmm1                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
@@ -4826,19 +4827,6 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
-    "jmp       99f                             \n"
-
-    // Blend 25 / 75.
-    LABELALIGN
-  "25:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm1)
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        25b                             \n"
     "jmp       99f                             \n"
 
     // Blend 50 / 50.
@@ -4851,19 +4839,6 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        50b                             \n"
-    "jmp       99f                             \n"
-
-    // Blend 75 / 25.
-    LABELALIGN
-  "75:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm0)
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        75b                             \n"
     "jmp       99f                             \n"
 
     // Blend 100 / 0 - Copy row unchanged.
@@ -4881,8 +4856,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm5"
+  : "memory", "cc", "eax", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSSE3
@@ -4897,12 +4872,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "cmp       $0x0,%3                         \n"
     "je        100f                            \n"
     "sub       %1,%0                           \n"
-    "cmp       $0x20,%3                        \n"
-    "je        75f                             \n"
     "cmp       $0x40,%3                        \n"
     "je        50f                             \n"
-    "cmp       $0x60,%3                        \n"
-    "je        25f                             \n"
 
     "vmovd      %3,%%xmm0                      \n"
     "neg        %3                             \n"
@@ -4912,6 +4883,9 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "vpunpcklwd %%xmm5,%%xmm5,%%xmm5           \n"
     "vpxor      %%ymm0,%%ymm0,%%ymm0           \n"
     "vpermd     %%ymm5,%%ymm0,%%ymm5           \n"
+    "mov        $0x400040,%%eax                \n"
+    "vmovd      %%eax,%%xmm4                   \n"
+    "vbroadcastss %%xmm4,%%ymm4                \n"
 
     // General purpose row blend.
     LABELALIGN
@@ -4922,6 +4896,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "vpunpcklbw %%ymm2,%%ymm0,%%ymm0           \n"
     "vpmaddubsw %%ymm5,%%ymm0,%%ymm0           \n"
     "vpmaddubsw %%ymm5,%%ymm1,%%ymm1           \n"
+    "vpaddw     %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpaddw     %%ymm4,%%ymm1,%%ymm1           \n"
     "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
     "vpsrlw     $0x7,%%ymm1,%%ymm1             \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
@@ -4929,19 +4905,6 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
-    "jmp       99f                             \n"
-
-    // Blend 25 / 75.
-    LABELALIGN
-  "25:                                         \n"
-    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
-    MEMOPREG(vmovdqu,0x00,1,4,1,ymm1)
-    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
-    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
-    "lea       " MEMLEA(0x20,1) ",%1           \n"
-    "sub       $0x20,%2                        \n"
-    "jg        25b                             \n"
     "jmp       99f                             \n"
 
     // Blend 50 / 50.
@@ -4953,19 +4916,6 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "lea       " MEMLEA(0x20,1) ",%1           \n"
     "sub       $0x20,%2                        \n"
     "jg        50b                             \n"
-    "jmp       99f                             \n"
-
-    // Blend 75 / 25.
-    LABELALIGN
-  "75:                                         \n"
-    "vmovdqu    " MEMACCESS(1) ",%%ymm1        \n"
-    MEMOPREG(vmovdqu,0x00,1,4,1,ymm0)
-    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
-    "vpavgb     %%ymm1,%%ymm0,%%ymm0           \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
-    "lea       " MEMLEA(0x20,1) ",%1           \n"
-    "sub       $0x20,%2                        \n"
-    "jg        75b                             \n"
     "jmp       99f                             \n"
 
     // Blend 100 / 0 - Copy row unchanged.
@@ -4982,122 +4932,11 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "+c"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm5"
+  : "memory", "cc", "eax", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_AVX2
-
-#ifdef HAS_INTERPOLATEROW_SSE2
-// Bilinear filter 16x2 -> 16x1
-void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) {
-  asm volatile (
-    "sub       %1,%0                           \n"
-    "shr       %3                              \n"
-    "cmp       $0x0,%3                         \n"
-    "je        100f                            \n"
-    "cmp       $0x20,%3                        \n"
-    "je        75f                             \n"
-    "cmp       $0x40,%3                        \n"
-    "je        50f                             \n"
-    "cmp       $0x60,%3                        \n"
-    "je        25f                             \n"
-
-    "movd      %3,%%xmm0                       \n"
-    "neg       %3                              \n"
-    "add       $0x80,%3                        \n"
-    "movd      %3,%%xmm5                       \n"
-    "punpcklbw %%xmm0,%%xmm5                   \n"
-    "punpcklwd %%xmm5,%%xmm5                   \n"
-    "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-    "pxor      %%xmm4,%%xmm4                   \n"
-
-    // General purpose row blend.
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm2)           //  movdqu    (%1,%4,1),%%xmm2
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "movdqa    %%xmm2,%%xmm3                   \n"
-    "punpcklbw %%xmm4,%%xmm2                   \n"
-    "punpckhbw %%xmm4,%%xmm3                   \n"
-    "punpcklbw %%xmm4,%%xmm0                   \n"
-    "punpckhbw %%xmm4,%%xmm1                   \n"
-    "psubw     %%xmm0,%%xmm2                   \n"
-    "psubw     %%xmm1,%%xmm3                   \n"
-    "paddw     %%xmm2,%%xmm2                   \n"
-    "paddw     %%xmm3,%%xmm3                   \n"
-    "pmulhw    %%xmm5,%%xmm2                   \n"
-    "pmulhw    %%xmm5,%%xmm3                   \n"
-    "paddw     %%xmm2,%%xmm0                   \n"
-    "paddw     %%xmm3,%%xmm1                   \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        1b                              \n"
-    "jmp       99f                             \n"
-
-    // Blend 25 / 75.
-    LABELALIGN
-  "25:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        25b                             \n"
-    "jmp       99f                             \n"
-
-    // Blend 50 / 50.
-    LABELALIGN
-  "50:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm1)           //  movdqu    (%1,%4,1),%%xmm1
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        50b                             \n"
-    "jmp       99f                             \n"
-
-    // Blend 75 / 25.
-    LABELALIGN
-  "75:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
-    MEMOPREG(movdqu,0x00,1,4,1,xmm0)           //  movdqu    (%1,%4,1),%%xmm0
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        75b                             \n"
-    "jmp       99f                             \n"
-
-    // Blend 100 / 0 - Copy row unchanged.
-    LABELALIGN
-  "100:                                        \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)           //  movdqu    %%xmm0,(%1,%0,1)
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
-    "sub       $0x10,%2                        \n"
-    "jg        100b                            \n"
-
-  "99:                                         \n"
-  : "+r"(dst_ptr),    // %0
-    "+r"(src_ptr),    // %1
-    "+r"(dst_width),  // %2
-    "+r"(source_y_fraction)  // %3
-  : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
-  );
-}
-#endif  // HAS_INTERPOLATEROW_SSE2
 
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.

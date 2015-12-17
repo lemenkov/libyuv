@@ -909,15 +909,15 @@ TEST_F(LibYUVPlanarTest, TestARGBInterpolate) {
   EXPECT_EQ(0u, interpolate_pixels[1][0]);
   EXPECT_EQ(0u, interpolate_pixels[1][1]);
   EXPECT_EQ(0u, interpolate_pixels[1][2]);
-  EXPECT_NEAR(128u, interpolate_pixels[1][3], 1);  // C = 127, SSE = 128.
+  EXPECT_EQ(128u, interpolate_pixels[1][3]);
   EXPECT_EQ(0u, interpolate_pixels[2][0]);
   EXPECT_EQ(0u, interpolate_pixels[2][1]);
   EXPECT_EQ(0u, interpolate_pixels[2][2]);
   EXPECT_EQ(0u, interpolate_pixels[2][3]);
-  EXPECT_NEAR(128u, interpolate_pixels[3][0], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[3][1], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[3][2], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[3][3], 1);
+  EXPECT_EQ(128u, interpolate_pixels[3][0]);
+  EXPECT_EQ(128u, interpolate_pixels[3][1]);
+  EXPECT_EQ(128u, interpolate_pixels[3][2]);
+  EXPECT_EQ(128u, interpolate_pixels[3][3]);
 
   ARGBInterpolate(&orig_pixels_0[0][0], 0, &orig_pixels_1[0][0], 0,
                   &interpolate_pixels[0][0], 0, 4, 1, 0);
@@ -991,15 +991,15 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
   EXPECT_EQ(0u, interpolate_pixels[4]);
   EXPECT_EQ(0u, interpolate_pixels[5]);
   EXPECT_EQ(0u, interpolate_pixels[6]);
-  EXPECT_NEAR(128u, interpolate_pixels[7], 1);  // C = 127, SSE = 128.
+  EXPECT_EQ(128u, interpolate_pixels[7]);
   EXPECT_EQ(0u, interpolate_pixels[8]);
   EXPECT_EQ(0u, interpolate_pixels[9]);
   EXPECT_EQ(0u, interpolate_pixels[10]);
   EXPECT_EQ(0u, interpolate_pixels[11]);
-  EXPECT_NEAR(128u, interpolate_pixels[12], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[13], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[14], 1);
-  EXPECT_NEAR(128u, interpolate_pixels[15], 1);
+  EXPECT_EQ(128u, interpolate_pixels[12]);
+  EXPECT_EQ(128u, interpolate_pixels[13]);
+  EXPECT_EQ(128u, interpolate_pixels[14]);
+  EXPECT_EQ(128u, interpolate_pixels[15]);
 
   InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
                    &interpolate_pixels[0], 0, 16, 1, 0);
@@ -1013,12 +1013,12 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
 
   EXPECT_EQ(4u, interpolate_pixels[0]);
   EXPECT_EQ(8u, interpolate_pixels[1]);
-  EXPECT_EQ(16u,interpolate_pixels[2]);
+  EXPECT_EQ(16u, interpolate_pixels[2]);
   EXPECT_EQ(32u, interpolate_pixels[3]);
 
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     InterpolatePlane(&orig_pixels_0[0], 0, &orig_pixels_1[0], 0,
-                     &interpolate_pixels[0], 0, 1280, 1, 128);
+                     &interpolate_pixels[0], 0, 1280, 1, 123);
   }
 }
 

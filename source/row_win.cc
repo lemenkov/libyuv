@@ -5571,12 +5571,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     cmp        eax, 0
     je         xloop100  // 0 / 128.  Blend 100 / 0.
     sub        edi, esi
-    cmp        eax, 32
-    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
     cmp        eax, 64
     je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
-    cmp        eax, 96
-    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
 
     vmovd      xmm0, eax  // high fraction 0..127
     neg        eax
@@ -5587,6 +5583,10 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     vpxor      ymm0, ymm0, ymm0
     vpermd     ymm5, ymm0, ymm5
 
+    mov        eax, 0x00400040  // 64 for rounding.
+    vmovd      xmm4, eax
+    vbroadcastss ymm4, xmm4
+
   xloop:
     vmovdqu    ymm0, [esi]
     vmovdqu    ymm2, [esi + edx]
@@ -5594,6 +5594,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     vpunpcklbw ymm0, ymm0, ymm2  // mutates
     vpmaddubsw ymm0, ymm0, ymm5
     vpmaddubsw ymm1, ymm1, ymm5
+    vpaddw     ymm0, ymm0, ymm4
+    vpaddw     ymm1, ymm1, ymm4
     vpsrlw     ymm0, ymm0, 7
     vpsrlw     ymm1, ymm1, 7
     vpackuswb  ymm0, ymm0, ymm1  // unmutates
@@ -5603,18 +5605,6 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
     jmp        xloop99
 
-   // Blend 25 / 75.
- xloop25:
-   vmovdqu    ymm0, [esi]
-   vmovdqu    ymm1, [esi + edx]
-   vpavgb     ymm0, ymm0, ymm1
-   vpavgb     ymm0, ymm0, ymm1
-   vmovdqu    [esi + edi], ymm0
-   lea        esi, [esi + 32]
-   sub        ecx, 32
-   jg         xloop25
-   jmp        xloop99
-
    // Blend 50 / 50.
  xloop50:
    vmovdqu    ymm0, [esi]
@@ -5623,18 +5613,6 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
    lea        esi, [esi + 32]
    sub        ecx, 32
    jg         xloop50
-   jmp        xloop99
-
-   // Blend 75 / 25.
- xloop75:
-   vmovdqu    ymm1, [esi]
-   vmovdqu    ymm0, [esi + edx]
-   vpavgb     ymm0, ymm0, ymm1
-   vpavgb     ymm0, ymm0, ymm1
-   vmovdqu    [esi + edi], ymm0
-   lea        esi, [esi + 32]
-   sub        ecx, 32
-   jg         xloop75
    jmp        xloop99
 
    // Blend 100 / 0 - Copy row unchanged.
@@ -5668,12 +5646,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     // Dispatch to specialized filters if applicable.
     cmp        eax, 0
     je         xloop100  // 0 / 128.  Blend 100 / 0.
-    cmp        eax, 32
-    je         xloop75   // 32 / 128 is 0.25.  Blend 75 / 25.
     cmp        eax, 64
     je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
-    cmp        eax, 96
-    je         xloop25   // 96 / 128 is 0.75.  Blend 25 / 75.
 
     movd       xmm0, eax  // high fraction 0..127
     neg        eax
@@ -5683,6 +5657,10 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
 
+    mov        eax, 0x00400040  // 64 for rounding.
+    movd       xmm4, eax
+    pshufd     xmm4, xmm4, 0x00
+
   xloop:
     movdqu     xmm0, [esi]
     movdqu     xmm2, [esi + edx]
@@ -5691,6 +5669,8 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     punpckhbw  xmm1, xmm2
     pmaddubsw  xmm0, xmm5
     pmaddubsw  xmm1, xmm5
+    paddw      xmm0, xmm4
+    paddw      xmm1, xmm4
     psrlw      xmm0, 7
     psrlw      xmm1, 7
     packuswb   xmm0, xmm1
@@ -5700,18 +5680,6 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     jg         xloop
     jmp        xloop99
 
-    // Blend 25 / 75.
-  xloop25:
-    movdqu     xmm0, [esi]
-    movdqu     xmm1, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop25
-    jmp        xloop99
-
     // Blend 50 / 50.
   xloop50:
     movdqu     xmm0, [esi]
@@ -5721,18 +5689,6 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     lea        esi, [esi + 16]
     sub        ecx, 16
     jg         xloop50
-    jmp        xloop99
-
-    // Blend 75 / 25.
-  xloop75:
-    movdqu     xmm1, [esi]
-    movdqu     xmm0, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop75
     jmp        xloop99
 
     // Blend 100 / 0 - Copy row unchanged.
@@ -5749,114 +5705,6 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     ret
   }
 }
-
-#ifdef HAS_INTERPOLATEROW_SSE2
-// Bilinear filter 16x2 -> 16x1
-__declspec(naked)
-void InterpolateRow_SSE2(uint8* dst_ptr, const uint8* src_ptr,
-                         ptrdiff_t src_stride, int dst_width,
-                         int source_y_fraction) {
-  __asm {
-    push       esi
-    push       edi
-    mov        edi, [esp + 8 + 4]   // dst_ptr
-    mov        esi, [esp + 8 + 8]   // src_ptr
-    mov        edx, [esp + 8 + 12]  // src_stride
-    mov        ecx, [esp + 8 + 16]  // dst_width
-    mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
-    sub        edi, esi
-    // Dispatch to specialized filters if applicable.
-    cmp        eax, 0
-    je         xloop100  // 0 / 256.  Blend 100 / 0.
-    cmp        eax, 64
-    je         xloop75   // 64 / 256 is 0.25.  Blend 75 / 25.
-    cmp        eax, 128
-    je         xloop50   // 128 / 256 is 0.50.  Blend 50 / 50.
-    cmp        eax, 192
-    je         xloop25   // 192 / 256 is 0.75.  Blend 25 / 75.
-
-    movd       xmm5, eax            // xmm5 = y fraction
-    punpcklbw  xmm5, xmm5
-    psrlw      xmm5, 1
-    punpcklwd  xmm5, xmm5
-    punpckldq  xmm5, xmm5
-    punpcklqdq xmm5, xmm5
-    pxor       xmm4, xmm4
-
-  xloop:
-    movdqu     xmm0, [esi]  // row0
-    movdqu     xmm2, [esi + edx]  // row1
-    movdqu     xmm1, xmm0
-    movdqu     xmm3, xmm2
-    punpcklbw  xmm2, xmm4
-    punpckhbw  xmm3, xmm4
-    punpcklbw  xmm0, xmm4
-    punpckhbw  xmm1, xmm4
-    psubw      xmm2, xmm0  // row1 - row0
-    psubw      xmm3, xmm1
-    paddw      xmm2, xmm2  // 9 bits * 15 bits = 8.16
-    paddw      xmm3, xmm3
-    pmulhw     xmm2, xmm5  // scale diff
-    pmulhw     xmm3, xmm5
-    paddw      xmm0, xmm2  // sum rows
-    paddw      xmm1, xmm3
-    packuswb   xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop
-    jmp        xloop99
-
-    // Blend 25 / 75.
-  xloop25:
-    movdqu     xmm0, [esi]
-    movdqu     xmm1, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop25
-    jmp        xloop99
-
-    // Blend 50 / 50.
-  xloop50:
-    movdqu     xmm0, [esi]
-    movdqu     xmm1, [esi + edx]
-    pavgb      xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop50
-    jmp        xloop99
-
-    // Blend 75 / 25.
-  xloop75:
-    movdqu     xmm1, [esi]
-    movdqu     xmm0, [esi + edx]
-    pavgb      xmm0, xmm1
-    pavgb      xmm0, xmm1
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop75
-    jmp        xloop99
-
-    // Blend 100 / 0 - Copy row unchanged.
-  xloop100:
-    movdqu     xmm0, [esi]
-    movdqu     [esi + edi], xmm0
-    lea        esi, [esi + 16]
-    sub        ecx, 16
-    jg         xloop100
-
-  xloop99:
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-#endif  // HAS_INTERPOLATEROW_SSE2
 
 // For BGRAToARGB, ABGRToARGB, RGBAToARGB, and ARGBToRGBA.
 __declspec(naked)

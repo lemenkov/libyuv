@@ -593,9 +593,6 @@ ANY11T(InterpolateRow_Any_AVX2, InterpolateRow_AVX2, 1, 1, 31)
 #ifdef HAS_INTERPOLATEROW_SSSE3
 ANY11T(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3, 1, 1, 15)
 #endif
-#ifdef HAS_INTERPOLATEROW_SSE2
-ANY11T(InterpolateRow_Any_SSE2, InterpolateRow_SSE2, 1, 1, 15)
-#endif
 #ifdef HAS_INTERPOLATEROW_NEON
 ANY11T(InterpolateRow_Any_NEON, InterpolateRow_NEON, 1, 1, 15)
 #endif
