@@ -105,10 +105,10 @@ extern "C" {
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
-// The following functions fail on gcc/clang 32 bit.
+// The following functions fail on gcc/clang 32 bit with fpic and framepointer.
 // caveat: clangcl uses row_win.cc which works.
-#if !(defined(DEBUG) || defined(_DEBUG)) || !defined(__i386__) || \
-    defined(_MSC_VER)
+#if defined(NDEBUG) || !(defined(_DEBUG) && defined(__i386__)) || \
+   !defined(__i386__) || defined(_MSC_VER)
 // TODO(fbarchard): fix build error on x86 debug
 // https://code.google.com/p/libyuv/issues/detail?id=524
 #define HAS_I411TOARGBROW_SSSE3
