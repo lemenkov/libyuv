@@ -1813,14 +1813,18 @@ void OMITFP I411ToARGBRow_SSSE3(const uint8* y_buf,
     READYUV411_TEMP
     YUVTORGB(yuvconstants)
     STOREARGB
-    "sub       $0x8,%[width]                   \n"
+    "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
   : [y_buf]"+r"(y_buf),    // %[y_buf]
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [temp]"+r"(temp),       // %[temp]
+#if defined(__i386__) && defined(__pic__)
+    [width]"+m"(width)     // %[width]
+#else
     [width]"+rm"(width)    // %[width]
+#endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
   : "memory", "cc", NACL_R14 YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
