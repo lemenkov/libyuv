@@ -2259,16 +2259,16 @@ void RAWToYRow_NEON(const uint8* src_raw, uint8* dst_y, int width) {
 void InterpolateRow_NEON(uint8* dst_ptr,
                          const uint8* src_ptr, ptrdiff_t src_stride,
                          int dst_width, int source_y_fraction) {
-  int y1_fraction = source_y_fraction >> 1;
+  int y1_fraction = source_y_fraction;
   asm volatile (
     "cmp        %4, #0                         \n"
     "beq        100f                           \n"
     "add        %2, %1                         \n"
-    "cmp        %4, #64                        \n"
+    "cmp        %4, #128                       \n"
     "beq        50f                            \n"
 
     "vdup.8     d5, %4                         \n"
-    "rsb        %4, #128                       \n"
+    "rsb        %4, #256                       \n"
     "vdup.8     d4, %4                         \n"
     // General purpose row blend.
   "1:                                          \n"
@@ -2281,8 +2281,8 @@ void InterpolateRow_NEON(uint8* dst_ptr,
     "vmull.u8   q14, d1, d4                    \n"
     "vmlal.u8   q13, d2, d5                    \n"
     "vmlal.u8   q14, d3, d5                    \n"
-    "vrshrn.u16 d0, q13, #7                    \n"
-    "vrshrn.u16 d1, q14, #7                    \n"
+    "vrshrn.u16 d0, q13, #8                    \n"
+    "vrshrn.u16 d1, q14, #8                    \n"
     MEMACCESS(0)
     "vst1.8     {q0}, [%0]!                    \n"
     "bgt        1b                             \n"

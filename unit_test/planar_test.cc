@@ -940,7 +940,6 @@ TEST_F(LibYUVPlanarTest, TestARGBInterpolate) {
   }
 }
 
-
 TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
   SIMD_ALIGNED(uint8 orig_pixels_0[1280]);
   SIMD_ALIGNED(uint8 orig_pixels_1[1280]);
@@ -1024,7 +1023,7 @@ TEST_F(LibYUVPlanarTest, TestInterpolatePlane) {
 
 #define TESTTERP(FMT_A, BPP_A, STRIDE_A,                                       \
                  FMT_B, BPP_B, STRIDE_B,                                       \
-                 W1280, TERP, DIFF, N, NEG, OFF)                               \
+                 W1280, TERP, N, NEG, OFF)                               \
 TEST_F(LibYUVPlanarTest, ARGBInterpolate##TERP##N) {                           \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
@@ -1050,16 +1049,9 @@ TEST_F(LibYUVPlanarTest, ARGBInterpolate##TERP##N) {                           \
                     dst_argb_opt, kStrideB,                                    \
                     kWidth, NEG kHeight, TERP);                                \
   }                                                                            \
-  int max_diff = 0;                                                            \
   for (int i = 0; i < kStrideB * kHeight; ++i) {                               \
-    int abs_diff =                                                             \
-        abs(static_cast<int>(dst_argb_c[i]) -                                  \
-            static_cast<int>(dst_argb_opt[i]));                                \
-    if (abs_diff > max_diff) {                                                 \
-      max_diff = abs_diff;                                                     \
-    }                                                                          \
+    EXPECT_EQ(dst_argb_c[i], dst_argb_opt[i]);                                 \
   }                                                                            \
-  EXPECT_LE(max_diff, DIFF);                                                   \
   free_aligned_buffer_64(src_argb_a);                                          \
   free_aligned_buffer_64(src_argb_b);                                          \
   free_aligned_buffer_64(dst_argb_c);                                          \
@@ -1067,16 +1059,10 @@ TEST_F(LibYUVPlanarTest, ARGBInterpolate##TERP##N) {                           \
 }
 
 #define TESTINTERPOLATE(TERP)                                                  \
-    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_ - 1, TERP, 1, _Any, +, 0)                        \
-    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_, TERP, 1, _Unaligned, +, 1)                      \
-    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_, TERP, 1, _Invert, -, 0)                         \
-    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_, TERP, 1, _Opt, +, 0)                            \
-    TESTTERP(ARGB, 4, 1, ARGB, 4, 1,                                           \
-             benchmark_width_ - 1, TERP, 1, _Any_Invert, -, 0)
+    TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_ - 1, TERP, _Any, +, 0)   \
+    TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Unaligned, +, 1) \
+    TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Invert, -, 0)    \
+    TESTTERP(ARGB, 4, 1, ARGB, 4, 1, benchmark_width_, TERP, _Opt, +, 0)
 
 TESTINTERPOLATE(0)
 TESTINTERPOLATE(64)

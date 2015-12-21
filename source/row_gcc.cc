@@ -4791,20 +4791,19 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                           int source_y_fraction) {
   asm volatile (
     "sub       %1,%0                           \n"
-    "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
     "je        100f                            \n"
-    "cmp       $0x40,%3                        \n"
+    "cmp       $0x80,%3                        \n"
     "je        50f                             \n"
 
     "movd      %3,%%xmm0                       \n"
     "neg       %3                              \n"
-    "add       $0x80,%3                        \n"
+    "add       $0x100,%3                       \n"
     "movd      %3,%%xmm5                       \n"
     "punpcklbw %%xmm0,%%xmm5                   \n"
     "punpcklwd %%xmm5,%%xmm5                   \n"
     "pshufd    $0x0,%%xmm5,%%xmm5              \n"
-    "mov       $0x400040,%%eax                 \n"
+    "mov       $0x80808080,%%eax               \n"
     "movd      %%eax,%%xmm4                    \n"
     "pshufd    $0x0,%%xmm4,%%xmm4              \n"
 
@@ -4813,17 +4812,21 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   "1:                                          \n"
     "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
     MEMOPREG(movdqu,0x00,1,4,1,xmm2)
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "punpcklbw %%xmm2,%%xmm0                   \n"
-    "punpckhbw %%xmm2,%%xmm1                   \n"
-    "pmaddubsw %%xmm5,%%xmm0                   \n"
-    "pmaddubsw %%xmm5,%%xmm1                   \n"
-    "paddw     %%xmm4,%%xmm0                   \n"
-    "paddw     %%xmm4,%%xmm1                   \n"
-    "psrlw     $0x7,%%xmm0                     \n"
-    "psrlw     $0x7,%%xmm1                     \n"
-    "packuswb  %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
+    "movdqa     %%xmm0,%%xmm1                  \n"
+    "punpcklbw  %%xmm2,%%xmm0                  \n"
+    "punpckhbw  %%xmm2,%%xmm1                  \n"
+    "psubb      %%xmm4,%%xmm0                  \n"
+    "psubb      %%xmm4,%%xmm1                  \n"
+    "movdqa     %%xmm5,%%xmm2                  \n"
+    "movdqa     %%xmm5,%%xmm3                  \n"
+    "pmaddubsw  %%xmm0,%%xmm2                  \n"
+    "pmaddubsw  %%xmm1,%%xmm3                  \n"
+    "paddw      %%xmm4,%%xmm2                  \n"
+    "paddw      %%xmm4,%%xmm3                  \n"
+    "psrlw      $0x8,%%xmm2                    \n"
+    "psrlw      $0x8,%%xmm3                    \n"
+    "packuswb   %%xmm3,%%xmm2                  \n"
+    MEMOPMEM(movdqu,xmm2,0x00,1,0,1)
     "lea       " MEMLEA(0x10,1) ",%1           \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -4857,7 +4860,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc", "eax", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm4", "xmm5"
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_INTERPOLATEROW_SSSE3
@@ -4881,9 +4884,8 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     "vmovd      %3,%%xmm5                      \n"
     "vpunpcklbw %%xmm0,%%xmm5,%%xmm5           \n"
     "vpunpcklwd %%xmm5,%%xmm5,%%xmm5           \n"
-    "vpxor      %%ymm0,%%ymm0,%%ymm0           \n"
-    "vpermd     %%ymm5,%%ymm0,%%ymm5           \n"
-    "mov        $0x400040,%%eax                \n"
+    "vbroadcastss %%xmm5,%%ymm5                \n"
+    "mov        $0x80808080,%%eax              \n"
     "vmovd      %%eax,%%xmm4                   \n"
     "vbroadcastss %%xmm4,%%ymm4                \n"
 
@@ -4894,12 +4896,14 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     MEMOPREG(vmovdqu,0x00,1,4,1,ymm2)
     "vpunpckhbw %%ymm2,%%ymm0,%%ymm1           \n"
     "vpunpcklbw %%ymm2,%%ymm0,%%ymm0           \n"
-    "vpmaddubsw %%ymm5,%%ymm0,%%ymm0           \n"
-    "vpmaddubsw %%ymm5,%%ymm1,%%ymm1           \n"
-    "vpaddw     %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpsubb     %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpsubb     %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm1,%%ymm5,%%ymm1           \n"
+    "vpmaddubsw %%ymm0,%%ymm5,%%ymm0           \n"
     "vpaddw     %%ymm4,%%ymm1,%%ymm1           \n"
-    "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
-    "vpsrlw     $0x7,%%ymm1,%%ymm1             \n"
+    "vpaddw     %%ymm4,%%ymm0,%%ymm0           \n"
+    "vpsrlw     $0x8,%%ymm1,%%ymm1             \n"
+    "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
     MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
     "lea       " MEMLEA(0x20,1) ",%1           \n"

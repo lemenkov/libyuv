@@ -5566,24 +5566,22 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
-    shr        eax, 1
     // Dispatch to specialized filters if applicable.
     cmp        eax, 0
-    je         xloop100  // 0 / 128.  Blend 100 / 0.
+    je         xloop100  // 0 / 256.  Blend 100 / 0.
     sub        edi, esi
-    cmp        eax, 64
-    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
+    cmp        eax, 128
+    je         xloop50   // 128 /256 is 0.50.  Blend 50 / 50.
 
-    vmovd      xmm0, eax  // high fraction 0..127
+    vmovd      xmm0, eax  // high fraction 0..255
     neg        eax
-    add        eax, 128
-    vmovd      xmm5, eax  // low fraction 128..1
+    add        eax, 256
+    vmovd      xmm5, eax  // low fraction 256..1
     vpunpcklbw xmm5, xmm5, xmm0
     vpunpcklwd xmm5, xmm5, xmm5
-    vpxor      ymm0, ymm0, ymm0
-    vpermd     ymm5, ymm0, ymm5
+    vbroadcastss ymm5, xmm5
 
-    mov        eax, 0x00400040  // 64 for rounding.
+    mov        eax, 0x80808080  // 128b for bias and rounding.
     vmovd      xmm4, eax
     vbroadcastss ymm4, xmm4
 
@@ -5591,13 +5589,15 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
     vmovdqu    ymm0, [esi]
     vmovdqu    ymm2, [esi + edx]
     vpunpckhbw ymm1, ymm0, ymm2  // mutates
-    vpunpcklbw ymm0, ymm0, ymm2  // mutates
-    vpmaddubsw ymm0, ymm0, ymm5
-    vpmaddubsw ymm1, ymm1, ymm5
+    vpunpcklbw ymm0, ymm0, ymm2
+    vpsubb     ymm1, ymm1, ymm4  // bias to signed image
+    vpsubb     ymm0, ymm0, ymm4
+    vpmaddubsw ymm1, ymm5, ymm1
+    vpmaddubsw ymm0, ymm5, ymm0
+    vpaddw     ymm1, ymm1, ymm4  // unbias and round
     vpaddw     ymm0, ymm0, ymm4
-    vpaddw     ymm1, ymm1, ymm4
-    vpsrlw     ymm0, ymm0, 7
-    vpsrlw     ymm1, ymm1, 7
+    vpsrlw     ymm1, ymm1, 8
+    vpsrlw     ymm0, ymm0, 8
     vpackuswb  ymm0, ymm0, ymm1  // unmutates
     vmovdqu    [esi + edi], ymm0
     lea        esi, [esi + 32]
@@ -5629,6 +5629,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
 #endif  // HAS_INTERPOLATEROW_AVX2
 
 // Bilinear filter 16x2 -> 16x1
+// TODO(fbarchard): Consider allowing 256 using memcpy.
 __declspec(naked)
 void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
                           ptrdiff_t src_stride, int dst_width,
@@ -5636,28 +5637,27 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
   __asm {
     push       esi
     push       edi
+
     mov        edi, [esp + 8 + 4]   // dst_ptr
     mov        esi, [esp + 8 + 8]   // src_ptr
     mov        edx, [esp + 8 + 12]  // src_stride
     mov        ecx, [esp + 8 + 16]  // dst_width
     mov        eax, [esp + 8 + 20]  // source_y_fraction (0..255)
     sub        edi, esi
-    shr        eax, 1
     // Dispatch to specialized filters if applicable.
     cmp        eax, 0
-    je         xloop100  // 0 / 128.  Blend 100 / 0.
-    cmp        eax, 64
-    je         xloop50   // 64 / 128 is 0.50.  Blend 50 / 50.
+    je         xloop100  // 0 /256.  Blend 100 / 0.
+    cmp        eax, 128
+    je         xloop50   // 128 / 256 is 0.50.  Blend 50 / 50.
 
-    movd       xmm0, eax  // high fraction 0..127
+    movd       xmm0, eax  // high fraction 0..255
     neg        eax
-    add        eax, 128
-    movd       xmm5, eax  // low fraction 128..1
+    add        eax, 256
+    movd       xmm5, eax  // low fraction 255..1
     punpcklbw  xmm5, xmm0
     punpcklwd  xmm5, xmm5
     pshufd     xmm5, xmm5, 0
-
-    mov        eax, 0x00400040  // 64 for rounding.
+    mov        eax, 0x80808080  // 128 for biasing image to signed.
     movd       xmm4, eax
     pshufd     xmm4, xmm4, 0x00
 
@@ -5667,14 +5667,18 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     movdqu     xmm1, xmm0
     punpcklbw  xmm0, xmm2
     punpckhbw  xmm1, xmm2
-    pmaddubsw  xmm0, xmm5
-    pmaddubsw  xmm1, xmm5
-    paddw      xmm0, xmm4
-    paddw      xmm1, xmm4
-    psrlw      xmm0, 7
-    psrlw      xmm1, 7
-    packuswb   xmm0, xmm1
-    movdqu     [esi + edi], xmm0
+    psubb      xmm0, xmm4  // bias image by -128
+    psubb      xmm1, xmm4
+    movdqa     xmm2, xmm5
+    movdqa     xmm3, xmm5
+    pmaddubsw  xmm2, xmm0
+    pmaddubsw  xmm3, xmm1
+    paddw      xmm2, xmm4
+    paddw      xmm3, xmm4
+    psrlw      xmm2, 8
+    psrlw      xmm3, 8
+    packuswb   xmm2, xmm3
+    movdqu     [esi + edi], xmm2
     lea        esi, [esi + 16]
     sub        ecx, 16
     jg         xloop
