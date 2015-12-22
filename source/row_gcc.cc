@@ -4880,7 +4880,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
 
     "vmovd      %3,%%xmm0                      \n"
     "neg        %3                             \n"
-    "add        $0x80,%3                       \n"
+    "add        $0x100,%3                      \n"
     "vmovd      %3,%%xmm5                      \n"
     "vpunpcklbw %%xmm0,%%xmm5,%%xmm5           \n"
     "vpunpcklwd %%xmm5,%%xmm5,%%xmm5           \n"
