@@ -4871,11 +4871,10 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) {
   asm volatile (
-    "shr       %3                              \n"
     "cmp       $0x0,%3                         \n"
     "je        100f                            \n"
     "sub       %1,%0                           \n"
-    "cmp       $0x40,%3                        \n"
+    "cmp       $0x80,%3                        \n"
     "je        50f                             \n"
 
     "vmovd      %3,%%xmm0                      \n"
