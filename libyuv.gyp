@@ -34,6 +34,8 @@
     'libyuv_disable_jpeg%': 0,
     # 'chromium_code' treats libyuv as internal and increases warning level.
     'chromium_code': 1,
+    # clang compiler default variable usable by other apps that include libyuv.
+    'clang%': 0,
     # Link-Time Optimizations.
     'use_lto%': 0,
     'build_neon': 0,
