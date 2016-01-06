@@ -677,7 +677,7 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 
 #if defined(HAS_BLENDPLANEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-  BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
+    BlendPlaneRow = BlendPlaneRow_Any_SSSE3;
     if (IS_ALIGNED(halfwidth, 8)) {
       BlendPlaneRow = BlendPlaneRow_SSSE3;
     }
@@ -685,33 +685,45 @@ int I420Blend(const uint8* src_y0, int src_stride_y0,
 #endif
 #if defined(HAS_BLENDPLANEROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-  BlendPlaneRow = BlendPlaneRow_Any_AVX2;
+    BlendPlaneRow = BlendPlaneRow_Any_AVX2;
     if (IS_ALIGNED(halfwidth, 32)) {
       BlendPlaneRow = BlendPlaneRow_AVX2;
     }
   }
 #endif
+  if (!IS_ALIGNED(width, 2)) {
+    ScaleRowDown2 = ScaleRowDown2Box_Odd_C;
+  }
 #if defined(HAS_SCALEROWDOWN2_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Any_NEON;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      ScaleRowDown2 = ScaleRowDown2Box_NEON;
+    ScaleRowDown2 = ScaleRowDown2Box_Odd_NEON;
+    if (IS_ALIGNED(width, 2)) {
+      ScaleRowDown2 = ScaleRowDown2Box_Any_NEON;
+      if (IS_ALIGNED(halfwidth, 16)) {
+        ScaleRowDown2 = ScaleRowDown2Box_NEON;
+      }
     }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Any_SSSE3;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      ScaleRowDown2 = ScaleRowDown2Box_SSSE3;
+    ScaleRowDown2 = ScaleRowDown2Box_Odd_SSSE3;
+    if (IS_ALIGNED(width, 2)) {
+      ScaleRowDown2 = ScaleRowDown2Box_Any_SSSE3;
+      if (IS_ALIGNED(halfwidth, 16)) {
+        ScaleRowDown2 = ScaleRowDown2Box_SSSE3;
+      }
     }
   }
 #endif
 #if defined(HAS_SCALEROWDOWN2_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
-      ScaleRowDown2 = ScaleRowDown2Box_AVX2;
+    ScaleRowDown2 = ScaleRowDown2Box_Odd_AVX2;
+    if (IS_ALIGNED(width, 2)) {
+      ScaleRowDown2 = ScaleRowDown2Box_Any_AVX2;
+      if (IS_ALIGNED(halfwidth, 32)) {
+        ScaleRowDown2 = ScaleRowDown2Box_AVX2;
+      }
     }
   }
 #endif
