@@ -17,19 +17,6 @@
     'GCC_PRECOMPILE_PREFIX_HEADER': 'NO',
   },
   'variables': {
-    'variables': {
-      # Disable use of sysroot for Linux. It's enabled by default in Chromium,
-      # but it currently lacks the libudev-dev package.
-      # TODO(kjellander): Remove when crbug.com/561584 is fixed.
-      'conditions': [
-         ['target_arch=="ia32" or target_arch=="x64"', {
-           'use_sysroot': 0,
-         }, {
-           'use_sysroot%': 1,
-         }],
-       ],
-    },
-    'use_sysroot%': '<(use_sysroot)',
     'use_system_libjpeg%': 0,
     'libyuv_disable_jpeg%': 0,
     # 'chromium_code' treats libyuv as internal and increases warning level.

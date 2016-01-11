@@ -1682,12 +1682,12 @@ TEST_F(LibYUVConvertTest, NAME) {                                              \
 TESTPTOB(TestYUY2ToNV12, YUY2ToI420, YUY2ToNV12)
 TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
 
-#define TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,         \
+#define TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,  \
                        W1280, N, NEG, OFF, FMT_C, BPP_C)                       \
 TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
-  const int kStrideB = kWidth * BPP_B;                                         \
+  const int kStrideB = SUBSAMPLE(kWidth, SUB_B) * BPP_B;                       \
   const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                          \
   const int kSizeUV = kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y);               \
   align_buffer_64(src_y, kWidth * kHeight + OFF);                              \
@@ -1735,58 +1735,56 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
   free_aligned_buffer_64(dst_argb_bc);                                         \
 }
 
-#define TESTPLANARTOE(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,          \
+#define TESTPLANARTOE(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,   \
                       FMT_C, BPP_C)                                            \
-    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,      \
         benchmark_width_ - 4, _Any, +, 0, FMT_C, BPP_C)                        \
-    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,      \
         benchmark_width_, _Unaligned, +, 1, FMT_C, BPP_C)                      \
-    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,      \
         benchmark_width_, _Invert, -, 0, FMT_C, BPP_C)                         \
-    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,             \
+    TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,      \
         benchmark_width_, _Opt, +, 0, FMT_C, BPP_C)
 
-TESTPLANARTOE(I420, 2, 2, ARGB, 4, ABGR, 4)
-TESTPLANARTOE(J420, 2, 2, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(J420, 2, 2, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(H420, 2, 2, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, BGRA, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RGBA, 4, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RGB24, 3, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, RAW, 3, RGB24, 3)
-TESTPLANARTOE(I420, 2, 2, RGB24, 3, RAW, 3)
-TESTPLANARTOE(I420, 2, 2, ARGB, 4, RAW, 3)
-TESTPLANARTOE(I420, 2, 2, RAW, 3, ARGB, 4)
-TESTPLANARTOE(I420, 2, 2, ARGB, 4, RGB565, 2)
-TESTPLANARTOE(I420, 2, 2, ARGB, 4, ARGB1555, 2)
-TESTPLANARTOE(I420, 2, 2, ARGB, 4, ARGB4444, 2)
-TESTPLANARTOE(I422, 2, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(J422, 2, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(J422, 2, 1, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(H422, 2, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(H422, 2, 1, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(I422, 2, 1, BGRA, 4, ARGB, 4)
-TESTPLANARTOE(I422, 2, 1, ABGR, 4, ARGB, 4)
-TESTPLANARTOE(I422, 2, 1, RGBA, 4, ARGB, 4)
-TESTPLANARTOE(I411, 4, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(I444, 1, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(J444, 1, 1, ARGB, 4, ARGB, 4)
-TESTPLANARTOE(I444, 1, 1, ABGR, 4, ARGB, 4)
-// TESTPLANARTOE(I420, 2, 2, YUY2, 2, ARGB, 4)
-// TESTPLANARTOE(I420, 2, 2, UYVY, 2, ARGB, 4)
-TESTPLANARTOE(I422, 2, 1, YUY2, 2, ARGB, 4)
-TESTPLANARTOE(I422, 2, 1, UYVY, 2, ARGB, 4)
-// TESTPLANARTOE(I420, 2, 2, ARGB, 4, I400, 1)
-// TESTPLANARTOE(J420, 2, 2, ARGB, 4, J400, 1)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ABGR, 4)
+TESTPLANARTOE(J420, 2, 2, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(J420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(H420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, BGRA, 1, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, RGBA, 1, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, RAW, 1, 3, RGB24, 3)
+TESTPLANARTOE(I420, 2, 2, RGB24, 1, 3, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, RAW, 3)
+TESTPLANARTOE(I420, 2, 2, RAW, 1, 3, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, RGB565, 2)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ARGB1555, 2)
+TESTPLANARTOE(I420, 2, 2, ARGB, 1, 4, ARGB4444, 2)
+TESTPLANARTOE(I422, 2, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(J422, 2, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(J422, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(H422, 2, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(H422, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(I422, 2, 1, BGRA, 1, 4, ARGB, 4)
+TESTPLANARTOE(I422, 2, 1, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(I422, 2, 1, RGBA, 1, 4, ARGB, 4)
+TESTPLANARTOE(I411, 4, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(I444, 1, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(J444, 1, 1, ARGB, 1, 4, ARGB, 4)
+TESTPLANARTOE(I444, 1, 1, ABGR, 1, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, YUY2, 2, 4, ARGB, 4)
+TESTPLANARTOE(I420, 2, 2, UYVY, 2, 4, ARGB, 4)
+TESTPLANARTOE(I422, 2, 1, YUY2, 2, 4, ARGB, 4)
+TESTPLANARTOE(I422, 2, 1, UYVY, 2, 4, ARGB, 4)
 
-#define TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,        \
+#define TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B, \
                        W1280, N, NEG, OFF, FMT_C, BPP_C, ATTEN)                \
 TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
-  const int kStrideB = kWidth * BPP_B;                                         \
+  const int kStrideB = SUBSAMPLE(kWidth, SUB_B) * BPP_B;                       \
   const int kSizeUV =                                                          \
     SUBSAMPLE(kWidth, SUBSAMP_X) * SUBSAMPLE(kHeight, SUBSAMP_Y);              \
   align_buffer_64(src_y, kWidth * kHeight + OFF);                              \
@@ -1840,20 +1838,20 @@ TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {                \
   free_aligned_buffer_64(dst_argb_bc);                                         \
 }
 
-#define TESTQPLANARTOE(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,         \
+#define TESTQPLANARTOE(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,  \
                       FMT_C, BPP_C)                                            \
-    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,     \
         benchmark_width_ - 4, _Any, +, 0, FMT_C, BPP_C, 0)                     \
-    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,     \
         benchmark_width_, _Unaligned, +, 1, FMT_C, BPP_C, 0)                   \
-    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,     \
         benchmark_width_, _Invert, -, 0, FMT_C, BPP_C, 0)                      \
-    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+    TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,     \
         benchmark_width_, _Opt, +, 0, FMT_C, BPP_C, 0)                         \
-      TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,          \
+      TESTQPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B,   \
           benchmark_width_, _Premult, +, 0, FMT_C, BPP_C, 1)
 
-TESTQPLANARTOE(I420Alpha, 2, 2, ARGB, 4, ABGR, 4)
-TESTQPLANARTOE(I420Alpha, 2, 2, ABGR, 4, ARGB, 4)
+TESTQPLANARTOE(I420Alpha, 2, 2, ARGB, 1, 4, ABGR, 4)
+TESTQPLANARTOE(I420Alpha, 2, 2, ABGR, 1, 4, ARGB, 4)
 
 }  // namespace libyuv
