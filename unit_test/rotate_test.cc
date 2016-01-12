@@ -262,28 +262,28 @@ TEST_F(LibYUVRotateTest, DISABLED_NV12Rotate270_Odd) {
                  disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, NV12Rotate0_Inverted) {
+TEST_F(LibYUVRotateTest, NV12Rotate0_Invert) {
   NV12TestRotate(benchmark_width_, -benchmark_height_,
                  benchmark_width_, benchmark_height_,
                  kRotate0, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, NV12Rotate90_Inverted) {
+TEST_F(LibYUVRotateTest, NV12Rotate90_Invert) {
   NV12TestRotate(benchmark_width_, -benchmark_height_,
                  benchmark_height_, benchmark_width_,
                  kRotate90, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, NV12Rotate180_Inverted) {
+TEST_F(LibYUVRotateTest, NV12Rotate180_Invert) {
   NV12TestRotate(benchmark_width_, -benchmark_height_,
                  benchmark_width_, benchmark_height_,
                  kRotate180, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_);
 }
 
-TEST_F(LibYUVRotateTest, NV12Rotate270_Inverted) {
+TEST_F(LibYUVRotateTest, NV12Rotate270_Invert) {
   NV12TestRotate(benchmark_width_, -benchmark_height_,
                  benchmark_height_, benchmark_width_,
                  kRotate270, benchmark_iterations_,

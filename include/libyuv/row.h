@@ -105,17 +105,6 @@ extern "C" {
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
 #define HAS_I400TOARGBROW_SSE2
-// The following functions fail on gcc/clang 32 bit with fpic and framepointer.
-// caveat: clangcl uses row_win.cc which works.
-#if defined(NDEBUG) || !(defined(_DEBUG) && defined(__i386__)) || \
-   !defined(__i386__) || defined(_MSC_VER)
-// TODO(fbarchard): fix build error on x86 debug
-// https://code.google.com/p/libyuv/issues/detail?id=524
-#define HAS_I411TOARGBROW_SSSE3
-// TODO(fbarchard): fix build error on android_full_debug=1
-// https://code.google.com/p/libyuv/issues/detail?id=517
-#define HAS_I422ALPHATOARGBROW_SSSE3
-#endif
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
@@ -129,7 +118,6 @@ extern "C" {
 #define HAS_J422TOARGBROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSSE3
-#define HAS_MIRRORUVROW_SSSE3
 #define HAS_MIRRORUVROW_SSSE3
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV12TORGB565ROW_SSSE3
@@ -173,6 +161,7 @@ extern "C" {
 #define HAS_ARGBSHADEROW_SSE2
 #define HAS_ARGBSUBTRACTROW_SSE2
 #define HAS_ARGBUNATTENUATEROW_SSE2
+#define HAS_BLENDPLANEROW_SSSE3
 #define HAS_COMPUTECUMULATIVESUMROW_SSE2
 #define HAS_CUMULATIVESUMTOAVERAGEROW_SSE2
 #define HAS_INTERPOLATEROW_SSSE3
@@ -182,7 +171,18 @@ extern "C" {
 #define HAS_SOBELXROW_SSE2
 #define HAS_SOBELXYROW_SSE2
 #define HAS_SOBELYROW_SSE2
-#define HAS_BLENDPLANEROW_SSSE3
+
+// The following functions fail on gcc/clang 32 bit with fpic and framepointer.
+// caveat: clangcl uses row_win.cc which works.
+#if defined(NDEBUG) || !(defined(_DEBUG) && defined(__i386__)) || \
+   !defined(__i386__) || defined(_MSC_VER)
+// TODO(fbarchard): fix build error on x86 debug
+// https://code.google.com/p/libyuv/issues/detail?id=524
+#define HAS_I411TOARGBROW_SSSE3
+// TODO(fbarchard): fix build error on android_full_debug=1
+// https://code.google.com/p/libyuv/issues/detail?id=517
+#define HAS_I422ALPHATOARGBROW_SSSE3
+#endif
 #endif
 
 // The following are available on all x86 platforms, but
@@ -264,7 +264,6 @@ extern "C" {
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
-#define HAS_I422ALPHATOARGBROW_NEON
 #define HAS_ABGRTOUVROW_NEON
 #define HAS_ABGRTOYROW_NEON
 #define HAS_ARGB1555TOARGBROW_NEON
@@ -292,6 +291,7 @@ extern "C" {
 #define HAS_COPYROW_NEON
 #define HAS_I400TOARGBROW_NEON
 #define HAS_I411TOARGBROW_NEON
+#define HAS_I422ALPHATOARGBROW_NEON
 #define HAS_I422TOARGB1555ROW_NEON
 #define HAS_I422TOARGB4444ROW_NEON
 #define HAS_I422TOARGBROW_NEON

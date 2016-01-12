@@ -1330,7 +1330,9 @@ TEST_F(LibYUVPlanarTest, I420Blend_Unaligned) {
   TestI420Blend(benchmark_width_, benchmark_height_, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 1);
 }
-TEST_F(LibYUVPlanarTest, I420Blend_Any) {
+
+// TODO(fbarchard): DISABLED because _Any uses C.  Avoid C and re-enable.
+TEST_F(LibYUVPlanarTest, DISABLED_I420Blend_Any) {
   TestI420Blend(benchmark_width_ - 4, benchmark_height_, benchmark_iterations_,
                  disable_cpu_flags_, benchmark_cpu_info_, +1, 0);
 }
