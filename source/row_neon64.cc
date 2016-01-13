@@ -1477,50 +1477,6 @@ void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "movi       v24.8h, #47, lsl #0  \n"  /* VG coefficient (-0.7344) / 2  */  \
     "movi       v25.16b, #0x80       \n"  /* 128.5 (0x8080 in 16-bit)      */
 
-// 16x1 pixels -> 8x1.  width is number of argb pixels. e.g. 16.
-#ifdef HAS_ARGBTOUV422ROW_NEON
-void ARGBToUV422Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-                         int width) {
-  asm volatile (
-    RGBTOUV_SETUP_REG
-  "1:                                          \n"
-    MEMACCESS(0)
-    "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
-
-    "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
-    "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
-    "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
-
-    "subs       %w3, %w3, #16                  \n"  // 16 processed per loop.
-    "mul        v3.8h, v0.8h, v20.8h           \n"  // B
-    "mls        v3.8h, v1.8h, v21.8h           \n"  // G
-    "mls        v3.8h, v2.8h, v22.8h           \n"  // R
-    "add        v3.8h, v3.8h, v25.8h           \n"  // +128 -> unsigned
-
-    "mul        v4.8h, v2.8h, v20.8h           \n"  // R
-    "mls        v4.8h, v1.8h, v24.8h           \n"  // G
-    "mls        v4.8h, v0.8h, v23.8h           \n"  // B
-    "add        v4.8h, v4.8h, v25.8h           \n"  // +128 -> unsigned
-
-    "uqshrn     v0.8b, v3.8h, #8               \n"  // 16 bit to 8 bit U
-    "uqshrn     v1.8b, v4.8h, #8               \n"  // 16 bit to 8 bit V
-
-    MEMACCESS(1)
-    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels U.
-    MEMACCESS(2)
-    "st1        {v1.8b}, [%2], #8              \n"  // store 8 pixels V.
-    "b.gt       1b                             \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_u),     // %1
-    "+r"(dst_v),     // %2
-    "+r"(width)        // %3
-  :
-  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-    "v20", "v21", "v22", "v23", "v24", "v25"
-  );
-}
-#endif  // HAS_ARGBTOUV422ROW_NEON
-
 // 32x1 pixels -> 8x1.  width is number of argb pixels. e.g. 32.
 #ifdef HAS_ARGBTOUV411ROW_NEON
 void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,

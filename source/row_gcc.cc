@@ -1144,59 +1144,6 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
 }
 #endif  // HAS_ARGBTOUV444ROW_SSSE3
 
-#ifdef HAS_ARGBTOUV422ROW_SSSE3
-void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
-                          uint8* dst_u, uint8* dst_v, int width) {
-  asm volatile (
-    "movdqa    %4,%%xmm3                       \n"
-    "movdqa    %5,%%xmm4                       \n"
-    "movdqa    %6,%%xmm5                       \n"
-    "sub       %1,%2                           \n"
-    LABELALIGN
-  "1:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
-    "lea       " MEMLEA(0x40,0) ",%0           \n"
-    "movdqa    %%xmm0,%%xmm7                   \n"
-    "shufps    $0x88,%%xmm1,%%xmm0             \n"
-    "shufps    $0xdd,%%xmm1,%%xmm7             \n"
-    "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqa    %%xmm2,%%xmm7                   \n"
-    "shufps    $0x88,%%xmm6,%%xmm2             \n"
-    "shufps    $0xdd,%%xmm6,%%xmm7             \n"
-    "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqa    %%xmm0,%%xmm1                   \n"
-    "movdqa    %%xmm2,%%xmm6                   \n"
-    "pmaddubsw %%xmm4,%%xmm0                   \n"
-    "pmaddubsw %%xmm4,%%xmm2                   \n"
-    "pmaddubsw %%xmm3,%%xmm1                   \n"
-    "pmaddubsw %%xmm3,%%xmm6                   \n"
-    "phaddw    %%xmm2,%%xmm0                   \n"
-    "phaddw    %%xmm6,%%xmm1                   \n"
-    "psraw     $0x8,%%xmm0                     \n"
-    "psraw     $0x8,%%xmm1                     \n"
-    "packsswb  %%xmm1,%%xmm0                   \n"
-    "paddb     %%xmm5,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
-    "lea       " MEMLEA(0x8,1) ",%1            \n"
-    "sub       $0x10,%3                        \n"
-    "jg        1b                              \n"
-  : "+r"(src_argb0),       // %0
-    "+r"(dst_u),           // %1
-    "+r"(dst_v),           // %2
-    "+rm"(width)           // %3
-  : "m"(kARGBToV),  // %4
-    "m"(kARGBToU),  // %5
-    "m"(kAddUV128)  // %6
-  : "memory", "cc", NACL_R14
-    "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
-  );
-}
-#endif  // HAS_ARGBTOUV422ROW_SSSE3
-
 void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int width) {
   asm volatile (
     "movdqa    %4,%%xmm5                       \n"

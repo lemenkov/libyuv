@@ -1648,64 +1648,6 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb0,
 }
 
 __declspec(naked)
-void ARGBToUV422Row_SSSE3(const uint8* src_argb0,
-                          uint8* dst_u, uint8* dst_v, int width) {
-  __asm {
-    push       edi
-    mov        eax, [esp + 4 + 4]   // src_argb
-    mov        edx, [esp + 4 + 8]   // dst_u
-    mov        edi, [esp + 4 + 12]  // dst_v
-    mov        ecx, [esp + 4 + 16]  // width
-    movdqa     xmm5, xmmword ptr kAddUV128
-    movdqa     xmm6, xmmword ptr kARGBToV
-    movdqa     xmm7, xmmword ptr kARGBToU
-    sub        edi, edx             // stride from u to v
-
- convertloop:
-    /* step 1 - subsample 16x2 argb pixels to 8x1 */
-    movdqu     xmm0, [eax]
-    movdqu     xmm1, [eax + 16]
-    movdqu     xmm2, [eax + 32]
-    movdqu     xmm3, [eax + 48]
-    lea        eax,  [eax + 64]
-    movdqa     xmm4, xmm0
-    shufps     xmm0, xmm1, 0x88
-    shufps     xmm4, xmm1, 0xdd
-    pavgb      xmm0, xmm4
-    movdqa     xmm4, xmm2
-    shufps     xmm2, xmm3, 0x88
-    shufps     xmm4, xmm3, 0xdd
-    pavgb      xmm2, xmm4
-
-    // step 2 - convert to U and V
-    // from here down is very similar to Y code except
-    // instead of 16 different pixels, its 8 pixels of U and 8 of V
-    movdqa     xmm1, xmm0
-    movdqa     xmm3, xmm2
-    pmaddubsw  xmm0, xmm7  // U
-    pmaddubsw  xmm2, xmm7
-    pmaddubsw  xmm1, xmm6  // V
-    pmaddubsw  xmm3, xmm6
-    phaddw     xmm0, xmm2
-    phaddw     xmm1, xmm3
-    psraw      xmm0, 8
-    psraw      xmm1, 8
-    packsswb   xmm0, xmm1
-    paddb      xmm0, xmm5            // -> unsigned
-
-    // step 3 - store 8 U and 8 V values
-    movlps     qword ptr [edx], xmm0 // U
-    movhps     qword ptr [edx + edi], xmm0 // V
-    lea        edx, [edx + 8]
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        edi
-    ret
-  }
-}
-
-__declspec(naked)
 void BGRAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width) {
   __asm {

@@ -766,8 +766,10 @@ TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 4)
 // arm version subsamples by summing 4 pixels then multiplying by matrix with
 // 4x smaller coefficients which are rounded to nearest integer.
 TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 4)
+TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, 4)
 #else
 TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 0)
+TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, 0)
 #endif
 TESTATOPLANAR(BGRA, 4, 1, I420, 2, 2, 4)
 TESTATOPLANAR(ABGR, 4, 1, I420, 2, 2, 4)
