@@ -16,7 +16,7 @@ if (is_win) {
 }
 
 config("gflags_config") {
- include_dirs = [
+  include_dirs = [
     "$gflags_gen_arch_root/include",  # For configured files.
     "src",  # For everything else.
   ]
@@ -28,6 +28,13 @@ config("gflags_config") {
     "GFLAGS_DLL_DECLARE_FLAG=",
     "GFLAGS_DLL_DEFINE_FLAG=",
   ]
+
+  # GN orders flags on a target before flags from configs. The default config
+  # adds -Wall, and this flag have to be after -Wall -- so they need to
+  # come from a config and can't be on the target directly.
+  if (is_clang) {
+    cflags = [ "-Wno-unused-local-typedef" ]
+  }
 }
 
 source_set("gflags") {
@@ -45,9 +52,7 @@ source_set("gflags") {
     ]
   }
 
-  include_dirs = [
-    "$gflags_gen_arch_root/include/private",  # For config.h
-  ]
+  include_dirs = [ "$gflags_gen_arch_root/include/private" ]  # For config.h
 
   public_configs = [ ":gflags_config" ]
 
@@ -60,3 +65,4 @@ source_set("gflags") {
     configs -= [ "//build/config/clang:extra_warnings" ]
   }
 }
+

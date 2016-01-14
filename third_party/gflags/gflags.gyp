@@ -76,8 +76,10 @@
           },
         }],
         ['clang==1', {
+          'cflags': ['-Wno-unused-local-typedef',],
           'cflags!': ['-Wheader-hygiene',],
           'xcode_settings': {
+            'WARNING_CFLAGS': ['-Wno-unused-local-typedef',],
             'WARNING_CFLAGS!': ['-Wheader-hygiene',],
           },
         }],
@@ -85,3 +87,4 @@
     },
   ],
 }
+
