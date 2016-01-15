@@ -445,7 +445,7 @@ int I420ToNV21(const uint8* src_y, int src_stride_y,
   return I420ToNV12(src_y, src_stride_y,
                     src_v, src_stride_v,
                     src_u, src_stride_u,
-                    dst_y, src_stride_y,
+                    dst_y, dst_stride_y,
                     dst_vu, dst_stride_vu,
                     width, height);
 }
