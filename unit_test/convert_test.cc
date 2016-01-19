@@ -790,12 +790,12 @@ TESTATOPLANAR(UYVY, 2, 1, I422, 2, 1, 2)
 TESTATOPLANAR(I400, 1, 1, I420, 2, 2, 2)
 TESTATOPLANAR(J400, 1, 1, J420, 2, 2, 2)
 
-#define TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,       \
-                       W1280, N, NEG, OFF)                                     \
+#define TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,\
+                         W1280, N, NEG, OFF)                                   \
 TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
-  const int kStride = (kWidth * 8 * BPP_A + 7) / 8;                            \
+  const int kStride = SUBSAMPLE(kWidth, SUB_A) * BPP_A;                        \
   const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                          \
   align_buffer_64(src_argb, kStride * kHeight + OFF);                          \
   align_buffer_64(dst_y_c, kWidth * kHeight);                                  \
@@ -849,20 +849,20 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
   free_aligned_buffer_64(src_argb);                                            \
 }
 
-#define TESTATOBIPLANAR(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)        \
-    TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+#define TESTATOBIPLANAR(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y) \
+    TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,    \
                      benchmark_width_ - 4, _Any, +, 0)                         \
-    TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+    TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,    \
                      benchmark_width_, _Unaligned, +, 1)                       \
-    TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+    TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,    \
                      benchmark_width_, _Invert, -, 0)                          \
-    TESTATOBIPLANARI(FMT_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+    TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,    \
                      benchmark_width_, _Opt, +, 0)
 
-TESTATOBIPLANAR(ARGB, 4, NV12, 2, 2)
-TESTATOBIPLANAR(ARGB, 4, NV21, 2, 2)
-TESTATOBIPLANAR(YUY2, 2, NV12, 2, 2)
-TESTATOBIPLANAR(UYVY, 2, NV12, 2, 2)
+TESTATOBIPLANAR(ARGB, 1, 4, NV12, 2, 2)
+TESTATOBIPLANAR(ARGB, 1, 4, NV21, 2, 2)
+TESTATOBIPLANAR(YUY2, 2, 4, NV12, 2, 2)
+TESTATOBIPLANAR(UYVY, 2, 4, NV12, 2, 2)
 
 #define TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A,                            \
                   FMT_B, BPP_B, STRIDE_B, HEIGHT_B,                            \

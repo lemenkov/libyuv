@@ -2424,6 +2424,9 @@ int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// TODO(fbarchard): Consider if width is even Y channel can be split
+// directly. A SplitUVRow_Odd function could copy the remaining chroma.
+
 LIBYUV_API
 int YUY2ToNV12(const uint8* src_yuy2, int src_stride_yuy2,
                uint8* dst_y, int dst_stride_y,
@@ -2498,22 +2501,24 @@ int YUY2ToNV12(const uint8* src_yuy2, int src_stride_yuy2,
 
   {
     int awidth = halfwidth * 2;
-    // 2 rows of uv
-    align_buffer_64(rows, awidth * 2);
+    // row of y and 2 rows of uv
+    align_buffer_64(rows, awidth * 3);
 
     for (y = 0; y < height - 1; y += 2) {
       // Split Y from UV.
-      SplitUVRow(src_yuy2, dst_y, rows, awidth);
-      SplitUVRow(src_yuy2 + src_stride_yuy2, dst_y + dst_stride_y,
-                 rows + awidth, awidth);
-      InterpolateRow(dst_uv, rows, awidth, awidth, 128);
+      SplitUVRow(src_yuy2, rows, rows + awidth, awidth);
+      memcpy(dst_y, rows, width);
+      SplitUVRow(src_yuy2 + src_stride_yuy2, rows, rows + awidth * 2, awidth);
+      memcpy(dst_y + dst_stride_y, rows, width);
+      InterpolateRow(dst_uv, rows + awidth, awidth, awidth, 128);
       src_yuy2 += src_stride_yuy2 * 2;
       dst_y += dst_stride_y * 2;
       dst_uv += dst_stride_uv;
     }
     if (height & 1) {
       // Split Y from UV.
-      SplitUVRow(src_yuy2, dst_y, dst_uv, awidth);
+      SplitUVRow(src_yuy2, rows, dst_uv, awidth);
+      memcpy(dst_y, rows, width);
     }
     free_aligned_buffer_64(rows);
   }
@@ -2594,22 +2599,24 @@ int UYVYToNV12(const uint8* src_uyvy, int src_stride_uyvy,
 
   {
     int awidth = halfwidth * 2;
-    // 2 rows of uv
-    align_buffer_64(rows, awidth * 2);
+    // row of y and 2 rows of uv
+    align_buffer_64(rows, awidth * 3);
 
     for (y = 0; y < height - 1; y += 2) {
       // Split Y from UV.
-      SplitUVRow(src_uyvy, rows, dst_y, awidth);
-      SplitUVRow(src_uyvy + src_stride_uyvy, rows + awidth,
-                 dst_y + dst_stride_y, awidth);
-      InterpolateRow(dst_uv, rows, awidth, awidth, 128);
+      SplitUVRow(src_uyvy, rows + awidth, rows, awidth);
+      memcpy(dst_y, rows, width);
+      SplitUVRow(src_uyvy + src_stride_uyvy, rows + awidth * 2, rows, awidth);
+      memcpy(dst_y + dst_stride_y, rows, width);
+      InterpolateRow(dst_uv, rows + awidth, awidth, awidth, 128);
       src_uyvy += src_stride_uyvy * 2;
       dst_y += dst_stride_y * 2;
       dst_uv += dst_stride_uv;
     }
     if (height & 1) {
       // Split Y from UV.
-      SplitUVRow(src_uyvy, dst_uv, dst_y, awidth);
+      SplitUVRow(src_uyvy, dst_uv, rows, awidth);
+      memcpy(dst_y, rows, width);
     }
     free_aligned_buffer_64(rows);
   }
