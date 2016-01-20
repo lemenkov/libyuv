@@ -1348,7 +1348,7 @@ TEST_F(LibYUVConvertTest, MJPGToARGB) {
 
 #endif  // HAVE_JPEG
 
-TEST_F(LibYUVConvertTest, CropNV12) {
+TEST_F(LibYUVConvertTest, NV12Crop) {
   const int SUBSAMP_X = 2;
   const int SUBSAMP_Y = 2;
   const int kWidth = benchmark_width_;
