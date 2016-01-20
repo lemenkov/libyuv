@@ -81,7 +81,19 @@ namespace libyuv {
     }                                                                          \
     p += HN;                                                                   \
   }                                                                            \
-                                                                               \
+  if ((benchmark_height_ & 1) && HS == 2) {                                    \
+    for (int x = 0; x < benchmark_width_ - 1; x += 2) {                        \
+      uint8 r = static_cast<uint8>(fastrand());                                \
+      p[0] = r;                                                                \
+      p[1] = r;                                                                \
+      p += 2;                                                                  \
+    }                                                                          \
+    if (benchmark_width_ & 1) {                                                \
+      uint8 r = static_cast<uint8>(fastrand());                                \
+      p[0] = r;                                                                \
+      p += 1;                                                                  \
+    }                                                                          \
+  }                                                                            \
   /* Start with YUV converted to ARGB. */                                      \
   YUVTOARGB(orig_y, benchmark_width_,                                          \
             orig_u, (benchmark_width_ + 1) / 2,                                \
