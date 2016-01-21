@@ -70,7 +70,6 @@ set(ly_unittest_sources
   ${ly_base_dir}/unit_test/scale_test.cc
   ${ly_base_dir}/unit_test/unit_test.cc
   ${ly_base_dir}/unit_test/video_common_test.cc
-  ${ly_base_dir}/unit_test/version_test.cc
 )
 
 set(ly_header_files

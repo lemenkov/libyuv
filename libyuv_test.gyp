@@ -9,7 +9,6 @@
 {
   'variables': {
     'libyuv_disable_jpeg%': 0,
-    'libyuv_enable_svn%': 0,
   },
   'targets': [
     {
@@ -54,14 +53,8 @@
         'unit_test/scale_test.cc',
         'unit_test/unit_test.cc',
         'unit_test/video_common_test.cc',
-        'unit_test/version_test.cc',
       ],
       'conditions': [
-        [ 'libyuv_enable_svn == 1', {
-          'defines': [
-            'LIBYUV_SVNREVISION="<!(svnversion -n)"',
-          ],
-        }],
         ['OS=="linux"', {
           'cflags': [
             '-fexceptions',
