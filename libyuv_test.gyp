@@ -76,7 +76,15 @@
           'xcode_settings': {
             'DEBUGGING_SYMBOLS': 'YES',
             'DEBUG_INFORMATION_FORMAT' : 'dwarf-with-dsym',
+            # Work around compile issue with isosim.mm, see
+            # https://code.google.com/p/libyuv/issues/detail?id=548 for details.
+            'WARNING_CFLAGS': [
+              '-Wno-sometimes-uninitialized',
+            ],
           },
+          'cflags': [
+            '-Wno-sometimes-uninitialized',
+          ],
         }],
         [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
