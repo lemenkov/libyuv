@@ -28,7 +28,6 @@ def GetPreferredTryMasters(project, change):
     'win_x64_rel',
     'mac',
     'mac_rel',
-    'mac_x64_rel',
     'ios',
     'ios_rel',
     'ios_arm64',
