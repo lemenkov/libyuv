@@ -384,12 +384,6 @@ int ARGBUnattenuate(const uint8* src_argb, int src_stride_argb,
                     uint8* dst_argb, int dst_stride_argb,
                     int width, int height);
 
-// Convert MJPG to ARGB.
-LIBYUV_API
-int MJPGToARGB(const uint8* sample, size_t sample_size,
-               uint8* argb, int argb_stride,
-               int w, int h, int dw, int dh);
-
 // Internal function - do not call directly.
 // Computes table of cumulative sum for image where the value is the sum
 // of all values above and to the left of the entry. Used by ARGBBlur.
