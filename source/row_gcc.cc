@@ -2900,7 +2900,7 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 #ifdef HAS_SETROW_X86
 void SetRow_X86(uint8* dst, uint8 v8, int width) {
   size_t width_tmp = (size_t)(width >> 2);
-  const uint32 v32 = v8 * 0x01010101;  // Duplicate byte to all bytes.
+  const uint32 v32 = v8 * 0x01010101u;  // Duplicate byte to all bytes.
   asm volatile (
     "rep stosl " MEMSTORESTRING(eax,0) "       \n"
     : "+D"(dst),       // %0
