@@ -55,10 +55,10 @@ static inline double get_time() {
 }
 #endif
 
-extern int fastrand_seed;
+extern unsigned int fastrand_seed;
 inline int fastrand() {
-  fastrand_seed = fastrand_seed * 214013 + 2531011;
-  return (fastrand_seed >> 16) & 0xffff;
+  fastrand_seed = fastrand_seed * 214013u + 2531011u;
+  return static_cast<int>((fastrand_seed >> 16) & 0xffff);
 }
 
 static inline void MemRandomize(uint8* dst, int64 len) {
