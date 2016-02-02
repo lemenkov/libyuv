@@ -659,7 +659,6 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int x, int dx,
   int i;
   int scaletbl[2];
   int minboxwidth = dx >> 16;
-  int* scaleptr = scaletbl - minboxwidth;
   int boxwidth;
   scaletbl[0] = 65536 / (MIN1(minboxwidth) * boxheight);
   scaletbl[1] = 65536 / (MIN1(minboxwidth + 1) * boxheight);
@@ -667,7 +666,8 @@ static void ScaleAddCols2_C(int dst_width, int boxheight, int x, int dx,
     int ix = x >> 16;
     x += dx;
     boxwidth = MIN1((x >> 16) - ix);
-    *dst_ptr++ = SumPixels(boxwidth, src_ptr + ix) * scaleptr[boxwidth] >> 16;
+    *dst_ptr++ = SumPixels(boxwidth, src_ptr + ix) *
+        scaletbl[boxwidth - minboxwidth] >> 16;
   }
 }
 
@@ -676,7 +676,6 @@ static void ScaleAddCols2_16_C(int dst_width, int boxheight, int x, int dx,
   int i;
   int scaletbl[2];
   int minboxwidth = dx >> 16;
-  int* scaleptr = scaletbl - minboxwidth;
   int boxwidth;
   scaletbl[0] = 65536 / (MIN1(minboxwidth) * boxheight);
   scaletbl[1] = 65536 / (MIN1(minboxwidth + 1) * boxheight);
@@ -684,8 +683,8 @@ static void ScaleAddCols2_16_C(int dst_width, int boxheight, int x, int dx,
     int ix = x >> 16;
     x += dx;
     boxwidth = MIN1((x >> 16) - ix);
-    *dst_ptr++ =
-        SumPixels_16(boxwidth, src_ptr + ix) * scaleptr[boxwidth] >> 16;
+    *dst_ptr++ = SumPixels_16(boxwidth, src_ptr + ix) *
+        scaletbl[boxwidth - minboxwidth]  >> 16;
   }
 }
 
