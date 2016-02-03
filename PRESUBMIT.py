@@ -38,6 +38,8 @@ def GetPreferredTryMasters(project, change):
     'linux_memcheck',
     'linux_tsan2',
     'linux_asan',
+    'linux_ubsan',
+    'linux_ubsan_vptr',
     'android',
     'android_rel',
     'android_clang',
