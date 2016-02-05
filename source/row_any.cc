@@ -596,8 +596,8 @@ ANY11T(InterpolateRow_Any_SSSE3, InterpolateRow_SSSE3, 1, 1, 15)
 #ifdef HAS_INTERPOLATEROW_NEON
 ANY11T(InterpolateRow_Any_NEON, InterpolateRow_NEON, 1, 1, 15)
 #endif
-#ifdef HAS_INTERPOLATEROW_MIPS_DSPR2
-ANY11T(InterpolateRow_Any_MIPS_DSPR2, InterpolateRow_MIPS_DSPR2, 1, 1, 3)
+#ifdef HAS_INTERPOLATEROW_DSPR2
+ANY11T(InterpolateRow_Any_DSPR2, InterpolateRow_DSPR2, 1, 1, 3)
 #endif
 #undef ANY11T
 
@@ -705,8 +705,8 @@ ANY12(SplitUVRow_Any_AVX2, SplitUVRow_AVX2, 0, 2, 0, 31)
 #ifdef HAS_SPLITUVROW_NEON
 ANY12(SplitUVRow_Any_NEON, SplitUVRow_NEON, 0, 2, 0, 15)
 #endif
-#ifdef HAS_SPLITUVROW_MIPS_DSPR2
-ANY12(SplitUVRow_Any_MIPS_DSPR2, SplitUVRow_MIPS_DSPR2, 0, 2, 0, 15)
+#ifdef HAS_SPLITUVROW_DSPR2
+ANY12(SplitUVRow_Any_DSPR2, SplitUVRow_DSPR2, 0, 2, 0, 15)
 #endif
 #ifdef HAS_ARGBTOUV444ROW_SSSE3
 ANY12(ARGBToUV444Row_Any_SSSE3, ARGBToUV444Row_SSSE3, 0, 4, 0, 15)

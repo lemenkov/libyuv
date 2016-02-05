@@ -66,8 +66,8 @@ int main(int argc, const char* argv[]) {
     printf("Has NEON %x\n", has_neon);
   }
   if (has_mips) {
-    int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
-    printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
+    int has_dspr2 = TestCpuFlag(kCpuHasDSPR2);
+    printf("Has DSPR2 %x\n", has_dspr2);
   }
   if (has_x86) {
     int has_sse2 = TestCpuFlag(kCpuHasSSE2);

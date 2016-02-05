@@ -255,11 +255,11 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
   }
 #endif
 // TODO(fbarchard): Mirror on mips handle unaligned memory.
-#if defined(HAS_MIRRORROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+#if defined(HAS_MIRRORROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(dst_y, 4) && IS_ALIGNED(dst_stride_y, 4)) {
-    MirrorRow = MirrorRow_MIPS_DSPR2;
+    MirrorRow = MirrorRow_DSPR2;
   }
 #endif
 
@@ -986,13 +986,13 @@ static int I422ToRGBAMatrix(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
-#if defined(HAS_I422TORGBAROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 4) &&
+#if defined(HAS_I422TORGBAROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(width, 4) &&
       IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
       IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
       IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
       IS_ALIGNED(dst_rgba, 4) && IS_ALIGNED(dst_stride_rgba, 4)) {
-    I422ToRGBARow = I422ToRGBARow_MIPS_DSPR2;
+    I422ToRGBARow = I422ToRGBARow_DSPR2;
   }
 #endif
 
@@ -1906,13 +1906,13 @@ int InterpolatePlane(const uint8* src0, int src_stride0,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+#if defined(HAS_INTERPOLATEROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) &&
       IS_ALIGNED(src0, 4) && IS_ALIGNED(src_stride0, 4) &&
       IS_ALIGNED(src1, 4) && IS_ALIGNED(src_stride1, 4) &&
       IS_ALIGNED(dst, 4) && IS_ALIGNED(dst_stride, 4) &&
       IS_ALIGNED(width, 4)) {
-    InterpolateRow = InterpolateRow_MIPS_DSPR2;
+    InterpolateRow = InterpolateRow_DSPR2;
   }
 #endif
 

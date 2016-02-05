@@ -49,13 +49,13 @@ void TransposePlane(const uint8* src, int src_stride,
     }
   }
 #endif
-#if defined(HAS_TRANSPOSEWX8_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2)) {
+#if defined(HAS_TRANSPOSEWX8_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2)) {
     if (IS_ALIGNED(width, 4) &&
         IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
-      TransposeWx8 = TransposeWx8_Fast_MIPS_DSPR2;
+      TransposeWx8 = TransposeWx8_Fast_DSPR2;
     } else {
-      TransposeWx8 = TransposeWx8_MIPS_DSPR2;
+      TransposeWx8 = TransposeWx8_DSPR2;
     }
   }
 #endif
@@ -134,11 +134,11 @@ void RotatePlane180(const uint8* src, int src_stride,
   }
 #endif
 // TODO(fbarchard): Mirror on mips handle unaligned memory.
-#if defined(HAS_MIRRORROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+#if defined(HAS_MIRRORROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst, 4) && IS_ALIGNED(dst_stride, 4)) {
-    MirrorRow = MirrorRow_MIPS_DSPR2;
+    MirrorRow = MirrorRow_DSPR2;
   }
 #endif
 #if defined(HAS_COPYROW_SSE2)
@@ -203,10 +203,10 @@ void TransposeUV(const uint8* src, int src_stride,
     }
   }
 #endif
-#if defined(HAS_TRANSPOSEUVWX8_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) && IS_ALIGNED(width, 2) &&
+#if defined(HAS_TRANSPOSEUVWX8_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(width, 2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
-    TransposeUVWx8 = TransposeUVWx8_MIPS_DSPR2;
+    TransposeUVWx8 = TransposeUVWx8_DSPR2;
   }
 #endif
 
@@ -279,10 +279,10 @@ void RotateUV180(const uint8* src, int src_stride,
     MirrorUVRow = MirrorUVRow_SSSE3;
   }
 #endif
-#if defined(HAS_MIRRORUVROW_MIPS_DSPR2)
-  if (TestCpuFlag(kCpuHasMIPS_DSPR2) &&
+#if defined(HAS_MIRRORUVROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) &&
       IS_ALIGNED(src, 4) && IS_ALIGNED(src_stride, 4)) {
-    MirrorUVRow = MirrorUVRow_MIPS_DSPR2;
+    MirrorUVRow = MirrorUVRow_DSPR2;
   }
 #endif
 

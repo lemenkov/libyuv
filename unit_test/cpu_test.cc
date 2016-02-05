@@ -48,8 +48,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has AVX3 %x\n", has_avx3);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   printf("Has MIPS %x\n", has_mips);
-  int has_mips_dspr2 = TestCpuFlag(kCpuHasMIPS_DSPR2);
-  printf("Has MIPS DSPR2 %x\n", has_mips_dspr2);
+  int has_dspr2 = TestCpuFlag(kCpuHasDSPR2);
+  printf("Has DSPR2 %x\n", has_dspr2);
 }
 
 TEST_F(LibYUVBaseTest, TestCpuCompilerEnabled) {

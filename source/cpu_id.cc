@@ -251,15 +251,11 @@ int InitCpuFlags(void) {
 #endif
 #if defined(__mips__) && defined(__linux__)
 #if defined(__mips_dspr2)
-  cpu_info |= kCpuHasMIPS_DSPR2;
+  cpu_info |= kCpuHasDSPR2;
 #endif
   cpu_info |= kCpuHasMIPS;
-
-  if (getenv("LIBYUV_DISABLE_MIPS")) {
-    cpu_info &= ~kCpuHasMIPS;
-  }
-  if (getenv("LIBYUV_DISABLE_MIPS_DSPR2")) {
-    cpu_info &= ~kCpuHasMIPS_DSPR2;
+  if (getenv("LIBYUV_DISABLE_DSPR2")) {
+    cpu_info &= ~kCpuHasDSPR2;
   }
 #endif
 #if defined(__arm__) || defined(__aarch64__)
