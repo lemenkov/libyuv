@@ -7,7 +7,7 @@ vars = {
 
   # Roll the Chromium Git hash to pick up newer versions of all the
   # dependencies and tools linked to in setup_links.py.
-  'chromium_revision': '70ee602b6c186707286f9b5836a28311fe92e91e',
+  'chromium_revision': '3c455872750c9d0f74266b04f97701a516ac9075',
 }
 
 # NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
