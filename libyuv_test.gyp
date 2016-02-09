@@ -27,14 +27,6 @@
       'export_dependent_settings': [
         '<(DEPTH)/testing/gtest.gyp:gtest',
       ],
-      'defines': [
-        # Enable the following 3 macros to turn off assembly for specified CPU.
-        # 'LIBYUV_DISABLE_X86',
-        # 'LIBYUV_DISABLE_NEON',
-        # 'LIBYUV_DISABLE_MIPS',
-        # Enable the following macro to build libyuv as a shared library (dll).
-        # 'LIBYUV_USING_SHARED_LIBRARY',
-      ],
       'sources': [
         # headers
         'unit_test/unit_test.h',
@@ -98,10 +90,24 @@
           'defines': [
             'LIBYUV_NEON'
           ],
-       }],
+        }],
+        # MemorySanitizer does not support assembly code yet.
+        # http://crbug.com/344505
+        [ 'msan == 1', {
+          'defines': [
+            'LIBYUV_DISABLE_X86',
+          ],
+        }],
       ], # conditions
+      'defines': [
+        # Enable the following 3 macros to turn off assembly for specified CPU.
+        # 'LIBYUV_DISABLE_X86',
+        # 'LIBYUV_DISABLE_NEON',
+        # 'LIBYUV_DISABLE_MIPS',
+        # Enable the following macro to build libyuv as a shared library (dll).
+        # 'LIBYUV_USING_SHARED_LIBRARY',
+      ],
     },
-
     {
       'target_name': 'compare',
       'type': 'executable',

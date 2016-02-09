@@ -77,6 +77,8 @@ pin-log.txt
 /tools/generate_library_loader
 /tools/gn
 /tools/grit
+/tools/gritsettings/README
+/tools/gritsettings/resource_ids
 /tools/gyp
 /tools/isolate_driver.py
 /tools/memory
@@ -87,6 +89,19 @@ pin-log.txt
 /tools/swarming_client
 /tools/tsan_suppressions
 /tools/valgrind
+/tools/valgrind-libyuv/libyuv_tests.bat
+/tools/valgrind-libyuv/libyuv_tests.py
+/tools/valgrind-libyuv/libyuv_tests.sh
+/tools/valgrind-libyuv/memcheck/OWNERS
+/tools/valgrind-libyuv/memcheck/PRESUBMIT.py
+/tools/valgrind-libyuv/memcheck/suppressions.txt
+/tools/valgrind-libyuv/memcheck/suppressions_mac.txt
+/tools/valgrind-libyuv/memcheck/suppressions_win32.txt
+/tools/valgrind-libyuv/tsan/OWNERS
+/tools/valgrind-libyuv/tsan/PRESUBMIT.py
+/tools/valgrind-libyuv/tsan/suppressions.txt
+/tools/valgrind-libyuv/tsan/suppressions_mac.txt
+/tools/valgrind-libyuv/tsan/suppressions_win32.txt
 /tools/vim
 /tools/win
 
