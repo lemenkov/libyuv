@@ -2595,7 +2595,11 @@ void NV12ToRGB565Row_AVX2(const uint8* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);
+#if defined(HAS_ARGBTORGB565ROW_AVX2)
     ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+#else
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+#endif
     src_y += twidth;
     src_uv += twidth;
     dst_rgb565 += twidth * 2;
