@@ -2495,7 +2495,11 @@ void I422ToRGB565Row_AVX2(const uint8* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+#if defined(HAS_ARGBTORGB565ROW_AVX2)
     ARGBToRGB565Row_AVX2(row, dst_rgb565, twidth);
+#else
+    ARGBToRGB565Row_SSE2(row, dst_rgb565, twidth);
+#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -2517,7 +2521,11 @@ void I422ToARGB1555Row_AVX2(const uint8* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+#if defined(HAS_ARGBTOARGB1555ROW_AVX2)
     ARGBToARGB1555Row_AVX2(row, dst_argb1555, twidth);
+#else
+    ARGBToARGB1555Row_SSE2(row, dst_argb1555, twidth);
+#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
@@ -2539,7 +2547,11 @@ void I422ToARGB4444Row_AVX2(const uint8* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
+#if defined(HAS_ARGBTOARGB4444ROW_AVX2)
     ARGBToARGB4444Row_AVX2(row, dst_argb4444, twidth);
+#else
+    ARGBToARGB4444Row_SSE2(row, dst_argb4444, twidth);
+#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;
