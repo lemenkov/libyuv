@@ -46,8 +46,8 @@ For Android add `;target_os=['android'];` to your Linux .gclient
         },
         "safesync_url": "",
       },
-    ]
-    target_os = ["android", "unix"]
+    ];
+    target_os = ["android", "unix"];
 
 Then run:
 
@@ -182,7 +182,6 @@ Running test with C code:
 
 ### Linux
 
-    tools/clang/scripts/update.sh
     GYP_DEFINES="target_arch=x64" ./gyp_libyuv
     ninja -j7 -C out/Debug
     ninja -j7 -C out/Release
