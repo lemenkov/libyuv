@@ -1023,6 +1023,67 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0, int src_stride_argb,
 }
 #endif  // HAS_ARGBTOUVROW_AVX2
 
+#ifdef HAS_ARGBTOUVJROW_AVX2
+void ARGBToUVJRow_AVX2(const uint8* src_argb0, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width) {
+  asm volatile (
+    "vbroadcastf128 %5,%%ymm5                  \n"
+    "vbroadcastf128 %6,%%ymm6                  \n"
+    "vbroadcastf128 %7,%%ymm7                  \n"
+    "sub       %1,%2                           \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
+    "vmovdqu    " MEMACCESS2(0x40,0) ",%%ymm2  \n"
+    "vmovdqu    " MEMACCESS2(0x60,0) ",%%ymm3  \n"
+    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
+    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
+    VMEMOPREG(vpavgb,0x40,0,4,1,ymm2,ymm2)
+    VMEMOPREG(vpavgb,0x60,0,4,1,ymm3,ymm3)
+    "lea       " MEMLEA(0x80,0) ",%0           \n"
+    "vshufps    $0x88,%%ymm1,%%ymm0,%%ymm4     \n"
+    "vshufps    $0xdd,%%ymm1,%%ymm0,%%ymm0     \n"
+    "vpavgb     %%ymm4,%%ymm0,%%ymm0           \n"
+    "vshufps    $0x88,%%ymm3,%%ymm2,%%ymm4     \n"
+    "vshufps    $0xdd,%%ymm3,%%ymm2,%%ymm2     \n"
+    "vpavgb     %%ymm4,%%ymm2,%%ymm2           \n"
+
+    "vpmaddubsw %%ymm7,%%ymm0,%%ymm1           \n"
+    "vpmaddubsw %%ymm7,%%ymm2,%%ymm3           \n"
+    "vpmaddubsw %%ymm6,%%ymm0,%%ymm0           \n"
+    "vpmaddubsw %%ymm6,%%ymm2,%%ymm2           \n"
+    "vphaddw    %%ymm3,%%ymm1,%%ymm1           \n"
+    "vphaddw    %%ymm2,%%ymm0,%%ymm0           \n"
+    "vpaddw     %%ymm5,%%ymm0,%%ymm0           \n"
+    "vpaddw     %%ymm5,%%ymm1,%%ymm1           \n"
+    "vpsraw     $0x8,%%ymm1,%%ymm1             \n"
+    "vpsraw     $0x8,%%ymm0,%%ymm0             \n"
+    "vpacksswb  %%ymm0,%%ymm1,%%ymm0           \n"
+    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+    "vpshufb    %8,%%ymm0,%%ymm0               \n"
+
+    "vextractf128 $0x0,%%ymm0," MEMACCESS(1) " \n"
+    VEXTOPMEM(vextractf128,1,ymm0,0x0,1,2,1) // vextractf128 $1,%%ymm0,(%1,%2,1)
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "sub       $0x20,%3                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb0),       // %0
+    "+r"(dst_u),           // %1
+    "+r"(dst_v),           // %2
+    "+rm"(width)           // %3
+  : "r"((intptr_t)(src_stride_argb)), // %4
+    "m"(kAddUVJ128),  // %5
+    "m"(kARGBToVJ),  // %6
+    "m"(kARGBToUJ),  // %7
+    "m"(kShufARGBToUV_AVX)  // %8
+  : "memory", "cc", NACL_R14
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
+  );
+}
+#endif  // HAS_ARGBTOUVJROW_AVX2
+
 #ifdef HAS_ARGBTOUVJROW_SSSE3
 void ARGBToUVJRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
                         uint8* dst_u, uint8* dst_v, int width) {
@@ -1475,7 +1536,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0, int src_stride_rgba,
 #define READYUV411_TEMP                                                        \
     "movzwl     " MEMACCESS([u_buf]) ",%[temp]                  \n"            \
     "movd       %[temp],%%xmm0                                  \n"            \
-    MEMOPARG(movzwl,0x00,[u_buf],[v_buf],1,[temp]) "            \n"            \
+    MEMOPARG(movzwl, 0x00, [u_buf], [v_buf], 1, [temp]) "       \n"            \
     "movd       %[temp],%%xmm1                                  \n"            \
     "lea        " MEMLEA(0x2, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
@@ -2032,7 +2093,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpackuswb   %%ymm2,%%ymm2,%%ymm2                               \n"
 #define YUVTORGB_REGS_AVX2 \
     "xmm8", "xmm9", "xmm10", "xmm11", "xmm12", "xmm13", "xmm14",
-#else// Convert 16 pixels: 16 UV and 16 Y.
+#else  // Convert 16 pixels: 16 UV and 16 Y.
 #define YUVTORGB_SETUP_AVX2(yuvconstants)
 #define YUVTORGB_AVX2(yuvconstants)                                            \
     "vpmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%ymm0,%%ymm2   \n"        \
