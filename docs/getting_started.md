@@ -54,6 +54,11 @@ Then run:
     export GYP_DEFINES="OS=android"
     gclient sync
 
+Caveat: Theres an error with Google Play services updates.  If you get the error "Your version of the Google Play services library is not up to date", run the following:
+    cd chromium/src
+    ./build/android/play_services/update.py download
+    cd ../..
+
 For Windows the gclient sync must be done from an Administrator command prompt.
 
 The sync will generate native build files for your environment using gyp (Windows: Visual Studio, OSX: XCode, Linux: make). This generation can also be forced manually: `gclient runhooks`

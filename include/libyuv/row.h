@@ -195,6 +195,7 @@ extern "C" {
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
 #define HAS_ARGBTORGB565DITHERROW_AVX2
+#define HAS_ARGBTOUVJROW_AVX2
 #define HAS_ARGBTOUVROW_AVX2
 #define HAS_ARGBTOYJROW_AVX2
 #define HAS_ARGBTOYROW_AVX2
@@ -708,8 +709,8 @@ void ARGB4444ToYRow_Any_NEON(const uint8* src_argb4444, uint8* dst_y,
 
 void ARGBToUVRow_AVX2(const uint8* src_argb, int src_stride_argb,
                       uint8* dst_u, uint8* dst_v, int width);
-void ARGBToUVRow_Any_AVX2(const uint8* src_argb, int src_stride_argb,
-                          uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_AVX2(const uint8* src_argb, int src_stride_argb,
+                       uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_SSSE3(const uint8* src_argb, int src_stride_argb,
                        uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVJRow_SSSE3(const uint8* src_argb, int src_stride_argb,
@@ -720,6 +721,10 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr, int src_stride_abgr,
                        uint8* dst_u, uint8* dst_v, int width);
 void RGBAToUVRow_SSSE3(const uint8* src_rgba, int src_stride_rgba,
                        uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVRow_Any_AVX2(const uint8* src_argb, int src_stride_argb,
+                          uint8* dst_u, uint8* dst_v, int width);
+void ARGBToUVJRow_Any_AVX2(const uint8* src_argb, int src_stride_argb,
+                           uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVRow_Any_SSSE3(const uint8* src_argb, int src_stride_argb,
                            uint8* dst_u, uint8* dst_v, int width);
 void ARGBToUVJRow_Any_SSSE3(const uint8* src_argb, int src_stride_argb,
