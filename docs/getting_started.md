@@ -164,7 +164,7 @@ mipsel
 
 arm64 disassembly:
 
-    ./third_party/android_tools/ndk//toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-4android-objdump -d out/Release/obj/source/libyuv.row_neon64.o
+    third_party/android_tools/ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump -d out/Release/obj/source/libyuv.row_neon64.o
 
 Running tests:
 
