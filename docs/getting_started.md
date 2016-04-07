@@ -184,10 +184,15 @@ Running test with C code:
 
 #### Building with GN
 
-    call gn gen out/Release "--args=is_debug=false target_cpu=\"x86\""
-    call gn gen out/Debug "--args=is_debug=true target_cpu=\"x86\""
+    gn gen out/Release "--args=is_debug=false target_cpu=\"x86\""
+    gn gen out/Debug "--args=is_debug=true target_cpu=\"x86\""
     ninja -C out/Release
     ninja -C out/Debug
+
+### Building Offical with GN
+
+    gn gen out/Official "--args=is_debug=false is_official_build=true is_chrome_branded=true"
+    ninja -C out/Official
 
 ### Linux
 
