@@ -47,6 +47,12 @@
       # Allows libyuv.a redistributable library without external dependencies.
       'standalone_static_library': 1,
       'conditions': [
+       # Disable -Wunused-parameter
+        ['clang == 1', {
+          'cflags': [
+            '-Wno-unused-parameter',
+         ],
+        }],
         ['build_neon != 0', {
           'defines': [
             'LIBYUV_NEON',
