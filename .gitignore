@@ -9,6 +9,8 @@ pin-log.txt
 /chromium/src/
 /google_apis
 /links
+/links.db
+/native_client
 /net
 /out
 /sde-avx-sse-transition-out.txt

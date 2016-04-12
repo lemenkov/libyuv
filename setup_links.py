@@ -35,6 +35,7 @@ DIRECTORIES = [
   'build',
   'buildtools',
   'google_apis',  # Needed by build/common.gypi.
+  'native_client',
   'net',
   'testing',
   'third_party/binutils',
