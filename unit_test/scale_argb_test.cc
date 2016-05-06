@@ -28,6 +28,10 @@ static int ARGBTestFilter(int src_width, int src_height,
                           int dst_width, int dst_height,
                           FilterMode f, int benchmark_iterations,
                           int disable_cpu_flags, int benchmark_cpu_info) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+
   int i, j;
   const int b = 0;  // 128 to test for padding/stride.
   int64 src_argb_plane_size = (Abs(src_width) + b * 2) *
@@ -143,6 +147,10 @@ static int TileARGBScale(const uint8* src_argb, int src_stride_argb,
 static int ARGBClipTestFilter(int src_width, int src_height,
                               int dst_width, int dst_height,
                               FilterMode f, int benchmark_iterations) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+
   const int b = 128;
   int64 src_argb_plane_size = (Abs(src_width) + b * 2) *
       (Abs(src_height) + b * 2) * 4;

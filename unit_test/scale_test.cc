@@ -25,6 +25,10 @@ static int TestFilter(int src_width, int src_height,
                       int dst_width, int dst_height,
                       FilterMode f, int benchmark_iterations,
                       int disable_cpu_flags, int benchmark_cpu_info) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+
   int i, j;
   const int b = 0;  // 128 to test for padding/stride.
   int src_width_uv = (Abs(src_width) + 1) >> 1;
@@ -148,6 +152,10 @@ static int TestFilter(int src_width, int src_height,
 static int TestFilter_16(int src_width, int src_height,
                          int dst_width, int dst_height,
                          FilterMode f, int benchmark_iterations) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+
   int i, j;
   const int b = 0;  // 128 to test for padding/stride.
   int src_width_uv = (Abs(src_width) + 1) >> 1;
@@ -274,8 +282,8 @@ static int TestFilter_16(int src_width, int src_height,
 // The following adjustments in dimensions ensure the scale factor will be
 // exactly achieved.
 // 2 is chroma subsample
-#define DX(x, nom, denom) static_cast<int>((Abs(x) / nom / 2) * nom * 2)
-#define SX(x, nom, denom) static_cast<int>((x / nom / 2) * denom * 2)
+#define DX(x, nom, denom) static_cast<int>(((Abs(x) / nom + 1) / 2) * nom * 2)
+#define SX(x, nom, denom) static_cast<int>(((x / nom + 1) / 2) * denom * 2)
 
 #define TEST_FACTOR1(name, filter, nom, denom, max_diff)                       \
     TEST_F(LibYUVScaleTest, ScaleDownBy##name##_##filter) {                    \
