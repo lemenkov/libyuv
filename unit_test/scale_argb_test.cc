@@ -11,9 +11,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "libyuv/convert.h"
+#include "libyuv/convert_argb.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/row.h"
+#include "libyuv/row.h"   // For align_buffer_64
 #include "libyuv/scale_argb.h"
 #include "libyuv/video_common.h"
 #include "../unit_test/unit_test.h"
