@@ -191,15 +191,25 @@
             # These are used to configure java_apk.gypi included below.
             'test_type': 'gtest',
             'apk_name': 'libyuv_unittest',
+            'test_suite_name': 'libyuv_unittest',
             'intermediate_dir': '<(PRODUCT_DIR)/libyuv_unittest_apk',
+            'input_shlib_path': '<(SHARED_LIB_DIR)/<(SHARED_LIB_PREFIX)libyuv_unittest<(SHARED_LIB_SUFFIX)',
             'final_apk_path': '<(intermediate_dir)/libyuv_unittest-debug.apk',
             'java_in_dir': '<(DEPTH)/testing/android/native_test/java',
+            'test_runner_path': '<(DEPTH)/util/android/test_runner.py',
             'native_lib_target': 'libyuv_unittest',
             'gyp_managed_install': 0,
           },
-          'includes': [ 'build/java_apk.gypi' ],
+          'includes': [
+            'build/android/test_runner.gypi',
+            'build/java_apk.gypi',
+           ],
           'dependencies': [
             '<(DEPTH)/base/base.gyp:base_java',
+            # TODO(kjellander): Figure out why base_build_config_gen is needed
+            # here. It really shouldn't since it's a dependency of base_java
+            # above, but there's always 0 tests run if it's missing.
+            '<(DEPTH)/base/base.gyp:base_build_config_gen',
             '<(DEPTH)/build/android/pylib/device/commands/commands.gyp:chromium_commands',
             '<(DEPTH)/build/android/pylib/remote/device/dummy/dummy.gyp:remote_device_dummy_apk',
             '<(DEPTH)/testing/android/appurify_support.gyp:appurify_support_java',

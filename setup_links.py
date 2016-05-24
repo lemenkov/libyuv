@@ -34,7 +34,7 @@ import textwrap
 DIRECTORIES = [
   'build',
   'buildtools',
-  'google_apis',  # Needed by build/common.gypi.
+  'mojo',  # TODO(kjellander): Remove, see webrtc:5629.
   'native_client',
   'net',
   'testing',
@@ -46,6 +46,7 @@ DIRECTORIES = [
   'third_party/llvm-build',
   'third_party/lss',
   'third_party/yasm',
+  'third_party/WebKit',  # TODO(kjellander): Remove, see webrtc:5629.
   'tools/clang',
   'tools/gn',
   'tools/gyp',
@@ -63,15 +64,14 @@ if 'android' in target_os:
   DIRECTORIES += [
     'base',
     'third_party/android_platform',
-    'third_party/android_testrunner',
     'third_party/android_tools',
     'third_party/appurify-python',
     'third_party/ashmem',
     'third_party/catapult',
+    'third_party/icu',
     'third_party/ijar',
     'third_party/jsr-305',
     'third_party/junit',
-    'third_party/libevent',
     'third_party/libxml',
     'third_party/mockito',
     'third_party/modp_b64',
@@ -80,14 +80,11 @@ if 'android' in target_os:
     'third_party/robolectric',
     'tools/android',
     'tools/grit',
-    'tools/relocation_packer',
-    'tools/telemetry',
   ]
 if 'ios' in target_os:
   DIRECTORIES.append('third_party/class-dump')
 
 FILES = {
-  'tools/find_depot_tools.py': None,
   'tools/isolate_driver.py': None,
   'third_party/BUILD.gn': None,
 }
