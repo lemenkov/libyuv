@@ -179,8 +179,8 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Unaligned) {
   uint32 fourcc;
   const int kMaxTest = benchmark_width_ * benchmark_height_ * 4 + 1;
   align_buffer_64(src_a, kMaxTest);
-  for (int i = 0; i < kMaxTest; ++i) {
-    src_a[i + 1] = 255;
+  for (int i = 1; i < kMaxTest; ++i) {
+    src_a[i] = 255;
   }
 
   src_a[0 + 1] = 0;
