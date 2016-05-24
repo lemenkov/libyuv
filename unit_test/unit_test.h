@@ -22,6 +22,16 @@
 
 #include "libyuv/basic_types.h"
 
+#ifndef SIMD_ALIGNED
+#if defined(_MSC_VER) && !defined(__CLR_VER)
+#define SIMD_ALIGNED(var) __declspec(align(16)) var
+#elif defined(__GNUC__) && !defined(__pnacl__)
+#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#else
+#define SIMD_ALIGNED(var) var
+#endif
+#endif
+
 static __inline int Abs(int v) {
   return v >= 0 ? v : -v;
 }
@@ -31,11 +41,11 @@ static __inline int Abs(int v) {
 // Scaling uses 16.16 fixed point to step thru the source image, so a
 // maximum size of 32767.999 can be expressed.  32768 is valid because
 // the step is 1 beyond the image but not used.
-// Destination size is mainly constrained by valid scale step not the 
+// Destination size is mainly constrained by valid scale step not the
 // absolute size, so it may be possible to relax the destination size
 // constraint.
 // Source size is unconstrained for most specialized scalers.  e.g.
-// An image of 65536 scaled to half size would be valid.  The test 
+// An image of 65536 scaled to half size would be valid.  The test
 // could be relaxed for special scale factors.
 // If this test is removed, the scaling function should gracefully
 // fail with a return code.  The test could be changed to know that
