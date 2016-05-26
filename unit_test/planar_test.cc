@@ -2390,6 +2390,36 @@ TEST_F(LibYUVPlanarTest, TestARGBCopyAlpha) {
   free_aligned_buffer_64(orig_pixels);
 }
 
+TEST_F(LibYUVPlanarTest, TestARGBExtractAlpha) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_64(src_pixels, kPixels * 4);
+  align_buffer_64(dst_pixels_opt, kPixels);
+  align_buffer_64(dst_pixels_c, kPixels);
+
+  MemRandomize(src_pixels, kPixels * 4);
+  MemRandomize(dst_pixels_opt, kPixels);
+  memcpy(dst_pixels_c, dst_pixels_opt, kPixels);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  ARGBExtractAlpha(src_pixels, benchmark_width_ * 4,
+                   dst_pixels_c, benchmark_width_,
+                   benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    ARGBExtractAlpha(src_pixels, benchmark_width_ * 4,
+                     dst_pixels_opt, benchmark_width_,
+                     benchmark_width_, benchmark_height_);
+  }
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+
+  free_aligned_buffer_64(dst_pixels_c);
+  free_aligned_buffer_64(dst_pixels_opt);
+  free_aligned_buffer_64(src_pixels);
+}
+
 TEST_F(LibYUVPlanarTest, TestARGBCopyYToAlpha) {
   const int kPixels = benchmark_width_ * benchmark_height_;
   align_buffer_64(orig_pixels, kPixels);

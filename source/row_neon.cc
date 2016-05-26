@@ -1298,6 +1298,23 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int width) {
   );
 }
 
+void ARGBExtractAlphaRow_NEON(const uint8* src_argb, uint8* dst_a, int width) {
+  asm volatile (
+  "1:                                          \n"
+    MEMACCESS(0)
+    "vld4.8     {d0, d1, d2, d3}, [%0]!        \n"  // load row 8 pixels
+    "subs       %2, %2, #8                     \n"  // 8 processed per loop
+    MEMACCESS(1)
+    "vst1.8     {d3}, [%1]!                    \n"  // store 8 A's.
+    "bgt       1b                              \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_a),      // %1
+    "+r"(width)       // %2
+  :
+  : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
+  );
+}
+
 void ARGBToYJRow_NEON(const uint8* src_argb, uint8* dst_y, int width) {
   asm volatile (
     "vmov.u8    d24, #15                       \n"  // B * 0.11400 coefficient

@@ -104,6 +104,7 @@ extern "C" {
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_ARGBTOYJROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
+#define HAS_ARGBEXTRACTALPHAROW_SSE2
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_ERMS
@@ -291,6 +292,7 @@ extern "C" {
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #define HAS_ARGBTOYROW_NEON
+#define HAS_ARGBEXTRACTALPHAROW_NEON
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_COPYROW_NEON
@@ -876,6 +878,14 @@ void ARGBCopyAlphaRow_Any_SSE2(const uint8* src_argb, uint8* dst_argb,
                                int width);
 void ARGBCopyAlphaRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,
                                int width);
+
+void ARGBExtractAlphaRow_C(const uint8* src_argb, uint8* dst_a, int width);
+void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width);
+void ARGBExtractAlphaRow_NEON(const uint8* src_argb, uint8* dst_a, int width);
+void ARGBExtractAlphaRow_Any_SSE2(const uint8* src_argb, uint8* dst_a,
+                                  int width);
+void ARGBExtractAlphaRow_Any_NEON(const uint8* src_argb, uint8* dst_a,
+                                  int width);
 
 void ARGBCopyYToAlphaRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);

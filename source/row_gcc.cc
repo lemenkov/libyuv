@@ -2936,6 +2936,33 @@ void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_ARGBCOPYALPHAROW_AVX2
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_SSE2
+// width in pixels
+void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
+ asm volatile (
+    LABELALIGN
+  "1:                                          \n"
+    "movdqu    " MEMACCESS(0) ", %%xmm0        \n"
+    "movdqu    " MEMACCESS2(0x10, 0) ", %%xmm1 \n"
+    "lea       " MEMLEA(0x20, 0) ", %0         \n"
+    "psrld     $0x18, %%xmm0                   \n"
+    "psrld     $0x18, %%xmm1                   \n"
+    "packssdw  %%xmm1, %%xmm0                  \n"
+    "packuswb  %%xmm0, %%xmm0                  \n"
+    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x8, 1) ", %1          \n"
+    "sub       $0x8, %2                        \n"
+    "jg        1b                              \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_a),     // %1
+    "+rm"(width)     // %2
+  :
+  : "memory", "cc"
+    , "xmm0", "xmm1"
+  );
+}
+#endif  // HAS_ARGBEXTRACTALPHAROW_SSE2
+
 #ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
 // width in pixels
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {

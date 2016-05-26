@@ -1399,6 +1399,25 @@ void ARGBToYRow_NEON(const uint8* src_argb, uint8* dst_y, int width) {
 }
 #endif  // HAS_ARGBTOYROW_NEON
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_NEON
+void ARGBExtractAlphaRow_NEON(const uint8* src_argb, uint8* dst_a, int width) {
+  asm volatile (
+  "1:                                          \n"
+    MEMACCESS(0)
+    "ld4        {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load row 8 pixels
+    "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+    MEMACCESS(1)
+    "st1        {v3.8b}, [%1], #8              \n"  // store 8 A's.
+    "b.gt       1b                             \n"
+  : "+r"(src_argb),   // %0
+    "+r"(dst_a),      // %1
+    "+r"(width)       // %2
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3"  // Clobber List
+  );
+}
+#endif  // HAS_ARGBEXTRACTALPHAROW_NEON
+
 #ifdef HAS_ARGBTOYJROW_NEON
 void ARGBToYJRow_NEON(const uint8* src_argb, uint8* dst_y, int width) {
   asm volatile (
