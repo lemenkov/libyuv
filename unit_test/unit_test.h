@@ -91,6 +91,16 @@ static inline double get_time() {
 }
 #endif
 
+#ifndef SIMD_ALIGNED
+#if defined(_MSC_VER) && !defined(__CLR_VER)
+#define SIMD_ALIGNED(var) __declspec(align(16)) var
+#elif defined(__GNUC__) && !defined(__pnacl__)
+#define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
+#else
+#define SIMD_ALIGNED(var) var
+#endif
+#endif
+
 extern unsigned int fastrand_seed;
 inline int fastrand() {
   fastrand_seed = fastrand_seed * 214013u + 2531011u;

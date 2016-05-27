@@ -1744,7 +1744,9 @@ int ARGBBlur(const uint8* src_argb, int src_stride_argb,
 #if defined(HAS_CUMULATIVESUMTOAVERAGEROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ComputeCumulativeSumRow = ComputeCumulativeSumRow_SSE2;
-    CumulativeSumToAverageRow = CumulativeSumToAverageRow_SSE2;
+    if (IS_ALIGNED(dst_cumsum, 16)) {
+      CumulativeSumToAverageRow = CumulativeSumToAverageRow_SSE2;
+    }
   }
 #endif
   // Compute enough CumulativeSum for first row to be blurred. After this

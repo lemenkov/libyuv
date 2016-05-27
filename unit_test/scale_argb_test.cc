@@ -13,7 +13,6 @@
 
 #include "libyuv/convert_argb.h"
 #include "libyuv/cpu_id.h"
-#include "libyuv/row.h"   // For align_buffer_64
 #include "libyuv/scale_argb.h"
 #include "libyuv/video_common.h"
 #include "../unit_test/unit_test.h"
@@ -156,7 +155,7 @@ static int ARGBClipTestFilter(int src_width, int src_height,
       (Abs(src_height) + b * 2) * 4;
   int src_stride_argb = (b * 2 + Abs(src_width)) * 4;
 
-  align_buffer_64(src_argb, src_argb_plane_size);
+  align_buffer_page_end(src_argb, src_argb_plane_size);
   if (!src_argb) {
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
@@ -173,8 +172,8 @@ static int ARGBClipTestFilter(int src_width, int src_height,
     }
   }
 
-  align_buffer_64(dst_argb_c, dst_argb_plane_size);
-  align_buffer_64(dst_argb_opt, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_c, dst_argb_plane_size);
+  align_buffer_page_end(dst_argb_opt, dst_argb_plane_size);
   if (!dst_argb_c || !dst_argb_opt) {
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
@@ -216,9 +215,9 @@ static int ARGBClipTestFilter(int src_width, int src_height,
     }
   }
 
-  free_aligned_buffer_64(dst_argb_c);
-  free_aligned_buffer_64(dst_argb_opt);
-  free_aligned_buffer_64(src_argb);
+  free_aligned_buffer_page_end(dst_argb_c);
+  free_aligned_buffer_page_end(dst_argb_opt);
+  free_aligned_buffer_page_end(src_argb);
   return max_diff;
 }
 
@@ -322,8 +321,7 @@ int YUVToARGBScaleReference2(const uint8* src_y, int src_stride_y,
                              int clip_x, int clip_y,
                              int clip_width, int clip_height,
                              enum FilterMode filtering) {
-
-  uint8* argb_buffer = (uint8*)malloc(src_width * src_height * 4);
+  uint8* argb_buffer = static_cast<uint8*>(malloc(src_width * src_height * 4));
   int r;
   I420ToARGB(src_y, src_stride_y,
              src_u, src_stride_u,
