@@ -67,9 +67,9 @@ static inline bool SizeValid(int src_width, int src_height,
 #define align_buffer_page_end(var, size)                                       \
   uint8* var;                                                                  \
   uint8* var##_mem;                                                            \
-  var##_mem = reinterpret_cast<uint8*>(malloc((((size) + 4095) & ~4095) +      \
-      OFFBY));                                                                 \
-  var = var##_mem + (-(size) & 4095) + OFFBY;
+  var##_mem = reinterpret_cast<uint8*>(malloc(((size) + 4095 + 63) & ~4095));  \
+  var = (uint8*)((intptr_t)(var##_mem + (((size) + 4095 + 63) & ~4095) -       \
+      (size)) & ~63);
 
 #define free_aligned_buffer_page_end(var) \
   free(var##_mem);  \

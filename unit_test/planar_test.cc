@@ -1929,7 +1929,7 @@ static int TestBlur(int width, int height, int benchmark_iterations,
 }
 
 static const int kBlurSize = 55;
-TEST_F(LibYUVPlanarTest, DISABLED_ARGBBlur_Any) {
+TEST_F(LibYUVPlanarTest, ARGBBlur_Any) {
   int max_diff = TestBlur(benchmark_width_ - 1, benchmark_height_,
                           benchmark_iterations_,
                           disable_cpu_flags_, benchmark_cpu_info_,

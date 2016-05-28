@@ -5275,6 +5275,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx, const uint8* src_sobely,
 // dst points to pixel to store result to.
 // count is number of averaged pixels to produce.
 // Does 4 pixels at a time.
+// This function requires alignment on accumulation buffer pointers.
 void CumulativeSumToAverageRow_SSE2(const int32* topleft, const int32* botleft,
                                     int width, int area, uint8* dst,
                                     int count) {

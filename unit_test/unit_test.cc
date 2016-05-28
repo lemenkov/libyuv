@@ -34,7 +34,7 @@ DEFINE_int32(libyuv_cpu_info, -1,
 // Set flags to -1 for benchmarking to avoid slower C code.
 
 LibYUVConvertTest::LibYUVConvertTest() :
-    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(130),
+    benchmark_iterations_(BENCHMARK_ITERATIONS), benchmark_width_(128),
     benchmark_height_(72), disable_cpu_flags_(1), benchmark_cpu_info_(-1) {
   const char* repeat = getenv("LIBYUV_REPEAT");
   if (repeat) {
