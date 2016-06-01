@@ -146,7 +146,7 @@ namespace libyuv {
 TESTCS(TestI420, I420ToARGB, ARGBToI420, 1, 2, benchmark_width_, ERROR_FULL)
 TESTCS(TestI422, I422ToARGB, ARGBToI422, 0, 1, 0, ERROR_FULL)
 TESTCS(TestJ420, J420ToARGB, ARGBToJ420, 1, 2, benchmark_width_, ERROR_J420)
-TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, 3)
+TESTCS(TestJ422, J422ToARGB, ARGBToJ422, 0, 1, 0, ERROR_J420)
 
 static void YUVToRGB(int y, int u, int v, int* r, int* g, int* b) {
   const int kWidth = 16;
