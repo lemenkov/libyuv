@@ -61,6 +61,7 @@
             '-mfpu=vfp',
             '-mfpu=vfpv3',
             '-mfpu=vfpv3-d16',
+            # '-mthumb',  # arm32 not thumb
           ],
           'conditions': [
             # Disable LTO in libyuv_neon target due to gcc 4.9 compiler bug.
@@ -74,6 +75,7 @@
             ['target_arch != "arm64"', {
               'cflags': [
                 '-mfpu=neon',
+                # '-marm',  # arm32 not thumb
               ],
             }],
           ],

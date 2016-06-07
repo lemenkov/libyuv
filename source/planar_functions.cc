@@ -2404,8 +2404,8 @@ int ARGBExtractAlpha(const uint8* src_argb, int src_stride,
 #endif
 #if defined(HAS_ARGBEXTRACTALPHAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    ARGBExtractAlphaRow = IS_ALIGNED(width, 8) ? ARGBExtractAlphaRow_NEON
-                                               : ARGBExtractAlphaRow_Any_NEON;
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 16) ? ARGBExtractAlphaRow_NEON
+                                                : ARGBExtractAlphaRow_Any_NEON;
   }
 #endif
 

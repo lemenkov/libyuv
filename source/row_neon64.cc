@@ -450,7 +450,6 @@ void I422ToARGB4444Row_NEON(const uint8* src_y,
 void I400ToARGBRow_NEON(const uint8* src_y,
                         uint8* dst_argb,
                         int width) {
-  int64 width64 = (int64)(width);
   asm volatile (
     YUVTORGB_SETUP
     "movi       v23.8b, #255                   \n"
@@ -463,7 +462,7 @@ void I400ToARGBRow_NEON(const uint8* src_y,
     "b.gt       1b                             \n"
     : "+r"(src_y),     // %0
       "+r"(dst_argb),  // %1
-      "+r"(width64)    // %2
+      "+r"(width)      // %2
     : [kUVToRB]"r"(&kYuvI601Constants.kUVToRB),
       [kUVToG]"r"(&kYuvI601Constants.kUVToG),
       [kUVBiasBGR]"r"(&kYuvI601Constants.kUVBiasBGR),
@@ -1404,10 +1403,10 @@ void ARGBExtractAlphaRow_NEON(const uint8* src_argb, uint8* dst_a, int width) {
   asm volatile (
   "1:                                          \n"
     MEMACCESS(0)
-    "ld4        {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32 \n"  // load row 8 pixels
-    "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+    "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load row 16 pixels
+    "subs       %w2, %w2, #16                  \n"  // 16 processed per loop
     MEMACCESS(1)
-    "st1        {v3.8b}, [%1], #8              \n"  // store 8 A's.
+    "st1        {v3.16b}, [%1], #16            \n"  // store 16 A's.
     "b.gt       1b                             \n"
   : "+r"(src_argb),   // %0
     "+r"(dst_a),      // %1
