@@ -563,7 +563,6 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  int64 width64 = (int64)(width);
   asm volatile (
     YUVTORGB_SETUP
     "movi       v23.8b, #255                   \n"
@@ -576,7 +575,7 @@ void YUY2ToARGBRow_NEON(const uint8* src_yuy2,
     "b.gt       1b                             \n"
     : "+r"(src_yuy2),  // %0
       "+r"(dst_argb),  // %1
-      "+r"(width64)    // %2
+      "+r"(width)      // %2
     : [kUVToRB]"r"(&yuvconstants->kUVToRB),
       [kUVToG]"r"(&yuvconstants->kUVToG),
       [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
@@ -590,7 +589,6 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  int64 width64 = (int64)(width);
   asm volatile (
     YUVTORGB_SETUP
     "movi       v23.8b, #255                   \n"
@@ -603,7 +601,7 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
     "b.gt       1b                             \n"
     : "+r"(src_uyvy),  // %0
       "+r"(dst_argb),  // %1
-      "+r"(width64)    // %2
+      "+r"(width)      // %2
     : [kUVToRB]"r"(&yuvconstants->kUVToRB),
       [kUVToG]"r"(&yuvconstants->kUVToG),
       [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
@@ -681,10 +679,10 @@ void SetRow_NEON(uint8* dst, uint8 v8, int count) {
   asm volatile (
     "dup        v0.16b, %w2                    \n"  // duplicate 16 bytes
   "1:                                          \n"
-    "subs      %w1, %w1, #16                   \n"  // 16 bytes per loop
+    "subs       %w1, %w1, #16                  \n"  // 16 bytes per loop
     MEMACCESS(0)
     "st1        {v0.16b}, [%0], #16            \n"  // store
-    "b.gt      1b                              \n"
+    "b.gt       1b                             \n"
   : "+r"(dst),   // %0
     "+r"(count)  // %1
   : "r"(v8)      // %2
@@ -696,10 +694,10 @@ void ARGBSetRow_NEON(uint8* dst, uint32 v32, int count) {
   asm volatile (
     "dup        v0.4s, %w2                     \n"  // duplicate 4 ints
   "1:                                          \n"
-    "subs      %w1, %w1, #4                    \n"  // 4 ints per loop
+    "subs       %w1, %w1, #4                   \n"  // 4 ints per loop
     MEMACCESS(0)
     "st1        {v0.16b}, [%0], #16            \n"  // store
-    "b.gt      1b                              \n"
+    "b.gt       1b                             \n"
   : "+r"(dst),   // %0
     "+r"(count)  // %1
   : "r"(v32)     // %2
@@ -708,16 +706,14 @@ void ARGBSetRow_NEON(uint8* dst, uint32 v32, int count) {
 }
 
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
-  int64 width64 = (int64) width;
   asm volatile (
     // Start at end of source row.
-    "add        %0, %0, %2                     \n"
+    "add        %0, %0, %w2, sxtw              \n"
     "sub        %0, %0, #16                    \n"
-
   "1:                                          \n"
     MEMACCESS(0)
     "ld1        {v0.16b}, [%0], %3             \n"  // src -= 16
-    "subs       %2, %2, #16                   \n"  // 16 pixels per loop.
+    "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop.
     "rev64      v0.16b, v0.16b                 \n"
     MEMACCESS(1)
     "st1        {v0.D}[1], [%1], #8            \n"  // dst += 16
@@ -726,7 +722,7 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "b.gt       1b                             \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
-    "+r"(width64)  // %2
+    "+r"(width)  // %2
   : "r"((ptrdiff_t)-16)    // %3
   : "cc", "memory", "v0"
   );
@@ -734,16 +730,14 @@ void MirrorRow_NEON(const uint8* src, uint8* dst, int width) {
 
 void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                       int width) {
-  int64 width64 = (int64) width;
   asm volatile (
     // Start at end of source row.
-    "add        %0, %0, %3, lsl #1             \n"
+    "add        %0, %0, %w3, sxtw #1           \n"
     "sub        %0, %0, #16                    \n"
-
   "1:                                          \n"
     MEMACCESS(0)
     "ld2        {v0.8b, v1.8b}, [%0], %4       \n"  // src -= 16
-    "subs       %3, %3, #8                     \n"  // 8 pixels per loop.
+    "subs       %w3, %w3, #8                   \n"  // 8 pixels per loop.
     "rev64      v0.8b, v0.8b                   \n"
     "rev64      v1.8b, v1.8b                   \n"
     MEMACCESS(1)
@@ -754,23 +748,21 @@ void MirrorUVRow_NEON(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
   : "+r"(src_uv),  // %0
     "+r"(dst_u),   // %1
     "+r"(dst_v),   // %2
-    "+r"(width64)    // %3
+    "+r"(width)    // %3
   : "r"((ptrdiff_t)-16)      // %4
   : "cc", "memory", "v0", "v1"
   );
 }
 
 void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
-  int64 width64 = (int64) width;
   asm volatile (
-    // Start at end of source row.
-    "add        %0, %0, %2, lsl #2             \n"
+  // Start at end of source row.
+    "add        %0, %0, %w2, sxtw #2           \n"
     "sub        %0, %0, #16                    \n"
-
   "1:                                          \n"
     MEMACCESS(0)
     "ld1        {v0.16b}, [%0], %3             \n"  // src -= 16
-    "subs       %2, %2, #4                     \n"  // 4 pixels per loop.
+    "subs       %w2, %w2, #4                   \n"  // 4 pixels per loop.
     "rev64      v0.4s, v0.4s                   \n"
     MEMACCESS(1)
     "st1        {v0.D}[1], [%1], #8            \n"  // dst += 16
@@ -779,7 +771,7 @@ void ARGBMirrorRow_NEON(const uint8* src, uint8* dst, int width) {
     "b.gt       1b                             \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
-    "+r"(width64)  // %2
+    "+r"(width)  // %2
   : "r"((ptrdiff_t)-16)    // %3
   : "cc", "memory", "v0"
   );
@@ -797,7 +789,7 @@ void RGB24ToARGBRow_NEON(const uint8* src_rgb24, uint8* dst_argb, int width) {
     "b.gt       1b                             \n"
   : "+r"(src_rgb24),  // %0
     "+r"(dst_argb),   // %1
-    "+r"(width)         // %2
+    "+r"(width)       // %2
   :
   : "cc", "memory", "v1", "v2", "v3", "v4"  // Clobber List
   );
@@ -817,7 +809,7 @@ void RAWToARGBRow_NEON(const uint8* src_raw, uint8* dst_argb, int width) {
     "b.gt       1b                             \n"
   : "+r"(src_raw),   // %0
     "+r"(dst_argb),  // %1
-    "+r"(width)        // %2
+    "+r"(width)      // %2
   :
   : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5"  // Clobber List
   );
