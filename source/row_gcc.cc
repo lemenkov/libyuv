@@ -3596,7 +3596,7 @@ void BlendPlaneRow_SSSE3(const uint8* src0, const uint8* src1,
     "+r"(src1),       // %1
     "+r"(alpha),      // %2
     "+r"(dst),        // %3
-    "+r"(width)       // %4
+    "+rm"(width)      // %4
   :: "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -3653,7 +3653,7 @@ void BlendPlaneRow_AVX2(const uint8* src0, const uint8* src1,
     "+r"(src1),       // %1
     "+r"(alpha),      // %2
     "+r"(dst),        // %3
-    "+r"(width)       // %4
+    "+rm"(width)      // %4
   :: "memory", "cc", "eax",
      "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
@@ -4936,9 +4936,9 @@ void InterpolateRow_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "jg        100b                            \n"
 
   "99:                                         \n"
-  : "+r"(dst_ptr),    // %0
-    "+r"(src_ptr),    // %1
-    "+r"(dst_width),  // %2
+  : "+r"(dst_ptr),     // %0
+    "+r"(src_ptr),     // %1
+    "+rm"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc", "eax", NACL_R14
@@ -5014,7 +5014,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr, const uint8* src_ptr,
   "999:                                        \n"
   : "+D"(dst_ptr),    // %0
     "+S"(src_ptr),    // %1
-    "+c"(dst_width),  // %2
+    "+cm"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
   : "memory", "cc", "eax", NACL_R14
