@@ -572,6 +572,10 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     MEMACCESS(6)                                               \
     "vld2.8     {d6["#n"], d7["#n"]}, [%6]     \n"
 
+// The NEON version mimics this formula:
+// #define BLENDER(a, b, f) (uint8)((int)(a) +
+//    ((int)(f) * ((int)(b) - (int)(a)) >> 16))
+
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
                           int dst_width, int x, int dx) {
   int dx_offset[4] = {0, 1, 2, 3};

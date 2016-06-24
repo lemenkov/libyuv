@@ -314,10 +314,10 @@ static int TestFilter_16(int src_width, int src_height,
 
 TEST_FACTOR(2, 1, 2, 0)
 TEST_FACTOR(4, 1, 4, 0)
-TEST_FACTOR(8, 1, 8, 3)
+TEST_FACTOR(8, 1, 8, 0)
 TEST_FACTOR(3by4, 3, 4, 1)
 TEST_FACTOR(3by8, 3, 8, 1)
-TEST_FACTOR(3, 1, 3, 3)
+TEST_FACTOR(3, 1, 3, 0)
 #undef TEST_FACTOR1
 #undef TEST_FACTOR
 #undef SX
@@ -356,9 +356,9 @@ TEST_FACTOR(3, 1, 3, 3)
 // Test scale to a specified size with all 4 filters.
 #define TEST_SCALETO(name, width, height)                                      \
     TEST_SCALETO1(name, width, height, None, 0)                                \
-    TEST_SCALETO1(name, width, height, Linear, 3)                              \
-    TEST_SCALETO1(name, width, height, Bilinear, 3)                            \
-    TEST_SCALETO1(name, width, height, Box, 3)
+    TEST_SCALETO1(name, width, height, Linear, 0)                              \
+    TEST_SCALETO1(name, width, height, Bilinear, 0)                            \
+    TEST_SCALETO1(name, width, height, Box, 0)
 
 TEST_SCALETO(Scale, 1, 1)
 TEST_SCALETO(Scale, 320, 240)
