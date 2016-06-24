@@ -612,8 +612,8 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
     "vmovl.u16  q10, d21                       \n"
     "vmul.s32   q11, q11, q13                  \n"
     "vmul.s32   q12, q12, q10                  \n"
-    "vshrn.s32  d18, q11, #16                  \n"
-    "vshrn.s32  d19, q12, #16                  \n"
+    "vrshrn.s32  d18, q11, #16                 \n"
+    "vrshrn.s32  d19, q12, #16                 \n"
     "vadd.s16   q8, q8, q9                     \n"
     "vmovn.s16  d6, q8                         \n"
 

@@ -626,8 +626,8 @@ void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
     "ushll2    v6.4s, v6.8h, #0                \n"
     "mul       v16.4s, v16.4s, v7.4s           \n"
     "mul       v17.4s, v17.4s, v6.4s           \n"
-    "shrn      v6.4h, v16.4s, #16              \n"
-    "shrn2     v6.8h, v17.4s, #16              \n"
+    "rshrn      v6.4h, v16.4s, #16             \n"
+    "rshrn2     v6.8h, v17.4s, #16             \n"
     "add       v4.8h, v4.8h, v6.8h             \n"
     "xtn       v4.8b, v4.8h                    \n"
 
