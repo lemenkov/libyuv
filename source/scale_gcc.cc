@@ -878,7 +878,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "movd      %%xmm1,%k2                      \n"
     "mov       %w2," MEMACCESS(0) "            \n"
     "lea       " MEMLEA(0x2,0) ",%0            \n"
-    "sub       $0x2,%5                         \n"
+    "subl      $0x2,%5                         \n"
     "jge       2b                              \n"
 
     LABELALIGN
@@ -904,7 +904,11 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "=&a"(temp_pixel),  // %2
     "=&r"(x0),          // %3
     "=&r"(x1),          // %4
+#if defined(__x86_64__)
     "+rm"(dst_width)    // %5
+#else
+    "+m"(dst_width)    // %5
+#endif
   : "rm"(x),            // %6
     "rm"(dx),           // %7
 #if defined(__x86_64__)
