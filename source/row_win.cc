@@ -10,8 +10,11 @@
 
 #include "libyuv/row.h"
 
-#if !defined(LIBYUV_DISABLE_X86) && defined(_M_X64) && \
-    defined(_MSC_VER) && !defined(__clang__)
+// This module is for Visual C 32/64 bit and clangcl 32 bit
+#if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && \
+    (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
+
+#if defined(_M_X64)
 #include <emmintrin.h>
 #include <tmmintrin.h>  // For _mm_maddubs_epi16
 #endif
@@ -20,10 +23,6 @@
 namespace libyuv {
 extern "C" {
 #endif
-
-// This module is for Visual C 32/64 bit and clangcl 32 bit
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 
 // 64 bit
 #if defined(_M_X64)
@@ -6261,9 +6260,10 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 #endif  // defined(_M_X64)
-#endif  // !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64))
 
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv
 #endif
+
+#endif  // !defined(LIBYUV_DISABLE_X86) && (defined(_M_IX86) || defined(_M_X64))

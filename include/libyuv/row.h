@@ -262,7 +262,7 @@ extern "C" {
 #endif
 
 // The following are also available on x64 Visual C.
-#if !defined(LIBYUV_DISABLE_X86) && defined (_M_X64) && \
+#if !defined(LIBYUV_DISABLE_X86) && defined(_MSC_VER) && defined(_M_X64) && \
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422ALPHATOARGBROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
