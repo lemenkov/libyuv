@@ -441,13 +441,13 @@ struct YuvConstants {
 #else
 // This struct is for Intel color conversion.
 struct YuvConstants {
-  lvec8 kUVToB;
-  lvec8 kUVToG;
-  lvec8 kUVToR;
-  lvec16 kUVBiasB;
-  lvec16 kUVBiasG;
-  lvec16 kUVBiasR;
-  lvec16 kYToRgb;
+  int8 kUVToB[32];
+  int8 kUVToG[32];
+  int8 kUVToR[32];
+  int16 kUVBiasB[16];
+  int16 kUVBiasG[16];
+  int16 kUVBiasR[16];
+  int16 kYToRgb[16];
 };
 
 // Offsets into YuvConstants structure

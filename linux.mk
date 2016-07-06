@@ -75,7 +75,7 @@ psnr: util/psnr.cc
 
 # A C test utility that uses libyuv conversion from C.
 cpuid: util/cpuid.c libyuv.a
-	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a
+	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a -lc++
 
 clean:
 	/bin/rm -f source/*.o *.ii *.s libyuv.a convert cpuid psnr
