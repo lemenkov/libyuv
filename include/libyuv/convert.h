@@ -185,6 +185,16 @@ int ARGB4444ToI420(const uint8* src_frame, int src_stride_frame,
                    uint8* dst_v, int dst_stride_v,
                    int width, int height);
 
+// Draw a rectangle into I420.
+// TODO(fbarchard): add planar_functions.h to webrtc includes
+// https://bugs.chromium.org/p/libyuv/issues/detail?id=618
+LIBYUV_API
+int I420Rect(uint8* dst_y, int dst_stride_y,
+             uint8* dst_u, int dst_stride_u,
+             uint8* dst_v, int dst_stride_v,
+             int x, int y, int width, int height,
+             int value_y, int value_u, int value_v);
+
 #ifdef HAVE_JPEG
 // src_width/height provided by capture.
 // dst_width/height for clipping determine final size.
