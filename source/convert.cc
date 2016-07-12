@@ -226,6 +226,75 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
   }
 }
 
+// Support function for NV12 etc UV channels.
+// Width and height are plane sizes (typically half pixel width)
+static void SplitPlane(const uint8* src_uv, int src_stride_uv,
+                       uint8* dst_u, int dst_stride_u,
+                       uint8* dst_v, int dst_stride_v,
+                       int width, int height) {
+  int y;
+  void (*SplitUVRow)(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
+                     int width) = SplitUVRow_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_u = dst_u + (height - 1) * dst_stride_u;
+    dst_v = dst_v + (height - 1) * dst_stride_v;
+    dst_stride_u = -dst_stride_u;
+    dst_stride_v = -dst_stride_v;
+  }
+  // Coalesce rows.
+  if (src_stride_uv == width * 2 &&
+      dst_stride_u == width &&
+      dst_stride_v == width) {
+    width *= height;
+    height = 1;
+    src_stride_uv = dst_stride_u = dst_stride_v = 0;
+  }
+#if defined(HAS_SPLITUVROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    SplitUVRow = SplitUVRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      SplitUVRow = SplitUVRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    SplitUVRow = SplitUVRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      SplitUVRow = SplitUVRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    SplitUVRow = SplitUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      SplitUVRow = SplitUVRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SPLITUVROW_DSPR2)
+  if (TestCpuFlag(kCpuHasDSPR2) &&
+      IS_ALIGNED(dst_u, 4) && IS_ALIGNED(dst_stride_u, 4) &&
+      IS_ALIGNED(dst_v, 4) && IS_ALIGNED(dst_stride_v, 4)) {
+    SplitUVRow = SplitUVRow_Any_DSPR2;
+    if (IS_ALIGNED(width, 16)) {
+      SplitUVRow = SplitUVRow_DSPR2;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    // Copy a row of UV.
+    SplitUVRow(src_uv, dst_u, dst_v, width);
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+    src_uv += src_stride_uv;
+  }
+}
+
 // Support converting from FOURCC_M420
 // Useful for bandwidth constrained transports like USB 1.0 and 2.0 and for
 // easy conversion to I420.
@@ -1380,6 +1449,81 @@ int ARGB4444ToI420(const uint8* src_argb4444, int src_stride_argb4444,
     free_aligned_buffer_64(row);
   }
 #endif
+  return 0;
+}
+
+static void SplitPixels(const uint8* src_u, int src_pixel_stride_uv,
+                        uint8* dst_u, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    *dst_u = *src_u;
+    ++dst_u;
+    src_u += src_pixel_stride_uv;
+  }
+}
+
+// Convert Android420 to I420.
+LIBYUV_API
+int Android420ToI420(const uint8* src_y, int src_stride_y,
+                     const uint8* src_u, int src_stride_u,
+                     const uint8* src_v, int src_stride_v,
+                     int src_pixel_stride_uv,
+                     uint8* dst_y, int dst_stride_y,
+                     uint8* dst_u, int dst_stride_u,
+                     uint8* dst_v, int dst_stride_v,
+                     int width, int height) {
+  int y;
+  const int vu_off = src_v - src_u;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_y || !src_u || !src_v ||
+      !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+
+  // Copy UV planes as is - I420
+  if (src_pixel_stride_uv == 1) {
+    CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, halfheight);
+    CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
+    return 0;
+  // Split UV planes - NV21
+  } else if (src_pixel_stride_uv == 2 && vu_off == -1 &&
+             src_stride_u == src_stride_v) {
+    SplitPlane(src_v, src_stride_v, dst_v, dst_stride_v, dst_u, dst_stride_u,
+               halfwidth, halfheight);
+    return 0;
+  // Split UV planes - NV12
+  } else if (src_pixel_stride_uv == 2 && vu_off == 1 &&
+             src_stride_u == src_stride_v) {
+    SplitPlane(src_u, src_stride_u, dst_u, dst_stride_u, dst_v, dst_stride_v,
+               halfwidth, halfheight);
+    return 0;
+  }
+
+  for (y = 0; y < halfheight; ++y) {
+    SplitPixels(src_u, src_pixel_stride_uv, dst_u, halfwidth);
+    SplitPixels(src_v, src_pixel_stride_uv, dst_v, halfwidth);
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_u += dst_stride_u;
+    dst_v += dst_stride_v;
+  }
   return 0;
 }
 

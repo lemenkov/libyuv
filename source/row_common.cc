@@ -988,7 +988,7 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BG (UG * 128 + VG * 128 + YGB)
 #define BR            (VR * 128 + YGB)
 
-#if defined(__aarch64__)
+#if defined(__aarch64__)  // 64 bit arm
 const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
@@ -1005,7 +1005,7 @@ const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-#elif defined(__arm__)
+#elif defined(__arm__)  // 32 bit arm
 const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -1264,9 +1264,9 @@ static __inline void YuvPixel(uint8 y, uint8 u, uint8 v,
 #endif
 
   uint32 y1 = (uint32)(y * 0x0101 * yg) >> 16;
-  *b = Clamp((int32)(-(u * ub         ) + y1 + bb) >> 6);
+  *b = Clamp((int32)(-(u * ub)          + y1 + bb) >> 6);
   *g = Clamp((int32)(-(u * ug + v * vg) + y1 + bg) >> 6);
-  *r = Clamp((int32)(-(         v * vr) + y1 + br) >> 6);
+  *r = Clamp((int32)         (-(v * vr) + y1 + br) >> 6);
 }
 
 // Y contribution to R,G,B.  Scale and bias.
@@ -2167,7 +2167,7 @@ static void HalfRow_16_C(const uint16* src_uv, ptrdiff_t src_uv_stride,
 void InterpolateRow_C(uint8* dst_ptr, const uint8* src_ptr,
                       ptrdiff_t src_stride,
                       int width, int source_y_fraction) {
-  int y1_fraction = source_y_fraction ;
+  int y1_fraction = source_y_fraction;
   int y0_fraction = 256 - y1_fraction;
   const uint8* src_ptr1 = src_ptr + src_stride;
   int x;
