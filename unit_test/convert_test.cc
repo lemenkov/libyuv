@@ -174,22 +174,18 @@ TESTPLANARTOP(I420, 2, 2, I420Mirror, 2, 2)
 TESTPLANARTOP(I422, 2, 1, I422, 2, 1)
 TESTPLANARTOP(I444, 1, 1, I444, 1, 1)
 
-
-
 // Test Android 420 to I420
-
-#define TESTAPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,          \
-                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF)  \
-TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
+#define TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE,                          \
+                        SRC_SUBSAMP_X, SRC_SUBSAMP_Y,                          \
+                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF,  \
+                        PN, OFF_U, OFF_V)                                      \
+TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##_##PN##N) {\
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
+  const int kSizeUV = SUBSAMPLE(kWidth, SRC_SUBSAMP_X) *                       \
+                      SUBSAMPLE(kHeight, SRC_SUBSAMP_Y);                       \
   align_buffer_page_end(src_y, kWidth * kHeight + OFF);                        \
-  align_buffer_page_end(src_u,                                                 \
-                        SUBSAMPLE(kWidth, SRC_SUBSAMP_X) *                     \
-                        SUBSAMPLE(kHeight, SRC_SUBSAMP_Y) + OFF);              \
-  align_buffer_page_end(src_v,                                                 \
-                        SUBSAMPLE(kWidth, SRC_SUBSAMP_X) *                     \
-                        SUBSAMPLE(kHeight, SRC_SUBSAMP_Y) + OFF);              \
+  align_buffer_page_end(src_uv, kSizeUV * ((PIXEL_STRIDE == 3) ? 3 : 2) + OFF);\
   align_buffer_page_end(dst_y_c, kWidth * kHeight);                            \
   align_buffer_page_end(dst_u_c,                                               \
                         SUBSAMPLE(kWidth, SUBSAMP_X) *                         \
@@ -204,14 +200,17 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
   align_buffer_page_end(dst_v_opt,                                             \
                         SUBSAMPLE(kWidth, SUBSAMP_X) *                         \
                         SUBSAMPLE(kHeight, SUBSAMP_Y));                        \
+  uint8* src_u = src_uv + OFF_U;                                               \
+  uint8* src_v = src_uv + (PIXEL_STRIDE == 1 ? kSizeUV : OFF_V);               \
+  int src_stride_uv =  SUBSAMPLE(kWidth, SUBSAMP_X) * PIXEL_STRIDE;            \
   for (int i = 0; i < kHeight; ++i)                                            \
     for (int j = 0; j < kWidth; ++j)                                           \
       src_y[i * kWidth + j + OFF] = (fastrand() & 0xff);                       \
   for (int i = 0; i < SUBSAMPLE(kHeight, SRC_SUBSAMP_Y); ++i) {                \
     for (int j = 0; j < SUBSAMPLE(kWidth, SRC_SUBSAMP_X); ++j) {               \
-      src_u[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
+      src_u[(i * src_stride_uv) + j * PIXEL_STRIDE + OFF] =                    \
           (fastrand() & 0xff);                                                 \
-      src_v[(i * SUBSAMPLE(kWidth, SRC_SUBSAMP_X)) + j + OFF] =                \
+      src_v[(i * src_stride_uv) + j * PIXEL_STRIDE + OFF] =                    \
           (fastrand() & 0xff);                                                 \
     }                                                                          \
   }                                                                            \
@@ -231,7 +230,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                                  SUBSAMPLE(kWidth, SRC_SUBSAMP_X),             \
                                  src_v + OFF,                                  \
                                  SUBSAMPLE(kWidth, SRC_SUBSAMP_X),             \
-                                 1,                                            \
+                                 PIXEL_STRIDE,                                 \
                                  dst_y_c, kWidth,                              \
                                  dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  dst_v_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
@@ -243,7 +242,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                                        SUBSAMPLE(kWidth, SRC_SUBSAMP_X),       \
                                    src_v + OFF,                                \
                                        SUBSAMPLE(kWidth, SRC_SUBSAMP_X),       \
-                                   1,                                          \
+                                   PIXEL_STRIDE,                               \
                                    dst_y_opt, kWidth,                          \
                                    dst_u_opt, SUBSAMPLE(kWidth, SUBSAMP_X),    \
                                    dst_v_opt, SUBSAMPLE(kWidth, SUBSAMP_X),    \
@@ -294,27 +293,29 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
   free_aligned_buffer_page_end(dst_u_opt);                                     \
   free_aligned_buffer_page_end(dst_v_opt);                                     \
   free_aligned_buffer_page_end(src_y);                                         \
-  free_aligned_buffer_page_end(src_u);                                         \
-  free_aligned_buffer_page_end(src_v);                                         \
+  free_aligned_buffer_page_end(src_uv);                                        \
 }
 
-#define TESTAPLANARTOP(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,           \
+#define TESTAPLANARTOP(SRC_FMT_PLANAR, PN, PIXEL_STRIDE, OFF_U, OFF_V,         \
+                       SRC_SUBSAMP_X, SRC_SUBSAMP_Y,                           \
                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                       \
-    TESTAPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
-                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_width_ - 4, _Any, +, 0)                          \
-    TESTAPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
-                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_width_, _Unaligned, +, 1)                        \
-    TESTAPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
-                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_width_, _Invert, -, 0)                           \
-    TESTAPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,              \
-                    FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                          \
-                    benchmark_width_, _Opt, +, 0)
+    TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,               \
+                    SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+                    benchmark_width_ - 4, _Any, +, 0, PN, OFF_U, OFF_V)        \
+    TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,               \
+                    SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+                    benchmark_width_, _Unaligned, +, 1, PN, OFF_U, OFF_V)      \
+    TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,               \
+                    SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+                    benchmark_width_, _Invert, -, 0, PN, OFF_U, OFF_V)         \
+    TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,               \
+                    SRC_SUBSAMP_Y, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,           \
+                    benchmark_width_, _Opt, +, 0, PN, OFF_U, OFF_V)
 
-TESTAPLANARTOP(Android420, 2, 2, I420, 2, 2)
-
+TESTAPLANARTOP(Android420, I420, 1, 0, 0, 2, 2, I420, 2, 2)
+TESTAPLANARTOP(Android420, NV12, 2, 0, 1, 2, 2, I420, 2, 2)
+TESTAPLANARTOP(Android420, NV21, 2, 1, 0, 2, 2, I420, 2, 2)
+TESTAPLANARTOP(Android420, YUV3, 3, 0, 1, 2, 2, I420, 2, 2)
 
 #define TESTPLANARTOBPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,          \
                        FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF)   \

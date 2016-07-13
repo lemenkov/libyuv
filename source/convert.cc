@@ -227,7 +227,7 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
 }
 
 // Support function for NV12 etc UV channels.
-// Width and height are plane sizes (typically half pixel width)
+// Width and height are plane sizes (typically half pixel width).
 static void SplitPlane(const uint8* src_uv, int src_stride_uv,
                        uint8* dst_u, int dst_stride_u,
                        uint8* dst_v, int dst_stride_v,
