@@ -374,7 +374,7 @@ extern "C" {
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
 #define SIMD_ALIGNED(var) __declspec(align(16)) var
-#define SIMD_ALIGNED32(var) __declspec(align(64)) var
+#define SIMD_ALIGNED32(var) __declspec(align(32)) var
 typedef __declspec(align(16)) int16 vec16[8];
 typedef __declspec(align(16)) int32 vec32[4];
 typedef __declspec(align(16)) int8 vec8[16];
@@ -390,7 +390,7 @@ typedef __declspec(align(32)) uint8 ulvec8[32];
 #elif !defined(__pnacl__) && (defined(__GNUC__) || defined(__clang__))
 // Caveat GCC 4.2 to 4.7 have a known issue using vectors with const.
 #define SIMD_ALIGNED(var) var __attribute__((aligned(16)))
-#define SIMD_ALIGNED32(var) var __attribute__((aligned(64)))
+#define SIMD_ALIGNED32(var) var __attribute__((aligned(32)))
 typedef int16 __attribute__((vector_size(16))) vec16;
 typedef int32 __attribute__((vector_size(16))) vec32;
 typedef int8 __attribute__((vector_size(16))) vec8;
@@ -422,7 +422,7 @@ typedef uint8 ulvec8[32];
 
 #if defined(__aarch64__)
 // This struct is for Arm64 color conversion.
-struct YuvConstants {
+struct uvConstants {
   uvec16 kUVToRB;
   uvec16 kUVToRB2;
   uvec16 kUVToG;
