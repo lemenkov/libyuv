@@ -422,7 +422,7 @@ typedef uint8 ulvec8[32];
 
 #if defined(__aarch64__)
 // This struct is for Arm64 color conversion.
-struct uvConstants {
+struct YuvConstants {
   uvec16 kUVToRB;
   uvec16 kUVToRB2;
   uvec16 kUVToG;

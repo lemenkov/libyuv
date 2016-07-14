@@ -989,7 +989,7 @@ void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width) {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)  // 64 bit arm
-const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -997,7 +997,7 @@ const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1006,20 +1006,20 @@ const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)  // 32 bit arm
-const YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvI601Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuI601Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED32(kYuvI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYuvI601Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1031,7 +1031,7 @@ const YuvConstants SIMD_ALIGNED32(kYuvI601Constants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED32(kYvuI601Constants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYvuI601Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1076,7 +1076,7 @@ const YuvConstants SIMD_ALIGNED32(kYvuI601Constants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1084,7 +1084,7 @@ const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1093,20 +1093,20 @@ const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvJPEGConstants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuJPEGConstants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED32(kYuvJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYuvJPEGConstants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1118,7 +1118,7 @@ const YuvConstants SIMD_ALIGNED32(kYuvJPEGConstants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED32(kYvuJPEGConstants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYvuJPEGConstants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
@@ -1164,7 +1164,7 @@ const YuvConstants SIMD_ALIGNED32(kYvuJPEGConstants) = {
 #define BR            (VR * 128 + YGB)
 
 #if defined(__aarch64__)
-const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { -UB, -VR, -UB, -VR, -UB, -VR, -UB, -VR },
   { UG, VG, UG, VG, UG, VG, UG, VG },
@@ -1172,7 +1172,7 @@ const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { -VR, -UB, -VR, -UB, -VR, -UB, -VR, -UB },
   { VG, UG, VG, UG, VG, UG, VG, UG },
@@ -1181,20 +1181,20 @@ const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { 0x0101 * YG, 0, 0, 0 }
 };
 #elif defined(__arm__)
-const YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYuvH709Constants) = {
   { -UB, -UB, -UB, -UB, -VR, -VR, -VR, -VR, 0, 0, 0, 0, 0, 0, 0, 0 },
   { UG, UG, UG, UG, VG, VG, VG, VG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BB, BG, BR, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
-const YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
   { -VR, -VR, -VR, -VR, -UB, -UB, -UB, -UB, 0, 0, 0, 0, 0, 0, 0, 0 },
   { VG, VG, VG, VG, UG, UG, UG, UG, 0, 0, 0, 0, 0, 0, 0, 0 },
   { BR, BG, BB, 0, 0, 0, 0, 0 },
   { 0x0101 * YG, 0, 0, 0 }
 };
 #else
-const YuvConstants SIMD_ALIGNED32(kYuvH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYuvH709Constants) = {
   { UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0,
     UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0, UB, 0 },
   { UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG,
@@ -1206,7 +1206,7 @@ const YuvConstants SIMD_ALIGNED32(kYuvH709Constants) = {
   { BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR, BR },
   { YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG, YG }
 };
-const YuvConstants SIMD_ALIGNED32(kYvuH709Constants) = {
+const struct YuvConstants SIMD_ALIGNED32(kYvuH709Constants) = {
   { VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0,
     VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0, VR, 0 },
   { VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG, VG, UG,
