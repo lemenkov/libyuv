@@ -40,7 +40,6 @@ exec_script_whitelist = [
   "//build/config/win/visual_studio_version.gni",
   "//build/gn_helpers.py",
   "//build/gypi_to_gn.py",
-  "//build/toolchain/concurrent_links.gni",
   "//build/toolchain/gcc_toolchain.gni",
   "//build/toolchain/mac/BUILD.gn",
   "//build/toolchain/win/BUILD.gn",
