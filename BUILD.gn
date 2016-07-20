@@ -18,7 +18,7 @@ config("libyuv_config") {
 
 use_neon = current_cpu == "arm64" || (current_cpu == "arm" && (arm_use_neon || arm_optionally_use_neon))
 
-source_set("libyuv") {
+static_library("libyuv") {
   sources = [
     # Headers
     "include/libyuv.h",
