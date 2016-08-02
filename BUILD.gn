@@ -82,14 +82,12 @@ static_library("libyuv") {
    public_configs = [ ":libyuv_config" ]
 
   defines = []
+  deps = []
 
   if (!is_ios) {
     defines += [ "HAVE_JPEG" ]
+    deps += [ "//third_party:jpeg" ]
   }
-
-  deps = [
-    "//third_party:jpeg",
-  ]
 
   if (use_neon) {
     deps += [ ":libyuv_neon" ]
