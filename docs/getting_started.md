@@ -138,29 +138,29 @@ Add to .gclient last line: `target_os=['android'];`
 armv7
 
     GYP_DEFINES="OS=android" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 arm64
 
     GYP_DEFINES="OS=android target_arch=arm64 target_subarch=arm64" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 ia32
 
     GYP_DEFINES="OS=android target_arch=ia32" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
     GYP_DEFINES="OS=android target_arch=ia32 android_full_debug=1" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
 
 mipsel
 
     GYP_DEFINES="OS=android target_arch=mipsel" GYP_CROSSCOMPILE=1 ./gyp_libyuv
-    ninja -j7 -C out/Debug libyuv_unittest_apk
-    ninja -j7 -C out/Release libyuv_unittest_apk
+    ninja -j7 -C out/Debug yuv_unittest_apk
+    ninja -j7 -C out/Release yuv_unittest_apk
 
 arm32 disassembly:
 
