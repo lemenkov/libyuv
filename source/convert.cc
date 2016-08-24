@@ -44,6 +44,7 @@ static int I4xxToI420(const uint8* src_y, int src_stride_y,
       src_uv_width == 0 || src_uv_height == 0) {
     return -1;
   }
+  // TODO(fbarchard): make Y optional.
   ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
              dst_y, dst_stride_y, dst_y_width, dst_y_height,
              kFilterBilinear);
@@ -313,8 +314,7 @@ static int X420ToI420(const uint8* src_y,
                       int width, int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_uv ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_uv || !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }

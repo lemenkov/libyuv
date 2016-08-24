@@ -427,7 +427,8 @@ TESTPLANARTOBP(I420, 2, 2, NV12, 2, 2)
 TESTPLANARTOBP(I420, 2, 2, NV21, 2, 2)
 
 #define TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,         \
-                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF) \
+                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, W1280, N, NEG, OFF, \
+                         DOY)                                                  \
 TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = benchmark_height_;                                       \
@@ -471,7 +472,7 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
   SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                          \
                                  src_uv + OFF,                                 \
                                  2 * SUBSAMPLE(kWidth, SRC_SUBSAMP_X),         \
-                                 dst_y_c, kWidth,                              \
+                                 DOY ? dst_y_c : NULL, kWidth,                 \
                                  dst_u_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  dst_v_c, SUBSAMPLE(kWidth, SUBSAMP_X),        \
                                  kWidth, NEG kHeight);                         \
@@ -480,23 +481,25 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
     SRC_FMT_PLANAR##To##FMT_PLANAR(src_y + OFF, kWidth,                        \
                                    src_uv + OFF,                               \
                                    2 * SUBSAMPLE(kWidth, SRC_SUBSAMP_X),       \
-                                   dst_y_opt, kWidth,                          \
+                                   DOY ? dst_y_opt : NULL, kWidth,             \
                                    dst_u_opt, SUBSAMPLE(kWidth, SUBSAMP_X),    \
                                    dst_v_opt, SUBSAMPLE(kWidth, SUBSAMP_X),    \
                                    kWidth, NEG kHeight);                       \
   }                                                                            \
   int max_diff = 0;                                                            \
-  for (int i = 0; i < kHeight; ++i) {                                          \
-    for (int j = 0; j < kWidth; ++j) {                                         \
-      int abs_diff =                                                           \
-          abs(static_cast<int>(dst_y_c[i * kWidth + j]) -                      \
-              static_cast<int>(dst_y_opt[i * kWidth + j]));                    \
-      if (abs_diff > max_diff) {                                               \
-        max_diff = abs_diff;                                                   \
+  if (DOY) {                                                                   \
+    for (int i = 0; i < kHeight; ++i) {                                        \
+      for (int j = 0; j < kWidth; ++j) {                                       \
+        int abs_diff =                                                         \
+            abs(static_cast<int>(dst_y_c[i * kWidth + j]) -                    \
+                static_cast<int>(dst_y_opt[i * kWidth + j]));                  \
+        if (abs_diff > max_diff) {                                             \
+          max_diff = abs_diff;                                                 \
+        }                                                                      \
       }                                                                        \
     }                                                                          \
+    EXPECT_LE(max_diff, 1);                                                    \
   }                                                                            \
-  EXPECT_LE(max_diff, 1);                                                      \
   for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                    \
     for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                   \
       int abs_diff =                                                           \
@@ -537,16 +540,19 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
                         FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y)                      \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_width_ - 4, _Any, +, 0)                         \
+                     benchmark_width_ - 4, _Any, +, 0, 1)                      \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_width_, _Unaligned, +, 1)                       \
+                     benchmark_width_, _Unaligned, +, 1, 1)                    \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_width_, _Invert, -, 0)                          \
+                     benchmark_width_, _Invert, -, 0, 1)                       \
     TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
                      FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
-                     benchmark_width_, _Opt, +, 0)
+                     benchmark_width_, _Opt, +, 0, 1)                          \
+    TESTBIPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,             \
+                     FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,                         \
+                     benchmark_width_, _NullY, +, 0, 0)
 
 TESTBIPLANARTOP(NV12, 2, 2, I420, 2, 2)
 TESTBIPLANARTOP(NV21, 2, 2, I420, 2, 2)
