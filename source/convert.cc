@@ -40,14 +40,14 @@ static int I4xxToI420(const uint8* src_y, int src_stride_y,
   const int dst_y_height = Abs(src_y_height);
   const int dst_uv_width = SUBSAMPLE(dst_y_width, 1, 1);
   const int dst_uv_height = SUBSAMPLE(dst_y_height, 1, 1);
-  if (src_y_width == 0 || src_y_height == 0 ||
-      src_uv_width == 0 || src_uv_height == 0) {
+  if (src_uv_width == 0 || src_uv_height == 0) {
     return -1;
   }
-  // TODO(fbarchard): support NULL for dst_y
-  ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
-             dst_y, dst_stride_y, dst_y_width, dst_y_height,
-             kFilterBilinear);
+  if (dst_y) {
+    ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
+               dst_y, dst_stride_y, dst_y_width, dst_y_height,
+               kFilterBilinear);
+  }
   ScalePlane(src_u, src_stride_u, src_uv_width, src_uv_height,
              dst_u, dst_stride_u, dst_uv_width, dst_uv_height,
              kFilterBilinear);
@@ -229,75 +229,6 @@ static void CopyPlane2(const uint8* src, int src_stride_0, int src_stride_1,
   }
 }
 
-// Support function for NV12 etc UV channels.
-// Width and height are plane sizes (typically half pixel width).
-static void SplitUVPlane(const uint8* src_uv, int src_stride_uv,
-                         uint8* dst_u, int dst_stride_u,
-                         uint8* dst_v, int dst_stride_v,
-                         int width, int height) {
-  int y;
-  void (*SplitUVRow)(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
-                     int width) = SplitUVRow_C;
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    dst_u = dst_u + (height - 1) * dst_stride_u;
-    dst_v = dst_v + (height - 1) * dst_stride_v;
-    dst_stride_u = -dst_stride_u;
-    dst_stride_v = -dst_stride_v;
-  }
-  // Coalesce rows.
-  if (src_stride_uv == width * 2 &&
-      dst_stride_u == width &&
-      dst_stride_v == width) {
-    width *= height;
-    height = 1;
-    src_stride_uv = dst_stride_u = dst_stride_v = 0;
-  }
-#if defined(HAS_SPLITUVROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    SplitUVRow = SplitUVRow_Any_SSE2;
-    if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_SPLITUVROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    SplitUVRow = SplitUVRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      SplitUVRow = SplitUVRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_SPLITUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    SplitUVRow = SplitUVRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_SPLITUVROW_DSPR2)
-  if (TestCpuFlag(kCpuHasDSPR2) &&
-      IS_ALIGNED(dst_u, 4) && IS_ALIGNED(dst_stride_u, 4) &&
-      IS_ALIGNED(dst_v, 4) && IS_ALIGNED(dst_stride_v, 4)) {
-    SplitUVRow = SplitUVRow_Any_DSPR2;
-    if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_DSPR2;
-    }
-  }
-#endif
-
-  for (y = 0; y < height; ++y) {
-    // Copy a row of UV.
-    SplitUVRow(src_uv, dst_u, dst_v, width);
-    dst_u += dst_stride_u;
-    dst_v += dst_stride_v;
-    src_uv += src_stride_uv;
-  }
-}
-
 // Support converting from FOURCC_M420
 // Useful for bandwidth constrained transports like USB 1.0 and 2.0 and for
 // easy conversion to I420.
@@ -324,7 +255,9 @@ static int X420ToI420(const uint8* src_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
+    if (dst_y) {
+      dst_y = dst_y + (height - 1) * dst_stride_y;
+    }
     dst_u = dst_u + (halfheight - 1) * dst_stride_u;
     dst_v = dst_v + (halfheight - 1) * dst_stride_v;
     dst_stride_y = -dst_stride_y;

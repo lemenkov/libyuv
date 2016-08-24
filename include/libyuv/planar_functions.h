@@ -39,6 +39,20 @@ void SetPlane(uint8* dst_y, int dst_stride_y,
               int width, int height,
               uint32 value);
 
+// Split interleaved UV plane into separate U and V planes.
+LIBYUV_API
+void SplitUVPlane(const uint8* src_uv, int src_stride_uv,
+                  uint8* dst_u, int dst_stride_u,
+                  uint8* dst_v, int dst_stride_v,
+                  int width, int height);
+
+// Merge separate U and V planes into one interleaved UV plane.
+LIBYUV_API
+void MergeUVPlane(const uint8* src_u, int src_stride_u,
+                  const uint8* src_v, int src_stride_v,
+                  uint8* dst_uv, int dst_stride_uv,
+                  int width, int height);
+
 // Copy I400.  Supports inverting.
 LIBYUV_API
 int I400ToI400(const uint8* src_y, int src_stride_y,

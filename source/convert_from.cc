@@ -361,6 +361,7 @@ int I420ToUYVY(const uint8* src_y, int src_stride_y,
   return 0;
 }
 
+// TODO(fbarchard): test negative height for invert.
 LIBYUV_API
 int I420ToNV12(const uint8* src_y, int src_stride_y,
                const uint8* src_u, int src_stride_u,
@@ -368,76 +369,19 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
                uint8* dst_y, int dst_stride_y,
                uint8* dst_uv, int dst_stride_uv,
                int width, int height) {
-  int y;
-  void (*MergeUVRow_)(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
-      int width) = MergeUVRow_C;
-  // Coalesce rows.
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  if (!src_u || !src_v || !dst_uv ||
+  if (!src_y || !src_u || !src_v || !dst_y || !dst_uv ||
       width <= 0 || height == 0) {
     return -1;
   }
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    if (dst_y) {
-      dst_y = dst_y + (height - 1) * dst_stride_y;
-    }
-    dst_uv = dst_uv + (halfheight - 1) * dst_stride_uv;
-    dst_stride_y = -dst_stride_y;
-    dst_stride_uv = -dst_stride_uv;
-  }
-  if (src_stride_y == width &&
-      dst_stride_y == width) {
-    width *= height;
-    height = 1;
-    src_stride_y = dst_stride_y = 0;
-  }
-  // Coalesce rows.
-  if (src_stride_u == halfwidth &&
-      src_stride_v == halfwidth &&
-      dst_stride_uv == halfwidth * 2) {
-    halfwidth *= halfheight;
-    halfheight = 1;
-    src_stride_u = src_stride_v = dst_stride_uv = 0;
-  }
-#if defined(HAS_MERGEUVROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    MergeUVRow_ = MergeUVRow_Any_SSE2;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow_ = MergeUVRow_SSE2;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    MergeUVRow_ = MergeUVRow_Any_AVX2;
-    if (IS_ALIGNED(halfwidth, 32)) {
-      MergeUVRow_ = MergeUVRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_MERGEUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    MergeUVRow_ = MergeUVRow_Any_NEON;
-    if (IS_ALIGNED(halfwidth, 16)) {
-      MergeUVRow_ = MergeUVRow_NEON;
-    }
-  }
-#endif
-
+  int halfwidth = (width + 1) / 2;
+  int halfheight = height > 0 ? (height + 1) / 2 : (height - 1) / 2;
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
-  for (y = 0; y < halfheight; ++y) {
-    // Merge a row of U and V into a row of UV.
-    MergeUVRow_(src_u, src_v, dst_uv, halfwidth);
-    src_u += src_stride_u;
-    src_v += src_stride_v;
-    dst_uv += dst_stride_uv;
-  }
+  MergeUVPlane(src_u, src_stride_u,
+               src_v, src_stride_v,
+               dst_uv, dst_stride_uv,
+               halfwidth, halfheight);
   return 0;
 }
 
