@@ -46,9 +46,11 @@ static int I420ToI4xx(const uint8* src_y, int src_stride_y,
       dst_uv_width <= 0 || dst_uv_height <= 0) {
     return -1;
   }
-  ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
-             dst_y, dst_stride_y, dst_y_width, dst_y_height,
-             kFilterBilinear);
+  if (dst_y) {
+    ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
+               dst_y, dst_stride_y, dst_y_width, dst_y_height,
+               kFilterBilinear);
+  }
   ScalePlane(src_u, src_stride_u, src_uv_width, src_uv_height,
              dst_u, dst_stride_u, dst_uv_width, dst_uv_height,
              kFilterBilinear);
@@ -372,7 +374,7 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   // Coalesce rows.
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_u || !src_v || !dst_y || !dst_uv ||
+  if (!src_u || !src_v || !dst_uv ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -380,7 +382,9 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   if (height < 0) {
     height = -height;
     halfheight = (height + 1) >> 1;
-    dst_y = dst_y + (height - 1) * dst_stride_y;
+    if (dst_y) {
+      dst_y = dst_y + (height - 1) * dst_stride_y;
+    }
     dst_uv = dst_uv + (halfheight - 1) * dst_stride_uv;
     dst_stride_y = -dst_stride_y;
     dst_stride_uv = -dst_stride_uv;
@@ -424,7 +428,9 @@ int I420ToNV12(const uint8* src_y, int src_stride_y,
   }
 #endif
 
-  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
   for (y = 0; y < halfheight; ++y) {
     // Merge a row of U and V into a row of UV.
     MergeUVRow_(src_u, src_v, dst_uv, halfwidth);

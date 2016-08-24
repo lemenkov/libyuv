@@ -128,8 +128,8 @@ int I422Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_v, int dst_stride_v,
              int width, int height) {
   int halfwidth = (width + 1) >> 1;
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_u || !src_v ||
+      !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -143,7 +143,10 @@ int I422Copy(const uint8* src_y, int src_stride_y,
     src_stride_u = -src_stride_u;
     src_stride_v = -src_stride_v;
   }
-  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
   CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, halfwidth, height);
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, height);
   return 0;
@@ -158,8 +161,8 @@ int I444Copy(const uint8* src_y, int src_stride_y,
              uint8* dst_u, int dst_stride_u,
              uint8* dst_v, int dst_stride_v,
              int width, int height) {
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_u || !src_v ||
+      !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -174,7 +177,9 @@ int I444Copy(const uint8* src_y, int src_stride_y,
     src_stride_v = -src_stride_v;
   }
 
-  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
   CopyPlane(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
   CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
   return 0;
@@ -214,6 +219,7 @@ int I420ToI400(const uint8* src_y, int src_stride_y,
     src_y = src_y + (height - 1) * src_stride_y;
     src_stride_y = -src_stride_y;
   }
+
   CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   return 0;
 }

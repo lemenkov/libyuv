@@ -44,7 +44,7 @@ static int I4xxToI420(const uint8* src_y, int src_stride_y,
       src_uv_width == 0 || src_uv_height == 0) {
     return -1;
   }
-  // TODO(fbarchard): make Y optional.
+  // TODO(fbarchard): support NULL for dst_y
   ScalePlane(src_y, src_stride_y, src_y_width, src_y_height,
              dst_y, dst_stride_y, dst_y_width, dst_y_height,
              kFilterBilinear);
@@ -70,8 +70,8 @@ int I420Copy(const uint8* src_y, int src_stride_y,
              int width, int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_u || !src_v ||
+      !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -167,7 +167,7 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
                int width, int height) {
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !dst_y || !dst_u || !dst_v ||
+  if (!dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
@@ -178,7 +178,9 @@ int I400ToI420(const uint8* src_y, int src_stride_y,
     src_y = src_y + (height - 1) * src_stride_y;
     src_stride_y = -src_stride_y;
   }
-  CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
   SetPlane(dst_u, dst_stride_u, halfwidth, halfheight, 128);
   SetPlane(dst_v, dst_stride_v, halfwidth, halfheight, 128);
   return 0;
@@ -1435,8 +1437,8 @@ int Android420ToI420(const uint8* src_y, int src_stride_y,
   const int vu_off = src_v - src_u;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
-  if (!src_y || !src_u || !src_v ||
-      !dst_y || !dst_u || !dst_v ||
+  if (!src_u || !src_v ||
+      !dst_u || !dst_v ||
       width <= 0 || height == 0) {
     return -1;
   }
