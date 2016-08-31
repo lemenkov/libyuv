@@ -27,6 +27,7 @@ pin-log.txt
 /third_party/bouncycastle
 /third_party/BUILD.gn
 /third_party/catapult
+/third_party/ced
 /third_party/closure_compiler
 /third_party/drmemory
 /third_party/gflags/src
