@@ -45,6 +45,8 @@ DIRECTORIES = [
   'third_party/libjpeg_turbo',
   'third_party/llvm-build',
   'third_party/lss',
+  'third_party/proguard',
+  'third_party/tcmalloc',
   'third_party/yasm',
   'third_party/WebKit',  # TODO(kjellander): Remove, see webrtc:5629.
   'tools/clang',
@@ -89,6 +91,7 @@ if 'android' in target_os:
     'third_party/requests',
     'third_party/robolectric',
     'third_party/sqlite4java',
+    'third_party/zlib',
     'tools/android',
     'tools/grit',
   ]
