@@ -192,7 +192,7 @@ class Rmtree(Action):
   def doit(self, _):
     if sys.platform.startswith('win'):
       # shutil.rmtree() doesn't work on Windows if any of the directories are
-      # read-only, which svn repositories are.
+      # read-only.
       subprocess.check_call(['rd', '/q', '/s', self._path], shell=True)
     else:
       shutil.rmtree(self._path)

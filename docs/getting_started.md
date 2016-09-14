@@ -84,8 +84,7 @@ To get just the source (not buildable):
     ninja -C out\Release_x64
 
 #### Building with clangcl
-    set GYP_DEFINES=clang=1 target_arch=ia32 libyuv_enable_svn=1
-    set LLVM_REPO_URL=svn://svn.chromium.org/llvm-project
+    set GYP_DEFINES=clang=1 target_arch=ia32
     call python tools\clang\scripts\update.py
     call python gyp_libyuv -fninja libyuv_test.gyp
     ninja -C out\Debug

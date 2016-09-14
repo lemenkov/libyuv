@@ -10,8 +10,8 @@ vars = {
   'chromium_revision': '941118827f5240dedb40082cffb1ead6c6d621cc',
 }
 
-# NOTE: Prefer revision numbers to tags for svn deps. Use http rather than
-# https; the latter can cause problems for users behind proxies.
+# NOTE: Use http rather than https; the latter can cause problems for users
+# behind proxies.
 deps = {
   Var('root_dir') + '/third_party/gflags/src':
     Var('chromium_git') + '/external/github.com/gflags/gflags@03bebcb065c83beff83d50ae025a55a4bf94dfca',
