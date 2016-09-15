@@ -421,7 +421,7 @@ void ScaleColsUp2_16_C(uint16* dst_ptr, const uint16* src_ptr,
 #define BLENDER(a, b, f) (uint8)((int)(a) + \
     ((((int)((f)) * ((int)(b) - (int)(a))) + 0x8000) >> 16))
 #else
-// inteluses 7 bit math with rounding.
+// Intel uses 7 bit math with rounding.
 #define BLENDER(a, b, f) (uint8)((int)(a) + \
     (((int)((f) >> 9) * ((int)(b) - (int)(a)) + 0x40) >> 7))
 #endif

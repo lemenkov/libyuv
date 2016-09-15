@@ -867,7 +867,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr, const uint8* src_ptr,
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
     "psubb     %8,%%xmm0                       \n"  // make pixels signed.
-    "pxor      %%xmm6,%%xmm1                   \n"  // 128 -f = (f ^ 127 ) + 1
+    "pxor      %%xmm6,%%xmm1                   \n"  // 128 - f = (f ^ 127 ) + 1
     "paddusb   %%xmm7,%%xmm1                   \n"
     "pmaddubsw %%xmm0,%%xmm1                   \n"
     "pextrw    $0x1,%%xmm2,%k3                 \n"
