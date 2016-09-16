@@ -182,9 +182,6 @@ if (libyuv_include_tests) {
     if (is_linux) {
       cflags = [ "-fexceptions" ]
     }
-    if (is_ios && target_cpu=="arm64") {
-      defines += [ "LIBYUV_DISABLE_NEON" ]
-    }
     if (is_ios) {
       configs -= [ "//build/config/compiler:default_symbols" ]
       configs += [ "//build/config/compiler:symbols" ]
@@ -246,10 +243,6 @@ if (libyuv_include_tests) {
     ]
     deps = [ ":libyuv" ]
 
-    if (is_ios && target_cpu=="arm64") {
-      # TODO(fbarchard): Enable Neon. See https://crbug.com/646279
-      defines = [ "LIBYUV_DISABLE_NEON" ]
-    }
     if (!is_ios && !libyuv_disable_jpeg) {
       defines = [ "HAVE_JPEG" ]
     }

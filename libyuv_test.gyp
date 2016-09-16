@@ -52,11 +52,6 @@
             '-fexceptions',
           ],
         }],
-        [ 'OS == "ios" and target_subarch == 64', {
-          'defines': [
-            'LIBYUV_DISABLE_NEON'
-          ],
-        }],
         [ 'OS == "ios"', {
           'xcode_settings': {
             'DEBUGGING_SYMBOLS': 'YES',
@@ -151,12 +146,6 @@
         'libyuv.gyp:libyuv',
       ],
       'conditions': [
-        [ 'OS == "ios" and target_subarch == 64', {
-          'defines': [
-            'LIBYUV_DISABLE_NEON'
-          ],
-        }],
-
         [ 'OS != "ios" and libyuv_disable_jpeg != 1', {
           'defines': [
             'HAVE_JPEG',
