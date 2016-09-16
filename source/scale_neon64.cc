@@ -588,7 +588,7 @@ void ScaleAddRows_NEON(const uint8* src_ptr, ptrdiff_t src_stride,
     "ld2        {v4.b, v5.b}["#n"], [%6]      \n"
 
 // The NEON version mimics this formula (from row_common.cc):
-// #define BLENDER(a, b, f) (uint8)((int)(a) + \
+// #define BLENDER(a, b, f) (uint8)((int)(a) +
 //    ((((int)((f)) * ((int)(b) - (int)(a))) + 0x8000) >> 16))
 
 void ScaleFilterCols_NEON(uint8* dst_ptr, const uint8* src_ptr,
