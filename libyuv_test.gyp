@@ -86,6 +86,12 @@
             'LIBYUV_NEON'
           ],
         }],
+        [ '(target_arch == "mipsel" or target_arch == "mips64el") \
+          and (mips_msa == 1)', {
+          'defines': [
+            'LIBYUV_MSA'
+          ],
+        }],
       ], # conditions
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.

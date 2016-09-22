@@ -402,6 +402,14 @@ void MirrorPlane(const uint8* src_y, int src_stride_y,
     MirrorRow = MirrorRow_DSPR2;
   }
 #endif
+#if defined(HAS_MIRRORROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MirrorRow = MirrorRow_Any_MSA;
+    if (IS_ALIGNED(width, 64)) {
+      MirrorRow = MirrorRow_MSA;
+    }
+}
+#endif
 
   // Mirror plane
   for (y = 0; y < height; ++y) {

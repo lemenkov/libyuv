@@ -372,6 +372,10 @@ extern "C" {
 #endif
 #endif
 
+#if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
+#define HAS_MIRRORROW_MSA
+#endif
+
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
 #if defined(VISUALC_HAS_AVX2)
 #define SIMD_ALIGNED(var) __declspec(align(32)) var
@@ -809,11 +813,13 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width);
 void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_NEON(const uint8* src, uint8* dst, int width);
 void MirrorRow_DSPR2(const uint8* src, uint8* dst, int width);
+void MirrorRow_MSA(const uint8* src, uint8* dst, int width);
 void MirrorRow_C(const uint8* src, uint8* dst, int width);
 void MirrorRow_Any_AVX2(const uint8* src, uint8* dst, int width);
 void MirrorRow_Any_SSSE3(const uint8* src, uint8* dst, int width);
 void MirrorRow_Any_SSE2(const uint8* src, uint8* dst, int width);
 void MirrorRow_Any_NEON(const uint8* src, uint8* dst, int width);
+void MirrorRow_Any_MSA(const uint8* src, uint8* dst, int width);
 
 void MirrorUVRow_SSSE3(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
                        int width);

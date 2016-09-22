@@ -195,6 +195,16 @@ Running test with C code:
     gn gen out/Official "--args=is_debug=false is_official_build=true is_chrome_branded=true"
     ninja -C out/Official
 
+#### Building mips with GN
+
+mipsel
+    gn gen out/Default "--args=is_debug=false target_cpu=\"mipsel\" target_os = \"android\" mips_arch_variant = \"r6\" mips_use_msa = true is_component_build = true is_clang = false"
+    ninja -C out/Default
+
+mips64el
+    gn gen out/Default "--args=is_debug=false target_cpu=\"mips64el\" target_os = \"android\" mips_arch_variant = \"r6\" mips_use_msa = true is_component_build = true is_clang = false"
+    ninja -C out/Default
+
 ### Linux
 
     GYP_DEFINES="target_arch=x64" ./gyp_libyuv

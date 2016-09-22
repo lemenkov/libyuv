@@ -94,6 +94,10 @@ static_library("libyuv") {
     deps += [ ":libyuv_neon" ]
   }
 
+  if (libyuv_use_msa) {
+    deps += [ ":libyuv_msa" ]
+  }
+
   if (is_nacl) {
     # Always enable optimization under NaCl to workaround crbug.com/538243 .
     configs -= [ "//build/config/compiler:default_optimization" ]
@@ -121,6 +125,17 @@ if (libyuv_use_neon) {
       configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
+  }
+}
+
+if (libyuv_use_msa) {
+  static_library("libyuv_msa") {
+    sources = [
+      # MSA Source Files
+      "source/row_msa.cc",
+    ]
+
+    public_configs = [ ":libyuv_config" ]
   }
 }
 
