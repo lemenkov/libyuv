@@ -164,14 +164,14 @@ int ArmCpuCaps(const char* cpuinfo_name) {
 LIBYUV_API SAFEBUFFERS
 int MipsCpuCaps(const char* cpuinfo_name, const char ase[]) {
   char cpuinfo_line[512];
-  int len = strlen(ase);
+  int len = (int)strlen(ase);
   FILE* f = fopen(cpuinfo_name, "r");
   if (!f) {
     // ase enabled if /proc/cpuinfo is unavailable.
-    if(strcmp(ase, " msa") == 0) {
+    if (strcmp(ase, " msa") == 0) {
       return kCpuHasMSA;
     }
-    if(strcmp(ase, " dspr2") == 0) {
+    if (strcmp(ase, " dspr2") == 0) {
       return kCpuHasDSPR2;
     }
   }
@@ -180,10 +180,10 @@ int MipsCpuCaps(const char* cpuinfo_name, const char ase[]) {
       char* p = strstr(cpuinfo_line, ase);
       if (p && (p[len] == ' ' || p[len] == '\n')) {
         fclose(f);
-        if(strcmp(ase, " msa") == 0) {
+        if (strcmp(ase, " msa") == 0) {
           return kCpuHasMSA;
         }
-        if(strcmp(ase, " dspr2") == 0) {
+        if (strcmp(ase, " dspr2") == 0) {
           return kCpuHasDSPR2;
         }
       }

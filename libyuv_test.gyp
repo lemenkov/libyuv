@@ -9,6 +9,7 @@
 {
   'variables': {
     'libyuv_disable_jpeg%': 0,
+    'mips_msa%': 0,  # Default to msa off.
   },
   'targets': [
     {

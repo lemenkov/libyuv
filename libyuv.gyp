@@ -25,6 +25,7 @@
     'clang%': 0,
     # Link-Time Optimizations.
     'use_lto%': 0,
+    'mips_msa%': 0,  # Default to msa off.
     'build_neon': 0,
     'build_msa': 0,
     'conditions': [
