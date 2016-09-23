@@ -13,9 +13,6 @@ WebRTC standalone shares a lot of dependencies and build tools with Chromium.
 To do this, many of the paths of a Chromium checkout is emulated by creating
 symlinks to files and directories. This script handles the setup of symlinks to
 achieve this.
-
-It also handles cleanup of the legacy Subversion-based approach that was used
-before Chrome switched over their master repo from Subversion to Git.
 """
 
 
@@ -248,15 +245,16 @@ class LinkError(IOError):
   pass
 
 
-# Handles symlink creation on the different platforms.
+# Use junctions instead of symlinks on the Windows platform.
 if sys.platform.startswith('win'):
   def symlink(source_path, link_path):
-    flag = 1 if os.path.isdir(source_path) else 0
-    if not ctypes.windll.kernel32.CreateSymbolicLinkW(
-        unicode(link_path), unicode(source_path), flag):
-      raise OSError('Failed to create symlink to %s. Notice that only NTFS '
-                    'version 5.0 and up has all the needed APIs for '
-                    'creating symlinks.' % source_path)
+    if os.path.isdir(source_path):
+      subprocess.check_call(['cmd.exe', '/c', 'mklink', '/J', link_path,
+                             source_path])
+    else:
+      # Don't create symlinks to files on Windows, just copy the file instead
+      # (there's no way to create a link without administrator's privileges).
+      shutil.copy(source_path, link_path)
   os.symlink = symlink
 
 
@@ -308,18 +306,10 @@ class WebRTCLinkSetup(object):
                               A C T I O N     R E Q I R E D
         @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        Because chromium/src is transitioning to Git (from SVN), we needed to
-        change the way that the WebRTC standalone checkout works. Instead of
-        individually syncing subdirectories of Chromium in SVN, we're now
-        syncing Chromium (and all of its DEPS, as defined by its own DEPS file),
-        into the `chromium/src` directory.
-
-        As such, all Chromium directories which are currently pulled by DEPS are
-        now replaced with a symlink into the full Chromium checkout.
-
-        To avoid disrupting developers, we've chosen to not delete your
-        directories forcibly, in case you have some work in progress in one of
-        them :).
+        Setting up the checkout requires creating symlinks to directories in the
+        Chromium checkout inside chromium/src.
+        To avoid disrupting developers, we've chosen to not delete directories
+        forcibly, in case you have some work in progress in one of them :)
 
         ACTION REQUIRED:
         Before running `gclient sync|runhooks` again, you must run:
@@ -327,7 +317,7 @@ class WebRTCLinkSetup(object):
 
         Which will replace all directories which now must be symlinks, after
         prompting with a summary of the work-to-be-done.
-        """), 'python ' if sys.platform.startswith('win') else '', sys.argv[0])
+        """), 'python ' if sys.platform.startswith('win') else '', __file__)
         sys.exit(1)
       elif self._prompt:
         if not query_yes_no('Would you like to perform the above plan?'):
@@ -365,8 +355,9 @@ class WebRTCLinkSetup(object):
                      check_msg=None):
     """Create zero or more Actions to link to a file or directory.
 
-    This will be a symlink on POSIX platforms. On Windows this requires
-    that NTFS is version 5.0 or higher (Vista or newer).
+    This will be a symlink on POSIX platforms. On Windows it will result in:
+    * a junction for directories
+    * a copied file for single files.
 
     Args:
       source_path: Path relative to the Chromium checkout root.
@@ -396,8 +387,8 @@ class WebRTCLinkSetup(object):
     source_path = fix_separators(source_path)
     source_path = os.path.join(CHROMIUM_CHECKOUT, source_path)
     if os.path.exists(source_path) and not check_fn:
-      raise LinkError('_LinkChromiumPath can only be used to link to %s: '
-                      'Tried to link to: %s' % (check_msg, source_path))
+      raise LinkError('Can only to link to %s: tried to link to: %s' %
+                      (check_msg, source_path))
 
     if not os.path.exists(source_path):
       logging.debug('Silently ignoring missing source: %s. This is to avoid '
@@ -480,12 +471,9 @@ def main():
         return os.getuid() == 0
       except AttributeError:
         return ctypes.windll.shell32.IsUserAnAdmin() != 0
-    if not is_admin():
-      logging.error('On Windows, you now need to have administrator '
-                    'privileges for the shell running %s (or '
-                    '`gclient sync|runhooks`).\nPlease start another command '
-                    'prompt as Administrator and try again.', sys.argv[0])
-      return 1
+    if is_admin():
+      logging.warning('WARNING: On Windows, you no longer need run as '
+                      'administrator. Please run with user account privileges.')
 
   if not os.path.exists(CHROMIUM_CHECKOUT):
     logging.error('Cannot find a Chromium checkout at %s. Did you run "gclient '
