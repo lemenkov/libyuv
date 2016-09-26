@@ -74,5 +74,20 @@
   out1 = (RTYPE) __msa_vshf_b((v16i8) mask1, (v16i8) in3, (v16i8) in2);  \
 }
 #define VSHF_B2_UB(...) VSHF_B2(v16u8, __VA_ARGS__)
+
+#define VSHF_W2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1) {   \
+  out0 = (RTYPE) __msa_vshf_w((v4i32) mask0, (v4i32) in1, (v4i32) in0);  \
+  out1 = (RTYPE) __msa_vshf_w((v4i32) mask1, (v4i32) in3, (v4i32) in2);  \
+}
+#define VSHF_W2_UB(...) VSHF_W2(v16u8, __VA_ARGS__)
+#define VSHF_W2_SB(...) VSHF_W2(v16i8, __VA_ARGS__)
+#define VSHF_W4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
+                mask0, mask1, mask2, mask3,                     \
+                out0, out1, out2, out3) {                       \
+  VSHF_W2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1)  \
+  VSHF_W2(RTYPE, in4, in5, in6, in7, mask2, mask3, out2, out3)  \
+}
+#define VSHF_W4_UB(...) VSHF_W4(v16u8, __VA_ARGS__)
+
 #endif  /* !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa) */
 #endif  /* __MACROS_MSA_H__ */
