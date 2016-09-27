@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_MACROS_MSA_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_MACROS_MSA_H_
 #define INCLUDE_LIBYUV_MACROS_MSA_H_
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #include <stdint.h>
 #include <msa.h>
 
-#define LD_B(RTYPE, psrc) *((RTYPE*)(psrc))
+#define LD_B(RTYPE, psrc) *((RTYPE*)(psrc))   /* NOLINT */
 #define LD_UB(...) LD_B(v16u8, __VA_ARGS__)
 
-#define ST_B(RTYPE, in, pdst) *((RTYPE*)(pdst)) = (in)
+#define ST_B(RTYPE, in, pdst) *((RTYPE*)(pdst)) = (in)  /* NOLINT */
 #define ST_UB(...) ST_B(v16u8, __VA_ARGS__)
 
 /* Description : Load two vectors with 16 'byte' sized elements
@@ -73,4 +73,4 @@
 
 #endif  /* !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa) */
 
-#endif  // INCLUDE_LIBYUV_MACROS_MSA_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_MACROS_MSA_H_

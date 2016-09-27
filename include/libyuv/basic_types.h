@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef INCLUDE_LIBYUV_BASIC_TYPES_H_  // NOLINT
+#ifndef INCLUDE_LIBYUV_BASIC_TYPES_H_
 #define INCLUDE_LIBYUV_BASIC_TYPES_H_
 
 #include <stddef.h>  // for NULL, size_t
@@ -115,4 +115,4 @@ typedef signed char int8;
 #define LIBYUV_LITTLE_ENDIAN
 #endif
 
-#endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_  NOLINT
+#endif  // INCLUDE_LIBYUV_BASIC_TYPES_H_
