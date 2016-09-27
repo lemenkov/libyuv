@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef __MACROS_MSA_H__
-#define __MACROS_MSA_H__
+#ifndef INCLUDE_LIBYUV_MACROS_MSA_H_  // NOLINT
+#define INCLUDE_LIBYUV_MACROS_MSA_H_
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #include <stdint.h>
@@ -33,14 +33,12 @@
   out1 = LD_B(RTYPE, (psrc) + stride);            \
 }
 #define LD_UB2(...) LD_B2(v16u8, __VA_ARGS__)
-#define LD_SB2(...) LD_B2(v16i8, __VA_ARGS__)
 
 #define LD_B4(RTYPE, psrc, stride, out0, out1, out2, out3) {  \
   LD_B2(RTYPE, (psrc), stride, out0, out1);                   \
   LD_B2(RTYPE, (psrc) + 2 * stride , stride, out2, out3);     \
 }
 #define LD_UB4(...) LD_B4(v16u8, __VA_ARGS__)
-#define LD_SB4(...) LD_B4(v16i8, __VA_ARGS__)
 
 /* Description : Store two vectors with stride each having 16 'byte' sized
                  elements
@@ -53,15 +51,13 @@
   ST_B(RTYPE, in1, (pdst) + stride);            \
 }
 #define ST_UB2(...) ST_B2(v16u8, __VA_ARGS__)
-#define ST_SB2(...) ST_B2(v16i8, __VA_ARGS__)
-
+#
 #define ST_B4(RTYPE, in0, in1, in2, in3, pdst, stride) {  \
   ST_B2(RTYPE, in0, in1, (pdst), stride);                 \
   ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
 }
 #define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
-#define ST_SB4(...) ST_B4(v16i8, __VA_ARGS__)
-
+#
 /* Description : Shuffle byte vector elements as per mask vector
    Arguments   : Inputs  - in0, in1, in2, in3, mask0, mask1
                  Outputs - out0, out1
@@ -75,19 +71,6 @@
 }
 #define VSHF_B2_UB(...) VSHF_B2(v16u8, __VA_ARGS__)
 
-#define VSHF_W2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1) {   \
-  out0 = (RTYPE) __msa_vshf_w((v4i32) mask0, (v4i32) in1, (v4i32) in0);  \
-  out1 = (RTYPE) __msa_vshf_w((v4i32) mask1, (v4i32) in3, (v4i32) in2);  \
-}
-#define VSHF_W2_UB(...) VSHF_W2(v16u8, __VA_ARGS__)
-#define VSHF_W2_SB(...) VSHF_W2(v16i8, __VA_ARGS__)
-#define VSHF_W4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7,  \
-                mask0, mask1, mask2, mask3,                     \
-                out0, out1, out2, out3) {                       \
-  VSHF_W2(RTYPE, in0, in1, in2, in3, mask0, mask1, out0, out1)  \
-  VSHF_W2(RTYPE, in4, in5, in6, in7, mask2, mask3, out2, out3)  \
-}
-#define VSHF_W4_UB(...) VSHF_W4(v16u8, __VA_ARGS__)
-
 #endif  /* !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa) */
-#endif  /* __MACROS_MSA_H__ */
+
+#endif  // INCLUDE_LIBYUV_MACROS_MSA_H_  NOLINT
