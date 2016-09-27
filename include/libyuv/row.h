@@ -252,6 +252,7 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
+#define HAS_SHORTTOF16ROW_AVX2
 #endif
 
 // The following are also available on x64 Visual C.
@@ -1931,6 +1932,10 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
 void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             uint8* dst_argb, const float* poly,
                             int width);
+
+// Scale and convert to half float.
+void ShortToF16Row_C(const uint16* src, int16* dst, float scale, int width);
+void ShortToF16Row_AVX2(const uint16* src, int16* dst, float scale, int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                              const uint8* luma, uint32 lumacoeff);

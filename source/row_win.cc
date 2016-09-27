@@ -6095,6 +6095,36 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
+// Samples assumed to be unsigned in low 9, 10 or 12 bits.  Scale factor
+// adjust the sample range to 0 to 1 using a float multiply.
+// e.g. 9 bit scale is 1.0f / 512.0f
+// e.g. 10 bit scale is 1.0f / 1024.0f
+#ifdef HAS_SHORTTOHALFFLOAT_AVX2
+__declspec(naked)
+void ShortToF16Row_AVX2(const uint16* src, int16* dst, float scale, int width) {
+  __asm {
+    mov        eax, [esp + 4]      /* src */
+    mov        edx, [esp + 8]      /* dst */
+    vbroadcastss ymm4, [esp + 12]  /* scale */
+    mov        ecx, [esp + 16]     /* width */
+
+    // 8 pixel loop.
+ convertloop:
+    vpmovzxwd   ymm0, xmmword ptr [eax]  // 8 shorts -> 8 ints
+    lea         eax, [eax + 16]
+    vcvtdq2ps   ymm0, ymm0        // convert 8 ints to floats
+    vmulps      ymm0, ymm0, ymm4  // scale to normalized range 0 to 1
+    vcvtps2ph   xmm0, ymm0, 0     // float conver to 8 half floats round even
+    vmovdqu     [edx], xmm0
+    lea         edx, [edx + 16]
+    sub         ecx, 8
+    jg          convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_SHORTTOHALFFLOAT_AVX2
+
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.
 __declspec(naked)
