@@ -83,6 +83,7 @@ void CopyPlane(const uint8* src_y, int src_stride_y,
 }
 
 // TODO(fbarchard): Consider support for negative height.
+// TODO(fbarchard): Consider stride measured in bytes.
 LIBYUV_API
 void CopyPlane_16(const uint16* src_y, int src_stride_y,
                   uint16* dst_y, int dst_stride_y,
@@ -2437,6 +2438,51 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
     ARGBPolynomialRow(src_argb, dst_argb, poly, width);
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert plane of 16 bit shorts to half floats.
+// Source values are multiplied by scale before storing as half float.
+LIBYUV_API
+int HalfFloatPlane(const uint16* src_y, int src_stride_y,
+                   uint16* dst_y, int dst_stride_y,
+                   float scale,
+                   int width, int height) {
+  int y;
+  void (*HalfFloatRow)(const uint16* src, uint16* dst, float scale, int width) =
+      HalfFloatRow_C;
+  if (!src_y || !dst_y  || width <= 0 || height == 0) {
+    return -1;
+  }
+  src_stride_y >>= 1;
+  dst_stride_y >>= 1;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y  = src_y  + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width &&
+      dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+#if defined(HAS_HALFFLOATROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    HalfFloatRow = HalfFloatRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      HalfFloatRow = HalfFloatRow_AVX2;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    HalfFloatRow(src_y, dst_y, scale, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
   }
   return 0;
 }

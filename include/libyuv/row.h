@@ -231,6 +231,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
+#define HAS_HALFFLOATROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -252,7 +253,6 @@ extern "C" {
 #define HAS_ARGBTORGB565ROW_AVX2
 #define HAS_J400TOARGBROW_AVX2
 #define HAS_RGB565TOARGBROW_AVX2
-#define HAS_SHORTTOF16ROW_AVX2
 #endif
 
 // The following are also available on x64 Visual C.
@@ -1934,8 +1934,10 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             int width);
 
 // Scale and convert to half float.
-void ShortToF16Row_C(const uint16* src, int16* dst, float scale, int width);
-void ShortToF16Row_AVX2(const uint16* src, int16* dst, float scale, int width);
+void HalfFloatRow_C(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_AVX2(const uint16* src, uint16* dst, float scale,
+                           int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                              const uint8* luma, uint32 lumacoeff);

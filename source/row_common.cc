@@ -2333,6 +2333,25 @@ void ARGBPolynomialRow_C(const uint8* src_argb,
   }
 }
 
+// Samples assumed to be unsigned in low 9, 10 or 12 bits.  Scale factor
+// adjust the source integer range to the half float range desired.
+
+// This magic constant is 2^-112. Multiplying by this
+// is the same as subtracting 112 from the exponent, which
+// is the difference in exponent bias between 32-bit and
+// 16-bit floats. Once we've done this subtraction, we can
+// simply extract the low bits of the exponent and the high
+// bits of the mantissa from our float and we're done.
+
+void HalfFloatRow_C(const uint16* src, uint16* dst, float scale, int width) {
+  int i;
+  float mult = 1.9259299444e-34f * scale;
+  for (i = 0; i < width; ++i) {
+    float value = src[i] * mult;
+    dst[i] = (uint16)((*(uint32_t*)&value) >> 13);
+  }
+}
+
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                              const uint8* luma, uint32 lumacoeff) {
   uint32 bc = lumacoeff & 0xff;

@@ -2081,6 +2081,46 @@ TEST_F(LibYUVPlanarTest, TestARGBPolynomial) {
   }
 }
 
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane) {
+  int i, j;
+  const int y_plane_size = benchmark_width_ * benchmark_height_ * 2;
+
+  align_buffer_page_end(orig_y, y_plane_size);
+  align_buffer_page_end(dst_c, y_plane_size);
+  align_buffer_page_end(dst_opt, y_plane_size);
+  MemRandomize(orig_y, y_plane_size);
+  memset(dst_c, 0, y_plane_size);
+  memset(dst_opt, 1, y_plane_size);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags_);
+  double c_time = get_time();
+  for (j = 0; j < benchmark_iterations_; j++) {
+    HalfFloatPlane((uint16*)orig_y, benchmark_width_ * 2,
+                   (uint16*)dst_c, benchmark_width_ * 2,
+                   1.0f / 4096.0f, benchmark_width_, benchmark_height_);
+  }
+  c_time = (get_time() - c_time) / benchmark_iterations_;
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info_);
+  double opt_time = get_time();
+  for (j = 0; j < benchmark_iterations_; j++) {
+    HalfFloatPlane((uint16*)orig_y, benchmark_width_ * 2,
+                   (uint16*)dst_opt, benchmark_width_ * 2,
+                   1.0f / 4096.0f, benchmark_width_, benchmark_height_);
+  }
+  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+
+  for (i = 0; i < y_plane_size; ++i) {
+    EXPECT_EQ(dst_c[i], dst_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  free_aligned_buffer_page_end(dst_c);
+  free_aligned_buffer_page_end(dst_opt);
+}
+
 TEST_F(LibYUVPlanarTest, TestARGBLumaColorTable) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8 dst_pixels_opt[1280][4]);

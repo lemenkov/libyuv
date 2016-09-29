@@ -281,6 +281,14 @@ int ARGBPolynomial(const uint8* src_argb, int src_stride_argb,
                    const float* poly,
                    int width, int height);
 
+// Convert plane of 16 bit shorts to half floats.
+// Source values are multiplied by scale before storing as half float.
+LIBYUV_API
+int HalfFloatPlane(const uint16* src_y, int src_stride_y,
+                   uint16* dst_y, int dst_stride_y,
+                   float scale,
+                   int width, int height);
+
 // Quantize a rectangle of ARGB. Alpha unaffected.
 // scale is a 16 bit fractional fixed point scaler between 0 and 65535.
 // interval_size should be a value between 1 and 255.

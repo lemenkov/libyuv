@@ -5366,6 +5366,39 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
+#ifdef HAS_HALFFLOATROW_AVX2
+void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
+  asm volatile (
+   "vbroadcastss  %3, %%ymm4                  \n"
+
+    // 16 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vpmovzxwd   " MEMACCESS(0) ",%%ymm0       \n"  // 8 shorts -> 8 ints
+    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm1 \n"  // 8 more
+    "lea         " MEMLEA(0x20,0) ",%0         \n"
+    "vcvtdq2ps   %%ymm0,%%ymm0                 \n"
+    "vcvtdq2ps   %%ymm1,%%ymm1                 \n"
+    "vmulps      %%ymm0,%%ymm4,%%ymm0          \n"
+    "vmulps      %%ymm1,%%ymm4,%%ymm1          \n"
+    "vcvtps2ph   $3, %%ymm0, %%xmm0            \n"
+    "vcvtps2ph   $3, %%ymm1, %%xmm1            \n"
+    "vmovdqu     %%xmm0," MEMACCESS(1) "       \n"
+    "vmovdqu     %%xmm1," MEMACCESS2(0x10,1) " \n"
+    "lea         " MEMLEA(0x20,1) ",%1         \n"
+    "sub         $0x10,%2                      \n"
+    "jg          1b                            \n"
+    "vzeroupper                                \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  : "x"(scale)   // %3
+  : "memory", "cc",
+    "xmm0", "xmm4"
+  );
+}
+#endif  // HAS_HALFFLOATROW_AVX2
+
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,

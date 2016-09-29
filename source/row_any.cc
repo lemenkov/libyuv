@@ -546,6 +546,28 @@ ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, const uint8*, 4, 4, 3)
 #endif
 #undef ANY11P
 
+// Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
+#define ANY11P16(NAMEANY, ANY_SIMD, T, SBPP, BPP, MASK)                        \
+    void NAMEANY(const uint16* src_ptr, uint16* dst_ptr,                       \
+                 T shuffler, int width) {                                      \
+      SIMD_ALIGNED(uint16 temp[32 * 2]);                                       \
+      memset(temp, 0, 64);  /* for msan */                                     \
+      int r = width & MASK;                                                    \
+      int n = width & ~MASK;                                                   \
+      if (n > 0) {                                                             \
+        ANY_SIMD(src_ptr, dst_ptr, shuffler, n);                               \
+      }                                                                        \
+      memcpy(temp, src_ptr + n * SBPP, r * SBPP);                              \
+      ANY_SIMD(temp, temp + 64, shuffler, MASK + 1);                           \
+      memcpy(dst_ptr + n * BPP, temp + 64, r * BPP);                           \
+    }
+
+#ifdef HAS_HALFFLOATROW_AVX2
+ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, float, 1, 1, 15)
+#endif
+#undef ANY11P16
+
+
 // Any 1 to 1 with yuvconstants
 #define ANY11C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)                    \
     void NAMEANY(const uint8* src_ptr, uint8* dst_ptr,                         \
