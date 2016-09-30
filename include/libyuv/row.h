@@ -262,6 +262,13 @@ extern "C" {
 #define HAS_I422TOARGBROW_SSSE3
 #endif
 
+// The following are available on gcc x86 platforms:
+// TODO(fbarchard): Port to Visual C.
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+#define HAS_HALFFLOATROW_SSE2
+#endif
+
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
@@ -1937,6 +1944,9 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 void HalfFloatRow_C(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_Any_AVX2(const uint16* src, uint16* dst, float scale,
+                           int width);
+void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_SSE2(const uint16* src, uint16* dst, float scale,
                            int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,

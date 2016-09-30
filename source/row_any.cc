@@ -562,6 +562,9 @@ ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, const uint8*, 4, 4, 3)
       memcpy(dst_ptr + n * BPP, temp + 64, r * BPP);                           \
     }
 
+#ifdef HAS_HALFFLOATROW_SSE2
+ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, float, 1, 1, 15)
+#endif
 #ifdef HAS_HALFFLOATROW_AVX2
 ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, float, 1, 1, 15)
 #endif

@@ -2470,11 +2470,27 @@ int HalfFloatPlane(const uint16* src_y, int src_stride_y,
     height = 1;
     src_stride_y = dst_stride_y = 0;
   }
+#if defined(HAS_HALFFLOATROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    HalfFloatRow = HalfFloatRow_Any_SSE2;
+    if (IS_ALIGNED(width, 8)) {
+      HalfFloatRow = HalfFloatRow_SSE2;
+    }
+  }
+#endif
 #if defined(HAS_HALFFLOATROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     HalfFloatRow = HalfFloatRow_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
       HalfFloatRow = HalfFloatRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_HALFFLOATROW_AVX)
+  if (TestCpuFlag(kCpuHasAVX)) {
+//    HalfFloatRow = HalfFloatRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      HalfFloatRow = HalfFloatRow_AVX;
     }
   }
 #endif

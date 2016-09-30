@@ -5366,6 +5366,43 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
+#ifdef HAS_HALFFLOATROW_SSE2
+void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
+  float mult = 1.9259299444e-34f * scale;
+  asm volatile (
+    "movd        %3,%%xmm4                     \n"
+    "pshufd      $0x0,%%xmm4,%%xmm4            \n"
+    "pxor        %%xmm5,%%xmm5                 \n"
+
+    // 16 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "movdqu      " MEMACCESS(0) ",%%xmm0       \n"  // 8 shorts
+    "lea         " MEMLEA(0x10,0) ",%0         \n"
+    "movdqa      %%xmm0,%%xmm1                 \n"
+    "punpcklwd   %%xmm5,%%xmm0                 \n"  // 8 ints in xmm0/1
+    "cvtdq2ps    %%xmm0,%%xmm0                 \n"  // 8 floats
+    "punpckhwd   %%xmm5,%%xmm1                 \n"
+    "cvtdq2ps    %%xmm1,%%xmm1                 \n"
+    "mulps       %%xmm4,%%xmm0                 \n"
+    "mulps       %%xmm4,%%xmm1                 \n"
+    "psrld       $0xd,%%xmm0                   \n"
+    "psrld       $0xd,%%xmm1                   \n"
+    "packssdw    %%xmm1,%%xmm0                 \n"
+    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "sub         $0x8,%2                       \n"
+    "jg          1b                            \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  : "rm"(mult)   // %3
+  : "memory", "cc",
+    "xmm0", "xmm1", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_HALFFLOATROW_SSE2
+
 #ifdef HAS_HALFFLOATROW_AVX2
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
@@ -5394,7 +5431,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "+r"(width)  // %2
   : "x"(scale)   // %3
   : "memory", "cc",
-    "xmm0", "xmm4"
+    "xmm0", "xmm1", "xmm4"
   );
 }
 #endif  // HAS_HALFFLOATROW_AVX2
