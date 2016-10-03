@@ -2486,15 +2486,6 @@ int HalfFloatPlane(const uint16* src_y, int src_stride_y,
     }
   }
 #endif
-#if defined(HAS_HALFFLOATROW_AVX)
-  if (TestCpuFlag(kCpuHasAVX)) {
-//    HalfFloatRow = HalfFloatRow_Any_AVX2;
-    if (IS_ALIGNED(width, 16)) {
-      HalfFloatRow = HalfFloatRow_AVX;
-    }
-  }
-#endif
-
   for (y = 0; y < height; ++y) {
     HalfFloatRow(src_y, dst_y, scale, width);
     src_y += src_stride_y;

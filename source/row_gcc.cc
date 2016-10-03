@@ -5367,38 +5367,37 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
 #ifdef HAS_HALFFLOATROW_SSE2
+static float kScaleBias = 1.9259299444e-34f;
 void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
-  float mult = 1.9259299444e-34f * scale;
   asm volatile (
-    "movd        %3,%%xmm4                     \n"
-    "pshufd      $0x0,%%xmm4,%%xmm4            \n"
+    "pshufd      $0x0,%3,%%xmm4                \n"
     "pxor        %%xmm5,%%xmm5                 \n"
 
     // 16 pixel loop.
     LABELALIGN
   "1:                                          \n"
-    "movdqu      " MEMACCESS(0) ",%%xmm0       \n"  // 8 shorts
+    "movdqu      " MEMACCESS(0) ",%%xmm2       \n"  // 8 shorts
     "lea         " MEMLEA(0x10,0) ",%0         \n"
-    "movdqa      %%xmm0,%%xmm1                 \n"
-    "punpcklwd   %%xmm5,%%xmm0                 \n"  // 8 ints in xmm0/1
-    "cvtdq2ps    %%xmm0,%%xmm0                 \n"  // 8 floats
-    "punpckhwd   %%xmm5,%%xmm1                 \n"
-    "cvtdq2ps    %%xmm1,%%xmm1                 \n"
-    "mulps       %%xmm4,%%xmm0                 \n"
-    "mulps       %%xmm4,%%xmm1                 \n"
-    "psrld       $0xd,%%xmm0                   \n"
-    "psrld       $0xd,%%xmm1                   \n"
-    "packssdw    %%xmm1,%%xmm0                 \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "lea       " MEMLEA(0x10,1) ",%1           \n"
+    "movdqa      %%xmm2,%%xmm3                 \n"
+    "punpcklwd   %%xmm5,%%xmm2                 \n"  // 8 ints in xmm2/1
+    "cvtdq2ps    %%xmm2,%%xmm2                 \n"  // 8 floats
+    "punpckhwd   %%xmm5,%%xmm3                 \n"
+    "cvtdq2ps    %%xmm3,%%xmm3                 \n"
+    "mulps       %%xmm4,%%xmm2                 \n"
+    "mulps       %%xmm4,%%xmm3                 \n"
+    "psrld       $0xd,%%xmm2                   \n"
+    "psrld       $0xd,%%xmm3                   \n"
+    "packssdw    %%xmm3,%%xmm2                 \n"
+    "movdqu      %%xmm2," MEMACCESS(1) "       \n"
+    "lea         " MEMLEA(0x10,1) ",%1         \n"
     "sub         $0x8,%2                       \n"
     "jg          1b                            \n"
-  : "+r"(src),   // %0
-    "+r"(dst),   // %1
-    "+r"(width)  // %2
-  : "rm"(mult)   // %3
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "x"(scale * kScaleBias)   // %3
   : "memory", "cc",
-    "xmm0", "xmm1", "xmm4", "xmm5"
+    "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
 #endif  // HAS_HALFFLOATROW_SSE2
@@ -5411,17 +5410,17 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
   "1:                                          \n"
-    "vpmovzxwd   " MEMACCESS(0) ",%%ymm0       \n"  // 8 shorts -> 8 ints
-    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm1 \n"  // 8 more
+    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 8 shorts -> 8 ints
+    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"  // 8 more
     "lea         " MEMLEA(0x20,0) ",%0         \n"
-    "vcvtdq2ps   %%ymm0,%%ymm0                 \n"
-    "vcvtdq2ps   %%ymm1,%%ymm1                 \n"
-    "vmulps      %%ymm0,%%ymm4,%%ymm0          \n"
-    "vmulps      %%ymm1,%%ymm4,%%ymm1          \n"
-    "vcvtps2ph   $3, %%ymm0, %%xmm0            \n"
-    "vcvtps2ph   $3, %%ymm1, %%xmm1            \n"
-    "vmovdqu     %%xmm0," MEMACCESS(1) "       \n"
-    "vmovdqu     %%xmm1," MEMACCESS2(0x10,1) " \n"
+    "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
+    "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
+    "vmulps      %%ymm2,%%ymm4,%%ymm2          \n"
+    "vmulps      %%ymm3,%%ymm4,%%ymm3          \n"
+    "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
+    "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
+    "vmovdqu     %%xmm2," MEMACCESS(1) "       \n"
+    "vmovdqu     %%xmm3," MEMACCESS2(0x10,1) " \n"
     "lea         " MEMLEA(0x20,1) ",%1         \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
@@ -5431,7 +5430,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "+r"(width)  // %2
   : "x"(scale)   // %3
   : "memory", "cc",
-    "xmm0", "xmm1", "xmm4"
+    "xmm2", "xmm3", "xmm4"
   );
 }
 #endif  // HAS_HALFFLOATROW_AVX2

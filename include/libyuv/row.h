@@ -140,6 +140,7 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
+#define HAS_HALFFLOATROW_SSE2
 
 // Effects:
 #define HAS_ARGBADDROW_SSE2
@@ -260,13 +261,6 @@ extern "C" {
     (!defined(__clang__) || defined(__SSSE3__))
 #define HAS_I422ALPHATOARGBROW_SSSE3
 #define HAS_I422TOARGBROW_SSSE3
-#endif
-
-// The following are available on gcc x86 platforms:
-// TODO(fbarchard): Port to Visual C.
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
-#define HAS_HALFFLOATROW_SSE2
 #endif
 
 // The following are available on Neon platforms:

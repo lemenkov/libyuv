@@ -6095,6 +6095,42 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 }
 #endif  // HAS_ARGBPOLYNOMIALROW_AVX2
 
+#ifdef HAS_HALFFLOATROW_SSE2
+static float kExpBias = 1.9259299444e-34f;
+__declspec(naked)
+void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
+  __asm {
+    mov        eax, [esp + 4]      /* src */
+    mov        edx, [esp + 8]      /* dst */
+    movd       xmm4, dword ptr [esp + 12]    /* scale */
+    mov        ecx, [esp + 16]     /* width */
+    mulss      xmm4, kExpBias
+    pshufd     xmm4, xmm4, 0
+    pxor       xmm5, xmm5
+
+    // 8 pixel loop.
+ convertloop:
+    movdqu      xmm2, xmmword ptr [eax]  // 8 shorts
+    lea         eax, [eax + 16]
+    movdqa      xmm3, xmm2
+    punpcklwd   xmm2, xmm5
+    cvtdq2ps    xmm2, xmm2        // convert 8 ints to floats
+    punpckhwd   xmm3, xmm5
+    cvtdq2ps    xmm3, xmm3
+    mulps       xmm2, xmm4
+    mulps       xmm3, xmm4
+    psrld       xmm2, 13
+    psrld       xmm3, 13
+    packssdw    xmm2, xmm3
+    movdqu      [edx], xmm2
+    lea         edx, [edx + 16]
+    sub         ecx, 8
+    jg          convertloop
+    ret
+  }
+}
+#endif  // HAS_HALFFLOATROW_SSE2
+
 #ifdef HAS_HALFFLOATROW_AVX2
 __declspec(naked)
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
@@ -6106,17 +6142,17 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
 
     // 8 pixel loop.
  convertloop:
-    vpmovzxwd   ymm0, xmmword ptr [eax]  // 8 shorts -> 8 ints
-    vpmovzxwd   ymm1, xmmword ptr [eax + 16]  // 8 more shorts
+    vpmovzxwd   ymm2, xmmword ptr [eax]  // 8 shorts -> 8 ints
+    vpmovzxwd   ymm3, xmmword ptr [eax + 16]  // 8 more shorts
     lea         eax, [eax + 32]
-    vcvtdq2ps   ymm0, ymm0        // convert 8 ints to floats
-    vcvtdq2ps   ymm1, ymm1
-    vmulps      ymm0, ymm0, ymm4  // scale to normalized range 0 to 1
-    vmulps      ymm1, ymm1, ymm4
-    vcvtps2ph   xmm0, ymm0, 3     // float convert to 8 half floats truncate
-    vcvtps2ph   xmm1, ymm1, 3
-    vmovdqu     [edx], xmm0
-    vmovdqu     [edx + 16], xmm1
+    vcvtdq2ps   ymm2, ymm2        // convert 8 ints to floats
+    vcvtdq2ps   ymm3, ymm3
+    vmulps      ymm2, ymm2, ymm4  // scale to normalized range 0 to 1
+    vmulps      ymm3, ymm3, ymm4
+    vcvtps2ph   xmm2, ymm2, 3     // float convert to 8 half floats truncate
+    vcvtps2ph   xmm3, ymm3, 3
+    vmovdqu     [edx], xmm2
+    vmovdqu     [edx + 16], xmm3
     lea         edx, [edx + 32]
     sub         ecx, 16
     jg          convertloop
