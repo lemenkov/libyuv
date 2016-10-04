@@ -53,6 +53,54 @@ void ARGBMirrorRow_MSA(const uint8* src, uint8* dst, int width) {
   }
 }
 
+void I422ToYUY2Row_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_yuy2,
+                       int width) {
+  int x;
+  v16u8 src_u0, src_v0, src_y0, src_y1, vec_uv0, vec_uv1;
+  v16u8 dst_yuy2_0, dst_yuy2_1, dst_yuy2_2, dst_yuy2_3;
+
+  for (x = 0; x < width; x += 32) {
+    src_u0 = LD_UB(src_u);
+    src_v0 = LD_UB(src_v);
+    LD_UB2(src_y, 16, src_y0, src_y1);
+    ILVRL_B2_UB(src_v0, src_u0, vec_uv0, vec_uv1);
+    ILVRL_B2_UB(vec_uv0, src_y0, dst_yuy2_0, dst_yuy2_1);
+    ILVRL_B2_UB(vec_uv1, src_y1, dst_yuy2_2, dst_yuy2_3);
+    ST_UB4(dst_yuy2_0, dst_yuy2_1, dst_yuy2_2, dst_yuy2_3, dst_yuy2, 16);
+    src_u += 16;
+    src_v += 16;
+    src_y += 32;
+    dst_yuy2 += 64;
+  }
+}
+
+void I422ToUYVYRow_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_uyvy,
+                       int width) {
+  int x;
+  v16u8 src_u0, src_v0, src_y0, src_y1, vec_uv0, vec_uv1;
+  v16u8 dst_uyvy0, dst_uyvy1, dst_uyvy2, dst_uyvy3;
+
+  for (x = 0; x < width; x += 32) {
+    src_u0 = LD_UB(src_u);
+    src_v0 = LD_UB(src_v);
+    LD_UB2(src_y, 16, src_y0, src_y1);
+    ILVRL_B2_UB(src_v0, src_u0, vec_uv0, vec_uv1);
+    ILVRL_B2_UB(src_y0, vec_uv0, dst_uyvy0, dst_uyvy1);
+    ILVRL_B2_UB(src_y1, vec_uv1, dst_uyvy2, dst_uyvy3);
+    ST_UB4(dst_uyvy0, dst_uyvy1, dst_uyvy2, dst_uyvy3, dst_uyvy, 16);
+    src_u += 16;
+    src_v += 16;
+    src_y += 32;
+    dst_uyvy += 64;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

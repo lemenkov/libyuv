@@ -370,6 +370,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #define HAS_MIRRORROW_MSA
 #define HAS_ARGBMIRRORROW_MSA
+#define HAS_I422TOYUY2ROW_MSA
+#define HAS_I422TOUYVYROW_MSA
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -1769,6 +1771,22 @@ void I422ToUYVYRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,
                             const uint8* src_v,
                             uint8* dst_uyvy, int width);
+void I422ToYUY2Row_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_yuy2, int width);
+void I422ToUYVYRow_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_uyvy, int width);
+void I422ToYUY2Row_Any_MSA(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_yuy2, int width);
+void I422ToUYVYRow_Any_MSA(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_uyvy, int width);
 
 // Effects related row functions.
 void ARGBAttenuateRow_C(const uint8* src_argb, uint8* dst_argb, int width);

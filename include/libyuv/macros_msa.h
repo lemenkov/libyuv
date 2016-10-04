@@ -71,6 +71,19 @@
 }
 #define VSHF_B2_UB(...) VSHF_B2(v16u8, __VA_ARGS__)
 
+/* Description : Interleave both left and right half of input vectors
+   Arguments   : Inputs  - in0, in1
+                 Outputs - out0, out1
+                 Return Type - as per RTYPE
+   Details     : Right half of byte elements from 'in0' and 'in1' are
+                 interleaved and written to 'out0'
+*/
+#define ILVRL_B2(RTYPE, in0, in1, out0, out1) {           \
+  out0 = (RTYPE) __msa_ilvr_b((v16i8) in0, (v16i8) in1);  \
+  out1 = (RTYPE) __msa_ilvl_b((v16i8) in0, (v16i8) in1);  \
+}
+#define ILVRL_B2_UB(...) ILVRL_B2(v16u8, __VA_ARGS__)
+
 #endif  /* !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa) */
 
 #endif  // INCLUDE_LIBYUV_MACROS_MSA_H_
