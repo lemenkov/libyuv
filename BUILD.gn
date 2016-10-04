@@ -98,9 +98,11 @@ static_library("libyuv") {
     deps += [ ":libyuv_msa" ]
   }
 
-  if (is_nacl) {
-    # Always enable optimization under NaCl to workaround crbug.com/538243 .
+  # Always enable optimization for Release and NaCl builds (to workaround
+  # crbug.com/538243).
+  if (!is_debug || is_nacl) {
     configs -= [ "//build/config/compiler:default_optimization" ]
+    # Enable optimize for speed (-O2) over size (-Os).
     configs += [ "//build/config/compiler:optimize_max" ]
   }
 }
