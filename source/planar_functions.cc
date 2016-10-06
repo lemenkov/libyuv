@@ -433,6 +433,10 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
       YUY2ToUV422Row_C;
   void (*YUY2ToYRow)(const uint8* src_yuy2, uint8* dst_y, int width) =
       YUY2ToYRow_C;
+  if (!src_yuy2 || !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -471,9 +475,7 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
 #if defined(HAS_YUY2TOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     YUY2ToYRow = YUY2ToYRow_Any_NEON;
-    if (width >= 16) {
-      YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
-    }
+    YUY2ToUV422Row = YUY2ToUV422Row_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       YUY2ToYRow = YUY2ToYRow_NEON;
       YUY2ToUV422Row = YUY2ToUV422Row_NEON;
@@ -505,6 +507,10 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
       UYVYToUV422Row_C;
   void (*UYVYToYRow)(const uint8* src_uyvy,
                      uint8* dst_y, int width) = UYVYToYRow_C;
+  if (!src_uyvy || !dst_y || !dst_u || !dst_v ||
+      width <= 0 || height == 0) {
+    return -1;
+  }
   // Negative height means invert the image.
   if (height < 0) {
     height = -height;
@@ -543,9 +549,7 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
 #if defined(HAS_UYVYTOYROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     UYVYToYRow = UYVYToYRow_Any_NEON;
-    if (width >= 16) {
-      UYVYToUV422Row = UYVYToUV422Row_Any_NEON;
-    }
+    UYVYToUV422Row = UYVYToUV422Row_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       UYVYToYRow = UYVYToYRow_NEON;
       UYVYToUV422Row = UYVYToUV422Row_NEON;
