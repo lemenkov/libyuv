@@ -101,6 +101,126 @@ void I422ToUYVYRow_MSA(const uint8* src_y,
   }
 }
 
+void YUY2ToYRow_MSA(const uint8* src_yuy2, uint8* dst_y, int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_yuy2, 16, src0, src1, src2, src3);
+    dst0 = (v16u8) __msa_pckev_b((v16i8) src1, (v16i8) src0);
+    dst1 = (v16u8) __msa_pckev_b((v16i8) src3, (v16i8) src2);
+    ST_UB2(dst0, dst1, dst_y, 16);
+    src_yuy2 += 64;
+    dst_y += 32;
+  }
+}
+
+void YUY2ToUVRow_MSA(const uint8* src_yuy2, int src_stride_yuy2,
+                     uint8* dst_u, uint8* dst_v, int width) {
+  const uint8* src_yuy2_next = src_yuy2 + src_stride_yuy2;
+  int x;
+  v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
+  v16u8 vec0, vec1, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_yuy2, 16, src0, src1, src2, src3);
+    LD_UB4(src_yuy2_next, 16, src4, src5, src6, src7);
+    src0 = (v16u8) __msa_pckod_b((v16i8) src1, (v16i8) src0);
+    src1 = (v16u8) __msa_pckod_b((v16i8) src3, (v16i8) src2);
+    src2 = (v16u8) __msa_pckod_b((v16i8) src5, (v16i8) src4);
+    src3 = (v16u8) __msa_pckod_b((v16i8) src7, (v16i8) src6);
+    vec0 = __msa_aver_u_b(src0, src2);
+    vec1 = __msa_aver_u_b(src1, src3);
+    dst0 = (v16u8) __msa_pckev_b((v16i8) vec1, (v16i8) vec0);
+    dst1 = (v16u8) __msa_pckod_b((v16i8) vec1, (v16i8) vec0);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
+    src_yuy2 += 64;
+    src_yuy2_next += 64;
+    dst_u += 16;
+    dst_v += 16;
+  }
+}
+
+void YUY2ToUV422Row_MSA(const uint8* src_yuy2, uint8* dst_u, uint8* dst_v,
+                        int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_yuy2, 16, src0, src1, src2, src3);
+    src0 = (v16u8) __msa_pckod_b((v16i8) src1, (v16i8) src0);
+    src1 = (v16u8) __msa_pckod_b((v16i8) src3, (v16i8) src2);
+    dst0 = (v16u8) __msa_pckev_b((v16i8) src1, (v16i8) src0);
+    dst1 = (v16u8) __msa_pckod_b((v16i8) src1, (v16i8) src0);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
+    src_yuy2 += 64;
+    dst_u += 16;
+    dst_v += 16;
+  }
+}
+
+void UYVYToYRow_MSA(const uint8* src_uyvy, uint8* dst_y, int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_uyvy, 16, src0, src1, src2, src3);
+    dst0 = (v16u8) __msa_pckod_b((v16i8) src1, (v16i8) src0);
+    dst1 = (v16u8) __msa_pckod_b((v16i8) src3, (v16i8) src2);
+    ST_UB2(dst0, dst1, dst_y, 16);
+    src_uyvy += 64;
+    dst_y += 32;
+  }
+}
+
+void UYVYToUVRow_MSA(const uint8* src_uyvy, int src_stride_uyvy,
+                     uint8* dst_u, uint8* dst_v, int width) {
+  const uint8 *src_uyvy_next = src_uyvy + src_stride_uyvy;
+  int x;
+  v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
+  v16u8 vec0, vec1, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_uyvy, 16, src0, src1, src2, src3);
+    LD_UB4(src_uyvy_next, 16, src4, src5, src6, src7);
+    src0 = (v16u8) __msa_pckev_b((v16i8) src1, (v16i8) src0);
+    src1 = (v16u8) __msa_pckev_b((v16i8) src3, (v16i8) src2);
+    src2 = (v16u8) __msa_pckev_b((v16i8) src5, (v16i8) src4);
+    src3 = (v16u8) __msa_pckev_b((v16i8) src7, (v16i8) src6);
+    vec0 = __msa_aver_u_b(src0, src2);
+    vec1 = __msa_aver_u_b(src1, src3);
+    dst0 = (v16u8) __msa_pckev_b((v16i8) vec1, (v16i8) vec0);
+    dst1 = (v16u8) __msa_pckod_b((v16i8) vec1, (v16i8) vec0);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
+    src_uyvy += 64;
+    src_uyvy_next += 64;
+    dst_u += 16;
+    dst_v += 16;
+  }
+}
+
+void UYVYToUV422Row_MSA(const uint8* src_uyvy, uint8* dst_u, uint8* dst_v,
+                        int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 32) {
+    LD_UB4(src_uyvy, 16, src0, src1, src2, src3);
+    src0 = (v16u8) __msa_pckev_b((v16i8) src1, (v16i8) src0);
+    src1 = (v16u8) __msa_pckev_b((v16i8) src3, (v16i8) src2);
+    dst0 = (v16u8) __msa_pckev_b((v16i8) src1, (v16i8) src0);
+    dst1 = (v16u8) __msa_pckod_b((v16i8) src1, (v16i8) src0);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
+    src_uyvy += 64;
+    dst_u += 16;
+    dst_v += 16;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

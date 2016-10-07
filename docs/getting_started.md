@@ -166,12 +166,12 @@ ia32
 mipsel
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mipsel\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
-    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mipsel\"" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
+    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mipsel\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
     ninja -j7 -v -C out/Debug libyuv_unittest
     ninja -j7 -v -C out/Release libyuv_unittest
 
-    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\"" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
-    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\"" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
+    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
+    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
     ninja -j7 -v -C out/Debug libyuv_unittest
     ninja -j7 -v -C out/Release libyuv_unittest
 
