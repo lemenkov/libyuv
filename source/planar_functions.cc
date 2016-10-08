@@ -588,6 +588,71 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
   return 0;
 }
 
+// Convert YUY2 to Y.
+LIBYUV_API
+int YUY2ToY(const uint8* src_yuy2, int src_stride_yuy2,
+             uint8* dst_y, int dst_stride_y,
+             int width, int height) {
+  int y;
+  void (*YUY2ToYRow)(const uint8* src_yuy2, uint8* dst_y, int width) =
+      YUY2ToYRow_C;
+  if (!src_yuy2 || !dst_y || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_yuy2 = src_yuy2 + (height - 1) * src_stride_yuy2;
+    src_stride_yuy2 = -src_stride_yuy2;
+  }
+  // Coalesce rows.
+  if (src_stride_yuy2 == width * 2 &&
+      dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_yuy2 = dst_stride_y = 0;
+  }
+#if defined(HAS_YUY2TOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    YUY2ToYRow = YUY2ToYRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    YUY2ToYRow = YUY2ToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      YUY2ToYRow = YUY2ToYRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    YUY2ToYRow = YUY2ToYRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      YUY2ToYRow = YUY2ToYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_YUY2TOYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    YUY2ToYRow = YUY2ToYRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      YUY2ToYRow = YUY2ToYRow_MSA;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    YUY2ToYRow(src_yuy2, dst_y, width);
+    src_yuy2 += src_stride_yuy2;
+    dst_y += dst_stride_y;
+  }
+  return 0;
+}
+
 // Mirror I400 with optional flipping
 LIBYUV_API
 int I400Mirror(const uint8* src_y, int src_stride_y,
@@ -2698,6 +2763,7 @@ int ARGBCopyYToAlpha(const uint8* src_y, int src_stride_y,
   }
   return 0;
 }
+
 
 // TODO(fbarchard): Consider if width is even Y channel can be split
 // directly. A SplitUVRow_Odd function could copy the remaining chroma.

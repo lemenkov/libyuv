@@ -10,6 +10,8 @@
 
 #include "libyuv/row.h"
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
