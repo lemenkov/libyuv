@@ -447,7 +447,8 @@ int YUY2ToI422(const uint8* src_yuy2, int src_stride_yuy2,
   if (src_stride_yuy2 == width * 2 &&
       dst_stride_y == width &&
       dst_stride_u * 2 == width &&
-      dst_stride_v * 2 == width) {
+      dst_stride_v * 2 == width &&
+      width * height <= 32768) {
     width *= height;
     height = 1;
     src_stride_yuy2 = dst_stride_y = dst_stride_u = dst_stride_v = 0;
@@ -531,7 +532,8 @@ int UYVYToI422(const uint8* src_uyvy, int src_stride_uyvy,
   if (src_stride_uyvy == width * 2 &&
       dst_stride_y == width &&
       dst_stride_u * 2 == width &&
-      dst_stride_v * 2 == width) {
+      dst_stride_v * 2 == width &&
+      width * height <= 32768) {
     width *= height;
     height = 1;
     src_stride_uyvy = dst_stride_y = dst_stride_u = dst_stride_v = 0;
