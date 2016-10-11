@@ -636,41 +636,6 @@ void ARGBToUV444Row_C(const uint8* src_argb,
   }
 }
 
-void ARGBToUV411Row_C(const uint8* src_argb,
-                      uint8* dst_u, uint8* dst_v, int width) {
-  int x;
-  for (x = 0; x < width - 3; x += 4) {
-    uint8 ab = (src_argb[0] + src_argb[4] + src_argb[8] + src_argb[12]) >> 2;
-    uint8 ag = (src_argb[1] + src_argb[5] + src_argb[9] + src_argb[13]) >> 2;
-    uint8 ar = (src_argb[2] + src_argb[6] + src_argb[10] + src_argb[14]) >> 2;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-    src_argb += 16;
-    dst_u += 1;
-    dst_v += 1;
-  }
-  // Odd width handling mimics 'any' function which replicates last pixel.
-  if ((width & 3) == 3) {
-    uint8 ab = (src_argb[0] + src_argb[4] + src_argb[8] + src_argb[8]) >> 2;
-    uint8 ag = (src_argb[1] + src_argb[5] + src_argb[9] + src_argb[9]) >> 2;
-    uint8 ar = (src_argb[2] + src_argb[6] + src_argb[10] + src_argb[10]) >> 2;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-  } else if ((width & 3) == 2) {
-    uint8 ab = (src_argb[0] + src_argb[4]) >> 1;
-    uint8 ag = (src_argb[1] + src_argb[5]) >> 1;
-    uint8 ar = (src_argb[2] + src_argb[6]) >> 1;
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-  } else if ((width & 3) == 1) {
-    uint8 ab = src_argb[0];
-    uint8 ag = src_argb[1];
-    uint8 ar = src_argb[2];
-    dst_u[0] = RGBToU(ar, ag, ab);
-    dst_v[0] = RGBToV(ar, ag, ab);
-  }
-}
-
 void ARGBGrayRow_C(const uint8* src_argb, uint8* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
@@ -1527,48 +1492,6 @@ void I422ToRGB565Row_C(const uint8* src_y,
     g0 = g0 >> 2;
     r0 = r0 >> 3;
     *(uint16*)(dst_rgb565) = b0 | (g0 << 5) | (r0 << 11);
-  }
-}
-
-void I411ToARGBRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
-                     uint8* rgb_buf,
-                     const struct YuvConstants* yuvconstants,
-                     int width) {
-  int x;
-  for (x = 0; x < width - 3; x += 4) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
-    rgb_buf[7] = 255;
-    YuvPixel(src_y[2], src_u[0], src_v[0],
-             rgb_buf + 8, rgb_buf + 9, rgb_buf + 10, yuvconstants);
-    rgb_buf[11] = 255;
-    YuvPixel(src_y[3], src_u[0], src_v[0],
-             rgb_buf + 12, rgb_buf + 13, rgb_buf + 14, yuvconstants);
-    rgb_buf[15] = 255;
-    src_y += 4;
-    src_u += 1;
-    src_v += 1;
-    rgb_buf += 16;  // Advance 4 pixels.
-  }
-  if (width & 2) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
-    YuvPixel(src_y[1], src_u[0], src_v[0],
-             rgb_buf + 4, rgb_buf + 5, rgb_buf + 6, yuvconstants);
-    rgb_buf[7] = 255;
-    src_y += 2;
-    rgb_buf += 8;  // Advance 2 pixels.
-  }
-  if (width & 1) {
-    YuvPixel(src_y[0], src_u[0], src_v[0],
-             rgb_buf + 0, rgb_buf + 1, rgb_buf + 2, yuvconstants);
-    rgb_buf[3] = 255;
   }
 }
 

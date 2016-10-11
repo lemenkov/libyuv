@@ -1969,21 +1969,6 @@ void RGBAToUVRow_SSSE3(const uint8* src_argb0, int src_stride_argb,
     __asm lea        ebp, [ebp + 16]                                           \
   }
 
-// Read 4 UV from 411, upsample to 16 UV.
-#define READYUV411_AVX2 __asm {                                                \
-    __asm vmovd      xmm0, dword ptr [esi]        /* U */                      \
-    __asm vmovd      xmm1, dword ptr [esi + edi]  /* V */                      \
-    __asm lea        esi,  [esi + 4]                                           \
-    __asm vpunpcklbw ymm0, ymm0, ymm1             /* UV */                     \
-    __asm vpunpcklwd ymm0, ymm0, ymm0             /* UVUV (upsample) */        \
-    __asm vpermq     ymm0, ymm0, 0xd8                                          \
-    __asm vpunpckldq ymm0, ymm0, ymm0             /* UVUVUVUV (upsample) */    \
-    __asm vmovdqu    xmm4, [eax]                  /* Y */                      \
-    __asm vpermq     ymm4, ymm4, 0xd8                                          \
-    __asm vpunpcklbw ymm4, ymm4, ymm4                                          \
-    __asm lea        eax, [eax + 16]                                           \
-  }
-
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2 __asm {                                                  \
     __asm vmovdqu    xmm0, [esi]                  /* UV */                     \
@@ -2198,46 +2183,6 @@ void I444ToARGBRow_AVX2(const uint8* y_buf,
 }
 #endif  // HAS_I444TOARGBROW_AVX2
 
-#ifdef HAS_I411TOARGBROW_AVX2
-// 16 pixels
-// 4 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
-__declspec(naked)
-void I411ToARGBRow_AVX2(const uint8* y_buf,
-                        const uint8* u_buf,
-                        const uint8* v_buf,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    mov        eax, [esp + 12 + 4]   // Y
-    mov        esi, [esp + 12 + 8]   // U
-    mov        edi, [esp + 12 + 12]  // V
-    mov        edx, [esp + 12 + 16]  // abgr
-    mov        ebx, [esp + 12 + 20]  // yuvconstants
-    mov        ecx, [esp + 12 + 24]  // width
-    sub        edi, esi
-    vpcmpeqb   ymm5, ymm5, ymm5     // generate 0xffffffffffffffff for alpha
-
- convertloop:
-    READYUV411_AVX2
-    YUVTORGB_AVX2(ebx)
-    STOREARGB_AVX2
-
-    sub        ecx, 16
-    jg         convertloop
-
-    pop        ebx
-    pop        edi
-    pop        esi
-    vzeroupper
-    ret
-  }
-}
-#endif  // HAS_I411TOARGBROW_AVX2
-
 #ifdef HAS_NV12TOARGBROW_AVX2
 // 16 pixels.
 // 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
@@ -2449,24 +2394,6 @@ void I422ToRGBARow_AVX2(const uint8* y_buf,
     __asm lea        eax, [eax + 8]                                            \
     __asm movq       xmm5, qword ptr [ebp]   /* A */                           \
     __asm lea        ebp, [ebp + 8]                                            \
-  }
-
-// Read 2 UV from 411, upsample to 8 UV.
-// drmemory fails with memory fault if pinsrw used. libyuv bug: 525
-//  __asm pinsrw     xmm0, [esi], 0        /* U */
-//  __asm pinsrw     xmm1, [esi + edi], 0  /* V */
-#define READYUV411_EBX __asm {                                                 \
-    __asm movzx      ebx, word ptr [esi]        /* U */                        \
-    __asm movd       xmm0, ebx                                                 \
-    __asm movzx      ebx, word ptr [esi + edi]  /* V */                        \
-    __asm movd       xmm1, ebx                                                 \
-    __asm lea        esi,  [esi + 2]                                           \
-    __asm punpcklbw  xmm0, xmm1            /* UV */                            \
-    __asm punpcklwd  xmm0, xmm0            /* UVUV (upsample) */               \
-    __asm punpckldq  xmm0, xmm0            /* UVUVUVUV (upsample) */           \
-    __asm movq       xmm4, qword ptr [eax]                                     \
-    __asm punpcklbw  xmm4, xmm4                                                \
-    __asm lea        eax, [eax + 8]                                            \
   }
 
 // Read 4 UV from NV12, upsample to 8 UV.
@@ -2806,46 +2733,6 @@ void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
  convertloop:
     READYUVA422
     YUVTORGB(ebx)
-    STOREARGB
-
-    sub        ecx, 8
-    jg         convertloop
-
-    pop        ebp
-    pop        ebx
-    pop        edi
-    pop        esi
-    ret
-  }
-}
-
-// 8 pixels.
-// 2 UV values upsampled to 8 UV, mixed with 8 Y producing 8 ARGB (32 bytes).
-// Similar to I420 but duplicate UV once more.
-__declspec(naked)
-void I411ToARGBRow_SSSE3(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width) {
-  __asm {
-    push       esi
-    push       edi
-    push       ebx
-    push       ebp
-    mov        eax, [esp + 16 + 4]   // Y
-    mov        esi, [esp + 16 + 8]   // U
-    mov        edi, [esp + 16 + 12]  // V
-    mov        edx, [esp + 16 + 16]  // abgr
-    mov        ebp, [esp + 16 + 20]  // yuvconstants
-    mov        ecx, [esp + 16 + 24]  // width
-    sub        edi, esi
-    pcmpeqb    xmm5, xmm5            // generate 0xffffffff for alpha
-
- convertloop:
-    READYUV411_EBX
-    YUVTORGB(ebp)
     STOREARGB
 
     sub        ecx, 8

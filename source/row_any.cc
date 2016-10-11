@@ -127,9 +127,6 @@ ANY31(BlendPlaneRow_Any_SSSE3, BlendPlaneRow_SSSE3, 0, 0, 1, 7)
 #ifdef HAS_I422TOARGBROW_SSSE3
 ANY31C(I422ToARGBRow_Any_SSSE3, I422ToARGBRow_SSSE3, 1, 0, 4, 7)
 #endif
-#ifdef HAS_I411TOARGBROW_SSSE3
-ANY31C(I411ToARGBRow_Any_SSSE3, I411ToARGBRow_SSSE3, 2, 0, 4, 7)
-#endif
 #ifdef HAS_I444TOARGBROW_SSSE3
 ANY31C(I444ToARGBRow_Any_SSSE3, I444ToARGBRow_SSSE3, 0, 0, 4, 7)
 ANY31C(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_SSSE3, 1, 0, 4, 7)
@@ -150,9 +147,6 @@ ANY31C(I422ToRGBARow_Any_AVX2, I422ToRGBARow_AVX2, 1, 0, 4, 15)
 #ifdef HAS_I444TOARGBROW_AVX2
 ANY31C(I444ToARGBRow_Any_AVX2, I444ToARGBRow_AVX2, 0, 0, 4, 15)
 #endif
-#ifdef HAS_I411TOARGBROW_AVX2
-ANY31C(I411ToARGBRow_Any_AVX2, I411ToARGBRow_AVX2, 2, 0, 4, 15)
-#endif
 #ifdef HAS_I422TOARGB4444ROW_AVX2
 ANY31C(I422ToARGB4444Row_Any_AVX2, I422ToARGB4444Row_AVX2, 1, 0, 2, 7)
 #endif
@@ -165,7 +159,6 @@ ANY31C(I422ToRGB565Row_Any_AVX2, I422ToRGB565Row_AVX2, 1, 0, 2, 7)
 #ifdef HAS_I422TOARGBROW_NEON
 ANY31C(I444ToARGBRow_Any_NEON, I444ToARGBRow_NEON, 0, 0, 4, 7)
 ANY31C(I422ToARGBRow_Any_NEON, I422ToARGBRow_NEON, 1, 0, 4, 7)
-ANY31C(I411ToARGBRow_Any_NEON, I411ToARGBRow_NEON, 2, 0, 4, 7)
 ANY31C(I422ToRGBARow_Any_NEON, I422ToRGBARow_NEON, 1, 0, 4, 7)
 ANY31C(I422ToRGB24Row_Any_NEON, I422ToRGB24Row_NEON, 1, 0, 3, 7)
 ANY31C(I422ToARGB4444Row_Any_NEON, I422ToARGB4444Row_NEON, 1, 0, 2, 7)
@@ -720,21 +713,6 @@ ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
         ANY_SIMD(src_ptr, dst_u, dst_v, n);                                    \
       }                                                                        \
       memcpy(temp, src_ptr  + (n >> UVSHIFT) * BPP, SS(r, UVSHIFT) * BPP);     \
-      /* repeat last 4 - 12 bytes for 411 subsampler */                        \
-      if (((width & 3) == 1) && BPP == 4 && DUVSHIFT == 2) {                   \
-        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
-        memcpy(temp + SS(r, UVSHIFT) * BPP + BPP,                              \
-               temp + SS(r, UVSHIFT) * BPP - BPP, BPP * 2);                    \
-      }                                                                        \
-      if (((width & 3) == 2) && BPP == 4 && DUVSHIFT == 2) {                   \
-        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP * 2, BPP * 2);                \
-      }                                                                        \
-      if (((width & 3) == 3) && BPP == 4 && DUVSHIFT == 2) {                   \
-        memcpy(temp + SS(r, UVSHIFT) * BPP,                                    \
-               temp + SS(r, UVSHIFT) * BPP - BPP, BPP);                        \
-      }                                                                        \
       ANY_SIMD(temp, temp + 128, temp + 256, MASK + 1);                        \
       memcpy(dst_u + (n >> DUVSHIFT), temp + 128, SS(r, DUVSHIFT));            \
       memcpy(dst_v + (n >> DUVSHIFT), temp + 256, SS(r, DUVSHIFT));            \
@@ -765,7 +743,6 @@ ANY12(UYVYToUV422Row_Any_SSE2, UYVYToUV422Row_SSE2, 1, 4, 1, 15)
 #endif
 #ifdef HAS_YUY2TOUV422ROW_NEON
 ANY12(ARGBToUV444Row_Any_NEON, ARGBToUV444Row_NEON, 0, 4, 0, 7)
-ANY12(ARGBToUV411Row_Any_NEON, ARGBToUV411Row_NEON, 0, 4, 2, 31)
 ANY12(YUY2ToUV422Row_Any_NEON, YUY2ToUV422Row_NEON, 1, 4, 1, 15)
 ANY12(UYVYToUV422Row_Any_NEON, UYVYToUV422Row_NEON, 1, 4, 1, 15)
 #endif

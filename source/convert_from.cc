@@ -104,28 +104,6 @@ int I420ToI444(const uint8* src_y, int src_stride_y,
                     dst_uv_width, dst_uv_height);
 }
 
-// 420 chroma is 1/2 width, 1/2 height
-// 411 chroma is 1/4 width, 1x height
-LIBYUV_API
-int I420ToI411(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  const int dst_uv_width = (Abs(width) + 3) >> 2;
-  const int dst_uv_height = Abs(height);
-  return I420ToI4xx(src_y, src_stride_y,
-                    src_u, src_stride_u,
-                    src_v, src_stride_v,
-                    dst_y, dst_stride_y,
-                    dst_u, dst_stride_u,
-                    dst_v, dst_stride_v,
-                    width, height,
-                    dst_uv_width, dst_uv_height);
-}
-
 // Copy to I400. Source can be I420,422,444,400,NV12,NV21
 LIBYUV_API
 int I400Copy(const uint8* src_y, int src_stride_y,
@@ -900,7 +878,7 @@ int I420ToRGB565Dither(const uint8* src_y, int src_stride_y,
     for (y = 0; y < height; ++y) {
       I422ToARGBRow(src_y, src_u, src_v, row_argb, &kYuvI601Constants, width);
       ARGBToRGB565DitherRow(row_argb, dst_rgb565,
-                            *(uint32*)(dither4x4 + ((y & 3) << 2)), width);
+          *(uint32*)(dither4x4 + ((y & 3) << 2)), width);  // NOLINT
       dst_rgb565 += dst_stride_rgb565;
       src_y += src_stride_y;
       if (y & 1) {
@@ -1113,20 +1091,6 @@ int ConvertFromI420(const uint8* y, int y_stride,
                      width, height);
       break;
     }
-    case FOURCC_I411: {
-      int quarterwidth = (width + 3) / 4;
-      uint8* dst_u = dst_sample + width * height;
-      uint8* dst_v = dst_u + quarterwidth * height;
-      r = I420ToI411(y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     dst_sample, width,
-                     dst_u, quarterwidth,
-                     dst_v, quarterwidth,
-                     width, height);
-      break;
-    }
-
     // Formats not supported - MJPG, biplanar, some rgb formats.
     default:
       return -1;  // unknown fourcc - return failure code.

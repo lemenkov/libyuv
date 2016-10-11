@@ -30,17 +30,6 @@ extern "C" {
     MEMACCESS(2)                                                               \
     "vld1.32    {d2[1]}, [%2]!                 \n"
 
-// Read 8 Y, 2 U and 2 V from 422
-#define READYUV411                                                             \
-    MEMACCESS(0)                                                               \
-    "vld1.8     {d0}, [%0]!                    \n"                             \
-    MEMACCESS(1)                                                               \
-    "vld1.16    {d2[0]}, [%1]!                 \n"                             \
-    MEMACCESS(2)                                                               \
-    "vld1.16    {d2[1]}, [%2]!                 \n"                             \
-    "vmov.u8    d3, d2                         \n"                             \
-    "vzip.u8    d2, d3                         \n"
-
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                                                             \
     MEMACCESS(0)                                                               \
@@ -220,36 +209,6 @@ void I422AlphaToARGBRow_NEON(const uint8* src_y,
       "+r"(src_a),     // %3
       "+r"(dst_argb),  // %4
       "+r"(width)      // %5
-    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
-      [kUVToG]"r"(&yuvconstants->kUVToG),
-      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
-      [kYToRgb]"r"(&yuvconstants->kYToRgb)
-    : "cc", "memory", "q0", "q1", "q2", "q3", "q4",
-      "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
-  );
-}
-
-void I411ToARGBRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  asm volatile (
-    YUVTORGB_SETUP
-    "vmov.u8    d23, #255                      \n"
-  "1:                                          \n"
-    READYUV411
-    YUVTORGB
-    "subs       %4, %4, #8                     \n"
-    MEMACCESS(3)
-    "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
-    "bgt        1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_argb),  // %3
-      "+r"(width)      // %4
     : [kUVToRB]"r"(&yuvconstants->kUVToRB),
       [kUVToG]"r"(&yuvconstants->kUVToG),
       [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
@@ -1380,69 +1339,6 @@ void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "+r"(width)        // %3
   :
   : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q12", "q13", "q14", "q15"
-  );
-}
-
-// 32x1 pixels -> 8x1.  width is number of argb pixels. e.g. 32.
-void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-                         int width) {
-  asm volatile (
-    "vmov.s16   q10, #112 / 2                  \n"  // UB / VR 0.875 coefficient
-    "vmov.s16   q11, #74 / 2                   \n"  // UG -0.5781 coefficient
-    "vmov.s16   q12, #38 / 2                   \n"  // UR -0.2969 coefficient
-    "vmov.s16   q13, #18 / 2                   \n"  // VB -0.1406 coefficient
-    "vmov.s16   q14, #94 / 2                   \n"  // VG -0.7344 coefficient
-    "vmov.u16   q15, #0x8080                   \n"  // 128.5
-  "1:                                          \n"
-    MEMACCESS(0)
-    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
-    MEMACCESS(0)
-    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB pixels.
-    "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
-    MEMACCESS(0)
-    "vld4.8     {d8, d10, d12, d14}, [%0]!     \n"  // load 8 more ARGB pixels.
-    MEMACCESS(0)
-    "vld4.8     {d9, d11, d13, d15}, [%0]!     \n"  // load last 8 ARGB pixels.
-    "vpaddl.u8  q4, q4                         \n"  // B 16 bytes -> 8 shorts.
-    "vpaddl.u8  q5, q5                         \n"  // G 16 bytes -> 8 shorts.
-    "vpaddl.u8  q6, q6                         \n"  // R 16 bytes -> 8 shorts.
-
-    "vpadd.u16  d0, d0, d1                     \n"  // B 16 shorts -> 8 shorts.
-    "vpadd.u16  d1, d8, d9                     \n"  // B
-    "vpadd.u16  d2, d2, d3                     \n"  // G 16 shorts -> 8 shorts.
-    "vpadd.u16  d3, d10, d11                   \n"  // G
-    "vpadd.u16  d4, d4, d5                     \n"  // R 16 shorts -> 8 shorts.
-    "vpadd.u16  d5, d12, d13                   \n"  // R
-
-    "vrshr.u16  q0, q0, #1                     \n"  // 2x average
-    "vrshr.u16  q1, q1, #1                     \n"
-    "vrshr.u16  q2, q2, #1                     \n"
-
-    "subs       %3, %3, #32                    \n"  // 32 processed per loop.
-    "vmul.s16   q8, q0, q10                    \n"  // B
-    "vmls.s16   q8, q1, q11                    \n"  // G
-    "vmls.s16   q8, q2, q12                    \n"  // R
-    "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
-    "vmul.s16   q9, q2, q10                    \n"  // R
-    "vmls.s16   q9, q1, q14                    \n"  // G
-    "vmls.s16   q9, q0, q13                    \n"  // B
-    "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
-    "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
-    "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
-    MEMACCESS(1)
-    "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels U.
-    MEMACCESS(2)
-    "vst1.8     {d1}, [%2]!                    \n"  // store 8 pixels V.
-    "bgt        1b                             \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_u),     // %1
-    "+r"(dst_v),     // %2
-    "+r"(width)        // %3
-  :
-  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-    "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15"
   );
 }
 

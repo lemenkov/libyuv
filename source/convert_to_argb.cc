@@ -67,7 +67,7 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
 
   if (need_buf) {
     int argb_size = crop_width * 4 * abs_crop_height;
-    rotate_buffer = (uint8*)malloc(argb_size);
+    rotate_buffer = (uint8*)malloc(argb_size);  /* NOLINT */
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }
@@ -258,20 +258,6 @@ int ConvertToARGB(const uint8* sample, size_t sample_size,
       r = I444ToARGB(src_y, src_width,
                      src_u, src_width,
                      src_v, src_width,
-                     crop_argb, argb_stride,
-                     crop_width, inv_crop_height);
-      break;
-    }
-    case FOURCC_I411: {
-      int quarterwidth = (src_width + 3) / 4;
-      const uint8* src_y = sample + src_width * crop_y + crop_x;
-      const uint8* src_u = sample + src_width * abs_src_height +
-          quarterwidth * crop_y + crop_x / 4;
-      const uint8* src_v = sample + src_width * abs_src_height +
-          quarterwidth * (abs_src_height + crop_y) + crop_x / 4;
-      r = I411ToARGB(src_y, src_width,
-                     src_u, quarterwidth,
-                     src_v, quarterwidth,
                      crop_argb, argb_stride,
                      crop_width, inv_crop_height);
       break;

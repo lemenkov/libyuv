@@ -137,27 +137,6 @@ int I444ToI420(const uint8* src_y, int src_stride_y,
                     width, height);
 }
 
-// 411 chroma is 1/4 width, 1x height
-// 420 chroma is 1/2 width, 1/2 height
-LIBYUV_API
-int I411ToI420(const uint8* src_y, int src_stride_y,
-               const uint8* src_u, int src_stride_u,
-               const uint8* src_v, int src_stride_v,
-               uint8* dst_y, int dst_stride_y,
-               uint8* dst_u, int dst_stride_u,
-               uint8* dst_v, int dst_stride_v,
-               int width, int height) {
-  const int src_uv_width = SUBSAMPLE(width, 3, 2);
-  return I4xxToI420(src_y, src_stride_y,
-                    src_u, src_stride_u,
-                    src_v, src_stride_v,
-                    dst_y, dst_stride_y,
-                    dst_u, dst_stride_u,
-                    dst_v, dst_stride_v,
-                    width, height,
-                    src_uv_width, height);
-}
-
 // I400 is greyscale typically used in MJPG
 LIBYUV_API
 int I400ToI420(const uint8* src_y, int src_stride_y,

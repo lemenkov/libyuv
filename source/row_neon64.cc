@@ -27,16 +27,6 @@ extern "C" {
     MEMACCESS(2)                                                               \
     "ld1        {v1.s}[1], [%2], #4            \n"
 
-// Read 8 Y, 2 U and 2 V from 422
-#define READYUV411                                                             \
-    MEMACCESS(0)                                                               \
-    "ld1        {v0.8b}, [%0], #8              \n"                             \
-    MEMACCESS(1)                                                               \
-    "ld1        {v2.h}[0], [%1], #2            \n"                             \
-    MEMACCESS(2)                                                               \
-    "ld1        {v2.h}[1], [%2], #2            \n"                             \
-    "zip1       v1.8b, v2.8b, v2.8b            \n"
-
 // Read 8 Y, 8 U and 8 V from 444
 #define READYUV444                                                             \
     MEMACCESS(0)                                                               \
@@ -211,36 +201,6 @@ void I422AlphaToARGBRow_NEON(const uint8* src_y,
       "+r"(src_a),     // %3
       "+r"(dst_argb),  // %4
       "+r"(width)      // %5
-    : [kUVToRB]"r"(&yuvconstants->kUVToRB),
-      [kUVToG]"r"(&yuvconstants->kUVToG),
-      [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
-      [kYToRgb]"r"(&yuvconstants->kYToRgb)
-    : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v20",
-      "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30"
-  );
-}
-
-void I411ToARGBRow_NEON(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
-  asm volatile (
-    YUVTORGB_SETUP
-    "movi       v23.8b, #255                   \n" /* A */
-  "1:                                          \n"
-    READYUV411
-    YUVTORGB(v22, v21, v20)
-    "subs       %w4, %w4, #8                   \n"
-    MEMACCESS(3)
-    "st4        {v20.8b,v21.8b,v22.8b,v23.8b}, [%3], #32     \n"
-    "b.gt       1b                             \n"
-    : "+r"(src_y),     // %0
-      "+r"(src_u),     // %1
-      "+r"(src_v),     // %2
-      "+r"(dst_argb),  // %3
-      "+r"(width)      // %4
     : [kUVToRB]"r"(&yuvconstants->kUVToRB),
       [kUVToG]"r"(&yuvconstants->kUVToG),
       [kUVBiasBGR]"r"(&yuvconstants->kUVBiasBGR),
@@ -1394,57 +1354,6 @@ void ARGBToUV444Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
     "movi       v23.8h, #9,  lsl #0  \n"  /* VB coefficient (-0.1406) / 2  */  \
     "movi       v24.8h, #47, lsl #0  \n"  /* VG coefficient (-0.7344) / 2  */  \
     "movi       v25.16b, #0x80       \n"  /* 128.5 (0x8080 in 16-bit)      */
-
-// 32x1 pixels -> 8x1.  width is number of argb pixels. e.g. 32.
-void ARGBToUV411Row_NEON(const uint8* src_argb, uint8* dst_u, uint8* dst_v,
-                         int width) {
-  asm volatile (
-    RGBTOUV_SETUP_REG
-  "1:                                          \n"
-    MEMACCESS(0)
-    "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
-    "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
-    "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
-    "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
-    MEMACCESS(0)
-    "ld4        {v4.16b,v5.16b,v6.16b,v7.16b}, [%0], #64 \n"  // load next 16.
-    "uaddlp     v4.8h, v4.16b                  \n"  // B 16 bytes -> 8 shorts.
-    "uaddlp     v5.8h, v5.16b                  \n"  // G 16 bytes -> 8 shorts.
-    "uaddlp     v6.8h, v6.16b                  \n"  // R 16 bytes -> 8 shorts.
-
-    "addp       v0.8h, v0.8h, v4.8h            \n"  // B 16 shorts -> 8 shorts.
-    "addp       v1.8h, v1.8h, v5.8h            \n"  // G 16 shorts -> 8 shorts.
-    "addp       v2.8h, v2.8h, v6.8h            \n"  // R 16 shorts -> 8 shorts.
-
-    "urshr      v0.8h, v0.8h, #1               \n"  // 2x average
-    "urshr      v1.8h, v1.8h, #1               \n"
-    "urshr      v2.8h, v2.8h, #1               \n"
-
-    "subs       %w3, %w3, #32                  \n"  // 32 processed per loop.
-    "mul        v3.8h, v0.8h, v20.8h           \n"  // B
-    "mls        v3.8h, v1.8h, v21.8h           \n"  // G
-    "mls        v3.8h, v2.8h, v22.8h           \n"  // R
-    "add        v3.8h, v3.8h, v25.8h           \n"  // +128 -> unsigned
-    "mul        v4.8h, v2.8h, v20.8h           \n"  // R
-    "mls        v4.8h, v1.8h, v24.8h           \n"  // G
-    "mls        v4.8h, v0.8h, v23.8h           \n"  // B
-    "add        v4.8h, v4.8h, v25.8h           \n"  // +128 -> unsigned
-    "uqshrn     v0.8b, v3.8h, #8               \n"  // 16 bit to 8 bit U
-    "uqshrn     v1.8b, v4.8h, #8               \n"  // 16 bit to 8 bit V
-    MEMACCESS(1)
-    "st1        {v0.8b}, [%1], #8              \n"  // store 8 pixels U.
-    MEMACCESS(2)
-    "st1        {v1.8b}, [%2], #8              \n"  // store 8 pixels V.
-    "b.gt       1b                             \n"
-  : "+r"(src_argb),  // %0
-    "+r"(dst_u),     // %1
-    "+r"(dst_v),     // %2
-    "+r"(width)        // %3
-  :
-  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",
-    "v20", "v21", "v22", "v23", "v24", "v25"
-  );
-}
 
 // 16x2 pixels -> 8x1.  width is number of argb pixels. e.g. 16.
 #define RGBTOUV(QB, QG, QR) \

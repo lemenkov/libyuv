@@ -37,20 +37,18 @@ This is how OSX formats map to libyuv
 The following is extracted from video_common.h as a complete list of formats supported by libyuv.
 
     enum FourCC {
-      // 9 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
+      // 8 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
       FOURCC_I420 = FOURCC('I', '4', '2', '0'),
       FOURCC_I422 = FOURCC('I', '4', '2', '2'),
       FOURCC_I444 = FOURCC('I', '4', '4', '4'),
-      FOURCC_I411 = FOURCC('I', '4', '1', '1'),
       FOURCC_I400 = FOURCC('I', '4', '0', '0'),
       FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
       FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
       FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
       FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
 
-      // 2 Secondary YUV formats: row biplanar.
+      // 1 Secondary YUV formats: row biplanar.
       FOURCC_M420 = FOURCC('M', '4', '2', '0'),
-      FOURCC_Q420 = FOURCC('Q', '4', '2', '0'),
 
       // 9 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp.
       FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
@@ -104,7 +102,7 @@ The following is extracted from video_common.h as a complete list of formats sup
 
 # Planar YUV
       The following formats contains a full size Y plane followed by 1 or 2
-        planes for UV: I420, I422, I444, I411, I400, NV21, NV12, I400
+        planes for UV: I420, I422, I444, I400, NV21, NV12, I400
       The size (subsampling) of the UV varies.
         I420, NV12 and NV21 are half width, half height
         I422, NV16 and NV61 are half width, full height

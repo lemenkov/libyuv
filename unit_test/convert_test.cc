@@ -166,10 +166,8 @@ TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {                 \
 TESTPLANARTOP(I420, 2, 2, I420, 2, 2)
 TESTPLANARTOP(I422, 2, 1, I420, 2, 2)
 TESTPLANARTOP(I444, 1, 1, I420, 2, 2)
-TESTPLANARTOP(I411, 4, 1, I420, 2, 2)
 TESTPLANARTOP(I420, 2, 2, I422, 2, 1)
 TESTPLANARTOP(I420, 2, 2, I444, 1, 1)
-TESTPLANARTOP(I420, 2, 2, I411, 4, 1)
 TESTPLANARTOP(I420, 2, 2, I420Mirror, 2, 2)
 TESTPLANARTOP(I422, 2, 1, I422, 2, 1)
 TESTPLANARTOP(I444, 1, 1, I444, 1, 1)
@@ -655,7 +653,6 @@ TESTPLANARTOB(H422, 2, 1, ABGR, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, BGRA, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, ABGR, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, RGBA, 4, 4, 1, 2, ARGB, 4)
-TESTPLANARTOB(I411, 4, 1, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I444, 1, 1, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(J444, 1, 1, ARGB, 4, 4, 1, 2, ARGB, 4)
 TESTPLANARTOB(I444, 1, 1, ABGR, 4, 4, 1, 2, ARGB, 4)
@@ -819,6 +816,8 @@ TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4, 2)
 TESTBIPLANARTOB(NV21, 2, 2, ARGB, 4, 2)
 TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2, 9)
 
+#ifdef DO_THREE_PLANES
+// Do 3 allocations for yuv.  conventional but slower.
 #define TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, \
                        W1280, DIFF, N, NEG, OFF)                               \
 TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
@@ -894,10 +893,9 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
   free_aligned_buffer_page_end(dst_v_opt);                                     \
   free_aligned_buffer_page_end(src_argb);                                      \
 }
-
-
-#define TESTATOPLANARI2(FMT_A, BPP_A, YALIGN, FMT_PLANAR,                      \
-                        SUBSAMP_X, SUBSAMP_Y, W1280, DIFF, N, NEG, OFF)        \
+#else
+#define TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR,                       \
+                       SUBSAMP_X, SUBSAMP_Y, W1280, DIFF, N, NEG, OFF)         \
 TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
   const int kWidth = ((W1280) > 0) ? (W1280) : 1;                              \
   const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                     \
@@ -952,6 +950,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
   free_aligned_buffer_page_end(dst_uv_opt);                                    \
   free_aligned_buffer_page_end(src_argb);                                      \
 }
+#endif
 
 #define TESTATOPLANAR(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,  \
                       DIFF)                                                    \
@@ -962,9 +961,7 @@ TEST_F(LibYUVConvertTest, FMT_A##To##FMT_PLANAR##N) {                          \
     TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,     \
                    benchmark_width_, DIFF, _Invert, -, 0)                      \
     TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,     \
-                   benchmark_width_, DIFF, _Opt, +, 0)                         \
-    TESTATOPLANARI2(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,    \
-                   benchmark_width_, DIFF, _SxS, +, 0)
+                   benchmark_width_, DIFF, _Opt, +, 0)
 
 TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 4)
 #if defined(__arm__) || defined (__aarch64__)
@@ -985,7 +982,6 @@ TESTATOPLANAR(RGB565, 2, 1, I420, 2, 2, 5)
 // TODO(fbarchard): Make 1555 neon work same as C code, reduce to diff 9.
 TESTATOPLANAR(ARGB1555, 2, 1, I420, 2, 2, 15)
 TESTATOPLANAR(ARGB4444, 2, 1, I420, 2, 2, 17)
-TESTATOPLANAR(ARGB, 4, 1, I411, 4, 1, 4)
 TESTATOPLANAR(ARGB, 4, 1, I422, 2, 1, 2)
 TESTATOPLANAR(ARGB, 4, 1, I444, 1, 1, 2)
 TESTATOPLANAR(YUY2, 2, 1, I420, 2, 2, 2)
@@ -1983,7 +1979,6 @@ TESTPLANARTOE(H422, 2, 1, ABGR, 1, 4, ARGB, 4)
 TESTPLANARTOE(I422, 2, 1, BGRA, 1, 4, ARGB, 4)
 TESTPLANARTOE(I422, 2, 1, ABGR, 1, 4, ARGB, 4)
 TESTPLANARTOE(I422, 2, 1, RGBA, 1, 4, ARGB, 4)
-TESTPLANARTOE(I411, 4, 1, ARGB, 1, 4, ARGB, 4)
 TESTPLANARTOE(I444, 1, 1, ARGB, 1, 4, ARGB, 4)
 TESTPLANARTOE(J444, 1, 1, ARGB, 1, 4, ARGB, 4)
 TESTPLANARTOE(I444, 1, 1, ABGR, 1, 4, ARGB, 4)

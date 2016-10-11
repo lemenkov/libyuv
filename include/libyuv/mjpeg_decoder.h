@@ -37,7 +37,6 @@ static const uint32 kUnknownDataSize = 0xFFFFFFFF;
 enum JpegSubsamplingType {
   kJpegYuv420,
   kJpegYuv422,
-  kJpegYuv411,
   kJpegYuv444,
   kJpegYuv400,
   kJpegUnknown

@@ -70,7 +70,7 @@ int ConvertToI420(const uint8* sample,
   if (need_buf) {
     int y_size = crop_width * abs_crop_height;
     int uv_size = ((crop_width + 1) / 2) * ((abs_crop_height + 1) / 2);
-    rotate_buffer = (uint8*)malloc(y_size + uv_size * 2);
+    rotate_buffer = (uint8*)malloc(y_size + uv_size * 2);  /* NOLINT */
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
     }
@@ -280,22 +280,6 @@ int ConvertToI420(const uint8* sample,
       r = I444ToI420(src_y, src_width,
                      src_u, src_width,
                      src_v, src_width,
-                     y, y_stride,
-                     u, u_stride,
-                     v, v_stride,
-                     crop_width, inv_crop_height);
-      break;
-    }
-    case FOURCC_I411: {
-      int quarterwidth = (src_width + 3) / 4;
-      const uint8* src_y = sample + src_width * crop_y + crop_x;
-      const uint8* src_u = sample + src_width * abs_src_height +
-          quarterwidth * crop_y + crop_x / 4;
-      const uint8* src_v = sample + src_width * abs_src_height +
-          quarterwidth * (abs_src_height + crop_y) + crop_x / 4;
-      r = I411ToI420(src_y, src_width,
-                     src_u, quarterwidth,
-                     src_v, quarterwidth,
                      y, y_stride,
                      u, u_stride,
                      v, v_stride,
