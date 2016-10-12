@@ -157,19 +157,19 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Opt) {
   src_a[0] = 0;
   fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
                       benchmark_width_, benchmark_height_);
-  EXPECT_EQ(libyuv::FOURCC_BGRA, fourcc);
+  EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_BGRA), fourcc);
   src_a[0] = 255;
   src_a[3] = 0;
   fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
                       benchmark_width_, benchmark_height_);
-  EXPECT_EQ(libyuv::FOURCC_ARGB, fourcc);
+  EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_ARGB), fourcc);
   src_a[3] = 255;
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
     fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
                         benchmark_width_, benchmark_height_);
   }
-  EXPECT_EQ(0, fourcc);
+  EXPECT_EQ(0u, fourcc);
 
   free_aligned_buffer_page_end(src_a);
 }
@@ -185,19 +185,19 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Unaligned) {
   src_a[0 + 1] = 0;
   fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
                       benchmark_width_, benchmark_height_);
-  EXPECT_EQ(libyuv::FOURCC_BGRA, fourcc);
+  EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_BGRA), fourcc);
   src_a[0 + 1] = 255;
   src_a[3 + 1] = 0;
   fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
                       benchmark_width_, benchmark_height_);
-  EXPECT_EQ(libyuv::FOURCC_ARGB, fourcc);
+  EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_ARGB), fourcc);
   src_a[3 + 1] = 255;
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
     fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
                         benchmark_width_, benchmark_height_);
   }
-  EXPECT_EQ(0, fourcc);
+  EXPECT_EQ(0u, fourcc);
 
   free_aligned_buffer_page_end(src_a);
 }
@@ -226,7 +226,7 @@ TEST_F(LibYUVBaseTest, BenchmarkSumSquareError_Opt) {
     h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
 
-  EXPECT_EQ(0, h1);
+  EXPECT_EQ(0u, h1);
 
   free_aligned_buffer_page_end(src_a);
   free_aligned_buffer_page_end(src_b);
@@ -242,18 +242,18 @@ TEST_F(LibYUVBaseTest, SumSquareError) {
   uint64 err;
   err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
-  EXPECT_EQ(0, err);
+  EXPECT_EQ(0u, err);
 
   memset(src_a, 1, kMaxWidth);
   err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
-  EXPECT_EQ(err, kMaxWidth);
+  EXPECT_EQ(static_cast<int>(err), kMaxWidth);
 
   memset(src_a, 190, kMaxWidth);
   memset(src_b, 193, kMaxWidth);
   err = ComputeSumSquareError(src_a, src_b, kMaxWidth);
 
-  EXPECT_EQ(kMaxWidth * 3 * 3, err);
+  EXPECT_EQ(static_cast<int>(err), kMaxWidth * 3 * 3);
 
   for (int i = 0; i < kMaxWidth; ++i) {
     src_a[i] = (fastrand() & 0xff);
