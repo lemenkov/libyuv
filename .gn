@@ -24,11 +24,11 @@ check_targets = [ "//libyuv/*" ]
 # to force additional review for new uses of exec_script, which is strongly
 # discouraged except for gypi_to_gn calls.
 exec_script_whitelist = [
-  "//build/config/BUILD.gn",
   "//build/config/android/BUILD.gn",
   "//build/config/android/config.gni",
   "//build/config/android/internal_rules.gni",
   "//build/config/android/rules.gni",
+  "//build/config/BUILD.gn",
   "//build/config/compiler/BUILD.gn",
   "//build/config/gcc/gcc_version.gni",
   "//build/config/ios/ios_sdk.gni",
@@ -37,6 +37,7 @@ exec_script_whitelist = [
   "//build/config/mac/mac_sdk.gni",
   "//build/config/posix/BUILD.gn",
   "//build/config/sysroot.gni",
+  "//build/config/win/BUILD.gn",
   "//build/config/win/visual_studio_version.gni",
   "//build/gn_helpers.py",
   "//build/gypi_to_gn.py",
@@ -45,3 +46,4 @@ exec_script_whitelist = [
   "//build/toolchain/mac/BUILD.gn",
   "//build/toolchain/win/BUILD.gn",
 ]
+
