@@ -14,6 +14,9 @@
 mac_sdk_min_build_override = "10.11"
 mac_deployment_target_build_override = "10.7"
 
+# Some non-Chromium builds don't use Chromium's third_party/binutils.
+linux_use_bundled_binutils_override = true
+
 # Variable that can be used to support multiple build scenarios, like having
 # Chromium specific targets in a client project's GN file etc.
 build_with_chromium = false
