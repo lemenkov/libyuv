@@ -2702,6 +2702,12 @@ int ARGBExtractAlpha(const uint8* src_argb, int src_stride,
                                                : ARGBExtractAlphaRow_Any_SSE2;
   }
 #endif
+#if defined(HAS_ARGBEXTRACTALPHAROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBExtractAlphaRow = IS_ALIGNED(width, 32) ? ARGBExtractAlphaRow_AVX2
+                                                : ARGBExtractAlphaRow_Any_AVX2;
+  }
+#endif
 #if defined(HAS_ARGBEXTRACTALPHAROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBExtractAlphaRow = IS_ALIGNED(width, 16) ? ARGBExtractAlphaRow_NEON

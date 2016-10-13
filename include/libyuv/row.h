@@ -239,6 +239,15 @@ extern "C" {
 #define HAS_BLENDPLANEROW_AVX2
 #endif
 
+
+// The following are available clang 3.4 or gcc 4.7.
+// TODO(fbarchard): Port to Visual C
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) && \
+    !(defined(__clang__) && defined(_M_IX86) )
+#define HAS_ARGBEXTRACTALPHAROW_AVX2
+#endif
+
 // The following are available for AVX2 Visual C and clangcl 32 bit:
 // TODO(fbarchard): Port to gcc.
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
@@ -880,8 +889,11 @@ void ARGBCopyAlphaRow_Any_AVX2(const uint8* src_argb, uint8* dst_argb,
 
 void ARGBExtractAlphaRow_C(const uint8* src_argb, uint8* dst_a, int width);
 void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width);
+void ARGBExtractAlphaRow_AVX2(const uint8* src_argb, uint8* dst_a, int width);
 void ARGBExtractAlphaRow_NEON(const uint8* src_argb, uint8* dst_a, int width);
 void ARGBExtractAlphaRow_Any_SSE2(const uint8* src_argb, uint8* dst_a,
+                                  int width);
+void ARGBExtractAlphaRow_Any_AVX2(const uint8* src_argb, uint8* dst_a,
                                   int width);
 void ARGBExtractAlphaRow_Any_NEON(const uint8* src_argb, uint8* dst_a,
                                   int width);

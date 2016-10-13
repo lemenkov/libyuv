@@ -2860,6 +2860,47 @@ void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
 }
 #endif  // HAS_ARGBEXTRACTALPHAROW_SSE2
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_AVX2
+static const uvec8 kShuffleAlphaShort_AVX2 = {
+  3u, 128u, 128u, 128u, 7u, 128u, 128u, 128u,
+  11u, 128u, 128u, 128u, 15u, 128u, 128u, 128u
+};
+
+void ARGBExtractAlphaRow_AVX2(const uint8* src_argb, uint8* dst_a, int width) {
+ asm volatile (
+    "vmovdqa    %3,%%ymm4                      \n"
+    "vbroadcastf128 %4,%%ymm5                  \n"
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu   " MEMACCESS(0) ", %%ymm0        \n"
+    "vmovdqu   " MEMACCESS2(0x20, 0) ", %%ymm1 \n"
+    "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n" // vpsrld $0x18, %%ymm0
+    "vpshufb    %%ymm5,%%ymm1,%%ymm1           \n"
+    "vmovdqu   " MEMACCESS2(0x40, 0) ", %%ymm2 \n"
+    "vmovdqu   " MEMACCESS2(0x60, 0) ", %%ymm3 \n"
+    "lea       " MEMLEA(0x80, 0) ", %0         \n"
+    "vpackssdw  %%ymm1, %%ymm0, %%ymm0         \n"  // mutates
+    "vpshufb    %%ymm5,%%ymm2,%%ymm2           \n"
+    "vpshufb    %%ymm5,%%ymm3,%%ymm3           \n"
+    "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // mutates
+    "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
+    "vpermd     %%ymm0,%%ymm4,%%ymm0           \n"  // unmutate.
+    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "lea       " MEMLEA(0x20,1) ",%1           \n"
+    "sub        $0x20, %2                      \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src_argb),  // %0
+    "+r"(dst_a),     // %1
+    "+rm"(width)     // %2
+  : "m"(kPermdARGBToY_AVX),  // %3
+    "m"(kShuffleAlphaShort_AVX2)  // %4
+  : "memory", "cc"
+    , "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_ARGBEXTRACTALPHAROW_AVX2
+
 #ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
 // width in pixels
 void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
