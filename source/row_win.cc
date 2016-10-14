@@ -3445,6 +3445,41 @@ void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
 }
 #endif  // HAS_ARGBEXTRACTALPHAROW_SSE2
 
+#ifdef HAS_ARGBEXTRACTALPHAROW_AVX2
+// width in pixels
+__declspec(naked)
+void ARGBExtractAlphaRow_AVX2(const uint8* src_argb, uint8* dst_a, int width) {
+  __asm {
+    mov        eax, [esp + 4]   // src_argb
+    mov        edx, [esp + 8]   // dst_a
+    mov        ecx, [esp + 12]  // width
+    vmovdqa    ymm4, ymmword ptr kPermdARGBToY_AVX
+
+  extractloop:
+    vmovdqu    ymm0, [eax]
+    vmovdqu    ymm1, [eax + 32]
+    vpsrld     ymm0, ymm0, 24
+    vpsrld     ymm1, ymm1, 24
+    vmovdqu    ymm2, [eax + 64]
+    vmovdqu    ymm3, [eax + 96]
+    lea        eax, [eax + 128]
+    vpackssdw  ymm0, ymm0, ymm1  // mutates
+    vpsrld     ymm2, ymm2, 24
+    vpsrld     ymm3, ymm3, 24
+    vpackssdw  ymm2, ymm2, ymm3  // mutates
+    vpackuswb  ymm0, ymm0, ymm2  // mutates
+    vpermd     ymm0, ymm4, ymm0  // unmutate
+    vmovdqu    [edx], ymm0
+    lea        edx, [edx + 32]
+    sub        ecx, 32
+    jg         extractloop
+
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_ARGBEXTRACTALPHAROW_AVX2
+
 #ifdef HAS_ARGBCOPYYTOALPHAROW_SSE2
 // width in pixels
 __declspec(naked)

@@ -83,6 +83,7 @@ extern "C" {
 #define HAS_ABGRTOYROW_SSSE3
 #define HAS_ARGB1555TOARGBROW_SSE2
 #define HAS_ARGB4444TOARGBROW_SSE2
+#define HAS_ARGBEXTRACTALPHAROW_SSE2
 #define HAS_ARGBSETROW_X86
 #define HAS_ARGBSHUFFLEROW_SSE2
 #define HAS_ARGBSHUFFLEROW_SSSE3
@@ -97,12 +98,12 @@ extern "C" {
 #define HAS_ARGBTOUVROW_SSSE3
 #define HAS_ARGBTOYJROW_SSSE3
 #define HAS_ARGBTOYROW_SSSE3
-#define HAS_ARGBEXTRACTALPHAROW_SSE2
 #define HAS_BGRATOUVROW_SSSE3
 #define HAS_BGRATOYROW_SSSE3
 #define HAS_COPYROW_ERMS
 #define HAS_COPYROW_SSE2
 #define HAS_H422TOARGBROW_SSSE3
+#define HAS_HALFFLOATROW_SSE2
 #define HAS_I400TOARGBROW_SSE2
 #define HAS_I422TOARGB1555ROW_SSSE3
 #define HAS_I422TOARGB4444ROW_SSSE3
@@ -140,7 +141,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_SSE2
 #define HAS_YUY2TOUVROW_SSE2
 #define HAS_YUY2TOYROW_SSE2
-#define HAS_HALFFLOATROW_SSE2
 
 // Effects:
 #define HAS_ARGBADDROW_SSE2
@@ -189,6 +189,7 @@ extern "C" {
     defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_ARGBCOPYALPHAROW_AVX2
 #define HAS_ARGBCOPYYTOALPHAROW_AVX2
+#define HAS_ARGBEXTRACTALPHAROW_AVX2
 #define HAS_ARGBMIRRORROW_AVX2
 #define HAS_ARGBPOLYNOMIALROW_AVX2
 #define HAS_ARGBSHUFFLEROW_AVX2
@@ -199,12 +200,8 @@ extern "C" {
 #define HAS_ARGBTOYROW_AVX2
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
+#define HAS_HALFFLOATROW_AVX2
 #define HAS_I400TOARGBROW_AVX2
-#if !(defined(_DEBUG) && defined(__i386__))
-// TODO(fbarchard): fix build error on android_full_debug=1
-// https://code.google.com/p/libyuv/issues/detail?id=517
-#define HAS_I422ALPHATOARGBROW_AVX2
-#endif
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
 #define HAS_I422TOARGBROW_AVX2
@@ -228,7 +225,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_AVX2
 #define HAS_YUY2TOUVROW_AVX2
 #define HAS_YUY2TOYROW_AVX2
-#define HAS_HALFFLOATROW_AVX2
 
 // Effects:
 #define HAS_ARGBADDROW_AVX2
@@ -237,15 +233,12 @@ extern "C" {
 #define HAS_ARGBSUBTRACTROW_AVX2
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_BLENDPLANEROW_AVX2
+
+#if !(defined(_DEBUG) && defined(__i386__))
+// TODO(fbarchard): fix build error on android_full_debug=1
+// https://code.google.com/p/libyuv/issues/detail?id=517
+#define HAS_I422ALPHATOARGBROW_AVX2
 #endif
-
-
-// The following are available clang 3.4 or gcc 4.7.
-// TODO(fbarchard): Port to Visual C
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2)) && \
-    !(defined(__clang__) && defined(_M_IX86) )
-#define HAS_ARGBEXTRACTALPHAROW_AVX2
 #endif
 
 // The following are available for AVX2 Visual C and clangcl 32 bit:
@@ -279,6 +272,7 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_NEON
 #define HAS_ARGB4444TOUVROW_NEON
 #define HAS_ARGB4444TOYROW_NEON
+#define HAS_ARGBEXTRACTALPHAROW_NEON
 #define HAS_ARGBSETROW_NEON
 #define HAS_ARGBTOARGB1555ROW_NEON
 #define HAS_ARGBTOARGB4444ROW_NEON
@@ -291,7 +285,6 @@ extern "C" {
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #define HAS_ARGBTOYROW_NEON
-#define HAS_ARGBEXTRACTALPHAROW_NEON
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_COPYROW_NEON
@@ -371,15 +364,15 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
-#define HAS_MIRRORROW_MSA
 #define HAS_ARGBMIRRORROW_MSA
-#define HAS_I422TOYUY2ROW_MSA
 #define HAS_I422TOUYVYROW_MSA
-#define HAS_YUY2TOYROW_MSA
-#define HAS_YUY2TOUVROW_MSA
-#define HAS_YUY2TOUV422ROW_MSA
-#define HAS_UYVYTOYROW_MSA
+#define HAS_I422TOYUY2ROW_MSA
+#define HAS_MIRRORROW_MSA
 #define HAS_UYVYTOUVROW_MSA
+#define HAS_UYVYTOYROW_MSA
+#define HAS_YUY2TOUV422ROW_MSA
+#define HAS_YUY2TOUVROW_MSA
+#define HAS_YUY2TOYROW_MSA
 
 #endif
 
