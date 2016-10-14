@@ -79,6 +79,7 @@ int main(int argc, const char* argv[]) {
     int has_avx3 = TestCpuFlag(kCpuHasAVX3);
     int has_erms = TestCpuFlag(kCpuHasERMS);
     int has_fma3 = TestCpuFlag(kCpuHasFMA3);
+    int has_f16c = TestCpuFlag(kCpuHasF16C);
     printf("Has SSE2 %x\n", has_sse2);
     printf("Has SSSE3 %x\n", has_ssse3);
     printf("Has SSE4.1 %x\n", has_sse41);
@@ -88,6 +89,7 @@ int main(int argc, const char* argv[]) {
     printf("Has AVX3 %x\n", has_avx3);
     printf("Has ERMS %x\n", has_erms);
     printf("Has FMA3 %x\n", has_fma3);
+    printf("Has F16C %x\n", has_f16c);
   }
   return 0;
 }

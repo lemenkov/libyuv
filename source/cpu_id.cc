@@ -229,19 +229,21 @@ int InitCpuFlags(void) {
   if (cpu_info0[0] >= 7) {
     CpuId(7, 0, cpu_info7);
   }
-  cpu_info = ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
+  cpu_info = kCpuHasX86 |
+             ((cpu_info1[3] & 0x04000000) ? kCpuHasSSE2 : 0) |
              ((cpu_info1[2] & 0x00000200) ? kCpuHasSSSE3 : 0) |
              ((cpu_info1[2] & 0x00080000) ? kCpuHasSSE41 : 0) |
              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
-             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0) |
-             ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
-             kCpuHasX86;
+             ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0);
 
 #ifdef HAS_XGETBV
   // AVX requires CPU has AVX, XSAVE and OSXSave for xgetbv
   if (((cpu_info1[2] & 0x1c000000) == 0x1c000000) &&  // AVX and OSXSave
       ((GetXCR0() & 6) == 6)) {  // Test OS saves YMM registers
-    cpu_info |= ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) | kCpuHasAVX;
+    cpu_info |= kCpuHasAVX |
+                ((cpu_info7[1] & 0x00000020) ? kCpuHasAVX2 : 0) |
+                ((cpu_info1[2] & 0x00001000) ? kCpuHasFMA3 : 0) |
+                ((cpu_info1[2] & 0x20000000) ? kCpuHasF16C : 0);
 
     // Detect AVX512bw
     if ((GetXCR0() & 0xe0) == 0xe0) {
@@ -281,6 +283,10 @@ int InitCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_AVX3")) {
     cpu_info &= ~kCpuHasAVX3;
   }
+  if (TestEnv("LIBYUV_DISABLE_F16C")) {
+    cpu_info &= ~kCpuHasF16C;
+  }
+
 #endif
 #if defined(__mips__) && defined(__linux__)
 #if defined(__mips_dspr2)

@@ -31,13 +31,15 @@ static const int kCpuHasX86 = 0x10;
 static const int kCpuHasSSE2 = 0x20;
 static const int kCpuHasSSSE3 = 0x40;
 static const int kCpuHasSSE41 = 0x80;
-static const int kCpuHasSSE42 = 0x100;
+static const int kCpuHasSSE42 = 0x100;  // unused at this time.
 static const int kCpuHasAVX = 0x200;
 static const int kCpuHasAVX2 = 0x400;
 static const int kCpuHasERMS = 0x800;
 static const int kCpuHasFMA3 = 0x1000;
 static const int kCpuHasAVX3 = 0x2000;
-// 0x2000, 0x4000, 0x8000 reserved for future X86 flags.
+static const int kCpuHasF16C = 0x4000;
+
+// 0x8000 reserved for future X86 flags.
 
 // These flags are only valid on MIPS processors.
 static const int kCpuHasMIPS = 0x10000;

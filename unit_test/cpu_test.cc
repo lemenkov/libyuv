@@ -45,6 +45,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has FMA3 %x\n", has_fma3);
   int has_avx3 = TestCpuFlag(kCpuHasAVX3);
   printf("Has AVX3 %x\n", has_avx3);
+  int has_f16c = TestCpuFlag(kCpuHasF16C);
+  printf("Has F16C %x\n", has_f16c);
   int has_mips = TestCpuFlag(kCpuHasMIPS);
   printf("Has MIPS %x\n", has_mips);
   int has_dspr2 = TestCpuFlag(kCpuHasDSPR2);
