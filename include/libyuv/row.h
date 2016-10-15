@@ -201,6 +201,7 @@ extern "C" {
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_HALFFLOATROW_AVX2
+// #define HAS_HALFFLOATROW_F16C  // Enable to test halffloat cast
 #define HAS_I400TOARGBROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
@@ -1931,11 +1932,14 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 
 // Scale and convert to half float.
 void HalfFloatRow_C(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_SSE2(const uint16* src, uint16* dst, float scale,
+                           int width);
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_Any_AVX2(const uint16* src, uint16* dst, float scale,
                            int width);
-void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width);
-void HalfFloatRow_Any_SSE2(const uint16* src, uint16* dst, float scale,
+void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_F16C(const uint16* src, uint16* dst, float scale,
                            int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,

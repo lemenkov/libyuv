@@ -5341,7 +5341,43 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
 #endif  // HAS_HALFFLOATROW_SSE2
 
 #ifdef HAS_HALFFLOATROW_AVX2
+// TODO(fbarchard): consider vadddw instead of vmulps
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
+  asm volatile (
+    "vbroadcastss  %3, %%ymm4                  \n"
+    "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
+
+    // 16 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vmovdqu    " MEMACCESS(0) ",%%ymm2        \n"  // 8 shorts
+    "lea        " MEMLEA(0x20,0) ",%0          \n"
+    "vpunpckhwd %%ymm2,%%ymm5,%%ymm3           \n"
+    "vpunpcklwd %%ymm2,%%ymm5,%%ymm2           \n"
+    "vcvtdq2ps  %%ymm3,%%ymm3                  \n"
+    "vcvtdq2ps  %%ymm2,%%ymm2                  \n"
+    "vmulps     %%ymm3,%%ymm4,%%ymm3           \n"
+    "vmulps     %%ymm2,%%ymm4,%%ymm2           \n"
+    "vpsrld     $0xd,%%ymm3,%%ymm3             \n"
+    "vpsrld     $0xd,%%ymm2,%%ymm2             \n"
+    "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // mutates
+    "vmovdqu    %%ymm2," MEMACCESS(1) "        \n"
+    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    "sub        $0x10,%2                       \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "x"(scale * kScaleBias)   // %3
+  : "memory", "cc",
+    "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_HALFFLOATROW_AVX2
+
+#ifdef HAS_HALFFLOATROW_F16C
+void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
    "vbroadcastss  %3, %%ymm4                  \n"
 
@@ -5362,6 +5398,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "lea         " MEMLEA(0x20,1) ",%1         \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
+
     "vzeroupper                                \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
@@ -5371,7 +5408,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "xmm2", "xmm3", "xmm4"
   );
 }
-#endif  // HAS_HALFFLOATROW_AVX2
+#endif  // HAS_HALFFLOATROW_F16C
 
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.

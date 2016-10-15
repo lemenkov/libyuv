@@ -6059,10 +6059,46 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
   __asm {
     mov        eax, [esp + 4]      /* src */
     mov        edx, [esp + 8]      /* dst */
+    movd       xmm4, dword ptr [esp + 12]  /* scale */
+    mov        ecx, [esp + 16]     /* width */
+
+    vmulss     xmm4, xmm4, kExpBias
+    vbroadcastss ymm4, xmm4
+    vpxor      ymm5, ymm5, ymm5
+
+    // 16 pixel loop.
+ convertloop:
+    vmovdqu     ymm2, [eax]  // 16 shorts
+    lea         eax, [eax + 32]
+    vpunpckhwd  ymm3, ymm2, ymm5 // convert 16 shorts to 16 ints
+    vpunpcklwd  ymm2, ymm2, ymm5
+    vcvtdq2ps   ymm3, ymm3  // convert 16 ints to floats
+    vcvtdq2ps   ymm2, ymm2
+    vmulps      ymm3, ymm3, ymm4  // scale to adjust exponent for 5 bit range.
+    vmulps      ymm2, ymm2, ymm4
+    vpsrld      ymm3, ymm3, 13  // float convert to 8 half floats truncate
+    vpsrld      ymm2, ymm2, 13
+    vpackssdw   ymm2, ymm2, ymm3
+    vmovdqu     [edx], ymm2
+    lea         edx, [edx + 32]
+    sub         ecx, 16
+    jg          convertloop
+    vzeroupper
+    ret
+  }
+}
+#endif  // HAS_HALFFLOATROW_AVX2
+
+#ifdef HAS_HALFFLOATROW_F16C
+__declspec(naked)
+void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
+  __asm {
+    mov        eax, [esp + 4]      /* src */
+    mov        edx, [esp + 8]      /* dst */
     vbroadcastss ymm4, [esp + 12]  /* scale */
     mov        ecx, [esp + 16]     /* width */
 
-    // 8 pixel loop.
+    // 16 pixel loop.
  convertloop:
     vpmovzxwd   ymm2, xmmword ptr [eax]  // 8 shorts -> 8 ints
     vpmovzxwd   ymm3, xmmword ptr [eax + 16]  // 8 more shorts
@@ -6082,7 +6118,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     ret
   }
 }
-#endif  // HAS_HALFFLOATROW_AVX2
+#endif  // HAS_HALFFLOATROW_F16C
 
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.
