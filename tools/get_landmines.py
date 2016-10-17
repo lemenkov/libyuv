@@ -37,7 +37,7 @@ def print_landmines():
   # dependency problems, fix the dependency problems instead of adding a
   # landmine.
   # See the Chromium version in src/build/get_landmines.py for usage examples.
-  pass
+  print 'Clobber to remove GYP artifacts after switching bots to GN.'
 
 
 def main():
