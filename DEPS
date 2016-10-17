@@ -35,6 +35,21 @@ hooks = [
     'action': ['python', Var('root_dir') + '/setup_links.py'],
   },
   {
+    # This clobbers when necessary (based on get_landmines.py). It should be
+    # an early hook but it will need to be run after syncing Chromium and
+    # setting up the links, so the script actually exists.
+    'name': 'landmines',
+    'pattern': '.',
+    'action': [
+        'python',
+        Var('root_dir') + '/build/landmines.py',
+        '--landmine-scripts',
+        Var('root_dir') + '/tools/get_landmines.py',
+        '--src-dir',
+        Var('root_dir'),
+    ],
+  },
+  {
     # A change to a .gyp, .gypi, or to GYP itself should run the generator.
     'pattern': '.',
     'action': ['python', Var('root_dir') + '/gyp_libyuv'],

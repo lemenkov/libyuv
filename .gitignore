@@ -1,4 +1,5 @@
 *.pyc
+.landmines
 pin-log.txt
 /base
 /build
