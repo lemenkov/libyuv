@@ -68,7 +68,7 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
   if (info_ecx == 0) {
     __cpuid((int*)(cpu_info), info_eax);
   } else {
-    cpu_info[3] = cpu_info[2] = cpu_info[1] = cpu_info[0] = 0;
+    cpu_info[3] = cpu_info[2] = cpu_info[1] = cpu_info[0] = 0u;
   }
 #endif
 // GCC version uses inline x86 assembly.
@@ -114,7 +114,6 @@ void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
 #if (defined(_M_IX86) || defined(_M_X64) || \
     defined(__i386__) || defined(__x86_64__)) && \
     !defined(__pnacl__) && !defined(__CLR_VER) && !defined(__native_client__)
-#define HAS_XGETBV
 // X86 CPUs have xgetbv to detect OS saves high parts of ymm registers.
 int GetXCR0() {
   uint32 xcr0 = 0u;
@@ -125,6 +124,9 @@ int GetXCR0() {
 #endif  // defined(__i386__) || defined(__x86_64__)
   return xcr0;
 }
+#else
+// xgetbv unavailable to query for OSSave support.  Return 0.
+#define GetXCR0() 0
 #endif  // defined(_M_IX86) || defined(_M_X64) ..
 // Return optimization to previous setting.
 #if defined(_M_IX86) && (_MSC_VER < 1900)
@@ -218,7 +220,6 @@ static LIBYUV_BOOL TestEnv(const char*) {
 
 LIBYUV_API SAFEBUFFERS
 int InitCpuFlags(void) {
-  // TODO(fbarchard): swap kCpuInit logic so 0 means uninitialized.
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
   uint32 cpu_info0[4] = { 0, 0, 0, 0 };
@@ -236,8 +237,7 @@ int InitCpuFlags(void) {
              ((cpu_info1[2] & 0x00100000) ? kCpuHasSSE42 : 0) |
              ((cpu_info7[1] & 0x00000200) ? kCpuHasERMS : 0);
 
-#ifdef HAS_XGETBV
-  // AVX requires CPU has AVX, XSAVE and OSXSave for xgetbv
+  // AVX requires OS saves YMM registers.
   if (((cpu_info1[2] & 0x1c000000) == 0x1c000000) &&  // AVX and OSXSave
       ((GetXCR0() & 6) == 6)) {  // Test OS saves YMM registers
     cpu_info |= kCpuHasAVX |
@@ -250,7 +250,6 @@ int InitCpuFlags(void) {
       cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX3 : 0;
     }
   }
-#endif
 
   // Environment variable overrides for testing.
   if (TestEnv("LIBYUV_DISABLE_X86")) {
