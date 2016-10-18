@@ -38,6 +38,7 @@ def print_landmines():
   # landmine.
   # See the Chromium version in src/build/get_landmines.py for usage examples.
   print 'Clobber to remove GYP artifacts after switching bots to GN.'
+  print 'Another try to remove GYP artifacts after switching bots to GN.'
 
 
 def main():
