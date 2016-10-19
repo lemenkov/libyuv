@@ -1075,6 +1075,14 @@ int ARGB4444ToARGB(const uint8* src_argb4444, int src_stride_argb4444,
     }
   }
 #endif
+#if defined(HAS_ARGB4444TOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGB4444ToARGBRow = ARGB4444ToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGB4444ToARGBRow = ARGB4444ToARGBRow_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGB4444ToARGBRow(src_argb4444, dst_argb, width);
