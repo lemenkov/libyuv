@@ -201,7 +201,7 @@ extern "C" {
 #define HAS_COPYROW_AVX
 #define HAS_H422TOARGBROW_AVX2
 #define HAS_HALFFLOATROW_AVX2
-// #define HAS_HALFFLOATROW_F16C  // Enable to test halffloat cast
+//  #define HAS_HALFFLOATROW_F16C  // Enable to test halffloat cast
 #define HAS_I400TOARGBROW_AVX2
 #define HAS_I422TOARGB1555ROW_AVX2
 #define HAS_I422TOARGB4444ROW_AVX2
@@ -329,6 +329,11 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
+
+// TODO(fbarchard): Port to 32 bit.
+#if defined(__aarch64__)
+#define HAS_HALFFLOATROW_NEON
+#endif
 
 // Effects:
 #define HAS_ARGBADDROW_NEON
@@ -1953,6 +1958,9 @@ void HalfFloatRow_Any_AVX2(const uint16* src, uint16* dst, float scale,
                            int width);
 void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_Any_F16C(const uint16* src, uint16* dst, float scale,
+                           int width);
+void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_NEON(const uint16* src, uint16* dst, float scale,
                            int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,

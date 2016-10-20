@@ -2081,9 +2081,12 @@ TEST_F(LibYUVPlanarTest, TestARGBPolynomial) {
   }
 }
 
-TEST_F(LibYUVPlanarTest, TestHalfFloatPlane) {
+int TestHalfFloatPlane(int benchmark_width, int benchmark_height,
+                       int benchmark_iterations,
+                       int disable_cpu_flags, int benchmark_cpu_info,
+                       float scale) {
   int i, j;
-  const int y_plane_size = benchmark_width_ * benchmark_height_ * 2;
+  const int y_plane_size = benchmark_width * benchmark_height * 2;
 
   align_buffer_page_end(orig_y, y_plane_size);
   align_buffer_page_end(dst_c, y_plane_size);
@@ -2093,32 +2096,62 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane) {
   memset(dst_opt, 1, y_plane_size);
 
   // Disable all optimizations.
-  MaskCpuFlags(disable_cpu_flags_);
+  MaskCpuFlags(disable_cpu_flags);
   double c_time = get_time();
-  for (j = 0; j < benchmark_iterations_; j++) {
-    HalfFloatPlane((uint16*)orig_y, benchmark_width_ * 2,
-                   (uint16*)dst_c, benchmark_width_ * 2,
-                   1.0f / 4096.0f, benchmark_width_, benchmark_height_);
+  for (j = 0; j < benchmark_iterations; j++) {
+    HalfFloatPlane((uint16*)orig_y, benchmark_width * 2,
+                   (uint16*)dst_c, benchmark_width * 2,
+                   scale, benchmark_width, benchmark_height);
   }
-  c_time = (get_time() - c_time) / benchmark_iterations_;
+  c_time = (get_time() - c_time) / benchmark_iterations;
 
   // Enable optimizations.
-  MaskCpuFlags(benchmark_cpu_info_);
+  MaskCpuFlags(benchmark_cpu_info);
   double opt_time = get_time();
-  for (j = 0; j < benchmark_iterations_; j++) {
-    HalfFloatPlane((uint16*)orig_y, benchmark_width_ * 2,
-                   (uint16*)dst_opt, benchmark_width_ * 2,
-                   1.0f / 4096.0f, benchmark_width_, benchmark_height_);
+  for (j = 0; j < benchmark_iterations; j++) {
+    HalfFloatPlane((uint16*)orig_y, benchmark_width * 2,
+                   (uint16*)dst_opt, benchmark_width * 2,
+                   scale, benchmark_width, benchmark_height);
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
+  opt_time = (get_time() - opt_time) / benchmark_iterations;
 
+  int diff = 0;
   for (i = 0; i < y_plane_size; ++i) {
-    EXPECT_EQ(dst_c[i], dst_opt[i]);
+    diff = dst_c[i] - dst_opt[i];
+    if (diff) break;
   }
 
   free_aligned_buffer_page_end(orig_y);
   free_aligned_buffer_page_end(dst_c);
   free_aligned_buffer_page_end(dst_opt);
+  return diff;
+}
+
+// 5 bit exponent with bias of 15 will underflow to a denormal if scale causes
+// exponent to be less than 0.  15 - log2(65536) = -1/  This shouldnt normally
+// happen since scale is 1/(1<<bits) where bits is 9, 10 or 12.
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_denormal) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f / 65536.0f);
+  EXPECT_EQ(diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Opt) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f / 4096.0f);
+  EXPECT_EQ(diff, 0);
+}
+
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Offby1) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f / 1023.0f);
+  EXPECT_EQ(diff, 0);
 }
 
 TEST_F(LibYUVPlanarTest, TestARGBLumaColorTable) {
