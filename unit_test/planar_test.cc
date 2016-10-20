@@ -2099,8 +2099,8 @@ int TestHalfFloatPlane(int benchmark_width, int benchmark_height,
   MaskCpuFlags(disable_cpu_flags);
   double c_time = get_time();
   for (j = 0; j < benchmark_iterations; j++) {
-    HalfFloatPlane((uint16*)orig_y, benchmark_width * 2,
-                   (uint16*)dst_c, benchmark_width * 2,
+    HalfFloatPlane(reinterpret_cast<uint16*>(orig_y), benchmark_width * 2,
+                   reinterpret_cast<uint16*>(dst_c), benchmark_width * 2,
                    scale, benchmark_width, benchmark_height);
   }
   c_time = (get_time() - c_time) / benchmark_iterations;
@@ -2109,8 +2109,8 @@ int TestHalfFloatPlane(int benchmark_width, int benchmark_height,
   MaskCpuFlags(benchmark_cpu_info);
   double opt_time = get_time();
   for (j = 0; j < benchmark_iterations; j++) {
-    HalfFloatPlane((uint16*)orig_y, benchmark_width * 2,
-                   (uint16*)dst_opt, benchmark_width * 2,
+    HalfFloatPlane(reinterpret_cast<uint16*>(orig_y), benchmark_width * 2,
+                   reinterpret_cast<uint16*>(dst_opt), benchmark_width * 2,
                    scale, benchmark_width, benchmark_height);
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;

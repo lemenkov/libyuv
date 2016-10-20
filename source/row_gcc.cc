@@ -5350,17 +5350,17 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
   "1:                                          \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm2        \n"  // 8 shorts
+    "vmovdqu    " MEMACCESS(0) ",%%ymm2        \n"  // 16 shorts
     "lea        " MEMLEA(0x20,0) ",%0          \n"
-    "vpunpckhwd %%ymm2,%%ymm5,%%ymm3           \n"
-    "vpunpcklwd %%ymm2,%%ymm5,%%ymm2           \n"
+    "vpunpckhwd %%ymm5,%%ymm2,%%ymm3           \n"  // mutates
+    "vpunpcklwd %%ymm5,%%ymm2,%%ymm2           \n"
     "vcvtdq2ps  %%ymm3,%%ymm3                  \n"
     "vcvtdq2ps  %%ymm2,%%ymm2                  \n"
     "vmulps     %%ymm3,%%ymm4,%%ymm3           \n"
     "vmulps     %%ymm2,%%ymm4,%%ymm2           \n"
     "vpsrld     $0xd,%%ymm3,%%ymm3             \n"
     "vpsrld     $0xd,%%ymm2,%%ymm2             \n"
-    "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // mutates
+    "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // unmutates
     "vmovdqu    %%ymm2," MEMACCESS(1) "        \n"
     "lea        " MEMLEA(0x20,1) ",%1          \n"
     "sub        $0x10,%2                       \n"
@@ -5384,8 +5384,8 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
   "1:                                          \n"
-    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 8 shorts -> 8 ints
-    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"  // 8 more
+    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
+    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
     "lea         " MEMLEA(0x20,0) ",%0         \n"
     "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
