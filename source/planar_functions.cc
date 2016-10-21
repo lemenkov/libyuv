@@ -2579,17 +2579,19 @@ int HalfFloatPlane(const uint16* src_y, int src_stride_y,
 #endif
 #if defined(HAS_HALFFLOATROW_F16C)
   if (TestCpuFlag(kCpuHasAVX2) && TestCpuFlag(kCpuHasF16C)) {
-    HalfFloatRow = HalfFloatRow_Any_F16C;
+    HalfFloatRow = (scale == 1.0f) ?
+      HalfFloat1Row_Any_F16C : HalfFloatRow_Any_F16C;
     if (IS_ALIGNED(width, 16)) {
-      HalfFloatRow = HalfFloatRow_F16C;
+      HalfFloatRow = (scale == 1.0f) ? HalfFloat1Row_F16C : HalfFloatRow_F16C;
     }
   }
 #endif
 #if defined(HAS_HALFFLOATROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    HalfFloatRow = HalfFloatRow_Any_NEON;
+    HalfFloatRow = (scale == 1.0f) ?
+      HalfFloat1Row_Any_NEON : HalfFloatRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
-      HalfFloatRow = HalfFloatRow_NEON;
+      HalfFloatRow = (scale == 1.0f) ? HalfFloat1Row_NEON : HalfFloatRow_NEON;
     }
   }
 #endif

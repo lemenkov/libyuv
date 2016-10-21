@@ -1959,9 +1959,15 @@ void HalfFloatRow_Any_AVX2(const uint16* src, uint16* dst, float scale,
 void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_Any_F16C(const uint16* src, uint16* dst, float scale,
                            int width);
+void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloat1Row_Any_F16C(const uint16* src, uint16* dst, float scale,
+                            int width);
 void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width);
 void HalfFloatRow_Any_NEON(const uint16* src, uint16* dst, float scale,
                            int width);
+void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloat1Row_Any_NEON(const uint16* src, uint16* dst, float scale,
+                            int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb, uint8* dst_argb, int width,
                              const uint8* luma, uint32 lumacoeff);

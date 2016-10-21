@@ -5410,6 +5410,36 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
 }
 #endif  // HAS_HALFFLOATROW_F16C
 
+#ifdef HAS_HALFFLOATROW_F16C
+void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float, int width) {
+  asm volatile (
+    // 16 pixel loop.
+    LABELALIGN
+  "1:                                          \n"
+    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
+    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
+    "lea         " MEMLEA(0x20,0) ",%0         \n"
+    "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
+    "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
+    "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
+    "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
+    "vmovdqu     %%xmm2," MEMACCESS(1) "       \n"
+    "vmovdqu     %%xmm3," MEMACCESS2(0x10,1) " \n"
+    "lea         " MEMLEA(0x20,1) ",%1         \n"
+    "sub         $0x10,%2                      \n"
+    "jg          1b                            \n"
+
+    "vzeroupper                                \n"
+  : "+r"(src),   // %0
+    "+r"(dst),   // %1
+    "+r"(width)  // %2
+  :
+  : "memory", "cc",
+    "xmm2", "xmm3"
+  );
+}
+#endif  // HAS_HALFFLOATROW_F16C
+
 #ifdef HAS_ARGBCOLORTABLEROW_X86
 // Tranform ARGB pixels with color table.
 void ARGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb,

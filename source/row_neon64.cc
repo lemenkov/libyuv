@@ -2711,6 +2711,55 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
   );
 }
 
+
+void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float, int width) {
+  asm volatile (
+  "1:                                          \n"
+    MEMACCESS(0)
+    "ld1        {v1.16b}, [%0], #16            \n"  // load 8 shorts
+    "subs       %w2, %w2, #8                   \n"  // 8 pixels per loop
+    "uxtl       v2.4s, v1.4h                   \n"  // 8 int's
+    "uxtl2      v1.4s, v1.8h                   \n"
+    "scvtf      v2.4s, v2.4s                   \n"  // 8 floats
+    "scvtf      v1.4s, v1.4s                   \n"
+    "fcvtn      v4.4h, v2.4s                   \n"  // 8 floatsgit
+    "fcvtn2     v4.8h, v1.4s                   \n"
+   MEMACCESS(1)
+    "st1        {v4.16b}, [%1], #16            \n"  // store 8 shorts
+    "b.gt       1b                             \n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  :
+  : "cc", "memory", "v1", "v2", "v4"
+  );
+}
+
+void HalfFloatRow_NEON2(const uint16* src, uint16* dst, float scale, int width) {
+  asm volatile (
+  "1:                                          \n"
+    MEMACCESS(0)
+    "ld1        {v1.16b}, [%0], #16            \n"  // load 8 shorts
+    "subs       %w2, %w2, #8                   \n"  // 8 pixels per loop
+    "uxtl       v2.4s, v1.4h                   \n"  // 8 int's
+    "uxtl2      v1.4s, v1.8h                   \n"
+    "scvtf      v2.4s, v2.4s                   \n"  // 8 floats
+    "scvtf      v1.4s, v1.4s                   \n"
+    "fmul       v2.4s, v2.4s, %3.s[0]          \n"  // adjust exponent
+    "fmul       v1.4s, v1.4s, %3.s[0]          \n"
+    "uqshrn     v4.4h, v2.4s, #13              \n"  // isolate halffloat
+    "uqshrn2    v4.8h, v1.4s, #13              \n"
+   MEMACCESS(1)
+    "st1        {v4.16b}, [%1], #16            \n"  // store 8 shorts
+    "b.gt       1b                             \n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "w"(scale * 1.9259299444e-34f)    // %3
+  : "cc", "memory", "v1", "v2", "v4"
+  );
+}
+
 void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
   "1:                                          \n"
