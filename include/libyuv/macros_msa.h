@@ -15,6 +15,98 @@
 #include <stdint.h>
 #include <msa.h>
 
+#if (__mips_isa_rev >= 6)
+  #define LW(psrc) ( {                     \
+    uint8 *psrc_lw_m = (uint8 *) (psrc);   \
+    uint32 val_m;                          \
+                                           \
+    asm volatile (                         \
+      "lw  %[val_m],  %[psrc_lw_m]  \n\t"  \
+                                           \
+      : [val_m] "=r" (val_m)               \
+      : [psrc_lw_m] "m" (*psrc_lw_m)       \
+    );                                     \
+                                           \
+    val_m;                                 \
+  } )
+
+  #if (__mips == 64)
+    #define LD(psrc) ( {                     \
+      uint8 *psrc_ld_m = (uint8 *) (psrc);   \
+      uint64 val_m = 0;                      \
+                                             \
+      asm volatile (                         \
+        "ld  %[val_m],  %[psrc_ld_m]  \n\t"  \
+                                             \
+        : [val_m] "=r" (val_m)               \
+        : [psrc_ld_m] "m" (*psrc_ld_m)       \
+      );                                     \
+                                             \
+      val_m;                                 \
+    } )
+  #else  // !(__mips == 64)
+    #define LD(psrc) ( {                                      \
+      uint8 *psrc_ld_m = (uint8 *) (psrc);                    \
+      uint32 val0_m, val1_m;                                  \
+      uint64 val_m = 0;                                       \
+                                                              \
+      val0_m = LW(psrc_ld_m);                                 \
+      val1_m = LW(psrc_ld_m + 4);                             \
+                                                              \
+      val_m = (uint64) (val1_m);                              \
+      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \
+      val_m = (uint64) (val_m | (uint64) val0_m);             \
+                                                              \
+      val_m;                                                  \
+    } )
+  #endif  // (__mips == 64)
+#else  // !(__mips_isa_rev >= 6)
+  #define LW(psrc) ( {                      \
+    uint8 *psrc_lw_m = (uint8 *) (psrc);    \
+    uint32 val_m;                           \
+                                            \
+    asm volatile (                          \
+      "ulw  %[val_m],  %[psrc_lw_m]  \n\t"  \
+                                            \
+      : [val_m] "=r" (val_m)                \
+      : [psrc_lw_m] "m" (*psrc_lw_m)        \
+    );                                      \
+                                            \
+    val_m;                                  \
+  } )
+
+  #if (__mips == 64)
+    #define LD(psrc) ( {                      \
+      uint8 *psrc_ld_m = (uint8 *) (psrc);    \
+      uint64 val_m = 0;                       \
+                                              \
+      asm volatile (                          \
+        "uld  %[val_m],  %[psrc_ld_m]  \n\t"  \
+                                              \
+        : [val_m] "=r" (val_m)                \
+        : [psrc_ld_m] "m" (*psrc_ld_m)        \
+      );                                      \
+                                              \
+      val_m;                                  \
+    } )
+  #else  // !(__mips == 64)
+    #define LD(psrc) ( {                                      \
+      uint8 *psrc_ld_m = (uint8 *) (psrc);                    \
+      uint32 val0_m, val1_m;                                  \
+      uint64 val_m = 0;                                       \
+                                                              \
+      val0_m = LW(psrc_ld_m);                                 \
+      val1_m = LW(psrc_ld_m + 4);                             \
+                                                              \
+      val_m = (uint64) (val1_m);                              \
+      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \
+      val_m = (uint64) (val_m | (uint64) val0_m);             \
+                                                              \
+      val_m;                                                  \
+    } )
+  #endif  // (__mips == 64)
+#endif  // (__mips_isa_rev >= 6)
+
 #define LD_B(RTYPE, psrc) *((RTYPE*)(psrc))   /* NOLINT */
 #define LD_UB(...) LD_B(v16u8, __VA_ARGS__)
 
