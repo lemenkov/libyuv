@@ -174,8 +174,7 @@ extern "C" {
 
 // The following functions fail on gcc/clang 32 bit with fpic and framepointer.
 // caveat: clangcl uses row_win.cc which works.
-#if defined(NDEBUG) || !(defined(_DEBUG) && defined(__i386__)) || \
-    !defined(__i386__) || defined(_MSC_VER)
+#if defined(__x86_64__) || defined(__OPTIMIZE__) || defined(_MSC_VER)
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
 #define HAS_I422ALPHATOARGBROW_SSSE3
@@ -235,7 +234,7 @@ extern "C" {
 #define HAS_ARGBUNATTENUATEROW_AVX2
 #define HAS_BLENDPLANEROW_AVX2
 
-#if !(defined(_DEBUG) && defined(__i386__))
+#if defined(__x86_64__) || defined(__OPTIMIZE__) || defined(_MSC_VER)
 // TODO(fbarchard): fix build error on android_full_debug=1
 // https://code.google.com/p/libyuv/issues/detail?id=517
 #define HAS_I422ALPHATOARGBROW_AVX2

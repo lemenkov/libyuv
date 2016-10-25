@@ -1708,7 +1708,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     [u_buf]"+r"(u_buf),    // %[u_buf]
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [dst_rgb24]"+r"(dst_rgb24),  // %[dst_rgb24]
-#if defined(__i386__) && defined(__pic__)
+#if defined(__i386__)
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
@@ -1772,7 +1772,7 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
-#if defined(__i386__) && defined(__pic__)
+#if defined(__i386__)
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
@@ -2152,7 +2152,7 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
     [v_buf]"+r"(v_buf),    // %[v_buf]
     [a_buf]"+r"(a_buf),    // %[a_buf]
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
-#if defined(__i386__) && defined(__pic__)
+#if defined(__i386__)
     [width]"+m"(width)     // %[width]
 #else
     [width]"+rm"(width)    // %[width]
