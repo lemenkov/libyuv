@@ -19,6 +19,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Convert 8 pixels of YUV 420 to RGB.
 #define I422TORGB(in0, in1, in2, ub, vr, ug, vg,               \
                   bb, bg, br, yg, out0, out1, out2) {          \
   v8i16 vec0_m;                                                \

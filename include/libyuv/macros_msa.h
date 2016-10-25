@@ -16,97 +16,81 @@
 #include <msa.h>
 
 #if (__mips_isa_rev >= 6)
-  #define LW(psrc) ( {                     \
-    uint8 *psrc_lw_m = (uint8 *) (psrc);   \
+  #define LW(psrc) ({                      \
+    uint8* psrc_lw_m = (uint8*) (psrc);    \  /* NOLINT */
     uint32 val_m;                          \
-                                           \
     asm volatile (                         \
       "lw  %[val_m],  %[psrc_lw_m]  \n\t"  \
-                                           \
       : [val_m] "=r" (val_m)               \
       : [psrc_lw_m] "m" (*psrc_lw_m)       \
     );                                     \
                                            \
     val_m;                                 \
-  } )
+  })
 
   #if (__mips == 64)
-    #define LD(psrc) ( {                     \
-      uint8 *psrc_ld_m = (uint8 *) (psrc);   \
+    #define LD(psrc) ({                      \
+      uint8* psrc_ld_m = (uint8*) (psrc);    \  /* NOLINT */
       uint64 val_m = 0;                      \
-                                             \
       asm volatile (                         \
         "ld  %[val_m],  %[psrc_ld_m]  \n\t"  \
-                                             \
         : [val_m] "=r" (val_m)               \
         : [psrc_ld_m] "m" (*psrc_ld_m)       \
       );                                     \
-                                             \
       val_m;                                 \
-    } )
+    })
   #else  // !(__mips == 64)
-    #define LD(psrc) ( {                                      \
-      uint8 *psrc_ld_m = (uint8 *) (psrc);                    \
+    #define LD(psrc) ({                                       \
+      uint8* psrc_ld_m = (uint8*) (psrc);                     \  /* NOLINT */
       uint32 val0_m, val1_m;                                  \
       uint64 val_m = 0;                                       \
-                                                              \
       val0_m = LW(psrc_ld_m);                                 \
       val1_m = LW(psrc_ld_m + 4);                             \
-                                                              \
-      val_m = (uint64) (val1_m);                              \
-      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \
-      val_m = (uint64) (val_m | (uint64) val0_m);             \
-                                                              \
+      val_m = (uint64) (val1_m);                              \  /* NOLINT */
+      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \  /* NOLINT */
+      val_m = (uint64) (val_m | (uint64) val0_m);             \  /* NOLINT */
       val_m;                                                  \
-    } )
+    })
   #endif  // (__mips == 64)
 #else  // !(__mips_isa_rev >= 6)
-  #define LW(psrc) ( {                      \
-    uint8 *psrc_lw_m = (uint8 *) (psrc);    \
+  #define LW(psrc) ({                       \
+    uint8* psrc_lw_m = (uint8*) (psrc);     \  /* NOLINT */
     uint32 val_m;                           \
-                                            \
     asm volatile (                          \
       "ulw  %[val_m],  %[psrc_lw_m]  \n\t"  \
-                                            \
       : [val_m] "=r" (val_m)                \
       : [psrc_lw_m] "m" (*psrc_lw_m)        \
     );                                      \
-                                            \
     val_m;                                  \
-  } )
+  })
 
   #if (__mips == 64)
-    #define LD(psrc) ( {                      \
-      uint8 *psrc_ld_m = (uint8 *) (psrc);    \
+    #define LD(psrc) ({                       \
+      uint8* psrc_ld_m = (uint8*) (psrc);     \  /* NOLINT */
       uint64 val_m = 0;                       \
-                                              \
       asm volatile (                          \
         "uld  %[val_m],  %[psrc_ld_m]  \n\t"  \
-                                              \
         : [val_m] "=r" (val_m)                \
         : [psrc_ld_m] "m" (*psrc_ld_m)        \
       );                                      \
-                                              \
       val_m;                                  \
-    } )
+    })
   #else  // !(__mips == 64)
-    #define LD(psrc) ( {                                      \
-      uint8 *psrc_ld_m = (uint8 *) (psrc);                    \
+    #define LD(psrc) ({                                       \
+      uint8* psrc_ld_m = (uint8*) (psrc);                     \  /* NOLINT */
       uint32 val0_m, val1_m;                                  \
       uint64 val_m = 0;                                       \
-                                                              \
       val0_m = LW(psrc_ld_m);                                 \
       val1_m = LW(psrc_ld_m + 4);                             \
-                                                              \
-      val_m = (uint64) (val1_m);                              \
-      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \
-      val_m = (uint64) (val_m | (uint64) val0_m);             \
-                                                              \
+      val_m = (uint64) (val1_m);                              \  /* NOLINT */
+      val_m = (uint64) ((val_m << 32) & 0xFFFFFFFF00000000);  \  /* NOLINT */
+      val_m = (uint64) (val_m | (uint64) val0_m);             \  /* NOLINT */
       val_m;                                                  \
-    } )
+    })
   #endif  // (__mips == 64)
 #endif  // (__mips_isa_rev >= 6)
 
+// TODO(fbarchard): Consider removing __VAR_ARGS versions.
 #define LD_B(RTYPE, psrc) *((RTYPE*)(psrc))   /* NOLINT */
 #define LD_UB(...) LD_B(v16u8, __VA_ARGS__)
 
@@ -143,13 +127,14 @@
   ST_B(RTYPE, in1, (pdst) + stride);            \
 }
 #define ST_UB2(...) ST_B2(v16u8, __VA_ARGS__)
-#
+
 #define ST_B4(RTYPE, in0, in1, in2, in3, pdst, stride) {  \
   ST_B2(RTYPE, in0, in1, (pdst), stride);                 \
   ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride);    \
 }
 #define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
-#
+
+// TODO(fbarchard): Consider using __msa_vshf_b and __msa_ilvr_b directly.
 /* Description : Shuffle byte vector elements as per mask vector
    Arguments   : Inputs  - in0, in1, in2, in3, mask0, mask1
                  Outputs - out0, out1
