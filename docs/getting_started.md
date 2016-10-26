@@ -72,13 +72,13 @@ To get just the source (not buildable):
 
     call gn gen out/Release "--args=is_debug=false target_cpu=\"x86\""
     call gn gen out/Debug "--args=is_debug=true target_cpu=\"x86\""
-    ninja -j7 -v -C out/Release
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Release
+    ninja -v -C out/Debug
 
     call gn gen out/Release "--args=is_debug=false target_cpu=\"x64\""
     call gn gen out/Debug "--args=is_debug=true target_cpu=\"x64\""
-    ninja -j7 -v -C out/Release
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Release
+    ninja -v -C out/Debug
 
 #### Building with clang-cl
 
@@ -87,20 +87,20 @@ To get just the source (not buildable):
 
     call gn gen out/Release "--args=is_debug=false is_official_build=false is_clang=true target_cpu=\"x86\""
     call gn gen out/Debug "--args=is_debug=true is_official_build=false is_clang=true target_cpu=\"x86\""
-    ninja -j7 -v -C out/Release
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Release
+    ninja -v -C out/Debug
 
     call gn gen out/Release "--args=is_debug=false is_official_build=false is_clang=true target_cpu=\"x64\""
     call gn gen out/Debug "--args=is_debug=true is_official_build=false is_clang=true target_cpu=\"x64\""
-    ninja -j7 -v -C out/Release
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Release
+    ninja -v -C out/Debug
 
 ### macOS and Linux
 
     gn gen out/Release "--args=is_debug=false"
     gn gen out/Debug "--args=is_debug=true"
-    ninja -j7 -v -C out/Release
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Release
+    ninja -v -C out/Debug
 
 ### Building Offical with GN
 
@@ -108,34 +108,23 @@ To get just the source (not buildable):
     ninja -C out/Official
 
 ### iOS
-This section needs an update to GN build documentation.
 http://www.chromium.org/developers/how-tos/build-instructions-ios
 
 Add to .gclient last line: `target_os=['ios'];`
 
-armv7
-
-    GYP_DEFINES="OS=ios target_arch=armv7 target_subarch=arm32" GYP_CROSSCOMPILE=1 GYP_GENERATOR_FLAGS="output_dir=out_ios" ./gyp_libyuv
-    ninja -j7 -C out_ios/Debug-iphoneos libyuv_unittest
-    ninja -j7 -C out_ios/Release-iphoneos libyuv_unittest
-
 arm64
 
-    GYP_DEFINES="OS=ios target_arch=arm64 target_subarch=arm64" GYP_CROSSCOMPILE=1 GYP_GENERATOR_FLAGS="output_dir=out_ios" ./gyp_libyuv
-    ninja -j7 -C out_ios/Debug-iphoneos libyuv_unittest
-    ninja -j7 -C out_ios/Release-iphoneos libyuv_unittest
+    gn gen out/Release "--args=is_debug=false target_os=\"ios\" ios_enable_code_signing=false target_cpu=\"arm64\""
+    gn gen out/Debug "--args=is_debug=true target_os=\"ios\" ios_enable_code_signing=false target_cpu=\"arm64\""
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
-both armv7 and arm64 (fat)
+ios simulator
 
-    GYP_DEFINES="OS=ios target_arch=armv7 target_subarch=both" GYP_CROSSCOMPILE=1 GYP_GENERATOR_FLAGS="output_dir=out_ios" ./gyp_libyuv
-    ninja -j7 -C out_ios/Debug-iphoneos libyuv_unittest
-    ninja -j7 -C out_ios/Release-iphoneos libyuv_unittest
-
-simulator
-
-    GYP_DEFINES="OS=ios target_arch=ia32 target_subarch=arm32" GYP_CROSSCOMPILE=1 GYP_GENERATOR_FLAGS="output_dir=out_sim" ./gyp_libyuv
-    ninja -j7 -C out_sim/Debug-iphonesimulator libyuv_unittest
-    ninja -j7 -C out_sim/Release-iphonesimulator libyuv_unittest
+    gn gen out/Release "--args=is_debug=false target_os=\"ios\" ios_enable_code_signing=false target_cpu=\"x86\""
+    gn gen out/Debug "--args=is_debug=true target_os=\"ios\" ios_enable_code_signing=false target_cpu=\"x86\""
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 ### Android
 https://code.google.com/p/chromium/wiki/AndroidBuildInstructions
@@ -146,34 +135,34 @@ armv7
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"arm\""
     gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"arm\""
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 arm64
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"arm64\""
     gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"arm64\""
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 ia32
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"x86\""
     gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"x86\""
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 mipsel
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mipsel\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
     gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mipsel\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
     gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
     gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=false"
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 arm disassembly:
 
@@ -208,16 +197,16 @@ Running test with C code:
 
     gn gen out/Release "--args=is_debug=false target_cpu=\"arm64\""
     gn gen out/Debug "--args=is_debug=true target_cpu=\"arm64\""
-    ninja -j7 -v -C out/Debug libyuv_unittest
-    ninja -j7 -v -C out/Release libyuv_unittest
+    ninja -v -C out/Debug libyuv_unittest
+    ninja -v -C out/Release libyuv_unittest
 
 ## Building the Library with make
 
 ### Linux
 
-    make -j7 V=1 -f linux.mk
-    make -j7 V=1 -f linux.mk clean
-    make -j7 V=1 -f linux.mk CXX=clang++
+    make V=1 -f linux.mk
+    make V=1 -f linux.mk clean
+    make V=1 -f linux.mk CXX=clang++
 
 ## Building the Library with cmake
 
@@ -271,7 +260,7 @@ Then run:
 ## Sanitizers
 
     gn gen out/Debug "--args=is_debug=true is_asan=true"
-    ninja -j7 -v -C out/Debug
+    ninja -v -C out/Debug
 
     Sanitizers available: tsan, msan, asan, ubsan, lsan
 
