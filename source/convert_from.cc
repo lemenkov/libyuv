@@ -558,6 +558,14 @@ static int I420ToRGB24Matrix(const uint8* src_y, int src_stride_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGB24ROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToRGB24Row = I422ToRGB24Row_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToRGB24Row(src_y, src_u, src_v, dst_rgb24, yuvconstants, width);

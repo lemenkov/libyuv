@@ -564,6 +564,14 @@ static int I420AlphaToARGBMatrix(const uint8* src_y, int src_stride_y,
     I422AlphaToARGBRow = I422AlphaToARGBRow_DSPR2;
   }
 #endif
+#if defined(HAS_I422ALPHATOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I422AlphaToARGBRow = I422AlphaToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      I422AlphaToARGBRow = I422AlphaToARGBRow_MSA;
+    }
+  }
+#endif
 #if defined(HAS_ARGBATTENUATEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBAttenuateRow = ARGBAttenuateRow_Any_SSSE3;
