@@ -19,6 +19,18 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// Fill YUV -> RGB conversion constants into vectors
+#define YUVTORGB_SETUP(yuvconst, ub, vr, ug, vg, bb, bg, br, yg) { \
+  ub = __msa_fill_w(yuvconst->kUVToB[0]);                          \
+  vr = __msa_fill_w(yuvconst->kUVToR[1]);                          \
+  ug = __msa_fill_w(yuvconst->kUVToG[0]);                          \
+  vg = __msa_fill_w(yuvconst->kUVToG[1]);                          \
+  bb = __msa_fill_w(yuvconst->kUVBiasB[0]);                        \
+  bg = __msa_fill_w(yuvconst->kUVBiasG[0]);                        \
+  br = __msa_fill_w(yuvconst->kUVBiasR[0]);                        \
+  yg = __msa_fill_w(yuvconst->kYToRgb[0]);                         \
+}
+
 // Load YUV 422 pixel data
 #define READYUV422(psrc_y, psrc_u, psrc_v, out_y, out_u, out_v) {  \
   uint64 y_m;                                                      \
@@ -33,9 +45,9 @@ extern "C" {
 }
 
 // Convert 8 pixels of YUV 420 to RGB.
-#define I422TORGB(in_y, in_u, in_v,                             \
-                  ub, vr, ug, vg, bb, bg, br, yg,               \
-                  out_b, out_g, out_r) {                        \
+#define YUVTORGB(in_y, in_u, in_v,                              \
+                 ub, vr, ug, vg, bb, bg, br, yg,                \
+                 out_b, out_g, out_r) {                         \
   v8i16 vec0_m;                                                 \
   v4i32 reg0_m, reg1_m, reg2_m, reg3_m, reg4_m;                 \
   v4i32 reg5_m, reg6_m, reg7_m, reg8_m, reg9_m;                 \
@@ -92,6 +104,17 @@ extern "C" {
   out_b = __msa_pckev_h((v8i16) reg1_m, (v8i16) reg0_m);        \
   out_g = __msa_pckev_h((v8i16) reg3_m, (v8i16) reg2_m);        \
   out_r = __msa_pckev_h((v8i16) reg5_m, (v8i16) reg4_m);        \
+}
+
+// Pack and Store 8 ARGB values.
+#define STOREARGB(in0, in1, in2, in3, pdst_argb) {           \
+  v8i16 vec0_m, vec1_m;                                      \
+  v16u8 dst0_m, dst1_m;                                      \
+  vec0_m = (v8i16) __msa_ilvev_b((v16i8) in1, (v16i8) in0);  \
+  vec1_m = (v8i16) __msa_ilvev_b((v16i8) in3, (v16i8) in2);  \
+  dst0_m = (v16u8) __msa_ilvr_h(vec1_m, vec0_m);             \
+  dst1_m = (v16u8) __msa_ilvl_h(vec1_m, vec0_m);             \
+  ST_UB2(dst0_m, dst1_m, pdst_argb, 16);                     \
 }
 
 void MirrorRow_MSA(const uint8* src, uint8* dst, int width) {
@@ -180,29 +203,19 @@ void I422ToARGBRow_MSA(const uint8* src_y, const uint8* src_u,
                        const uint8* src_v, uint8* rgb_buf,
                        const struct YuvConstants* yuvconstants, int width) {
   int x;
-  v16u8 src0, src1, src2, dst0, dst1;
+  v16u8 src0, src1, src2;
   v8i16 vec0, vec1, vec2;
   v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
   v16u8 const_255 = (v16u8) __msa_ldi_b(255);
 
-  vec_ub = __msa_fill_w(yuvconstants->kUVToB[0]);
-  vec_vr = __msa_fill_w(yuvconstants->kUVToR[1]);
-  vec_ug = __msa_fill_w(yuvconstants->kUVToG[0]);
-  vec_vg = __msa_fill_w(yuvconstants->kUVToG[1]);
-  vec_bb = __msa_fill_w(yuvconstants->kUVBiasB[0]);
-  vec_bg = __msa_fill_w(yuvconstants->kUVBiasG[0]);
-  vec_br = __msa_fill_w(yuvconstants->kUVBiasR[0]);
-  vec_yg = __msa_fill_w(yuvconstants->kYToRgb[0]);
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
 
   for (x = 0; x < width; x += 8) {
     READYUV422(src_y, src_u, src_v, src0, src1, src2);
-    I422TORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
-              vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
-    vec0 = (v8i16) __msa_ilvev_b((v16i8) vec1, (v16i8) vec0);
-    vec1 = (v8i16) __msa_ilvev_b((v16i8) const_255, (v16i8) vec2);
-    dst0 = (v16u8) __msa_ilvr_h((v8i16) vec1, (v8i16) vec0);
-    dst1 = (v16u8) __msa_ilvl_h((v8i16) vec1, (v8i16) vec0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    STOREARGB(vec0, vec1, vec2, const_255, rgb_buf);
     src_y += 8;
     src_u += 4;
     src_v += 4;
@@ -210,33 +223,23 @@ void I422ToARGBRow_MSA(const uint8* src_y, const uint8* src_u,
   }
 }
 
-void I422ToRGBARow_MSA(const uint8* src_y, const uint8* src_u,
+void YUVTORGBARow_MSA(const uint8* src_y, const uint8* src_u,
                        const uint8* src_v, uint8* rgb_buf,
                        const struct YuvConstants* yuvconstants, int width) {
   int x;
-  v16u8 src0, src1, src2, dst0, dst1;
+  v16u8 src0, src1, src2;
   v8i16 vec0, vec1, vec2;
   v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
   v16u8 const_255 = (v16u8) __msa_ldi_b(255);
 
-  vec_ub = __msa_fill_w(yuvconstants->kUVToB[0]);
-  vec_vr = __msa_fill_w(yuvconstants->kUVToR[1]);
-  vec_ug = __msa_fill_w(yuvconstants->kUVToG[0]);
-  vec_vg = __msa_fill_w(yuvconstants->kUVToG[1]);
-  vec_bb = __msa_fill_w(yuvconstants->kUVBiasB[0]);
-  vec_bg = __msa_fill_w(yuvconstants->kUVBiasG[0]);
-  vec_br = __msa_fill_w(yuvconstants->kUVBiasR[0]);
-  vec_yg = __msa_fill_w(yuvconstants->kYToRgb[0]);
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
 
   for (x = 0; x < width; x += 8) {
     READYUV422(src_y, src_u, src_v, src0, src1, src2);
-    I422TORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
-              vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
-    vec0 = (v8i16) __msa_ilvev_b((v16i8) vec0, (v16i8) const_255);
-    vec1 = (v8i16) __msa_ilvev_b((v16i8) vec2, (v16i8) vec1);
-    dst0 = (v16u8) __msa_ilvr_h(vec1, vec0);
-    dst1 = (v16u8) __msa_ilvl_h(vec1, vec0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    STOREARGB(const_255, vec0, vec1, vec2, rgb_buf);
     src_y += 8;
     src_u += 4;
     src_v += 4;
@@ -251,32 +254,22 @@ void I422AlphaToARGBRow_MSA(const uint8* src_y, const uint8* src_u,
                             int width) {
   int x;
   int64 data_a;
-  v16u8 src0, src1, src2, src3, dst0, dst1;
+  v16u8 src0, src1, src2, src3;
   v8i16 vec0, vec1, vec2;
   v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
   v4i32 zero = { 0 };
 
-  vec_ub = __msa_fill_w(yuvconstants->kUVToB[0]);
-  vec_vr = __msa_fill_w(yuvconstants->kUVToR[1]);
-  vec_ug = __msa_fill_w(yuvconstants->kUVToG[0]);
-  vec_vg = __msa_fill_w(yuvconstants->kUVToG[1]);
-  vec_bb = __msa_fill_w(yuvconstants->kUVBiasB[0]);
-  vec_bg = __msa_fill_w(yuvconstants->kUVBiasG[0]);
-  vec_br = __msa_fill_w(yuvconstants->kUVBiasR[0]);
-  vec_yg = __msa_fill_w(yuvconstants->kYToRgb[0]);
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
 
   for (x = 0; x < width; x += 8) {
     data_a = LD(src_a);
     READYUV422(src_y, src_u, src_v, src0, src1, src2);
     src3 = (v16u8) __msa_insert_d((v2i64) zero, 0, data_a);
-    I422TORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
-              vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
     src3 = (v16u8) __msa_ilvr_b((v16i8) src3, (v16i8) src3);
-    vec0 = (v8i16) __msa_ilvev_b((v16i8) vec1, (v16i8) vec0);
-    vec1 = (v8i16) __msa_ilvev_b((v16i8) src3, (v16i8) vec2);
-    dst0 = (v16u8) __msa_ilvr_h((v8i16) vec1, (v8i16) vec0);
-    dst1 = (v16u8) __msa_ilvl_h((v8i16) vec1, (v8i16) vec0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    STOREARGB(vec0, vec1, vec2, src3, rgb_buf);
     src_y += 8;
     src_u += 4;
     src_v += 4;
@@ -285,9 +278,9 @@ void I422AlphaToARGBRow_MSA(const uint8* src_y, const uint8* src_u,
   }
 }
 
-void I422ToRGB24Row_MSA(const uint8* src_y, const uint8* src_u,
-                        const uint8* src_v, uint8* rgb_buf,
-                        const struct YuvConstants* yuvconstants, int32 width) {
+void YUVTORGB24Row_MSA(const uint8* src_y, const uint8* src_u,
+                       const uint8* src_v, uint8* rgb_buf,
+                       const struct YuvConstants* yuvconstants, int32 width) {
   int x;
   int64 data_u, data_v;
   v16u8 src0, src1, src2, src3, src4, src5, dst0, dst1, dst2;
@@ -300,14 +293,8 @@ void I422ToRGB24Row_MSA(const uint8* src_y, const uint8* src_u,
   v16i8 shuffler2 =
       { 26, 6, 7, 27, 8, 9, 28, 10, 11, 29, 12, 13, 30, 14, 15, 31 };
 
-  vec_ub = __msa_fill_w(yuvconstants->kUVToB[0]);
-  vec_vr = __msa_fill_w(yuvconstants->kUVToR[1]);
-  vec_ug = __msa_fill_w(yuvconstants->kUVToG[0]);
-  vec_vg = __msa_fill_w(yuvconstants->kUVToG[1]);
-  vec_bb = __msa_fill_w(yuvconstants->kUVBiasB[0]);
-  vec_bg = __msa_fill_w(yuvconstants->kUVBiasG[0]);
-  vec_br = __msa_fill_w(yuvconstants->kUVBiasR[0]);
-  vec_yg = __msa_fill_w(yuvconstants->kYToRgb[0]);
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
 
   for (x = 0; x < width; x += 16) {
     src0 = (v16u8) __msa_ld_b((v16u8*) src_y, 0);
@@ -318,10 +305,10 @@ void I422ToRGB24Row_MSA(const uint8* src_y, const uint8* src_u,
     src3 = (v16u8) __msa_sldi_b((v16i8) src0, (v16i8) src0, 8);
     src4 = (v16u8) __msa_sldi_b((v16i8) src1, (v16i8) src1, 4);
     src5 = (v16u8) __msa_sldi_b((v16i8) src2, (v16i8) src2, 4);
-    I422TORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
-              vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
-    I422TORGB(src3, src4, src5, vec_ub, vec_vr, vec_ug, vec_vg,
-              vec_bb, vec_bg, vec_br, vec_yg, vec3, vec4, vec5);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    YUVTORGB(src3, src4, src5, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec3, vec4, vec5);
     reg0 = (v16u8) __msa_ilvev_b((v16i8) vec1, (v16i8) vec0);
     reg2 = (v16u8) __msa_ilvev_b((v16i8) vec4, (v16i8) vec3);
     reg3 = (v16u8) __msa_pckev_b((v16i8) vec5, (v16i8) vec2);
@@ -335,6 +322,104 @@ void I422ToRGB24Row_MSA(const uint8* src_y, const uint8* src_u,
     src_u += 8;
     src_v += 8;
     rgb_buf += 48;
+  }
+}
+
+// TODO(fbarchard): Consider AND instead of shift to isolate 5 upper bits of R.
+void YUVTORGB565Row_MSA(const uint8* src_y, const uint8* src_u,
+                        const uint8* src_v, uint8* dst_rgb565,
+                        const struct YuvConstants* yuvconstants, int width) {
+  int x;
+  v16u8 src0, src1, src2, dst0;
+  v8i16 vec0, vec1, vec2;
+  v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
+
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
+
+  for (x = 0; x < width; x += 8) {
+    READYUV422(src_y, src_u, src_v, src0, src1, src2);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec2, vec1);
+    vec0 = __msa_srai_h(vec0, 3);
+    vec1 = __msa_srai_h(vec1, 3);
+    vec2 = __msa_srai_h(vec2, 2);
+    vec1 = __msa_slli_h(vec1, 11);
+    vec2 = __msa_slli_h(vec2, 5);
+    vec0 |= vec1;
+    dst0 = (v16u8) (vec2 | vec0);
+    ST_UB(dst0, dst_rgb565);
+    src_y += 8;
+    src_u += 4;
+    src_v += 4;
+    dst_rgb565 += 16;
+  }
+}
+
+// TODO(fbarchard): Consider AND instead of shift to isolate 4 upper bits of G.
+void I422ToARGB4444Row_MSA(const uint8* src_y, const uint8* src_u,
+                           const uint8* src_v, uint8* dst_argb4444,
+                           const struct YuvConstants* yuvconstants, int width) {
+  int x;
+  v16u8 src0, src1, src2, dst0;
+  v8i16 vec0, vec1, vec2;
+  v8u16 reg0, reg1, reg2;
+  v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
+  v8u16 const_0xF000 = (v8u16) __msa_fill_h(0xF000);
+
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
+
+  for (x = 0; x < width; x += 8) {
+    READYUV422(src_y, src_u, src_v, src0, src1, src2);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    reg0 = (v8u16) __msa_srai_h(vec0, 4);
+    reg1 = (v8u16) __msa_srai_h(vec1, 4);
+    reg2 = (v8u16) __msa_srai_h(vec2, 4);
+    reg1 = (v8u16) __msa_slli_h((v8i16) reg1, 4);
+    reg2 = (v8u16) __msa_slli_h((v8i16) reg2, 8);
+    reg1 |= const_0xF000;
+    reg0 |= reg2;
+    dst0 = (v16u8) (reg1 | reg0);
+    ST_UB(dst0, dst_argb4444);
+    src_y += 8;
+    src_u += 4;
+    src_v += 4;
+    dst_argb4444 += 16;
+  }
+}
+
+void I422ToARGB1555Row_MSA(const uint8* src_y, const uint8* src_u,
+                           const uint8* src_v, uint8* dst_argb1555,
+                           const struct YuvConstants* yuvconstants, int width) {
+  int x;
+  v16u8 src0, src1, src2, dst0;
+  v8i16 vec0, vec1, vec2;
+  v8u16 reg0, reg1, reg2;
+  v4i32 vec_ub, vec_vr, vec_ug, vec_vg, vec_bb, vec_bg, vec_br, vec_yg;
+  v8u16 const_0x8000 = (v8u16) __msa_fill_h(0x8000);
+
+  YUVTORGB_SETUP(yuvconstants, vec_ub, vec_vr, vec_ug,
+                 vec_vg, vec_bb, vec_bg, vec_br, vec_yg);
+
+  for (x = 0; x < width; x += 8) {
+    READYUV422(src_y, src_u, src_v, src0, src1, src2);
+    YUVTORGB(src0, src1, src2, vec_ub, vec_vr, vec_ug, vec_vg,
+             vec_bb, vec_bg, vec_br, vec_yg, vec0, vec1, vec2);
+    reg0 = (v8u16) __msa_srai_h(vec0, 3);
+    reg1 = (v8u16) __msa_srai_h(vec1, 3);
+    reg2 = (v8u16) __msa_srai_h(vec2, 3);
+    reg1 = (v8u16) __msa_slli_h((v8i16) reg1, 5);
+    reg2 = (v8u16) __msa_slli_h((v8i16) reg2, 10);
+    reg1 |= const_0x8000;
+    reg0 |= reg2;
+    dst0 = (v16u8) (reg1 | reg0);
+    ST_UB(dst0, dst_argb1555);
+    src_y += 8;
+    src_u += 4;
+    src_v += 4;
+    dst_argb1555 += 16;
   }
 }
 

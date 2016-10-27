@@ -678,6 +678,24 @@ void I422ToRGB24Row_MSA(const uint8* src_y,
                         uint8* dst_rgb24,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I422ToRGB565Row_MSA(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_rgb565,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I422ToARGB4444Row_MSA(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_argb4444,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422ToARGB1555Row_MSA(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_argb1555,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 
 void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int width);
 void ARGBToYRow_Any_AVX2(const uint8* src_argb, uint8* dst_y, int width);
@@ -1681,6 +1699,24 @@ void I422ToRGB24Row_Any_MSA(const uint8* src_y,
                             uint8* dst_rgb24,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void I422ToRGB565Row_Any_MSA(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_rgb565,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I422ToARGB4444Row_Any_MSA(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_argb4444,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
+void I422ToARGB1555Row_Any_MSA(const uint8* src_y,
+                               const uint8* src_u,
+                               const uint8* src_v,
+                               uint8* dst_argb1555,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
 
 void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int width);
 void YUY2ToUVRow_AVX2(const uint8* src_yuy2, int stride_yuy2,
