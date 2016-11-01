@@ -288,6 +288,7 @@ extern "C" {
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_COPYROW_NEON
+#define HAS_HALFFLOATROW_NEON
 #define HAS_I400TOARGBROW_NEON
 #define HAS_I422ALPHATOARGBROW_NEON
 #define HAS_I422TOARGB1555ROW_NEON
@@ -328,11 +329,6 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_NEON
 #define HAS_YUY2TOUVROW_NEON
 #define HAS_YUY2TOYROW_NEON
-
-// TODO(fbarchard): Port to 32 bit.
-#if defined(__aarch64__)
-#define HAS_HALFFLOATROW_NEON
-#endif
 
 // Effects:
 #define HAS_ARGBADDROW_NEON

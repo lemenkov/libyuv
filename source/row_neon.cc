@@ -2733,7 +2733,63 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
   : "cc", "memory", "q0", "q1"  // Clobber List
   );
 }
-#endif  // defined(__ARM_NEON__) && !defined(__aarch64__)
+
+void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float, int width) {
+  asm volatile (
+    "vdup.32    q0, %3                         \n"
+
+  "1:                                          \n"
+    MEMACCESS(0)
+    "vld1.8     {q1}, [%0]!                    \n"  // load 8 shorts
+    "subs       %2, %2, #8                     \n"  // 8 pixels per loop
+    "vmovl.u8   q2, d2                         \n"  // 8 int's
+    "vmovl.u8   q3, d3                         \n"
+    "vcvt.f32.u32  q2, q2                      \n"  // 8 floats
+    "vcvt.f32.u32  q3, q3                      \n"
+    "vmul.f32   q2, q2, q0                     \n"  // adjust exponent
+    "vmul.f32   q3, q3, q0                     \n"
+    "vqshrn.u32 d2, q2, #13                    \n"   // isolate halffloat
+    "vqshrn.u32 d3, q3, #13                    \n"
+    MEMACCESS(1)
+    "vst1.8     {q1}, [%0]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "r"(1.9259299444e-34f)    // %3
+  : "cc", "memory", "q0", "q1", "q2", "q3"
+  );
+}
+
+// TODO(fbarchard): multiply by element.
+void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width) {
+  asm volatile (
+    "vdup.32    q0, %3                         \n"
+
+  "1:                                          \n"
+    MEMACCESS(0)
+    "vld1.8     {q1}, [%0]!                    \n"  // load 8 shorts
+    "subs       %2, %2, #8                     \n"  // 8 pixels per loop
+    "vmovl.u8   q2, d2                         \n"  // 8 int's
+    "vmovl.u8   q3, d3                         \n"
+    "vcvt.f32.u32  q2, q2                      \n"  // 8 floats
+    "vcvt.f32.u32  q3, q3                      \n"
+    "vmul.f32   q2, q2, q0                     \n"  // adjust exponent
+    "vmul.f32   q3, q3, q0                     \n"
+    "vqshrn.u32 d2, q2, #13                    \n"   // isolate halffloat
+    "vqshrn.u32 d3, q3, #13                    \n"
+    MEMACCESS(1)
+    "vst1.8     {q1}, [%0]!                    \n"
+    "bgt        1b                             \n"
+  : "+r"(src),    // %0
+    "+r"(dst),    // %1
+    "+r"(width)   // %2
+  : "r"(scale * 1.9259299444e-34f)    // %3
+  : "cc", "memory", "q0", "q1", "q2", "q3"
+  );
+}
+
+#endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..
 
 #ifdef __cplusplus
 }  // extern "C"
