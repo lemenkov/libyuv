@@ -2711,6 +2711,7 @@ void SobelYRow_NEON(const uint8* src_y0, const uint8* src_y1,
   );
 }
 
+// Caveat - rounds float to half float whereas scaling version truncates.
 void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float, int width) {
   asm volatile (
   "1:                                          \n"
@@ -2721,7 +2722,7 @@ void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float, int width) {
     "uxtl2      v3.4s, v1.8h                   \n"
     "scvtf      v2.4s, v2.4s                   \n"  // 8 floats
     "scvtf      v3.4s, v3.4s                   \n"
-    "fcvtn      v1.4h, v2.4s                   \n"  // 8 floatsgit
+    "fcvtn      v1.4h, v2.4s                   \n"  // 8 half floats
     "fcvtn2     v1.8h, v3.4s                   \n"
    MEMACCESS(1)
     "st1        {v1.16b}, [%1], #16            \n"  // store 8 shorts

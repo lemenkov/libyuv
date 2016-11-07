@@ -2742,16 +2742,16 @@ void HalfFloat1Row_NEON(const uint16* src, uint16* dst, float, int width) {
     MEMACCESS(0)
     "vld1.8     {q1}, [%0]!                    \n"  // load 8 shorts
     "subs       %2, %2, #8                     \n"  // 8 pixels per loop
-    "vmovl.u8   q2, d2                         \n"  // 8 int's
-    "vmovl.u8   q3, d3                         \n"
+    "vmovl.u16  q2, d2                         \n"  // 8 int's
+    "vmovl.u16  q3, d3                         \n"
     "vcvt.f32.u32  q2, q2                      \n"  // 8 floats
     "vcvt.f32.u32  q3, q3                      \n"
     "vmul.f32   q2, q2, q0                     \n"  // adjust exponent
     "vmul.f32   q3, q3, q0                     \n"
-    "vqshrn.u32 d2, q2, #13                    \n"   // isolate halffloat
+    "vqshrn.u32 d2, q2, #13                    \n"  // isolate halffloat
     "vqshrn.u32 d3, q3, #13                    \n"
     MEMACCESS(1)
-    "vst1.8     {q1}, [%0]!                    \n"
+    "vst1.8     {q1}, [%1]!                    \n"
     "bgt        1b                             \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1
@@ -2770,16 +2770,16 @@ void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width) {
     MEMACCESS(0)
     "vld1.8     {q1}, [%0]!                    \n"  // load 8 shorts
     "subs       %2, %2, #8                     \n"  // 8 pixels per loop
-    "vmovl.u8   q2, d2                         \n"  // 8 int's
-    "vmovl.u8   q3, d3                         \n"
+    "vmovl.u16  q2, d2                         \n"  // 8 int's
+    "vmovl.u16  q3, d3                         \n"
     "vcvt.f32.u32  q2, q2                      \n"  // 8 floats
     "vcvt.f32.u32  q3, q3                      \n"
     "vmul.f32   q2, q2, q0                     \n"  // adjust exponent
     "vmul.f32   q3, q3, q0                     \n"
-    "vqshrn.u32 d2, q2, #13                    \n"   // isolate halffloat
+    "vqshrn.u32 d2, q2, #13                    \n"  // isolate halffloat
     "vqshrn.u32 d3, q3, #13                    \n"
     MEMACCESS(1)
-    "vst1.8     {q1}, [%0]!                    \n"
+    "vst1.8     {q1}, [%1]!                    \n"
     "bgt        1b                             \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1

@@ -2120,26 +2120,61 @@ int TestHalfFloatPlane(int benchmark_width, int benchmark_height,
   }
   opt_time = (get_time() - opt_time) / benchmark_iterations;
 
-  int diff = 0;
-  for (i = 0; i < y_plane_size; ++i) {
-    diff = dst_c[i] - dst_opt[i];
-    if (diff) break;
+  int max_diff = 0;
+  for (i = 0; i < y_plane_size / 2; ++i) {
+    int abs_diff =
+        abs(static_cast<int>(reinterpret_cast<uint16*>(dst_c)[i]) -
+            static_cast<int>(reinterpret_cast<uint16*>(dst_opt)[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
   }
 
   free_aligned_buffer_page_end(orig_y);
-  return diff;
+  return max_diff;
 }
+
+#if defined(__arm__)
+static void EnableFlushDenormalToZero(void) {
+  uint32_t cw;
+  __asm__ __volatile__ (
+    "vmrs   %0, fpscr         \n"
+    "orr    %0, %0, #0x1000000        \n"
+    "vmsr   fpscr, %0         \n"
+    : "=r"(cw) :: "memory");
+}
+#endif
 
 // 5 bit exponent with bias of 15 will underflow to a denormal if scale causes
 // exponent to be less than 0.  15 - log2(65536) = -1/  This shouldnt normally
 // happen since scale is 1/(1<<bits) where bits is 9, 10 or 12.
-#define MAXHALFDIFF 0
+
 TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_16bit_denormal) {
+// 32 bit arm rounding on denormal case is off by 1 compared to C.
+#if defined(__arm__)
+  EnableFlushDenormalToZero();
+#endif
   int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
                                 benchmark_iterations_,
                                 disable_cpu_flags_, benchmark_cpu_info_,
                                 1.0f / 65536.0f, 65535);
-  EXPECT_LE(diff, MAXHALFDIFF);
+  EXPECT_EQ(0, diff);
+}
+
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_16bit_One) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f, 65535);
+  EXPECT_LE(diff, 1);
+}
+
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_16bit_Opt) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f / 4096.0f, 65535);
+  EXPECT_EQ(0, diff);
 }
 
 TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_10bit_Opt) {
@@ -2147,7 +2182,7 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_10bit_Opt) {
                                 benchmark_iterations_,
                                 disable_cpu_flags_, benchmark_cpu_info_,
                                 1.0f / 1024.0f, 1023);
-  EXPECT_LE(diff, MAXHALFDIFF);
+  EXPECT_EQ(0, diff);
 }
 
 TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_9bit_Opt) {
@@ -2155,7 +2190,7 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_9bit_Opt) {
                                 benchmark_iterations_,
                                 disable_cpu_flags_, benchmark_cpu_info_,
                                 1.0f / 512.0f, 511);
-  EXPECT_LE(diff, MAXHALFDIFF);
+  EXPECT_EQ(0, diff);
 }
 
 TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Opt) {
@@ -2163,15 +2198,7 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Opt) {
                                 benchmark_iterations_,
                                 disable_cpu_flags_, benchmark_cpu_info_,
                                 1.0f / 4096.0f, 4095);
-  EXPECT_LE(diff, MAXHALFDIFF);
-}
-
-TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_One) {
-  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_,
-                                disable_cpu_flags_, benchmark_cpu_info_,
-                                1.0f, 4095);
-  EXPECT_LE(diff, MAXHALFDIFF);
+  EXPECT_EQ(0, diff);
 }
 
 TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Offby1) {
@@ -2179,9 +2206,24 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_Offby1) {
                                 benchmark_iterations_,
                                 disable_cpu_flags_, benchmark_cpu_info_,
                                 1.0f / 4095.0f, 4095);
-  EXPECT_LE(diff, MAXHALFDIFF);
+  EXPECT_EQ(0, diff);
 }
 
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_One) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f, 2047);
+  EXPECT_EQ(0, diff);
+}
+
+TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_12bit_One) {
+  int diff = TestHalfFloatPlane(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_,
+                                disable_cpu_flags_, benchmark_cpu_info_,
+                                1.0f, 4095);
+  EXPECT_LE(diff, 1);
+}
 
 TEST_F(LibYUVPlanarTest, TestARGBLumaColorTable) {
   SIMD_ALIGNED(uint8 orig_pixels[1280][4]);
