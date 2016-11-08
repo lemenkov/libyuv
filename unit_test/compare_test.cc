@@ -36,7 +36,8 @@ TEST_F(LibYUVBaseTest, Djb2_Test) {
   align_buffer_page_end(src_a, kMaxTest);
   align_buffer_page_end(src_b, kMaxTest);
 
-  const char* fox = "The quick brown fox jumps over the lazy dog"
+  const char* fox =
+      "The quick brown fox jumps over the lazy dog"
       " and feels as if he were in the seventh heaven of typography"
       " together with Hermann Zapf";
   uint32 foxhash = HashDjb2(reinterpret_cast<const uint8*>(fox), 131, 5381);
@@ -155,19 +156,19 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Opt) {
   }
 
   src_a[0] = 0;
-  fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
-                      benchmark_width_, benchmark_height_);
+  fourcc = ARGBDetect(src_a, benchmark_width_ * 4, benchmark_width_,
+                      benchmark_height_);
   EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_BGRA), fourcc);
   src_a[0] = 255;
   src_a[3] = 0;
-  fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
-                      benchmark_width_, benchmark_height_);
+  fourcc = ARGBDetect(src_a, benchmark_width_ * 4, benchmark_width_,
+                      benchmark_height_);
   EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_ARGB), fourcc);
   src_a[3] = 255;
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    fourcc = ARGBDetect(src_a, benchmark_width_ * 4,
-                        benchmark_width_, benchmark_height_);
+    fourcc = ARGBDetect(src_a, benchmark_width_ * 4, benchmark_width_,
+                        benchmark_height_);
   }
   EXPECT_EQ(0u, fourcc);
 
@@ -183,19 +184,19 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Unaligned) {
   }
 
   src_a[0 + 1] = 0;
-  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
-                      benchmark_width_, benchmark_height_);
+  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4, benchmark_width_,
+                      benchmark_height_);
   EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_BGRA), fourcc);
   src_a[0 + 1] = 255;
   src_a[3 + 1] = 0;
-  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
-                      benchmark_width_, benchmark_height_);
+  fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4, benchmark_width_,
+                      benchmark_height_);
   EXPECT_EQ(static_cast<uint32>(libyuv::FOURCC_ARGB), fourcc);
   src_a[3 + 1] = 255;
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
-    fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4,
-                        benchmark_width_, benchmark_height_);
+    fourcc = ARGBDetect(src_a + 1, benchmark_width_ * 4, benchmark_width_,
+                        benchmark_height_);
   }
   EXPECT_EQ(0u, fourcc);
 
@@ -220,8 +221,9 @@ TEST_F(LibYUVBaseTest, BenchmarkSumSquareError_Opt) {
   memset(src_a, 0, kMaxWidth);
   memset(src_b, 0, kMaxWidth);
 
-  int count = benchmark_iterations_ *
-    ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
+  int count =
+      benchmark_iterations_ *
+      ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
   for (int i = 0; i < count; ++i) {
     h1 = ComputeSumSquareError(src_a, src_b, kMaxWidth);
   }
@@ -284,8 +286,7 @@ TEST_F(LibYUVBaseTest, BenchmarkPsnr_Opt) {
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
-    CalcFramePsnr(src_a, benchmark_width_,
-                  src_b, benchmark_width_,
+    CalcFramePsnr(src_a, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
@@ -309,8 +310,7 @@ TEST_F(LibYUVBaseTest, BenchmarkPsnr_Unaligned) {
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
-    CalcFramePsnr(src_a + 1, benchmark_width_,
-                  src_b, benchmark_width_,
+    CalcFramePsnr(src_a + 1, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
@@ -335,24 +335,24 @@ TEST_F(LibYUVBaseTest, Psnr) {
 
   double err;
   err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   EXPECT_EQ(err, kMaxPsnr);
 
   memset(src_a, 255, kSrcPlaneSize);
 
   err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   EXPECT_EQ(err, 0.0);
 
   memset(src_a, 1, kSrcPlaneSize);
 
   err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   EXPECT_GT(err, 48.0);
   EXPECT_LT(err, 49.0);
@@ -362,8 +362,8 @@ TEST_F(LibYUVBaseTest, Psnr) {
   }
 
   err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   EXPECT_GT(err, 2.0);
   if (kSrcWidth * kSrcHeight >= 256) {
@@ -384,14 +384,14 @@ TEST_F(LibYUVBaseTest, Psnr) {
   double c_err, opt_err;
 
   c_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                        src_b + kSrcStride * b + b, kSrcStride,
-                        kSrcWidth, kSrcHeight);
+                        src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                        kSrcHeight);
 
   MaskCpuFlags(benchmark_cpu_info_);
 
   opt_err = CalcFramePsnr(src_a + kSrcStride * b + b, kSrcStride,
-                          src_b + kSrcStride * b + b, kSrcStride,
-                          kSrcWidth, kSrcHeight);
+                          src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                          kSrcHeight);
 
   EXPECT_EQ(opt_err, c_err);
 
@@ -411,8 +411,7 @@ TEST_F(LibYUVBaseTest, DISABLED_BenchmarkSsim_Opt) {
 
   double opt_time = get_time();
   for (int i = 0; i < benchmark_iterations_; ++i)
-    CalcFrameSsim(src_a, benchmark_width_,
-                  src_b, benchmark_width_,
+    CalcFrameSsim(src_a, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
@@ -435,14 +434,14 @@ TEST_F(LibYUVBaseTest, Ssim) {
   memset(src_a, 0, kSrcPlaneSize);
   memset(src_b, 0, kSrcPlaneSize);
 
-  if (kSrcWidth <=8 || kSrcHeight <= 8) {
+  if (kSrcWidth <= 8 || kSrcHeight <= 8) {
     printf("warning - Ssim size too small.  Testing function executes.\n");
   }
 
   double err;
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
     EXPECT_EQ(err, 1.0);
@@ -451,8 +450,8 @@ TEST_F(LibYUVBaseTest, Ssim) {
   memset(src_a, 255, kSrcPlaneSize);
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
     EXPECT_LT(err, 0.0001);
@@ -461,8 +460,8 @@ TEST_F(LibYUVBaseTest, Ssim) {
   memset(src_a, 1, kSrcPlaneSize);
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
     EXPECT_GT(err, 0.0001);
@@ -474,8 +473,8 @@ TEST_F(LibYUVBaseTest, Ssim) {
   }
 
   err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                      src_b + kSrcStride * b + b, kSrcStride,
-                      kSrcWidth, kSrcHeight);
+                      src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                      kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
     EXPECT_GT(err, 0.0);
@@ -493,14 +492,14 @@ TEST_F(LibYUVBaseTest, Ssim) {
   double c_err, opt_err;
 
   c_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                        src_b + kSrcStride * b + b, kSrcStride,
-                        kSrcWidth, kSrcHeight);
+                        src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                        kSrcHeight);
 
   MaskCpuFlags(benchmark_cpu_info_);
 
   opt_err = CalcFrameSsim(src_a + kSrcStride * b + b, kSrcStride,
-                          src_b + kSrcStride * b + b, kSrcStride,
-                          kSrcWidth, kSrcHeight);
+                          src_b + kSrcStride * b + b, kSrcStride, kSrcWidth,
+                          kSrcHeight);
 
   if (kSrcWidth > 8 && kSrcHeight > 8) {
     EXPECT_EQ(opt_err, c_err);

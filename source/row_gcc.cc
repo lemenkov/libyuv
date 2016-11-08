@@ -16,6 +16,8 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// clang-format off
+
 // This module is for GCC x86 and x64.
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
@@ -2566,7 +2568,7 @@ void SplitUVRow_AVX2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "vpsrlw     $0x8,%%ymm5,%%ymm5               \n"
     "sub        %1,%2                            \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "vmovdqu    " MEMACCESS(0) ",%%ymm0          \n"
     "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1    \n"
     "lea        " MEMLEA(0x40,0) ",%0            \n"
@@ -2603,7 +2605,7 @@ void SplitUVRow_SSE2(const uint8* src_uv, uint8* dst_u, uint8* dst_v,
     "psrlw      $0x8,%%xmm5                      \n"
     "sub        %1,%2                            \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "movdqu     " MEMACCESS(0) ",%%xmm0          \n"
     "movdqu     " MEMACCESS2(0x10,0) ",%%xmm1    \n"
     "lea        " MEMLEA(0x20,0) ",%0            \n"
@@ -2637,7 +2639,7 @@ void MergeUVRow_AVX2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
   asm volatile (
     "sub       %0,%1                             \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "vmovdqu   " MEMACCESS(0) ",%%ymm0           \n"
     MEMOPREG(vmovdqu,0x00,0,1,1,ymm1)             //  vmovdqu (%0,%1,1),%%ymm1
     "lea       " MEMLEA(0x20,0) ",%0             \n"
@@ -2668,7 +2670,7 @@ void MergeUVRow_SSE2(const uint8* src_u, const uint8* src_v, uint8* dst_uv,
   asm volatile (
     "sub       %0,%1                             \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0           \n"
     MEMOPREG(movdqu,0x00,0,1,1,xmm1)             //  movdqu    (%0,%1,1),%%xmm1
     "lea       " MEMLEA(0x10,0) ",%0             \n"
@@ -5146,7 +5148,7 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
  asm volatile (
     "sub       %1,%2                             \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "movq      " MEMACCESS(1) ",%%xmm2           \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       " MEMLEA(0x8,1) ",%1              \n"
@@ -5181,7 +5183,7 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
  asm volatile (
     "sub        %1,%2                            \n"
     LABELALIGN
-  "1:                                            \n"
+  "1:                                          \n"
     "movq      " MEMACCESS(1) ",%%xmm2           \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       " MEMLEA(0x8,1) ",%1              \n"
@@ -5601,6 +5603,8 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb, uint8* dst_argb,
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
 #endif  // defined(__x86_64__) || defined(__i386__)
+
+// clang-format on
 
 #ifdef __cplusplus
 }  // extern "C"
