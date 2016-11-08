@@ -1374,19 +1374,15 @@ TEST_F(LibYUVPlanarTest, TestCopyPlane) {
 
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags_);
-  double c_time = get_time();
   for (j = 0; j < benchmark_iterations_; j++) {
     CopyPlane(orig_y + y_off, y_st, dst_c + y_off, stride, yw, yh);
   }
-  c_time = (get_time() - c_time) / benchmark_iterations_;
 
   // Enable optimizations.
   MaskCpuFlags(benchmark_cpu_info_);
-  double opt_time = get_time();
   for (j = 0; j < benchmark_iterations_; j++) {
     CopyPlane(orig_y + y_off, y_st, dst_opt + y_off, stride, yw, yh);
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations_;
 
   for (i = 0; i < y_plane_size; ++i) {
     if (dst_c[i] != dst_opt[i])
@@ -2053,28 +2049,24 @@ int TestHalfFloatPlane(int benchmark_width,
   memset(dst_opt, 1, y_plane_size);
 
   for (i = 0; i < y_plane_size / 2; ++i) {
-    reinterpret_cast<uint16*>(orig_y)[i] = static_cast<uint16>(i & mask);
+    reinterpret_cast<uint16*>(orig_y)[i] &= mask;
   }
 
   // Disable all optimizations.
   MaskCpuFlags(disable_cpu_flags);
-  double c_time = get_time();
   for (j = 0; j < benchmark_iterations; j++) {
     HalfFloatPlane(reinterpret_cast<uint16*>(orig_y), benchmark_width * 2,
                    reinterpret_cast<uint16*>(dst_c), benchmark_width * 2, scale,
                    benchmark_width, benchmark_height);
   }
-  c_time = (get_time() - c_time) / benchmark_iterations;
 
   // Enable optimizations.
   MaskCpuFlags(benchmark_cpu_info);
-  double opt_time = get_time();
   for (j = 0; j < benchmark_iterations; j++) {
     HalfFloatPlane(reinterpret_cast<uint16*>(orig_y), benchmark_width * 2,
                    reinterpret_cast<uint16*>(dst_opt), benchmark_width * 2,
                    scale, benchmark_width, benchmark_height);
   }
-  opt_time = (get_time() - opt_time) / benchmark_iterations;
 
   int max_diff = 0;
   for (i = 0; i < y_plane_size / 2; ++i) {
