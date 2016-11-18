@@ -229,12 +229,12 @@ void I422ToARGBRow_MSA(const uint8* src_y,
   }
 }
 
-void YUVTORGBARow_MSA(const uint8* src_y,
-                      const uint8* src_u,
-                      const uint8* src_v,
-                      uint8* rgb_buf,
-                      const struct YuvConstants* yuvconstants,
-                      int width) {
+void I422ToRGBARow_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* rgb_buf,
+                       const struct YuvConstants* yuvconstants,
+                       int width) {
   int x;
   v16u8 src0, src1, src2;
   v8i16 vec0, vec1, vec2;
@@ -289,12 +289,12 @@ void I422AlphaToARGBRow_MSA(const uint8* src_y,
   }
 }
 
-void YUVTORGB24Row_MSA(const uint8* src_y,
-                       const uint8* src_u,
-                       const uint8* src_v,
-                       uint8* rgb_buf,
-                       const struct YuvConstants* yuvconstants,
-                       int32 width) {
+void I422ToRGB24Row_MSA(const uint8* src_y,
+                        const uint8* src_u,
+                        const uint8* src_v,
+                        uint8* rgb_buf,
+                        const struct YuvConstants* yuvconstants,
+                        int32 width) {
   int x;
   int64 data_u, data_v;
   v16u8 src0, src1, src2, src3, src4, src5, dst0, dst1, dst2;
@@ -340,12 +340,12 @@ void YUVTORGB24Row_MSA(const uint8* src_y,
 }
 
 // TODO(fbarchard): Consider AND instead of shift to isolate 5 upper bits of R.
-void YUVTORGB565Row_MSA(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_rgb565,
-                        const struct YuvConstants* yuvconstants,
-                        int width) {
+void I422ToRGB565Row_MSA(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_rgb565,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
   int x;
   v16u8 src0, src1, src2, dst0;
   v8i16 vec0, vec1, vec2;
@@ -737,6 +737,54 @@ void ARGBToUVRow_MSA(const uint8* src_argb0,
     src_argb0_next += 128;
     dst_u += 16;
     dst_v += 16;
+  }
+}
+
+void ARGBToRGB24Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1, dst2;
+  v16i8 shuffler0 = {0, 1, 2, 4, 5, 6, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20};
+  v16i8 shuffler1 = {5,  6,  8,  9,  10, 12, 13, 14,
+                     16, 17, 18, 20, 21, 22, 24, 25};
+  v16i8 shuffler2 = {10, 12, 13, 14, 16, 17, 18, 20,
+                     21, 22, 24, 25, 26, 28, 29, 30};
+
+  for (x = 0; x < width; x += 16) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_argb, 32);
+    src3 = (v16u8)__msa_ld_b((v16i8*)src_argb, 48);
+    dst0 = (v16u8)__msa_vshf_b(shuffler0, (v16i8)src1, (v16i8)src0);
+    dst1 = (v16u8)__msa_vshf_b(shuffler1, (v16i8)src2, (v16i8)src1);
+    dst2 = (v16u8)__msa_vshf_b(shuffler2, (v16i8)src3, (v16i8)src2);
+    ST_UB2(dst0, dst1, dst_rgb, 16);
+    ST_UB(dst2, (dst_rgb + 32));
+    src_argb += 64;
+    dst_rgb += 48;
+  }
+}
+
+void ARGBToRAWRow_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1, dst2;
+  v16i8 shuffler0 = {2, 1, 0, 6, 5, 4, 10, 9, 8, 14, 13, 12, 18, 17, 16, 22};
+  v16i8 shuffler1 = {5,  4,  10, 9,  8,  14, 13, 12,
+                     18, 17, 16, 22, 21, 20, 26, 25};
+  v16i8 shuffler2 = {8,  14, 13, 12, 18, 17, 16, 22,
+                     21, 20, 26, 25, 24, 30, 29, 28};
+
+  for (x = 0; x < width; x += 16) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_argb, 32);
+    src3 = (v16u8)__msa_ld_b((v16i8*)src_argb, 48);
+    dst0 = (v16u8)__msa_vshf_b(shuffler0, (v16i8)src1, (v16i8)src0);
+    dst1 = (v16u8)__msa_vshf_b(shuffler1, (v16i8)src2, (v16i8)src1);
+    dst2 = (v16u8)__msa_vshf_b(shuffler2, (v16i8)src3, (v16i8)src2);
+    ST_UB2(dst0, dst1, dst_rgb, 16);
+    ST_UB(dst2, (dst_rgb + 32));
+    src_argb += 64;
+    dst_rgb += 48;
   }
 }
 

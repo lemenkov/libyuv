@@ -384,6 +384,8 @@ extern "C" {
 #define HAS_I422TORGBAROW_MSA
 #define HAS_I422ALPHATOARGBROW_MSA
 #define HAS_I422TORGB24ROW_MSA
+#define HAS_ARGBTORGB24ROW_MSA
+#define HAS_ARGBTORAWROW_MSA
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -1304,6 +1306,8 @@ void ARGBToRGB565DitherRow_NEON(const uint8* src_argb,
                                 uint8* dst_rgb,
                                 const uint32 dither4,
                                 int width);
+void ARGBToRGB24Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToRAWRow_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
@@ -1892,6 +1896,8 @@ void ARGBToRGB565DitherRow_Any_NEON(const uint8* src_argb,
                                     uint8* dst_rgb,
                                     const uint32 dither4,
                                     int width);
+void ARGBToRGB24Row_Any_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToRAWRow_Any_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void I444ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,

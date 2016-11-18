@@ -841,6 +841,14 @@ int ARGBToRGB24(const uint8* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB24ROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToRGB24Row = ARGBToRGB24Row_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRGB24Row = ARGBToRGB24Row_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBToRGB24Row(src_argb, dst_rgb24, width);
@@ -888,6 +896,14 @@ int ARGBToRAW(const uint8* src_argb,
     ARGBToRAWRow = ARGBToRAWRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBToRAWRow = ARGBToRAWRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORAWROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToRAWRow = ARGBToRAWRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToRAWRow = ARGBToRAWRow_MSA;
     }
   }
 #endif
