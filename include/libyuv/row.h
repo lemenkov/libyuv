@@ -386,6 +386,10 @@ extern "C" {
 #define HAS_I422TORGB24ROW_MSA
 #define HAS_ARGBTORGB24ROW_MSA
 #define HAS_ARGBTORAWROW_MSA
+#define HAS_ARGBTORGB565ROW_MSA
+#define HAS_ARGBTOARGB1555ROW_MSA
+#define HAS_ARGBTOARGB4444ROW_MSA
+#define HAS_ARGBTOUV444ROW_MSA
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -714,6 +718,10 @@ void ARGBToUVRow_NEON(const uint8* src_argb,
                       uint8* dst_u,
                       uint8* dst_v,
                       int width);
+void ARGBToUV444Row_MSA(const uint8* src_argb,
+                        uint8* dst_u,
+                        uint8* dst_v,
+                        int width);
 void ARGBToUVRow_MSA(const uint8* src_argb,
                      int src_stride_argb,
                      uint8* dst_u,
@@ -884,6 +892,10 @@ void ARGBToUVRow_Any_NEON(const uint8* src_argb,
                           uint8* dst_u,
                           uint8* dst_v,
                           int width);
+void ARGBToUV444Row_Any_MSA(const uint8* src_argb,
+                            uint8* dst_u,
+                            uint8* dst_v,
+                            int width);
 void ARGBToUVRow_Any_MSA(const uint8* src_argb,
                          int src_stride_argb,
                          uint8* dst_u,
@@ -1308,6 +1320,9 @@ void ARGBToRGB565DitherRow_NEON(const uint8* src_argb,
                                 int width);
 void ARGBToRGB24Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToRGB565Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToARGB1555Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToARGB4444Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void ARGBToRGBARow_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRGB24Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
@@ -1898,6 +1913,13 @@ void ARGBToRGB565DitherRow_Any_NEON(const uint8* src_argb,
                                     int width);
 void ARGBToRGB24Row_Any_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_Any_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToRGB565Row_Any_MSA(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToARGB1555Row_Any_MSA(const uint8* src_argb,
+                               uint8* dst_rgb,
+                               int width);
+void ARGBToARGB4444Row_Any_MSA(const uint8* src_argb,
+                               uint8* dst_rgb,
+                               int width);
 
 void I444ToARGBRow_Any_NEON(const uint8* src_y,
                             const uint8* src_u,

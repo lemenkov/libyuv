@@ -788,6 +788,175 @@ void ARGBToRAWRow_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
+void ARGBToRGB565Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  v16u8 src0, src1, dst0;
+  v16u8 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
+  v16i8 zero = {0};
+
+  for (x = 0; x < width; x += 8) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    vec0 = (v16u8)__msa_srai_b((v16i8)src0, 3);
+    vec1 = (v16u8)__msa_slli_b((v16i8)src0, 3);
+    vec2 = (v16u8)__msa_srai_b((v16i8)src0, 5);
+    vec4 = (v16u8)__msa_srai_b((v16i8)src1, 3);
+    vec5 = (v16u8)__msa_slli_b((v16i8)src1, 3);
+    vec6 = (v16u8)__msa_srai_b((v16i8)src1, 5);
+    vec1 = (v16u8)__msa_sldi_b(zero, (v16i8)vec1, 1);
+    vec2 = (v16u8)__msa_sldi_b(zero, (v16i8)vec2, 1);
+    vec5 = (v16u8)__msa_sldi_b(zero, (v16i8)vec5, 1);
+    vec6 = (v16u8)__msa_sldi_b(zero, (v16i8)vec6, 1);
+    vec3 = (v16u8)__msa_sldi_b(zero, (v16i8)src0, 2);
+    vec7 = (v16u8)__msa_sldi_b(zero, (v16i8)src1, 2);
+    vec0 = __msa_binsli_b(vec0, vec1, 2);
+    vec1 = __msa_binsli_b(vec2, vec3, 4);
+    vec4 = __msa_binsli_b(vec4, vec5, 2);
+    vec5 = __msa_binsli_b(vec6, vec7, 4);
+    vec0 = (v16u8)__msa_ilvev_b((v16i8)vec1, (v16i8)vec0);
+    vec4 = (v16u8)__msa_ilvev_b((v16i8)vec5, (v16i8)vec4);
+    dst0 = (v16u8)__msa_pckev_h((v8i16)vec4, (v8i16)vec0);
+    ST_UB(dst0, dst_rgb);
+    src_argb += 32;
+    dst_rgb += 16;
+  }
+}
+
+void ARGBToARGB1555Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  v16u8 src0, src1, dst0;
+  v16u8 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7, vec8, vec9;
+  v16i8 zero = {0};
+
+  for (x = 0; x < width; x += 8) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    vec0 = (v16u8)__msa_srai_b((v16i8)src0, 3);
+    vec1 = (v16u8)__msa_slli_b((v16i8)src0, 2);
+    vec2 = (v16u8)__msa_srai_b((v16i8)vec0, 3);
+    vec1 = (v16u8)__msa_sldi_b(zero, (v16i8)vec1, 1);
+    vec2 = (v16u8)__msa_sldi_b(zero, (v16i8)vec2, 1);
+    vec3 = (v16u8)__msa_srai_b((v16i8)src0, 1);
+    vec5 = (v16u8)__msa_srai_b((v16i8)src1, 3);
+    vec6 = (v16u8)__msa_slli_b((v16i8)src1, 2);
+    vec7 = (v16u8)__msa_srai_b((v16i8)vec5, 3);
+    vec6 = (v16u8)__msa_sldi_b(zero, (v16i8)vec6, 1);
+    vec7 = (v16u8)__msa_sldi_b(zero, (v16i8)vec7, 1);
+    vec8 = (v16u8)__msa_srai_b((v16i8)src1, 1);
+    vec3 = (v16u8)__msa_sldi_b(zero, (v16i8)vec3, 2);
+    vec8 = (v16u8)__msa_sldi_b(zero, (v16i8)vec8, 2);
+    vec4 = (v16u8)__msa_sldi_b(zero, (v16i8)src0, 3);
+    vec9 = (v16u8)__msa_sldi_b(zero, (v16i8)src1, 3);
+    vec0 = __msa_binsli_b(vec0, vec1, 2);
+    vec5 = __msa_binsli_b(vec5, vec6, 2);
+    vec1 = __msa_binsli_b(vec2, vec3, 5);
+    vec6 = __msa_binsli_b(vec7, vec8, 5);
+    vec1 = __msa_binsli_b(vec1, vec4, 0);
+    vec6 = __msa_binsli_b(vec6, vec9, 0);
+    vec0 = (v16u8)__msa_ilvev_b((v16i8)vec1, (v16i8)vec0);
+    vec1 = (v16u8)__msa_ilvev_b((v16i8)vec6, (v16i8)vec5);
+    dst0 = (v16u8)__msa_pckev_h((v8i16)vec1, (v8i16)vec0);
+    ST_UB(dst0, dst_rgb);
+    src_argb += 32;
+    dst_rgb += 16;
+  }
+}
+
+void ARGBToARGB4444Row_MSA(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  v16u8 src0, src1;
+  v16u8 vec0, vec1;
+  v16u8 dst0;
+  v16i8 zero = {0};
+
+  for (x = 0; x < width; x += 8) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    vec0 = (v16u8)__msa_srai_b((v16i8)src0, 4);
+    vec1 = (v16u8)__msa_srai_b((v16i8)src1, 4);
+    src0 = (v16u8)__msa_sldi_b(zero, (v16i8)src0, 1);
+    src1 = (v16u8)__msa_sldi_b(zero, (v16i8)src1, 1);
+    vec0 = __msa_binsli_b(vec0, src0, 3);
+    vec1 = __msa_binsli_b(vec1, src1, 3);
+    dst0 = (v16u8)__msa_pckev_b((v16i8)vec1, (v16i8)vec0);
+    ST_UB(dst0, dst_rgb);
+    src_argb += 32;
+    dst_rgb += 16;
+  }
+}
+
+void ARGBToUV444Row_MSA(const uint8* src_argb,
+                        uint8* dst_u,
+                        uint8* dst_v,
+                        int32 width) {
+  int32 x;
+  v16u8 src0, src1, src2, src3, reg0, reg1, reg2, reg3, dst0, dst1;
+  v8u16 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
+  v8u16 vec8, vec9, vec10, vec11;
+  v8u16 const_112 = (v8u16)__msa_ldi_h(112);
+  v8u16 const_74 = (v8u16)__msa_ldi_h(74);
+  v8u16 const_38 = (v8u16)__msa_ldi_h(38);
+  v8u16 const_94 = (v8u16)__msa_ldi_h(94);
+  v8u16 const_18 = (v8u16)__msa_ldi_h(18);
+  v8u16 const_32896 = (v8u16)__msa_fill_h(32896);
+  v16i8 zero = {0};
+
+  for (x = width; x > 0; x -= 16) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_argb, 32);
+    src3 = (v16u8)__msa_ld_b((v16i8*)src_argb, 48);
+    reg0 = (v16u8)__msa_pckev_b((v16i8)src1, (v16i8)src0);
+    reg1 = (v16u8)__msa_pckev_b((v16i8)src3, (v16i8)src2);
+    reg2 = (v16u8)__msa_pckod_b((v16i8)src1, (v16i8)src0);
+    reg3 = (v16u8)__msa_pckod_b((v16i8)src3, (v16i8)src2);
+    src0 = (v16u8)__msa_pckev_b((v16i8)reg1, (v16i8)reg0);
+    src1 = (v16u8)__msa_pckev_b((v16i8)reg3, (v16i8)reg2);
+    src2 = (v16u8)__msa_pckod_b((v16i8)reg1, (v16i8)reg0);
+    vec0 = (v8u16)__msa_ilvr_b(zero, (v16i8)src0);
+    vec1 = (v8u16)__msa_ilvl_b(zero, (v16i8)src0);
+    vec2 = (v8u16)__msa_ilvr_b(zero, (v16i8)src1);
+    vec3 = (v8u16)__msa_ilvl_b(zero, (v16i8)src1);
+    vec4 = (v8u16)__msa_ilvr_b(zero, (v16i8)src2);
+    vec5 = (v8u16)__msa_ilvl_b(zero, (v16i8)src2);
+    vec10 = vec0 * const_18;
+    vec11 = vec1 * const_18;
+    vec8 = vec2 * const_94;
+    vec9 = vec3 * const_94;
+    vec6 = vec4 * const_112;
+    vec7 = vec5 * const_112;
+    vec0 *= const_112;
+    vec1 *= const_112;
+    vec2 *= const_74;
+    vec3 *= const_74;
+    vec4 *= const_38;
+    vec5 *= const_38;
+    vec8 += vec10;
+    vec9 += vec11;
+    vec6 += const_32896;
+    vec7 += const_32896;
+    vec0 += const_32896;
+    vec1 += const_32896;
+    vec2 += vec4;
+    vec3 += vec5;
+    vec0 -= vec2;
+    vec1 -= vec3;
+    vec6 -= vec8;
+    vec7 -= vec9;
+    vec0 = (v8u16)__msa_srai_h((v8i16)vec0, 8);
+    vec1 = (v8u16)__msa_srai_h((v8i16)vec1, 8);
+    vec6 = (v8u16)__msa_srai_h((v8i16)vec6, 8);
+    vec7 = (v8u16)__msa_srai_h((v8i16)vec7, 8);
+    dst0 = (v16u8)__msa_pckev_b((v16i8)vec1, (v16i8)vec0);
+    dst1 = (v16u8)__msa_pckev_b((v16i8)vec7, (v16i8)vec6);
+    ST_UB(dst0, dst_u);
+    ST_UB(dst1, dst_v);
+    src_argb += 64;
+    dst_u += 16;
+    dst_v += 16;
+  }
+}
+
 void ARGB4444ToARGBRow_MSA(const uint8* src_argb4444,
                            uint8* dst_argb,
                            int width) {
