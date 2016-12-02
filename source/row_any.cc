@@ -234,6 +234,15 @@ ANY21(ARGBAddRow_Any_NEON, ARGBAddRow_NEON, 0, 4, 4, 4, 7)
 #ifdef HAS_ARGBSUBTRACTROW_NEON
 ANY21(ARGBSubtractRow_Any_NEON, ARGBSubtractRow_NEON, 0, 4, 4, 4, 7)
 #endif
+#ifdef HAS_ARGBMULTIPLYROW_MSA
+ANY21(ARGBMultiplyRow_Any_MSA, ARGBMultiplyRow_MSA, 0, 4, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBADDROW_MSA
+ANY21(ARGBAddRow_Any_MSA, ARGBAddRow_MSA, 0, 4, 4, 4, 7)
+#endif
+#ifdef HAS_ARGBSUBTRACTROW_MSA
+ANY21(ARGBSubtractRow_Any_MSA, ARGBSubtractRow_MSA, 0, 4, 4, 4, 7)
+#endif
 #ifdef HAS_SOBELROW_SSE2
 ANY21(SobelRow_Any_SSE2, SobelRow_SSE2, 0, 1, 1, 4, 15)
 #endif

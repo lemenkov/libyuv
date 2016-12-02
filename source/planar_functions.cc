@@ -1115,6 +1115,14 @@ int ARGBMultiply(const uint8* src_argb0,
     }
   }
 #endif
+#if defined(HAS_ARGBMULTIPLYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBMultiplyRow = ARGBMultiplyRow_Any_MSA;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBMultiplyRow = ARGBMultiplyRow_MSA;
+    }
+  }
+#endif
 
   // Multiply plane
   for (y = 0; y < height; ++y) {
@@ -1184,6 +1192,14 @@ int ARGBAdd(const uint8* src_argb0,
     }
   }
 #endif
+#if defined(HAS_ARGBADDROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBAddRow = ARGBAddRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAddRow = ARGBAddRow_MSA;
+    }
+  }
+#endif
 
   // Add plane
   for (y = 0; y < height; ++y) {
@@ -1245,6 +1261,14 @@ int ARGBSubtract(const uint8* src_argb0,
     ARGBSubtractRow = ARGBSubtractRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       ARGBSubtractRow = ARGBSubtractRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSUBTRACTROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBSubtractRow = ARGBSubtractRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBSubtractRow = ARGBSubtractRow_MSA;
     }
   }
 #endif

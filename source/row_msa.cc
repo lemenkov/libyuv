@@ -957,6 +957,87 @@ void ARGBToUV444Row_MSA(const uint8* src_argb,
   }
 }
 
+void ARGBMultiplyRow_MSA(const uint8* src_argb0,
+                         const uint8* src_argb1,
+                         uint8* dst_argb,
+                         int width) {
+  int x;
+  v16u8 src0, src1, dst0;
+  v8u16 vec0, vec1, vec2, vec3;
+  v4u32 reg0, reg1, reg2, reg3;
+  v8i16 zero = {0};
+
+  for (x = 0; x < width; x += 4) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb0, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb1, 0);
+    vec0 = (v8u16)__msa_ilvr_b((v16i8)src0, (v16i8)src0);
+    vec1 = (v8u16)__msa_ilvl_b((v16i8)src0, (v16i8)src0);
+    vec2 = (v8u16)__msa_ilvr_b((v16i8)zero, (v16i8)src1);
+    vec3 = (v8u16)__msa_ilvl_b((v16i8)zero, (v16i8)src1);
+    reg0 = (v4u32)__msa_ilvr_h(zero, (v8i16)vec0);
+    reg1 = (v4u32)__msa_ilvl_h(zero, (v8i16)vec0);
+    reg2 = (v4u32)__msa_ilvr_h(zero, (v8i16)vec1);
+    reg3 = (v4u32)__msa_ilvl_h(zero, (v8i16)vec1);
+    reg0 *= (v4u32)__msa_ilvr_h(zero, (v8i16)vec2);
+    reg1 *= (v4u32)__msa_ilvl_h(zero, (v8i16)vec2);
+    reg2 *= (v4u32)__msa_ilvr_h(zero, (v8i16)vec3);
+    reg3 *= (v4u32)__msa_ilvl_h(zero, (v8i16)vec3);
+    reg0 = (v4u32)__msa_srai_w((v4i32)reg0, 16);
+    reg1 = (v4u32)__msa_srai_w((v4i32)reg1, 16);
+    reg2 = (v4u32)__msa_srai_w((v4i32)reg2, 16);
+    reg3 = (v4u32)__msa_srai_w((v4i32)reg3, 16);
+    vec0 = (v8u16)__msa_pckev_h((v8i16)reg1, (v8i16)reg0);
+    vec1 = (v8u16)__msa_pckev_h((v8i16)reg3, (v8i16)reg2);
+    dst0 = (v16u8)__msa_pckev_b((v16i8)vec1, (v16i8)vec0);
+    ST_UB(dst0, dst_argb);
+    src_argb0 += 16;
+    src_argb1 += 16;
+    dst_argb += 16;
+  }
+}
+
+void ARGBAddRow_MSA(const uint8* src_argb0,
+                    const uint8* src_argb1,
+                    uint8* dst_argb,
+                    int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 8) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb0, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb0, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_argb1, 0);
+    src3 = (v16u8)__msa_ld_b((v16i8*)src_argb1, 16);
+    dst0 = __msa_adds_u_b(src0, src2);
+    dst1 = __msa_adds_u_b(src1, src3);
+    ST_UB2(dst0, dst1, dst_argb, 16);
+    src_argb0 += 32;
+    src_argb1 += 32;
+    dst_argb += 32;
+  }
+}
+
+void ARGBSubtractRow_MSA(const uint8* src_argb0,
+                         const uint8* src_argb1,
+                         uint8* dst_argb,
+                         int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+
+  for (x = 0; x < width; x += 8) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_argb0, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_argb0, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_argb1, 0);
+    src3 = (v16u8)__msa_ld_b((v16i8*)src_argb1, 16);
+    dst0 = __msa_subs_u_b(src0, src2);
+    dst1 = __msa_subs_u_b(src1, src3);
+    ST_UB2(dst0, dst1, dst_argb, 16);
+    src_argb0 += 32;
+    src_argb1 += 32;
+    dst_argb += 32;
+  }
+}
+
 void ARGB4444ToARGBRow_MSA(const uint8* src_argb4444,
                            uint8* dst_argb,
                            int width) {

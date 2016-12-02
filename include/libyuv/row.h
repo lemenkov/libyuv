@@ -390,6 +390,9 @@ extern "C" {
 #define HAS_ARGBTOARGB1555ROW_MSA
 #define HAS_ARGBTOARGB4444ROW_MSA
 #define HAS_ARGBTOUV444ROW_MSA
+#define HAS_ARGBMULTIPLYROW_MSA
+#define HAS_ARGBADDROW_MSA
+#define HAS_ARGBSUBTRACTROW_MSA
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -1809,6 +1812,14 @@ void ARGBMultiplyRow_Any_NEON(const uint8* src_argb,
                               const uint8* src_argb1,
                               uint8* dst_argb,
                               int width);
+void ARGBMultiplyRow_MSA(const uint8* src_argb,
+                         const uint8* src_argb1,
+                         uint8* dst_argb,
+                         int width);
+void ARGBMultiplyRow_Any_MSA(const uint8* src_argb,
+                             const uint8* src_argb1,
+                             uint8* dst_argb,
+                             int width);
 
 // ARGB add images.
 void ARGBAddRow_C(const uint8* src_argb,
@@ -1839,6 +1850,14 @@ void ARGBAddRow_Any_NEON(const uint8* src_argb,
                          const uint8* src_argb1,
                          uint8* dst_argb,
                          int width);
+void ARGBAddRow_MSA(const uint8* src_argb,
+                    const uint8* src_argb1,
+                    uint8* dst_argb,
+                    int width);
+void ARGBAddRow_Any_MSA(const uint8* src_argb,
+                        const uint8* src_argb1,
+                        uint8* dst_argb,
+                        int width);
 
 // ARGB subtract images. Same API as Blend, but these require
 // pointer and width alignment for SSE2.
@@ -1870,6 +1889,14 @@ void ARGBSubtractRow_Any_NEON(const uint8* src_argb,
                               const uint8* src_argb1,
                               uint8* dst_argb,
                               int width);
+void ARGBSubtractRow_MSA(const uint8* src_argb,
+                         const uint8* src_argb1,
+                         uint8* dst_argb,
+                         int width);
+void ARGBSubtractRow_Any_MSA(const uint8* src_argb,
+                             const uint8* src_argb1,
+                             uint8* dst_argb,
+                             int width);
 
 void ARGBToRGB24Row_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_Any_SSSE3(const uint8* src_argb, uint8* dst_rgb, int width);
