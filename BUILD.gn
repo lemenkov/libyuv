@@ -164,6 +164,7 @@ if (libyuv_use_msa) {
     sources = [
       # MSA Source Files
       "source/row_msa.cc",
+      "source/scale_msa.cc",
     ]
 
     public_configs = [ ":libyuv_config" ]

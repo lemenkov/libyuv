@@ -72,6 +72,7 @@
       'source/scale_common.cc',
       'source/scale_gcc.cc',
       'source/scale_mips.cc',
+      'source/scale_msa.cc',
       'source/scale_neon.cc',
       'source/scale_neon64.cc',
       'source/scale_win.cc',

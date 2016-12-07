@@ -50,6 +50,7 @@ set(ly_source_files
   ${ly_src_dir}/scale_argb.cc
   ${ly_src_dir}/scale_common.cc
   ${ly_src_dir}/scale_mips.cc
+  ${ly_src_dir}/scale_msa.cc
   ${ly_src_dir}/scale_neon.cc
   ${ly_src_dir}/scale_neon64.cc
   ${ly_src_dir}/scale_gcc.cc
@@ -130,13 +131,13 @@ if(TEST)
   if (JPEG_FOUND)
     target_link_libraries(libyuv_unittest ${JPEG_LIBRARY})
   endif()
-  
+
   if(NACL AND NACL_LIBC STREQUAL "newlib")
     target_link_libraries(libyuv_unittest glibc-compat)
   endif()
 
   target_link_libraries(libyuv_unittest gflags)
-  
+
 endif()
 
 install(TARGETS ${ly_lib_name} DESTINATION lib)

@@ -103,6 +103,11 @@ extern "C" {
 #define HAS_SCALEROWDOWN38_DSPR2
 #endif
 
+#if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
+#define HAS_SCALEARGBROWDOWN2_MSA
+#define HAS_SCALEARGBROWDOWNEVEN_MSA
+#endif
+
 // Scale ARGB vertically with bilinear interpolation.
 void ScalePlaneVertical(int src_height,
                         int dst_width,
@@ -562,6 +567,18 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr,
                                ptrdiff_t src_stride,
                                uint8* dst,
                                int dst_width);
+void ScaleARGBRowDown2_MSA(const uint8_t* src_argb,
+                           ptrdiff_t src_stride,
+                           uint8_t* dst_argb,
+                           int dst_width);
+void ScaleARGBRowDown2Linear_MSA(const uint8_t* src_argb,
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst_argb,
+                                 int dst_width);
+void ScaleARGBRowDown2Box_MSA(const uint8_t* src_argb,
+                              ptrdiff_t src_stride,
+                              uint8_t* dst_argb,
+                              int dst_width);
 void ScaleARGBRowDown2_Any_SSE2(const uint8* src_argb,
                                 ptrdiff_t src_stride,
                                 uint8* dst_argb,
@@ -586,6 +603,18 @@ void ScaleARGBRowDown2Box_Any_NEON(const uint8* src_ptr,
                                    ptrdiff_t src_stride,
                                    uint8* dst,
                                    int dst_width);
+void ScaleARGBRowDown2_Any_MSA(const uint8_t* src_argb,
+                               ptrdiff_t src_stride,
+                               uint8_t* dst_argb,
+                               int dst_width);
+void ScaleARGBRowDown2Linear_Any_MSA(const uint8_t* src_argb,
+                                     ptrdiff_t src_stride,
+                                     uint8_t* dst_argb,
+                                     int dst_width);
+void ScaleARGBRowDown2Box_Any_MSA(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  uint8_t* dst_argb,
+                                  int dst_width);
 
 void ScaleARGBRowDownEven_SSE2(const uint8* src_argb,
                                ptrdiff_t src_stride,
@@ -607,6 +636,16 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb,
                                   int src_stepx,
                                   uint8* dst_argb,
                                   int dst_width);
+void ScaleARGBRowDownEven_MSA(const uint8_t* src_argb,
+                              ptrdiff_t src_stride,
+                              int32_t src_stepx,
+                              uint8_t* dst_argb,
+                              int dst_width);
+void ScaleARGBRowDownEvenBox_MSA(const uint8* src_argb,
+                                 ptrdiff_t src_stride,
+                                 int src_stepx,
+                                 uint8* dst_argb,
+                                 int dst_width);
 void ScaleARGBRowDownEven_Any_SSE2(const uint8* src_argb,
                                    ptrdiff_t src_stride,
                                    int src_stepx,
@@ -627,6 +666,16 @@ void ScaleARGBRowDownEvenBox_Any_NEON(const uint8* src_argb,
                                       int src_stepx,
                                       uint8* dst_argb,
                                       int dst_width);
+void ScaleARGBRowDownEven_Any_MSA(const uint8_t* src_argb,
+                                  ptrdiff_t src_stride,
+                                  int32_t src_stepx,
+                                  uint8_t* dst_argb,
+                                  int dst_width);
+void ScaleARGBRowDownEvenBox_Any_MSA(const uint8* src_argb,
+                                     ptrdiff_t src_stride,
+                                     int src_stepx,
+                                     uint8* dst_argb,
+                                     int dst_width);
 
 // ScaleRowDown2Box also used by planar functions
 // NEON downscalers with interpolation.
