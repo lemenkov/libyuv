@@ -1496,7 +1496,7 @@ int Android420ToI420(const uint8* src_y,
                      int width,
                      int height) {
   int y;
-  const int vu_off = src_v - src_u;
+  const ptrdiff_t vu_off = src_v - src_u;
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
   if (!src_u || !src_v || !dst_u || !dst_v || width <= 0 || height == 0) {
