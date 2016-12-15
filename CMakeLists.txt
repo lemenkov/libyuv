@@ -33,6 +33,7 @@ set(ly_source_files
   ${ly_src_dir}/rotate_argb.cc
   ${ly_src_dir}/rotate_common.cc
   ${ly_src_dir}/rotate_mips.cc
+  ${ly_src_dir}/rotate_msa.cc
   ${ly_src_dir}/rotate_neon.cc
   ${ly_src_dir}/rotate_neon64.cc
   ${ly_src_dir}/rotate_gcc.cc

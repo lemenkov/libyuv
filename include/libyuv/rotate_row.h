@@ -60,6 +60,11 @@ extern "C" {
 #define HAS_TRANSPOSEUVWX8_DSPR2
 #endif  // defined(__mips__)
 
+#if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
+#define HAS_TRANSPOSEWX8_MSA
+#define HAS_TRANSPOSEUVWX8_MSA
+#endif
+
 void TransposeWxH_C(const uint8* src,
                     int src_stride,
                     uint8* dst,
@@ -97,6 +102,11 @@ void TransposeWx8_Fast_DSPR2(const uint8* src,
                              uint8* dst,
                              int dst_stride,
                              int width);
+void TransposeWx8_MSA(const uint8* src,
+                      int src_stride,
+                      uint8* dst,
+                      int dst_stride,
+                      int width);
 
 void TransposeWx8_Any_NEON(const uint8* src,
                            int src_stride,
@@ -118,6 +128,11 @@ void TransposeWx8_Any_DSPR2(const uint8* src,
                             uint8* dst,
                             int dst_stride,
                             int width);
+void TransposeWx8_Any_MSA(const uint8* src,
+                          int src_stride,
+                          uint8* dst,
+                          int dst_stride,
+                          int width);
 
 void TransposeUVWxH_C(const uint8* src,
                       int src_stride,
@@ -156,6 +171,13 @@ void TransposeUVWx8_DSPR2(const uint8* src,
                           uint8* dst_b,
                           int dst_stride_b,
                           int width);
+void TransposeUVWx8_MSA(const uint8* src,
+                        int src_stride,
+                        uint8* dst_a,
+                        int dst_stride_a,
+                        uint8* dst_b,
+                        int dst_stride_b,
+                        int width);
 
 void TransposeUVWx8_Any_SSE2(const uint8* src,
                              int src_stride,
@@ -178,6 +200,13 @@ void TransposeUVWx8_Any_DSPR2(const uint8* src,
                               uint8* dst_b,
                               int dst_stride_b,
                               int width);
+void TransposeUVWx8_Any_MSA(const uint8* src,
+                            int src_stride,
+                            uint8* dst_a,
+                            int dst_stride_a,
+                            uint8* dst_b,
+                            int dst_stride_b,
+                            int width);
 
 #ifdef __cplusplus
 }  // extern "C"

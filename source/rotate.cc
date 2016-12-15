@@ -62,6 +62,14 @@ void TransposePlane(const uint8* src,
     }
   }
 #endif
+#if defined(HAS_TRANSPOSEWX8_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    TransposeWx8 = TransposeWx8_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      TransposeWx8 = TransposeWx8_MSA;
+    }
+  }
+#endif
 
   // Work across the source in 8x8 tiles
   while (i >= 8) {
@@ -230,6 +238,14 @@ void TransposeUV(const uint8* src,
   if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(width, 2) && IS_ALIGNED(src, 4) &&
       IS_ALIGNED(src_stride, 4)) {
     TransposeUVWx8 = TransposeUVWx8_DSPR2;
+  }
+#endif
+#if defined(HAS_TRANSPOSEUVWX8_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    TransposeUVWx8 = TransposeUVWx8_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      TransposeUVWx8 = TransposeUVWx8_MSA;
+    }
   }
 #endif
 

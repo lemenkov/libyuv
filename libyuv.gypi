@@ -55,6 +55,7 @@
       'source/rotate_common.cc',
       'source/rotate_gcc.cc',
       'source/rotate_mips.cc',
+      'source/rotate_msa.cc',
       'source/rotate_neon.cc',
       'source/rotate_neon64.cc',
       'source/rotate_win.cc',
