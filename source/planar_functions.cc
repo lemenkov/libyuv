@@ -1696,6 +1696,14 @@ int ARGBAttenuate(const uint8* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBATTENUATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBAttenuateRow(src_argb, dst_argb, width);
@@ -1791,6 +1799,11 @@ int ARGBGrayTo(const uint8* src_argb,
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBGRAYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_MSA;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBGrayRow(src_argb, dst_argb, width);
@@ -1831,6 +1844,12 @@ int ARGBGray(uint8* dst_argb,
     ARGBGrayRow = ARGBGrayRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBGRAYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
+    ARGBGrayRow = ARGBGrayRow_MSA;
+  }
+#endif
+
   for (y = 0; y < height; ++y) {
     ARGBGrayRow(dst, dst, width);
     dst += dst_stride_argb;
@@ -1868,6 +1887,12 @@ int ARGBSepia(uint8* dst_argb,
     ARGBSepiaRow = ARGBSepiaRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBSEPIAROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 8)) {
+    ARGBSepiaRow = ARGBSepiaRow_MSA;
+  }
+#endif
+
   for (y = 0; y < height; ++y) {
     ARGBSepiaRow(dst, width);
     dst += dst_stride_argb;
@@ -2261,6 +2286,11 @@ int ARGBShade(const uint8* src_argb,
     ARGBShadeRow = ARGBShadeRow_NEON;
   }
 #endif
+#if defined(HAS_ARGBSHADEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 4)) {
+    ARGBShadeRow = ARGBShadeRow_MSA;
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     ARGBShadeRow(src_argb, dst_argb, width, value);
@@ -2452,6 +2482,14 @@ int ARGBShuffle(const uint8* src_bgra,
     ARGBShuffleRow = ARGBShuffleRow_Any_NEON;
     if (IS_ALIGNED(width, 4)) {
       ARGBShuffleRow = ARGBShuffleRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSHUFFLEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBShuffleRow = ARGBShuffleRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBShuffleRow = ARGBShuffleRow_MSA;
     }
   }
 #endif

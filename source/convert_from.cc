@@ -976,6 +976,14 @@ int I420ToRGB565Dither(const uint8* src_y,
     }
   }
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_MSA;
+    }
+  }
+#endif
   {
     // Allocate a row of argb.
     align_buffer_64(row_argb, width * 4);

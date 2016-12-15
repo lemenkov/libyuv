@@ -646,6 +646,14 @@ static int I420AlphaToARGBMatrix(const uint8* src_y,
     }
   }
 #endif
+#if defined(HAS_ARGBATTENUATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBAttenuateRow = ARGBAttenuateRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBAttenuateRow = ARGBAttenuateRow_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422AlphaToARGBRow(src_y, src_u, src_v, src_a, dst_argb, yuvconstants,

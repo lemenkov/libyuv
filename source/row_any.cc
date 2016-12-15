@@ -502,6 +502,9 @@ ANY11(ARGBUnattenuateRow_Any_AVX2, ARGBUnattenuateRow_AVX2, 0, 4, 4, 7)
 #ifdef HAS_ARGBATTENUATEROW_NEON
 ANY11(ARGBAttenuateRow_Any_NEON, ARGBAttenuateRow_NEON, 0, 4, 4, 7)
 #endif
+#ifdef HAS_ARGBATTENUATEROW_MSA
+ANY11(ARGBAttenuateRow_Any_MSA, ARGBAttenuateRow_MSA, 0, 4, 4, 7)
+#endif
 #ifdef HAS_ARGBEXTRACTALPHAROW_SSE2
 ANY11(ARGBExtractAlphaRow_Any_SSE2, ARGBExtractAlphaRow_SSE2, 0, 4, 1, 7)
 #endif
@@ -582,6 +585,14 @@ ANY11P(ARGBToRGB565DitherRow_Any_NEON,
        2,
        7)
 #endif
+#if defined(HAS_ARGBTORGB565DITHERROW_MSA)
+ANY11P(ARGBToRGB565DitherRow_Any_MSA,
+       ARGBToRGB565DitherRow_MSA,
+       const uint32,
+       4,
+       2,
+       7)
+#endif
 #ifdef HAS_ARGBSHUFFLEROW_SSE2
 ANY11P(ARGBShuffleRow_Any_SSE2, ARGBShuffleRow_SSE2, const uint8*, 4, 4, 3)
 #endif
@@ -593,6 +604,9 @@ ANY11P(ARGBShuffleRow_Any_AVX2, ARGBShuffleRow_AVX2, const uint8*, 4, 4, 15)
 #endif
 #ifdef HAS_ARGBSHUFFLEROW_NEON
 ANY11P(ARGBShuffleRow_Any_NEON, ARGBShuffleRow_NEON, const uint8*, 4, 4, 3)
+#endif
+#ifdef HAS_ARGBSHUFFLEROW_MSA
+ANY11P(ARGBShuffleRow_Any_MSA, ARGBShuffleRow_MSA, const uint8*, 4, 4, 7)
 #endif
 #undef ANY11P
 
