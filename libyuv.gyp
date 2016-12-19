@@ -18,7 +18,8 @@
   },
   'variables': {
     'use_system_libjpeg%': 0,
-    'libyuv_disable_jpeg%': 0,
+    # Can be enabled if your jpeg has GYP support.
+    'libyuv_disable_jpeg%': 1,
     # 'chromium_code' treats libyuv as internal and increases warning level.
     'chromium_code': 1,
     # clang compiler default variable usable by other apps that include libyuv.
