@@ -107,6 +107,21 @@ static void ScalePlaneDown2(int src_width,
     ScaleRowDown2 = filtering ? ScaleRowDown2Box_DSPR2 : ScaleRowDown2_DSPR2;
   }
 #endif
+#if defined(HAS_SCALEROWDOWN2_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ScaleRowDown2 =
+        filtering == kFilterNone
+            ? ScaleRowDown2_Any_MSA
+            : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_MSA
+                                          : ScaleRowDown2Box_Any_MSA);
+    if (IS_ALIGNED(dst_width, 32)) {
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_MSA
+                                               : (filtering == kFilterLinear
+                                                      ? ScaleRowDown2Linear_MSA
+                                                      : ScaleRowDown2Box_MSA);
+    }
+  }
+#endif
 
   if (filtering == kFilterLinear) {
     src_stride = 0;
@@ -230,6 +245,15 @@ static void ScalePlaneDown4(int src_width,
       IS_ALIGNED(src_ptr, 4) && IS_ALIGNED(src_stride, 4) &&
       IS_ALIGNED(dst_ptr, 4) && IS_ALIGNED(dst_stride, 4)) {
     ScaleRowDown4 = filtering ? ScaleRowDown4Box_DSPR2 : ScaleRowDown4_DSPR2;
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN4_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ScaleRowDown4 =
+        filtering ? ScaleRowDown4Box_Any_MSA : ScaleRowDown4_Any_MSA;
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_MSA : ScaleRowDown4_MSA;
+    }
   }
 #endif
 
@@ -567,6 +591,26 @@ static void ScalePlaneDown38(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN38_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    if (!filtering) {
+      ScaleRowDown38_3 = ScaleRowDown38_Any_MSA;
+      ScaleRowDown38_2 = ScaleRowDown38_Any_MSA;
+    } else {
+      ScaleRowDown38_3 = ScaleRowDown38_3_Box_Any_MSA;
+      ScaleRowDown38_2 = ScaleRowDown38_2_Box_Any_MSA;
+    }
+    if (dst_width % 12 == 0) {
+      if (!filtering) {
+        ScaleRowDown38_3 = ScaleRowDown38_MSA;
+        ScaleRowDown38_2 = ScaleRowDown38_MSA;
+      } else {
+        ScaleRowDown38_3 = ScaleRowDown38_3_Box_MSA;
+        ScaleRowDown38_2 = ScaleRowDown38_2_Box_MSA;
+      }
+    }
+  }
+#endif
 
   for (y = 0; y < dst_height - 2; y += 3) {
     ScaleRowDown38_3(src_ptr, filter_stride, dst_ptr, dst_width);
@@ -839,6 +883,14 @@ static void ScalePlaneBox(int src_width,
       ScaleAddRow = ScaleAddRow_Any_NEON;
       if (IS_ALIGNED(src_width, 16)) {
         ScaleAddRow = ScaleAddRow_NEON;
+      }
+    }
+#endif
+#if defined(HAS_SCALEADDROW_MSA)
+    if (TestCpuFlag(kCpuHasMSA)) {
+      ScaleAddRow = ScaleAddRow_Any_MSA;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRow = ScaleAddRow_MSA;
       }
     }
 #endif

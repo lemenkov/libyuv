@@ -51,30 +51,28 @@
   })
 #endif  // (__mips == 64)
 
-#define SW(val, pdst)                              \
-  ({                                               \
-    uint8_t* pdst_sw_m = (uint8_t*)(pdst);         \
-    uint32_t val_m = (val);                        \
-    asm volatile("sw  %[val_m],  %[pdst_sw_m]  \n" \
-                                                   \
-                 : [pdst_sw_m] "=m"(*pdst_sw_m)    \
-                 : [val_m] "r"(val_m));            \
+#define SW(val, pdst)                                   \
+  ({                                                    \
+    uint8_t* pdst_sw_m = (uint8_t*)(pdst); /* NOLINT */ \
+    uint32_t val_m = (val);                             \
+    asm volatile("sw  %[val_m],  %[pdst_sw_m]  \n"      \
+                 : [pdst_sw_m] "=m"(*pdst_sw_m)         \
+                 : [val_m] "r"(val_m));                 \
   })
 
 #if (__mips == 64)
-#define SD(val, pdst)                              \
-  ({                                               \
-    uint8_t* pdst_sd_m = (uint8_t*)(pdst);         \
-    uint64_t val_m = (val);                        \
-    asm volatile("sd  %[val_m],  %[pdst_sd_m]  \n" \
-                                                   \
-                 : [pdst_sd_m] "=m"(*pdst_sd_m)    \
-                 : [val_m] "r"(val_m));            \
+#define SD(val, pdst)                                   \
+  ({                                                    \
+    uint8_t* pdst_sd_m = (uint8_t*)(pdst); /* NOLINT */ \
+    uint64_t val_m = (val);                             \
+    asm volatile("sd  %[val_m],  %[pdst_sd_m]  \n"      \
+                 : [pdst_sd_m] "=m"(*pdst_sd_m)         \
+                 : [val_m] "r"(val_m));                 \
   })
 #else  // !(__mips == 64)
 #define SD(val, pdst)                                        \
   ({                                                         \
-    uint8_t* pdst_sd_m = (uint8_t*)(pdst);                   \
+    uint8_t* pdst_sd_m = (uint8_t*)(pdst); /* NOLINT */      \
     uint32_t val0_m, val1_m;                                 \
     val0_m = (uint32_t)((val)&0x00000000FFFFFFFF);           \
     val1_m = (uint32_t)(((val) >> 32) & 0x00000000FFFFFFFF); \
@@ -118,18 +116,18 @@
   })
 #endif  // (__mips == 64)
 
-#define SW(val, pdst)                               \
-  ({                                                \
-    uint8_t* pdst_sw_m = (uint8_t*)(pdst);          \
-    uint32_t val_m = (val);                         \
-    asm volatile("usw  %[val_m],  %[pdst_sw_m]  \n" \
-                 : [pdst_sw_m] "=m"(*pdst_sw_m)     \
-                 : [val_m] "r"(val_m));             \
+#define SW(val, pdst)                                   \
+  ({                                                    \
+    uint8_t* pdst_sw_m = (uint8_t*)(pdst); /* NOLINT */ \
+    uint32_t val_m = (val);                             \
+    asm volatile("usw  %[val_m],  %[pdst_sw_m]  \n"     \
+                 : [pdst_sw_m] "=m"(*pdst_sw_m)         \
+                 : [val_m] "r"(val_m));                 \
   })
 
 #define SD(val, pdst)                                        \
   ({                                                         \
-    uint8_t* pdst_sd_m = (uint8_t*)(pdst);                   \
+    uint8_t* pdst_sd_m = (uint8_t*)(pdst); /* NOLINT */      \
     uint32_t val0_m, val1_m;                                 \
     val0_m = (uint32_t)((val)&0x00000000FFFFFFFF);           \
     val1_m = (uint32_t)(((val) >> 32) & 0x00000000FFFFFFFF); \
@@ -144,6 +142,9 @@
 
 #define ST_B(RTYPE, in, pdst) *((RTYPE*)(pdst)) = (in) /* NOLINT */
 #define ST_UB(...) ST_B(v16u8, __VA_ARGS__)
+
+#define ST_H(RTYPE, in, pdst) *((RTYPE*)(pdst)) = (in) /* NOLINT */
+#define ST_UH(...) ST_H(v8u16, __VA_ARGS__)
 
 /* Description : Load two vectors with 16 'byte' sized elements
    Arguments   : Inputs  - psrc, stride
@@ -185,6 +186,18 @@
     ST_B2(RTYPE, in2, in3, (pdst) + 2 * stride, stride); \
   }
 #define ST_UB4(...) ST_B4(v16u8, __VA_ARGS__)
+
+/* Description : Store vectors of 8 halfword elements with stride
+   Arguments   : Inputs - in0, in1, pdst, stride
+   Details     : Store 8 halfword elements from 'in0' to (pdst)
+                 Store 8 halfword elements from 'in1' to (pdst + stride)
+*/
+#define ST_H2(RTYPE, in0, in1, pdst, stride) \
+  {                                          \
+    ST_H(RTYPE, in0, (pdst));                \
+    ST_H(RTYPE, in1, (pdst) + stride);       \
+  }
+#define ST_UH2(...) ST_H2(v8u16, __VA_ARGS__)
 
 // TODO(fbarchard): Consider using __msa_vshf_b and __msa_ilvr_b directly.
 /* Description : Shuffle byte vector elements as per mask vector

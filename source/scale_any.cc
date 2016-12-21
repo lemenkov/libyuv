@@ -135,6 +135,21 @@ SDODD(ScaleRowDown2Box_Odd_NEON,
       1,
       15)
 #endif
+#ifdef HAS_SCALEROWDOWN2_MSA
+SDANY(ScaleRowDown2_Any_MSA, ScaleRowDown2_MSA, ScaleRowDown2_C, 2, 1, 31)
+SDANY(ScaleRowDown2Linear_Any_MSA,
+      ScaleRowDown2Linear_MSA,
+      ScaleRowDown2Linear_C,
+      2,
+      1,
+      31)
+SDANY(ScaleRowDown2Box_Any_MSA,
+      ScaleRowDown2Box_MSA,
+      ScaleRowDown2Box_C,
+      2,
+      1,
+      31)
+#endif
 #ifdef HAS_SCALEROWDOWN4_SSSE3
 SDANY(ScaleRowDown4_Any_SSSE3, ScaleRowDown4_SSSE3, ScaleRowDown4_C, 4, 1, 7)
 SDANY(ScaleRowDown4Box_Any_SSSE3,
@@ -161,6 +176,15 @@ SDANY(ScaleRowDown4Box_Any_NEON,
       4,
       1,
       7)
+#endif
+#ifdef HAS_SCALEROWDOWN4_MSA
+SDANY(ScaleRowDown4_Any_MSA, ScaleRowDown4_MSA, ScaleRowDown4_C, 4, 1, 15)
+SDANY(ScaleRowDown4Box_Any_MSA,
+      ScaleRowDown4Box_MSA,
+      ScaleRowDown4Box_C,
+      4,
+      1,
+      15)
 #endif
 #ifdef HAS_SCALEROWDOWN34_SSSE3
 SDANY(ScaleRowDown34_Any_SSSE3,
@@ -237,6 +261,26 @@ SDANY(ScaleRowDown38_3_Box_Any_NEON,
       11)
 SDANY(ScaleRowDown38_2_Box_Any_NEON,
       ScaleRowDown38_2_Box_NEON,
+      ScaleRowDown38_2_Box_C,
+      8 / 3,
+      1,
+      11)
+#endif
+#ifdef HAS_SCALEROWDOWN38_MSA
+SDANY(ScaleRowDown38_Any_MSA,
+      ScaleRowDown38_MSA,
+      ScaleRowDown38_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_3_Box_Any_MSA,
+      ScaleRowDown38_3_Box_MSA,
+      ScaleRowDown38_3_Box_C,
+      8 / 3,
+      1,
+      11)
+SDANY(ScaleRowDown38_2_Box_Any_MSA,
+      ScaleRowDown38_2_Box_MSA,
       ScaleRowDown38_2_Box_C,
       8 / 3,
       1,
@@ -373,6 +417,9 @@ SAANY(ScaleAddRow_Any_AVX2, ScaleAddRow_AVX2, ScaleAddRow_C, 31)
 #endif
 #ifdef HAS_SCALEADDROW_NEON
 SAANY(ScaleAddRow_Any_NEON, ScaleAddRow_NEON, ScaleAddRow_C, 15)
+#endif
+#ifdef HAS_SCALEADDROW_MSA
+SAANY(ScaleAddRow_Any_MSA, ScaleAddRow_MSA, ScaleAddRow_C, 15)
 #endif
 #undef SAANY
 
