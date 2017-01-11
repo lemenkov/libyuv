@@ -356,17 +356,19 @@ int main(int argc, const char* argv[]) {
   const int uv_size = ((image_width + 1) / 2) * ((image_height + 1) / 2);
   const size_t total_size = y_size + 2 * uv_size;  // NOLINT
 #if defined(_MSC_VER)
-  _fseeki64(file_org, static_cast<__int64>(num_skip_org) *
-                          static_cast<__int64>(total_size),
-            SEEK_SET);
+  _fseeki64(
+      file_org,
+      static_cast<__int64>(num_skip_org) * static_cast<__int64>(total_size),
+      SEEK_SET);
 #else
   fseek(file_org, num_skip_org * total_size, SEEK_SET);
 #endif
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
 #if defined(_MSC_VER)
-    _fseeki64(file_rec[cur_rec], static_cast<__int64>(num_skip_rec) *
-                                     static_cast<__int64>(total_size),
-              SEEK_SET);
+    _fseeki64(
+        file_rec[cur_rec],
+        static_cast<__int64>(num_skip_rec) * static_cast<__int64>(total_size),
+        SEEK_SET);
 #else
     fseek(file_rec[cur_rec], num_skip_rec * total_size, SEEK_SET);
 #endif

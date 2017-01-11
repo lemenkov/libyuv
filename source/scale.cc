@@ -894,6 +894,14 @@ static void ScalePlaneBox(int src_width,
       }
     }
 #endif
+#if defined(HAS_SCALEADDROW_DSPR2)
+    if (TestCpuFlag(kCpuHasDSPR2)) {
+      ScaleAddRow = ScaleAddRow_Any_DSPR2;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRow = ScaleAddRow_DSPR2;
+      }
+    }
+#endif
 
     for (j = 0; j < dst_height; ++j) {
       int boxheight;

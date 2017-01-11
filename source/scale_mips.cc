@@ -42,10 +42,10 @@ void ScaleRowDown2_DSPR2(const uint8* src_ptr,
       "lw             $t6, 24(%[src_ptr])            \n"  // |27|26|25|24|
       "lw             $t7, 28(%[src_ptr])            \n"  // |31|30|29|28|
       // TODO(fbarchard): Use odd pixels instead of even.
-      "precr.qb.ph    $t8, $t1, $t0                  \n"  // |6|4|2|0|
-      "precr.qb.ph    $t0, $t3, $t2                  \n"  // |14|12|10|8|
-      "precr.qb.ph    $t1, $t5, $t4                  \n"  // |22|20|18|16|
-      "precr.qb.ph    $t2, $t7, $t6                  \n"  // |30|28|26|24|
+      "precrq.qb.ph   $t8, $t1, $t0                  \n"  // |7|5|3|1|
+      "precrq.qb.ph   $t0, $t3, $t2                  \n"  // |15|13|11|9|
+      "precrq.qb.ph   $t1, $t5, $t4                  \n"  // |23|21|19|17|
+      "precrq.qb.ph   $t2, $t7, $t6                  \n"  // |31|29|27|25|
       "addiu          %[src_ptr], %[src_ptr], 32     \n"
       "addiu          $t9, $t9, -1                   \n"
       "sw             $t8, 0(%[dst])                 \n"
@@ -61,7 +61,7 @@ void ScaleRowDown2_DSPR2(const uint8* src_ptr,
       " nop                                          \n"
 
       "21:                                           \n"
-      "lbu            $t0, 0(%[src_ptr])             \n"
+      "lbu            $t0, 1(%[src_ptr])             \n"
       "addiu          %[src_ptr], %[src_ptr], 2      \n"
       "addiu          $t9, $t9, -1                   \n"
       "sb             $t0, 0(%[dst])                 \n"
@@ -198,8 +198,8 @@ void ScaleRowDown4_DSPR2(const uint8* src_ptr,
       "precr.qb.ph    $t2, $t4, $t3                 \n"  // |14|12|10|8|
       "precr.qb.ph    $t5, $t6, $t5                 \n"  // |22|20|18|16|
       "precr.qb.ph    $t6, $t8, $t7                 \n"  // |30|28|26|24|
-      "precr.qb.ph    $t1, $t2, $t1                 \n"  // |12|8|4|0|
-      "precr.qb.ph    $t5, $t6, $t5                 \n"  // |28|24|20|16|
+      "precrq.qb.ph   $t1, $t2, $t1                 \n"  // |14|10|6|2|
+      "precrq.qb.ph   $t5, $t6, $t5                 \n"  // |30|26|22|18|
       "addiu          %[src_ptr], %[src_ptr], 32    \n"
       "addiu          $t9, $t9, -1                  \n"
       "sw             $t1, 0(%[dst])                \n"
@@ -213,7 +213,7 @@ void ScaleRowDown4_DSPR2(const uint8* src_ptr,
       " nop                                         \n"
 
       "21:                                          \n"
-      "lbu            $t1, 0(%[src_ptr])            \n"
+      "lbu            $t1, 2(%[src_ptr])            \n"
       "addiu          %[src_ptr], %[src_ptr], 4     \n"
       "addiu          $t9, $t9, -1                  \n"
       "sb             $t1, 0(%[dst])                \n"
@@ -613,6 +613,51 @@ void ScaleRowDown38_3_Box_DSPR2(const uint8* src_ptr,
         [s2] "+r"(s2), [dst_width] "+r"(dst_width)
       : [c1] "r"(c1), [c2] "r"(c2)
       : "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8");
+}
+
+void ScaleAddRow_DSPR2(const uint8* src_ptr, uint16* dst_ptr, int src_width) {
+  int x;
+  for (x = 0; x < ((src_width - 1)); x += 8) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4;
+    uint32 tmp_t5, tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t5],   0(%[src_ptr])             \n"
+        "lw                %[tmp_t6],   4(%[src_ptr])             \n"
+        "lw                %[tmp_t1],   0(%[dst_ptr])             \n"
+        "lw                %[tmp_t2],   4(%[dst_ptr])             \n"
+        "lw                %[tmp_t3],   8(%[dst_ptr])             \n"
+        "lw                %[tmp_t4],   12(%[dst_ptr])            \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t5]                 \n"
+        "preceu.ph.qbl     %[tmp_t8],   %[tmp_t5]                 \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t7]  \n"
+        "addu.ph           %[tmp_t2],   %[tmp_t2],     %[tmp_t8]  \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t6]                 \n"
+        "preceu.ph.qbl     %[tmp_t8],   %[tmp_t6]                 \n"
+        "addu.ph           %[tmp_t3],   %[tmp_t3],     %[tmp_t7]  \n"
+        "addu.ph           %[tmp_t4],   %[tmp_t4],     %[tmp_t8]  \n"
+        "sw                %[tmp_t1],   0(%[dst_ptr])             \n"
+        "sw                %[tmp_t2],   4(%[dst_ptr])             \n"
+        "sw                %[tmp_t3],   8(%[dst_ptr])             \n"
+        "sw                %[tmp_t4],   12(%[dst_ptr])            \n"
+        ".set pop                                                 \n"
+        :
+        [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2), [tmp_t3] "=&r"(tmp_t3),
+        [tmp_t4] "=&r"(tmp_t4), [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+        [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [src_ptr] "+r"(src_ptr)
+        : [dst_ptr] "r"(dst_ptr));
+    src_ptr += 8;
+    dst_ptr += 8;
+  }
+
+  if ((src_width)&7) {
+    for (x = 0; x < ((src_width - 1) & 7); x += 1) {
+      dst_ptr[0] += src_ptr[0];
+      src_ptr += 1;
+      dst_ptr += 1;
+    }
+  }
 }
 
 #endif  // defined(__mips_dsp) && (__mips_dsp_rev >= 2)

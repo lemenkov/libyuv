@@ -101,6 +101,7 @@ extern "C" {
 #define HAS_SCALEROWDOWN4_DSPR2
 #define HAS_SCALEROWDOWN34_DSPR2
 #define HAS_SCALEROWDOWN38_DSPR2
+#define HAS_SCALEADDROW_DSPR2
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -846,6 +847,10 @@ void ScaleRowDown38_3_Box_DSPR2(const uint8* src_ptr,
                                 ptrdiff_t src_stride,
                                 uint8* dst_ptr,
                                 int dst_width);
+void ScaleAddRow_DSPR2(const uint8* src_ptr, uint16* dst_ptr, int src_width);
+void ScaleAddRow_Any_DSPR2(const uint8* src_ptr,
+                           uint16* dst_ptr,
+                           int src_width);
 
 void ScaleRowDown2_MSA(const uint8_t* src_ptr,
                        ptrdiff_t src_stride,
@@ -885,9 +890,9 @@ void ScaleRowDown2_Any_MSA(const uint8_t* src_ptr,
                            uint8_t* dst,
                            int dst_width);
 void ScaleRowDown2Linear_Any_MSA(const uint8_t* src_ptr,
-                             ptrdiff_t src_stride,
-                             uint8_t* dst,
-                             int dst_width);
+                                 ptrdiff_t src_stride,
+                                 uint8_t* dst,
+                                 int dst_width);
 void ScaleRowDown2Box_Any_MSA(const uint8_t* src_ptr,
                               ptrdiff_t src_stride,
                               uint8_t* dst,

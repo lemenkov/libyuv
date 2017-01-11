@@ -585,126 +585,89 @@ void MirrorUVRow_DSPR2(const uint8* src_uv,
       : "t0", "t1", "t2", "t3", "t4", "t5", "t7", "t8", "t9");
 }
 
-// Convert (4 Y and 2 VU) I422 and arrange RGB values into
-// t5 = | 0 | B0 | 0 | b0 |
-// t4 = | 0 | B1 | 0 | b1 |
-// t9 = | 0 | G0 | 0 | g0 |
-// t8 = | 0 | G1 | 0 | g1 |
-// t2 = | 0 | R0 | 0 | r0 |
-// t1 = | 0 | R1 | 0 | r1 |
-#define YUVTORGB                                \
-  "lw                $t0, 0(%[y_buf])       \n" \
-  "lhu               $t1, 0(%[u_buf])       \n" \
-  "lhu               $t2, 0(%[v_buf])       \n" \
-  "preceu.ph.qbr     $t1, $t1               \n" \
-  "preceu.ph.qbr     $t2, $t2               \n" \
-  "preceu.ph.qbra    $t3, $t0               \n" \
-  "preceu.ph.qbla    $t0, $t0               \n" \
-  "subu.ph           $t1, $t1, $s5          \n" \
-  "subu.ph           $t2, $t2, $s5          \n" \
-  "subu.ph           $t3, $t3, $s4          \n" \
-  "subu.ph           $t0, $t0, $s4          \n" \
-  "mul.ph            $t3, $t3, $s0          \n" \
-  "mul.ph            $t0, $t0, $s0          \n" \
-  "shll.ph           $t4, $t1, 0x7          \n" \
-  "subu.ph           $t4, $t4, $t1          \n" \
-  "mul.ph            $t6, $t1, $s1          \n" \
-  "mul.ph            $t1, $t2, $s2          \n" \
-  "addq_s.ph         $t5, $t4, $t3          \n" \
-  "addq_s.ph         $t4, $t4, $t0          \n" \
-  "shra.ph           $t5, $t5, 6            \n" \
-  "shra.ph           $t4, $t4, 6            \n" \
-  "addiu             %[u_buf], 2            \n" \
-  "addiu             %[v_buf], 2            \n" \
-  "addu.ph           $t6, $t6, $t1          \n" \
-  "mul.ph            $t1, $t2, $s3          \n" \
-  "addu.ph           $t9, $t6, $t3          \n" \
-  "addu.ph           $t8, $t6, $t0          \n" \
-  "shra.ph           $t9, $t9, 6            \n" \
-  "shra.ph           $t8, $t8, 6            \n" \
-  "addu.ph           $t2, $t1, $t3          \n" \
-  "addu.ph           $t1, $t1, $t0          \n" \
-  "shra.ph           $t2, $t2, 6            \n" \
-  "shra.ph           $t1, $t1, 6            \n" \
-  "subu.ph           $t5, $t5, $s5          \n" \
-  "subu.ph           $t4, $t4, $s5          \n" \
-  "subu.ph           $t9, $t9, $s5          \n" \
-  "subu.ph           $t8, $t8, $s5          \n" \
-  "subu.ph           $t2, $t2, $s5          \n" \
-  "subu.ph           $t1, $t1, $s5          \n" \
-  "shll_s.ph         $t5, $t5, 8            \n" \
-  "shll_s.ph         $t4, $t4, 8            \n" \
-  "shll_s.ph         $t9, $t9, 8            \n" \
-  "shll_s.ph         $t8, $t8, 8            \n" \
-  "shll_s.ph         $t2, $t2, 8            \n" \
-  "shll_s.ph         $t1, $t1, 8            \n" \
-  "shra.ph           $t5, $t5, 8            \n" \
-  "shra.ph           $t4, $t4, 8            \n" \
-  "shra.ph           $t9, $t9, 8            \n" \
-  "shra.ph           $t8, $t8, 8            \n" \
-  "shra.ph           $t2, $t2, 8            \n" \
-  "shra.ph           $t1, $t1, 8            \n" \
-  "addu.ph           $t5, $t5, $s5          \n" \
-  "addu.ph           $t4, $t4, $s5          \n" \
-  "addu.ph           $t9, $t9, $s5          \n" \
-  "addu.ph           $t8, $t8, $s5          \n" \
-  "addu.ph           $t2, $t2, $s5          \n" \
-  "addu.ph           $t1, $t1, $s5          \n"
-
-// TODO(fbarchard): accept yuv conversion constants.
-void I422ToARGBRow_DSPR2(const uint8* y_buf,
-                         const uint8* u_buf,
-                         const uint8* v_buf,
+void I422ToARGBRow_DSPR2(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
                          uint8* rgb_buf,
                          const struct YuvConstants* yuvconstants,
                          int width) {
-  __asm__ __volatile__(
-      ".set push                                \n"
-      ".set noreorder                           \n"
-      "beqz              %[width], 2f           \n"
-      " repl.ph          $s0, 74                \n"  // |YG|YG| = |74|74|
-      "repl.ph           $s1, -25               \n"  // |UG|UG| = |-25|-25|
-      "repl.ph           $s2, -52               \n"  // |VG|VG| = |-52|-52|
-      "repl.ph           $s3, 102               \n"  // |VR|VR| = |102|102|
-      "repl.ph           $s4, 16                \n"  // |0|16|0|16|
-      "repl.ph           $s5, 128               \n"  // |128|128| // clipping
-      "lui               $s6, 0xff00            \n"
-      "ori               $s6, 0xff00            \n"  // |ff|00|ff|00|ff|
+  int x;
+  uint32 tmp_ub = yuvconstants->kUVToB[0];
+  uint32 tmp_ug = yuvconstants->kUVToG[0];
+  uint32 tmp_vg = yuvconstants->kUVToG[1];
+  uint32 tmp_vr = yuvconstants->kUVToR[1];
+  uint32 tmp_bb = yuvconstants->kUVBiasB[0];
+  uint32 tmp_bg = yuvconstants->kUVBiasG[0];
+  uint32 tmp_br = yuvconstants->kUVBiasR[0];
+  uint32 yg = yuvconstants->kYToRgb[0];
+  uint32 tmp_yg;
+  uint32 tmp_mask = 0x7fff7fff;
+  tmp_bb = ((uint)(tmp_bb & 0xffff) << 16) | (tmp_bb & 0xffff);
+  tmp_bg = ((uint)(tmp_bg & 0xffff) << 16) | (tmp_bg & 0xffff);
+  tmp_br = ((uint)(tmp_br & 0xffff) << 16) | (tmp_br & 0xffff);
+  tmp_yg = ((uint)(yg & 0xffff) << 16) | (yg & 0xffff);
+  tmp_ub = ~(((uint)(tmp_ub & 0xffff) << 16) | (tmp_ub & 0xffff)) + 0x00010001;
+  tmp_ug = ((uint)(tmp_ug & 0xffff) << 16) | (tmp_ug & 0xffff);
+  tmp_vg = ((uint)(tmp_vg & 0xffff) << 16) | (tmp_vg & 0xffff);
+  tmp_vr = ~(((uint)(tmp_vr & 0xffff) << 16) | (tmp_vr & 0xffff)) + 0x00010001;
+  yg = yg * 0x0101;
 
-      "1:                                        \n" YUVTORGB
-      // Arranging into argb format
-      "precr.qb.ph       $t4, $t8, $t4          \n"  // |G1|g1|B1|b1|
-      "precr.qb.ph       $t5, $t9, $t5          \n"  // |G0|g0|B0|b0|
-      "addiu             %[width], -4           \n"
-      "precrq.qb.ph      $t8, $t4, $t5          \n"  // |G1|B1|G0|B0|
-      "precr.qb.ph       $t9, $t4, $t5          \n"  // |g1|b1|g0|b0|
-      "precr.qb.ph       $t2, $t1, $t2          \n"  // |R1|r1|R0|r0|
-
-      "addiu             %[y_buf], 4            \n"
-      "preceu.ph.qbla    $t1, $t2               \n"  // |0 |R1|0 |R0|
-      "preceu.ph.qbra    $t2, $t2               \n"  // |0 |r1|0 |r0|
-      "or                $t1, $t1, $s6          \n"  // |ff|R1|ff|R0|
-      "or                $t2, $t2, $s6          \n"  // |ff|r1|ff|r0|
-      "precrq.ph.w       $t0, $t2, $t9          \n"  // |ff|r1|g1|b1|
-      "precrq.ph.w       $t3, $t1, $t8          \n"  // |ff|R1|G1|B1|
-      "sll               $t9, $t9, 16           \n"
-      "sll               $t8, $t8, 16           \n"
-      "packrl.ph         $t2, $t2, $t9          \n"  // |ff|r0|g0|b0|
-      "packrl.ph         $t1, $t1, $t8          \n"  // |ff|R0|G0|B0|
-                                                     // Store results.
-      "sw                $t2, 0(%[rgb_buf])     \n"
-      "sw                $t0, 4(%[rgb_buf])     \n"
-      "sw                $t1, 8(%[rgb_buf])     \n"
-      "sw                $t3, 12(%[rgb_buf])    \n"
-      "bnez              %[width], 1b           \n"
-      " addiu            %[rgb_buf], 16         \n"
-      "2:                                        \n"
-      ".set pop                                 \n"
-      : [y_buf] "+r"(y_buf), [u_buf] "+r"(u_buf), [v_buf] "+r"(v_buf),
-        [width] "+r"(width), [rgb_buf] "+r"(rgb_buf)
-      :
-      : "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "s0", "s1",
-        "s2", "s3", "s4", "s5", "s6");
+  for (x = 0; x < width - 1; x += 2) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    uint32 tmp_t6, tmp_t7, tmp_t8, tmp_t9;
+    __asm__ __volatile__(
+        ".set push                                             \n"
+        ".set noreorder                                        \n"
+        "lbu              %[tmp_t7], 0(%[src_y])               \n"
+        "lbu              %[tmp_t1], 1(%[src_y])               \n"
+        "mul              %[tmp_t7], %[tmp_t7],     %[yg]      \n"
+        "mul              %[tmp_t1], %[tmp_t1],     %[yg]      \n"
+        "lbu              %[tmp_t2], 0(%[src_u])               \n"
+        "lbu              %[tmp_t3], 0(%[src_v])               \n"
+        "replv.ph         %[tmp_t2], %[tmp_t2]                 \n"
+        "replv.ph         %[tmp_t3], %[tmp_t3]                 \n"
+        "mul.ph           %[tmp_t4], %[tmp_t2],     %[tmp_ub]  \n"
+        "mul.ph           %[tmp_t5], %[tmp_t2],     %[tmp_ug]  \n"
+        "mul.ph           %[tmp_t6], %[tmp_t3],     %[tmp_vr]  \n"
+        "mul.ph           %[tmp_t3], %[tmp_t3],     %[tmp_vg]  \n"
+        "srl              %[tmp_t7], %[tmp_t7],     16         \n"
+        "ins              %[tmp_t1], %[tmp_t7],     0,      16 \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t1],     %[tmp_bb]  \n"
+        "addq_s.ph        %[tmp_t8], %[tmp_t1],     %[tmp_bg]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t1],     %[tmp_br]  \n"
+        "addq_s.ph        %[tmp_t5], %[tmp_t5],     %[tmp_t3]  \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t7],     %[tmp_t4]  \n"
+        "subq_s.ph        %[tmp_t8], %[tmp_t8],     %[tmp_t5]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t9],     %[tmp_t6]  \n"
+        "shra.ph          %[tmp_t7], %[tmp_t7],     6          \n"
+        "shra.ph          %[tmp_t8], %[tmp_t8],     6          \n"
+        "shra.ph          %[tmp_t9], %[tmp_t9],     6          \n"
+        "shll_s.ph        %[tmp_t7], %[tmp_t7],     7          \n"
+        "shll_s.ph        %[tmp_t8], %[tmp_t8],     7          \n"
+        "shll_s.ph        %[tmp_t9], %[tmp_t9],     7          \n"
+        "precrqu_s.qb.ph  %[tmp_t8], %[tmp_mask],   %[tmp_t8]  \n"
+        "precrqu_s.qb.ph  %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.ph.w      %[tmp_t9], %[tmp_t8],     %[tmp_t7]  \n"
+        "ins              %[tmp_t7], %[tmp_t8],     16,     16 \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.qb.ph     %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "sw               %[tmp_t8], 0(%[rgb_buf])             \n"
+        "sw               %[tmp_t7], 4(%[rgb_buf])             \n"
+        ".set pop                                              \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [tmp_t9] "=&r"(tmp_t9)
+        : [src_y] "r"(src_y), [src_u] "r"(src_u), [src_v] "r"(src_v),
+          [tmp_ub] "r"(tmp_ub), [tmp_ug] "r"(tmp_ug), [yg] "r"(yg),
+          [tmp_vg] "r"(tmp_vg), [tmp_vr] "r"(tmp_vr), [tmp_bb] "r"(tmp_bb),
+          [tmp_bg] "r"(tmp_bg), [tmp_br] "r"(tmp_br), [tmp_yg] "r"(tmp_yg),
+          [rgb_buf] "r"(rgb_buf), [tmp_mask] "r"(tmp_mask));
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 4 pixels.
+  }
 }
 
 // Bilinear filter 8x2 -> 8x1
@@ -740,10 +703,10 @@ void InterpolateRow_DSPR2(uint8* dst_ptr,
       "addq.ph           $t7, $t7, $t9                     \n"
       "addq.ph           $t2, $t2, $t4                     \n"
       "addq.ph           $t3, $t3, $t5                     \n"
-      "shra.ph           $t6, $t6, 8                       \n"
-      "shra.ph           $t7, $t7, 8                       \n"
-      "shra.ph           $t2, $t2, 8                       \n"
-      "shra.ph           $t3, $t3, 8                       \n"
+      "shra_r.ph         $t6, $t6, 8                       \n"
+      "shra_r.ph         $t7, $t7, 8                       \n"
+      "shra_r.ph         $t2, $t2, 8                       \n"
+      "shra_r.ph         $t3, $t3, 8                       \n"
       "precr.qb.ph       $t6, $t6, $t7                     \n"
       "precr.qb.ph       $t2, $t2, $t3                     \n"
       "addiu             %[src_ptr], %[src_ptr], 8         \n"
@@ -761,6 +724,993 @@ void InterpolateRow_DSPR2(uint8* dst_ptr,
         [y0_fraction] "r"(y0_fraction), [src_stride] "r"(src_stride)
       : "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9");
 }
+#include <stdio.h>
+void RGB24ToARGBRow_DSPR2(const uint8* src_rgb24, uint8* dst_argb, int width) {
+  int x;
+  uint32 tmp_mask = 0xff;
+  uint32 tmp_t1;
+  for (x = 0; x < (width - 1); ++x) {
+    __asm__ __volatile__(
+        ".set push                                                  \n"
+        ".set noreorder                                             \n"
+        "ulw             %[tmp_t1],    0(%[src_rgb24])              \n"
+        "addiu           %[dst_argb],  %[dst_argb],     4           \n"
+        "addiu           %[src_rgb24], %[src_rgb24],    3           \n"
+        "ins             %[tmp_t1],    %[tmp_mask],     24,    8    \n"
+        "sw              %[tmp_t1],    -4(%[dst_argb])              \n"
+        ".set pop                                                   \n"
+        : [src_rgb24] "+r"(src_rgb24), [dst_argb] "+r"(dst_argb),
+          [tmp_t1] "=&r"(tmp_t1)
+        : [tmp_mask] "r"(tmp_mask)
+        : "memory");
+  }
+  uint8 b = src_rgb24[0];
+  uint8 g = src_rgb24[1];
+  uint8 r = src_rgb24[2];
+  dst_argb[0] = b;
+  dst_argb[1] = g;
+  dst_argb[2] = r;
+  dst_argb[3] = 255u;
+}
+
+void RAWToARGBRow_DSPR2(const uint8* src_raw, uint8* dst_argb, int width) {
+  int x;
+  uint32 tmp_mask = 0xff;
+  uint32 tmp_t1, tmp_t2;
+  for (x = 0; x < (width - 1); ++x) {
+    __asm__ __volatile__(
+        ".set push                                               \n"
+        ".set noreorder                                          \n"
+        "ulw               %[tmp_t1],   0(%[src_raw])            \n"
+        "addiu             %[dst_argb], %[dst_argb],      4      \n"
+        "addiu             %[src_raw],  %[src_raw],       3      \n"
+        "srl               %[tmp_t2],   %[tmp_t1],        16     \n"
+        "ins               %[tmp_t1],   %[tmp_mask],      24, 8  \n"
+        "ins               %[tmp_t1],   %[tmp_t1],        16, 8  \n"
+        "ins               %[tmp_t1],   %[tmp_t2],        0,  8  \n"
+        "sw                %[tmp_t1],   -4(%[dst_argb])          \n"
+        ".set pop                                                \n"
+        : [src_raw] "+r"(src_raw), [dst_argb] "+r"(dst_argb),
+          [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2)
+        : [tmp_mask] "r"(tmp_mask)
+        : "memory");
+  }
+  uint8 r = src_raw[0];
+  uint8 g = src_raw[1];
+  uint8 b = src_raw[2];
+  dst_argb[0] = b;
+  dst_argb[1] = g;
+  dst_argb[2] = r;
+  dst_argb[3] = 255u;
+}
+
+void RGB565ToARGBRow_DSPR2(const uint8* src_rgb565,
+                           uint8* dst_argb,
+                           int width) {
+  int x;
+  uint32 tmp_mask = 0xff;
+  uint32 tmp_t1, tmp_t2, tmp_t3;
+  for (x = 0; x < width; ++x) {
+    __asm__ __volatile__(
+        ".set push                                                   \n"
+        ".set noreorder                                              \n"
+        "lhu               %[tmp_t1],     0(%[src_rgb565])           \n"
+        "addiu             %[dst_argb],   %[dst_argb],      4        \n"
+        "addiu             %[src_rgb565], %[src_rgb565],    2        \n"
+        "sll               %[tmp_t2],     %[tmp_t1],        8        \n"
+        "ins               %[tmp_t2],     %[tmp_mask],      24,8     \n"
+        "ins               %[tmp_t2],     %[tmp_t1],        3, 16    \n"
+        "ins               %[tmp_t2],     %[tmp_t1],        5, 11    \n"
+        "srl               %[tmp_t3],     %[tmp_t1],        9        \n"
+        "ins               %[tmp_t2],     %[tmp_t3],        8, 2     \n"
+        "ins               %[tmp_t2],     %[tmp_t1],        3, 5     \n"
+        "srl               %[tmp_t3],     %[tmp_t1],        2        \n"
+        "ins               %[tmp_t2],     %[tmp_t3],        0, 3     \n"
+        "sw                %[tmp_t2],     -4(%[dst_argb])            \n"
+        ".set pop                                                    \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [src_rgb565] "+r"(src_rgb565),
+          [dst_argb] "+r"(dst_argb)
+        : [tmp_mask] "r"(tmp_mask));
+  }
+}
+
+void ARGB1555ToARGBRow_DSPR2(const uint8* src_argb1555,
+                             uint8* dst_argb,
+                             int width) {
+  int x;
+  uint32 tmp_t1, tmp_t2, tmp_t3;
+  for (x = 0; x < width; ++x) {
+    __asm__ __volatile__(
+        ".set push                                                   \n"
+        ".set noreorder                                              \n"
+        "lh                %[tmp_t1],       0(%[src_argb1555])       \n"
+        "addiu             %[dst_argb],     %[dst_argb],      4      \n"
+        "addiu             %[src_argb1555], %[src_argb1555],  2      \n"
+        "sll               %[tmp_t2],       %[tmp_t1],        9      \n"
+        "ins               %[tmp_t2],       %[tmp_t1],        4, 15  \n"
+        "ins               %[tmp_t2],       %[tmp_t1],        6, 10  \n"
+        "srl               %[tmp_t3],       %[tmp_t1],        7      \n"
+        "ins               %[tmp_t2],       %[tmp_t3],        8, 3   \n"
+        "ins               %[tmp_t2],       %[tmp_t1],        3, 5   \n"
+        "srl               %[tmp_t3],       %[tmp_t1],        2      \n"
+        "ins               %[tmp_t2],       %[tmp_t3],        0, 3   \n"
+        "sw                %[tmp_t2],       -4(%[dst_argb])          \n"
+        ".set pop                                                    \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [src_argb1555] "+r"(src_argb1555),
+          [dst_argb] "+r"(dst_argb)
+        :);
+  }
+}
+
+void ARGB4444ToARGBRow_DSPR2(const uint8* src_argb4444,
+                             uint8* dst_argb,
+                             int width) {
+  int x;
+  uint32 tmp_t1;
+  for (x = 0; x < width; ++x) {
+    __asm__ __volatile__(
+        ".set push                                                    \n"
+        ".set noreorder                                               \n"
+        "lh                %[tmp_t1],       0(%[src_argb4444])        \n"
+        "addiu             %[dst_argb],     %[dst_argb],       4      \n"
+        "addiu             %[src_argb4444], %[src_argb4444],   2      \n"
+        "ins               %[tmp_t1],       %[tmp_t1],         16, 16 \n"
+        "ins               %[tmp_t1],       %[tmp_t1],         12, 16 \n"
+        "ins               %[tmp_t1],       %[tmp_t1],         8,  12 \n"
+        "ins               %[tmp_t1],       %[tmp_t1],         4,  8  \n"
+        "sw                %[tmp_t1],       -4(%[dst_argb])           \n"
+        ".set pop                                                     \n"
+        : [src_argb4444] "+r"(src_argb4444), [dst_argb] "+r"(dst_argb),
+          [tmp_t1] "=&r"(tmp_t1));
+  }
+}
+
+void I444ToARGBRow_DSPR2(const uint8* y_buf,
+                         const uint8* u_buf,
+                         const uint8* v_buf,
+                         uint8* rgb_buf,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  int x;
+  uint32 tmp_ub = yuvconstants->kUVToB[0];
+  uint32 tmp_ug = yuvconstants->kUVToG[0];
+  uint32 tmp_vg = yuvconstants->kUVToG[1];
+  uint32 tmp_vr = yuvconstants->kUVToR[1];
+  uint32 tmp_bb = yuvconstants->kUVBiasB[0];
+  uint32 tmp_bg = yuvconstants->kUVBiasG[0];
+  uint32 tmp_br = yuvconstants->kUVBiasR[0];
+  uint32 yg = yuvconstants->kYToRgb[0];
+  uint32 tmp_mask = 0x7fff7fff;
+  uint32 tmp_yg;
+
+  tmp_bb = ((uint)(tmp_bb & 0xffff) << 16) | (tmp_bb & 0xffff);
+  tmp_bg = ((uint)(tmp_bg & 0xffff) << 16) | (tmp_bg & 0xffff);
+  tmp_br = ((uint)(tmp_br & 0xffff) << 16) | (tmp_br & 0xffff);
+  tmp_yg = ((uint)(yg & 0xffff) << 16) | (yg & 0xffff);
+  tmp_ub = ~(((uint)(tmp_ub & 0xffff) << 16) | (tmp_ub & 0xffff)) + 0x00010001;
+  tmp_ug = ((uint)(tmp_ug & 0xffff) << 16) | (tmp_ug & 0xffff);
+  tmp_vg = ((uint)(tmp_vg & 0xffff) << 16) | (tmp_vg & 0xffff);
+  tmp_vr = ~(((uint)(tmp_vr & 0xffff) << 16) | (tmp_vr & 0xffff)) + 0x00010001;
+  yg = yg * 0x0101;
+
+  for (x = 0; x < width - 1; x += 2) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    uint32 tmp_t6, tmp_t7, tmp_t8, tmp_t9;
+    __asm__ __volatile__(
+        ".set push                                              \n"
+        ".set noreorder                                         \n"
+        "lbu              %[tmp_t7], 0(%[y_buf])               \n"
+        "lbu              %[tmp_t1], 1(%[y_buf])               \n"
+        "mul              %[tmp_t7], %[tmp_t7],     %[yg]      \n"
+        "mul              %[tmp_t1], %[tmp_t1],     %[yg]      \n"
+        "lh               %[tmp_t2], 0(%[u_buf])               \n"
+        "lh               %[tmp_t3], 0(%[v_buf])               \n"
+        "preceu.ph.qbr    %[tmp_t2], %[tmp_t2]                 \n"
+        "preceu.ph.qbr    %[tmp_t3], %[tmp_t3]                 \n"
+        "mul.ph           %[tmp_t4], %[tmp_t2],     %[tmp_ub]  \n"
+        "mul.ph           %[tmp_t5], %[tmp_t2],     %[tmp_ug]  \n"
+        "mul.ph           %[tmp_t6], %[tmp_t3],     %[tmp_vr]  \n"
+        "mul.ph           %[tmp_t3], %[tmp_t3],     %[tmp_vg]  \n"
+        "srl              %[tmp_t7], %[tmp_t7],     16         \n"
+        "ins              %[tmp_t1], %[tmp_t7],     0,      16 \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t1],     %[tmp_bb]  \n"
+        "addq_s.ph        %[tmp_t8], %[tmp_t1],     %[tmp_bg]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t1],     %[tmp_br]  \n"
+        "addq_s.ph        %[tmp_t5], %[tmp_t5],     %[tmp_t3]  \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t7],     %[tmp_t4]  \n"
+        "subq_s.ph        %[tmp_t8], %[tmp_t8],     %[tmp_t5]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t9],     %[tmp_t6]  \n"
+        "shra.ph          %[tmp_t7], %[tmp_t7],     6          \n"
+        "shra.ph          %[tmp_t8], %[tmp_t8],     6          \n"
+        "shra.ph          %[tmp_t9], %[tmp_t9],     6          \n"
+        "shll_s.ph        %[tmp_t7], %[tmp_t7],     7          \n"
+        "shll_s.ph        %[tmp_t8], %[tmp_t8],     7          \n"
+        "shll_s.ph        %[tmp_t9], %[tmp_t9],     7          \n"
+        "precrqu_s.qb.ph  %[tmp_t8], %[tmp_mask],   %[tmp_t8]  \n"
+        "precrqu_s.qb.ph  %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.ph.w      %[tmp_t2], %[tmp_t8],     %[tmp_t7]  \n"
+        "ins              %[tmp_t7], %[tmp_t8],     16,     16 \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t2],     %[tmp_t7]  \n"
+        "precrq.qb.ph     %[tmp_t7], %[tmp_t2],     %[tmp_t7]  \n"
+        "sw               %[tmp_t8], 0(%[rgb_buf])             \n"
+        "sw               %[tmp_t7], 4(%[rgb_buf])             \n"
+        ".set pop                                              \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [tmp_t9] "=&r"(tmp_t9)
+        : [y_buf] "r"(y_buf), [yg] "r"(yg), [u_buf] "r"(u_buf),
+          [v_buf] "r"(v_buf), [tmp_ub] "r"(tmp_ub), [tmp_ug] "r"(tmp_ug),
+          [tmp_vg] "r"(tmp_vg), [tmp_vr] "r"(tmp_vr), [tmp_bb] "r"(tmp_bb),
+          [tmp_bg] "r"(tmp_bg), [tmp_br] "r"(tmp_br), [tmp_yg] "r"(tmp_yg),
+          [rgb_buf] "r"(rgb_buf), [tmp_mask] "r"(tmp_mask));
+    y_buf += 2;
+    u_buf += 2;
+    v_buf += 2;
+    rgb_buf += 8;  // Advance 1 pixel.
+  }
+}
+
+void I422ToARGB4444Row_DSPR2(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb4444,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  int x;
+  uint32 tmp_ub = yuvconstants->kUVToB[0];
+  uint32 tmp_ug = yuvconstants->kUVToG[0];
+  uint32 tmp_vg = yuvconstants->kUVToG[1];
+  uint32 tmp_vr = yuvconstants->kUVToR[1];
+  uint32 tmp_bb = yuvconstants->kUVBiasB[0];
+  uint32 tmp_bg = yuvconstants->kUVBiasG[0];
+  uint32 tmp_br = yuvconstants->kUVBiasR[0];
+  uint32 yg = yuvconstants->kYToRgb[0];
+  uint32 tmp_yg;
+  uint32 tmp_mask = 0x7fff7fff;
+  tmp_bb = ((uint)(tmp_bb & 0xffff) << 16) | (tmp_bb & 0xffff);
+  tmp_bg = ((uint)(tmp_bg & 0xffff) << 16) | (tmp_bg & 0xffff);
+  tmp_br = ((uint)(tmp_br & 0xffff) << 16) | (tmp_br & 0xffff);
+  tmp_yg = ((uint)(yg & 0xffff) << 16) | (yg & 0xffff);
+  tmp_ub = ~(((uint)(tmp_ub & 0xffff) << 16) | (tmp_ub & 0xffff)) + 0x00010001;
+  tmp_ug = ((uint)(tmp_ug & 0xffff) << 16) | (tmp_ug & 0xffff);
+  tmp_vg = ((uint)(tmp_vg & 0xffff) << 16) | (tmp_vg & 0xffff);
+  tmp_vr = ~(((uint)(tmp_vr & 0xffff) << 16) | (tmp_vr & 0xffff)) + 0x00010001;
+  yg = yg * 0x0101;
+
+  for (x = 0; x < width - 1; x += 2) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    uint32 tmp_t6, tmp_t7, tmp_t8, tmp_t9;
+    __asm__ __volatile__(
+        ".set push                                             \n"
+        ".set noreorder                                        \n"
+        "lbu              %[tmp_t7], 0(%[src_y])               \n"
+        "lbu              %[tmp_t1], 1(%[src_y])               \n"
+        "mul              %[tmp_t7], %[tmp_t7],     %[yg]      \n"
+        "mul              %[tmp_t1], %[tmp_t1],     %[yg]      \n"
+        "lbu              %[tmp_t2], 0(%[src_u])               \n"
+        "lbu              %[tmp_t3], 0(%[src_v])               \n"
+        "replv.ph         %[tmp_t2], %[tmp_t2]                 \n"
+        "replv.ph         %[tmp_t3], %[tmp_t3]                 \n"
+        "mul.ph           %[tmp_t4], %[tmp_t2],     %[tmp_ub]  \n"
+        "mul.ph           %[tmp_t5], %[tmp_t2],     %[tmp_ug]  \n"
+        "mul.ph           %[tmp_t6], %[tmp_t3],     %[tmp_vr]  \n"
+        "mul.ph           %[tmp_t3], %[tmp_t3],     %[tmp_vg]  \n"
+        "srl              %[tmp_t7], %[tmp_t7],     16         \n"
+        "ins              %[tmp_t1], %[tmp_t7],     0,      16 \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t1],     %[tmp_bb]  \n"
+        "addq_s.ph        %[tmp_t8], %[tmp_t1],     %[tmp_bg]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t1],     %[tmp_br]  \n"
+        "addq_s.ph        %[tmp_t5], %[tmp_t5],     %[tmp_t3]  \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t7],     %[tmp_t4]  \n"
+        "subq_s.ph        %[tmp_t8], %[tmp_t8],     %[tmp_t5]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t9],     %[tmp_t6]  \n"
+        "shra.ph          %[tmp_t7], %[tmp_t7],     6          \n"
+        "shra.ph          %[tmp_t8], %[tmp_t8],     6          \n"
+        "shra.ph          %[tmp_t9], %[tmp_t9],     6          \n"
+        "shll_s.ph        %[tmp_t7], %[tmp_t7],     7          \n"
+        "shll_s.ph        %[tmp_t8], %[tmp_t8],     7          \n"
+        "shll_s.ph        %[tmp_t9], %[tmp_t9],     7          \n"
+        "precrqu_s.qb.ph  %[tmp_t8], %[tmp_mask],   %[tmp_t8]  \n"
+        "precrqu_s.qb.ph  %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.ph.w      %[tmp_t2], %[tmp_t8],     %[tmp_t7]  \n"
+        "ins              %[tmp_t7], %[tmp_t8],     16,     16 \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t2],     %[tmp_t7]  \n"
+        "precrq.qb.ph     %[tmp_t7], %[tmp_t2],     %[tmp_t7]  \n"
+        "shrl.qb          %[tmp_t1], %[tmp_t8],     4          \n"
+        "shrl.qb          %[tmp_t2], %[tmp_t7],     4          \n"
+        "shrl.ph          %[tmp_t8], %[tmp_t1],     4          \n"
+        "shrl.ph          %[tmp_t7], %[tmp_t2],     4          \n"
+        "or               %[tmp_t8], %[tmp_t8],     %[tmp_t1]  \n"
+        "or               %[tmp_t7], %[tmp_t7],     %[tmp_t2]  \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t7],     %[tmp_t8]  \n"
+        "sw               %[tmp_t8], 0(%[dst_argb4444])        \n"
+        ".set pop                                              \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [tmp_t9] "=&r"(tmp_t9)
+        : [dst_argb4444] "r"(dst_argb4444), [yg] "r"(yg), [src_u] "r"(src_u),
+          [src_v] "r"(src_v), [src_y] "r"(src_y), [tmp_ub] "r"(tmp_ub),
+          [tmp_ug] "r"(tmp_ug), [tmp_vg] "r"(tmp_vg), [tmp_vr] "r"(tmp_vr),
+          [tmp_bb] "r"(tmp_bb), [tmp_bg] "r"(tmp_bg), [tmp_br] "r"(tmp_br),
+          [tmp_yg] "r"(tmp_yg), [tmp_mask] "r"(tmp_mask));
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    dst_argb4444 += 4;  // Advance 2 pixels.
+  }
+}
+
+void I422ToARGB1555Row_DSPR2(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_argb1555,
+                             const struct YuvConstants* yuvconstants,
+                             int width) {
+  int x;
+  uint32 tmp_ub = yuvconstants->kUVToB[0];
+  uint32 tmp_ug = yuvconstants->kUVToG[0];
+  uint32 tmp_vg = yuvconstants->kUVToG[1];
+  uint32 tmp_vr = yuvconstants->kUVToR[1];
+  uint32 tmp_bb = yuvconstants->kUVBiasB[0];
+  uint32 tmp_bg = yuvconstants->kUVBiasG[0];
+  uint32 tmp_br = yuvconstants->kUVBiasR[0];
+  uint32 yg = yuvconstants->kYToRgb[0];
+  uint32 tmp_yg;
+  uint32 tmp_mask = 0x80008000;
+  tmp_bb = ((uint)(tmp_bb & 0xffff) << 16) | (tmp_bb & 0xffff);
+  tmp_bg = ((uint)(tmp_bg & 0xffff) << 16) | (tmp_bg & 0xffff);
+  tmp_br = ((uint)(tmp_br & 0xffff) << 16) | (tmp_br & 0xffff);
+  tmp_yg = ((uint)(yg & 0xffff) << 16) | (yg & 0xffff);
+  tmp_ub = ~(((uint)(tmp_ub & 0xffff) << 16) | (tmp_ub & 0xffff)) + 0x00010001;
+  tmp_ug = ((uint)(tmp_ug & 0xffff) << 16) | (tmp_ug & 0xffff);
+  tmp_vg = ((uint)(tmp_vg & 0xffff) << 16) | (tmp_vg & 0xffff);
+  tmp_vr = ~(((uint)(tmp_vr & 0xffff) << 16) | (tmp_vr & 0xffff)) + 0x00010001;
+  yg = yg * 0x0101;
+
+  for (x = 0; x < width - 1; x += 2) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    uint32 tmp_t6, tmp_t7, tmp_t8, tmp_t9;
+    __asm__ __volatile__(
+        ".set push                                             \n"
+        ".set noreorder                                        \n"
+        "lbu              %[tmp_t7], 0(%[src_y])               \n"
+        "lbu              %[tmp_t1], 1(%[src_y])               \n"
+        "mul              %[tmp_t7], %[tmp_t7],     %[yg]      \n"
+        "mul              %[tmp_t1], %[tmp_t1],     %[yg]      \n"
+        "lbu              %[tmp_t2], 0(%[src_u])               \n"
+        "lbu              %[tmp_t3], 0(%[src_v])               \n"
+        "replv.ph         %[tmp_t2], %[tmp_t2]                 \n"
+        "replv.ph         %[tmp_t3], %[tmp_t3]                 \n"
+        "mul.ph           %[tmp_t4], %[tmp_t2],     %[tmp_ub]  \n"
+        "mul.ph           %[tmp_t5], %[tmp_t2],     %[tmp_ug]  \n"
+        "mul.ph           %[tmp_t6], %[tmp_t3],     %[tmp_vr]  \n"
+        "mul.ph           %[tmp_t3], %[tmp_t3],     %[tmp_vg]  \n"
+        "srl              %[tmp_t7], %[tmp_t7],     16         \n"
+        "ins              %[tmp_t1], %[tmp_t7],     0,      16 \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t1],     %[tmp_bb]  \n"
+        "addq_s.ph        %[tmp_t8], %[tmp_t1],     %[tmp_bg]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t1],     %[tmp_br]  \n"
+        "addq_s.ph        %[tmp_t5], %[tmp_t5],     %[tmp_t3]  \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t7],     %[tmp_t4]  \n"
+        "subq_s.ph        %[tmp_t8], %[tmp_t8],     %[tmp_t5]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t9],     %[tmp_t6]  \n"
+        "shra.ph          %[tmp_t7], %[tmp_t7],     6          \n"
+        "shra.ph          %[tmp_t8], %[tmp_t8],     6          \n"
+        "shra.ph          %[tmp_t9], %[tmp_t9],     6          \n"
+        "shll_s.ph        %[tmp_t7], %[tmp_t7],     7          \n"
+        "shll_s.ph        %[tmp_t8], %[tmp_t8],     7          \n"
+        "shll_s.ph        %[tmp_t9], %[tmp_t9],     7          \n"
+        "precrqu_s.qb.ph  %[tmp_t8], %[tmp_mask],   %[tmp_t8]  \n"
+        "precrqu_s.qb.ph  %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.ph.w      %[tmp_t2], %[tmp_t8],     %[tmp_t7]  \n"
+        "ins              %[tmp_t7], %[tmp_t8],     16,     16 \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t2],     %[tmp_t7]  \n"
+        "precrq.qb.ph     %[tmp_t7], %[tmp_t2],     %[tmp_t7]  \n"
+        "ins              %[tmp_t3], %[tmp_t8],     7,      24 \n"
+        "ins              %[tmp_t3], %[tmp_t8],     10,     16 \n"
+        "ins              %[tmp_t3], %[tmp_t8],     13,     8  \n"
+        "ins              %[tmp_t4], %[tmp_t7],     7,      24 \n"
+        "ins              %[tmp_t4], %[tmp_t7],     10,     16 \n"
+        "ins              %[tmp_t4], %[tmp_t7],     13,     8  \n"
+        "precrq.ph.w      %[tmp_t8], %[tmp_t4],     %[tmp_t3]  \n"
+        "or               %[tmp_t8], %[tmp_t8],     %[tmp_mask]\n"
+        "sw               %[tmp_t8], 0(%[dst_argb1555])        \n"
+        ".set pop                                              \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [tmp_t9] "=&r"(tmp_t9)
+        : [dst_argb1555] "r"(dst_argb1555), [yg] "r"(yg), [src_u] "r"(src_u),
+          [src_v] "r"(src_v), [src_y] "r"(src_y), [tmp_ub] "r"(tmp_ub),
+          [tmp_ug] "r"(tmp_ug), [tmp_vg] "r"(tmp_vg), [tmp_vr] "r"(tmp_vr),
+          [tmp_bb] "r"(tmp_bb), [tmp_bg] "r"(tmp_bg), [tmp_br] "r"(tmp_br),
+          [tmp_yg] "r"(tmp_yg), [tmp_mask] "r"(tmp_mask));
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    dst_argb1555 += 4;  // Advance 2 pixels.
+  }
+}
+
+void NV12ToARGBRow_DSPR2(const uint8* src_y,
+                         const uint8* src_uv,
+                         uint8* rgb_buf,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  int x;
+  uint32 tmp_ub = yuvconstants->kUVToB[0];
+  uint32 tmp_ug = yuvconstants->kUVToG[0];
+  uint32 tmp_vg = yuvconstants->kUVToG[1];
+  uint32 tmp_vr = yuvconstants->kUVToR[1];
+  uint32 tmp_bb = yuvconstants->kUVBiasB[0];
+  uint32 tmp_bg = yuvconstants->kUVBiasG[0];
+  uint32 tmp_br = yuvconstants->kUVBiasR[0];
+  uint32 yg = yuvconstants->kYToRgb[0];
+  uint32 tmp_mask = 0x7fff7fff;
+  uint32 tmp_yg;
+  tmp_bb = ((uint)(tmp_bb & 0xffff) << 16) | (tmp_bb & 0xffff);
+  tmp_bg = ((uint)(tmp_bg & 0xffff) << 16) | (tmp_bg & 0xffff);
+  tmp_br = ((uint)(tmp_br & 0xffff) << 16) | (tmp_br & 0xffff);
+  tmp_yg = ((uint)(yg & 0xffff) << 16) | (yg & 0xffff);
+  tmp_ub = ~(((uint)(tmp_ub & 0xffff) << 16) | (tmp_ub & 0xffff)) + 0x00010001;
+  tmp_ug = ((uint)(tmp_ug & 0xffff) << 16) | (tmp_ug & 0xffff);
+  tmp_vg = ((uint)(tmp_vg & 0xffff) << 16) | (tmp_vg & 0xffff);
+  tmp_vr = ~(((uint)(tmp_vr & 0xffff) << 16) | (tmp_vr & 0xffff)) + 0x00010001;
+  yg = yg * 0x0101;
+
+  for (x = 0; x < width - 1; x += 2) {
+    uint32 tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    uint32 tmp_t6, tmp_t7, tmp_t8, tmp_t9;
+    __asm__ __volatile__(
+        ".set push                                             \n"
+        ".set noreorder                                        \n"
+        "lbu              %[tmp_t7], 0(%[src_y])               \n"
+        "lbu              %[tmp_t1], 1(%[src_y])               \n"
+        "mul              %[tmp_t7], %[tmp_t7],     %[yg]      \n"
+        "mul              %[tmp_t1], %[tmp_t1],     %[yg]      \n"
+        "lbu              %[tmp_t2], 0(%[src_uv])              \n"
+        "lbu              %[tmp_t3], 1(%[src_uv])              \n"
+        "replv.ph         %[tmp_t2], %[tmp_t2]                 \n"
+        "replv.ph         %[tmp_t3], %[tmp_t3]                 \n"
+        "mul.ph           %[tmp_t4], %[tmp_t2],     %[tmp_ub]  \n"
+        "mul.ph           %[tmp_t5], %[tmp_t2],     %[tmp_ug]  \n"
+        "mul.ph           %[tmp_t6], %[tmp_t3],     %[tmp_vr]  \n"
+        "mul.ph           %[tmp_t3], %[tmp_t3],     %[tmp_vg]  \n"
+        "srl              %[tmp_t7], %[tmp_t7],     16         \n"
+        "ins              %[tmp_t1], %[tmp_t7],     0,      16 \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t1],     %[tmp_bb]  \n"
+        "addq_s.ph        %[tmp_t8], %[tmp_t1],     %[tmp_bg]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t1],     %[tmp_br]  \n"
+        "addq_s.ph        %[tmp_t5], %[tmp_t5],     %[tmp_t3]  \n"
+        "addq_s.ph        %[tmp_t7], %[tmp_t7],     %[tmp_t4]  \n"
+        "subq_s.ph        %[tmp_t8], %[tmp_t8],     %[tmp_t5]  \n"
+        "addq_s.ph        %[tmp_t9], %[tmp_t9],     %[tmp_t6]  \n"
+        "shra.ph          %[tmp_t7], %[tmp_t7],     6          \n"
+        "shra.ph          %[tmp_t8], %[tmp_t8],     6          \n"
+        "shra.ph          %[tmp_t9], %[tmp_t9],     6          \n"
+        "shll_s.ph        %[tmp_t7], %[tmp_t7],     7          \n"
+        "shll_s.ph        %[tmp_t8], %[tmp_t8],     7          \n"
+        "shll_s.ph        %[tmp_t9], %[tmp_t9],     7          \n"
+        "precrqu_s.qb.ph  %[tmp_t8], %[tmp_mask],   %[tmp_t8]  \n"
+        "precrqu_s.qb.ph  %[tmp_t7], %[tmp_t9],     %[tmp_t7]  \n"
+        "precrq.ph.w      %[tmp_t2], %[tmp_t8],     %[tmp_t7]  \n"
+        "ins              %[tmp_t7], %[tmp_t8],     16,     16 \n"
+        "precr.qb.ph      %[tmp_t8], %[tmp_t2],     %[tmp_t7]  \n"
+        "precrq.qb.ph     %[tmp_t7], %[tmp_t2],     %[tmp_t7]  \n"
+        "sw               %[tmp_t8], 0(%[rgb_buf])             \n"
+        "sw               %[tmp_t7], 4(%[rgb_buf])             \n"
+        ".set pop                                              \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8), [tmp_t9] "=&r"(tmp_t9)
+        : [src_y] "r"(src_y), [src_uv] "r"(src_uv), [yg] "r"(yg),
+          [tmp_ub] "r"(tmp_ub), [tmp_ug] "r"(tmp_ug), [tmp_vg] "r"(tmp_vg),
+          [tmp_vr] "r"(tmp_vr), [tmp_bb] "r"(tmp_bb), [tmp_bg] "r"(tmp_bg),
+          [tmp_br] "r"(tmp_br), [tmp_yg] "r"(tmp_yg), [rgb_buf] "r"(rgb_buf),
+          [tmp_mask] "r"(tmp_mask));
+
+    src_y += 2;
+    src_uv += 2;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+}
+
+void BGRAToUVRow_DSPR2(const uint8* src_rgb0,
+                       int src_stride_rgb,
+                       uint8* dst_u,
+                       uint8* dst_v,
+                       int width) {
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;
+  int x;
+  int const1 = 0xffda0000;
+  int const2 = 0x0070ffb6;
+  int const3 = 0x00700000;
+  int const4 = 0xffeeffa2;
+  int const5 = 0x100;
+  for (x = 0; x < width - 1; x += 2) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                 \n"
+        ".set noreorder                                            \n"
+        "lw                %[tmp_t1],   0(%[src_rgb0])             \n"
+        "lw                %[tmp_t2],   4(%[src_rgb0])             \n"
+        "lw                %[tmp_t3],   0(%[src_rgb1])             \n"
+        "lw                %[tmp_t4],   4(%[src_rgb1])             \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                  \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                  \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                  \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                  \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                  \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                  \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                  \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                  \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t6]   \n"
+        "addu.ph           %[tmp_t7],   %[tmp_t7],     %[tmp_t8]   \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t2]   \n"
+        "addu.ph           %[tmp_t3],   %[tmp_t3],     %[tmp_t4]   \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t7]   \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t3]   \n"
+        "shrl.ph           %[tmp_t5],   %[tmp_t5],     2           \n"
+        "shrl.ph           %[tmp_t1],   %[tmp_t1],     2           \n"
+        "mult              $ac0,        %[const5],     %[const5]   \n"
+        "mult              $ac1,        %[const5],     %[const5]   \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t5],     %[const1]   \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t5],     %[const3]   \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t1],     %[const2]   \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t1],     %[const4]   \n"
+        "extr_r.w          %[tmp_t7],   $ac0,          9           \n"
+        "extr_r.w          %[tmp_t8],   $ac1,          9           \n"
+        "addiu             %[dst_u],    %[dst_u],    1             \n"
+        "addiu             %[dst_v],    %[dst_v],    1             \n"
+        "addiu             %[src_rgb0], %[src_rgb0], 8             \n"
+        "addiu             %[src_rgb1], %[src_rgb1], 8             \n"
+        "sb                %[tmp_t7],   -1(%[dst_u])               \n"
+        "sb                %[tmp_t8],   -1(%[dst_v])               \n"
+        ".set pop                                                  \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_rgb0] "+r"(src_rgb0), [src_rgb1] "+r"(src_rgb1),
+          [dst_u] "+r"(dst_u), [dst_v] "+r"(dst_v)
+        : [const1] "r"(const1), [const2] "r"(const2), [const3] "r"(const3),
+          [const4] "r"(const4), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi");
+  }
+}
+
+void BGRAToYRow_DSPR2(const uint8* src_argb0, uint8* dst_y, int width) {
+  int x;
+  int const1 = 0x00420000;
+  int const2 = 0x00190081;
+  int const5 = 0x40;
+  for (x = 0; x < width; x += 4) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_argb0])           \n"
+        "lw                %[tmp_t2],   4(%[src_argb0])           \n"
+        "lw                %[tmp_t3],   8(%[src_argb0])           \n"
+        "lw                %[tmp_t4],   12(%[src_argb0])          \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "mult              $ac2,        %[const5],     %[const5]  \n"
+        "mult              $ac3,        %[const5],     %[const5]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t6],     %[const1]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t7],     %[const1]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t8],     %[const1]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t2],     %[const2]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t3],     %[const2]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t4],     %[const2]  \n"
+        "extr_r.w          %[tmp_t1],   $ac0,          8          \n"
+        "extr_r.w          %[tmp_t2],   $ac1,          8          \n"
+        "extr_r.w          %[tmp_t3],   $ac2,          8          \n"
+        "extr_r.w          %[tmp_t4],   $ac3,          8          \n"
+        "addiu             %[src_argb0],%[src_argb0],  16         \n"
+        "addiu             %[dst_y],    %[dst_y],      4          \n"
+        "sb                %[tmp_t1],   -4(%[dst_y])              \n"
+        "sb                %[tmp_t2],   -3(%[dst_y])              \n"
+        "sb                %[tmp_t3],   -2(%[dst_y])              \n"
+        "sb                %[tmp_t4],   -1(%[dst_y])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_argb0] "+r"(src_argb0), [dst_y] "+r"(dst_y)
+        : [const1] "r"(const1), [const2] "r"(const2), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi", "$ac2lo", "$ac2hi", "$ac3lo",
+          "$ac3hi");
+  }
+}
+
+void ABGRToUVRow_DSPR2(const uint8* src_rgb0,
+                       int src_stride_rgb,
+                       uint8* dst_u,
+                       uint8* dst_v,
+                       int width) {
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;
+  int x;
+  int const1 = 0xffb6ffda;
+  int const2 = 0x00000070;
+  int const3 = 0xffa20070;
+  int const4 = 0x0000ffee;
+  int const5 = 0x100;
+
+  for (x = 0; x < width - 1; x += 2) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_rgb0])            \n"
+        "lw                %[tmp_t2],   4(%[src_rgb0])            \n"
+        "lw                %[tmp_t3],   0(%[src_rgb1])            \n"
+        "lw                %[tmp_t4],   4(%[src_rgb1])            \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t6]  \n"
+        "addu.ph           %[tmp_t7],   %[tmp_t7],     %[tmp_t8]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t2]  \n"
+        "addu.ph           %[tmp_t3],   %[tmp_t3],     %[tmp_t4]  \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t7]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t3]  \n"
+        "shrl.ph           %[tmp_t5],   %[tmp_t5],     2          \n"
+        "shrl.ph           %[tmp_t1],   %[tmp_t1],     2          \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t5],     %[const3]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t1],     %[const4]  \n"
+        "extr_r.w          %[tmp_t7],   $ac0,          9          \n"
+        "extr_r.w          %[tmp_t8],   $ac1,          9          \n"
+        "addiu             %[dst_u],    %[dst_u],    1            \n"
+        "addiu             %[dst_v],    %[dst_v],    1            \n"
+        "addiu             %[src_rgb0], %[src_rgb0], 8            \n"
+        "addiu             %[src_rgb1], %[src_rgb1], 8            \n"
+        "sb                %[tmp_t7],   -1(%[dst_u])              \n"
+        "sb                %[tmp_t8],   -1(%[dst_v])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_rgb0] "+r"(src_rgb0), [src_rgb1] "+r"(src_rgb1),
+          [dst_u] "+r"(dst_u), [dst_v] "+r"(dst_v)
+        : [const1] "r"(const1), [const2] "r"(const2), [const3] "r"(const3),
+          [const4] "r"(const4), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi");
+  }
+}
+
+void ARGBToYRow_DSPR2(const uint8* src_argb0, uint8* dst_y, int width) {
+  int x;
+  int const1 = 0x00810019;
+  int const2 = 0x00000042;
+  int const5 = 0x40;
+  for (x = 0; x < width; x += 4) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_argb0])           \n"
+        "lw                %[tmp_t2],   4(%[src_argb0])           \n"
+        "lw                %[tmp_t3],   8(%[src_argb0])           \n"
+        "lw                %[tmp_t4],   12(%[src_argb0])          \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "mult              $ac2,        %[const5],     %[const5]  \n"
+        "mult              $ac3,        %[const5],     %[const5]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t6],     %[const1]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t7],     %[const1]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t8],     %[const1]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t2],     %[const2]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t3],     %[const2]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t4],     %[const2]  \n"
+        "extr_r.w          %[tmp_t1],   $ac0,          8          \n"
+        "extr_r.w          %[tmp_t2],   $ac1,          8          \n"
+        "extr_r.w          %[tmp_t3],   $ac2,          8          \n"
+        "extr_r.w          %[tmp_t4],   $ac3,          8          \n"
+        "addiu             %[dst_y],    %[dst_y],      4          \n"
+        "addiu             %[src_argb0],%[src_argb0],  16         \n"
+        "sb                %[tmp_t1],   -4(%[dst_y])              \n"
+        "sb                %[tmp_t2],   -3(%[dst_y])              \n"
+        "sb                %[tmp_t3],   -2(%[dst_y])              \n"
+        "sb                %[tmp_t4],   -1(%[dst_y])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_argb0] "+r"(src_argb0), [dst_y] "+r"(dst_y)
+        : [const1] "r"(const1), [const2] "r"(const2), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi", "$ac2lo", "$ac2hi", "$ac3lo",
+          "$ac3hi");
+  }
+}
+
+void ABGRToYRow_DSPR2(const uint8* src_argb0, uint8* dst_y, int width) {
+  int x;
+  int const1 = 0x00810042;
+  int const2 = 0x00000019;
+  int const5 = 0x40;
+  for (x = 0; x < width; x += 4) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_argb0])           \n"
+        "lw                %[tmp_t2],   4(%[src_argb0])           \n"
+        "lw                %[tmp_t3],   8(%[src_argb0])           \n"
+        "lw                %[tmp_t4],   12(%[src_argb0])          \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "mult              $ac2,        %[const5],     %[const5]  \n"
+        "mult              $ac3,        %[const5],     %[const5]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t6],     %[const1]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t7],     %[const1]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t8],     %[const1]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t2],     %[const2]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t3],     %[const2]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t4],     %[const2]  \n"
+        "extr_r.w          %[tmp_t1],   $ac0,          8          \n"
+        "extr_r.w          %[tmp_t2],   $ac1,          8          \n"
+        "extr_r.w          %[tmp_t3],   $ac2,          8          \n"
+        "extr_r.w          %[tmp_t4],   $ac3,          8          \n"
+        "addiu             %[src_argb0],%[src_argb0],  16         \n"
+        "addiu             %[dst_y],    %[dst_y],      4          \n"
+        "sb                %[tmp_t1],   -4(%[dst_y])              \n"
+        "sb                %[tmp_t2],   -3(%[dst_y])              \n"
+        "sb                %[tmp_t3],   -2(%[dst_y])              \n"
+        "sb                %[tmp_t4],   -1(%[dst_y])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_argb0] "+r"(src_argb0), [dst_y] "+r"(dst_y)
+        : [const1] "r"(const1), [const2] "r"(const2), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi", "$ac2lo", "$ac2hi", "$ac3lo",
+          "$ac3hi");
+  }
+}
+
+void RGBAToUVRow_DSPR2(const uint8* src_rgb0,
+                       int src_stride_rgb,
+                       uint8* dst_u,
+                       uint8* dst_v,
+                       int width) {
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;
+  int x;
+  int const1 = 0xffb60070;
+  int const2 = 0x0000ffda;
+  int const3 = 0xffa2ffee;
+  int const4 = 0x00000070;
+  int const5 = 0x100;
+
+  for (x = 0; x < width - 1; x += 2) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "ulw               %[tmp_t1],   0+1(%[src_rgb0])          \n"
+        "ulw               %[tmp_t2],   4+1(%[src_rgb0])          \n"
+        "ulw               %[tmp_t3],   0+1(%[src_rgb1])          \n"
+        "ulw               %[tmp_t4],   4+1(%[src_rgb1])          \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t6]  \n"
+        "addu.ph           %[tmp_t7],   %[tmp_t7],     %[tmp_t8]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t2]  \n"
+        "addu.ph           %[tmp_t3],   %[tmp_t3],     %[tmp_t4]  \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t7]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t3]  \n"
+        "shrl.ph           %[tmp_t5],   %[tmp_t5],     2          \n"
+        "shrl.ph           %[tmp_t1],   %[tmp_t1],     2          \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t5],     %[const3]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t1],     %[const4]  \n"
+        "extr_r.w          %[tmp_t7],   $ac0,          9          \n"
+        "extr_r.w          %[tmp_t8],   $ac1,          9          \n"
+        "addiu             %[src_rgb0], %[src_rgb0], 8            \n"
+        "addiu             %[src_rgb1], %[src_rgb1], 8            \n"
+        "addiu             %[dst_u],    %[dst_u],    1            \n"
+        "addiu             %[dst_v],    %[dst_v],    1            \n"
+        "sb                %[tmp_t7],   -1(%[dst_u])              \n"
+        "sb                %[tmp_t8],   -1(%[dst_v])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_rgb0] "+r"(src_rgb0), [src_rgb1] "+r"(src_rgb1),
+          [dst_u] "+r"(dst_u), [dst_v] "+r"(dst_v)
+        : [const1] "r"(const1), [const2] "r"(const2), [const3] "r"(const3),
+          [const4] "r"(const4), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi");
+  }
+}
+
+void RGBAToYRow_DSPR2(const uint8* src_argb0, uint8* dst_y, int width) {
+  int x;
+  int const1 = 0x00420081;
+  int const2 = 0x00190000;
+  int const5 = 0x40;
+  for (x = 0; x < width; x += 4) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_argb0])           \n"
+        "lw                %[tmp_t2],   4(%[src_argb0])           \n"
+        "lw                %[tmp_t3],   8(%[src_argb0])           \n"
+        "lw                %[tmp_t4],   12(%[src_argb0])          \n"
+        "preceu.ph.qbl     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbr     %[tmp_t4],   %[tmp_t4]                 \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "mult              $ac2,        %[const5],     %[const5]  \n"
+        "mult              $ac3,        %[const5],     %[const5]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t6],     %[const1]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t7],     %[const1]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t8],     %[const1]  \n"
+        "dpa.w.ph          $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpa.w.ph          $ac1,        %[tmp_t2],     %[const2]  \n"
+        "dpa.w.ph          $ac2,        %[tmp_t3],     %[const2]  \n"
+        "dpa.w.ph          $ac3,        %[tmp_t4],     %[const2]  \n"
+        "extr_r.w          %[tmp_t1],   $ac0,          8          \n"
+        "extr_r.w          %[tmp_t2],   $ac1,          8          \n"
+        "extr_r.w          %[tmp_t3],   $ac2,          8          \n"
+        "extr_r.w          %[tmp_t4],   $ac3,          8          \n"
+        "addiu             %[dst_y],    %[dst_y],      4          \n"
+        "addiu             %[src_argb0],%[src_argb0],  16         \n"
+        "sb                %[tmp_t1],   -4(%[dst_y])              \n"
+        "sb                %[tmp_t2],   -3(%[dst_y])              \n"
+        "sb                %[tmp_t3],   -2(%[dst_y])              \n"
+        "sb                %[tmp_t4],   -1(%[dst_y])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_argb0] "+r"(src_argb0), [dst_y] "+r"(dst_y)
+        : [const1] "r"(const1), [const2] "r"(const2), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi", "$ac2lo", "$ac2hi", "$ac3lo",
+          "$ac3hi");
+  }
+}
+
+void ARGBToUVRow_DSPR2(const uint8* src_rgb0,
+                       int src_stride_rgb,
+                       uint8* dst_u,
+                       uint8* dst_v,
+                       int width) {
+  const uint8* src_rgb1 = src_rgb0 + src_stride_rgb;
+  int x;
+  int const1 = 0xffb60070;
+  int const2 = 0x0000ffda;
+  int const3 = 0xffa2ffee;
+  int const4 = 0x00000070;
+  int const5 = 0x100;
+
+  for (x = 0; x < width - 1; x += 2) {
+    int tmp_t1, tmp_t2, tmp_t3, tmp_t4, tmp_t5;
+    int tmp_t6, tmp_t7, tmp_t8;
+    __asm__ __volatile__(
+        ".set push                                                \n"
+        ".set noreorder                                           \n"
+        "lw                %[tmp_t1],   0(%[src_rgb0])            \n"
+        "lw                %[tmp_t2],   4(%[src_rgb0])            \n"
+        "lw                %[tmp_t3],   0(%[src_rgb1])            \n"
+        "lw                %[tmp_t4],   4(%[src_rgb1])            \n"
+        "preceu.ph.qbr     %[tmp_t5],   %[tmp_t1]                 \n"
+        "preceu.ph.qbl     %[tmp_t1],   %[tmp_t1]                 \n"
+        "preceu.ph.qbr     %[tmp_t6],   %[tmp_t2]                 \n"
+        "preceu.ph.qbl     %[tmp_t2],   %[tmp_t2]                 \n"
+        "preceu.ph.qbr     %[tmp_t7],   %[tmp_t3]                 \n"
+        "preceu.ph.qbl     %[tmp_t3],   %[tmp_t3]                 \n"
+        "preceu.ph.qbr     %[tmp_t8],   %[tmp_t4]                 \n"
+        "preceu.ph.qbl     %[tmp_t4],   %[tmp_t4]                 \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t6]  \n"
+        "addu.ph           %[tmp_t7],   %[tmp_t7],     %[tmp_t8]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t2]  \n"
+        "addu.ph           %[tmp_t3],   %[tmp_t3],     %[tmp_t4]  \n"
+        "addu.ph           %[tmp_t5],   %[tmp_t5],     %[tmp_t7]  \n"
+        "addu.ph           %[tmp_t1],   %[tmp_t1],     %[tmp_t3]  \n"
+        "shrl.ph           %[tmp_t5],   %[tmp_t5],     2          \n"
+        "shrl.ph           %[tmp_t1],   %[tmp_t1],     2          \n"
+        "mult              $ac0,        %[const5],     %[const5]  \n"
+        "mult              $ac1,        %[const5],     %[const5]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t5],     %[const1]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t5],     %[const3]  \n"
+        "dpaq_s.w.ph       $ac0,        %[tmp_t1],     %[const2]  \n"
+        "dpaq_s.w.ph       $ac1,        %[tmp_t1],     %[const4]  \n"
+        "extr_r.w          %[tmp_t7],   $ac0,          9          \n"
+        "extr_r.w          %[tmp_t8],   $ac1,          9          \n"
+        "addiu             %[src_rgb0], %[src_rgb0], 8            \n"
+        "addiu             %[src_rgb1], %[src_rgb1], 8            \n"
+        "addiu             %[dst_u],    %[dst_u],    1            \n"
+        "addiu             %[dst_v],    %[dst_v],    1            \n"
+        "sb                %[tmp_t7],   -1(%[dst_u])              \n"
+        "sb                %[tmp_t8],   -1(%[dst_v])              \n"
+        ".set pop                                                 \n"
+        : [tmp_t1] "=&r"(tmp_t1), [tmp_t2] "=&r"(tmp_t2),
+          [tmp_t3] "=&r"(tmp_t3), [tmp_t4] "=&r"(tmp_t4),
+          [tmp_t5] "=&r"(tmp_t5), [tmp_t6] "=&r"(tmp_t6),
+          [tmp_t7] "=&r"(tmp_t7), [tmp_t8] "=&r"(tmp_t8),
+          [src_rgb0] "+r"(src_rgb0), [src_rgb1] "+r"(src_rgb1),
+          [dst_u] "+r"(dst_u), [dst_v] "+r"(dst_v)
+        : [const1] "r"(const1), [const2] "r"(const2), [const3] "r"(const3),
+          [const4] "r"(const4), [const5] "r"(const5)
+        : "hi", "lo", "$ac1lo", "$ac1hi");
+  }
+}
+
 #endif  // __mips_dsp_rev >= 2
 
 #endif  // defined(__mips__)

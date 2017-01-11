@@ -2032,7 +2032,7 @@ __declspec(naked) void RGBAToUVRow_SSSE3(const uint8* src_argb0,
     __asm vpsraw     ymm2, ymm2, 6                                             \
     __asm vpackuswb  ymm0, ymm0, ymm0 /* B */                        \
     __asm vpackuswb  ymm1, ymm1, ymm1 /* G */                        \
-    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */            \
+    __asm vpackuswb  ymm2, ymm2, ymm2 /* R */                  \
   }
 
 // Store 16 ARGB values.
