@@ -19,179 +19,226 @@ namespace libyuv {
 extern "C" {
 #endif
 
-void TransposeWx8_MSA(const uint8_t* src,
-                      int src_stride,
-                      uint8_t* dst,
-                      int dst_stride,
-                      int width) {
+#define ILVRL_B(in0, in1, in2, in3, out0, out1, out2, out3) \
+  {                                                         \
+    out0 = (v16u8)__msa_ilvr_b((v16i8)in1, (v16i8)in0);     \
+    out1 = (v16u8)__msa_ilvl_b((v16i8)in1, (v16i8)in0);     \
+    out2 = (v16u8)__msa_ilvr_b((v16i8)in3, (v16i8)in2);     \
+    out3 = (v16u8)__msa_ilvl_b((v16i8)in3, (v16i8)in2);     \
+  }
+
+#define ILVRL_H(in0, in1, in2, in3, out0, out1, out2, out3) \
+  {                                                         \
+    out0 = (v16u8)__msa_ilvr_h((v8i16)in1, (v8i16)in0);     \
+    out1 = (v16u8)__msa_ilvl_h((v8i16)in1, (v8i16)in0);     \
+    out2 = (v16u8)__msa_ilvr_h((v8i16)in3, (v8i16)in2);     \
+    out3 = (v16u8)__msa_ilvl_h((v8i16)in3, (v8i16)in2);     \
+  }
+
+#define ILVRL_W(in0, in1, in2, in3, out0, out1, out2, out3) \
+  {                                                         \
+    out0 = (v16u8)__msa_ilvr_w((v4i32)in1, (v4i32)in0);     \
+    out1 = (v16u8)__msa_ilvl_w((v4i32)in1, (v4i32)in0);     \
+    out2 = (v16u8)__msa_ilvr_w((v4i32)in3, (v4i32)in2);     \
+    out3 = (v16u8)__msa_ilvl_w((v4i32)in3, (v4i32)in2);     \
+  }
+
+#define ILVRL_D(in0, in1, in2, in3, out0, out1, out2, out3) \
+  {                                                         \
+    out0 = (v16u8)__msa_ilvr_d((v2i64)in1, (v2i64)in0);     \
+    out1 = (v16u8)__msa_ilvl_d((v2i64)in1, (v2i64)in0);     \
+    out2 = (v16u8)__msa_ilvr_d((v2i64)in3, (v2i64)in2);     \
+    out3 = (v16u8)__msa_ilvl_d((v2i64)in3, (v2i64)in2);     \
+  }
+
+void TransposeWx16_C(const uint8* src,
+                     int src_stride,
+                     uint8* dst,
+                     int dst_stride,
+                     int width) {
+  TransposeWx8_C(src, src_stride, dst, dst_stride, width);
+  TransposeWx8_C((src + 8 * src_stride), src_stride, (dst + 8), dst_stride,
+                 width);
+}
+
+void TransposeUVWx16_C(const uint8* src,
+                       int src_stride,
+                       uint8* dst_a,
+                       int dst_stride_a,
+                       uint8* dst_b,
+                       int dst_stride_b,
+                       int width) {
+  TransposeUVWx8_C(src, src_stride, dst_a, dst_stride_a, dst_b, dst_stride_b,
+                   width);
+  TransposeUVWx8_C((src + 8 * src_stride), src_stride, (dst_a + 8),
+                   dst_stride_a, (dst_b + 8), dst_stride_b, width);
+}
+
+void TransposeWx16_MSA(const uint8* src,
+                       int src_stride,
+                       uint8* dst,
+                       int dst_stride,
+                       int width) {
   int x;
-  uint64_t val0, val1, val2, val3;
-  v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
-  v16u8 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
+  const uint8* s;
+  v16u8 src0, src1, src2, src3, dst0, dst1, dst2, dst3, vec0, vec1, vec2, vec3;
   v16u8 reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7;
-  v16u8 dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7;
+  v16u8 res0, res1, res2, res3, res4, res5, res6, res7, res8, res9;
 
   for (x = 0; x < width; x += 16) {
-    src0 = (v16u8)__msa_ld_b((v16i8*)src, 0);
-    src1 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride), 0);
-    src2 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 2), 0);
-    src3 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 3), 0);
-    src4 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 4), 0);
-    src5 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 5), 0);
-    src6 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 6), 0);
-    src7 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 7), 0);
-    vec0 = (v16u8)__msa_ilvr_b((v16i8)src2, (v16i8)src0);
-    vec1 = (v16u8)__msa_ilvr_b((v16i8)src3, (v16i8)src1);
-    vec2 = (v16u8)__msa_ilvr_b((v16i8)src6, (v16i8)src4);
-    vec3 = (v16u8)__msa_ilvr_b((v16i8)src7, (v16i8)src5);
-    vec4 = (v16u8)__msa_ilvl_b((v16i8)src2, (v16i8)src0);
-    vec5 = (v16u8)__msa_ilvl_b((v16i8)src3, (v16i8)src1);
-    vec6 = (v16u8)__msa_ilvl_b((v16i8)src6, (v16i8)src4);
-    vec7 = (v16u8)__msa_ilvl_b((v16i8)src7, (v16i8)src5);
-    reg0 = (v16u8)__msa_ilvr_b((v16i8)vec1, (v16i8)vec0);
-    reg1 = (v16u8)__msa_ilvl_b((v16i8)vec1, (v16i8)vec0);
-    reg2 = (v16u8)__msa_ilvr_b((v16i8)vec3, (v16i8)vec2);
-    reg3 = (v16u8)__msa_ilvl_b((v16i8)vec3, (v16i8)vec2);
-    reg4 = (v16u8)__msa_ilvr_b((v16i8)vec5, (v16i8)vec4);
-    reg5 = (v16u8)__msa_ilvl_b((v16i8)vec5, (v16i8)vec4);
-    reg6 = (v16u8)__msa_ilvr_b((v16i8)vec7, (v16i8)vec6);
-    reg7 = (v16u8)__msa_ilvl_b((v16i8)vec7, (v16i8)vec6);
-    dst0 = (v16u8)__msa_ilvr_w((v4i32)reg2, (v4i32)reg0);
-    dst1 = (v16u8)__msa_ilvl_w((v4i32)reg2, (v4i32)reg0);
-    dst2 = (v16u8)__msa_ilvr_w((v4i32)reg3, (v4i32)reg1);
-    dst3 = (v16u8)__msa_ilvl_w((v4i32)reg3, (v4i32)reg1);
-    dst4 = (v16u8)__msa_ilvr_w((v4i32)reg6, (v4i32)reg4);
-    dst5 = (v16u8)__msa_ilvl_w((v4i32)reg6, (v4i32)reg4);
-    dst6 = (v16u8)__msa_ilvr_w((v4i32)reg7, (v4i32)reg5);
-    dst7 = (v16u8)__msa_ilvl_w((v4i32)reg7, (v4i32)reg5);
-    val0 = __msa_copy_s_d((v2i64)dst0, 0);
-    val1 = __msa_copy_s_d((v2i64)dst0, 1);
-    val2 = __msa_copy_s_d((v2i64)dst1, 0);
-    val3 = __msa_copy_s_d((v2i64)dst1, 1);
-    SD(val0, dst);
-    SD(val1, dst + dst_stride);
-    SD(val2, dst + dst_stride * 2);
-    SD(val3, dst + dst_stride * 3);
+    s = src;
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg0, reg1, reg2, reg3);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg4, reg5, reg6, reg7);
+    ILVRL_W(reg0, reg4, reg1, reg5, res0, res1, res2, res3);
+    ILVRL_W(reg2, reg6, reg3, reg7, res4, res5, res6, res7);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg0, reg1, reg2, reg3);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg4, reg5, reg6, reg7);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg4, (v4i32)reg0);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg4, (v4i32)reg0);
+    ILVRL_D(res0, res8, res1, res9, dst0, dst1, dst2, dst3);
+    ST_UB4(dst0, dst1, dst2, dst3, dst, dst_stride);
     dst += dst_stride * 4;
-    val0 = __msa_copy_s_d((v2i64)dst2, 0);
-    val1 = __msa_copy_s_d((v2i64)dst2, 1);
-    val2 = __msa_copy_s_d((v2i64)dst3, 0);
-    val3 = __msa_copy_s_d((v2i64)dst3, 1);
-    SD(val0, dst);
-    SD(val1, dst + dst_stride);
-    SD(val2, dst + dst_stride * 2);
-    SD(val3, dst + dst_stride * 3);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg5, (v4i32)reg1);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg5, (v4i32)reg1);
+    ILVRL_D(res2, res8, res3, res9, dst0, dst1, dst2, dst3);
+    ST_UB4(dst0, dst1, dst2, dst3, dst, dst_stride);
     dst += dst_stride * 4;
-    val0 = __msa_copy_s_d((v2i64)dst4, 0);
-    val1 = __msa_copy_s_d((v2i64)dst4, 1);
-    val2 = __msa_copy_s_d((v2i64)dst5, 0);
-    val3 = __msa_copy_s_d((v2i64)dst5, 1);
-    SD(val0, dst);
-    SD(val1, dst + dst_stride);
-    SD(val2, dst + dst_stride * 2);
-    SD(val3, dst + dst_stride * 3);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg6, (v4i32)reg2);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg6, (v4i32)reg2);
+    ILVRL_D(res4, res8, res5, res9, dst0, dst1, dst2, dst3);
+    ST_UB4(dst0, dst1, dst2, dst3, dst, dst_stride);
     dst += dst_stride * 4;
-    val0 = __msa_copy_s_d((v2i64)dst6, 0);
-    val1 = __msa_copy_s_d((v2i64)dst6, 1);
-    val2 = __msa_copy_s_d((v2i64)dst7, 0);
-    val3 = __msa_copy_s_d((v2i64)dst7, 1);
-    SD(val0, dst);
-    SD(val1, dst + dst_stride);
-    SD(val2, dst + dst_stride * 2);
-    SD(val3, dst + dst_stride * 3);
-    dst += dst_stride * 4;
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg7, (v4i32)reg3);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg7, (v4i32)reg3);
+    ILVRL_D(res6, res8, res7, res9, dst0, dst1, dst2, dst3);
+    ST_UB4(dst0, dst1, dst2, dst3, dst, dst_stride);
     src += 16;
+    dst += dst_stride * 4;
   }
 }
 
-void TransposeUVWx8_MSA(const uint8_t* src,
-                        int src_stride,
-                        uint8_t* dst_a,
-                        int dst_stride_a,
-                        uint8_t* dst_b,
-                        int dst_stride_b,
-                        int width) {
+void TransposeUVWx16_MSA(const uint8* src,
+                         int src_stride,
+                         uint8* dst_a,
+                         int dst_stride_a,
+                         uint8* dst_b,
+                         int dst_stride_b,
+                         int width) {
   int x;
-  uint64_t val0, val1, val2, val3;
-  v16u8 src0, src1, src2, src3, src4, src5, src6, src7;
-  v16u8 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
+  const uint8* s;
+  v16u8 src0, src1, src2, src3, dst0, dst1, dst2, dst3, vec0, vec1, vec2, vec3;
   v16u8 reg0, reg1, reg2, reg3, reg4, reg5, reg6, reg7;
-  v16u8 dst0, dst1, dst2, dst3, dst4, dst5, dst6, dst7;
+  v16u8 res0, res1, res2, res3, res4, res5, res6, res7, res8, res9;
 
   for (x = 0; x < width; x += 8) {
-    src0 = (v16u8)__msa_ld_b((v16i8*)src, 0);
-    src1 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride), 0);
-    src2 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 2), 0);
-    src3 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 3), 0);
-    src4 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 4), 0);
-    src5 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 5), 0);
-    src6 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 6), 0);
-    src7 = (v16u8)__msa_ld_b((v16i8*)(src + src_stride * 7), 0);
-    vec0 = (v16u8)__msa_ilvr_b((v16i8)src1, (v16i8)src0);
-    vec1 = (v16u8)__msa_ilvr_b((v16i8)src3, (v16i8)src2);
-    vec2 = (v16u8)__msa_ilvr_b((v16i8)src5, (v16i8)src4);
-    vec3 = (v16u8)__msa_ilvr_b((v16i8)src7, (v16i8)src6);
-    vec4 = (v16u8)__msa_ilvl_b((v16i8)src1, (v16i8)src0);
-    vec5 = (v16u8)__msa_ilvl_b((v16i8)src3, (v16i8)src2);
-    vec6 = (v16u8)__msa_ilvl_b((v16i8)src5, (v16i8)src4);
-    vec7 = (v16u8)__msa_ilvl_b((v16i8)src7, (v16i8)src6);
-    reg0 = (v16u8)__msa_ilvr_h((v8i16)vec1, (v8i16)vec0);
-    reg1 = (v16u8)__msa_ilvr_h((v8i16)vec3, (v8i16)vec2);
-    reg2 = (v16u8)__msa_ilvl_h((v8i16)vec1, (v8i16)vec0);
-    reg3 = (v16u8)__msa_ilvl_h((v8i16)vec3, (v8i16)vec2);
-    reg4 = (v16u8)__msa_ilvr_h((v8i16)vec5, (v8i16)vec4);
-    reg5 = (v16u8)__msa_ilvr_h((v8i16)vec7, (v8i16)vec6);
-    reg6 = (v16u8)__msa_ilvl_h((v8i16)vec5, (v8i16)vec5);
-    reg7 = (v16u8)__msa_ilvl_h((v8i16)vec7, (v8i16)vec6);
-    dst0 = (v16u8)__msa_ilvr_w((v4i32)reg1, (v4i32)reg0);
-    dst1 = (v16u8)__msa_ilvl_w((v4i32)reg1, (v4i32)reg0);
-    dst2 = (v16u8)__msa_ilvr_w((v4i32)reg3, (v4i32)reg2);
-    dst3 = (v16u8)__msa_ilvl_w((v4i32)reg3, (v4i32)reg2);
-    dst4 = (v16u8)__msa_ilvr_w((v4i32)reg5, (v4i32)reg4);
-    dst5 = (v16u8)__msa_ilvl_w((v4i32)reg5, (v4i32)reg4);
-    dst6 = (v16u8)__msa_ilvr_w((v4i32)reg7, (v4i32)reg6);
-    dst7 = (v16u8)__msa_ilvl_w((v4i32)reg7, (v4i32)reg6);
-    val0 = __msa_copy_s_d((v2i64)dst0, 0);
-    val1 = __msa_copy_s_d((v2i64)dst0, 1);
-    val2 = __msa_copy_s_d((v2i64)dst1, 0);
-    val3 = __msa_copy_s_d((v2i64)dst1, 1);
-    SD(val0, dst_a);
-    SD(val2, dst_a + dst_stride_a);
-    SD(val1, dst_b);
-    SD(val3, dst_b + dst_stride_b);
+    s = src;
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg0, reg1, reg2, reg3);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg4, reg5, reg6, reg7);
+    ILVRL_W(reg0, reg4, reg1, reg5, res0, res1, res2, res3);
+    ILVRL_W(reg2, reg6, reg3, reg7, res4, res5, res6, res7);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg0, reg1, reg2, reg3);
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src2 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    src3 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    s += src_stride;
+    ILVRL_B(src0, src1, src2, src3, vec0, vec1, vec2, vec3);
+    ILVRL_H(vec0, vec2, vec1, vec3, reg4, reg5, reg6, reg7);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg4, (v4i32)reg0);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg4, (v4i32)reg0);
+    ILVRL_D(res0, res8, res1, res9, dst0, dst1, dst2, dst3);
+    ST_UB2(dst0, dst2, dst_a, dst_stride_a);
+    ST_UB2(dst1, dst3, dst_b, dst_stride_b);
     dst_a += dst_stride_a * 2;
     dst_b += dst_stride_b * 2;
-    val0 = __msa_copy_s_d((v2i64)dst2, 0);
-    val1 = __msa_copy_s_d((v2i64)dst2, 1);
-    val2 = __msa_copy_s_d((v2i64)dst3, 0);
-    val3 = __msa_copy_s_d((v2i64)dst3, 1);
-    SD(val0, dst_a);
-    SD(val2, dst_a + dst_stride_a);
-    SD(val1, dst_b);
-    SD(val3, dst_b + dst_stride_b);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg5, (v4i32)reg1);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg5, (v4i32)reg1);
+    ILVRL_D(res2, res8, res3, res9, dst0, dst1, dst2, dst3);
+    ST_UB2(dst0, dst2, dst_a, dst_stride_a);
+    ST_UB2(dst1, dst3, dst_b, dst_stride_b);
     dst_a += dst_stride_a * 2;
     dst_b += dst_stride_b * 2;
-    val0 = __msa_copy_s_d((v2i64)dst4, 0);
-    val1 = __msa_copy_s_d((v2i64)dst4, 1);
-    val2 = __msa_copy_s_d((v2i64)dst5, 0);
-    val3 = __msa_copy_s_d((v2i64)dst5, 1);
-    SD(val0, dst_a);
-    SD(val2, dst_a + dst_stride_a);
-    SD(val1, dst_b);
-    SD(val3, dst_b + dst_stride_b);
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg6, (v4i32)reg2);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg6, (v4i32)reg2);
+    ILVRL_D(res4, res8, res5, res9, dst0, dst1, dst2, dst3);
+    ST_UB2(dst0, dst2, dst_a, dst_stride_a);
+    ST_UB2(dst1, dst3, dst_b, dst_stride_b);
     dst_a += dst_stride_a * 2;
     dst_b += dst_stride_b * 2;
-    val0 = __msa_copy_s_d((v2i64)dst6, 0);
-    val1 = __msa_copy_s_d((v2i64)dst6, 1);
-    val2 = __msa_copy_s_d((v2i64)dst7, 0);
-    val3 = __msa_copy_s_d((v2i64)dst7, 1);
-    SD(val0, dst_a);
-    SD(val2, dst_a + dst_stride_a);
-    SD(val1, dst_b);
-    SD(val3, dst_b + dst_stride_b);
-    dst_a += dst_stride_a * 2;
-    dst_b += dst_stride_b * 2;
+    res8 = (v16u8)__msa_ilvr_w((v4i32)reg7, (v4i32)reg3);
+    res9 = (v16u8)__msa_ilvl_w((v4i32)reg7, (v4i32)reg3);
+    ILVRL_D(res6, res8, res7, res9, dst0, dst1, dst2, dst3);
+    ST_UB2(dst0, dst2, dst_a, dst_stride_a);
+    ST_UB2(dst1, dst3, dst_b, dst_stride_b);
     src += 16;
+    dst_a += dst_stride_a * 2;
+    dst_b += dst_stride_b * 2;
   }
 }
 
