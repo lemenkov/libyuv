@@ -257,9 +257,8 @@ int ConvertToARGB(const uint8* sample,
     free(rotate_buffer);
   } else if (rotation) {
     src = sample + (src_width * crop_y + crop_x) * 4;
-    r = ARGBRotate(src, src_width * 4,
-                   crop_argb, argb_stride,
-                   crop_width, inv_crop_height, rotation);
+    r = ARGBRotate(src, src_width * 4, crop_argb, argb_stride, crop_width,
+                   inv_crop_height, rotation);
   }
 
   return r;

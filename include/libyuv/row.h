@@ -611,6 +611,57 @@ extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  // BT.709
 #endif
 #endif
 
+// Intel Code Analizer markers.  Insert IACA_START IACA_END around code to be
+// measured and then run with iaca -64 libyuv_unittest.
+// IACA_ASM_START amd IACA_ASM_END are equivalents that can be used within
+// inline assembly blocks.
+// example of iaca:
+// ~/iaca-lin64/bin/iaca.sh -64 -analysis LATENCY out/Release/libyuv_unittest
+
+#if defined(__x86_64__) || defined(__i386__)
+
+#define IACA_ASM_START  \
+  ".byte 0x0F, 0x0B\n"  \
+  " movl $111, %%ebx\n" \
+  ".byte 0x64, 0x67, 0x90\n"
+
+#define IACA_ASM_END         \
+  " movl $222, %%ebx\n"      \
+  ".byte 0x64, 0x67, 0x90\n" \
+  ".byte 0x0F, 0x0B\n"
+
+#define IACA_SSC_MARK(MARK_ID)                        \
+  __asm__ __volatile__("\n\t  movl $" #MARK_ID        \
+                       ", %%ebx"                      \
+                       "\n\t  .byte 0x64, 0x67, 0x90" \
+                       :                              \
+                       :                              \
+                       : "memory");
+
+#define IACA_UD_BYTES __asm__ __volatile__("\n\t .byte 0x0F, 0x0B");
+
+#else  /* Visual C */
+#define IACA_UD_BYTES \
+  { __asm _emit 0x0F __asm _emit 0x0B }
+
+#define IACA_SSC_MARK(x) \
+  { __asm mov ebx, x __asm _emit 0x64 __asm _emit 0x67 __asm _emit 0x90 }
+
+#define IACA_VC64_START __writegsbyte(111, 111);
+#define IACA_VC64_END __writegsbyte(222, 222);
+#endif
+
+#define IACA_START     \
+  {                    \
+    IACA_UD_BYTES      \
+    IACA_SSC_MARK(111) \
+  }
+#define IACA_END       \
+  {                    \
+    IACA_SSC_MARK(222) \
+    IACA_UD_BYTES      \
+  }
+
 void I444ToARGBRow_NEON(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,

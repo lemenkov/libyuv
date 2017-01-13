@@ -1925,18 +1925,17 @@ TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   dst[2] = 0x00000000;
   dst[3] = 0x00000000;
 
-  int r = ConvertToARGB(
-      reinterpret_cast<uint8_t*>(src),
-      16, // input size
-      reinterpret_cast<uint8_t*>(dst),
-      8, // destination stride
-      0, // crop_x
-      0, // crop_y
-      2, // width
-      2, // height
-      2, // crop width
-      2, // crop height
-      kRotate90, FOURCC_ARGB);
+  int r = ConvertToARGB(reinterpret_cast<uint8_t*>(src),
+                        16,  // input size
+                        reinterpret_cast<uint8_t*>(dst),
+                        8,  // destination stride
+                        0,  // crop_x
+                        0,  // crop_y
+                        2,  // width
+                        2,  // height
+                        2,  // crop width
+                        2,  // crop height
+                        kRotate90, FOURCC_ARGB);
 
   EXPECT_EQ(r, 0);
   // 90 degrees rotation, no conversion
