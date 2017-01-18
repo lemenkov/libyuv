@@ -1443,6 +1443,14 @@ int NV12ToRGB565(const uint8* src_y,
     }
   }
 #endif
+#if defined(HAS_NV12TORGB565ROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    NV12ToRGB565Row = NV12ToRGB565Row_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToRGB565Row = NV12ToRGB565Row_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     NV12ToRGB565Row(src_y, src_uv, dst_rgb565, &kYuvI601Constants, width);
@@ -2651,6 +2659,14 @@ int ARGBSobel(const uint8* src_argb,
     }
   }
 #endif
+#if defined(HAS_SOBELROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    SobelRow = SobelRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      SobelRow = SobelRow_MSA;
+    }
+  }
+#endif
   return ARGBSobelize(src_argb, src_stride_argb, dst_argb, dst_stride_argb,
                       width, height, SobelRow);
 }
@@ -2678,6 +2694,14 @@ int ARGBSobelToPlane(const uint8* src_argb,
     SobelToPlaneRow = SobelToPlaneRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       SobelToPlaneRow = SobelToPlaneRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SOBELTOPLANEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    SobelToPlaneRow = SobelToPlaneRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      SobelToPlaneRow = SobelToPlaneRow_MSA;
     }
   }
 #endif
@@ -2709,6 +2733,14 @@ int ARGBSobelXY(const uint8* src_argb,
     SobelXYRow = SobelXYRow_Any_NEON;
     if (IS_ALIGNED(width, 8)) {
       SobelXYRow = SobelXYRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_SOBELXYROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    SobelXYRow = SobelXYRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      SobelXYRow = SobelXYRow_MSA;
     }
   }
 #endif
