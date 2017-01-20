@@ -5459,7 +5459,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
 }
 #endif  // HAS_HALFFLOATROW_AVX2
 
-//#ifdef HAS_HALFFLOATROW_F16C
+#ifdef HAS_HALFFLOATROW_F16C
 void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
    "vbroadcastss  %3, %%ymm4                  \n"
@@ -5491,7 +5491,7 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
     "xmm2", "xmm3", "xmm4"
   );
 }
-//#endif  // HAS_HALFFLOATROW_F16C
+#endif  // HAS_HALFFLOATROW_F16C
 
 #ifdef HAS_HALFFLOATROW_F16C
 void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float, int width) {
