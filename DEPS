@@ -49,9 +49,4 @@ hooks = [
         Var('root_dir'),
     ],
   },
-  {
-    # A change to a .gyp, .gypi, or to GYP itself should run the generator.
-    'pattern': '.',
-    'action': ['python', Var('root_dir') + '/gyp_libyuv'],
-  },
 ]
