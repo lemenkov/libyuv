@@ -227,6 +227,14 @@ Release build/install
     cmake --build . --config Release
     sudo cmake --build . --target install --config Release
 
+Release package
+
+    mkdir out
+    cd out
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+    make -j4
+    make package
+
 ## Running Unittests
 
 ### Windows
