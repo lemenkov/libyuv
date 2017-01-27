@@ -18,7 +18,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips_dsp) && \
+#if !defined(LIBYUV_DISABLE_DSPR2) && defined(__mips_dsp) && \
     (__mips_dsp_rev >= 2) && (_MIPS_SIM == _MIPS_SIM_ABI32)
 
 void TransposeWx8_DSPR2(const uint8* src,

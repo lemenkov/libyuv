@@ -95,7 +95,7 @@ extern "C" {
 #endif
 
 // The following are available on Mips platforms:
-#if !defined(LIBYUV_DISABLE_MIPS) && !defined(__native_client__) && \
+#if !defined(LIBYUV_DISABLE_DSPR2) && !defined(__native_client__) && \
     defined(__mips__) && defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_SCALEROWDOWN2_DSPR2
 #define HAS_SCALEROWDOWN4_DSPR2

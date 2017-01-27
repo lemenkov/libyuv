@@ -355,10 +355,10 @@ extern "C" {
 #endif
 
 // The following are available on Mips platforms:
-#if !defined(LIBYUV_DISABLE_MIPS) && defined(__mips__) && \
-    (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
-#define HAS_COPYROW_MIPS
-#if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
+#if !defined(LIBYUV_DISABLE_dspr2) && defined(__dspr2__) && \
+    (_dspr2_SIM == _dspr2_SIM_ABI32) && (__dspr2_isa_rev < 6)
+#define HAS_COPYROW_dspr2
+#if defined(__dspr2_dsp) && (__dspr2_dsp_rev >= 2)
 #define HAS_I422TOARGBROW_DSPR2
 #define HAS_INTERPOLATEROW_DSPR2
 #define HAS_MIRRORROW_DSPR2
@@ -384,7 +384,7 @@ extern "C" {
 #endif
 #endif
 
-#if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
+#if !defined(LIBYUV_DISABLE_MSA) && defined(__dspr2_msa)
 #define HAS_ARGBMIRRORROW_MSA
 #define HAS_I422TOUYVYROW_MSA
 #define HAS_I422TOYUY2ROW_MSA
@@ -646,7 +646,7 @@ extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  // BT.709
 
 #define IACA_UD_BYTES __asm__ __volatile__("\n\t .byte 0x0F, 0x0B");
 
-#else  /* Visual C */
+#else /* Visual C */
 #define IACA_UD_BYTES \
   { __asm _emit 0x0F __asm _emit 0x0B }
 
@@ -1354,7 +1354,7 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);
 void CopyRow_ERMS(const uint8* src, uint8* dst, int count);
 void CopyRow_NEON(const uint8* src, uint8* dst, int count);
-void CopyRow_MIPS(const uint8* src, uint8* dst, int count);
+void CopyRow_dspr2(const uint8* src, uint8* dst, int count);
 void CopyRow_C(const uint8* src, uint8* dst, int count);
 void CopyRow_Any_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_Any_AVX(const uint8* src, uint8* dst, int count);

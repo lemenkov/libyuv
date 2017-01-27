@@ -79,19 +79,19 @@ static_library("libyuv") {
     "source/rotate_any.cc",
     "source/rotate_argb.cc",
     "source/rotate_common.cc",
-    "source/rotate_mips.cc",
+    "source/rotate_dspr2.cc",
     "source/rotate_gcc.cc",
     "source/rotate_win.cc",
     "source/row_any.cc",
     "source/row_common.cc",
-    "source/row_mips.cc",
+    "source/row_dspr2.cc",
     "source/row_gcc.cc",
     "source/row_win.cc",
     "source/scale.cc",
     "source/scale_any.cc",
     "source/scale_argb.cc",
     "source/scale_common.cc",
-    "source/scale_mips.cc",
+    "source/scale_dspr2.cc",
     "source/scale_gcc.cc",
     "source/scale_win.cc",
     "source/video_common.cc",
@@ -254,7 +254,7 @@ if (libyuv_include_tests) {
       # Enable the following 3 macros to turn off assembly for specified CPU.
       # "LIBYUV_DISABLE_X86",
       # "LIBYUV_DISABLE_NEON",
-      # "LIBYUV_DISABLE_MIPS",
+      # "LIBYUV_DISABLE_DSPR2",
       # Enable the following macro to build libyuv as a shared library (dll).
       # "LIBYUV_USING_SHARED_LIBRARY"
     ]

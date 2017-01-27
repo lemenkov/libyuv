@@ -22,19 +22,19 @@ LOCAL_SRC_FILES := \
     source/rotate_any.cc        \
     source/rotate_argb.cc       \
     source/rotate_common.cc     \
-    source/rotate_mips.cc       \
+    source/rotate_dspr2.cc      \
     source/rotate_neon64.cc     \
     source/rotate_gcc.cc        \
     source/row_any.cc           \
     source/row_common.cc        \
-    source/row_mips.cc          \
+    source/row_dspr2.cc         \
     source/row_neon64.cc        \
     source/row_gcc.cc           \
     source/scale.cc             \
     source/scale_any.cc         \
     source/scale_argb.cc        \
     source/scale_common.cc      \
-    source/scale_mips.cc        \
+    source/scale_dspr2.cc       \
     source/scale_neon64.cc      \
     source/scale_gcc.cc         \
     source/video_common.cc
