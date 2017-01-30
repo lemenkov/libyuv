@@ -212,14 +212,14 @@ Running test with C code:
 
 Install cmake: http://www.cmake.org/
 
-Default debug build:
+### Default debug build:
 
     mkdir out
     cd out
     cmake ..
     cmake --build .
 
-Release build/install
+### Release build/install
 
     mkdir out
     cd out
@@ -227,13 +227,32 @@ Release build/install
     cmake --build . --config Release
     sudo cmake --build . --target install --config Release
 
-Release package
+### Release package
 
     mkdir out
     cd out
     cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j4
     make package
+
+## Setup for Arm Cross compile
+
+    See also
+    https://www.ccoderun.ca/programming/2015-12-20_CrossCompiling/index.html#setup
+
+    sudo apt-get install ssh dkms build-essential linux-headers-generic
+    sudo apt-get install kdevelop cmake git subversion
+    sudo apt-get install graphviz doxygen doxygen-gui
+    sudo apt-get install manpages manpages-dev manpages-posix manpages-posix-dev
+    sudo apt-get install libboost-all-dev libboost-dev libssl-dev
+    sudo apt-get install rpm terminator fish
+    sudo apt-get install g++-arm-linux-gnueabihf gcc-arm-linux-gnueabihf
+
+### Build psnr tool
+
+    cd util
+    arm-linux-gnueabihf-g++ psnr_main.cc psnr.cc ssim.cc -o psnr
+    arm-linux-gnueabihf-objdump -d psnr
 
 ## Running Unittests
 
