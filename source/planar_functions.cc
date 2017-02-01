@@ -2564,6 +2564,14 @@ static int ARGBSobelize(const uint8* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYJROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBToYJRow = ARGBToYJRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToYJRow = ARGBToYJRow_MSA;
+    }
+  }
+#endif
 
 #if defined(HAS_SOBELYROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
