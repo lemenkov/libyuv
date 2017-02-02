@@ -44,7 +44,7 @@ For Android add `;target_os=['android'];` to your Linux .gclient
         "safesync_url": "",
       },
     ];
-    target_os = ["android", "unix"];
+    target_os = ["android", "linux"];
 
 Then run:
 
@@ -208,7 +208,7 @@ Running test with C code:
     make V=1 -f linux.mk clean
     make V=1 -f linux.mk CXX=clang++
 
-## Building the Library with cmake
+## Building the library with cmake
 
 Install cmake: http://www.cmake.org/
 
@@ -227,7 +227,7 @@ Install cmake: http://www.cmake.org/
     cmake --build . --config Release
     sudo cmake --build . --target install --config Release
 
-### Release package
+### Build RPM/DEB packages
 
     mkdir out
     cd out
@@ -237,8 +237,7 @@ Install cmake: http://www.cmake.org/
 
 ## Setup for Arm Cross compile
 
-    See also
-    https://www.ccoderun.ca/programming/2015-12-20_CrossCompiling/index.html#setup
+See also https://www.ccoderun.ca/programming/2015-12-20_CrossCompiling/index.html
 
     sudo apt-get install ssh dkms build-essential linux-headers-generic
     sudo apt-get install kdevelop cmake git subversion
