@@ -223,7 +223,7 @@ void ScaleRowDown2Box_MSA(const uint8_t* src_ptr,
   const uint8_t* s = src_ptr;
   const uint8_t* t = src_ptr + src_stride;
   v16u8 src0, src1, src2, src3, src4, src5, src6, src7, dst0, dst1;
-  v8u16 vec0, vec1, vec2, vec3, vec4, vec5, vec6, vec7;
+  v8u16 vec0, vec1, vec2, vec3;
 
   for (x = 0; x < dst_width; x += 32) {
     src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
@@ -521,7 +521,7 @@ void ScaleRowDown38_3_Box_MSA(const uint8_t* src_ptr,
 void ScaleAddRow_MSA(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
   int x;
   v16u8 src0;
-  v8u16 vec0, vec1, dst0, dst1;
+  v8u16 dst0, dst1;
   v16i8 zero = {0};
 
   assert(src_width > 0);
