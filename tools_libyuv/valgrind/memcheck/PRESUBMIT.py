@@ -22,8 +22,8 @@ def CheckChange(input_api, output_api):
   """Checks the memcheck suppressions files for bad data."""
 
   # Add the path to the Chrome valgrind dir to the import path:
-  tools_vg_path = os.path.join(input_api.PresubmitLocalPath(), '..', '..',
-                               'valgrind')
+  tools_vg_path = os.path.join(input_api.PresubmitLocalPath(), '..', '..', '..',
+                               'tools', 'valgrind')
   sys.path.append(tools_vg_path)
   import suppressions
 

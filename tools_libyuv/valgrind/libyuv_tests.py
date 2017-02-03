@@ -53,16 +53,17 @@ class LibyuvTest(chrome_tests.ChromeTests):
     # this script's location. If Mac or Windows is executing, additional
     # platform specific files have also been added.
     # Since only the ones located below this directory is added, we must also
-    # add the ones maintained by Chrome, located in ../valgrind.
+    # add the ones maintained by Chrome, located in ../../tools/valgrind.
 
     # The idea is to look for --suppression arguments in the cmd list and add a
     # modified copy of each suppression file, for the corresponding file in
-    # ../valgrind. If we would simply replace 'valgrind-libyuv' with 'valgrind'
-    # we may produce invalid paths if other parts of the path contain that
-    # string. That's why the code below only replaces the end of the path.
+    # ../../tools/valgrind.
     script_dir = path_utils.ScriptDir()
     old_base, _ = os.path.split(script_dir)
-    new_dir = os.path.join(old_base, 'valgrind')
+
+    checkout_src = os.path.abspath(os.path.join(script_dir, os.pardir,
+                                                os.pardir))
+    new_dir = os.path.join(checkout_src, 'tools', 'valgrind')
     add_suppressions = []
     for token in cmd:
       if '--suppressions' in token:

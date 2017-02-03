@@ -173,15 +173,15 @@ arm64 disassembly:
 
 Running tests:
 
-    util/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=*
+    build/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=*
 
 Running test as benchmark:
 
-    util/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=-1"
+    build/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=-1"
 
 Running test with C code:
 
-    util/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=1 --libyuv_cpu_info=1"
+    build/android/test_runner.py gtest -s libyuv_unittest -t 7200 --verbose --release --gtest_filter=* -a "--libyuv_width=1280 --libyuv_height=720 --libyuv_repeat=999 --libyuv_flags=1 --libyuv_cpu_info=1"
 
 #### Building with GN
 
