@@ -1,7 +1,7 @@
 vars = {
   # Override root_dir in your .gclient's custom_vars to specify a custom root
   # folder name.
-  'root_dir': Var('root_dir') + '',
+  'root_dir': 'libyuv',
   'chromium_git': 'https://chromium.googlesource.com',
   'chromium_revision': '8346af5a710b5c692803beab335b5e5439883387',
   'swarming_revision': 'ebc8dab6f8b8d79ec221c94de39a921145abd404',
