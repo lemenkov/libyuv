@@ -61,7 +61,7 @@ esac
 
 # For Libyuv, we'll use the locate_valgrind.sh script in Chromium's Valgrind
 # scripts dir to locate the Valgrind framework install
-CHROME_VALGRIND_SCRIPTS=$THISDIR/../valgrind
+CHROME_VALGRIND_SCRIPTS=$THISDIR/../../tools/valgrind
 
 if [ "$NEEDS_VALGRIND" == "1" ]
 then
