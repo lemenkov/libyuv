@@ -12,7 +12,9 @@
 # This script is a copy of the chrome_tests.sh wrapper script with the following
 # changes:
 # - The locate_valgrind.sh of Chromium's Valgrind scripts dir is used to locate
-#   the Valgrind framework install.
+#   the Valgrind framework install. If it fails a fallback path is used instead
+#   (../../chromium/src/third_party/valgrind/linux_x64) and a warning message
+#   is showed by |show_locate_valgrind_failed_warning|.
 # - libyuv_tests.py is invoked instead of chrome_tests.py.
 # - Chromium's Valgrind scripts directory is added to the PYTHONPATH to make it
 #   possible to execute the Python scripts properly.
@@ -20,11 +22,10 @@
 export THISDIR=`dirname $0`
 ARGV_COPY="$@"
 
-# We need to set CHROME_VALGRIND iff using Memcheck or TSan-Valgrind:
-#   tools/valgrind-libyuv/libyuv_tests.sh --tool memcheck
+# We need to set CHROME_VALGRIND iff using Memcheck:
+#   tools_libyuv/valgrind/libyuv_tests.sh --tool memcheck
 # or
-#   tools/valgrind-libyuv/libyuv_tests.sh --tool=memcheck
-# (same for "--tool=tsan")
+#   tools_libyuv/valgrind/libyuv_tests.sh --tool=memcheck
 tool="memcheck"  # Default to memcheck.
 while (( "$#" ))
 do
@@ -40,26 +41,14 @@ do
 done
 
 NEEDS_VALGRIND=0
-NEEDS_DRMEMORY=0
 
 case "$tool" in
   "memcheck")
     NEEDS_VALGRIND=1
     ;;
-  "tsan" | "tsan_rv")
-    if [ "`uname -s`" == CYGWIN* ]
-    then
-      NEEDS_PIN=1
-    else
-      NEEDS_VALGRIND=1
-    fi
-    ;;
-  "drmemory" | "drmemory_light" | "drmemory_full" | "drmemory_pattern")
-    NEEDS_DRMEMORY=1
-    ;;
 esac
 
-# For Libyuv, we'll use the locate_valgrind.sh script in Chromium's Valgrind
+# For libyuv, we'll use the locate_valgrind.sh script in Chromium's Valgrind
 # scripts dir to locate the Valgrind framework install
 CHROME_VALGRIND_SCRIPTS=$THISDIR/../../tools/valgrind
 
@@ -68,8 +57,24 @@ then
   CHROME_VALGRIND=`sh $CHROME_VALGRIND_SCRIPTS/locate_valgrind.sh`
   if [ "$CHROME_VALGRIND" = "" ]
   then
-    # locate_valgrind.sh failed
-    exit 1
+    CHROME_VALGRIND=../../src/third_party/valgrind/linux_x64
+    echo
+    echo "-------------------- WARNING ------------------------"
+    echo "locate_valgrind.sh failed."
+    echo "Using $CHROME_VALGRIND as a fallback location."
+    echo "This might be because:"
+    echo "1) This is a swarming bot"
+    echo "2) You haven't set up the valgrind binaries correctly."
+    echo "In this case, please make sure you have followed the instructions at"
+    echo "http://www.chromium.org/developers/how-tos/using-valgrind/get-valgrind"
+    echo "Notice: In the .gclient file, you need to add this for the 'libyuv'"
+    echo "solution since our directory structure is different from Chromium's:"
+    echo "\"custom_deps\": {"
+    echo "  \"libyuv/third_party/valgrind\":"
+    echo "      \"https://chromium.googlesource.com/chromium/deps/valgrind/binaries\","
+    echo "},"
+    echo "-----------------------------------------------------"
+    echo
   fi
   echo "Using valgrind binaries from ${CHROME_VALGRIND}"
 
@@ -90,49 +95,7 @@ then
       \) -mtime +1 -print0 | xargs -0 rm -rf
 fi
 
-if [ "$NEEDS_DRMEMORY" == "1" ]
-then
-  if [ -z "$DRMEMORY_COMMAND" ]
-  then
-    DRMEMORY_PATH="$THISDIR/../../third_party/drmemory"
-    DRMEMORY_SFX="$DRMEMORY_PATH/drmemory-windows-sfx.exe"
-    if [ ! -f "$DRMEMORY_SFX" ]
-    then
-      echo "Can't find Dr. Memory executables."
-      echo "See http://www.chromium.org/developers/how-tos/using-valgrind/dr-memory"
-      echo "for the instructions on how to get them."
-      exit 1
-    fi
-
-    chmod +x "$DRMEMORY_SFX"  # Cygwin won't run it without +x.
-    "$DRMEMORY_SFX" -o"$DRMEMORY_PATH/unpacked" -y
-    export DRMEMORY_COMMAND="$DRMEMORY_PATH/unpacked/bin/drmemory.exe"
-  fi
-fi
-
-if [ "$NEEDS_PIN" == "1" ]
-then
-  if [ -z "$PIN_COMMAND" ]
-  then
-    # Set up PIN_COMMAND to invoke TSan.
-    TSAN_PATH="$THISDIR/../../third_party/tsan"
-    TSAN_SFX="$TSAN_PATH/tsan-x86-windows-sfx.exe"
-    echo "$TSAN_SFX"
-    if [ ! -f $TSAN_SFX ]
-    then
-      echo "Can't find ThreadSanitizer executables."
-      echo "See http://www.chromium.org/developers/how-tos/using-valgrind/threadsanitizer/threadsanitizer-on-windows"
-      echo "for the instructions on how to get them."
-      exit 1
-    fi
-
-    chmod +x "$TSAN_SFX"  # Cygwin won't run it without +x.
-    "$TSAN_SFX" -o"$TSAN_PATH"/unpacked -y
-    export PIN_COMMAND="$TSAN_PATH/unpacked/tsan-x86-windows/tsan.bat"
-  fi
-fi
-
 # Add Chrome's Valgrind scripts dir to the PYTHON_PATH since it contains
 # the scripts that are needed for this script to run
-PYTHONPATH=$THISDIR/../python/google:$CHROME_VALGRIND_SCRIPTS python \
+PYTHONPATH=$THISDIR/../../tools/python/google:$CHROME_VALGRIND_SCRIPTS python \
            "$THISDIR/libyuv_tests.py" $ARGV_COPY
