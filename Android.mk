@@ -44,6 +44,8 @@ LOCAL_SRC_FILES := \
 #   source/convert_jpeg.cc
 #   source/mjpeg_validate.cc
 
+LOCAL_CFLAGS += -Wno-unused-parameter
+
 ifeq ($(TARGET_ARCH_ABI),armeabi-v7a)
     LOCAL_CFLAGS += -DLIBYUV_NEON
     LOCAL_SRC_FILES += \
