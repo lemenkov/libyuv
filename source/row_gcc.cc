@@ -1,4 +1,3 @@
-// VERSION 2
 /*
  *  Copyright 2011 The LibYuv Project Authors. All rights reserved.
  *
@@ -5457,12 +5456,13 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
     "pshufd      $0x0,%3,%%xmm4                \n"
     "pxor        %%xmm5,%%xmm5                 \n"
+    "sub         %0,%1                         \n"
 
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
     "movdqu      " MEMACCESS(0) ",%%xmm2       \n"  // 8 shorts
-    "lea         " MEMLEA(0x10,0) ",%0         \n"
+    "add         $0x10,%0                      \n"
     "movdqa      %%xmm2,%%xmm3                 \n"
     "punpcklwd   %%xmm5,%%xmm2                 \n"  // 8 ints in xmm2/1
     "cvtdq2ps    %%xmm2,%%xmm2                 \n"  // 8 floats
@@ -5473,8 +5473,7 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
     "psrld       $0xd,%%xmm2                   \n"
     "psrld       $0xd,%%xmm3                   \n"
     "packssdw    %%xmm3,%%xmm2                 \n"
-    "movdqu      %%xmm2," MEMACCESS(1) "       \n"
-    "lea         " MEMLEA(0x10,1) ",%1         \n"
+    MEMOPMEM(movdqu,xmm2,-0x10,0,1,1)
     "sub         $0x8,%2                       \n"
     "jg          1b                            \n"
   : "+r"(src),    // %0
@@ -5488,17 +5487,17 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
 #endif  // HAS_HALFFLOATROW_SSE2
 
 #ifdef HAS_HALFFLOATROW_AVX2
-// TODO(fbarchard): consider vadddw instead of vmulps
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
     "vbroadcastss  %3, %%ymm4                  \n"
     "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
+    "sub        %0,%1                          \n"
 
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
     "vmovdqu    " MEMACCESS(0) ",%%ymm2        \n"  // 16 shorts
-    "lea        " MEMLEA(0x20,0) ",%0          \n"
+    "add        $0x20,%0                       \n"
     "vpunpckhwd %%ymm5,%%ymm2,%%ymm3           \n"  // mutates
     "vpunpcklwd %%ymm5,%%ymm2,%%ymm2           \n"
     "vcvtdq2ps  %%ymm3,%%ymm3                  \n"
@@ -5508,10 +5507,10 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "vpsrld     $0xd,%%ymm3,%%ymm3             \n"
     "vpsrld     $0xd,%%ymm2,%%ymm2             \n"
     "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // unmutates
-    "vmovdqu    %%ymm2," MEMACCESS(1) "        \n"
-    "lea        " MEMLEA(0x20,1) ",%1          \n"
+    MEMOPMEM(vmovdqu,ymm2,-0x20,0,1,1)
     "sub        $0x10,%2                       \n"
     "jg         1b                             \n"
+
     "vzeroupper                                \n"
   : "+r"(src),    // %0
     "+r"(dst),    // %1
@@ -5526,26 +5525,25 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
 #ifdef HAS_HALFFLOATROW_F16C
 void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
   asm volatile (
-   "vbroadcastss  %3, %%ymm4                  \n"
+    "vbroadcastss  %3, %%ymm4                  \n"
+    "sub        %0,%1                          \n"
 
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
     "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
     "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
-    "lea         " MEMLEA(0x20,0) ",%0         \n"
     "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
     "vmulps      %%ymm2,%%ymm4,%%ymm2          \n"
     "vmulps      %%ymm3,%%ymm4,%%ymm3          \n"
     "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
     "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
-    "vmovdqu     %%xmm2," MEMACCESS(1) "       \n"
-    "vmovdqu     %%xmm3," MEMACCESS2(0x10,1) " \n"
-    "lea         " MEMLEA(0x20,1) ",%1         \n"
+    MEMOPMEM(vmovdqu,xmm2,0x00,0,1,1)
+    MEMOPMEM(vmovdqu,xmm3,0x10,0,1,1)
+    "add         $0x20,%0                      \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
-
     "vzeroupper                                \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1
@@ -5560,22 +5558,21 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
 #ifdef HAS_HALFFLOATROW_F16C
 void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float, int width) {
   asm volatile (
+    "sub        %0,%1                          \n"
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
     "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
     "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
-    "lea         " MEMLEA(0x20,0) ",%0         \n"
     "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
     "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
     "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
-    "vmovdqu     %%xmm2," MEMACCESS(1) "       \n"
-    "vmovdqu     %%xmm3," MEMACCESS2(0x10,1) " \n"
-    "lea         " MEMLEA(0x20,1) ",%1         \n"
+    MEMOPMEM(vmovdqu,xmm2,0x00,0,1,1)
+    MEMOPMEM(vmovdqu,xmm3,0x10,0,1,1)
+    "add         $0x20,%0                      \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
-
     "vzeroupper                                \n"
   : "+r"(src),   // %0
     "+r"(dst),   // %1

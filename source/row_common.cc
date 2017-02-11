@@ -202,9 +202,8 @@ void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
     uint8 b1 = src_argb[4] >> 3;
     uint8 g1 = src_argb[5] >> 2;
     uint8 r1 = src_argb[6] >> 3;
-    WRITEWORD(
-        dst_rgb,
-        b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) | (r1 << 27));
+    WRITEWORD(dst_rgb, b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) |
+                           (r1 << 27));
     dst_rgb += 4;
     src_argb += 8;
   }
@@ -238,9 +237,8 @@ void ARGBToRGB565DitherRow_C(const uint8* src_argb,
     uint8 b1 = clamp255(src_argb[4] + dither1) >> 3;
     uint8 g1 = clamp255(src_argb[5] + dither1) >> 2;
     uint8 r1 = clamp255(src_argb[6] + dither1) >> 3;
-    WRITEWORD(
-        dst_rgb,
-        b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) | (r1 << 27));
+    WRITEWORD(dst_rgb, b0 | (g0 << 5) | (r0 << 11) | (b1 << 16) | (g1 << 21) |
+                           (r1 << 27));
     dst_rgb += 4;
     src_argb += 8;
   }

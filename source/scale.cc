@@ -45,9 +45,10 @@ static void ScalePlaneDown2(int src_width,
   int y;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering == kFilterNone ? ScaleRowDown2_C : (filtering == kFilterLinear
-                                                        ? ScaleRowDown2Linear_C
-                                                        : ScaleRowDown2Box_C);
+      filtering == kFilterNone
+          ? ScaleRowDown2_C
+          : (filtering == kFilterLinear ? ScaleRowDown2Linear_C
+                                        : ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
   if (!filtering) {
     src_ptr += src_stride;  // Point to odd rows.
