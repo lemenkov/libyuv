@@ -95,6 +95,8 @@ void CpuId(uint32 info_eax, uint32 info_ecx, uint32* cpu_info) {
 #else  // (defined(_M_IX86) || defined(_M_X64) ...
 LIBYUV_API
 void CpuId(uint32 eax, uint32 ecx, uint32* cpu_info) {
+  (void)eax;
+  (void)ecx;
   cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
 }
 #endif

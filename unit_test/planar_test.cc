@@ -1173,12 +1173,12 @@ static void TestBlendPlane(int width,
   MaskCpuFlags(disable_cpu_flags);
   BlendPlane(src_argb_a + off, width, src_argb_b + off, width,
              src_argb_alpha + off, width, dst_argb_c + off, width, width,
-             height);
+             invert * height);
   MaskCpuFlags(benchmark_cpu_info);
   for (int i = 0; i < benchmark_iterations; ++i) {
     BlendPlane(src_argb_a + off, width, src_argb_b + off, width,
                src_argb_alpha + off, width, dst_argb_opt + off, width, width,
-               height);
+               invert * height);
   }
   for (int i = 0; i < kStride * height; ++i) {
     EXPECT_EQ(dst_argb_c[i + off], dst_argb_opt[i + off]);
@@ -1252,14 +1252,15 @@ static void TestI420Blend(int width,
   I420Blend(src_y0 + off, width, src_u0 + off, kStrideUV, src_v0 + off,
             kStrideUV, src_y1 + off, width, src_u1 + off, kStrideUV,
             src_v1 + off, kStrideUV, src_a + off, width, dst_y_c + off, width,
-            dst_u_c + off, kStrideUV, dst_v_c + off, kStrideUV, width, height);
+            dst_u_c + off, kStrideUV, dst_v_c + off, kStrideUV, width,
+            invert * height);
   MaskCpuFlags(benchmark_cpu_info);
   for (int i = 0; i < benchmark_iterations; ++i) {
     I420Blend(src_y0 + off, width, src_u0 + off, kStrideUV, src_v0 + off,
               kStrideUV, src_y1 + off, width, src_u1 + off, kStrideUV,
               src_v1 + off, kStrideUV, src_a + off, width, dst_y_opt + off,
               width, dst_u_opt + off, kStrideUV, dst_v_opt + off, kStrideUV,
-              width, height);
+              width, invert * height);
   }
   for (int i = 0; i < width * height; ++i) {
     EXPECT_EQ(dst_y_c[i + off], dst_y_opt[i + off]);
