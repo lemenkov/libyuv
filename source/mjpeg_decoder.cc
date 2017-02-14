@@ -431,7 +431,7 @@ void skip_input_data(j_decompress_ptr cinfo, long num_bytes) {  // NOLINT
 }
 
 void term_source(j_decompress_ptr cinfo) {
-  // Nothing to do.
+  (void)cinfo;  // Nothing to do.
 }
 
 #ifdef HAVE_SETJMP
