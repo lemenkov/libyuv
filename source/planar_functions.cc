@@ -240,6 +240,10 @@ int I420ToI400(const uint8* src_y,
                int dst_stride_y,
                int width,
                int height) {
+  (void)src_u;
+  (void)src_stride_u;
+  (void)src_v;
+  (void)src_stride_v;
   if (!src_y || !dst_y || width <= 0 || height == 0) {
     return -1;
   }
