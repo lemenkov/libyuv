@@ -317,12 +317,12 @@ int YUVToARGBScaleReference2(const uint8* src_y,
                              int src_stride_u,
                              const uint8* src_v,
                              int src_stride_v,
-                             uint32 src_fourcc,
+                             uint32 /* src_fourcc */,  // TODO: Add support.
                              int src_width,
                              int src_height,
                              uint8* dst_argb,
                              int dst_stride_argb,
-                             uint32 dst_fourcc,
+                             uint32 /* dst_fourcc */,  // TODO: Add support.
                              int dst_width,
                              int dst_height,
                              int clip_x,
@@ -368,9 +368,7 @@ static int YUVToARGBTestFilter(int src_width,
                                int dst_width,
                                int dst_height,
                                FilterMode f,
-                               int benchmark_iterations,
-                               int disable_cpu_flags,
-                               int benchmark_cpu_info) {
+                               int benchmark_iterations) {
   int64 src_y_plane_size = Abs(src_width) * Abs(src_height);
   int64 src_uv_plane_size =
       ((Abs(src_width) + 1) / 2) * ((Abs(src_height) + 1) / 2);
@@ -434,18 +432,17 @@ static int YUVToARGBTestFilter(int src_width,
 }
 
 TEST_F(LibYUVScaleTest, YUVToRGBScaleUp) {
-  int diff = YUVToARGBTestFilter(
-      benchmark_width_, benchmark_height_, benchmark_width_ * 3 / 2,
-      benchmark_height_ * 3 / 2, libyuv::kFilterBilinear, benchmark_iterations_,
-      disable_cpu_flags_, benchmark_cpu_info_);
+  int diff =
+      YUVToARGBTestFilter(benchmark_width_, benchmark_height_,
+                          benchmark_width_ * 3 / 2, benchmark_height_ * 3 / 2,
+                          libyuv::kFilterBilinear, benchmark_iterations_);
   EXPECT_LE(diff, 10);
 }
 
 TEST_F(LibYUVScaleTest, YUVToRGBScaleDown) {
   int diff = YUVToARGBTestFilter(
       benchmark_width_ * 3 / 2, benchmark_height_ * 3 / 2, benchmark_width_,
-      benchmark_height_, libyuv::kFilterBilinear, benchmark_iterations_,
-      disable_cpu_flags_, benchmark_cpu_info_);
+      benchmark_height_, libyuv::kFilterBilinear, benchmark_iterations_);
   EXPECT_LE(diff, 10);
 }
 
