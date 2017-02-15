@@ -50,6 +50,8 @@ static void ScalePlaneDown2(int src_width,
           : (filtering == kFilterLinear ? ScaleRowDown2Linear_C
                                         : ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
+  (void)src_width;
+  (void)src_height;
   if (!filtering) {
     src_ptr += src_stride;  // Point to odd rows.
     src_stride = 0;
@@ -152,6 +154,8 @@ static void ScalePlaneDown2_16(int src_width,
           : (filtering == kFilterLinear ? ScaleRowDown2Linear_16_C
                                         : ScaleRowDown2Box_16_C);
   int row_stride = src_stride << 1;
+  (void)src_width;
+  (void)src_height;
   if (!filtering) {
     src_ptr += src_stride;  // Point to odd rows.
     src_stride = 0;
@@ -210,6 +214,8 @@ static void ScalePlaneDown4(int src_width,
                         uint8* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown4Box_C : ScaleRowDown4_C;
   int row_stride = src_stride << 2;
+  (void)src_width;
+  (void)src_height;
   if (!filtering) {
     src_ptr += src_stride * 2;  // Point to row 2.
     src_stride = 0;
@@ -282,6 +288,8 @@ static void ScalePlaneDown4_16(int src_width,
                         uint16* dst_ptr, int dst_width) =
       filtering ? ScaleRowDown4Box_16_C : ScaleRowDown4_16_C;
   int row_stride = src_stride << 2;
+  (void)src_width;
+  (void)src_height;
   if (!filtering) {
     src_ptr += src_stride * 2;  // Point to row 2.
     src_stride = 0;
@@ -318,7 +326,6 @@ static void ScalePlaneDown4_16(int src_width,
 }
 
 // Scale plane down, 3/4
-
 static void ScalePlaneDown34(int src_width,
                              int src_height,
                              int dst_width,
@@ -334,6 +341,8 @@ static void ScalePlaneDown34(int src_width,
   void (*ScaleRowDown34_1)(const uint8* src_ptr, ptrdiff_t src_stride,
                            uint8* dst_ptr, int dst_width);
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
+  (void)src_width;
+  (void)src_height;
   assert(dst_width % 3 == 0);
   if (!filtering) {
     ScaleRowDown34_0 = ScaleRowDown34_C;
@@ -434,6 +443,8 @@ static void ScalePlaneDown34_16(int src_width,
   void (*ScaleRowDown34_1)(const uint16* src_ptr, ptrdiff_t src_stride,
                            uint16* dst_ptr, int dst_width);
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
+  (void)src_width;
+  (void)src_height;
   assert(dst_width % 3 == 0);
   if (!filtering) {
     ScaleRowDown34_0 = ScaleRowDown34_16_C;
@@ -532,6 +543,8 @@ static void ScalePlaneDown38(int src_width,
                            uint8* dst_ptr, int dst_width);
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
   assert(dst_width % 3 == 0);
+  (void)src_width;
+  (void)src_height;
   if (!filtering) {
     ScaleRowDown38_3 = ScaleRowDown38_C;
     ScaleRowDown38_2 = ScaleRowDown38_C;
@@ -651,6 +664,8 @@ static void ScalePlaneDown38_16(int src_width,
   void (*ScaleRowDown38_2)(const uint16* src_ptr, ptrdiff_t src_stride,
                            uint16* dst_ptr, int dst_width);
   const int filter_stride = (filtering == kFilterLinear) ? 0 : src_stride;
+  (void)src_width;
+  (void)src_height;
   assert(dst_width % 3 == 0);
   if (!filtering) {
     ScaleRowDown38_3 = ScaleRowDown38_16_C;

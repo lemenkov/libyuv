@@ -27,6 +27,7 @@ void ScaleARGBRowDown2_MSA(const uint8_t* src_argb,
                            int dst_width) {
   int x;
   v16u8 src0, src1, dst0;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 4) {
     src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
@@ -44,6 +45,7 @@ void ScaleARGBRowDown2Linear_MSA(const uint8_t* src_argb,
                                  int dst_width) {
   int x;
   v16u8 src0, src1, vec0, vec1, dst0;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 4) {
     src0 = (v16u8)__msa_ld_b((v16i8*)src_argb, 0);
@@ -101,6 +103,7 @@ void ScaleARGBRowDownEven_MSA(const uint8_t* src_argb,
   int x;
   int32_t stepx = src_stepx * 4;
   int32_t data0, data1, data2, data3;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 4) {
     data0 = LW(src_argb);
@@ -177,6 +180,7 @@ void ScaleRowDown2_MSA(const uint8_t* src_ptr,
                        int dst_width) {
   int x;
   v16u8 src0, src1, src2, src3, dst0, dst1;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 32) {
     src0 = (v16u8)__msa_ld_b((v16i8*)src_ptr, 0);
@@ -197,6 +201,7 @@ void ScaleRowDown2Linear_MSA(const uint8_t* src_ptr,
                              int dst_width) {
   int x;
   v16u8 src0, src1, src2, src3, vec0, vec1, vec2, vec3, dst0, dst1;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 32) {
     src0 = (v16u8)__msa_ld_b((v16i8*)src_ptr, 0);
@@ -261,6 +266,7 @@ void ScaleRowDown4_MSA(const uint8_t* src_ptr,
                        int dst_width) {
   int x;
   v16u8 src0, src1, src2, src3, vec0, vec1, dst0;
+  (void)src_stride;
 
   for (x = 0; x < dst_width; x += 16) {
     src0 = (v16u8)__msa_ld_b((v16i8*)src_ptr, 0);
@@ -351,6 +357,7 @@ void ScaleRowDown38_MSA(const uint8_t* src_ptr,
   uint32_t dst1;
   v16u8 src0, src1, vec0;
   v16i8 mask = {0, 3, 6, 8, 11, 14, 16, 19, 22, 24, 27, 30, 0, 0, 0, 0};
+  (void)src_stride;
 
   assert(dst_width % 3 == 0);
   width = dst_width / 3;

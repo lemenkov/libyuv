@@ -455,8 +455,9 @@ void ErrorHandler(j_common_ptr cinfo) {
   longjmp(mgr->setjmp_buffer, 1);
 }
 
+// Suppress fprintf warnings.
 void OutputHandler(j_common_ptr cinfo) {
-  // Suppress fprintf warnings.
+  (void)cinfo;
 }
 
 #endif  // HAVE_SETJMP
