@@ -442,6 +442,11 @@ extern "C" {
 #define HAS_BGRATOUVROW_MSA
 #define HAS_ABGRTOUVROW_MSA
 #define HAS_RGBATOUVROW_MSA
+#define HAS_I444TOARGBROW_MSA
+#define HAS_I400TOARGBROW_MSA
+#define HAS_J400TOARGBROW_MSA
+#define HAS_YUY2TOARGBROW_MSA
+#define HAS_UYVYTOARGBROW_MSA
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -754,6 +759,12 @@ void UYVYToARGBRow_NEON(const uint8* src_uyvy,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void I444ToARGBRow_MSA(const uint8* src_y,
+                       const uint8* src_u,
+                       const uint8* src_v,
+                       uint8* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 void I444ToARGBRow_DSPR2(const uint8* src_y,
                          const uint8* src_u,
                          const uint8* src_v,
@@ -833,6 +844,14 @@ void NV12ToRGB565Row_MSA(const uint8* src_y,
                          int width);
 void NV21ToARGBRow_MSA(const uint8* src_y,
                        const uint8* src_vu,
+                       uint8* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void YUY2ToARGBRow_MSA(const uint8* src_yuy2,
+                       uint8* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void UYVYToARGBRow_MSA(const uint8* src_uyvy,
                        uint8* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
@@ -1679,10 +1698,12 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int width);
+void J400ToARGBRow_MSA(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int width);
+void J400ToARGBRow_Any_MSA(const uint8* src_y, uint8* dst_argb, int width);
 
 void I444ToARGBRow_C(const uint8* src_y,
                      const uint8* src_u,
@@ -2079,9 +2100,11 @@ void I400ToARGBRow_C(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_NEON(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_MSA(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_Any_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_Any_AVX2(const uint8* src_y, uint8* dst_argb, int width);
 void I400ToARGBRow_Any_NEON(const uint8* src_y, uint8* dst_argb, int width);
+void I400ToARGBRow_Any_MSA(const uint8* src_y, uint8* dst_argb, int width);
 
 // ARGB preattenuated alpha blend.
 void ARGBBlendRow_SSSE3(const uint8* src_argb,
@@ -2413,6 +2436,12 @@ void I422ToARGBRow_DSPR2(const uint8* src_y,
                          uint8* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width);
+void I444ToARGBRow_Any_MSA(const uint8* src_y,
+                           const uint8* src_u,
+                           const uint8* src_v,
+                           uint8* dst_argb,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 void I422ToARGBRow_Any_MSA(const uint8* src_y,
                            const uint8* src_u,
                            const uint8* src_v,
@@ -2468,6 +2497,14 @@ void NV12ToRGB565Row_Any_MSA(const uint8* src_y,
                              int width);
 void NV21ToARGBRow_Any_MSA(const uint8* src_y,
                            const uint8* src_vu,
+                           uint8* dst_argb,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void YUY2ToARGBRow_Any_MSA(const uint8* src_yuy2,
+                           uint8* dst_argb,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void UYVYToARGBRow_Any_MSA(const uint8* src_uyvy,
                            uint8* dst_argb,
                            const struct YuvConstants* yuvconstants,
                            int width);
