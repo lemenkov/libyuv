@@ -212,6 +212,9 @@ ANY21(MergeUVRow_Any_AVX2, MergeUVRow_AVX2, 0, 1, 1, 2, 31)
 #ifdef HAS_MERGEUVROW_NEON
 ANY21(MergeUVRow_Any_NEON, MergeUVRow_NEON, 0, 1, 1, 2, 15)
 #endif
+#ifdef HAS_MERGEUVROW_MSA
+ANY21(MergeUVRow_Any_MSA, MergeUVRow_MSA, 0, 1, 1, 2, 15)
+#endif
 
 // Math functions.
 #ifdef HAS_ARGBMULTIPLYROW_SSE2
@@ -428,6 +431,9 @@ ANY11(I400ToARGBRow_Any_MSA, I400ToARGBRow_MSA, 0, 1, 4, 15)
 #endif
 #if defined(HAS_RAWTORGB24ROW_NEON)
 ANY11(RAWToRGB24Row_Any_NEON, RAWToRGB24Row_NEON, 0, 3, 3, 7)
+#endif
+#if defined(HAS_RAWTORGB24ROW_MSA)
+ANY11(RAWToRGB24Row_Any_MSA, RAWToRGB24Row_MSA, 0, 3, 3, 15)
 #endif
 #ifdef HAS_ARGBTOYROW_AVX2
 ANY11(ARGBToYRow_Any_AVX2, ARGBToYRow_AVX2, 0, 4, 1, 31)
@@ -797,6 +803,9 @@ ANY11T(InterpolateRow_Any_NEON, InterpolateRow_NEON, 1, 1, 15)
 #ifdef HAS_INTERPOLATEROW_DSPR2
 ANY11T(InterpolateRow_Any_DSPR2, InterpolateRow_DSPR2, 1, 1, 3)
 #endif
+#ifdef HAS_INTERPOLATEROW_MSA
+ANY11T(InterpolateRow_Any_MSA, InterpolateRow_MSA, 1, 1, 31)
+#endif
 #undef ANY11T
 
 // Any 1 to 1 mirror.
@@ -861,6 +870,9 @@ ANY1(SetRow_Any_NEON, SetRow_NEON, uint8, 1, 15)
 #endif
 #ifdef HAS_ARGBSETROW_NEON
 ANY1(ARGBSetRow_Any_NEON, ARGBSetRow_NEON, uint32, 4, 3)
+#endif
+#ifdef HAS_ARGBSETROW_MSA
+ANY1(ARGBSetRow_Any_MSA, ARGBSetRow_MSA, uint32, 4, 3)
 #endif
 #undef ANY1
 

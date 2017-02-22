@@ -360,6 +360,14 @@ int ARGBToNV12(const uint8* src_argb,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MergeUVRow_ = MergeUVRow_Any_MSA;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow_ = MergeUVRow_MSA;
+    }
+  }
+#endif
   {
     // Allocate a rows of uv.
     align_buffer_64(row_u, ((halfwidth + 31) & ~31) * 2);
@@ -500,6 +508,14 @@ int ARGBToNV21(const uint8* src_argb,
     ARGBToUVRow = ARGBToUVRow_Any_DSPR2;
     if (IS_ALIGNED(width, 16)) {
       ARGBToUVRow = ARGBToUVRow_DSPR2;
+    }
+  }
+#endif
+#if defined(HAS_MERGEUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MergeUVRow_ = MergeUVRow_Any_MSA;
+    if (IS_ALIGNED(halfwidth, 16)) {
+      MergeUVRow_ = MergeUVRow_MSA;
     }
   }
 #endif

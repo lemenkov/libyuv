@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "libyuv/row.h"
 
 // This module is for GCC MSA
@@ -2846,6 +2848,124 @@ void UYVYToARGBRow_MSA(const uint8* src_uyvy,
     STOREARGB(vec0, vec1, vec2, alpha, rgb_buf);
     src_uyvy += 16;
     rgb_buf += 32;
+  }
+}
+
+void InterpolateRow_MSA(uint8* dst_ptr,
+                        const uint8* src_ptr,
+                        ptrdiff_t src_stride,
+                        int width,
+                        int32 source_y_fraction) {
+  int32 y1_fraction = source_y_fraction;
+  int32 y0_fraction = 256 - y1_fraction;
+  uint16 y_fractions;
+  const uint8* s = src_ptr;
+  const uint8* t = src_ptr + src_stride;
+  int x;
+  v16u8 src0, src1, src2, src3, dst0, dst1;
+  v8u16 vec0, vec1, vec2, vec3, y_frac;
+
+  if (0 == y1_fraction) {
+    memcpy(dst_ptr, src_ptr, width);
+    return;
+  }
+
+  if (128 == y1_fraction) {
+    for (x = 0; x < width; x += 32) {
+      src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+      src1 = (v16u8)__msa_ld_b((v16i8*)s, 16);
+      src2 = (v16u8)__msa_ld_b((v16i8*)t, 0);
+      src3 = (v16u8)__msa_ld_b((v16i8*)t, 16);
+      dst0 = __msa_aver_u_b(src0, src2);
+      dst1 = __msa_aver_u_b(src1, src3);
+      ST_UB2(dst0, dst1, dst_ptr, 16);
+      s += 32;
+      t += 32;
+      dst_ptr += 32;
+    }
+    return;
+  }
+
+  y_fractions = (uint16)(y0_fraction + (y1_fraction << 8));
+  y_frac = (v8u16)__msa_fill_h(y_fractions);
+
+  for (x = 0; x < width; x += 32) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)s, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)s, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)t, 0);
+    src3 = (v16u8)__msa_ld_b((v16i8*)t, 16);
+    vec0 = (v8u16)__msa_ilvr_b((v16i8)src2, (v16i8)src0);
+    vec1 = (v8u16)__msa_ilvl_b((v16i8)src2, (v16i8)src0);
+    vec2 = (v8u16)__msa_ilvr_b((v16i8)src3, (v16i8)src1);
+    vec3 = (v8u16)__msa_ilvl_b((v16i8)src3, (v16i8)src1);
+    vec0 = (v8u16)__msa_dotp_u_h((v16u8)vec0, (v16u8)y_frac);
+    vec1 = (v8u16)__msa_dotp_u_h((v16u8)vec1, (v16u8)y_frac);
+    vec2 = (v8u16)__msa_dotp_u_h((v16u8)vec2, (v16u8)y_frac);
+    vec3 = (v8u16)__msa_dotp_u_h((v16u8)vec3, (v16u8)y_frac);
+    vec0 = (v8u16)__msa_srari_h((v8i16)vec0, 8);
+    vec1 = (v8u16)__msa_srari_h((v8i16)vec1, 8);
+    vec2 = (v8u16)__msa_srari_h((v8i16)vec2, 8);
+    vec3 = (v8u16)__msa_srari_h((v8i16)vec3, 8);
+    dst0 = (v16u8)__msa_pckev_b((v16i8)vec1, (v16i8)vec0);
+    dst1 = (v16u8)__msa_pckev_b((v16i8)vec3, (v16i8)vec2);
+    ST_UB2(dst0, dst1, dst_ptr, 16);
+    s += 32;
+    t += 32;
+    dst_ptr += 32;
+  }
+}
+
+void ARGBSetRow_MSA(uint8* dst_argb, uint32 v32, int width) {
+  int x;
+  v16u8 dst0 = (v16u8)__msa_fill_w(v32);
+
+  for (x = 0; x < width; x += 4) {
+    ST_UB(dst0, dst_argb);
+    dst_argb += 16;
+  }
+}
+
+void RAWToRGB24Row_MSA(const uint8* src_raw, uint8* dst_rgb24, int width) {
+  int x;
+  v16u8 src0, src1, src2, src3, src4, dst0, dst1, dst2;
+  v16i8 shuffler0 = {2, 1, 0, 5, 4, 3, 8, 7, 6, 11, 10, 9, 14, 13, 12, 17};
+  v16i8 shuffler1 = {8,  7,  12, 11, 10, 15, 14, 13,
+                     18, 17, 16, 21, 20, 19, 24, 23};
+  v16i8 shuffler2 = {14, 19, 18, 17, 22, 21, 20, 25,
+                     24, 23, 28, 27, 26, 31, 30, 29};
+
+  for (x = 0; x < width; x += 16) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_raw, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_raw, 16);
+    src2 = (v16u8)__msa_ld_b((v16i8*)src_raw, 32);
+    src3 = (v16u8)__msa_sldi_b((v16i8)src1, (v16i8)src0, 8);
+    src4 = (v16u8)__msa_sldi_b((v16i8)src2, (v16i8)src1, 8);
+    dst0 = (v16u8)__msa_vshf_b(shuffler0, (v16i8)src1, (v16i8)src0);
+    dst1 = (v16u8)__msa_vshf_b(shuffler1, (v16i8)src4, (v16i8)src3);
+    dst2 = (v16u8)__msa_vshf_b(shuffler2, (v16i8)src2, (v16i8)src1);
+    ST_UB2(dst0, dst1, dst_rgb24, 16);
+    ST_UB(dst2, (dst_rgb24 + 32));
+    src_raw += 48;
+    dst_rgb24 += 48;
+  }
+}
+
+void MergeUVRow_MSA(const uint8* src_u,
+                    const uint8* src_v,
+                    uint8* dst_uv,
+                    int width) {
+  int x;
+  v16u8 src0, src1, dst0, dst1;
+
+  for (x = 0; x < width; x += 16) {
+    src0 = (v16u8)__msa_ld_b((v16i8*)src_u, 0);
+    src1 = (v16u8)__msa_ld_b((v16i8*)src_v, 0);
+    dst0 = (v16u8)__msa_ilvr_b((v16i8)src1, (v16i8)src0);
+    dst1 = (v16u8)__msa_ilvl_b((v16i8)src1, (v16i8)src0);
+    ST_UB2(dst0, dst1, dst_uv, 16);
+    src_u += 16;
+    src_v += 16;
+    dst_uv += 32;
   }
 }
 

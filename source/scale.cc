@@ -45,10 +45,9 @@ static void ScalePlaneDown2(int src_width,
   int y;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering == kFilterNone
-          ? ScaleRowDown2_C
-          : (filtering == kFilterLinear ? ScaleRowDown2Linear_C
-                                        : ScaleRowDown2Box_C);
+      filtering == kFilterNone ? ScaleRowDown2_C : (filtering == kFilterLinear
+                                                        ? ScaleRowDown2Linear_C
+                                                        : ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
   (void)src_width;
   (void)src_height;
@@ -1054,6 +1053,14 @@ void ScalePlaneBilinearDown(int src_width,
     InterpolateRow = InterpolateRow_Any_DSPR2;
     if (IS_ALIGNED(src_width, 4)) {
       InterpolateRow = InterpolateRow_DSPR2;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    InterpolateRow = InterpolateRow_Any_MSA;
+    if (IS_ALIGNED(src_width, 32)) {
+      InterpolateRow = InterpolateRow_MSA;
     }
   }
 #endif

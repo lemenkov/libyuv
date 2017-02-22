@@ -381,6 +381,14 @@ void MergeUVPlane(const uint8* src_u,
     }
   }
 #endif
+#if defined(HAS_MERGEUVROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MergeUVRow = MergeUVRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      MergeUVRow = MergeUVRow_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     // Merge a row of U and V into a row of UV.
@@ -1509,6 +1517,14 @@ int RAWToRGB24(const uint8* src_raw,
     }
   }
 #endif
+#if defined(HAS_RAWTORGB24ROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    RAWToRGB24Row = RAWToRGB24Row_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      RAWToRGB24Row = RAWToRGB24Row_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     RAWToRGB24Row(src_raw, dst_rgb24, width);
@@ -1636,6 +1652,14 @@ int ARGBRect(uint8* dst_argb,
 #if defined(HAS_ARGBSETROW_X86)
   if (TestCpuFlag(kCpuHasX86)) {
     ARGBSetRow = ARGBSetRow_X86;
+  }
+#endif
+#if defined(HAS_ARGBSETROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ARGBSetRow = ARGBSetRow_Any_MSA;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBSetRow = ARGBSetRow_MSA;
+    }
   }
 #endif
 
@@ -2372,6 +2396,14 @@ int InterpolatePlane(const uint8* src0,
       IS_ALIGNED(src_stride1, 4) && IS_ALIGNED(dst, 4) &&
       IS_ALIGNED(dst_stride, 4) && IS_ALIGNED(width, 4)) {
     InterpolateRow = InterpolateRow_DSPR2;
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    InterpolateRow = InterpolateRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      InterpolateRow = InterpolateRow_MSA;
+    }
   }
 #endif
 
@@ -3152,6 +3184,14 @@ int YUY2ToNV12(const uint8* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    InterpolateRow = InterpolateRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      InterpolateRow = InterpolateRow_MSA;
+    }
+  }
+#endif
 
   {
     int awidth = halfwidth * 2;
@@ -3249,6 +3289,14 @@ int UYVYToNV12(const uint8* src_uyvy,
     InterpolateRow = InterpolateRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    InterpolateRow = InterpolateRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      InterpolateRow = InterpolateRow_MSA;
     }
   }
 #endif
