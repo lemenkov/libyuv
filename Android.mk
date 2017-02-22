@@ -1,4 +1,4 @@
-# This is the Android makefile for libyuv for both platform and NDK.
+# This is the Android makefile for libyuv for NDK.
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -49,7 +49,7 @@ LOCAL_SRC_FILES := \
     source/scale_neon64.cc      \
     source/video_common.cc
 
-common_CFLAGS := -Wall -fexceptions -DHAVE_JPEG -Wno-unused-parameter
+common_CFLAGS := -Wall -fexceptions -DHAVE_JPEG
 LOCAL_CFLAGS += $(common_CFLAGS)
 LOCAL_SHARED_LIBRARIES := libjpeg
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
