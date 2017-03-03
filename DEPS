@@ -34,7 +34,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '1dfed1bd94599bc0e5df264ed69f2f52d6dcfe3f',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '5eeceb26328155271540367fc22ce468965a6e26',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'e7079f0e0e14108ab0dba58728ff219637458563',
    'src/tools/swarming_client':
