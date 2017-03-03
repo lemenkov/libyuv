@@ -19,6 +19,14 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// memset for temp is meant to clear the source buffer (not dest) so that
+// SIMD that reads full multiple of 16 bytes will not trigger msan errors.
+// memset is not needed for production, as the garbage values are processed but
+// not used, although there may be edge cases for subsampling.
+// The size of the buffer is based on the largest read, which can be inferred
+// by the source type (e.g. ARGB) and the mask (last parameter), or by examining
+// the source code for how much the source pointers are advanced.
+
 // Subsampled source needs to be increase by 1 of not even.
 #define SS(width, shift) (((width) + (1 << (shift)) - 1) >> (shift))
 
@@ -618,17 +626,17 @@ ANY11(ARGBExtractAlphaRow_Any_NEON, ARGBExtractAlphaRow_NEON, 0, 4, 1, 15)
 // Any 1 to 1 blended.  Destination is read, modify, write.
 #define ANY11B(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, BPP, MASK)               \
   void NAMEANY(const uint8* src_ptr, uint8* dst_ptr, int width) {         \
-    SIMD_ALIGNED(uint8 temp[128 * 2]);                                    \
-    memset(temp, 0, 128 * 2); /* for YUY2 and msan */                     \
+    SIMD_ALIGNED(uint8 temp[64 * 2]);                                     \
+    memset(temp, 0, 64 * 2); /* for msan */                               \
     int r = width & MASK;                                                 \
     int n = width & ~MASK;                                                \
     if (n > 0) {                                                          \
       ANY_SIMD(src_ptr, dst_ptr, n);                                      \
     }                                                                     \
     memcpy(temp, src_ptr + (n >> UVSHIFT) * SBPP, SS(r, UVSHIFT) * SBPP); \
-    memcpy(temp + 128, dst_ptr + n * BPP, r * BPP);                       \
-    ANY_SIMD(temp, temp + 128, MASK + 1);                                 \
-    memcpy(dst_ptr + n * BPP, temp + 128, r * BPP);                       \
+    memcpy(temp + 64, dst_ptr + n * BPP, r * BPP);                        \
+    ANY_SIMD(temp, temp + 64, MASK + 1);                                  \
+    memcpy(dst_ptr + n * BPP, temp + 64, r * BPP);                        \
   }
 
 #ifdef HAS_ARGBCOPYALPHAROW_AVX2
@@ -713,31 +721,31 @@ ANY11P(ARGBShuffleRow_Any_MSA, ARGBShuffleRow_MSA, const uint8*, 4, 4, 7)
 #define ANY11P16(NAMEANY, ANY_SIMD, T, SBPP, BPP, MASK)            \
   void NAMEANY(const uint16* src_ptr, uint16* dst_ptr, T shuffler, \
                int width) {                                        \
-    SIMD_ALIGNED(uint16 temp[32 * 2]);                             \
-    memset(temp, 0, 64); /* for msan */                            \
+    SIMD_ALIGNED(uint16 temp[16 * 2]);                             \
+    memset(temp, 0, 32); /* for msan */                            \
     int r = width & MASK;                                          \
     int n = width & ~MASK;                                         \
     if (n > 0) {                                                   \
       ANY_SIMD(src_ptr, dst_ptr, shuffler, n);                     \
     }                                                              \
-    memcpy(temp, src_ptr + n * SBPP, r * SBPP);                    \
-    ANY_SIMD(temp, temp + 64, shuffler, MASK + 1);                 \
-    memcpy(dst_ptr + n * BPP, temp + 64, r * BPP);                 \
+    memcpy(temp, src_ptr + n, r * SBPP);                           \
+    ANY_SIMD(temp, temp + 16, shuffler, MASK + 1);                 \
+    memcpy(dst_ptr + n, temp + 16, r * BPP);                       \
   }
 
 #ifdef HAS_HALFFLOATROW_SSE2
-ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, float, 1, 1, 7)
+ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, float, 2, 2, 7)
 #endif
 #ifdef HAS_HALFFLOATROW_AVX2
-ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, float, 1, 1, 15)
+ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, float, 2, 2, 15)
 #endif
 #ifdef HAS_HALFFLOATROW_F16C
-ANY11P16(HalfFloatRow_Any_F16C, HalfFloatRow_F16C, float, 1, 1, 15)
-ANY11P16(HalfFloat1Row_Any_F16C, HalfFloat1Row_F16C, float, 1, 1, 15)
+ANY11P16(HalfFloatRow_Any_F16C, HalfFloatRow_F16C, float, 2, 2, 15)
+ANY11P16(HalfFloat1Row_Any_F16C, HalfFloat1Row_F16C, float, 2, 2, 15)
 #endif
 #ifdef HAS_HALFFLOATROW_NEON
-ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, float, 1, 1, 7)
-ANY11P16(HalfFloat1Row_Any_NEON, HalfFloat1Row_NEON, float, 1, 1, 7)
+ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, float, 2, 2, 7)
+ANY11P16(HalfFloat1Row_Any_NEON, HalfFloat1Row_NEON, float, 2, 2, 7)
 #endif
 #undef ANY11P16
 
