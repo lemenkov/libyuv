@@ -11,7 +11,7 @@ import("//testing/test.gni")
 
 config("libyuv_config") {
   include_dirs = [ "include" ]
-  if (is_android && current_cpu=="arm64") {
+  if (is_android && current_cpu == "arm64") {
     ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64" ]
   }
   if (is_android && current_cpu != "arm64") {
@@ -36,7 +36,21 @@ group("default") {
   }
 }
 
-static_library("libyuv") {
+group("libyuv") {
+  public_configs = [ ":libyuv_config" ]
+
+  if (is_win && target_cpu == "x64") {
+    deps = [
+      ":libyuv_internal(//build/toolchain/win:clang_x64)",
+    ]
+  } else {
+    deps = [
+      ":libyuv_internal",
+    ]
+  }
+}
+
+static_library("libyuv_internal") {
   sources = [
     # Headers
     "include/libyuv.h",
@@ -97,8 +111,7 @@ static_library("libyuv") {
     "source/video_common.cc",
   ]
 
-  public_configs = [ ":libyuv_config" ]
-
+  configs += [ ":libyuv_config" ]
   defines = []
   deps = []
 
@@ -119,13 +132,13 @@ static_library("libyuv") {
   # crbug.com/538243).
   if (!is_debug || is_nacl) {
     configs -= [ "//build/config/compiler:default_optimization" ]
+
     # Enable optimize for speed (-O2) over size (-Os).
     configs += [ "//build/config/compiler:optimize_max" ]
   }
 
   # To enable AVX2 or other cpu optimization, pass flag here
   #  cflags = [ "-mavx2" ]
-
 }
 
 if (libyuv_use_neon) {
@@ -148,6 +161,7 @@ if (libyuv_use_neon) {
     # crbug.com/538243).
     if (!is_debug) {
       configs -= [ "//build/config/compiler:default_optimization" ]
+
       # Enable optimize for speed (-O2) over size (-Os).
       configs += [ "//build/config/compiler:optimize_max" ]
     }
@@ -163,9 +177,9 @@ if (libyuv_use_msa) {
   static_library("libyuv_msa") {
     sources = [
       # MSA Source Files
+      "source/rotate_msa.cc",
       "source/row_msa.cc",
       "source/scale_msa.cc",
-      "source/rotate_msa.cc",
     ]
 
     public_configs = [ ":libyuv_config" ]
@@ -178,13 +192,13 @@ if (libyuv_include_tests) {
       cflags = [
         # TODO(fbarchard): Fix sign and unused variable warnings.
         "-Wno-sign-compare",
-        "-Wno-unused-variable"
+        "-Wno-unused-variable",
       ]
     }
     if (is_win) {
       cflags = [
-        "/wd4245", # signed/unsigned mismatch
-        "/wd4189", # local variable is initialized but not referenced
+        "/wd4245",  # signed/unsigned mismatch
+        "/wd4189",  # local variable is initialized but not referenced
       ]
     }
   }
@@ -196,12 +210,11 @@ if (libyuv_include_tests) {
     testonly = true
 
     sources = [
-      # headers
-      "unit_test/unit_test.h",
       # sources
+      # headers
       "unit_test/basictypes_test.cc",
-      "unit_test/compare_test.cc",
       "unit_test/color_test.cc",
+      "unit_test/compare_test.cc",
       "unit_test/convert_test.cc",
       "unit_test/cpu_test.cc",
       "unit_test/math_test.cc",
@@ -211,6 +224,7 @@ if (libyuv_include_tests) {
       "unit_test/scale_argb_test.cc",
       "unit_test/scale_test.cc",
       "unit_test/unit_test.cc",
+      "unit_test/unit_test.h",
       "unit_test/video_common_test.cc",
     ]
 
@@ -222,7 +236,9 @@ if (libyuv_include_tests) {
 
     configs += [ ":libyuv_unittest_warnings_config" ]
 
-    public_deps = [ "//testing/gtest" ]
+    public_deps = [
+      "//testing/gtest",
+    ]
     public_configs = [ ":libyuv_unittest_config" ]
 
     defines = []
@@ -244,8 +260,8 @@ if (libyuv_include_tests) {
 
     # TODO(YangZhang): These lines can be removed when high accuracy
     # YUV to RGB to Neon is ported.
-    if ((target_cpu=="armv7" || target_cpu=="armv7s" ||
-        (target_cpu=="arm" && arm_version >= 7) || target_cpu=="arm64") &&
+    if ((target_cpu == "armv7" || target_cpu == "armv7s" ||
+         (target_cpu == "arm" && arm_version >= 7) || target_cpu == "arm64") &&
         (arm_use_neon || arm_optionally_use_neon)) {
       defines += [ "LIBYUV_NEON" ]
     }
@@ -263,9 +279,11 @@ if (libyuv_include_tests) {
   executable("compare") {
     sources = [
       # sources
-      "util/compare.cc"
+      "util/compare.cc",
     ]
-    deps = [ ":libyuv" ]
+    deps = [
+      ":libyuv",
+    ]
     if (is_linux) {
       cflags = [ "-fexceptions" ]
     }
@@ -274,9 +292,11 @@ if (libyuv_include_tests) {
   executable("convert") {
     sources = [
       # sources
-      "util/convert.cc"
+      "util/convert.cc",
     ]
-    deps = [ ":libyuv" ]
+    deps = [
+      ":libyuv",
+    ]
     if (is_linux) {
       cflags = [ "-fexceptions" ]
     }
@@ -285,11 +305,13 @@ if (libyuv_include_tests) {
   executable("psnr") {
     sources = [
       # sources
-      "util/psnr_main.cc",
       "util/psnr.cc",
-      "util/ssim.cc"
+      "util/psnr_main.cc",
+      "util/ssim.cc",
     ]
-    deps = [ ":libyuv" ]
+    deps = [
+      ":libyuv",
+    ]
 
     if (!is_ios && !libyuv_disable_jpeg) {
       defines = [ "HAVE_JPEG" ]
@@ -299,8 +321,10 @@ if (libyuv_include_tests) {
   executable("cpuid") {
     sources = [
       # sources
-      "util/cpuid.c"
+      "util/cpuid.c",
     ]
-    deps = [ ":libyuv" ]
+    deps = [
+      ":libyuv",
+    ]
   }
 }
