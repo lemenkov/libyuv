@@ -40,11 +40,11 @@ group("libyuv") {
   public_configs = [ ":libyuv_config" ]
 
   if (is_win && target_cpu == "x64") {
-    deps = [
+    public_deps = [
       ":libyuv_internal(//build/toolchain/win:clang_x64)",
     ]
   } else {
-    deps = [
+    public_deps = [
       ":libyuv_internal",
     ]
   }
