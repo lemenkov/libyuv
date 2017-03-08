@@ -1029,7 +1029,7 @@ void ScalePlaneVertical(int src_height,
                         enum FilterMode filtering) {
   // TODO(fbarchard): Allow higher bpp.
   int dst_width_bytes = dst_width * bpp;
-  void (*InterpolateRow)(uint8* dst_argb, const uint8* src_argb,
+  void (*InterpolateRow)(uint8 * dst_argb, const uint8* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
   const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;
@@ -1109,7 +1109,7 @@ void ScalePlaneVertical_16(int src_height,
                            enum FilterMode filtering) {
   // TODO(fbarchard): Allow higher wpp.
   int dst_width_words = dst_width * wpp;
-  void (*InterpolateRow)(uint16* dst_argb, const uint16* src_argb,
+  void (*InterpolateRow)(uint16 * dst_argb, const uint16* src_argb,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_16_C;
   const int max_y = (src_height > 1) ? ((src_height - 1) << 16) - 1 : 0;

@@ -14,8 +14,8 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
-#include "libyuv/scale.h"  // For ScalePlane()
 #include "libyuv/row.h"
+#include "libyuv/scale.h"  // For ScalePlane()
 
 #ifdef __cplusplus
 namespace libyuv {

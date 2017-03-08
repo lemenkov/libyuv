@@ -45,9 +45,10 @@ static void ScalePlaneDown2(int src_width,
   int y;
   void (*ScaleRowDown2)(const uint8* src_ptr, ptrdiff_t src_stride,
                         uint8* dst_ptr, int dst_width) =
-      filtering == kFilterNone ? ScaleRowDown2_C : (filtering == kFilterLinear
-                                                        ? ScaleRowDown2Linear_C
-                                                        : ScaleRowDown2Box_C);
+      filtering == kFilterNone
+          ? ScaleRowDown2_C
+          : (filtering == kFilterLinear ? ScaleRowDown2Linear_C
+                                        : ScaleRowDown2Box_C);
   int row_stride = src_stride << 1;
   (void)src_width;
   (void)src_height;
@@ -1014,10 +1015,10 @@ void ScalePlaneBilinearDown(int src_width,
 
   const int max_y = (src_height - 1) << 16;
   int j;
-  void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr, int dst_width,
+  void (*ScaleFilterCols)(uint8 * dst_ptr, const uint8* src_ptr, int dst_width,
                           int x, int dx) =
       (src_width >= 32768) ? ScaleFilterCols64_C : ScaleFilterCols_C;
-  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
+  void (*InterpolateRow)(uint8 * dst_ptr, const uint8* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering, &x, &y,
@@ -1121,10 +1122,10 @@ void ScalePlaneBilinearDown_16(int src_width,
 
   const int max_y = (src_height - 1) << 16;
   int j;
-  void (*ScaleFilterCols)(uint16* dst_ptr, const uint16* src_ptr, int dst_width,
-                          int x, int dx) =
+  void (*ScaleFilterCols)(uint16 * dst_ptr, const uint16* src_ptr,
+                          int dst_width, int x, int dx) =
       (src_width >= 32768) ? ScaleFilterCols64_16_C : ScaleFilterCols_16_C;
-  void (*InterpolateRow)(uint16* dst_ptr, const uint16* src_ptr,
+  void (*InterpolateRow)(uint16 * dst_ptr, const uint16* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_16_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering, &x, &y,
@@ -1217,10 +1218,10 @@ void ScalePlaneBilinearUp(int src_width,
   int dx = 0;
   int dy = 0;
   const int max_y = (src_height - 1) << 16;
-  void (*InterpolateRow)(uint8* dst_ptr, const uint8* src_ptr,
+  void (*InterpolateRow)(uint8 * dst_ptr, const uint8* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_C;
-  void (*ScaleFilterCols)(uint8* dst_ptr, const uint8* src_ptr, int dst_width,
+  void (*ScaleFilterCols)(uint8 * dst_ptr, const uint8* src_ptr, int dst_width,
                           int x, int dx) =
       filtering ? ScaleFilterCols_C : ScaleCols_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering, &x, &y,
@@ -1352,11 +1353,11 @@ void ScalePlaneBilinearUp_16(int src_width,
   int dx = 0;
   int dy = 0;
   const int max_y = (src_height - 1) << 16;
-  void (*InterpolateRow)(uint16* dst_ptr, const uint16* src_ptr,
+  void (*InterpolateRow)(uint16 * dst_ptr, const uint16* src_ptr,
                          ptrdiff_t src_stride, int dst_width,
                          int source_y_fraction) = InterpolateRow_16_C;
-  void (*ScaleFilterCols)(uint16* dst_ptr, const uint16* src_ptr, int dst_width,
-                          int x, int dx) =
+  void (*ScaleFilterCols)(uint16 * dst_ptr, const uint16* src_ptr,
+                          int dst_width, int x, int dx) =
       filtering ? ScaleFilterCols_16_C : ScaleCols_16_C;
   ScaleSlope(src_width, src_height, dst_width, dst_height, filtering, &x, &y,
              &dx, &dy);
@@ -1485,7 +1486,7 @@ static void ScalePlaneSimple(int src_width,
                              const uint8* src_ptr,
                              uint8* dst_ptr) {
   int i;
-  void (*ScaleCols)(uint8* dst_ptr, const uint8* src_ptr, int dst_width, int x,
+  void (*ScaleCols)(uint8 * dst_ptr, const uint8* src_ptr, int dst_width, int x,
                     int dx) = ScaleCols_C;
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
@@ -1521,7 +1522,7 @@ static void ScalePlaneSimple_16(int src_width,
                                 const uint16* src_ptr,
                                 uint16* dst_ptr) {
   int i;
-  void (*ScaleCols)(uint16* dst_ptr, const uint16* src_ptr, int dst_width,
+  void (*ScaleCols)(uint16 * dst_ptr, const uint16* src_ptr, int dst_width,
                     int x, int dx) = ScaleCols_16_C;
   // Initial source x/y coordinate and step values as 16.16 fixed point.
   int x = 0;
