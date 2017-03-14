@@ -14,7 +14,9 @@
 
 #include <cstring>
 
+#ifdef LIBYUV_USE_GFLAGS
 #include "gflags/gflags.h"
+#endif
 
 // Change this to 1000 for benchmarking.
 // TODO(fbarchard): Add command line parsing to pass this as option.
@@ -22,6 +24,7 @@
 
 unsigned int fastrand_seed = 0xfb;
 
+#ifdef LIBYUV_USE_GFLAGS
 DEFINE_int32(libyuv_width, 0, "width of test image.");
 DEFINE_int32(libyuv_height, 0, "height of test image.");
 DEFINE_int32(libyuv_repeat, 0, "number of times to repeat test.");
@@ -29,6 +32,14 @@ DEFINE_int32(libyuv_flags, 0, "cpu flags for reference code. 1 = C, -1 = SIMD");
 DEFINE_int32(libyuv_cpu_info,
              0,
              "cpu flags for benchmark code. 1 = C, -1 = SIMD");
+#else
+// Disable command line parameters if gflags disabled.
+static const int32 FLAGS_libyuv_width = 0;
+static const int32 FLAGS_libyuv_height = 0;
+static const int32 FLAGS_libyuv_repeat = 0;
+static const int32 FLAGS_libyuv_flags = 0;
+static const int32 FLAGS_libyuv_cpu_info = 0;
+#endif
 
 // For quicker unittests, default is 128 x 72.  But when benchmarking,
 // default to 720p.  Allow size to specify.
@@ -390,9 +401,11 @@ LibYUVBaseTest::LibYUVBaseTest()
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+#ifdef LIBYUV_USE_GFLAGS
   // AllowCommandLineParsing allows us to ignore flags passed on to us by
   // Chromium build bots without having to explicitly disable them.
   google::AllowCommandLineReparsing();
   google::ParseCommandLineFlags(&argc, &argv, true);
+#endif
   return RUN_ALL_TESTS();
 }

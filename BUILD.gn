@@ -9,6 +9,11 @@
 import("libyuv.gni")
 import("//testing/test.gni")
 
+declare_args() {
+  # Set to false to disable building with gflags.
+  libyuv_use_gflags = true
+}
+
 config("libyuv_config") {
   include_dirs = [ "include" ]
   if (is_android && current_cpu == "arm64") {
@@ -231,8 +236,13 @@ if (libyuv_include_tests) {
     deps = [
       ":libyuv",
       "//testing/gtest",
-      "//third_party/gflags",
     ]
+
+    defines = []
+    if (libyuv_use_gflags) {
+      defines += [ "LIBYUV_USE_GFLAGS" ]
+      deps += [ "//third_party/gflags" ]
+    }
 
     configs += [ ":libyuv_unittest_warnings_config" ]
 
@@ -240,8 +250,6 @@ if (libyuv_include_tests) {
       "//testing/gtest",
     ]
     public_configs = [ ":libyuv_unittest_config" ]
-
-    defines = []
 
     if (is_linux) {
       cflags = [ "-fexceptions" ]
