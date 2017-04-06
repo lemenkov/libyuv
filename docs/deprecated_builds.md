@@ -238,7 +238,7 @@ If you get a compile error for atlthunk.lib on Windows, read http://www.chromium
     ninja -C out/Debug libyuv
     ninja -C out/Debug libyuv_unittest
     ninja -C out/Debug compare
-    ninja -C out/Debug convert
+    ninja -C out/Debug yuvconvert
     ninja -C out/Debug psnr
     ninja -C out/Debug cpuid
 

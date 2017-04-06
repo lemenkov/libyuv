@@ -9,7 +9,7 @@
  */
 
 // Convert an ARGB image to YUV.
-// Usage: convert src_argb.raw dst_yuv.raw
+// Usage: yuvconvert src_argb.raw dst_yuv.raw
 
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS

@@ -123,14 +123,14 @@
       ], # conditions
     },
     {
-      'target_name': 'convert',
+      'target_name': 'yuvconvert',
       'type': 'executable',
       'dependencies': [
         'libyuv.gyp:libyuv',
       ],
       'sources': [
         # sources
-        'util/convert.cc',
+        'util/yuvconvert.cc',
       ],
       'conditions': [
         ['OS=="linux"', {

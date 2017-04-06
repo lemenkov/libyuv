@@ -33,7 +33,7 @@ group("default") {
   if (libyuv_include_tests) {
     deps += [
       ":compare",
-      ":convert",
+      ":yuvconvert",
       ":cpuid",
       ":libyuv_unittest",
       ":psnr",
@@ -297,10 +297,10 @@ if (libyuv_include_tests) {
     }
   }
 
-  executable("convert") {
+  executable("yuvconvert") {
     sources = [
       # sources
-      "util/convert.cc",
+      "util/yuvconvert.cc",
     ]
     deps = [
       ":libyuv",
