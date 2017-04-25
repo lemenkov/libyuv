@@ -357,7 +357,8 @@ extern "C" {
 // The following are available on Mips platforms:
 #if !defined(LIBYUV_DISABLE_DSPR2) && defined(__mips__) && \
     (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
-#define HAS_COPYROW_MIPS
+// TODO(fbarchard): fix CopyRow compile error - issue #700
+// #define HAS_COPYROW_MIPS
 #if defined(__mips_dsp) && (__mips_dsp_rev >= 2)
 #define HAS_I422TOARGBROW_DSPR2
 #define HAS_INTERPOLATEROW_DSPR2

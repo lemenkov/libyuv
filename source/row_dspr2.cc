@@ -19,6 +19,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_DSPR2) && defined(__mips__) && \
     (_MIPS_SIM == _MIPS_SIM_ABI32)
 
+// TODO(fbarchard): fix sgtu in CopyRow_MIPS for android sdk r14. bug/700
 #ifdef HAS_COPYROW_MIPS
 void CopyRow_MIPS(const uint8* src, uint8* dst, int count) {
   __asm__ __volatile__(
