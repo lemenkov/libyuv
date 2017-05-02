@@ -47,11 +47,6 @@ LOCAL_SRC_FILES := \
     source/video_common.cc
 
 common_CFLAGS := -Wall -fexceptions
-# Mips builds on NDK r14+ require -no-integrated-as to properly compile inline
-# assembly.
-ifneq ($(findstring mips, $(TARGET_ARCH_ABI)),)
-  common_CFLAGS += -no-integrated-as
-endif
 ifneq ($(LIBYUV_DISABLE_JPEG), "yes")
 LOCAL_SRC_FILES += \
     source/convert_jpeg.cc      \
