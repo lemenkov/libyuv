@@ -15,6 +15,7 @@
 #include "../unit_test/unit_test.h"
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
+#include "libyuv/compare_row.h" /* For HammingDistance_C */
 #include "libyuv/cpu_id.h"
 #include "libyuv/video_common.h"
 
@@ -202,6 +203,78 @@ TEST_F(LibYUVBaseTest, BenchmarkARGBDetect_Unaligned) {
 
   free_aligned_buffer_page_end(src_a);
 }
+
+TEST_F(LibYUVBaseTest, BenchmarkHammingDistance_Opt) {
+  const int kMaxWidth = 4096 * 3;
+  align_buffer_page_end(src_a, kMaxWidth);
+  align_buffer_page_end(src_b, kMaxWidth);
+  memset(src_a, 0, kMaxWidth);
+  memset(src_b, 0, kMaxWidth);
+
+  // Test known value
+  memcpy(src_a, "test0123test4567", 16);
+  memcpy(src_b, "tick0123tock4567", 16);
+  uint32 h1 = HammingDistance_C(src_a, src_b, 16);
+  EXPECT_EQ(16u, h1);
+
+  // Test C vs OPT on random buffer
+  MemRandomize(src_a, kMaxWidth);
+  MemRandomize(src_b, kMaxWidth);
+
+  uint32 h0 = HammingDistance_C(src_a, src_b, kMaxWidth);
+
+  int count =
+      benchmark_iterations_ *
+      ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
+  for (int i = 0; i < count; ++i) {
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+#elif !defined(LIBYUV_DISABLE_X86) && \
+    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+    h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
+#else
+    h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+#endif
+  }
+
+  EXPECT_EQ(h0, h1);
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
+TEST_F(LibYUVBaseTest, BenchmarkHammingDistance_C) {
+  const int kMaxWidth = 4096 * 3;
+  align_buffer_page_end(src_a, kMaxWidth);
+  align_buffer_page_end(src_b, kMaxWidth);
+  memset(src_a, 0, kMaxWidth);
+  memset(src_b, 0, kMaxWidth);
+
+  // Test known value
+  memcpy(src_a, "test0123test4567", 16);
+  memcpy(src_b, "tick0123tock4567", 16);
+  uint32 h1 = HammingDistance_C(src_a, src_b, 16);
+  EXPECT_EQ(16u, h1);
+
+  // Test C vs OPT on random buffer
+  MemRandomize(src_a, kMaxWidth);
+  MemRandomize(src_b, kMaxWidth);
+
+  uint32 h0 = HammingDistance_C(src_a, src_b, kMaxWidth);
+
+  int count =
+      benchmark_iterations_ *
+      ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
+  for (int i = 0; i < count; ++i) {
+    h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+  }
+
+  EXPECT_EQ(h0, h1);
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
 TEST_F(LibYUVBaseTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
   align_buffer_page_end(src_a, kMaxWidth);

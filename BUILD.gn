@@ -33,10 +33,10 @@ group("default") {
   if (libyuv_include_tests) {
     deps += [
       ":compare",
-      ":yuvconvert",
       ":cpuid",
       ":libyuv_unittest",
       ":psnr",
+      ":yuvconvert",
     ]
   }
 }
@@ -158,7 +158,8 @@ static_library("libyuv_internal") {
   }
 
   # To enable AVX2 or other cpu optimization, pass flag here
-  #  cflags = [ "-mavx2" ]
+  # cflags = [ "-mavx2" ]
+  # cflags = [ "-mpopcnt" ]
 }
 
 if (libyuv_use_neon) {
