@@ -19,7 +19,7 @@ extern "C" {
 
 #if ORIGINAL_C
 uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count) {
-  volatile uint32 diff = 0u;
+  uint32 diff = 0u;
 
   int i;
   for (i = 0; i < count; ++i) {
@@ -39,7 +39,7 @@ uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count) {
 
 // Hakmem method for hamming distance.
 uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count) {
-  volatile uint32 diff = 0u;
+  uint32 diff = 0u;
 
   int i;
   for (i = 0; i < count - 3; i += 4) {
