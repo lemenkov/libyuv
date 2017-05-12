@@ -275,6 +275,37 @@ TEST_F(LibYUVBaseTest, BenchmarkHammingDistance_C) {
   free_aligned_buffer_page_end(src_b);
 }
 
+TEST_F(LibYUVBaseTest, BenchmarkHammingDistance) {
+  const int kMaxWidth = 4096 * 3;
+  align_buffer_page_end(src_a, kMaxWidth);
+  align_buffer_page_end(src_b, kMaxWidth);
+  memset(src_a, 0, kMaxWidth);
+  memset(src_b, 0, kMaxWidth);
+
+  memcpy(src_a, "test0123test4567", 16);
+  memcpy(src_b, "tick0123tock4567", 16);
+  uint64 h1 = ComputeHammingDistance(src_a, src_b, 16);
+  EXPECT_EQ(16u, h1);
+
+  // Test C vs OPT on random buffer
+  MemRandomize(src_a, kMaxWidth);
+  MemRandomize(src_b, kMaxWidth);
+
+  uint32 h0 = HammingDistance_C(src_a, src_b, kMaxWidth);
+
+  int count =
+      benchmark_iterations_ *
+      ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
+  for (int i = 0; i < count; ++i) {
+    h1 = ComputeHammingDistance(src_a, src_b, kMaxWidth);
+  }
+
+  EXPECT_EQ(h0, h1);
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
 TEST_F(LibYUVBaseTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
   align_buffer_page_end(src_a, kMaxWidth);
