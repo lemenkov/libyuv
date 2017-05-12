@@ -52,10 +52,6 @@ extern "C" {
     (defined(__x86_64__) || defined(__i386__) || defined(_M_IX86))
 #define HAS_HASHDJB2_SSE41
 #define HAS_SUMSQUAREERROR_SSE2
-#endif
-
-// The following are available for GCC:
-#if !defined(LIBYUV_DISABLE_X86) && (defined(__x86_64__) || defined(__i386__))
 #define HAS_HAMMINGDISTANCE_X86
 #endif
 

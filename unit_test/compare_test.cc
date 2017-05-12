@@ -227,10 +227,9 @@ TEST_F(LibYUVBaseTest, BenchmarkHammingDistance_Opt) {
       benchmark_iterations_ *
       ((benchmark_width_ * benchmark_height_ + kMaxWidth - 1) / kMaxWidth);
   for (int i = 0; i < count; ++i) {
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#if defined(HAS_HAMMINGDISTANCE_NEON)
     h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
-#elif !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+#elif defined(HAS_HAMMINGDISTANCE_X86)
     h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
 #else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
