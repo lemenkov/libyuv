@@ -43,6 +43,9 @@ extern "C" {
 #define SAFEBUFFERS
 #endif
 
+// cpu_info_ variable for SIMD instruction sets detected.
+LIBYUV_API int cpu_info_ = 0;
+
 // Low level cpuid for X86.
 #if (defined(_M_IX86) || defined(_M_X64) || defined(__i386__) || \
      defined(__x86_64__)) &&                                     \
@@ -192,10 +195,6 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
   return 0;
 }
 
-// CPU detect function for SIMD instruction sets.
-LIBYUV_API
-int cpu_info_ = 0;  // cpu_info is not initialized yet.
-
 // Test environment variable for disabling CPU features. Any non-zero value
 // to disable. Zero ignored to make it easy to set the variable on/off.
 #if !defined(__native_client__) && !defined(_M_ARM)
@@ -215,7 +214,7 @@ static LIBYUV_BOOL TestEnv(const char*) {
 }
 #endif
 
-LIBYUV_API SAFEBUFFERS int InitCpuFlags(void) {
+static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) && defined(CPU_X86)
   uint32 cpu_info0[4] = {0, 0, 0, 0};
@@ -321,14 +320,27 @@ LIBYUV_API SAFEBUFFERS int InitCpuFlags(void) {
     cpu_info = 0;
   }
   cpu_info |= kCpuInitialized;
-  cpu_info_ = cpu_info;
   return cpu_info;
 }
 
 // Note that use of this function is not thread safe.
 LIBYUV_API
 void MaskCpuFlags(int enable_flags) {
-  cpu_info_ = InitCpuFlags() & enable_flags;
+#ifdef __ATOMIC_RELAXED
+  __atomic_store_n(&cpu_info_, GetCpuFlags() & enable_flags, __ATOMIC_RELAXED);
+#else
+  cpu_info_ = GetCpuFlags() & enable_flags;
+#endif
+}
+
+LIBYUV_API
+int InitCpuFlags(void) {
+  MaskCpuFlags(-1);
+#ifdef __ATOMIC_RELAXED
+  return __atomic_load_n(&cpu_info_, __ATOMIC_RELAXED);
+#else
+  return cpu_info_;
+#endif
 }
 
 #ifdef __cplusplus

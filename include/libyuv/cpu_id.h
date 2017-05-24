@@ -59,7 +59,12 @@ int ArmCpuCaps(const char* cpuinfo_name);
 // returns non-zero if instruction set is detected
 static __inline int TestCpuFlag(int test_flag) {
   LIBYUV_API extern int cpu_info_;
-  return (!cpu_info_ ? InitCpuFlags() : cpu_info_) & test_flag;
+#ifdef __ATOMIC_RELAXED
+  int cpu_info = __atomic_load_n(&cpu_info_, __ATOMIC_RELAXED);
+#else
+  int cpu_info = cpu_info_;
+#endif
+  return (!cpu_info ? InitCpuFlags() : cpu_info) & test_flag;
 }
 
 // For testing, allow CPU flags to be disabled.
