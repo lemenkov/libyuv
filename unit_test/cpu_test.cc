@@ -83,7 +83,7 @@ TEST_F(LibYUVBaseTest, TestCpuCompilerEnabled) {
 TEST_F(LibYUVBaseTest, TestCpuId) {
   int has_x86 = TestCpuFlag(kCpuHasX86);
   if (has_x86) {
-    uint32 cpu_info[4];
+    int cpu_info[4];
     // Vendor ID:
     // AuthenticAMD AMD processor
     // CentaurHauls Centaur processor
