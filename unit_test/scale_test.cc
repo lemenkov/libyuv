@@ -14,6 +14,7 @@
 #include "../unit_test/unit_test.h"
 #include "libyuv/cpu_id.h"
 #include "libyuv/scale.h"
+#include "libyuv/scale_row.h"  // For ScaleRowDown2Box_Odd_C
 
 #define STRINGIZE(line) #line
 #define FILELINESTR(file, line) file ":" STRINGIZE(line)
@@ -363,5 +364,90 @@ TEST_SCALETO(Scale, 640, 360)
 TEST_SCALETO(Scale, 1280, 720)
 #undef TEST_SCALETO1
 #undef TEST_SCALETO
+
+#ifdef HAS_SCALEROWDOWN2_SSSE3
+TEST_F(LibYUVScaleTest, TestScaleOdd) {
+  SIMD_ALIGNED(uint8 orig_pixels[128 * 2]);
+  SIMD_ALIGNED(uint8 dst_pixels_opt[64]);
+  SIMD_ALIGNED(uint8 dst_pixels_c[64]);
+  memset(orig_pixels, 0, sizeof(orig_pixels));
+  memset(dst_pixels_opt, 0, sizeof(dst_pixels_opt));
+  memset(dst_pixels_c, 0, sizeof(dst_pixels_c));
+
+  // TL
+  orig_pixels[0] = 255u;
+  orig_pixels[1] = 0u;
+  orig_pixels[128 + 0] = 0u;
+  orig_pixels[128 + 1] = 0u;
+  // TR
+  orig_pixels[2] = 0u;
+  orig_pixels[3] = 100u;
+  orig_pixels[128 + 2] = 0u;
+  orig_pixels[128 + 3] = 0u;
+  // BL
+  orig_pixels[4] = 0u;
+  orig_pixels[5] = 0u;
+  orig_pixels[128 + 4] = 50u;
+  orig_pixels[128 + 5] = 0u;
+  // BR
+  orig_pixels[6] = 0u;
+  orig_pixels[7] = 0u;
+  orig_pixels[128 + 6] = 0u;
+  orig_pixels[128 + 7] = 20u;
+  // Odd
+  orig_pixels[126] = 4u;
+  orig_pixels[127] = 255u;
+  orig_pixels[128 + 126] = 16u;
+  orig_pixels[128 + 127] = 255u;
+
+  // Test regular half size.
+  ScaleRowDown2Box_C(orig_pixels, 128, dst_pixels_c, 64);
+
+  EXPECT_EQ(64u, dst_pixels_c[0]);
+  EXPECT_EQ(25u, dst_pixels_c[1]);
+  EXPECT_EQ(13u, dst_pixels_c[2]);
+  EXPECT_EQ(5u, dst_pixels_c[3]);
+  EXPECT_EQ(0u, dst_pixels_c[4]);
+  EXPECT_EQ(133u, dst_pixels_c[63]);
+
+  // Test Odd width version - Last pixel is just 1 horizontal pixel.
+  ScaleRowDown2Box_Odd_C(orig_pixels, 128, dst_pixels_c, 64);
+
+  EXPECT_EQ(64u, dst_pixels_c[0]);
+  EXPECT_EQ(25u, dst_pixels_c[1]);
+  EXPECT_EQ(13u, dst_pixels_c[2]);
+  EXPECT_EQ(5u, dst_pixels_c[3]);
+  EXPECT_EQ(0u, dst_pixels_c[4]);
+  EXPECT_EQ(10u, dst_pixels_c[63]);
+
+  // Test one pixel less, should skip the last pixel.
+  memset(dst_pixels_c, 0, sizeof(dst_pixels_c));
+  ScaleRowDown2Box_Odd_C(orig_pixels, 128, dst_pixels_c, 63);
+
+  EXPECT_EQ(64u, dst_pixels_c[0]);
+  EXPECT_EQ(25u, dst_pixels_c[1]);
+  EXPECT_EQ(13u, dst_pixels_c[2]);
+  EXPECT_EQ(5u, dst_pixels_c[3]);
+  EXPECT_EQ(0u, dst_pixels_c[4]);
+  EXPECT_EQ(0u, dst_pixels_c[63]);
+
+  // Test regular half size SSSE3.
+  ScaleRowDown2Box_SSSE3(orig_pixels, 128, dst_pixels_opt, 64);
+
+  EXPECT_EQ(64u, dst_pixels_opt[0]);
+  EXPECT_EQ(25u, dst_pixels_opt[1]);
+  EXPECT_EQ(13u, dst_pixels_opt[2]);
+  EXPECT_EQ(5u, dst_pixels_opt[3]);
+  EXPECT_EQ(0u, dst_pixels_opt[4]);
+  EXPECT_EQ(133u, dst_pixels_opt[63]);
+
+  // Compare C and SSSE3 match.
+  ScaleRowDown2Box_Odd_C(orig_pixels, 128, dst_pixels_c, 64);
+  ScaleRowDown2Box_Odd_SSSE3(orig_pixels, 128, dst_pixels_opt, 64);
+  for (int i = 0; i < 64; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+}
+#endif  // HAS_SCALEROWDOWN2_SSSE3
 
 }  // namespace libyuv
