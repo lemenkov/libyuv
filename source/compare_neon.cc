@@ -22,12 +22,12 @@ extern "C" {
     !defined(__aarch64__)
 
 // 256 bits at a time
+// uses short accumulator which restricts count to 131 KB
 uint32 HammingDistance_NEON(const uint8* src_a, const uint8* src_b, int count) {
   uint32 diff;
 
   asm volatile (
-    // Load constants.
-    "vmov.u8    q4, #0                         \n"  // accumulator
+    "vmov.u16   q4, #0                         \n"  // accumulator
 
   "1:                                          \n"
     "vld1.8     {q0, q1}, [%0]!                \n"
@@ -38,13 +38,12 @@ uint32 HammingDistance_NEON(const uint8* src_a, const uint8* src_b, int count) {
     "vcnt.i8    q1, q1                         \n"
     "subs       %2, %2, #32                    \n"
     "vadd.u8    q0, q0, q1                     \n"  // 16 byte counts
-    "vpaddl.u8  q0, q0                         \n"  // 8 shorts
-    "vpadal.u16 q4, q0                         \n"  // 4 ints
+    "vpadal.u8  q4, q0                         \n"  // 8 shorts
     "bgt        1b                             \n"
 
-    "vpadd.u32  d0, d8, d9                     \n"
+    "vpaddl.u16 q0, q4                         \n"  // 4 ints
+    "vpadd.u32  d0, d0, d1                     \n"
     "vpadd.u32  d0, d0, d0                     \n"
-    // Move distance to return register.
     "vmov.32    %3, d0[0]                      \n"
  
     : "+r"(src_a),
