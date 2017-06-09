@@ -59,9 +59,7 @@ uint32 SumSquareError_NEON(const uint8* src_a, const uint8* src_b, int count) {
     "eor        v19.16b, v19.16b, v19.16b      \n"
 
   "1:                                          \n"
-    MEMACCESS(0)
     "ld1        {v0.16b}, [%0], #16            \n"
-    MEMACCESS(1)
     "ld1        {v1.16b}, [%1], #16            \n"
     "subs       %w2, %w2, #16                  \n"
     "usubl      v2.8h, v0.8b, v1.8b            \n"
