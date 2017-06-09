@@ -622,7 +622,6 @@ void ScaleFilterCols_NEON(uint8* dst_ptr,
   int dx_offset[4] = {0, 1, 2, 3};
   int* tmp = dx_offset;
   const uint8* src_tmp = src_ptr;
-  int64 dst_width64 = (int64)dst_width;  // Work around ios 64 bit warning.
   int64 x64 = (int64)x;
   int64 dx64 = (int64)dx;
   asm volatile (
@@ -669,7 +668,7 @@ void ScaleFilterCols_NEON(uint8* dst_ptr,
     "b.gt      1b                              \n"
   : "+r"(dst_ptr),          // %0
     "+r"(src_ptr),          // %1
-    "+r"(dst_width64),      // %2
+    "+r"(dst_width),        // %2
     "+r"(x64),              // %3
     "+r"(dx64),             // %4
     "+r"(tmp),              // %5
@@ -970,7 +969,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb,
   "add        %6, %1, %5, lsl #2             \n"            \
   "add        %3, %3, %4                     \n"            \
   MEMACCESS(6)                                              \
- "ld1        {" #vn ".s}[" #n "], [%6]       \n"
+  "ld1        {" #vn ".s}[" #n "], [%6]      \n"
 // clang-format on
 
 void ScaleARGBCols_NEON(uint8* dst_argb,
@@ -979,7 +978,6 @@ void ScaleARGBCols_NEON(uint8* dst_argb,
                         int x,
                         int dx) {
   const uint8* src_tmp = src_argb;
-  int64 dst_width64 = (int64)dst_width;  // Work around ios 64 bit warning.
   int64 x64 = (int64)x;
   int64 dx64 = (int64)dx;
   int64 tmp64;
@@ -1000,7 +998,7 @@ void ScaleARGBCols_NEON(uint8* dst_argb,
     "b.gt        1b                            \n"
   : "+r"(dst_argb),     // %0
     "+r"(src_argb),     // %1
-    "+r"(dst_width64),  // %2
+    "+r"(dst_width),    // %2
     "+r"(x64),          // %3
     "+r"(dx64),         // %4
     "=&r"(tmp64),       // %5
@@ -1031,7 +1029,6 @@ void ScaleARGBFilterCols_NEON(uint8* dst_argb,
   int dx_offset[4] = {0, 1, 2, 3};
   int* tmp = dx_offset;
   const uint8* src_tmp = src_argb;
-  int64 dst_width64 = (int64)dst_width;  // Work around ios 64 bit warning.
   int64 x64 = (int64)x;
   int64 dx64 = (int64)dx;
   asm volatile (
@@ -1077,7 +1074,7 @@ void ScaleARGBFilterCols_NEON(uint8* dst_argb,
     "b.gt    1b                                \n"
   : "+r"(dst_argb),         // %0
     "+r"(src_argb),         // %1
-    "+r"(dst_width64),      // %2
+    "+r"(dst_width),        // %2
     "+r"(x64),              // %3
     "+r"(dx64),             // %4
     "+r"(tmp),              // %5
