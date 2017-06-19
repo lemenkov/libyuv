@@ -399,6 +399,65 @@ LibYUVBaseTest::LibYUVBaseTest()
                        1280.0);
 }
 
+LibYUVCompareTest::LibYUVCompareTest()
+    : benchmark_iterations_(BENCHMARK_ITERATIONS),
+      benchmark_width_(128),
+      benchmark_height_(72),
+      disable_cpu_flags_(1),
+      benchmark_cpu_info_(-1) {
+  const char* repeat = getenv("LIBYUV_REPEAT");
+  if (repeat) {
+    benchmark_iterations_ = atoi(repeat);  // NOLINT
+  }
+  if (FLAGS_libyuv_repeat) {
+    benchmark_iterations_ = FLAGS_libyuv_repeat;
+  }
+  if (benchmark_iterations_ > 1) {
+    benchmark_width_ = 1280;
+    benchmark_height_ = 720;
+  }
+  const char* width = getenv("LIBYUV_WIDTH");
+  if (width) {
+    benchmark_width_ = atoi(width);  // NOLINT
+  }
+  if (FLAGS_libyuv_width) {
+    benchmark_width_ = FLAGS_libyuv_width;
+  }
+  const char* height = getenv("LIBYUV_HEIGHT");
+  if (height) {
+    benchmark_height_ = atoi(height);  // NOLINT
+  }
+  if (FLAGS_libyuv_height) {
+    benchmark_height_ = FLAGS_libyuv_height;
+  }
+  const char* cpu_flags = getenv("LIBYUV_FLAGS");
+  if (cpu_flags) {
+    disable_cpu_flags_ = atoi(cpu_flags);  // NOLINT
+  }
+  if (FLAGS_libyuv_flags) {
+    disable_cpu_flags_ = FLAGS_libyuv_flags;
+  }
+  const char* cpu_info = getenv("LIBYUV_CPU_INFO");
+  if (cpu_info) {
+    benchmark_cpu_info_ = atoi(cpu_flags);  // NOLINT
+  }
+  if (FLAGS_libyuv_cpu_info) {
+    benchmark_cpu_info_ = FLAGS_libyuv_cpu_info;
+  }
+  benchmark_pixels_div256_ =
+      static_cast<int>((static_cast<double>(Abs(benchmark_width_)) *
+                            static_cast<double>(Abs(benchmark_height_)) *
+                            static_cast<double>(benchmark_iterations_) +
+                        255.0) /
+                       256.0);
+  benchmark_pixels_div1280_ =
+      static_cast<int>((static_cast<double>(Abs(benchmark_width_)) *
+                            static_cast<double>(Abs(benchmark_height_)) *
+                            static_cast<double>(benchmark_iterations_) +
+                        1279.0) /
+                       1280.0);
+}
+
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 #ifdef LIBYUV_USE_GFLAGS
