@@ -14,7 +14,7 @@ vars = {
 
 deps = {
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + 'e3c0667f115674831e9eb2e91ecbec4545b049ab',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '15b41f483525d2e036a529e12518e55d2e5182a8',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '5ad14542a6a74dd914f067b948c5d3e8d170396b',
   'src/testing':
@@ -32,7 +32,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '7da28c6c7c6a1387217352ce02b31754deb54d2a',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '1397f0ed8bd7b907118588800f31382c1da33afc',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'f79809d0346e8191983826dee15df3f2c71b1343',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
    'src/tools/swarming_client':

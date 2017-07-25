@@ -7,6 +7,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 import("libyuv.gni")
+import("//build/toolchain/win/clang_name.gni")
 import("//testing/test.gni")
 
 declare_args() {
@@ -47,7 +48,7 @@ group("libyuv") {
   if (is_win && target_cpu == "x64") {
     # Compile with clang in order to get inline assembly
     public_deps = [
-      ":libyuv_internal(//build/toolchain/win:clang_x64)",
+      ":libyuv_internal($win_clang_x64_toolchain)",
     ]
   } else {
     public_deps = [
