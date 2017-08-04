@@ -2612,6 +2612,53 @@ void HalfFloatRow_NEON(const uint16* src, uint16* dst, float scale, int width) {
       : "cc", "memory", "v1", "v2", "v3");
 }
 
+float ScaleSumSamples_NEON(const float* src,
+                           float* dst,
+                           float scale,
+                           int width) {
+  float fmax;
+  asm volatile(
+      "movi       v3.4s, #0                      \n"  // max
+      "movi       v4.4s, #0                      \n"  // max
+
+      "1:                                        \n"
+      "ld1        {v1.4s, v2.4s}, [%0], #32      \n"  // load 8 samples
+      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+      "fmul       v1.4s, v1.4s, %4.s[0]          \n"  // scale
+      "fmul       v2.4s, v2.4s, %4.s[0]          \n"  // scale
+      "st1        {v1.4s, v2.4s}, [%1], #32      \n"  // store 8 samples
+      "fmax       v3.4s, v3.4s, v1.4s            \n"  // max
+      "fmax       v4.4s, v4.4s, v2.4s            \n"
+      "b.gt       1b                             \n"
+      "fmax       v3.4s, v3.4s, v4.4s            \n"  // max
+      "fmaxv      %s3, v3.4s                     \n"  // signed max acculator
+
+      : "+r"(src),    // %0
+        "+r"(dst),    // %1
+        "+r"(width),  // %2
+        "=w"(fmax)    // %3
+      : "w"(scale)    // %4
+      : "cc", "memory", "v1", "v2", "v3", "v4");
+  return fmax;
+}
+
+void ScaleSamples_NEON(const float* src, float* dst, float scale, int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld1        {v1.4s, v2.4s}, [%0], #32      \n"  // load 8 samples
+      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+      "fmul       v1.4s, v1.4s, %3.s[0]          \n"  // scale
+      "fmul       v2.4s, v2.4s, %3.s[0]          \n"  // scale
+      "st1        {v1.4s, v2.4s}, [%1], #32      \n"  // store 8 samples
+      "b.gt       1b                             \n"
+
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      : "w"(scale)   // %3
+      : "cc", "memory", "v1", "v2");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus

@@ -359,6 +359,11 @@ extern "C" {
 #define HAS_SOBELYROW_NEON
 #endif
 
+// The following are available on AArch64 platforms:
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_SCALESUMSAMPLES_NEON
+#endif
+
 // The following are available on Mips platforms:
 #if !defined(LIBYUV_DISABLE_DSPR2) && defined(__mips__) && \
     (_MIPS_SIM == _MIPS_SIM_ABI32) && (__mips_isa_rev < 6)
@@ -3151,6 +3156,14 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
                                  int width,
                                  const uint8* luma,
                                  uint32 lumacoeff);
+
+float ScaleSumSamples_C(const float* src, float* dst, float scale, int width);
+float ScaleSumSamples_NEON(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
+void ScaleSamples_C(const float* src, float* dst, float scale, int width);
+void ScaleSamples_NEON(const float* src, float* dst, float scale, int width);
 
 #ifdef __cplusplus
 }  // extern "C"
