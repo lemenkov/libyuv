@@ -2527,7 +2527,7 @@ float TestScaleSumSamples(int benchmark_width,
                           float scale,
                           bool opt) {
   int i, j;
-  float max_c, max_opt;
+  float sum_c, sum_opt = 0.f;
   const int y_plane_size = benchmark_width * benchmark_height * 4;
 
   align_buffer_page_end(orig_y, y_plane_size * 3);
@@ -2542,32 +2542,29 @@ float TestScaleSumSamples(int benchmark_width,
   memset(dst_c, 0, y_plane_size);
   memset(dst_opt, 1, y_plane_size);
 
-  // Disable all optimizations.
-  max_c = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+  sum_c = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
                             reinterpret_cast<float*>(dst_c), scale,
                             benchmark_width * benchmark_height);
 
-  // Enable optimizations.
   for (j = 0; j < benchmark_iterations; j++) {
-#ifdef HAS_SCALESUMSAMPLES_NEON
     if (opt) {
-      max_opt = ScaleSumSamples_NEON(reinterpret_cast<float*>(orig_y),
+#ifdef HAS_SCALESUMSAMPLES_NEON
+      sum_opt = ScaleSumSamples_NEON(reinterpret_cast<float*>(orig_y),
                                      reinterpret_cast<float*>(dst_opt), scale,
                                      benchmark_width * benchmark_height);
-
+#else
+      sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+                                  reinterpret_cast<float*>(dst_opt), scale,
+                                  benchmark_width * benchmark_height);
+#endif
     } else {
-      max_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
+      sum_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
                                   reinterpret_cast<float*>(dst_opt), scale,
                                   benchmark_width * benchmark_height);
     }
-#else
-    max_opt = ScaleSumSamples_C(reinterpret_cast<float*>(orig_y),
-                                reinterpret_cast<float*>(dst_opt), scale,
-                                benchmark_width * benchmark_height);
-#endif
   }
 
-  float max_diff = 0;
+  float max_diff = FAbs(sum_opt - sum_c);
   for (i = 0; i < y_plane_size / 4; ++i) {
     float abs_diff = FAbs((reinterpret_cast<float*>(dst_c)[i]) -
                           (reinterpret_cast<float*>(dst_opt)[i]));
@@ -2613,32 +2610,29 @@ float TestScaleSamples(int benchmark_width,
   memset(dst_c, 0, y_plane_size);
   memset(dst_opt, 1, y_plane_size);
 
-  // Disable all optimizations.
   ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                  reinterpret_cast<float*>(dst_c), scale,
                  benchmark_width * benchmark_height);
 
-  // Enable optimizations.
   for (j = 0; j < benchmark_iterations; j++) {
-#ifdef HAS_SCALESAMPLES_NEON
     if (opt) {
-      max_opt = ScaleSamples_NEON(reinterpret_cast<float*>(orig_y),
-                                  reinterpret_cast<float*>(dst_opt), scale,
-                                  benchmark_width * benchmark_height);
-
+#ifdef HAS_SCALESUMSAMPLES_NEON
+      ScaleSamples_NEON(reinterpret_cast<float*>(orig_y),
+                        reinterpret_cast<float*>(dst_opt), scale,
+                        benchmark_width * benchmark_height);
+#else
+      ScaleSamples_C(reinterpret_cast<float*>(orig_y),
+                     reinterpret_cast<float*>(dst_opt), scale,
+                     benchmark_width * benchmark_height);
+#endif
     } else {
       ScaleSamples_C(reinterpret_cast<float*>(orig_y),
                      reinterpret_cast<float*>(dst_opt), scale,
                      benchmark_width * benchmark_height);
     }
-#else
-    ScaleSamples_C(reinterpret_cast<float*>(orig_y),
-                   reinterpret_cast<float*>(dst_opt), scale,
-                   benchmark_width * benchmark_height);
-#endif
   }
 
-  float max_diff = 0;
+  float max_diff =0.f;
   for (i = 0; i < y_plane_size / 4; ++i) {
     float abs_diff = FAbs((reinterpret_cast<float*>(dst_c)[i]) -
                           (reinterpret_cast<float*>(dst_opt)[i]));
