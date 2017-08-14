@@ -3178,6 +3178,11 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
                                  const uint8* luma,
                                  uint32 lumacoeff);
 
+float ScaleMaxSamples_C(const float* src, float* dst, float scale, int width);
+float ScaleMaxSamples_NEON(const float* src,
+                           float* dst,
+                           float scale,
+                           int width);
 float ScaleSumSamples_C(const float* src, float* dst, float scale, int width);
 float ScaleSumSamples_NEON(const float* src,
                            float* dst,
