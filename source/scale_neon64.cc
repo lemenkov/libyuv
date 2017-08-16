@@ -1002,7 +1002,7 @@ void ScaleRowDown2Box_16_NEON(const uint16* src_ptr,
                               int dst_width) {
   asm volatile(
       // change the stride to row 2 pointer
-      "add        %1, %1, %0                     \n"
+      "add        %1, %0, %1, lsl #1             \n"  // ptr + stide * 2
       "1:                                        \n"
       "ld1        {v0.8h, v1.8h}, [%0], #32      \n"  // load row 1 and post inc
       "ld1        {v2.8h, v3.8h}, [%1], #32      \n"  // load row 2 and post inc
@@ -1033,8 +1033,7 @@ void ScaleRowUp2_16_NEON(const uint16* src_ptr,
                          uint16* dst,
                          int dst_width) {
   asm volatile(
-      // change the stride to row 2 pointer
-      "add        %1, %1, %0                     \n"
+      "add        %1, %0, %1, lsl #1             \n"  // ptr + stide * 2
       "movi       v20.4h, #1                     \n"
       "movi       v21.4h, #3                     \n"  // constants
       "movi       v22.4h, #9                     \n"
