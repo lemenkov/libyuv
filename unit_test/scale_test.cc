@@ -450,7 +450,6 @@ TEST_F(LibYUVScaleTest, TestScaleOdd) {
 }
 #endif  // HAS_SCALEROWDOWN2_SSSE3
 
-
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 extern "C" void ScaleRowUp2_16_NEON(const uint16* src_ptr,
@@ -470,16 +469,10 @@ TEST_F(LibYUVScaleTest, TestScaleRowUp2_16) {
   for (int i = 0; i < 640 * 2 + 1; ++i) {
     orig_pixels[i] = i;
   }
-  ScaleRowUp2_16_NEON(&orig_pixels[0],
-                      640,
-                      &dst_pixels_c[0],
-                      1280);
+  ScaleRowUp2_16_NEON(&orig_pixels[0], 640, &dst_pixels_c[0], 1280);
 
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
-    ScaleRowUp2_16_NEON(&orig_pixels[0],
-                        640,
-                        &dst_pixels_opt[0],
-                        1280);
+    ScaleRowUp2_16_NEON(&orig_pixels[0], 640, &dst_pixels_opt[0], 1280);
   }
 
   for (int i = 0; i < 1280; ++i) {
@@ -507,29 +500,17 @@ TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_16) {
   for (int i = 0; i < 2560 * 2; ++i) {
     orig_pixels[i] = i;
   }
-  ScaleRowDown2Box_16_C(&orig_pixels[0],
-                           2560,
-                           &dst_pixels_c[0],
-                           1280);
+  ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_c[0], 1280);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
-      ScaleRowDown2Box_16_NEON(&orig_pixels[0],
-                               2560,
-                               &dst_pixels_opt[0],
-                               1280);
+      ScaleRowDown2Box_16_NEON(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
     } else {
-      ScaleRowDown2Box_16_C(&orig_pixels[0],
-                            2560,
-                            &dst_pixels_opt[0],
-                            1280);
+      ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
     }
 #else
-    ScaleRowDown2Box_16_C(&orig_pixels[0],
-                          2560,
-                          &dst_pixels_opt[0],
-                          1280);
+    ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_opt[0], 1280);
 #endif
   }
 
