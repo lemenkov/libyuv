@@ -1009,11 +1009,9 @@ void ScaleRowDown2Box_16_NEON(const uint16* src_ptr,
       "subs       %w3, %w3, #8                   \n"  // 8 processed per loop
       "uaddlp     v0.4s, v0.8h                   \n"  // row 1 add adjacent
       "uaddlp     v1.4s, v1.8h                   \n"
-      "uadalp     v0.4s, v2.8h                   \n"  // row 2 add adjacent +
-                                                      // row1
+      "uadalp     v0.4s, v2.8h                   \n"  // +row 2 add adjacent
       "uadalp     v1.4s, v3.8h                   \n"
-      "rshrn      v0.4h, v0.4s, #2               \n"  // downshift, round and
-                                                      // pack
+      "rshrn      v0.4h, v0.4s, #2               \n"  // round and pack
       "rshrn2     v0.8h, v1.4s, #2               \n"
       "st1        {v0.8h}, [%2], #16             \n"
       "b.gt       1b                             \n"

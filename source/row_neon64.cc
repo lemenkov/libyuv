@@ -2693,16 +2693,14 @@ void ScaleSamples_NEON(const float* src, float* dst, float scale, int width) {
 }
 
 static vec16 kGauseCoefficients[4] = {
-  {1, 4, 6, 4, 1, 0, 0, 0},
-  {0, 1, 4, 6, 4, 1, 0, 0},
-  {0, 0, 1, 4, 6, 4, 1, 0},
-  {0, 0, 0, 1, 4, 6, 4, 1},
+    {1, 4, 6, 4, 1, 0, 0, 0},
+    {0, 1, 4, 6, 4, 1, 0, 0},
+    {0, 0, 1, 4, 6, 4, 1, 0},
+    {0, 0, 0, 1, 4, 6, 4, 1},
 };
 
 // filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
-void GaussRow_NEON(const uint16* src0,
-                   uint16* dst,
-                   int width) {
+void GaussRow_NEON(const uint16* src0, uint16* dst, int width) {
   asm volatile(
       "ld1       {v20.8h,v21.8h,v22.8h,v23.8h}, [%3]  \n"
 
@@ -2725,17 +2723,17 @@ void GaussRow_NEON(const uint16* src0,
       "umull      v4.4s, v0.4h, v23.4h           \n"  // forth pixel
       "umlal2     v4.4s, v0.8h, v23.8h           \n"
       "addv       s4, v4.4s                      \n"
-      
+
       "st4       {v1.s,v2.s,v3.s,v4.s}[0], [%1], #16  \n"  // store 4 samples
       "b.gt       1b                             \n"
 
-      : "+r"(src0),  // %0
-        "+r"(dst),   // %1
-        "+r"(width)  // %2
-      : "r"(&kGauseCoefficients[0])  // %3
-        "r"(8LL)     // %4
-      : "cc", "memory", "v0", "v1", "v2", "v3", "v4",
-        "v20", "v21", "v22", "v23");
+      : "+r"(src0),                   // %0
+        "+r"(dst),                    // %1
+        "+r"(width)                   // %2
+      : "r"(&kGauseCoefficients[0]),  // %3
+        "r"(8LL)                      // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v20", "v21", "v22",
+        "v23");
 }
 
 // filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
