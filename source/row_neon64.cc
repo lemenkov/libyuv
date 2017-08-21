@@ -2692,6 +2692,92 @@ void ScaleSamples_NEON(const float* src, float* dst, float scale, int width) {
       : "cc", "memory", "v1", "v2");
 }
 
+static vec16 kGauseCoefficients[4] = {
+  {1, 4, 6, 4, 1, 0, 0, 0},
+  {0, 1, 4, 6, 4, 1, 0, 0},
+  {0, 0, 1, 4, 6, 4, 1, 0},
+  {0, 0, 0, 1, 4, 6, 4, 1},
+};
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussRow_NEON(const uint16* src0,
+                   uint16* dst,
+                   int width) {
+  asm volatile(
+      "ld1       {v20.8h,v21.8h,v22.8h,v23.8h}, [%3]  \n"
+
+      "1:                                        \n"
+      "ld1        {v0.8h}, [%0], %4              \n"  // load 8 source samples
+      "subs       %w2, %w2, #4                   \n"  // 4 processed per loop
+
+      "umull      v1.4s, v0.4h, v20.4h           \n"  // first pixel
+      "umlal2     v1.4s, v0.8h, v20.8h           \n"
+      "addv       s1, v1.4s                      \n"
+
+      "umull      v2.4s, v0.4h, v21.4h           \n"  // second pixel
+      "umlal2     v2.4s, v0.8h, v21.8h           \n"
+      "addv       s2, v2.4s                      \n"
+
+      "umull      v3.4s, v0.4h, v22.4h           \n"  // third pixel
+      "umlal2     v3.4s, v0.8h, v22.8h           \n"
+      "addv       s3, v3.4s                      \n"
+
+      "umull      v4.4s, v0.4h, v23.4h           \n"  // forth pixel
+      "umlal2     v4.4s, v0.8h, v23.8h           \n"
+      "addv       s4, v4.4s                      \n"
+      
+      "st4       {v1.s,v2.s,v3.s,v4.s}[0], [%1], #16  \n"  // store 4 samples
+      "b.gt       1b                             \n"
+
+      : "+r"(src0),  // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      : "r"(&kGauseCoefficients[0])  // %3
+        "r"(8LL)     // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4",
+        "v20", "v21", "v22", "v23");
+}
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussCol_NEON(const uint32* src0,
+                   const uint32* src1,
+                   const uint32* src2,
+                   const uint32* src3,
+                   const uint32* src4,
+                   uint16* dst,
+                   int width) {
+  asm volatile(
+      "movi       v5.4s, #4                      \n"  // constant 4
+      "movi       v6.4s, #6                      \n"  // constant 6
+
+      "1:                                        \n"
+      "ld1        {v0.4s}, [%0], #16             \n"  // load 4 samples, 5 rows
+      "ld1        {v1.4s}, [%1], #16             \n"
+      "ld1        {v2.4s}, [%2], #16             \n"
+      "ld1        {v3.4s}, [%3], #16             \n"
+      "ld1        {v4.4s}, [%4], #16             \n"
+      "subs       %w6, %w6, #4                   \n"  // 4 processed per loop
+
+      "add        v0.4s, v0.4s, v4.4s            \n"  // * 1
+      "mla        v0.4s, v1.4s, v5.4s            \n"  // * 4
+      "mla        v0.4s, v2.4s, v6.4s            \n"  // * 6
+      "mla        v0.4s, v3.4s, v5.4s            \n"  // * 4
+
+      "uqshrn     v0.4h, v0.4s, #8               \n"  // round, shift by 8 pack.
+      "st1        {v0.4h}, [%5], #8              \n"  // store 4 samples
+      "b.gt       1b                             \n"
+
+      : "+r"(src0),  // %0
+        "+r"(src1),  // %1
+        "+r"(src2),  // %2
+        "+r"(src3),  // %3
+        "+r"(src4),  // %4
+        "+r"(dst),   // %5
+        "+r"(width)  // %6
+      :
+      : "cc", "memory", "v1", "v2", "v3", "v4", "v5", "v6");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus
