@@ -2672,6 +2672,20 @@ void ScaleSamples_C(const float* src, float* dst, float scale, int width) {
   }
 }
 
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussCol_C(const uint16* src0,
+                const uint16* src1,
+                const uint16* src2,
+                const uint16* src3,
+                const uint16* src4,
+                uint32* dst,
+                int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    *dst++ = *src0++ + *src1++ * 4 + *src2++ * 6 + *src3++ * 4 + *src4++;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

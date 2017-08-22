@@ -2742,6 +2742,7 @@ TEST_F(LibYUVPlanarTest, TestGaussRow_Opt) {
     orig_pixels[i] = i;
   }
   GaussRow_NEON(&orig_pixels[0], &dst_pixels_c[0], 1280);
+  MaskCpuFlags(benchmark_cpu_info_);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
@@ -2760,22 +2761,29 @@ TEST_F(LibYUVPlanarTest, TestGaussRow_Opt) {
   }
 
   EXPECT_EQ(dst_pixels_c[0], 0 * 1 + 1 * 4 + 2 * 6 + 3 * 4 + 4 * 1);
-  EXPECT_EQ(dst_pixels_c[1279],
-            1279 * 1 + 1280 * 4 + 1281 * 6 + 1282 * 4 + 1283 * 1);
+  EXPECT_EQ(dst_pixels_c[1279], 20496);
 }
 
-extern "C" void GaussCol_NEON(const uint32* src0,
-                              const uint32* src1,
-                              const uint32* src2,
-                              const uint32* src3,
-                              const uint32* src4,
-                              uint16* dst,
+extern "C" void GaussCol_NEON(const uint16* src0,
+                              const uint16* src1,
+                              const uint16* src2,
+                              const uint16* src3,
+                              const uint16* src4,
+                              uint32* dst,
                               int width);
 
+extern "C" void GaussCol_C(const uint16* src0,
+                           const uint16* src1,
+                           const uint16* src2,
+                           const uint16* src3,
+                           const uint16* src4,
+                           uint32* dst,
+                           int width);
+
 TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
-  SIMD_ALIGNED(uint32 orig_pixels[1280 * 5]);
-  SIMD_ALIGNED(uint16 dst_pixels_c[1280]);
-  SIMD_ALIGNED(uint16 dst_pixels_opt[1280]);
+  SIMD_ALIGNED(uint16 orig_pixels[1280 * 5]);
+  SIMD_ALIGNED(uint32 dst_pixels_c[1280]);
+  SIMD_ALIGNED(uint32 dst_pixels_opt[1280]);
 
   memset(orig_pixels, 0, sizeof(orig_pixels));
   memset(dst_pixels_c, 1, sizeof(dst_pixels_c));
@@ -2784,9 +2792,10 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
   for (int i = 0; i < 1280 * 5; ++i) {
     orig_pixels[i] = i;
   }
-  GaussCol_NEON(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
-                &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
-                &dst_pixels_c[0], 1280);
+  GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+             &orig_pixels[1280 * 3], &orig_pixels[1280 * 4], &dst_pixels_c[0],
+             1280);
+  MaskCpuFlags(benchmark_cpu_info_);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
@@ -2795,14 +2804,14 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
                     &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
                     &dst_pixels_opt[0], 1280);
     } else {
-      GaussCol_NEON(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
-                    &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
-                    &dst_pixels_opt[0], 1280);
+      GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+                 &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+                 &dst_pixels_opt[0], 1280);
     }
 #else
-    GaussCol_NEON(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
-                  &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
-                  &dst_pixels_opt[0], 1280);
+    GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+               &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+               &dst_pixels_opt[0], 1280);
 #endif
   }
 
@@ -2810,10 +2819,9 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
 
-  EXPECT_EQ(dst_pixels_c[0], (0 * 1 + 1280 * 4 + 1280 * 2 * 6 + 1280 * 3 * 4 +
-                              1280 * 4 * 1 + 128) /
-                                 256);
-  EXPECT_EQ(dst_pixels_c[1279], 239);
+  EXPECT_EQ(dst_pixels_c[0],
+            0 * 1 + 1280 * 4 + 1280 * 2 * 6 + 1280 * 3 * 4 + 1280 * 4 * 1);
+  EXPECT_EQ(dst_pixels_c[1279], 61424);
 }
 
 #endif  // aarch64
