@@ -424,6 +424,7 @@ extern "C" {
 #define HAS_ARGBEXTRACTALPHAROW_MSA
 #define HAS_SPLITUVROW_MSA
 #define HAS_MIRRORUVROW_MSA
+#define HAS_HALFFLOATROW_MSA
 
 #ifndef DISABLE_CLANG_MSA
 #define HAS_ABGRTOUVROW_MSA
@@ -3190,6 +3191,11 @@ void HalfFloat1Row_Any_NEON(const uint16* src,
                             uint16* dst,
                             float scale,
                             int width);
+void HalfFloatRow_MSA(const uint16* src, uint16* dst, float scale, int width);
+void HalfFloatRow_Any_MSA(const uint16* src,
+                          uint16* dst,
+                          float scale,
+                          int width);
 
 void ARGBLumaColorTableRow_C(const uint8* src_argb,
                              uint8* dst_argb,

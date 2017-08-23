@@ -749,6 +749,9 @@ ANY11P16(HalfFloat1Row_Any_F16C, HalfFloat1Row_F16C, float, 2, 2, 15)
 ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, float, 2, 2, 7)
 ANY11P16(HalfFloat1Row_Any_NEON, HalfFloat1Row_NEON, float, 2, 2, 7)
 #endif
+#ifdef HAS_HALFFLOATROW_MSA
+ANY11P16(HalfFloatRow_Any_MSA, HalfFloatRow_MSA, float, 2, 2, 31)
+#endif
 #undef ANY11P16
 
 // Any 1 to 1 with yuvconstants

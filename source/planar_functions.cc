@@ -2941,6 +2941,14 @@ int HalfFloatPlane(const uint16* src_y,
     }
   }
 #endif
+#if defined(HAS_HALFFLOATROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    HalfFloatRow = HalfFloatRow_Any_MSA;
+    if (IS_ALIGNED(width, 32)) {
+      HalfFloatRow = HalfFloatRow_MSA;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     HalfFloatRow(src_y, dst_y, scale, width);
