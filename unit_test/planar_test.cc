@@ -2759,8 +2759,9 @@ TEST_F(LibYUVPlanarTest, TestGaussRow_Opt) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
 
-  EXPECT_EQ(dst_pixels_c[0], 0 * 1 + 1 * 4 + 2 * 6 + 3 * 4 + 4 * 1);
-  EXPECT_EQ(dst_pixels_c[1279], 20496);
+  EXPECT_EQ(dst_pixels_c[0],
+            static_cast<uint16>(0 * 1 + 1 * 4 + 2 * 6 + 3 * 4 + 4 * 1));
+  EXPECT_EQ(dst_pixels_c[1279], static_cast<uint16>(20496));
 }
 
 extern "C" void GaussCol_NEON(const uint16* src0,
@@ -2819,8 +2820,9 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
   }
 
   EXPECT_EQ(dst_pixels_c[0],
-            0 * 1 + 1280 * 4 + 1280 * 2 * 6 + 1280 * 3 * 4 + 1280 * 4 * 1);
-  EXPECT_EQ(dst_pixels_c[1279], 61424);
+            static_cast<uint32>(0 * 1 + 1280 * 4 + 1280 * 2 * 6 + 1280 * 3 * 4 +
+                                1280 * 4 * 1));
+  EXPECT_EQ(dst_pixels_c[1279], static_cast<uint32>(61424));
 }
 
 }  // namespace libyuv
