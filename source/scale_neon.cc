@@ -704,13 +704,12 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr,
                             int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                          \n"
-      // load even pixels into q0, odd into q1
-      "vld2.32    {q0, q1}, [%0]!                \n"
-      "vld2.32    {q2, q3}, [%0]!                \n"
+      "1:                                        \n"
+      "vld4.32    {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+      "vld4.32    {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB
       "subs       %2, %2, #8                     \n"  // 8 processed per loop
-      "vst1.32    {q1}, [%1]!                    \n"  // store odd pixels
-      "vst1.32    {q3}, [%1]!                    \n"
+      "vmov       q2, q1                         \n"  // load next 8 ARGB
+      "vst2.32    {q2, q3}, [%1]!                \n"  // store odd pixels
       "bgt        1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -719,6 +718,15 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr,
       : "memory", "cc", "q0", "q1", "q2", "q3"  // Clobber List
       );
 }
+
+
+//  46:  f964 018d   vld4.32  {d16,d18,d20,d22}, [r4]!
+//  4a:  3e04        subs  r6, #4
+//  4c:  f964 118d   vld4.32  {d17,d19,d21,d23}, [r4]!
+//  50:  ef64 21f4   vorr  q9, q10, q10
+//  54:  f942 038d   vst2.32  {d16-d19}, [r2]!
+//  58:  d1f5        bne.n  46 <ScaleARGBRowDown2_C+0x46>
+
 
 void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb,
                                   ptrdiff_t src_stride,
