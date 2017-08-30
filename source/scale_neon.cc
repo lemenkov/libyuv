@@ -51,14 +51,9 @@ void ScaleRowDown2Linear_NEON(const uint8* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:                                          \n"
-      "vld1.8     {q0, q1}, [%0]!                \n"  // load pixels and post
-                                                      // inc
+      "vld2.8     {q0, q1}, [%0]!                \n"  // load 32 pixels
       "subs       %2, %2, #16                    \n"  // 16 processed per loop
-      "vpaddl.u8  q0, q0                         \n"  // add adjacent
-      "vpaddl.u8  q1, q1                         \n"
-      "vrshrn.u16 d0, q0, #1                     \n"  // downshift, round and
-                                                      // pack
-      "vrshrn.u16 d1, q1, #1                     \n"
+      "vrhadd.u8  q0, q0, q1                     \n"  // rounding half add
       "vst1.8     {q0}, [%1]!                    \n"
       "bgt        1b                             \n"
       : "+r"(src_ptr),   // %0
@@ -714,8 +709,8 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr,
       "vld2.32    {q0, q1}, [%0]!                \n"
       "vld2.32    {q2, q3}, [%0]!                \n"
       "subs       %2, %2, #8                     \n"  // 8 processed per loop
-      "vst1.8     {q1}, [%1]!                    \n"  // store odd pixels
-      "vst1.8     {q3}, [%1]!                    \n"
+      "vst1.32    {q1}, [%1]!                    \n"  // store odd pixels
+      "vst1.32    {q3}, [%1]!                    \n"
       "bgt        1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -732,20 +727,12 @@ void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb,
   (void)src_stride;
   asm volatile(
       "1:                                          \n"
-      "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
-      "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB
-                                                      // pixels.
+      "vld4.32    {d0, d2, d4, d6}, [%0]!        \n"  // load 8 ARGB pixels.
+      "vld4.32    {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 ARGB
       "subs       %2, %2, #8                     \n"  // 8 processed per loop
-      "vpaddl.u8  q0, q0                         \n"  // B 16 bytes -> 8 shorts.
-      "vpaddl.u8  q1, q1                         \n"  // G 16 bytes -> 8 shorts.
-      "vpaddl.u8  q2, q2                         \n"  // R 16 bytes -> 8 shorts.
-      "vpaddl.u8  q3, q3                         \n"  // A 16 bytes -> 8 shorts.
-      "vrshrn.u16 d0, q0, #1                     \n"  // downshift, round and
-                                                      // pack
-      "vrshrn.u16 d1, q1, #1                     \n"
-      "vrshrn.u16 d2, q2, #1                     \n"
-      "vrshrn.u16 d3, q3, #1                     \n"
-      "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"
+      "vrhadd.u8  q0, q0, q1                     \n"  // rounding half add
+      "vrhadd.u8  q1, q2, q3                     \n"  // rounding half add
+      "vst2.32    {q0, q1}, [%1]!                \n"
       "bgt       1b                              \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_argb),  // %1
