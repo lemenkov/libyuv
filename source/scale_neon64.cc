@@ -49,14 +49,10 @@ void ScaleRowDown2Linear_NEON(const uint8* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:                                          \n"
-      "ld1        {v0.16b,v1.16b}, [%0], #32     \n"  // load pixels and post
-                                                      // inc
+      // load even pixels into v0, odd into v1
+      "ld2        {v0.16b,v1.16b}, [%0], #32     \n"
+      "urhadd     v0.16b, v0.16b, v1.16b         \n"  // rounding half add
       "subs       %w2, %w2, #16                  \n"  // 16 processed per loop
-      "uaddlp     v0.8h, v0.16b                  \n"  // add adjacent
-      "uaddlp     v1.8h, v1.16b                  \n"
-      "rshrn      v0.8b, v0.8h, #1               \n"  // downshift, round and
-                                                      // pack
-      "rshrn2     v0.16b, v1.8h, #1              \n"
       "st1        {v0.16b}, [%1], #16            \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
@@ -726,13 +722,12 @@ void ScaleARGBRowDown2_NEON(const uint8* src_ptr,
                             int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                          \n"
-      // load even pixels into q0, odd into q1
-      "ld2        {v0.4s, v1.4s}, [%0], #32      \n"
-      "ld2        {v2.4s, v3.4s}, [%0], #32      \n"
+      "1:                                        \n"
+      // load 16 ARGB pixels with even pixels into q0/q2, odd into q1/q3
+      "ld4        {v0.4s,v1.4s,v2.4s,v3.4s}, [%0], #64   \n"
       "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
-      "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
-      "st1        {v3.16b}, [%1], #16            \n"
+      "mov        v2.16b, v3.16b                 \n"
+      "st2        {v1.4s,v2.4s}, [%1], #32       \n"  // store 8 odd pixels
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -748,20 +743,14 @@ void ScaleARGBRowDown2Linear_NEON(const uint8* src_argb,
                                   int dst_width) {
   (void)src_stride;
   asm volatile(
-      "1:                                          \n"
-      // load 8 ARGB pixels.
-      "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64   \n"
-      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop.
-      "uaddlp     v0.8h, v0.16b                  \n"  // B 16 bytes -> 8 shorts.
-      "uaddlp     v1.8h, v1.16b                  \n"  // G 16 bytes -> 8 shorts.
-      "uaddlp     v2.8h, v2.16b                  \n"  // R 16 bytes -> 8 shorts.
-      "uaddlp     v3.8h, v3.16b                  \n"  // A 16 bytes -> 8 shorts.
-      "rshrn      v0.8b, v0.8h, #1               \n"  // downshift, round and
-                                                      // pack
-      "rshrn      v1.8b, v1.8h, #1               \n"
-      "rshrn      v2.8b, v2.8h, #1               \n"
-      "rshrn      v3.8b, v3.8h, #1               \n"
-      "st4        {v0.8b,v1.8b,v2.8b,v3.8b}, [%1], #32     \n"
+      "1:                                        \n"
+      // load 16 ARGB pixels with even pixels into q0/q2, odd into q1/q3
+      "ld4        {v0.4s,v1.4s,v2.4s,v3.4s}, [%0], #64   \n"
+      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+
+      "urhadd     v0.16b, v0.16b, v1.16b         \n"  // rounding half add
+      "urhadd     v1.16b, v2.16b, v3.16b         \n"
+      "st2        {v0.4s,v1.4s}, [%1], #32       \n"  // store 8 pixels
       "b.gt       1b                             \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_argb),  // %1
