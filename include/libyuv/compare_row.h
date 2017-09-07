@@ -43,8 +43,10 @@ extern "C" {
 #endif  // __clang__
 
 // clang 6 mips issue https://bugs.chromium.org/p/libyuv/issues/detail?id=715
+// broken in clang version 6.0.0 (trunk 308728)
+// fixed in clang version 6.0.0 (trunk 310694)
 #if defined(__clang__)
-#define DISABLE_CLANG_MSA 1
+// #define DISABLE_CLANG_MSA 1
 #endif
 
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
