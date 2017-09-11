@@ -580,6 +580,54 @@ void MergeUVRow_NEON(const uint8* src_u,
       );
 }
 
+// Reads 16 packed RGB and write to planar dst_r, dst_g, dst_b.
+void SplitRGBRow_NEON(const uint8* src_rgb,
+                      uint8* dst_r,
+                      uint8* dst_g,
+                      uint8* dst_b,
+                      int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld3        {v0.16b,v1.16b,v2.16b}, [%0], #48 \n"  // load 16 RGB
+      "subs       %w4, %w4, #16                  \n"  // 16 processed per loop
+      "st1        {v0.16b}, [%1], #16            \n"  // store R
+      "st1        {v1.16b}, [%2], #16            \n"  // store G
+      "st1        {v2.16b}, [%3], #16            \n"  // store B
+      "b.gt       1b                             \n"
+      : "+r"(src_rgb),                    // %0
+        "+r"(dst_r),                      // %1
+        "+r"(dst_g),                      // %2
+        "+r"(dst_b),                      // %3
+        "+r"(width)                       // %4
+      :                                   // Input registers
+      : "cc", "memory", "v0", "v1", "v2"  // Clobber List
+      );
+}
+
+// Reads 16 planar R's, G's and B's and writes out 16 packed RGB at a time
+void MergeRGBRow_NEON(const uint8* src_r,
+                      const uint8* src_g,
+                      const uint8* src_b,
+                      uint8* dst_rgb,
+                      int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld1        {v0.16b}, [%0], #16            \n"  // load R
+      "ld1        {v1.16b}, [%1], #16            \n"  // load G
+      "ld1        {v2.16b}, [%2], #16            \n"  // load B
+      "subs       %w4, %w4, #16                  \n"  // 16 processed per loop
+      "st3        {v0.16b,v1.16b,v2.16b}, [%3], #48 \n"  // store 16 RGB
+      "b.gt       1b                             \n"
+      : "+r"(src_r),                      // %0
+        "+r"(src_g),                      // %1
+        "+r"(src_b),                      // %2
+        "+r"(dst_rgb),                    // %3
+        "+r"(width)                       // %4
+      :                                   // Input registers
+      : "cc", "memory", "v0", "v1", "v2"  // Clobber List
+      );
+}
+
 // Copy multiple of 32.  vld4.8  allow unaligned and is fastest on a15.
 void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
   asm volatile(

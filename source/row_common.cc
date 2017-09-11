@@ -1770,6 +1770,34 @@ void MergeUVRow_C(const uint8* src_u,
   }
 }
 
+void SplitRGBRow_C(const uint8* src_rgb,
+                   uint8* dst_r,
+                   uint8* dst_g,
+                   uint8* dst_b,
+                   int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_r[x] = src_rgb[0];
+    dst_g[x] = src_rgb[1];
+    dst_b[x] = src_rgb[2];
+    src_rgb += 3;
+  }
+}
+
+void MergeRGBRow_C(const uint8* src_r,
+                   const uint8* src_g,
+                   const uint8* src_b,
+                   uint8* dst_rgb,
+                   int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_rgb[0] = src_r[x];
+    dst_rgb[1] = src_g[x];
+    dst_rgb[2] = src_b[x];
+    dst_rgb += 3;
+  }
+}
+
 void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }

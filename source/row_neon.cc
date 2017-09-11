@@ -526,7 +526,7 @@ void MergeUVRow_NEON(const uint8* src_u,
       "vld1.8     {q0}, [%0]!                    \n"  // load U
       "vld1.8     {q1}, [%1]!                    \n"  // load V
       "subs       %3, %3, #16                    \n"  // 16 processed per loop
-      "vst2.u8    {q0, q1}, [%2]!                \n"  // store 16 pairs of UV
+      "vst2.8     {q0, q1}, [%2]!                \n"  // store 16 pairs of UV
       "bgt        1b                             \n"
       : "+r"(src_u),                // %0
         "+r"(src_v),                // %1
@@ -534,6 +534,56 @@ void MergeUVRow_NEON(const uint8* src_u,
         "+r"(width)                 // %3  // Output registers
       :                             // Input registers
       : "cc", "memory", "q0", "q1"  // Clobber List
+      );
+}
+
+// Reads 16 packed RGB and write to planar dst_r, dst_g, dst_b.
+void SplitRGBRow_NEON(const uint8* src_rgb,
+                      uint8* dst_r,
+                      uint8* dst_g,
+                      uint8* dst_b,
+                      int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld3.8     {d0, d2, d4}, [%0]!            \n"  // load 8 RGB
+      "vld3.8     {d1, d3, d5}, [%0]!            \n"  // next 8 RGB
+      "subs       %4, %4, #16                    \n"  // 16 processed per loop
+      "vst1.8     {q0}, [%1]!                    \n"  // store R
+      "vst1.8     {q1}, [%2]!                    \n"  // store G
+      "vst1.8     {q2}, [%3]!                    \n"  // store B
+      "bgt        1b                             \n"
+      : "+r"(src_rgb),                    // %0
+        "+r"(dst_r),                      // %1
+        "+r"(dst_g),                      // %2
+        "+r"(dst_b),                      // %3
+        "+r"(width)                       // %4
+      :                                   // Input registers
+      : "cc", "memory", "d0", "d1", "d2"  // Clobber List
+      );
+}
+
+// Reads 16 planar R's, G's and B's and writes out 16 packed RGB at a time
+void MergeRGBRow_NEON(const uint8* src_r,
+                      const uint8* src_g,
+                      const uint8* src_b,
+                      uint8* dst_rgb,
+                      int width) {
+  asm volatile(
+      "1:                                        \n"
+      "vld1.8     {q0}, [%0]!                    \n"  // load R
+      "vld1.8     {q1}, [%1]!                    \n"  // load G
+      "vld1.8     {q2}, [%2]!                    \n"  // load B
+      "subs       %4, %4, #16                    \n"  // 16 processed per loop
+      "vst3.8     {d0, d2, d4}, [%3]!            \n"  // store 8 RGB
+      "vst3.8     {d1, d3, d5}, [%3]!            \n"  // next 8 RGB
+      "bgt        1b                             \n"
+      : "+r"(src_r),                      // %0
+        "+r"(src_g),                      // %1
+        "+r"(src_b),                      // %2
+        "+r"(dst_rgb),                    // %3
+        "+r"(width)                       // %4
+      :                                   // Input registers
+      : "cc", "memory", "q0", "q1", "q2"  // Clobber List
       );
 }
 

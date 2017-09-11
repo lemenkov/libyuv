@@ -1054,7 +1054,7 @@ void ScaleRowUp2_16_NEON(const uint16* src_ptr,
         "+r"(dst_width)    // %3
       : "r"(2LL),          // %4
         "r"(14LL)          // %5
-       : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18",
+      : "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v16", "v17", "v18",
         "v19"  // Clobber List
       );
 }

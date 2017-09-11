@@ -2521,6 +2521,101 @@ TEST_F(LibYUVPlanarTest, SplitUVPlane_Opt) {
   free_aligned_buffer_page_end(dst_pixels_c);
 }
 
+TEST_F(LibYUVPlanarTest, MergeRGBPlane_Opt) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels, kPixels * 3);
+  align_buffer_page_end(tmp_pixels_r, kPixels);
+  align_buffer_page_end(tmp_pixels_g, kPixels);
+  align_buffer_page_end(tmp_pixels_b, kPixels);
+  align_buffer_page_end(dst_pixels_opt, kPixels * 3);
+  align_buffer_page_end(dst_pixels_c, kPixels * 3);
+
+  MemRandomize(src_pixels, kPixels * 3);
+  MemRandomize(tmp_pixels_r, kPixels);
+  MemRandomize(tmp_pixels_g, kPixels);
+  MemRandomize(tmp_pixels_b, kPixels);
+  MemRandomize(dst_pixels_opt, kPixels * 3);
+  MemRandomize(dst_pixels_c, kPixels * 3);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  SplitRGBPlane(src_pixels, benchmark_width_ * 3, tmp_pixels_r,
+                benchmark_width_, tmp_pixels_g, benchmark_width_, tmp_pixels_b,
+                benchmark_width_, benchmark_width_, benchmark_height_);
+  MergeRGBPlane(tmp_pixels_r, benchmark_width_, tmp_pixels_g, benchmark_width_,
+                tmp_pixels_b, benchmark_width_, dst_pixels_c,
+                benchmark_width_ * 3, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  SplitRGBPlane(src_pixels, benchmark_width_ * 3, tmp_pixels_r,
+                benchmark_width_, tmp_pixels_g, benchmark_width_, tmp_pixels_b,
+                benchmark_width_, benchmark_width_, benchmark_height_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    MergeRGBPlane(tmp_pixels_r, benchmark_width_, tmp_pixels_g,
+                  benchmark_width_, tmp_pixels_b, benchmark_width_,
+                  dst_pixels_opt, benchmark_width_ * 3, benchmark_width_,
+                  benchmark_height_);
+  }
+
+  for (int i = 0; i < kPixels * 3; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(tmp_pixels_r);
+  free_aligned_buffer_page_end(tmp_pixels_g);
+  free_aligned_buffer_page_end(tmp_pixels_b);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+  free_aligned_buffer_page_end(dst_pixels_c);
+}
+
+TEST_F(LibYUVPlanarTest, SplitRGBPlane_Opt) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels, kPixels * 3);
+  align_buffer_page_end(tmp_pixels_r, kPixels);
+  align_buffer_page_end(tmp_pixels_g, kPixels);
+  align_buffer_page_end(tmp_pixels_b, kPixels);
+  align_buffer_page_end(dst_pixels_opt, kPixels * 3);
+  align_buffer_page_end(dst_pixels_c, kPixels * 3);
+
+  MemRandomize(src_pixels, kPixels * 3);
+  MemRandomize(tmp_pixels_r, kPixels);
+  MemRandomize(tmp_pixels_g, kPixels);
+  MemRandomize(tmp_pixels_b, kPixels);
+  MemRandomize(dst_pixels_opt, kPixels * 3);
+  MemRandomize(dst_pixels_c, kPixels * 3);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  SplitRGBPlane(src_pixels, benchmark_width_ * 3, tmp_pixels_r,
+                benchmark_width_, tmp_pixels_g, benchmark_width_, tmp_pixels_b,
+                benchmark_width_, benchmark_width_, benchmark_height_);
+  MergeRGBPlane(tmp_pixels_r, benchmark_width_, tmp_pixels_g, benchmark_width_,
+                tmp_pixels_b, benchmark_width_, dst_pixels_c,
+                benchmark_width_ * 3, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    SplitRGBPlane(src_pixels, benchmark_width_ * 3, tmp_pixels_r,
+                  benchmark_width_, tmp_pixels_g, benchmark_width_,
+                  tmp_pixels_b, benchmark_width_, benchmark_width_,
+                  benchmark_height_);
+  }
+  MergeRGBPlane(tmp_pixels_r, benchmark_width_, tmp_pixels_g, benchmark_width_,
+                tmp_pixels_b, benchmark_width_, dst_pixels_opt,
+                benchmark_width_ * 3, benchmark_width_, benchmark_height_);
+
+  for (int i = 0; i < kPixels * 3; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels);
+  free_aligned_buffer_page_end(tmp_pixels_r);
+  free_aligned_buffer_page_end(tmp_pixels_g);
+  free_aligned_buffer_page_end(tmp_pixels_b);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+  free_aligned_buffer_page_end(dst_pixels_c);
+}
+
 float TestScaleMaxSamples(int benchmark_width,
                           int benchmark_height,
                           int benchmark_iterations,
