@@ -472,7 +472,6 @@ TEST_F(LibYUVScaleTest, TestScaleRowUp2_16) {
     orig_pixels[i] = i;
   }
   ScaleRowUp2_16_C(&orig_pixels[0], 640, &dst_pixels_c[0], 1280);
-  MaskCpuFlags(benchmark_cpu_info_);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
@@ -511,7 +510,6 @@ TEST_F(LibYUVScaleTest, TestScaleRowDown2Box_16) {
     orig_pixels[i] = i;
   }
   ScaleRowDown2Box_16_C(&orig_pixels[0], 2560, &dst_pixels_c[0], 1280);
-  MaskCpuFlags(benchmark_cpu_info_);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
