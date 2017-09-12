@@ -2711,8 +2711,7 @@ float ScaleSumSamples_NEON(const float* src,
       "b.gt       1b                             \n"
       "faddp      v5.4s, v5.4s, v6.4s            \n"
       "faddp      v5.4s, v5.4s, v5.4s            \n"
-      "faddp      v5.4s, v5.4s, v5.4s            \n"
-      "fmov       %w3, s5                        \n"  // sum
+      "faddp      %3.4s, v5.4s, v5.4s            \n"  // sum
 
       : "+r"(src),    // %0
         "+r"(dst),    // %1
