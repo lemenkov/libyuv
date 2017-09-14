@@ -77,11 +77,9 @@ void ScaleRowDown2Box_NEON(const uint8* src_ptr,
       "subs       %w3, %w3, #16                  \n"  // 16 processed per loop
       "uaddlp     v0.8h, v0.16b                  \n"  // row 1 add adjacent
       "uaddlp     v1.8h, v1.16b                  \n"
-      "uadalp     v0.8h, v2.16b                  \n"  // row 2 add adjacent +
-                                                      // row1
+      "uadalp     v0.8h, v2.16b                  \n"  // += row 2 add adjacent
       "uadalp     v1.8h, v3.16b                  \n"
-      "rshrn      v0.8b, v0.8h, #2               \n"  // downshift, round and
-                                                      // pack
+      "rshrn      v0.8b, v0.8h, #2               \n"  // round and pack
       "rshrn2     v0.16b, v1.8h, #2              \n"
       "st1        {v0.16b}, [%2], #16            \n"
       "b.gt       1b                             \n"
@@ -101,7 +99,7 @@ void ScaleRowDown4_NEON(const uint8* src_ptr,
   (void)src_stride;
   asm volatile(
       "1:                                        \n"
-      "ld4     {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32          \n"  // src line 0
+      "ld4     {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32  \n"  // src line 0
       "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
       "st1     {v2.8b}, [%1], #8                 \n"
       "b.gt       1b                             \n"
@@ -230,7 +228,7 @@ void ScaleRowDown34_1_Box_NEON(const uint8* src_ptr,
   asm volatile(
       "movi      v20.8b, #3                              \n"
       "add       %3, %3, %0                              \n"
-      "1:                                                  \n"
+      "1:                                                \n"
       "ld4       {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32    \n"  // src line 0
       "ld4       {v4.8b,v5.8b,v6.8b,v7.8b}, [%3], #32    \n"  // src line 1
       "subs         %w2, %w2, #24                        \n"
@@ -279,7 +277,7 @@ void ScaleRowDown38_NEON(const uint8* src_ptr,
   (void)src_stride;
   asm volatile(
       "ld1       {v3.16b}, [%3]                          \n"
-      "1:                                                  \n"
+      "1:                                                \n"
       "ld1       {v0.16b,v1.16b}, [%0], #32              \n"
       "subs      %w2, %w2, #12                           \n"
       "tbl       v2.16b, {v0.16b,v1.16b}, v3.16b         \n"
@@ -394,8 +392,7 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8* src_ptr,
       "sqrdmulh  v0.8h, v20.8h, v31.8h                   \n"
       "sqrdmulh  v1.8h, v21.8h, v31.8h                   \n"
 
-      // Align for table lookup, vtbl requires registers to
-      //  be adjacent
+      // Align for table lookup, vtbl requires registers to be adjacent
       "tbl       v3.16b, {v0.16b, v1.16b, v2.16b}, v30.16b \n"
 
       "st1       {v3.8b}, [%1], #8                       \n"
@@ -776,8 +773,7 @@ void ScaleARGBRowDown2Box_NEON(const uint8* src_ptr,
       "uadalp     v1.8h, v17.16b                 \n"  // G 16 bytes -> 8 shorts.
       "uadalp     v2.8h, v18.16b                 \n"  // R 16 bytes -> 8 shorts.
       "uadalp     v3.8h, v19.16b                 \n"  // A 16 bytes -> 8 shorts.
-      "rshrn      v0.8b, v0.8h, #2               \n"  // downshift, round and
-                                                      // pack
+      "rshrn      v0.8b, v0.8h, #2               \n"  // round and pack
       "rshrn      v1.8b, v1.8h, #2               \n"
       "rshrn      v2.8b, v2.8h, #2               \n"
       "rshrn      v3.8b, v3.8h, #2               \n"
@@ -827,8 +823,7 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8* src_argb,
   asm volatile(
       "add        %1, %1, %0                     \n"
       "1:                                        \n"
-      "ld1        {v0.8b}, [%0], %4              \n"  // Read 4 2x2 blocks ->
-                                                      // 2x1
+      "ld1        {v0.8b}, [%0], %4              \n"  // Read 4 2x2 -> 2x1
       "ld1        {v1.8b}, [%1], %4              \n"
       "ld1        {v2.8b}, [%0], %4              \n"
       "ld1        {v3.8b}, [%1], %4              \n"
@@ -891,8 +886,7 @@ void ScaleARGBCols_NEON(uint8* dst_argb,
       LOAD1_DATA32_LANE(v1, 3)
       // clang-format on
       "st1        {v0.4s, v1.4s}, [%0], #32      \n"  // store pixels
-      "subs       %w2, %w2, #8                   \n"  // 8 processed per
-                                                      // loop
+      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
       "b.gt       1b                             \n"
       : "+r"(dst_argb),   // %0
         "+r"(src_argb),   // %1
