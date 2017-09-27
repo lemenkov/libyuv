@@ -2626,9 +2626,9 @@ float TestScaleMaxSamples(int benchmark_width,
   float max_c, max_opt = 0.f;
   // NEON does multiple of 8, so round count up
   const int kPixels = (benchmark_width * benchmark_height + 7) & ~7;
-  align_buffer_page_end(orig_y, kPixels * 4 * 3);
-  uint8* dst_c = orig_y + kPixels * 4;
-  uint8* dst_opt = orig_y + kPixels * 4 * 2;
+  align_buffer_page_end(orig_y, kPixels * 4 * 3 + 48);
+  uint8* dst_c = orig_y + kPixels * 4 + 16;
+  uint8* dst_opt = orig_y + kPixels * 4 * 2 + 32;
 
   // Randomize works but may contain some denormals affecting performance.
   // MemRandomize(orig_y, kPixels * 4);
@@ -2825,6 +2825,66 @@ TEST_F(LibYUVPlanarTest, TestScaleSamples_C) {
 TEST_F(LibYUVPlanarTest, TestScaleSamples_Opt) {
   float diff = TestScaleSamples(benchmark_width_, benchmark_height_,
                                 benchmark_iterations_, 1.2f, true);
+  EXPECT_EQ(0, diff);
+}
+
+float TestCopySamples(int benchmark_width,
+                      int benchmark_height,
+                      int benchmark_iterations,
+                      bool opt) {
+  int i, j;
+  // NEON does multiple of 16 floats, so round count up
+  const int kPixels = (benchmark_width * benchmark_height + 15) & ~15;
+  align_buffer_page_end(orig_y, kPixels * 4 * 3);
+  uint8* dst_c = orig_y + kPixels * 4;
+  uint8* dst_opt = orig_y + kPixels * 4 * 2;
+
+  // Randomize works but may contain some denormals affecting performance.
+  // MemRandomize(orig_y, kPixels * 4);
+  // large values are problematic.  audio is really -1 to 1.
+  for (i = 0; i < kPixels; ++i) {
+    (reinterpret_cast<float*>(orig_y))[i] = sinf(static_cast<float>(i) * 0.1f);
+  }
+  memset(dst_c, 0, kPixels * 4);
+  memset(dst_opt, 1, kPixels * 4);
+
+  memcpy(reinterpret_cast<void*>(dst_c), reinterpret_cast<void*>(orig_y),
+         kPixels * 4);
+
+  for (j = 0; j < benchmark_iterations; j++) {
+    if (opt) {
+#ifdef HAS_COPYROW_NEON
+      CopyRow_NEON(orig_y, dst_opt, kPixels * 4);
+#else
+      CopyRow_C(orig_y, dst_opt, kPixels * 4);
+#endif
+    } else {
+      CopyRow_C(orig_y, dst_opt, kPixels * 4);
+    }
+  }
+
+  float max_diff = 0.f;
+  for (i = 0; i < kPixels; ++i) {
+    float abs_diff = FAbs((reinterpret_cast<float*>(dst_c)[i]) -
+                          (reinterpret_cast<float*>(dst_opt)[i]));
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, TestCopySamples_C) {
+  float diff = TestCopySamples(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_, false);
+  EXPECT_EQ(0, diff);
+}
+
+TEST_F(LibYUVPlanarTest, TestCopySamples_Opt) {
+  float diff = TestCopySamples(benchmark_width_, benchmark_height_,
+                                benchmark_iterations_, true);
   EXPECT_EQ(0, diff);
 }
 
