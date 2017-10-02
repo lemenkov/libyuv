@@ -229,13 +229,19 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
   for (int i = 0; i < count; ++i) {
 #if defined(HAS_HAMMINGDISTANCE_NEON)
     h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
+#elif defined(HAS_HAMMINGDISTANCE_AVX2)
+    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+    if (has_avx2) {
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
+    }
 #elif defined(HAS_HAMMINGDISTANCE_X86)
     h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
 #else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
   }
-
   EXPECT_EQ(h0, h1);
 
   free_aligned_buffer_page_end(src_a);

@@ -35,6 +35,63 @@ uint32 HammingDistance_X86(const uint8* src_a, const uint8* src_b, int count) {
   return diff;
 }
 
+#ifdef HAS_HAMMINGDISTANCE_AVX2
+static uint32 kNibbleMask = 0x0f0f0f0fu;
+static vec8 kBitCount = {0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4};
+
+uint32 HammingDistance_AVX2(const uint8* src_a, const uint8* src_b, int count) {
+  uint32 diff = 0u;
+
+  asm volatile(
+      "vbroadcastss  %4,%%ymm2                   \n"
+      "vbroadcastf128 %5,%%ymm3                  \n"
+      "vpxor      %%ymm0,%%ymm0,%%ymm0           \n"
+      "vpxor      %%ymm1,%%ymm1,%%ymm1           \n"
+      "sub        %0,%1                          \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqa    (%0),%%ymm4                    \n"
+      "vmovdqa    0x20(%0), %%ymm5               \n"
+      "vpxor      (%0,%1), %%ymm4, %%ymm4        \n"
+      "vpand      %%ymm2,%%ymm4,%%ymm6           \n"
+      "vpsrlw     $0x4,%%ymm4,%%ymm4             \n"
+      "vpshufb    %%ymm6,%%ymm3,%%ymm6           \n"
+      "vpand      %%ymm2,%%ymm4,%%ymm4           \n"
+      "vpshufb    %%ymm4,%%ymm3,%%ymm4           \n"
+      "vpaddb     %%ymm4,%%ymm6,%%ymm6           \n"
+      "vpxor      0x20(%0,%1),%%ymm5,%%ymm4      \n"
+      "add        $0x40,%0                       \n"
+      "vpand      %%ymm2,%%ymm4,%%ymm5           \n"
+      "vpsrlw     $0x4,%%ymm4,%%ymm4             \n"
+      "vpshufb    %%ymm5,%%ymm3,%%ymm5           \n"
+      "vpand      %%ymm2,%%ymm4,%%ymm4           \n"
+      "vpshufb    %%ymm4,%%ymm3,%%ymm4           \n"
+      "vpaddb     %%ymm5,%%ymm4,%%ymm4           \n"
+      "vpaddb     %%ymm6,%%ymm4,%%ymm4           \n"
+      "vpsadbw    %%ymm1,%%ymm4,%%ymm4           \n"
+      "vpaddd     %%ymm0,%%ymm4,%%ymm0           \n"
+      "sub        $0x40,%2                       \n"
+      "jg         1b                             \n"
+
+      "vpermq     $0xb1,%%ymm0,%%ymm1            \n"
+      "vpaddd     %%ymm1,%%ymm0,%%ymm0           \n"
+      "vpermq     $0xaa,%%ymm0,%%ymm1            \n"
+      "vpaddd     %%ymm1,%%ymm0,%%ymm0           \n"
+      "vmovd      %%xmm0, %3                     \n"
+      "vzeroupper                                \n"
+      : "+r"(src_a),       // %0
+        "+r"(src_b),       // %1
+        "+r"(count),       // %2
+        "=g"(diff)         // %3
+      : "m"(kNibbleMask),  // %4
+        "m"(kBitCount)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+
+  return diff;
+}
+#endif  // HAS_HAMMINGDISTANCE_AVX2
+
 uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
   uint32 sse;
   asm volatile (

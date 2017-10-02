@@ -2878,13 +2878,13 @@ float TestCopySamples(int benchmark_width,
 
 TEST_F(LibYUVPlanarTest, TestCopySamples_C) {
   float diff = TestCopySamples(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_, false);
+                               benchmark_iterations_, false);
   EXPECT_EQ(0, diff);
 }
 
 TEST_F(LibYUVPlanarTest, TestCopySamples_Opt) {
   float diff = TestCopySamples(benchmark_width_, benchmark_height_,
-                                benchmark_iterations_, true);
+                               benchmark_iterations_, true);
   EXPECT_EQ(0, diff);
 }
 
