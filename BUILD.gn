@@ -160,9 +160,9 @@ static_library("libyuv_internal") {
   # To enable AVX2 or other cpu optimization, pass flag here
   if (!is_win) {
     cflags = [
-      #      "-mpopcnt",
-      #      "-mavx2",
-      #      "-mfma",
+      # "-mpopcnt",
+      # "-mavx2",
+      # "-mfma",
       "-ffp-contract=fast",  # Enable fma vectorization for NEON.
     ]
   }

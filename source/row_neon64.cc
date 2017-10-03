@@ -636,10 +636,10 @@ void CopyRow_NEON(const uint8* src, uint8* dst, int count) {
       "subs       %w2, %w2, #32                  \n"  // 32 processed per loop
       "stp        q0, q1, [%1], #32              \n"
       "b.gt       1b                             \n"
-      : "+r"(src),                              // %0
-        "+r"(dst),                              // %1
-        "+r"(count)                             // %2  // Output registers
-      :                                         // Input registers
+      : "+r"(src),                  // %0
+        "+r"(dst),                  // %1
+        "+r"(count)                 // %2  // Output registers
+      :                             // Input registers
       : "cc", "memory", "v0", "v1"  // Clobber List
       );
 }

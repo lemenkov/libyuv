@@ -131,6 +131,11 @@ uint64 ComputeHammingDistance(const uint8* src_a,
     HammingDistance = HammingDistance_X86;
   }
 #endif
+#if defined(HAS_HAMMINGDISTANCE_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    HammingDistance = HammingDistance_SSSE3;
+  }
+#endif
 #if defined(HAS_HAMMINGDISTANCE_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     HammingDistance = HammingDistance_AVX2;

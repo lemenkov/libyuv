@@ -234,7 +234,12 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
     if (has_avx2) {
       h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
     } else {
-      h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
+      int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+      if (has_ssse3) {
+        h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+      } else {
+        h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
+      }
     }
 #elif defined(HAS_HAMMINGDISTANCE_X86)
     h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);

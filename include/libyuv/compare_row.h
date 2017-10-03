@@ -70,7 +70,13 @@ extern "C" {
 #define HAS_SUMSQUAREERROR_AVX2
 #endif
 
-// The following are available for VGCC and clangcl 64 bit:
+// The following are available for GCC and clangcl 64 bit:
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+#define HAS_HAMMINGDISTANCE_SSSE3
+#endif
+
+// The following are available for GCC and clangcl 64 bit:
 #if !defined(LIBYUV_DISABLE_X86) && defined(CLANG_HAS_AVX2) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
 #define HAS_HAMMINGDISTANCE_AVX2
@@ -93,7 +99,7 @@ extern "C" {
 
 uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_X86(const uint8* src_a, const uint8* src_b, int count);
-uint32 HammingDistance_SSE2(const uint8* src_a, const uint8* src_b, int count);
+uint32 HammingDistance_SSSE3(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_AVX2(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_NEON(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_MSA(const uint8* src_a, const uint8* src_b, int count);
