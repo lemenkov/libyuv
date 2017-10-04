@@ -115,8 +115,9 @@ uint64 ComputeHammingDistance(const uint8* src_a,
                               const uint8* src_b,
                               int count) {
   const int kBlockSize = 65536;
+  const int kSimdSize = 64;
   // SIMD for multiple of 64, and C for remainder
-  int remainder = count & (kBlockSize - 1) & ~63;
+  int remainder = count & (kBlockSize - 1) & ~(kSimdSize - 1);
   uint64 diff = 0;
   int i;
   uint32 (*HammingDistance)(const uint8* src_a, const uint8* src_b, int count) =
@@ -159,7 +160,7 @@ uint64 ComputeHammingDistance(const uint8* src_a,
     src_a += remainder;
     src_b += remainder;
   }
-  remainder = count & 31;
+  remainder = count & (kSimdSize - 1);
   if (remainder) {
     diff += HammingDistance_C(src_a, src_b, remainder);
   }

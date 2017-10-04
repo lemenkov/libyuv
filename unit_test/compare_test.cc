@@ -316,6 +316,23 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance) {
   free_aligned_buffer_page_end(src_b);
 }
 
+TEST_F(LibYUVCompareTest, TestHammingDistance) {
+  align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
+  memset(src_a, 255u, benchmark_width_ * benchmark_height_);
+  memset(src_b, 0, benchmark_width_ * benchmark_height_);
+
+  uint64 h1 = 0;
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    h1 = ComputeHammingDistance(src_a, src_b,
+                                benchmark_width_ * benchmark_height_);
+  }
+  EXPECT_EQ(benchmark_width_ * benchmark_height_ * 8ULL, h1);
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
 TEST_F(LibYUVCompareTest, BenchmarkSumSquareError_Opt) {
   const int kMaxWidth = 4096 * 3;
   align_buffer_page_end(src_a, kMaxWidth);
