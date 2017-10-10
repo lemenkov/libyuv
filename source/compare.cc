@@ -114,9 +114,10 @@ LIBYUV_API
 uint64 ComputeHammingDistance(const uint8* src_a,
                               const uint8* src_b,
                               int count) {
-  const int kBlockSize = (65536 - 64);  // Max count that SIMD wont overflow
+  const int kBlockSize = 65536;
   const int kSimdSize = 64;
-  int remainder;
+  // SIMD for multiple of 64, and C for remainder
+  int remainder = count & (kBlockSize - 1) & ~(kSimdSize - 1);
   uint64 diff = 0;
   int i;
   uint32 (*HammingDistance)(const uint8* src_a, const uint8* src_b, int count) =
@@ -152,14 +153,16 @@ uint64 ComputeHammingDistance(const uint8* src_a,
   for (i = 0; i < (count - (kBlockSize - 1)); i += kBlockSize) {
     diff += HammingDistance(src_a + i, src_b + i, kBlockSize);
   }
-  remainder = (count - i) & ~(kSimdSize - 1);
+  src_a += count & ~(kBlockSize - 1);
+  src_b += count & ~(kBlockSize - 1);
   if (remainder) {
-    diff += HammingDistance(src_a + i, src_b + i, remainder);
-    i += remainder;
+    diff += HammingDistance(src_a, src_b, remainder);
+    src_a += remainder;
+    src_b += remainder;
   }
-  remainder = (count - i);
+  remainder = count & (kSimdSize - 1);
   if (remainder) {
-    diff += HammingDistance_C(src_a + i, src_b + i, remainder);
+    diff += HammingDistance_C(src_a, src_b, remainder);
   }
   return diff;
 }
