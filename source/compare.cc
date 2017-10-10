@@ -110,11 +110,14 @@ uint32 ARGBDetect(const uint8* argb, int stride_argb, int width, int height) {
   return fourcc;
 }
 
+// NEON version accumulates in 16 bit shorts which overflow at 65536 bytes.
+// So actual maximum is 1 less loop, which is 64436 - 32 bytes.
+
 LIBYUV_API
 uint64 ComputeHammingDistance(const uint8* src_a,
                               const uint8* src_b,
                               int count) {
-  const int kBlockSize = 65536;
+  const int kBlockSize = 1 << 15;  // 32768;
   const int kSimdSize = 64;
   // SIMD for multiple of 64, and C for remainder
   int remainder = count & (kBlockSize - 1) & ~(kSimdSize - 1);
