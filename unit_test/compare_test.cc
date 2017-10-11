@@ -316,6 +316,78 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance) {
   free_aligned_buffer_page_end(src_b);
 }
 
+// Tests low levels match reference C for specified size.
+// The opt implementations have size limitations
+// For NEON the counters are 16 bit so the shorts overflow after 65536 bytes.
+// So doing one less iteration of the loop is the maximum.
+#if defined(HAS_HAMMINGDISTANCE_NEON)
+static const int kMaxOptCount = 65536 - 32;  // 65504
+#else
+static const int kMaxOptCount = (1 << (32 - 3)) - 64;  // 536870848
+#endif
+
+TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
+  uint32 h1 = 0;
+  align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
+  memset(src_a, 255u, benchmark_width_ * benchmark_height_);
+  memset(src_b, 0, benchmark_width_ * benchmark_height_);
+
+  uint64 h0 = ComputeHammingDistance(src_a, src_b,
+                                     benchmark_width_ * benchmark_height_);
+  EXPECT_EQ(benchmark_width_ * benchmark_height_ * 8ULL, h0);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+#if defined(HAS_HAMMINGDISTANCE_NEON)
+    h1 = HammingDistance_NEON(src_a, src_b,
+                              benchmark_width_ * benchmark_height_);
+#elif defined(HAS_HAMMINGDISTANCE_AVX2)
+    int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+    if (has_avx2) {
+      h1 = HammingDistance_AVX2(src_a, src_b,
+                                benchmark_width_ * benchmark_height_);
+    } else {
+      int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+      if (has_ssse3) {
+        h1 = HammingDistance_SSSE3(src_a, src_b,
+                                   benchmark_width_ * benchmark_height_);
+      } else {
+        h1 = HammingDistance_X86(src_a, src_b,
+                                 benchmark_width_ * benchmark_height_);
+      }
+    }
+#elif defined(HAS_HAMMINGDISTANCE_X86)
+    h1 =
+        HammingDistance_X86(src_a, src_b, benchmark_width_ * benchmark_height_);
+#else
+    h1 = HammingDistance_C(src_a, src_b, benchmark_width_ * benchmark_height_);
+#endif
+  }
+  // A large count will cause the low level to potentially overflow so the
+  // result can not be expected to be correct.
+  // TODO(fbarchard): Consider expecting the low 16 bits to match.
+  if ((benchmark_width_ * benchmark_height_) <= kMaxOptCount) {
+    EXPECT_EQ(benchmark_width_ * benchmark_height_ * 8U, h1);
+  } else {
+    if (benchmark_width_ * benchmark_height_ * 8ULL !=
+        static_cast<uint64>(h1)) {
+      printf(
+          "warning - HammingDistance_Opt %u does not match %llu "
+          "but length of %u is longer than guaranteed.\n",
+          h1, benchmark_width_ * benchmark_height_ * 8ULL,
+          benchmark_width_ * benchmark_height_);
+    } else {
+      printf(
+          "warning - HammingDistance_Opt %u matches but length of %u "
+          "is longer than guaranteed.\n",
+          h1, benchmark_width_ * benchmark_height_);
+    }
+  }
+
+  free_aligned_buffer_page_end(src_a);
+  free_aligned_buffer_page_end(src_b);
+}
+
 TEST_F(LibYUVCompareTest, TestHammingDistance) {
   align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_);
   align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
