@@ -60,7 +60,7 @@ extern "C" {
     (defined(__x86_64__) || defined(__i386__) || defined(_M_IX86))
 #define HAS_HASHDJB2_SSE41
 #define HAS_SUMSQUAREERROR_SSE2
-#define HAS_HAMMINGDISTANCE_X86
+#define HAS_HAMMINGDISTANCE_SSE42
 #endif
 
 // The following are available for Visual C and clangcl 32 bit:
@@ -98,7 +98,7 @@ extern "C" {
 #endif
 
 uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count);
-uint32 HammingDistance_X86(const uint8* src_a, const uint8* src_b, int count);
+uint32 HammingDistance_SSE42(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_SSSE3(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_AVX2(const uint8* src_a, const uint8* src_b, int count);
 uint32 HammingDistance_NEON(const uint8* src_a, const uint8* src_b, int count);

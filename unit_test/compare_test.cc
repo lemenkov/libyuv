@@ -234,18 +234,29 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
     if (has_avx2) {
       h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
     } else {
-      int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
-      if (has_ssse3) {
-        h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+      int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+      if (has_sse42) {
+        h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
       } else {
-        h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
+        int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+        if (has_ssse3) {
+          h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+        } else {
+          h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+        }
       }
     }
-#elif defined(HAS_HAMMINGDISTANCE_X86)
-    h1 = HammingDistance_X86(src_a, src_b, kMaxWidth);
-#else
+#elif defined(HAS_HAMMINGDISTANCE_SSE42)
+    int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+    if (has_sse42) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
+#else     
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
+
   }
   EXPECT_EQ(h0, h1);
 
@@ -328,59 +339,63 @@ static const int kMaxOptCount = (1 << (32 - 3)) - 64;  // 536870848
 
 TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
   uint32 h1 = 0;
-  align_buffer_page_end(src_a, benchmark_width_ * benchmark_height_);
-  align_buffer_page_end(src_b, benchmark_width_ * benchmark_height_);
-  memset(src_a, 255u, benchmark_width_ * benchmark_height_);
-  memset(src_b, 0, benchmark_width_ * benchmark_height_);
+  const int kMaxWidth =benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_a, kMaxWidth);
+  align_buffer_page_end(src_b, kMaxWidth);
+  memset(src_a, 255u, kMaxWidth);
+  memset(src_b, 0u, kMaxWidth);
 
-  uint64 h0 = ComputeHammingDistance(src_a, src_b,
-                                     benchmark_width_ * benchmark_height_);
-  EXPECT_EQ(benchmark_width_ * benchmark_height_ * 8ULL, h0);
+  uint64 h0 = ComputeHammingDistance(src_a, src_b, kMaxWidth);
+  EXPECT_EQ(kMaxWidth * 8ULL, h0);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
 #if defined(HAS_HAMMINGDISTANCE_NEON)
-    h1 = HammingDistance_NEON(src_a, src_b,
-                              benchmark_width_ * benchmark_height_);
+    h1 = HammingDistance_NEON(src_a, src_b, kMaxWidth);
 #elif defined(HAS_HAMMINGDISTANCE_AVX2)
     int has_avx2 = TestCpuFlag(kCpuHasAVX2);
     if (has_avx2) {
-      h1 = HammingDistance_AVX2(src_a, src_b,
-                                benchmark_width_ * benchmark_height_);
+      h1 = HammingDistance_AVX2(src_a, src_b, kMaxWidth);
     } else {
-      int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
-      if (has_ssse3) {
-        h1 = HammingDistance_SSSE3(src_a, src_b,
-                                   benchmark_width_ * benchmark_height_);
+      int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+      if (has_sse42) {
+        h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
       } else {
-        h1 = HammingDistance_X86(src_a, src_b,
-                                 benchmark_width_ * benchmark_height_);
+        int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+        if (has_ssse3) {
+          h1 = HammingDistance_SSSE3(src_a, src_b, kMaxWidth);
+        } else {
+          h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+        }
       }
     }
-#elif defined(HAS_HAMMINGDISTANCE_X86)
-    h1 =
-        HammingDistance_X86(src_a, src_b, benchmark_width_ * benchmark_height_);
-#else
-    h1 = HammingDistance_C(src_a, src_b, benchmark_width_ * benchmark_height_);
+#elif defined(HAS_HAMMINGDISTANCE_SSE42)
+    int has_sse42 = TestCpuFlag(kCpuHasSSE42);
+    if (has_sse42) {
+      h1 = HammingDistance_SSE42(src_a, src_b, kMaxWidth);
+    } else {
+      h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
+    }
+#else     
+    h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
   }
+
   // A large count will cause the low level to potentially overflow so the
   // result can not be expected to be correct.
   // TODO(fbarchard): Consider expecting the low 16 bits to match.
-  if ((benchmark_width_ * benchmark_height_) <= kMaxOptCount) {
-    EXPECT_EQ(benchmark_width_ * benchmark_height_ * 8U, h1);
+  if (kMaxWidth<= kMaxOptCount) {
+    EXPECT_EQ(kMaxWidth * 8U, h1);
   } else {
-    if (benchmark_width_ * benchmark_height_ * 8ULL !=
-        static_cast<uint64>(h1)) {
+    if (kMaxWidth * 8ULL != static_cast<uint64>(h1)) {
       printf(
           "warning - HammingDistance_Opt %u does not match %llu "
           "but length of %u is longer than guaranteed.\n",
-          h1, benchmark_width_ * benchmark_height_ * 8ULL,
-          benchmark_width_ * benchmark_height_);
+          h1, kMaxWidth * 8ULL, kMaxWidth);
     } else {
       printf(
           "warning - HammingDistance_Opt %u matches but length of %u "
           "is longer than guaranteed.\n",
-          h1, benchmark_width_ * benchmark_height_);
+          h1, kMaxWidth);
     }
   }
 

@@ -22,18 +22,92 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
 
-uint32 HammingDistance_X86(const uint8* src_a, const uint8* src_b, int count) {
+#if defined(__x86_64__)
+uint32 HammingDistance_SSE42(const uint8* src_a,
+                             const uint8* src_b,
+                             int count) {
+  uint64 diff = 0u;
+
+  asm volatile(
+      "xor        %%r15,%%r15                    \n"
+      "xor        %%r14,%%r14                    \n"
+      "xor        %%r13,%%r13                    \n"
+      "xor        %%r12,%%r12                    \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "mov        (%0),%%rax                     \n"
+      "mov        0x8(%0),%%rdx                  \n"
+      "xor        (%1),%%rax                     \n"
+      "xor        0x8(%1),%%rdx                  \n"
+      "popcnt     %%rax,%%rax                    \n"
+      "popcnt     %%rdx,%%rdx                    \n"
+      "mov        0x10(%0),%%rcx                 \n"
+      "mov        0x18(%0),%%rsi                 \n"
+      "xor        0x10(%1),%%rcx                 \n"
+      "xor        0x18(%1),%%rsi                 \n"
+      "popcnt     %%rcx,%%rcx                    \n"
+      "popcnt     %%rsi,%%rsi                    \n"
+      "add        $0x20,%0                       \n"
+      "add        $0x20,%1                       \n"
+      "add        %%rax,%%r15                    \n"
+      "add        %%rdx,%%r14                    \n"
+      "add        %%rcx,%%r13                    \n"
+      "add        %%rsi,%%r12                    \n"
+      "sub        $0x20,%2                       \n"
+      "jg         1b                             \n"
+
+      "add        %%r15, %%r14                   \n"
+      "add        %%r13, %%r12                   \n"
+      "add        %%r14, %%r12                   \n"
+      "mov        %%r12, %3                      \n"
+      : "+r"(src_a),  // %0
+        "+r"(src_b),  // %1
+        "+r"(count),  // %2
+        "=r"(diff)    // %3
+      :
+      : "memory", "cc", "rax", "rdx", "rcx", "rsi", "r12", "r13", "r14", "r15");
+
+  return static_cast<uint32>(diff);
+}
+#else
+uint32 HammingDistance_SSE42(const uint8* src_a,
+                             const uint8* src_b,
+                             int count) {
   uint32 diff = 0u;
 
-  int i;
-  for (i = 0; i < count - 7; i += 8) {
-    uint64 x = *((uint64*)src_a) ^ *((uint64*)src_b);
-    src_a += 8;
-    src_b += 8;
-    diff += __builtin_popcountll(x);
-  }
+  asm volatile(LABELALIGN
+               "1:                                        \n"
+               "mov        (%0),%%eax                     \n"
+               "mov        0x4(%0),%%edx                  \n"
+               "xor        (%1),%%eax                     \n"
+               "xor        0x4(%1),%%edx                  \n"
+               "popcnt     %%eax,%%eax                    \n"
+               "add        %%eax,%3                       \n"
+               "popcnt     %%edx,%%edx                    \n"
+               "add        %%edx,%3                       \n"
+               "mov        0x8(%0),%%eax                  \n"
+               "mov        0xc(%0),%%edx                  \n"
+               "xor        0x8(%1),%%eax                  \n"
+               "xor        0xc(%1),%%edx                  \n"
+               "popcnt     %%eax,%%eax                    \n"
+               "add        %%eax,%3                       \n"
+               "popcnt     %%edx,%%edx                    \n"
+               "add        %%edx,%3                       \n"
+               "add        $0x10,%0                       \n"
+               "add        $0x10,%1                       \n"
+               "sub        $0x10,%2                       \n"
+               "jg         1b                             \n"
+               : "+r"(src_a),  // %0
+                 "+r"(src_b),  // %1
+                 "+r"(count),  // %2
+                 "+r"(diff)    // %3
+               :
+               : "memory", "cc", "eax", "edx");
+
   return diff;
 }
+#endif
 
 static vec8 kNibbleMask = {15, 15, 15, 15, 15, 15, 15, 15,
                            15, 15, 15, 15, 15, 15, 15, 15};
