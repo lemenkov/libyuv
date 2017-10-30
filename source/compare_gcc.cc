@@ -34,6 +34,7 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
       "xor        %%r13,%%r13                    \n"
       "xor        %%r12,%%r12                    \n"
 
+      // Process 32 bytes per loop.
       LABELALIGN
       "1:                                        \n"
       "mov        (%0),%%rax                     \n"
@@ -56,7 +57,6 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
       "add        %%rsi,%%r12                    \n"
       "sub        $0x20,%2                       \n"
       "jg         1b                             \n"
-
       "add        %%r15, %%r14                   \n"
       "add        %%r13, %%r12                   \n"
       "add        %%r14, %%r12                   \n"
@@ -76,34 +76,36 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
                              int count) {
   uint32 diff = 0u;
 
-  asm volatile(LABELALIGN
-               "1:                                        \n"
-               "mov        (%0),%%eax                     \n"
-               "mov        0x4(%0),%%edx                  \n"
-               "xor        (%1),%%eax                     \n"
-               "xor        0x4(%1),%%edx                  \n"
-               "popcnt     %%eax,%%eax                    \n"
-               "add        %%eax,%3                       \n"
-               "popcnt     %%edx,%%edx                    \n"
-               "add        %%edx,%3                       \n"
-               "mov        0x8(%0),%%eax                  \n"
-               "mov        0xc(%0),%%edx                  \n"
-               "xor        0x8(%1),%%eax                  \n"
-               "xor        0xc(%1),%%edx                  \n"
-               "popcnt     %%eax,%%eax                    \n"
-               "add        %%eax,%3                       \n"
-               "popcnt     %%edx,%%edx                    \n"
-               "add        %%edx,%3                       \n"
-               "add        $0x10,%0                       \n"
-               "add        $0x10,%1                       \n"
-               "sub        $0x10,%2                       \n"
-               "jg         1b                             \n"
-               : "+r"(src_a),  // %0
-                 "+r"(src_b),  // %1
-                 "+r"(count),  // %2
-                 "+r"(diff)    // %3
-               :
-               : "memory", "cc", "eax", "edx");
+  asm volatile(
+      // Process 16 bytes per loop.
+      LABELALIGN
+      "1:                                        \n"
+      "mov        (%0),%%eax                     \n"
+      "mov        0x4(%0),%%edx                  \n"
+      "xor        (%1),%%eax                     \n"
+      "xor        0x4(%1),%%edx                  \n"
+      "popcnt     %%eax,%%eax                    \n"
+      "add        %%eax,%3                       \n"
+      "popcnt     %%edx,%%edx                    \n"
+      "add        %%edx,%3                       \n"
+      "mov        0x8(%0),%%eax                  \n"
+      "mov        0xc(%0),%%edx                  \n"
+      "xor        0x8(%1),%%eax                  \n"
+      "xor        0xc(%1),%%edx                  \n"
+      "popcnt     %%eax,%%eax                    \n"
+      "add        %%eax,%3                       \n"
+      "popcnt     %%edx,%%edx                    \n"
+      "add        %%edx,%3                       \n"
+      "add        $0x10,%0                       \n"
+      "add        $0x10,%1                       \n"
+      "sub        $0x10,%2                       \n"
+      "jg         1b                             \n"
+      : "+r"(src_a),  // %0
+        "+r"(src_b),  // %1
+        "+r"(count),  // %2
+        "+r"(diff)    // %3
+      :
+      : "memory", "cc", "eax", "edx");
 
   return diff;
 }

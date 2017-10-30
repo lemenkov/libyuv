@@ -253,10 +253,9 @@ TEST_F(LibYUVCompareTest, BenchmarkHammingDistance_Opt) {
     } else {
       h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
-#else     
+#else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
-
   }
   EXPECT_EQ(h0, h1);
 
@@ -339,7 +338,7 @@ static const int kMaxOptCount = (1 << (32 - 3)) - 64;  // 536870848
 
 TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
   uint32 h1 = 0;
-  const int kMaxWidth =benchmark_width_ * benchmark_height_;
+  const int kMaxWidth = benchmark_width_ * benchmark_height_;
   align_buffer_page_end(src_a, kMaxWidth);
   align_buffer_page_end(src_b, kMaxWidth);
   memset(src_a, 255u, kMaxWidth);
@@ -375,7 +374,7 @@ TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
     } else {
       h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
     }
-#else     
+#else
     h1 = HammingDistance_C(src_a, src_b, kMaxWidth);
 #endif
   }
@@ -383,7 +382,7 @@ TEST_F(LibYUVCompareTest, TestHammingDistance_Opt) {
   // A large count will cause the low level to potentially overflow so the
   // result can not be expected to be correct.
   // TODO(fbarchard): Consider expecting the low 16 bits to match.
-  if (kMaxWidth<= kMaxOptCount) {
+  if (kMaxWidth <= kMaxOptCount) {
     EXPECT_EQ(kMaxWidth * 8U, h1);
   } else {
     if (kMaxWidth * 8ULL != static_cast<uint64>(h1)) {
