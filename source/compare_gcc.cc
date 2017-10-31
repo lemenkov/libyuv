@@ -29,44 +29,44 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
   uint64 diff = 0u;
 
   asm volatile(
-      "xor        %%r15,%%r15                    \n"
-      "xor        %%r14,%%r14                    \n"
-      "xor        %%r13,%%r13                    \n"
-      "xor        %%r12,%%r12                    \n"
+      "xor        %3,%3                          \n"
+      "xor        %%r8,%%r8                      \n"
+      "xor        %%r9,%%r9                      \n"
+      "xor        %%r10,%%r10                    \n"
 
       // Process 32 bytes per loop.
       LABELALIGN
       "1:                                        \n"
-      "mov        (%0),%%rax                     \n"
+      "mov        (%0),%%rcx                     \n"
       "mov        0x8(%0),%%rdx                  \n"
-      "xor        (%1),%%rax                     \n"
+      "xor        (%1),%%rcx                     \n"
       "xor        0x8(%1),%%rdx                  \n"
-      "popcnt     %%rax,%%rax                    \n"
-      "popcnt     %%rdx,%%rdx                    \n"
-      "mov        0x10(%0),%%rcx                 \n"
-      "mov        0x18(%0),%%rsi                 \n"
-      "xor        0x10(%1),%%rcx                 \n"
-      "xor        0x18(%1),%%rsi                 \n"
       "popcnt     %%rcx,%%rcx                    \n"
+      "popcnt     %%rdx,%%rdx                    \n"
+      "mov        0x10(%0),%%rsi                 \n"
+      "mov        0x18(%0),%%rdi                 \n"
+      "xor        0x10(%1),%%rsi                 \n"
+      "xor        0x18(%1),%%rdi                 \n"
       "popcnt     %%rsi,%%rsi                    \n"
+      "popcnt     %%rdi,%%rdi                    \n"
       "add        $0x20,%0                       \n"
       "add        $0x20,%1                       \n"
-      "add        %%rax,%%r15                    \n"
-      "add        %%rdx,%%r14                    \n"
-      "add        %%rcx,%%r13                    \n"
-      "add        %%rsi,%%r12                    \n"
+      "add        %%rcx,%3                       \n"
+      "add        %%rdx,%%r8                     \n"
+      "add        %%rsi,%%r9                     \n"
+      "add        %%rdi,%%r10                    \n"
       "sub        $0x20,%2                       \n"
       "jg         1b                             \n"
-      "add        %%r15, %%r14                   \n"
-      "add        %%r13, %%r12                   \n"
-      "add        %%r14, %%r12                   \n"
-      "mov        %%r12, %3                      \n"
+
+      "add        %%r8, %3                       \n"
+      "add        %%r9, %3                       \n"
+      "add        %%r10, %3                      \n"
       : "+r"(src_a),  // %0
         "+r"(src_b),  // %1
         "+r"(count),  // %2
         "=r"(diff)    // %3
       :
-      : "memory", "cc", "rax", "rdx", "rcx", "rsi", "r12", "r13", "r14", "r15");
+      : "memory", "cc", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10");
 
   return static_cast<uint32>(diff);
 }
@@ -80,20 +80,20 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
       // Process 16 bytes per loop.
       LABELALIGN
       "1:                                        \n"
-      "mov        (%0),%%eax                     \n"
+      "mov        (%0),%%ecx                     \n"
       "mov        0x4(%0),%%edx                  \n"
-      "xor        (%1),%%eax                     \n"
+      "xor        (%1),%%ecx                     \n"
       "xor        0x4(%1),%%edx                  \n"
-      "popcnt     %%eax,%%eax                    \n"
-      "add        %%eax,%3                       \n"
+      "popcnt     %%ecx,%%ecx                    \n"
+      "add        %%ecx,%3                       \n"
       "popcnt     %%edx,%%edx                    \n"
       "add        %%edx,%3                       \n"
-      "mov        0x8(%0),%%eax                  \n"
+      "mov        0x8(%0),%%ecx                  \n"
       "mov        0xc(%0),%%edx                  \n"
-      "xor        0x8(%1),%%eax                  \n"
+      "xor        0x8(%1),%%ecx                  \n"
       "xor        0xc(%1),%%edx                  \n"
-      "popcnt     %%eax,%%eax                    \n"
-      "add        %%eax,%3                       \n"
+      "popcnt     %%ecx,%%ecx                    \n"
+      "add        %%ecx,%3                       \n"
       "popcnt     %%edx,%%edx                    \n"
       "add        %%edx,%3                       \n"
       "add        $0x10,%0                       \n"
@@ -105,7 +105,7 @@ uint32 HammingDistance_SSE42(const uint8* src_a,
         "+r"(count),  // %2
         "+r"(diff)    // %3
       :
-      : "memory", "cc", "eax", "edx");
+      : "memory", "cc", "ecx", "edx");
 
   return diff;
 }
