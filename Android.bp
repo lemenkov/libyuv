@@ -76,7 +76,7 @@ cc_test {
     name: "libyuv_unittest",
     static_libs: ["libyuv"],
     shared_libs: ["libjpeg"],
-
+    cflags: ["-Wall", "-Werror"],
     srcs: [
         "unit_test/unit_test.cc",
         "unit_test/basictypes_test.cc",
