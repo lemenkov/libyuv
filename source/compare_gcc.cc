@@ -160,7 +160,7 @@ uint32 HammingDistance_SSSE3(const uint8* src_a,
 
       "pshufd     $0xaa,%%xmm0,%%xmm1            \n"
       "paddd      %%xmm1,%%xmm0                  \n"
-      "vmovd      %%xmm0, %3                     \n"
+      "movd       %%xmm0, %3                     \n"
       : "+r"(src_a),       // %0
         "+r"(src_b),       // %1
         "+r"(count),       // %2
