@@ -50,13 +50,6 @@ extern "C" {
 #define VISUALC_HAS_AVX2 1
 #endif  // VisualStudio >= 2012
 
-// clang 6 mips issue https://bugs.chromium.org/p/libyuv/issues/detail?id=715
-// broken in clang version 6.0.0 (trunk 308728)
-// fixed in clang version 6.0.0 (trunk 310694)
-#if defined(__clang__)
-// #define DISABLE_CLANG_MSA 1
-#endif
-
 // The following are available on all x86 platforms:
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
@@ -112,19 +105,16 @@ extern "C" {
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
-#define HAS_SCALEARGBROWDOWN2_MSA
-#define HAS_SCALEROWDOWN2_MSA
-#define HAS_SCALEROWDOWN4_MSA
 #define HAS_SCALEADDROW_MSA
 #define HAS_SCALEARGBCOLS_MSA
-#define HAS_SCALEROWDOWN34_MSA
-
-#ifndef DISABLE_CLANG_MSA
-#define HAS_SCALEARGBROWDOWNEVEN_MSA
-#define HAS_SCALEROWDOWN38_MSA
-#define HAS_SCALEFILTERCOLS_MSA
 #define HAS_SCALEARGBFILTERCOLS_MSA
-#endif
+#define HAS_SCALEARGBROWDOWN2_MSA
+#define HAS_SCALEARGBROWDOWNEVEN_MSA
+#define HAS_SCALEFILTERCOLS_MSA
+#define HAS_SCALEROWDOWN2_MSA
+#define HAS_SCALEROWDOWN34_MSA
+#define HAS_SCALEROWDOWN38_MSA
+#define HAS_SCALEROWDOWN4_MSA
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.

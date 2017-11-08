@@ -42,13 +42,6 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
-// clang 6 mips issue https://bugs.chromium.org/p/libyuv/issues/detail?id=715
-// broken in clang version 6.0.0 (trunk 308728)
-// fixed in clang version 6.0.0 (trunk 310694)
-#if defined(__clang__)
-// #define DISABLE_CLANG_MSA 1
-#endif
-
 // The following are available for Visual C:
 #if !defined(LIBYUV_DISABLE_X86) && defined(_M_IX86) && \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2))
@@ -91,10 +84,7 @@ extern "C" {
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
 #define HAS_HAMMINGDISTANCE_MSA
-
-#ifndef DISABLE_CLANG_MSA
 #define HAS_SUMSQUAREERROR_MSA
-#endif
 #endif
 
 uint32 HammingDistance_C(const uint8* src_a, const uint8* src_b, int count);
