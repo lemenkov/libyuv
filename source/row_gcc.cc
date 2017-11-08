@@ -5713,7 +5713,7 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
-  : "mx"(scale * kScaleBias)   // %3
+  : "x"(scale * kScaleBias)   // %3
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4", "xmm5"
   );
@@ -5749,7 +5749,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
-  : "mx"(scale * kScaleBias)   // %3
+  : "x"(scale * kScaleBias)   // %3
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4", "xmm5"
   );
@@ -5782,7 +5782,7 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(width)  // %2
-  : "mx"(scale)  // %3
+  : "x"(scale)   // %3
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4"
   );
