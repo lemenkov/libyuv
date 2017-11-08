@@ -31,7 +31,7 @@ extern "C" {
   var = 0
 
 #if defined(__pnacl__) || defined(__CLR_VER) || \
-    (defined(__i386__) && !defined(__SSE2__))
+    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
 #endif
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
@@ -279,7 +279,7 @@ extern "C" {
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_MERGEUV10ROW_AVX2
 #endif
-    
+
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))

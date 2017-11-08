@@ -5687,6 +5687,7 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
 #ifdef HAS_HALFFLOATROW_SSE2
 static float kScaleBias = 1.9259299444e-34f;
 void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
+  scale *= kScaleBias;
   asm volatile (
     "pshufd      $0x0,%3,%%xmm4                \n"
     "pxor        %%xmm5,%%xmm5                 \n"
@@ -5713,7 +5714,11 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
-  : "x"(scale * kScaleBias)   // %3
+#if defined(__x86_64__)
+  : "x"(scale)   // %3
+#else
+  : "m"(scale)   // %3
+#endif
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4", "xmm5"
   );
@@ -5722,6 +5727,7 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
 
 #ifdef HAS_HALFFLOATROW_AVX2
 void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
+  scale *= kScaleBias;
   asm volatile (
     "vbroadcastss  %3, %%ymm4                  \n"
     "vpxor      %%ymm5,%%ymm5,%%ymm5           \n"
@@ -5749,7 +5755,11 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),    // %0
     "+r"(dst),    // %1
     "+r"(width)   // %2
-  : "x"(scale * kScaleBias)   // %3
+#if defined(__x86_64__)
+  : "x"(scale)   // %3
+#else
+  : "m"(scale)   // %3
+#endif
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4", "xmm5"
   );
@@ -5782,7 +5792,11 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
   : "+r"(src),   // %0
     "+r"(dst),   // %1
     "+r"(width)  // %2
+#if defined(__x86_64__)
   : "x"(scale)   // %3
+#else
+  : "m"(scale)   // %3
+#endif
   : "memory", "cc",
     "xmm2", "xmm3", "xmm4"
   );
