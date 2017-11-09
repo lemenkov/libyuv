@@ -2758,9 +2758,11 @@ void MergeUV10Row_AVX2(const uint16* src_u,
                        const uint16* src_v,
                        uint16* dst_uv,
                        int width) {
+  // clang-format off
   asm volatile (
     "sub       %0,%1                           \n"
 
+    // 16 pixels per loop.
     LABELALIGN
     "1:                                        \n"
     "vmovdqu   (%0),%%ymm0                     \n"
@@ -2768,14 +2770,8 @@ void MergeUV10Row_AVX2(const uint16* src_u,
     "add        $0x20,%0                       \n"
     "vpsllw    $0x6,%%ymm0,%%ymm0              \n"
     "vpsllw    $0x6,%%ymm1,%%ymm1              \n"
-//    "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
-//    "vpermq     $0xd8,%%ymm1,%%ymm1            \n"
-    "vpunpcklwd %%ymm1,%%ymm0,%%ymm2           \n"
+    "vpunpcklwd %%ymm1,%%ymm0,%%ymm2           \n"  // mutates
     "vpunpckhwd %%ymm1,%%ymm0,%%ymm0           \n"
-
-//    "vmovdqu   %%ymm2, (%2)                    \n"
-//    "vmovdqu   %%ymm0, 0x20(%2)                \n"
-
     "vextractf128 $0x0,%%ymm2,(%2)             \n"
     "vextractf128 $0x0,%%ymm0,0x10(%2)         \n"
     "vextractf128 $0x1,%%ymm2,0x20(%2)         \n"
@@ -2784,16 +2780,15 @@ void MergeUV10Row_AVX2(const uint16* src_u,
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
     "vzeroupper                                \n"
-  : "+r"(src_u),     // %0
-    "+r"(src_v),     // %1
-    "+r"(dst_uv),    // %2
-    "+r"(width)      // %3
+  : "+r"(src_u),   // %0
+    "+r"(src_v),   // %1
+    "+r"(dst_uv),  // %2
+    "+r"(width)    // %3
   :
-  : "memory", "cc", "xmm0", "xmm1", "xmm2"
-  );
+  : "memory", "cc", "xmm0", "xmm1", "xmm2");
+  // clang-format on
 }
 #endif  // HAS_MERGEUVROW_AVX2
-
 
 #ifdef HAS_SPLITRGBROW_SSSE3
 

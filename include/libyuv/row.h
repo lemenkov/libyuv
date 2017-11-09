@@ -274,7 +274,7 @@ extern "C" {
 
 // The following are available for AVX2 gcc/clang x86 platforms:
 // TODO(fbarchard): Port to Visual C
-#if !defined(LIBYUV_DISABLE_X86) && \
+#if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_MERGEUV10ROW_AVX2

@@ -244,11 +244,11 @@ static SAFEBUFFERS int GetCpuFlags(void) {
     if ((GetXCR0() & 0xe0) == 0xe0) {
       cpu_info |= (cpu_info7[1] & 0x40000000) ? kCpuHasAVX512BW : 0;
       cpu_info |= (cpu_info7[1] & 0x80000000) ? kCpuHasAVX512VL : 0;
-      cpu_info |= (cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI: 0;
-      cpu_info |= (cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2: 0;
-      cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG: 0;
-      cpu_info |= (cpu_info7[2] & 0x00004000) ? kCpuHasAVX512VPOPCNTDQ: 0;
-      cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI: 0;
+      cpu_info |= (cpu_info7[2] & 0x00000002) ? kCpuHasAVX512VBMI : 0;
+      cpu_info |= (cpu_info7[2] & 0x00000040) ? kCpuHasAVX512VBMI2 : 0;
+      cpu_info |= (cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0;
+      cpu_info |= (cpu_info7[2] & 0x00004000) ? kCpuHasAVX512VPOPCNTDQ : 0;
+      cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI : 0;
     }
   }
 

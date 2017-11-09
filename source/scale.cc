@@ -822,11 +822,12 @@ static void ScaleAddCols2_16_C(int dst_width,
 static void ScaleAddCols0_C(int dst_width,
                             int boxheight,
                             int x,
-                            int,
+                            int dx,
                             const uint16* src_ptr,
                             uint8* dst_ptr) {
   int scaleval = 65536 / boxheight;
   int i;
+  (void)dx;
   src_ptr += (x >> 16);
   for (i = 0; i < dst_width; ++i) {
     *dst_ptr++ = src_ptr[i] * scaleval >> 16;
