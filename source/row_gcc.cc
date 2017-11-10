@@ -2753,13 +2753,23 @@ void MergeUVRow_SSE2(const uint8* src_u,
 }
 #endif  // HAS_MERGEUVROW_SSE2
 
-#ifdef HAS_MERGEUV10ROW_AVX2
-void MergeUV10Row_AVX2(const uint16* src_u,
-                       const uint16* src_v,
-                       uint16* dst_uv,
-                       int width) {
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 128 = 9 bits
+// 64 = 10 bits
+// 16 = 12 bits
+// 1 = 16 bits
+
+#ifdef HAS_MERGEUVROW_16_AVX2
+void MergeUVRow_16_AVX2(const uint16* src_u,
+                        const uint16* src_v,
+                        uint16* dst_uv,
+                        int scale,
+                        int width) {
   // clang-format off
   asm volatile (
+    "vmovd      %4,%%xmm3                      \n"
+    "vpunpcklwd %%xmm3,%%xmm3,%%xmm3           \n"
+    "vbroadcastss %%xmm3,%%ymm3                \n"
     "sub       %0,%1                           \n"
 
     // 16 pixels per loop.
@@ -2768,8 +2778,9 @@ void MergeUV10Row_AVX2(const uint16* src_u,
     "vmovdqu   (%0),%%ymm0                     \n"
     "vmovdqu   (%0,%1,1),%%ymm1                \n"
     "add        $0x20,%0                       \n"
-    "vpsllw    $0x6,%%ymm0,%%ymm0              \n"
-    "vpsllw    $0x6,%%ymm1,%%ymm1              \n"
+
+    "vpmullw   %%ymm3,%%ymm0,%%ymm0            \n"
+    "vpmullw   %%ymm3,%%ymm1,%%ymm1            \n"
     "vpunpcklwd %%ymm1,%%ymm0,%%ymm2           \n"  // mutates
     "vpunpckhwd %%ymm1,%%ymm0,%%ymm0           \n"
     "vextractf128 $0x0,%%ymm2,(%2)             \n"
@@ -2784,8 +2795,8 @@ void MergeUV10Row_AVX2(const uint16* src_u,
     "+r"(src_v),   // %1
     "+r"(dst_uv),  // %2
     "+r"(width)    // %3
-  :
-  : "memory", "cc", "xmm0", "xmm1", "xmm2");
+  : "r"(scale)     // %4
+  : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
   // clang-format on
 }
 #endif  // HAS_MERGEUVROW_AVX2
