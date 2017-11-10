@@ -278,6 +278,7 @@ extern "C" {
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_MERGEUVROW_16_AVX2
+#define HAS_MULTIPLYROW_16_AVX2
 #endif
 
 // The following are available on Neon platforms:
@@ -1531,6 +1532,15 @@ void MergeUVRow_16_AVX2(const uint16* src_u,
                         uint16* dst_uv,
                         int scale,
                         int width);
+
+void MultiplyRow_16_AVX2(const uint16* src_y,
+                         uint16* dst_y,
+                         int scale,
+                         int width);
+void MultiplyRow_16_C(const uint16* src_y,
+                      uint16* dst_y,
+                      int scale,
+                      int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);

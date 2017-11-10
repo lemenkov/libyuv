@@ -2661,6 +2661,44 @@ TEST_F(LibYUVPlanarTest, MergeUVRow_16_Opt) {
 }
 #endif
 
+// TODO(fbarchard): improve test for platforms and cpu detect
+#ifdef HAS_MULTIPLYROW_16_AVX2
+TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_y, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
+
+  MemRandomize(src_pixels_y, kPixels * 2);
+  memset(dst_pixels_y_opt, 0, kPixels * 2);
+  memset(dst_pixels_y_c, 1, kPixels * 2);
+
+  MultiplyRow_16_C(reinterpret_cast<const uint16*>(src_pixels_y),
+                   reinterpret_cast<uint16*>(dst_pixels_y_c), 64, kPixels);
+
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    if (has_avx2) {
+      MultiplyRow_16_AVX2(reinterpret_cast<const uint16*>(src_pixels_y),
+                          reinterpret_cast<uint16*>(dst_pixels_y_opt), 64,
+                          kPixels);
+    } else {
+      MultiplyRow_16_C(reinterpret_cast<const uint16*>(src_pixels_y),
+                       reinterpret_cast<uint16*>(dst_pixels_y_opt), 64,
+                       kPixels);
+    }
+  }
+
+  for (int i = 0; i < kPixels * 2; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+#endif
+
 float TestScaleMaxSamples(int benchmark_width,
                           int benchmark_height,
                           int benchmark_iterations,

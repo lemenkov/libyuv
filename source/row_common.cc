@@ -1817,6 +1817,16 @@ void MergeUVRow_16_C(const uint16* src_u,
   }
 }
 
+void MultiplyRow_16_C(const uint16* src_y,
+                      uint16* dst_y,
+                      int scale,
+                      int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_y[x] = src_y[x] * scale;
+  }
+}
+
 void CopyRow_C(const uint8* src, uint8* dst, int count) {
   memcpy(dst, src, count);
 }
