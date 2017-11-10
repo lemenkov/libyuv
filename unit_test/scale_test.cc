@@ -45,9 +45,10 @@ static int TestFilter(int src_width,
   int src_stride_y = b * 2 + Abs(src_width);
   int src_stride_uv = b * 2 + src_width_uv;
 
-  align_buffer_page_end(src_y, src_y_plane_size)
-      align_buffer_page_end(src_u, src_uv_plane_size) align_buffer_page_end(
-          src_v, src_uv_plane_size) if (!src_y || !src_u || !src_v) {
+  align_buffer_page_end(src_y, src_y_plane_size);
+  align_buffer_page_end(src_u, src_uv_plane_size);
+  align_buffer_page_end(src_v, src_uv_plane_size);
+  if (!src_y || !src_u || !src_v) {
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
   }
@@ -64,16 +65,14 @@ static int TestFilter(int src_width,
   int dst_stride_y = b * 2 + dst_width;
   int dst_stride_uv = b * 2 + dst_width_uv;
 
-  align_buffer_page_end(dst_y_c, dst_y_plane_size)
-      align_buffer_page_end(dst_u_c, dst_uv_plane_size)
-          align_buffer_page_end(dst_v_c, dst_uv_plane_size)
-              align_buffer_page_end(dst_y_opt, dst_y_plane_size)
-                  align_buffer_page_end(dst_u_opt, dst_uv_plane_size)
-                      align_buffer_page_end(
-                          dst_v_opt,
-                          dst_uv_plane_size) if (!dst_y_c || !dst_u_c ||
-                                                 !dst_v_c || !dst_y_opt ||
-                                                 !dst_u_opt || !dst_v_opt) {
+  align_buffer_page_end(dst_y_c, dst_y_plane_size);
+  align_buffer_page_end(dst_u_c, dst_uv_plane_size);
+  align_buffer_page_end(dst_v_c, dst_uv_plane_size);
+  align_buffer_page_end(dst_y_opt, dst_y_plane_size);
+  align_buffer_page_end(dst_u_opt, dst_uv_plane_size);
+  align_buffer_page_end(dst_v_opt, dst_uv_plane_size);
+  if (!dst_y_c || !dst_u_c || !dst_v_c || !dst_y_opt || !dst_u_opt ||
+      !dst_v_opt) {
     printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
     return 0;
   }
@@ -135,17 +134,17 @@ static int TestFilter(int src_width,
     }
   }
 
-  free_aligned_buffer_page_end(dst_y_c) free_aligned_buffer_page_end(dst_u_c)
-      free_aligned_buffer_page_end(dst_v_c)
-          free_aligned_buffer_page_end(dst_y_opt)
-              free_aligned_buffer_page_end(dst_u_opt)
-                  free_aligned_buffer_page_end(dst_v_opt)
+  free_aligned_buffer_page_end(dst_y_c);
+  free_aligned_buffer_page_end(dst_u_c);
+  free_aligned_buffer_page_end(dst_v_c);
+  free_aligned_buffer_page_end(dst_y_opt);
+  free_aligned_buffer_page_end(dst_u_opt);
+  free_aligned_buffer_page_end(dst_v_opt);
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
 
-                      free_aligned_buffer_page_end(src_y)
-                          free_aligned_buffer_page_end(src_u)
-                              free_aligned_buffer_page_end(src_v)
-
-                                  return max_diff;
+  return max_diff;
 }
 
 // Test scaling with 8 bit C vs 16 bit C and return maximum pixel difference.
@@ -171,12 +170,13 @@ static int TestFilter_16(int src_width,
   int src_stride_y = b * 2 + Abs(src_width);
   int src_stride_uv = b * 2 + src_width_uv;
 
-  align_buffer_page_end(src_y, src_y_plane_size) align_buffer_page_end(
-      src_u, src_uv_plane_size) align_buffer_page_end(src_v, src_uv_plane_size)
-      align_buffer_page_end(src_y_16, src_y_plane_size * 2)
-          align_buffer_page_end(src_u_16, src_uv_plane_size * 2)
-              align_buffer_page_end(src_v_16, src_uv_plane_size * 2)
-                  uint16* p_src_y_16 = reinterpret_cast<uint16*>(src_y_16);
+  align_buffer_page_end(src_y, src_y_plane_size);
+  align_buffer_page_end(src_u, src_uv_plane_size);
+  align_buffer_page_end(src_v, src_uv_plane_size);
+  align_buffer_page_end(src_y_16, src_y_plane_size * 2);
+  align_buffer_page_end(src_u_16, src_uv_plane_size * 2);
+  align_buffer_page_end(src_v_16, src_uv_plane_size * 2);
+  uint16* p_src_y_16 = reinterpret_cast<uint16*>(src_y_16);
   uint16* p_src_u_16 = reinterpret_cast<uint16*>(src_u_16);
   uint16* p_src_v_16 = reinterpret_cast<uint16*>(src_v_16);
 
@@ -206,15 +206,14 @@ static int TestFilter_16(int src_width,
   int dst_stride_y = b * 2 + dst_width;
   int dst_stride_uv = b * 2 + dst_width_uv;
 
-  align_buffer_page_end(dst_y_8, dst_y_plane_size)
-      align_buffer_page_end(dst_u_8, dst_uv_plane_size)
-          align_buffer_page_end(dst_v_8, dst_uv_plane_size)
-              align_buffer_page_end(dst_y_16, dst_y_plane_size * 2)
-                  align_buffer_page_end(dst_u_16, dst_uv_plane_size * 2)
-                      align_buffer_page_end(dst_v_16, dst_uv_plane_size * 2)
+  align_buffer_page_end(dst_y_8, dst_y_plane_size);
+  align_buffer_page_end(dst_u_8, dst_uv_plane_size);
+  align_buffer_page_end(dst_v_8, dst_uv_plane_size);
+  align_buffer_page_end(dst_y_16, dst_y_plane_size * 2);
+  align_buffer_page_end(dst_u_16, dst_uv_plane_size * 2);
+  align_buffer_page_end(dst_v_16, dst_uv_plane_size * 2);
 
-                          uint16* p_dst_y_16 =
-                              reinterpret_cast<uint16*>(dst_y_16);
+  uint16* p_dst_y_16 = reinterpret_cast<uint16*>(dst_y_16);
   uint16* p_dst_u_16 = reinterpret_cast<uint16*>(dst_u_16);
   uint16* p_dst_v_16 = reinterpret_cast<uint16*>(dst_v_16);
 
@@ -263,20 +262,20 @@ static int TestFilter_16(int src_width,
     }
   }
 
-  free_aligned_buffer_page_end(dst_y_8) free_aligned_buffer_page_end(dst_u_8)
-      free_aligned_buffer_page_end(dst_v_8)
-          free_aligned_buffer_page_end(dst_y_16)
-              free_aligned_buffer_page_end(dst_u_16)
-                  free_aligned_buffer_page_end(dst_v_16)
+  free_aligned_buffer_page_end(dst_y_8);
+  free_aligned_buffer_page_end(dst_u_8);
+  free_aligned_buffer_page_end(dst_v_8);
+  free_aligned_buffer_page_end(dst_y_16);
+  free_aligned_buffer_page_end(dst_u_16);
+  free_aligned_buffer_page_end(dst_v_16);
+  free_aligned_buffer_page_end(src_y);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(src_y_16);
+  free_aligned_buffer_page_end(src_u_16);
+  free_aligned_buffer_page_end(src_v_16);
 
-                      free_aligned_buffer_page_end(src_y)
-                          free_aligned_buffer_page_end(src_u)
-                              free_aligned_buffer_page_end(src_v)
-                                  free_aligned_buffer_page_end(src_y_16)
-                                      free_aligned_buffer_page_end(src_u_16)
-                                          free_aligned_buffer_page_end(src_v_16)
-
-                                              return max_diff;
+  return max_diff;
 }
 
 // The following adjustments in dimensions ensure the scale factor will be
