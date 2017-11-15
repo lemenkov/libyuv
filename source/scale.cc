@@ -1700,7 +1700,7 @@ void ScalePlane_16(const uint16* src,
     CopyPlane_16(src, src_stride, dst, dst_stride, dst_width, dst_height);
     return;
   }
-  if (dst_width == src_width) {
+  if (dst_width == src_width && filtering != kFilterBox) {
     int dy = FixedDiv(src_height, dst_height);
     // Arbitrary scale vertically, but unscaled vertically.
     ScalePlaneVertical_16(src_height, dst_width, dst_height, src_stride,
@@ -1729,7 +1729,7 @@ void ScalePlane_16(const uint16* src,
       return;
     }
     if (4 * dst_width == src_width && 4 * dst_height == src_height &&
-        filtering != kFilterBilinear) {
+        (filtering == kFilterBox || filtering == kFilterNone)) {
       // optimized, 1/4
       ScalePlaneDown4_16(src_width, src_height, dst_width, dst_height,
                          src_stride, dst_stride, src, dst, filtering);
