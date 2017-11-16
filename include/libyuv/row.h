@@ -1537,10 +1537,7 @@ void MultiplyRow_16_AVX2(const uint16* src_y,
                          uint16* dst_y,
                          int scale,
                          int width);
-void MultiplyRow_16_C(const uint16* src_y,
-                      uint16* dst_y,
-                      int scale,
-                      int width);
+void MultiplyRow_16_C(const uint16* src_y, uint16* dst_y, int scale, int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);

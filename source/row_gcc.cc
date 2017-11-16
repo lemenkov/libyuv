@@ -2800,7 +2800,6 @@ void MergeUVRow_16_AVX2(const uint16* src_u,
 }
 #endif  // HAS_MERGEUVROW_AVX2
 
-
 #ifdef HAS_MULTIPLYROW_16_AVX2
 void MultiplyRow_16_AVX2(const uint16* src_y,
                          uint16* dst_y,
