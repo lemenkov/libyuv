@@ -153,7 +153,7 @@ static int TestFilter_16(int src_width,
     return 0;
   }
 
-  int i, j;
+  int i;
   int src_width_uv = (Abs(src_width) + 1) >> 1;
   int src_height_uv = (Abs(src_height) + 1) >> 1;
 
