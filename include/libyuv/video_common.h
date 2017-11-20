@@ -68,6 +68,7 @@ enum FourCC {
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
+  FOURCC_AR30 = FOURCC('A', 'R', '3', '0'),
   FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
   FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
