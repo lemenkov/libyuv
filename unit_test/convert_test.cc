@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
+
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/convert.h"
@@ -1069,6 +1071,7 @@ TESTATOB(ARGB, 4, 4, 1, RGB24, 3, 3, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RGB565, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB1555, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB4444, 2, 2, 1, 0)
+TESTATOB(ARGB, 4, 4, 1, AR30, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, YUY2, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, UYVY, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, I400, 1, 1, 1, 2)
@@ -1927,5 +1930,37 @@ TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   EXPECT_EQ(dst[2], src[3]);
   EXPECT_EQ(dst[3], src[1]);
 }
+
+#ifdef HAS_ARGBTOAR30ROW_AVX2
+TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src, kPixels * 4);
+  align_buffer_page_end(dst_opt, kPixels * 4);
+  align_buffer_page_end(dst_c, kPixels * 4);
+
+  MemRandomize(src, kPixels * 4);
+  memset(dst_opt, 0, kPixels * 4);
+  memset(dst_c, 1, kPixels * 4);
+
+  ARGBToAR30Row_C(src, dst_c, kPixels);
+
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    if (has_avx2) {
+      ARGBToAR30Row_AVX2(src, dst_opt, kPixels);
+    } else {
+      ARGBToAR30Row_C(src, dst_opt, kPixels);
+    }
+  }
+
+  for (int i = 0; i < kPixels * 4; ++i) {
+    EXPECT_EQ(dst_opt[i], dst_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(dst_c);
+}
+#endif  // HAS_ARGBTOAR30ROW_AVX2
 
 }  // namespace libyuv

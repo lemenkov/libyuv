@@ -301,6 +301,19 @@ void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
   }
 }
 
+void ARGBToAR30Row_C(const uint8* src_argb, uint8* dst_rgb, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint32 b0 = (src_argb[0] >> 6) | (src_argb[0] << 2);
+    uint32 g0 = (src_argb[1] >> 6) | (src_argb[1] << 2);
+    uint32 r0 = (src_argb[2] >> 6) | (src_argb[2] << 2);
+    uint32 a0 = (src_argb[3] >> 6);
+    *(uint32*)(dst_rgb) = b0 | (g0 << 10) | (r0 << 20) | (a0 << 30);
+    dst_rgb += 4;
+    src_argb += 4;
+  }
+}
+
 static __inline int RGBToY(uint8 r, uint8 g, uint8 b) {
   return (66 * r + 129 * g + 25 * b + 0x1080) >> 8;
 }

@@ -700,6 +700,57 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int width) {
 }
 #endif  // HAS_RGB24TOARGBROW_SSSE3
 
+#ifdef HAS_ARGBTOAR30ROW_AVX2
+void ARGBToAR30Row_AVX2(const uint8* src, uint8* dst, int width) {
+  asm volatile (
+    "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"  // 0x000000ff mask
+    "vpsrld     $0x18,%%ymm4,%%ymm4            \n"
+    "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"  // 0xc0000000 mask
+    "vpslld     $30,%%ymm5,%%ymm5              \n"
+
+    LABELALIGN
+    "1:                                        \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    // alpha
+    "vpand      %%ymm5,%%ymm0,%%ymm3           \n"
+    // red
+    "vpsrld     $0x10,%%ymm0,%%ymm1            \n"
+    "vpand      %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
+    "vpslld     $22,%%ymm1,%%ymm1              \n"
+    "vpslld     $20,%%ymm2,%%ymm2              \n"
+    "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
+    "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
+    //green
+    "vpsrld     $0x08,%%ymm0,%%ymm1            \n"
+    "vpand      %%ymm4,%%ymm1,%%ymm1           \n"
+    "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
+    "vpslld     $12,%%ymm1,%%ymm1              \n"
+    "vpslld     $10,%%ymm2,%%ymm2              \n"
+    "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
+    "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
+    //blue
+    "vpand      %%ymm4,%%ymm0,%%ymm1           \n"
+    "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
+    "vpslld     $2,%%ymm1,%%ymm1               \n"
+    "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
+    "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
+
+    "vmovdqu    %%ymm3,(%1)                    \n"
+    "add        $0x20,%0                       \n"
+    "add        $0x20,%1                       \n"
+    "sub        $0x8,%2                        \n"
+    "jg         1b                             \n"
+    "vzeroupper                                \n"
+  : "+r"(src),  // %0
+    "+r"(dst),  // %1
+    "+r"(width)   // %2
+  :: "memory", "cc",
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif
+
 #ifdef HAS_ARGBTOYROW_SSSE3
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {

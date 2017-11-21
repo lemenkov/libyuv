@@ -277,6 +277,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
+#define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
 #endif
@@ -1791,6 +1792,7 @@ void ARGBToRGB565DitherRow_AVX2(const uint8* src_argb,
 void ARGBToRGB565Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToARGB1555Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToARGB4444Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToAR30Row_AVX2(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void ARGBToRGB24Row_NEON(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_NEON(const uint8* src_argb, uint8* dst_rgb, int width);
@@ -1817,6 +1819,7 @@ void ARGBToRAWRow_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRGB565Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToARGB1555Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToARGB4444Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
+void ARGBToAR30Row_C(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width);
 void J400ToARGBRow_AVX2(const uint8* src_y, uint8* dst_argb, int width);
@@ -2416,6 +2419,9 @@ void ARGBToARGB1555Row_Any_AVX2(const uint8* src_argb,
 void ARGBToARGB4444Row_Any_AVX2(const uint8* src_argb,
                                 uint8* dst_rgb,
                                 int width);
+void ARGBToAR30Row_Any_AVX2(const uint8* src_argb,
+                            uint8* dst_rgb,
+                            int width);
 
 void ARGBToRGB24Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int width);

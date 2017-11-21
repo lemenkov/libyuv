@@ -1308,6 +1308,47 @@ int ARGBToARGB4444(const uint8* src_argb,
   return 0;
 }
 
+// Convert ARGB To AR30.
+LIBYUV_API
+int ARGBToAR30(const uint8* src_argb,
+               int src_stride_argb,
+               uint8* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height) {
+  int y;
+  void (*ARGBToAR30Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
+      ARGBToAR30Row_C;
+  if (!src_argb || !dst_ar30 || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_argb = src_argb + (height - 1) * src_stride_argb;
+    src_stride_argb = -src_stride_argb;
+  }
+  // Coalesce rows.
+  if (src_stride_argb == width * 4 && dst_stride_ar30 == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_argb = dst_stride_ar30 = 0;
+  }
+#if defined(HAS_ARGBTOAR30ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToAR30Row = ARGBToAR30Row_AVX2;
+    }
+  }
+#endif
+  for (y = 0; y < height; ++y) {
+    ARGBToAR30Row(src_argb, dst_ar30, width);
+    src_argb += src_stride_argb;
+    dst_ar30 += dst_stride_ar30;
+  }
+  return 0;
+}
+
 // Convert ARGB to J420. (JPeg full range I420).
 LIBYUV_API
 int ARGBToJ420(const uint8* src_argb,
