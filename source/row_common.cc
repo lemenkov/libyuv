@@ -1811,6 +1811,11 @@ void MergeRGBRow_C(const uint8* src_r,
   }
 }
 
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 128 = 9 bits
+// 64 = 10 bits
+// 16 = 12 bits
+// 1 = 16 bits
 void MergeUVRow_16_C(const uint16* src_u,
                      const uint16* src_v,
                      uint16* dst_uv,
@@ -1837,6 +1842,21 @@ void MultiplyRow_16_C(const uint16* src_y,
   int x;
   for (x = 0; x < width; ++x) {
     dst_y[x] = src_y[x] * scale;
+  }
+}
+
+// Use scale to convert lsb formats to msb, depending how many bits there are:
+// 32768 = 9 bits
+// 16384 = 10 bits
+// 4096 = 12 bits
+// 256 = 16 bits
+void Convert16To8Row_C(const uint16* src_y,
+                       uint8* dst_y,
+                       int scale,
+                       int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    dst_y[x] = (src_y[x] * scale) >> 16;
   }
 }
 

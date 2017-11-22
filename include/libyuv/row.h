@@ -278,6 +278,7 @@ extern "C" {
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_ARGBTOAR30ROW_AVX2
+#define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
 #endif
@@ -1540,6 +1541,12 @@ void MultiplyRow_16_AVX2(const uint16* src_y,
                          int width);
 void MultiplyRow_16_C(const uint16* src_y, uint16* dst_y, int scale, int width);
 
+void Convert16To8Row_AVX2(const uint16* src_y,
+                          uint8* dst_y,
+                          int scale,
+                          int width);
+void Convert16To8Row_C(const uint16* src_y, uint8* dst_y, int scale, int width);
+
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);
 void CopyRow_ERMS(const uint8* src, uint8* dst, int count);
@@ -2419,9 +2426,7 @@ void ARGBToARGB1555Row_Any_AVX2(const uint8* src_argb,
 void ARGBToARGB4444Row_Any_AVX2(const uint8* src_argb,
                                 uint8* dst_rgb,
                                 int width);
-void ARGBToAR30Row_Any_AVX2(const uint8* src_argb,
-                            uint8* dst_rgb,
-                            int width);
+void ARGBToAR30Row_Any_AVX2(const uint8* src_argb, uint8* dst_rgb, int width);
 
 void ARGBToRGB24Row_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int width);
 void ARGBToRAWRow_Any_NEON(const uint8* src_argb, uint8* dst_rgb, int width);

@@ -428,6 +428,136 @@ int H422ToABGR(const uint8* src_y,
                           width, height);
 }
 
+// Convert 10 bit YUV to 10 bit RGB with matrix
+static int H010ToAR30Matrix(const uint16* src_y,
+                            int src_stride_y,
+                            const uint16* src_u,
+                            int src_stride_u,
+                            const uint16* src_v,
+                            int src_stride_v,
+                            uint8* dst_ar30,
+                            int dst_stride_ar30,
+                            const struct YuvConstants* yuvconstants,
+                            int scale,  // 16384 for 10 bits
+                            int width,
+                            int height) {
+  int y;
+  int halfwidth = (width + 1) >> 1;
+  void (*Convert16To8Row)(const uint16* src_y, uint8* dst_y, int scale,
+                          int width) = Convert16To8Row_C;
+  void (*I422ToARGBRow)(const uint8* y_buf, const uint8* u_buf,
+                        const uint8* v_buf, uint8* rgb_buf,
+                        const struct YuvConstants* yuvconstants, int width) =
+      I422ToARGBRow_C;
+  void (*ARGBToAR30Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
+      ARGBToAR30Row_C;
+
+  if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
+    dst_stride_ar30 = -dst_stride_ar30;
+  }
+
+#if defined(HAS_CONVERT16TO8ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Convert16To8Row = Convert16To8Row_C;  // TODO(fbarchard): Any AVX2
+    if (IS_ALIGNED(width, 64)) {
+      Convert16To8Row = Convert16To8Row_AVX2;
+    }
+  }
+#endif
+
+#if defined(HAS_ARGBTOAR30ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToAR30Row = ARGBToAR30Row_AVX2;
+    }
+  }
+#endif
+
+#if defined(HAS_I422TOARGBROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToARGBRow = I422ToARGBRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I422ToARGBRow = I422ToARGBRow_Any_AVX2;
+    if (IS_ALIGNED(width, 16)) {
+      I422ToARGBRow = I422ToARGBRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    I422ToARGBRow = I422ToARGBRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToARGBRow = I422ToARGBRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_I422TOARGBROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    I422ToARGBRow = I422ToARGBRow_Any_MSA;
+    if (IS_ALIGNED(width, 8)) {
+      I422ToARGBRow = I422ToARGBRow_MSA;
+    }
+  }
+#endif
+
+  align_buffer_64(row_y, width);
+  align_buffer_64(row_u, halfwidth);
+  align_buffer_64(row_v, halfwidth);
+  align_buffer_64(row_argb, width * 4);
+
+  for (y = 0; y < height; ++y) {
+    Convert16To8Row(src_y, row_y, scale, width);
+    Convert16To8Row(src_u, row_u, scale, halfwidth);
+    Convert16To8Row(src_v, row_v, scale, halfwidth);
+
+    I422ToARGBRow(row_y, row_u, row_v, row_argb, yuvconstants, width);
+
+    ARGBToAR30Row(row_argb, dst_ar30, width);
+
+    dst_ar30 += dst_stride_ar30;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
+    }
+  }
+  free_aligned_buffer_64(row_y);
+  free_aligned_buffer_64(row_u);
+  free_aligned_buffer_64(row_v);
+  free_aligned_buffer_64(row_argb);
+  return 0;
+}
+
+// Convert H010 to AR30.
+LIBYUV_API
+int H010ToAR30(const uint16* src_y,
+               int src_stride_y,
+               const uint16* src_u,
+               int src_stride_u,
+               const uint16* src_v,
+               int src_stride_v,
+               uint8* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height) {
+  return H010ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                          src_stride_v, dst_ar30, dst_stride_ar30,
+                          &kYuvH709Constants, 16384, width, height);
+}
+
 // Convert I444 to ARGB with matrix
 static int I444ToARGBMatrix(const uint8* src_y,
                             int src_stride_y,
