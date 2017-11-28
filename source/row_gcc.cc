@@ -2894,6 +2894,37 @@ void MultiplyRow_16_AVX2(const uint16* src_y,
 // 16384 = 10 bits
 // 4096 = 12 bits
 // 256 = 16 bits
+void Convert16To8Row_SSSE3(const uint16* src_y,
+                           uint8* dst_y,
+                           int scale,
+                           int width) {
+  // clang-format off
+  asm volatile (
+    "movd      %3,%%xmm3                      \n"
+    "punpcklwd %%xmm3,%%xmm3                  \n"
+    "pshufd    $0x0,%%xmm3,%%xmm3             \n"
+
+    // 32 pixels per loop.
+    LABELALIGN
+    "1:                                       \n"
+    "movdqu    (%0),%%xmm0                    \n"
+    "movdqu    0x10(%0),%%xmm1                \n"
+    "pmulhuw   %%xmm3,%%xmm0                  \n"
+    "pmulhuw   %%xmm3,%%xmm1                  \n"
+    "packuswb  %%xmm1,%%xmm0                  \n"
+    "movdqu    %%xmm0,(%1)                    \n"
+    "add       $0x20,%0                       \n"
+    "add       $0x10,%1                       \n"
+    "sub       $0x10,%2                       \n"
+    "jg        1b                             \n"
+  : "+r"(src_y),   // %0
+    "+r"(dst_y),   // %1
+    "+r"(width)    // %2
+  : "r"(scale)     // %3
+  : "memory", "cc", "xmm0", "xmm1", "xmm3");
+  // clang-format on
+}
+
 #ifdef HAS_MULTIPLYROW_16_AVX2
 void Convert16To8Row_AVX2(const uint16* src_y,
                           uint8* dst_y,

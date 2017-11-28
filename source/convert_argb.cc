@@ -462,15 +462,22 @@ static int H010ToAR30Matrix(const uint16* src_y,
     dst_stride_ar30 = -dst_stride_ar30;
   }
 
+#if defined(HAS_CONVERT16TO8ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    Convert16To8Row = Convert16To8Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      Convert16To8Row = Convert16To8Row_SSSE3;
+    }
+  }
+#endif
 #if defined(HAS_CONVERT16TO8ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    Convert16To8Row = Convert16To8Row_C;  // TODO(fbarchard): Any AVX2
-    if (IS_ALIGNED(width, 64)) {
+    Convert16To8Row = Convert16To8Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
       Convert16To8Row = Convert16To8Row_AVX2;
     }
   }
 #endif
-
 #if defined(HAS_ARGBTOAR30ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
@@ -479,7 +486,6 @@ static int H010ToAR30Matrix(const uint16* src_y,
     }
   }
 #endif
-
 #if defined(HAS_I422TOARGBROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     I422ToARGBRow = I422ToARGBRow_Any_SSSE3;

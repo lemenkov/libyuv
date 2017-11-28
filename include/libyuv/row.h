@@ -37,7 +37,7 @@ extern "C" {
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
-#define LIBYUV_DISABLE_X86
+// define LIBYUV_DISABLE_X86
 #endif
 #endif
 // True if compiling for SSSE3 as a requirement.
@@ -268,6 +268,7 @@ extern "C" {
 // TODO(fbarchard): Port to Visual C
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+#define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #endif
@@ -1541,11 +1542,23 @@ void MultiplyRow_16_AVX2(const uint16* src_y,
                          int width);
 void MultiplyRow_16_C(const uint16* src_y, uint16* dst_y, int scale, int width);
 
+void Convert16To8Row_C(const uint16* src_y, uint8* dst_y, int scale, int width);
+void Convert16To8Row_SSSE3(const uint16* src_y,
+                           uint8* dst_y,
+                           int scale,
+                           int width);
 void Convert16To8Row_AVX2(const uint16* src_y,
                           uint8* dst_y,
                           int scale,
                           int width);
-void Convert16To8Row_C(const uint16* src_y, uint8* dst_y, int scale, int width);
+void Convert16To8Row_Any_SSSE3(const uint16* src_y,
+                               uint8* dst_y,
+                               int scale,
+                               int width);
+void Convert16To8Row_Any_AVX2(const uint16* src_y,
+                              uint8* dst_y,
+                              int scale,
+                              int width);
 
 void CopyRow_SSE2(const uint8* src, uint8* dst, int count);
 void CopyRow_AVX(const uint8* src, uint8* dst, int count);

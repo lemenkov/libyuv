@@ -2720,10 +2720,14 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
                     dst_pixels_y_c, 16384, kPixels);
 
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
   for (int i = 0; i < benchmark_iterations_; ++i) {
     if (has_avx2) {
       Convert16To8Row_AVX2(reinterpret_cast<const uint16*>(src_pixels_y),
                            dst_pixels_y_opt, 16384, kPixels);
+    } else if (has_ssse3) {
+      Convert16To8Row_SSSE3(reinterpret_cast<const uint16*>(src_pixels_y),
+                            dst_pixels_y_opt, 16384, kPixels);
     } else {
       Convert16To8Row_C(reinterpret_cast<const uint16*>(src_pixels_y),
                         dst_pixels_y_opt, 16384, kPixels);
