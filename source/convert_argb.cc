@@ -1431,16 +1431,16 @@ int ARGB4444ToARGB(const uint8* src_argb4444,
   return 0;
 }
 
-// Convert NV12 to ARGB.
-LIBYUV_API
-int NV12ToARGB(const uint8* src_y,
-               int src_stride_y,
-               const uint8* src_uv,
-               int src_stride_uv,
-               uint8* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height) {
+// Convert NV12 to ARGB with matrix
+static int NV12ToARGBMatrix(const uint8* src_y,
+                            int src_stride_y,
+                            const uint8* src_uv,
+                            int src_stride_uv,
+                            uint8* dst_argb,
+                            int dst_stride_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height) {
   int y;
   void (*NV12ToARGBRow)(const uint8* y_buf, const uint8* uv_buf, uint8* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
@@ -1496,7 +1496,7 @@ int NV12ToARGB(const uint8* src_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV12ToARGBRow(src_y, src_uv, dst_argb, &kYuvI601Constants, width);
+    NV12ToARGBRow(src_y, src_uv, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
@@ -1506,16 +1506,16 @@ int NV12ToARGB(const uint8* src_y,
   return 0;
 }
 
-// Convert NV21 to ARGB.
-LIBYUV_API
-int NV21ToARGB(const uint8* src_y,
-               int src_stride_y,
-               const uint8* src_uv,
-               int src_stride_uv,
-               uint8* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height) {
+// Convert NV21 to ARGB with matrix
+static int NV21ToARGBMatrix(const uint8* src_y,
+                            int src_stride_y,
+                            const uint8* src_uv,
+                            int src_stride_uv,
+                            uint8* dst_argb,
+                            int dst_stride_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width,
+                            int height) {
   int y;
   void (*NV21ToARGBRow)(const uint8* y_buf, const uint8* uv_buf, uint8* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
@@ -1563,7 +1563,7 @@ int NV21ToARGB(const uint8* src_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV21ToARGBRow(src_y, src_uv, dst_argb, &kYuvI601Constants, width);
+    NV21ToARGBRow(src_y, src_uv, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
@@ -1571,6 +1571,63 @@ int NV21ToARGB(const uint8* src_y,
     }
   }
   return 0;
+}
+
+// Convert NV12 to ARGB.
+LIBYUV_API
+int NV12ToARGB(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_uv,
+               int src_stride_uv,
+               uint8* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return NV12ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv, dst_argb,
+                          dst_stride_argb, &kYuvI601Constants, width, height);
+}
+
+// Convert NV21 to ARGB.
+LIBYUV_API
+int NV21ToARGB(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_uv,
+               int src_stride_uv,
+               uint8* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return NV21ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv, dst_argb,
+                          dst_stride_argb, &kYuvI601Constants, width, height);
+}
+
+// Convert NV12 to ABGR.
+// To output ABGR instead of ARGB swap the UV and use a mirrrored yuc matrix.
+// To swap the UV use NV12 instead of NV21.LIBYUV_API
+int NV12ToABGR(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_uv,
+               int src_stride_uv,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height) {
+  return NV21ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv, dst_abgr,
+                          dst_stride_abgr, &kYvuI601Constants, width, height);
+}
+
+// Convert NV21 to ABGR.
+LIBYUV_API
+int NV21ToABGR(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_vu,
+               int src_stride_vu,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height) {
+  return NV12ToARGBMatrix(src_y, src_stride_y, src_vu, src_stride_vu, dst_abgr,
+                          dst_stride_abgr, &kYvuI601Constants, width, height);
 }
 
 // Convert M420 to ARGB.
@@ -1782,6 +1839,120 @@ int UYVYToARGB(const uint8* src_uyvy,
     dst_argb += dst_stride_argb;
   }
   return 0;
+}
+static void WeavePixels(const uint8* src_u,
+                        const uint8* src_v,
+                        int src_pixel_stride_uv,
+                        uint8* dst_uv,
+                        int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    dst_uv[0] = *src_u;
+    dst_uv[1] = *src_v;
+    dst_uv += 2;
+    src_u += src_pixel_stride_uv;
+    src_v += src_pixel_stride_uv;
+  }
+}
+
+// Convert Android420 to ARGB.
+LIBYUV_API
+int Android420ToARGBMatrix(const uint8* src_y,
+                           int src_stride_y,
+                           const uint8* src_u,
+                           int src_stride_u,
+                           const uint8* src_v,
+                           int src_stride_v,
+                           int src_pixel_stride_uv,
+                           uint8* dst_argb,
+                           int dst_stride_argb,
+                           const struct YuvConstants* yuvconstants,
+                           int width,
+                           int height) {
+  int y;
+  uint8* dst_uv;
+  const ptrdiff_t vu_off = src_v - src_u;
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  if (!src_y || !src_u || !src_v || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    dst_argb = dst_argb + (height - 1) * dst_stride_argb;
+    dst_stride_argb = -dst_stride_argb;
+  }
+
+  // I420
+  if (src_pixel_stride_uv == 1) {
+    return I420ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                            src_stride_v, dst_argb, dst_stride_argb,
+                            yuvconstants, width, height);
+    // NV21
+  } else if (src_pixel_stride_uv == 2 && vu_off == -1 &&
+             src_stride_u == src_stride_v) {
+    return NV21ToARGBMatrix(src_y, src_stride_y, src_v, src_stride_v, dst_argb,
+                            dst_stride_argb, yuvconstants, width, height);
+    // NV12
+  } else if (src_pixel_stride_uv == 2 && vu_off == 1 &&
+             src_stride_u == src_stride_v) {
+    return NV12ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, dst_argb,
+                            dst_stride_argb, yuvconstants, width, height);
+  }
+
+  // General case fallback creates NV12
+  align_buffer_64(plane_uv, halfwidth * 2 * halfheight);
+  dst_uv = plane_uv;
+  for (y = 0; y < halfheight; ++y) {
+    WeavePixels(src_u, src_v, src_pixel_stride_uv, dst_uv, halfwidth);
+    src_u += src_stride_u;
+    src_v += src_stride_v;
+    dst_uv += halfwidth * 2;
+  }
+  NV12ToARGBMatrix(src_y, src_stride_y, plane_uv, halfwidth * 2, dst_argb,
+                   dst_stride_argb, yuvconstants, width, height);
+  free_aligned_buffer_64(plane_uv);
+  return 0;
+}
+
+// Convert Android420 to ARGB.
+LIBYUV_API
+int Android420ToARGB(const uint8* src_y,
+                     int src_stride_y,
+                     const uint8* src_u,
+                     int src_stride_u,
+                     const uint8* src_v,
+                     int src_stride_v,
+                     int src_pixel_stride_uv,
+                     uint8* dst_argb,
+                     int dst_stride_argb,
+                     int width,
+                     int height) {
+  return Android420ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                                src_stride_v, src_pixel_stride_uv, dst_argb,
+                                dst_stride_argb, &kYuvI601Constants, width,
+                                height);
+}
+
+// Convert Android420 to ABGR.
+LIBYUV_API
+int Android420ToABGR(const uint8* src_y,
+                     int src_stride_y,
+                     const uint8* src_u,
+                     int src_stride_u,
+                     const uint8* src_v,
+                     int src_stride_v,
+                     int src_pixel_stride_uv,
+                     uint8* dst_abgr,
+                     int dst_stride_abgr,
+                     int width,
+                     int height) {
+  return Android420ToARGBMatrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
+                                src_stride_u, src_pixel_stride_uv, dst_abgr,
+                                dst_stride_abgr, &kYvuI601Constants, width,
+                                height);
 }
 
 #ifdef __cplusplus

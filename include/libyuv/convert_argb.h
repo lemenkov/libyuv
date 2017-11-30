@@ -58,8 +58,8 @@ int I420ToABGR(const uint8* src_y,
                int src_stride_u,
                const uint8* src_v,
                int src_stride_v,
-               uint8* dst_argb,
-               int dst_stride_argb,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height);
 
@@ -187,6 +187,27 @@ int NV21ToARGB(const uint8* src_y,
                int src_stride_vu,
                uint8* dst_argb,
                int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert NV12 to ABGR.
+int NV12ToABGR(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_uv,
+               int src_stride_uv,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
+// Convert NV21 to ABGR.
+LIBYUV_API
+int NV21ToABGR(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_uv,
+               int src_stride_uv,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height);
 
@@ -422,6 +443,34 @@ int MJPGToARGB(const uint8* sample,
                int dst_width,
                int dst_height);
 #endif
+
+// Convert Android420 to ARGB.
+LIBYUV_API
+int Android420ToARGB(const uint8* src_y,
+                     int src_stride_y,
+                     const uint8* src_u,
+                     int src_stride_u,
+                     const uint8* src_v,
+                     int src_stride_v,
+                     int src_pixel_stride_uv,
+                     uint8* dst_argb,
+                     int dst_stride_argb,
+                     int width,
+                     int height);
+
+// Convert Android420 to ABGR.
+LIBYUV_API
+int Android420ToABGR(const uint8* src_y,
+                     int src_stride_y,
+                     const uint8* src_u,
+                     int src_stride_u,
+                     const uint8* src_v,
+                     int src_stride_v,
+                     int src_pixel_stride_uv,
+                     uint8* dst_abgr,
+                     int dst_stride_abgr,
+                     int width,
+                     int height);
 
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
