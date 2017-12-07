@@ -1935,7 +1935,8 @@ TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
 
 #ifdef HAS_ARGBTOAR30ROW_AVX2
 TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
-  const int kPixels = benchmark_width_ * benchmark_height_;
+  // ARGBToAR30Row_AVX2 expects a multiple of 8 pixels.
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 7) & ~7;
   align_buffer_page_end(src, kPixels * 4);
   align_buffer_page_end(dst_opt, kPixels * 4);
   align_buffer_page_end(dst_c, kPixels * 4);
@@ -2037,5 +2038,6 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
                    BPP_C)
 
 TESTPLANAR16TOB(H010, 2, 2, AR30, 4, 4, 1, 2, AR30, 4)
+TESTPLANAR16TOB(H010, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
 
 }  // namespace libyuv
