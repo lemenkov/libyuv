@@ -519,31 +519,40 @@ static int H010ToAR30Matrix(const uint16* src_y,
   }
 #endif
 
-  align_buffer_64(row_y, width);
-  align_buffer_64(row_u, halfwidth);
-  align_buffer_64(row_v, halfwidth);
-  align_buffer_64(row_argb, width * 4);
+  {
+    // Row buffers for 8 bit YUV and RGB.
+    align_buffer_64(row_buf, width + halfwidth * 2 + width * 4);
+    uint8* row_y = row_buf;
+    uint8* row_u = row_buf + width;
+    uint8* row_v = row_buf + width + halfwidth;
+    uint8* row_argb = row_buf + width + halfwidth * 2;
 
-  for (y = 0; y < height; ++y) {
-    Convert16To8Row(src_y, row_y, scale, width);
-    Convert16To8Row(src_u, row_u, scale, halfwidth);
-    Convert16To8Row(src_v, row_v, scale, halfwidth);
+    for (y = 0; y < height - 1; y += 2) {
+      Convert16To8Row(src_y, row_y, scale, width);
+      Convert16To8Row(src_u, row_u, scale, halfwidth);
+      Convert16To8Row(src_v, row_v, scale, halfwidth);
+      I422ToARGBRow(row_y, row_u, row_v, row_argb, yuvconstants, width);
+      ARGBToAR30Row(row_argb, dst_ar30, width);
 
-    I422ToARGBRow(row_y, row_u, row_v, row_argb, yuvconstants, width);
-
-    ARGBToAR30Row(row_argb, dst_ar30, width);
-
-    dst_ar30 += dst_stride_ar30;
-    src_y += src_stride_y;
-    if (y & 1) {
+      Convert16To8Row(src_y + src_stride_y, row_y, scale, width);
+      I422ToARGBRow(row_y, row_u, row_v, row_argb, yuvconstants, width);
+      ARGBToAR30Row(row_argb, dst_ar30 + dst_stride_ar30, width);
+      dst_ar30 += dst_stride_ar30 * 2;
+      src_y += src_stride_y * 2;
       src_u += src_stride_u;
       src_v += src_stride_v;
     }
+
+    if (height & 1) {
+      Convert16To8Row(src_y, row_y, scale, width);
+      Convert16To8Row(src_u, row_u, scale, halfwidth);
+      Convert16To8Row(src_v, row_v, scale, halfwidth);
+      I422ToARGBRow(row_y, row_u, row_v, row_argb, yuvconstants, width);
+      ARGBToAR30Row(row_argb, dst_ar30, width);
+    }
+
+    free_aligned_buffer_64(row_buf);
   }
-  free_aligned_buffer_64(row_y);
-  free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
-  free_aligned_buffer_64(row_argb);
   return 0;
 }
 
@@ -645,27 +654,36 @@ static int H010ToARGBMatrix(const uint16* src_y,
   }
 #endif
 
-  align_buffer_64(row_y, width);
-  align_buffer_64(row_u, halfwidth);
-  align_buffer_64(row_v, halfwidth);
+  {
+    // Row buffers for 8 bit YUV.
+    align_buffer_64(row_buf, width + halfwidth * 2);
+    uint8* row_y = row_buf;
+    uint8* row_u = row_buf + width;
+    uint8* row_v = row_buf + width + halfwidth;
 
-  for (y = 0; y < height; ++y) {
-    Convert16To8Row(src_y, row_y, scale, width);
-    Convert16To8Row(src_u, row_u, scale, halfwidth);
-    Convert16To8Row(src_v, row_v, scale, halfwidth);
+    for (y = 0; y < height - 1; y += 2) {
+      Convert16To8Row(src_y, row_y, scale, width);
+      Convert16To8Row(src_u, row_u, scale, halfwidth);
+      Convert16To8Row(src_v, row_v, scale, halfwidth);
+      I422ToARGBRow(row_y, row_u, row_v, dst_argb, yuvconstants, width);
 
-    I422ToARGBRow(row_y, row_u, row_v, dst_argb, yuvconstants, width);
-
-    dst_argb += dst_stride_argb;
-    src_y += src_stride_y;
-    if (y & 1) {
+      Convert16To8Row(src_y + src_stride_y, row_y, scale, width);
+      I422ToARGBRow(row_y, row_u, row_v, dst_argb + dst_stride_argb,
+                    yuvconstants, width);
+      dst_argb += dst_stride_argb * 2;
+      src_y += src_stride_y * 2;
       src_u += src_stride_u;
       src_v += src_stride_v;
     }
+
+    if (height & 1) {
+      Convert16To8Row(src_y, row_y, scale, width);
+      Convert16To8Row(src_u, row_u, scale, halfwidth);
+      Convert16To8Row(src_v, row_v, scale, halfwidth);
+      I422ToARGBRow(row_y, row_u, row_v, dst_argb, yuvconstants, width);
+    }
+    free_aligned_buffer_64(row_buf);
   }
-  free_aligned_buffer_64(row_y);
-  free_aligned_buffer_64(row_u);
-  free_aligned_buffer_64(row_v);
   return 0;
 }
 
