@@ -1948,14 +1948,16 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   ARGBToAR30Row_C(src, dst_c, kPixels);
 
   int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  int has_sse2 = TestCpuFlag(kCpuHasSSE2);
   for (int i = 0; i < benchmark_iterations_; ++i) {
     if (has_avx2) {
       ARGBToAR30Row_AVX2(src, dst_opt, kPixels);
+    } else if (has_sse2) {
+      ARGBToAR30Row_SSE2(src, dst_opt, kPixels);
     } else {
       ARGBToAR30Row_C(src, dst_opt, kPixels);
     }
   }
-
   for (int i = 0; i < kPixels * 4; ++i) {
     EXPECT_EQ(dst_opt[i], dst_c[i]);
   }

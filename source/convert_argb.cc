@@ -478,6 +478,14 @@ static int H010ToAR30Matrix(const uint16* src_y,
     }
   }
 #endif
+#if defined(HAS_ARGBTOAR30ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    ARGBToAR30Row = ARGBToAR30Row_Any_SSE2;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToAR30Row = ARGBToAR30Row_SSE2;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTOAR30ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
     ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
