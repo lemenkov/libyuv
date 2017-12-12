@@ -802,8 +802,7 @@ void ARGBToAR30Row_AVX2(const uint8* src, uint8* dst, int width) {
         "m"(kMaskRB10),     // %5
         "m"(kMaskAG10),     // %6
         "m"(kMulAG10)       // %7
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
-        "xmm6");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif
 

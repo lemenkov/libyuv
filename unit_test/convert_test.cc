@@ -30,6 +30,9 @@
 
 namespace libyuv {
 
+// Alias to copy pixels as is
+#define AR30ToAR30 ARGBCopy
+
 #define SUBSAMPLE(v, a) ((((v) + (a)-1)) / (a))
 
 #define TESTPLANARTOPI(SRC_FMT_PLANAR, SRC_SUBSAMP_X, SRC_SUBSAMP_Y,          \
@@ -597,6 +600,7 @@ TESTPLANARTOB(I422, 2, 1, YUY2, 2, 4, 1, 0, ARGB, 4)
 TESTPLANARTOB(I422, 2, 1, UYVY, 2, 4, 1, 0, ARGB, 4)
 TESTPLANARTOB(I420, 2, 2, I400, 1, 1, 1, 0, ARGB, 4)
 TESTPLANARTOB(J420, 2, 2, J400, 1, 1, 1, 0, ARGB, 4)
+TESTPLANARTOB(I420, 2, 2, AR30, 4, 4, 1, 0, AR30, 4)
 
 #define TESTQPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
                         YALIGN, W1280, DIFF, N, NEG, OFF, ATTEN)               \
@@ -1966,9 +1970,6 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   free_aligned_buffer_page_end(dst_c);
 }
 #endif  // HAS_ARGBTOAR30ROW_AVX2
-
-// Alias to copy pixels as is
-#define AR30ToAR30 ARGBToARGB
 
 #define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,      \
                          ALIGN, YALIGN, W1280, DIFF, N, NEG, SOFF, DOFF,      \

@@ -276,6 +276,18 @@ int I420ToARGB4444(const uint8* src_y,
                    int dst_stride_frame,
                    int width,
                    int height);
+// Convert I420 to AR30.
+LIBYUV_API
+int I420ToAR30(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_u,
+               int src_stride_u,
+               const uint8* src_v,
+               int src_stride_v,
+               uint8* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
 
 // Convert I420 to specified format.
 // "dst_sample_stride" is bytes in a row for the destination. Pass 0 if the
