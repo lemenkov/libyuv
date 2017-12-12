@@ -699,6 +699,23 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int width) {
   );
 }
 #endif  // HAS_RGB24TOARGBROW_SSSE3
+/*
+Red Blue
+With the 8 bit value in the upper bits, vpmulhuw by (1024+4) will produce a 10
+bit value in the low 10 bits of each 16 bit value. This is whats wanted for the
+blue channel. The red needs to be shifted 4 left, so multiply by (1024+4)*16 for
+red.
+
+Alpha Green
+Alpha and Green are already in the high bits so vpand can zero out the other
+bits, keeping just 2 upper bits of alpha and 8 bit green. The same multiplier
+could be used for Green - (1024+4) putting the 10 bit green in the lsb.  Alpha
+would be a simple multiplier to shift it into position.  It wants a gap of 10
+above the green.  Green is 10 bits, so there are 6 bits in the low short.  4
+more are needed, so a multiplier of 4 gets the 2 bits into the upper 16 bits,
+and then a shift of 4 is a multiply of 16, so (4*16) = 64.  Then shift the
+result left 10 to position the A and G channels.
+*/
 
 void ARGBToAR30Row_SSE2(const uint8* src, uint8* dst, int width) {
   asm volatile(
@@ -754,52 +771,48 @@ void ARGBToAR30Row_SSE2(const uint8* src, uint8* dst, int width) {
 }
 
 #ifdef HAS_ARGBTOAR30ROW_AVX2
+
+// Shuffle table for converting RAW to RGB24.  Last 8.
+static const uvec8 kShuffleRB30 = {128u, 0u, 128u, 2u,  128u, 4u,  128u, 6u,
+                                   128u, 8u, 128u, 10u, 128u, 12u, 128u, 14u};
+static const uint32 kMulRB10 = 1028 * 16 * 65536 + 1028;
+static const uint32 kMaskRB10 = 0x3ff003ff;
+static const uint32 kMaskAG10 = 0xc000ff00;
+static const uint32 kMulAG10 = 64 * 65536 + 1028;
+
 void ARGBToAR30Row_AVX2(const uint8* src, uint8* dst, int width) {
   asm volatile(
-      "vpcmpeqb   %%ymm4,%%ymm4,%%ymm4           \n"  // 0x000000ff mask
-      "vpsrld     $0x18,%%ymm4,%%ymm4            \n"
-      "vpcmpeqb   %%ymm5,%%ymm5,%%ymm5           \n"  // 0xc0000000 mask
-      "vpslld     $30,%%ymm5,%%ymm5              \n"
+      "vbroadcastf128 %3,%%ymm2                  \n"  // shuffler for RB
+      "vbroadcastss  %4,%%ymm3                   \n"  // multipler for RB
+      "vbroadcastss  %5,%%ymm4                   \n"  // mask for R10 B10
+      "vbroadcastss  %6,%%ymm5                   \n"  // mask for AG
+      "vbroadcastss  %7,%%ymm6                   \n"  // multipler for AG
+      "sub        %0,%1                          \n"
 
-      LABELALIGN
       "1:                                        \n"
-      "vmovdqu    (%0),%%ymm0                    \n"
-      // alpha
-      "vpand      %%ymm5,%%ymm0,%%ymm3           \n"
-      // red
-      "vpsrld     $0x10,%%ymm0,%%ymm1            \n"
-      "vpand      %%ymm4,%%ymm1,%%ymm1           \n"
-      "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
-      "vpslld     $22,%%ymm1,%%ymm1              \n"
-      "vpslld     $20,%%ymm2,%%ymm2              \n"
-      "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
-      "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
-      // green
-      "vpsrld     $0x08,%%ymm0,%%ymm1            \n"
-      "vpand      %%ymm4,%%ymm1,%%ymm1           \n"
-      "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
-      "vpslld     $12,%%ymm1,%%ymm1              \n"
-      "vpslld     $10,%%ymm2,%%ymm2              \n"
-      "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
-      "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
-      // blue
-      "vpand      %%ymm4,%%ymm0,%%ymm1           \n"
-      "vpsrld     $0x6,%%ymm1,%%ymm2             \n"
-      "vpslld     $2,%%ymm1,%%ymm1               \n"
-      "vpor       %%ymm1,%%ymm3,%%ymm3           \n"
-      "vpor       %%ymm2,%%ymm3,%%ymm3           \n"
-
-      "vmovdqu    %%ymm3,(%1)                    \n"
+      "vmovdqu    (%0),%%ymm0                    \n"  // fetch 8 ARGB pixels
+      "vpshufb    %%ymm2,%%ymm0,%%ymm1           \n"  // R0B0
+      "vpand      %%ymm5,%%ymm0,%%ymm0           \n"  // A0G0
+      "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"  // X2 R16 X4  B10
+      "vpmulhuw   %%ymm6,%%ymm0,%%ymm0           \n"  // X10 A2 X10 G10
+      "vpand      %%ymm4,%%ymm1,%%ymm1           \n"  // X2 R10 X10 B10
+      "vpslld     $10,%%ymm0,%%ymm0              \n"  // A2 x10 G10 x10
+      "vpor       %%ymm1,%%ymm0,%%ymm0           \n"  // A2 R10 G10 B10
+      "vmovdqu    %%ymm0,(%1,%0)                 \n"  // store 8 AR30 pixels
       "add        $0x20,%0                       \n"
-      "add        $0x20,%1                       \n"
       "sub        $0x8,%2                        \n"
       "jg         1b                             \n"
       "vzeroupper                                \n"
-      : "+r"(src),   // %0
-        "+r"(dst),   // %1
-        "+r"(width)  // %2
-        ::"memory",
-        "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+
+      : "+r"(src),         // %0
+        "+r"(dst),         // %1
+        "+r"(width)        // %2
+      : "m"(kShuffleRB30), // %3
+        "m"(kMulRB10),     // %4
+        "m"(kMaskRB10),    // %5
+        "m"(kMaskAG10),    // %6
+        "m"(kMulAG10)      // %7
+      : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif
 

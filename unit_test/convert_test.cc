@@ -1940,7 +1940,6 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   align_buffer_page_end(src, kPixels * 4);
   align_buffer_page_end(dst_opt, kPixels * 4);
   align_buffer_page_end(dst_c, kPixels * 4);
-
   MemRandomize(src, kPixels * 4);
   memset(dst_opt, 0, kPixels * 4);
   memset(dst_c, 1, kPixels * 4);
