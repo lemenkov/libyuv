@@ -699,12 +699,16 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int width) {
   );
 }
 #endif  // HAS_RGB24TOARGBROW_SSSE3
+
 /*
+
+ARGBToAR30Row:
+
 Red Blue
-With the 8 bit value in the upper bits, vpmulhuw by (1024+4) will produce a 10
-bit value in the low 10 bits of each 16 bit value. This is whats wanted for the
-blue channel. The red needs to be shifted 4 left, so multiply by (1024+4)*16 for
-red.
+With the 8 bit value in the upper bits of a short, vpmulhuw by (1024+4) will
+produce a 10 bit value in the low 10 bits of each 16 bit value. This is whats
+wanted for the blue channel. The red needs to be shifted 4 left, so multiply by
+(1024+4)*16 for red.
 
 Alpha Green
 Alpha and Green are already in the high bits so vpand can zero out the other
@@ -717,61 +721,6 @@ and then a shift of 4 is a multiply of 16, so (4*16) = 64.  Then shift the
 result left 10 to position the A and G channels.
 */
 
-void ARGBToAR30Row_SSE2(const uint8* src, uint8* dst, int width) {
-  asm volatile(
-      "pcmpeqb   %%xmm4,%%xmm4                   \n"  // 0x000000ff mask
-      "psrld     $0x18,%%xmm4                    \n"
-      "pcmpeqb   %%xmm5,%%xmm5                   \n"  // 0xc0000000 mask
-      "pslld     $30,%%xmm5                      \n"
-
-      LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      // alpha
-      "movdqa    %%xmm0,%%xmm3                   \n"
-      "pand      %%xmm5,%%xmm3                   \n"
-      // red
-      "movdqa    %%xmm0,%%xmm1                   \n"
-      "psrld     $0x10,%%xmm1                    \n"
-      "pand      %%xmm4,%%xmm1                   \n"
-      "movdqa    %%xmm1,%%xmm2                   \n"
-      "psrld     $0x6,%%xmm2                     \n"
-      "pslld     $22,%%xmm1                      \n"
-      "pslld     $20,%%xmm2                      \n"
-      "por       %%xmm1,%%xmm3                   \n"
-      "por       %%xmm2,%%xmm3                   \n"
-      // green
-      "movdqa    %%xmm0,%%xmm1                   \n"
-      "psrld     $0x08,%%xmm1                    \n"
-      "pand      %%xmm4,%%xmm1                   \n"
-      "movdqa    %%xmm1,%%xmm2                   \n"
-      "psrld     $0x6,%%xmm2                     \n"
-      "pslld     $12,%%xmm1                      \n"
-      "pslld     $10,%%xmm2                      \n"
-      "por       %%xmm1,%%xmm3                   \n"
-      "por       %%xmm2,%%xmm3                   \n"
-      // blue
-      "pand      %%xmm4,%%xmm0                   \n"
-      "movdqa    %%xmm0,%%xmm1                   \n"
-      "psrld     $0x6,%%xmm1                     \n"
-      "pslld     $2,%%xmm0                       \n"
-      "por       %%xmm0,%%xmm3                   \n"
-      "por       %%xmm1,%%xmm3                   \n"
-
-      "movdqu    %%xmm3,(%1)                     \n"
-      "add       $0x10,%0                        \n"
-      "add       $0x10,%1                        \n"
-      "sub       $0x4,%2                         \n"
-      "jg        1b                              \n"
-      : "+r"(src),   // %0
-        "+r"(dst),   // %1
-        "+r"(width)  // %2
-        ::"memory",
-        "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
-}
-
-#ifdef HAS_ARGBTOAR30ROW_AVX2
-
 // Shuffle table for converting RAW to RGB24.  Last 8.
 static const uvec8 kShuffleRB30 = {128u, 0u, 128u, 2u,  128u, 4u,  128u, 6u,
                                    128u, 8u, 128u, 10u, 128u, 12u, 128u, 14u};
@@ -779,6 +728,47 @@ static const uint32 kMulRB10 = 1028 * 16 * 65536 + 1028;
 static const uint32 kMaskRB10 = 0x3ff003ff;
 static const uint32 kMaskAG10 = 0xc000ff00;
 static const uint32 kMulAG10 = 64 * 65536 + 1028;
+
+void ARGBToAR30Row_SSSE3(const uint8* src, uint8* dst, int width) {
+  asm volatile(
+      "movdqa     %3,%%xmm2                     \n"  // shuffler for RB
+      "movd       %4,%%xmm3                     \n"  // multipler for RB
+      "movd       %5,%%xmm4                     \n"  // mask for R10 B10
+      "movd       %6,%%xmm5                     \n"  // mask for AG
+      "movd       %7,%%xmm6                     \n"  // multipler for AG
+      "pshufd     $0x0,%%xmm3,%%xmm3            \n"
+      "pshufd     $0x0,%%xmm4,%%xmm4            \n"
+      "pshufd     $0x0,%%xmm5,%%xmm5            \n"
+      "pshufd     $0x0,%%xmm6,%%xmm6            \n"
+      "sub        %0,%1                         \n"
+
+      "1:                                       \n"
+      "movdqu     (%0),%%xmm0                   \n"  // fetch 4 ARGB pixels
+      "movdqa     %%xmm0,%%xmm1                 \n"
+      "pshufb     %%xmm2,%%xmm1                 \n"  // R0B0
+      "pand       %%xmm5,%%xmm0                 \n"  // A0G0
+      "pmulhuw    %%xmm3,%%xmm1                 \n"  // X2 R16 X4  B10
+      "pmulhuw    %%xmm6,%%xmm0                 \n"  // X10 A2 X10 G10
+      "pand       %%xmm4,%%xmm1                 \n"  // X2 R10 X10 B10
+      "pslld      $10,%%xmm0                    \n"  // A2 x10 G10 x10
+      "por        %%xmm1,%%xmm0                 \n"  // A2 R10 G10 B10
+      "movdqu     %%xmm0,(%1,%0)                \n"  // store 4 AR30 pixels
+      "add        $0x10,%0                      \n"
+      "sub        $0x4,%2                       \n"
+      "jg         1b                            \n"
+
+      : "+r"(src),          // %0
+        "+r"(dst),          // %1
+        "+r"(width)         // %2
+      : "m"(kShuffleRB30),  // %3
+        "m"(kMulRB10),      // %4
+        "m"(kMaskRB10),     // %5
+        "m"(kMaskAG10),     // %6
+        "m"(kMulAG10)       // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+
+#ifdef HAS_ARGBTOAR30ROW_AVX2
 
 void ARGBToAR30Row_AVX2(const uint8* src, uint8* dst, int width) {
   asm volatile(
@@ -804,15 +794,16 @@ void ARGBToAR30Row_AVX2(const uint8* src, uint8* dst, int width) {
       "jg         1b                             \n"
       "vzeroupper                                \n"
 
-      : "+r"(src),         // %0
-        "+r"(dst),         // %1
-        "+r"(width)        // %2
-      : "m"(kShuffleRB30), // %3
-        "m"(kMulRB10),     // %4
-        "m"(kMaskRB10),    // %5
-        "m"(kMaskAG10),    // %6
-        "m"(kMulAG10)      // %7
-      : "memory", "cc", "eax", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+      : "+r"(src),          // %0
+        "+r"(dst),          // %1
+        "+r"(width)         // %2
+      : "m"(kShuffleRB30),  // %3
+        "m"(kMulRB10),      // %4
+        "m"(kMaskRB10),     // %5
+        "m"(kMaskAG10),     // %6
+        "m"(kMulAG10)       // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5",
+        "xmm6");
 }
 #endif
 
