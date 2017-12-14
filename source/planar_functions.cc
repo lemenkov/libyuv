@@ -70,11 +70,6 @@ void CopyPlane(const uint8* src_y,
     CopyRow = IS_ALIGNED(width, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
-#if defined(HAS_COPYROW_MIPS)
-  if (TestCpuFlag(kCpuHasMIPS)) {
-    CopyRow = CopyRow_MIPS;
-  }
-#endif
 
   // Copy plane
   for (y = 0; y < height; ++y) {
@@ -114,11 +109,6 @@ void CopyPlane_16(const uint16* src_y,
 #if defined(HAS_COPYROW_16_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 32)) {
     CopyRow = CopyRow_16_NEON;
-  }
-#endif
-#if defined(HAS_COPYROW_16_MIPS)
-  if (TestCpuFlag(kCpuHasMIPS)) {
-    CopyRow = CopyRow_16_MIPS;
   }
 #endif
 
@@ -308,16 +298,6 @@ void SplitUVPlane(const uint8* src_uv,
     SplitUVRow = SplitUVRow_Any_NEON;
     if (IS_ALIGNED(width, 16)) {
       SplitUVRow = SplitUVRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_SPLITUVROW_DSPR2)
-  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(dst_u, 4) &&
-      IS_ALIGNED(dst_stride_u, 4) && IS_ALIGNED(dst_v, 4) &&
-      IS_ALIGNED(dst_stride_v, 4)) {
-    SplitUVRow = SplitUVRow_Any_DSPR2;
-    if (IS_ALIGNED(width, 16)) {
-      SplitUVRow = SplitUVRow_DSPR2;
     }
   }
 #endif
@@ -560,14 +540,6 @@ void MirrorPlane(const uint8* src_y,
     if (IS_ALIGNED(width, 32)) {
       MirrorRow = MirrorRow_AVX2;
     }
-  }
-#endif
-// TODO(fbarchard): Mirror on mips handle unaligned memory.
-#if defined(HAS_MIRRORROW_DSPR2)
-  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(src_y, 4) &&
-      IS_ALIGNED(src_stride_y, 4) && IS_ALIGNED(dst_y, 4) &&
-      IS_ALIGNED(dst_stride_y, 4)) {
-    MirrorRow = MirrorRow_DSPR2;
   }
 #endif
 #if defined(HAS_MIRRORROW_MSA)
@@ -1471,15 +1443,6 @@ static int I422ToRGBAMatrix(const uint8* src_y,
     if (IS_ALIGNED(width, 8)) {
       I422ToRGBARow = I422ToRGBARow_NEON;
     }
-  }
-#endif
-#if defined(HAS_I422TORGBAROW_DSPR2)
-  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(width, 4) &&
-      IS_ALIGNED(src_y, 4) && IS_ALIGNED(src_stride_y, 4) &&
-      IS_ALIGNED(src_u, 2) && IS_ALIGNED(src_stride_u, 2) &&
-      IS_ALIGNED(src_v, 2) && IS_ALIGNED(src_stride_v, 2) &&
-      IS_ALIGNED(dst_rgba, 4) && IS_ALIGNED(dst_stride_rgba, 4)) {
-    I422ToRGBARow = I422ToRGBARow_DSPR2;
   }
 #endif
 #if defined(HAS_I422TORGBAROW_MSA)
@@ -2532,14 +2495,6 @@ int InterpolatePlane(const uint8* src0,
     if (IS_ALIGNED(width, 16)) {
       InterpolateRow = InterpolateRow_NEON;
     }
-  }
-#endif
-#if defined(HAS_INTERPOLATEROW_DSPR2)
-  if (TestCpuFlag(kCpuHasDSPR2) && IS_ALIGNED(src0, 4) &&
-      IS_ALIGNED(src_stride0, 4) && IS_ALIGNED(src1, 4) &&
-      IS_ALIGNED(src_stride1, 4) && IS_ALIGNED(dst, 4) &&
-      IS_ALIGNED(dst_stride, 4) && IS_ALIGNED(width, 4)) {
-    InterpolateRow = InterpolateRow_DSPR2;
   }
 #endif
 #if defined(HAS_INTERPOLATEROW_MSA)

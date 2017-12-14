@@ -173,11 +173,6 @@ void ARGBRotate180(const uint8* src,
     CopyRow = IS_ALIGNED(width * 4, 32) ? CopyRow_NEON : CopyRow_Any_NEON;
   }
 #endif
-#if defined(HAS_COPYROW_MIPS)
-  if (TestCpuFlag(kCpuHasMIPS)) {
-    CopyRow = CopyRow_MIPS;
-  }
-#endif
 
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
