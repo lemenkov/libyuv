@@ -12,6 +12,11 @@ import("//testing/test.gni")
 declare_args() {
   # Set to false to disable building with gflags.
   libyuv_use_gflags = true
+
+  # When building a shared library using a target in WebRTC or
+  # Chromium projects that depends on libyuv, setting this flag
+  # to true makes libyuv symbols visible inside that library.
+  libyuv_symbols_visible = false
 }
 
 config("libyuv_config") {
@@ -128,6 +133,11 @@ static_library("libyuv_internal") {
   configs += [ ":libyuv_config" ]
   defines = []
   deps = []
+
+  if (libyuv_symbols_visible) {
+    configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
+    configs += [ "//build/config/gcc:symbol_visibility_default" ]
+  }
 
   if (!is_ios) {
     defines += [ "HAVE_JPEG" ]
