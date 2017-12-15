@@ -2699,6 +2699,37 @@ TEST_F(LibYUVPlanarTest, MultiplyRow_16_Opt) {
 }
 #endif  // HAS_MULTIPLYROW_16_AVX2
 
+TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_y, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels);
+  align_buffer_page_end(dst_pixels_y_c, kPixels);
+
+  MemRandomize(src_pixels_y, kPixels * 2);
+  memset(dst_pixels_y_opt, 0, kPixels);
+  memset(dst_pixels_y_c, 1, kPixels);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  Convert16To8Plane(reinterpret_cast<const uint16*>(src_pixels_y),
+                    benchmark_width_, dst_pixels_y_c, benchmark_width_, 16384,
+                    benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    Convert16To8Plane(reinterpret_cast<const uint16*>(src_pixels_y),
+                      benchmark_width_, dst_pixels_y_opt, benchmark_width_,
+                      16384, benchmark_width_, benchmark_height_);
+  }
+
+  for (int i = 0; i < kPixels; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_CONVERT16TO8ROW_AVX2
 TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {

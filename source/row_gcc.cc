@@ -2956,20 +2956,20 @@ void Convert16To8Row_SSSE3(const uint16* src_y,
                            int width) {
   // clang-format off
   asm volatile (
-    "movd      %3,%%xmm3                      \n"
-    "punpcklwd %%xmm3,%%xmm3                  \n"
-    "pshufd    $0x0,%%xmm3,%%xmm3             \n"
+    "movd      %3,%%xmm2                      \n"
+    "punpcklwd %%xmm2,%%xmm2                  \n"
+    "pshufd    $0x0,%%xmm2,%%xmm2             \n"
 
     // 32 pixels per loop.
     LABELALIGN
     "1:                                       \n"
     "movdqu    (%0),%%xmm0                    \n"
     "movdqu    0x10(%0),%%xmm1                \n"
-    "pmulhuw   %%xmm3,%%xmm0                  \n"
-    "pmulhuw   %%xmm3,%%xmm1                  \n"
+    "add       $0x20,%0                       \n"
+    "pmulhuw   %%xmm2,%%xmm0                  \n"
+    "pmulhuw   %%xmm2,%%xmm1                  \n"
     "packuswb  %%xmm1,%%xmm0                  \n"
     "movdqu    %%xmm0,(%1)                    \n"
-    "add       $0x20,%0                       \n"
     "add       $0x10,%1                       \n"
     "sub       $0x10,%2                       \n"
     "jg        1b                             \n"
@@ -2977,7 +2977,7 @@ void Convert16To8Row_SSSE3(const uint16* src_y,
     "+r"(dst_y),   // %1
     "+r"(width)    // %2
   : "r"(scale)     // %3
-  : "memory", "cc", "xmm0", "xmm1", "xmm3");
+  : "memory", "cc", "xmm0", "xmm1", "xmm2");
   // clang-format on
 }
 
@@ -2988,22 +2988,21 @@ void Convert16To8Row_AVX2(const uint16* src_y,
                           int width) {
   // clang-format off
   asm volatile (
-    "vmovd      %3,%%xmm3                      \n"
-    "vpunpcklwd %%xmm3,%%xmm3,%%xmm3           \n"
-    "vbroadcastss %%xmm3,%%ymm3                \n"
+    "vmovd      %3,%%xmm2                      \n"
+    "vpunpcklwd %%xmm2,%%xmm2,%%xmm2           \n"
+    "vbroadcastss %%xmm2,%%ymm2                \n"
 
     // 32 pixels per loop.
     LABELALIGN
     "1:                                        \n"
     "vmovdqu   (%0),%%ymm0                     \n"
     "vmovdqu   0x20(%0),%%ymm1                 \n"
-    "vpmulhuw   %%ymm3,%%ymm0,%%ymm0           \n"
-    "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
-
+    "add       $0x40,%0                        \n"
+    "vpmulhuw  %%ymm2,%%ymm0,%%ymm0            \n"
+    "vpmulhuw  %%ymm2,%%ymm1,%%ymm1            \n"
     "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"  // mutates
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vmovdqu   %%ymm0,(%1)                     \n"
-    "add       $0x40,%0                        \n"
     "add       $0x20,%1                        \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -3012,7 +3011,7 @@ void Convert16To8Row_AVX2(const uint16* src_y,
     "+r"(dst_y),   // %1
     "+r"(width)    // %2
   : "r"(scale)     // %3
-  : "memory", "cc", "xmm0", "xmm1", "xmm3");
+  : "memory", "cc", "xmm0", "xmm1", "xmm2");
   // clang-format on
 }
 #endif  // HAS_MULTIPLYROW_16_AVX2

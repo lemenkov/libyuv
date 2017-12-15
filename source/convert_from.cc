@@ -1240,8 +1240,8 @@ int ConvertFromI420(const uint8* y,
       break;
     case FOURCC_RGBP:
       r = I420ToRGB565(y, y_stride, u, u_stride, v, v_stride, dst_sample,
-                       dst_sample_stride ? dst_sample_stride : width * 2,
-                       width, height);
+                       dst_sample_stride ? dst_sample_stride : width * 2, width,
+                       height);
       break;
     case FOURCC_RGBO:
       r = I420ToARGB1555(y, y_stride, u, u_stride, v, v_stride, dst_sample,
@@ -1255,8 +1255,8 @@ int ConvertFromI420(const uint8* y,
       break;
     case FOURCC_24BG:
       r = I420ToRGB24(y, y_stride, u, u_stride, v, v_stride, dst_sample,
-                      dst_sample_stride ? dst_sample_stride : width * 3,
-                      width, height);
+                      dst_sample_stride ? dst_sample_stride : width * 3, width,
+                      height);
       break;
     case FOURCC_RAW:
       r = I420ToRAW(y, y_stride, u, u_stride, v, v_stride, dst_sample,

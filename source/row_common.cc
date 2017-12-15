@@ -1856,7 +1856,7 @@ void Convert16To8Row_C(const uint16* src_y,
                        int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    dst_y[x] = (src_y[x] * scale) >> 16;
+    dst_y[x] = clamp255((src_y[x] * scale) >> 16);
   }
 }
 
