@@ -29,6 +29,14 @@
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
 
+#if defined(__arm__) || defined(__aarch64__)
+// arm version subsamples by summing 4 pixels then multiplying by matrix with
+// 4x smaller coefficients which are rounded to nearest integer.
+#define ARM_YUV_ERROR 4
+#else
+#define ARM_YUV_ERROR 0
+#endif
+
 namespace libyuv {
 
 // Alias to copy pixels as is
@@ -854,15 +862,8 @@ TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2, 9)
                  benchmark_width_, DIFF, _Opt, +, 0)
 
 TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 4)
-#if defined(__arm__) || defined(__aarch64__)
-// arm version subsamples by summing 4 pixels then multiplying by matrix with
-// 4x smaller coefficients which are rounded to nearest integer.
-TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 4)
-TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, 4)
-#else
-TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, 0)
-TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, 0)
-#endif
+TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, ARM_YUV_ERROR)
+TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, ARM_YUV_ERROR)
 TESTATOPLANAR(BGRA, 4, 1, I420, 2, 2, 4)
 TESTATOPLANAR(ABGR, 4, 1, I420, 2, 2, 4)
 TESTATOPLANAR(RGBA, 4, 1, I420, 2, 2, 4)
@@ -1066,6 +1067,7 @@ TESTATOB(ARGB, 4, 4, 1, J400, 1, 1, 1, 2)
 TESTATOB(BGRA, 4, 4, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ABGR, 4, 4, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(RGBA, 4, 4, 1, ARGB, 4, 4, 1, 0)
+TESTATOB(AR30, 4, 4, 1, AR30, 4, 4, 1, 0)
 TESTATOB(RAW, 3, 3, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(RAW, 3, 3, 1, RGB24, 3, 3, 1, 0)
 TESTATOB(RGB24, 3, 3, 1, ARGB, 4, 4, 1, 0)
@@ -1073,8 +1075,8 @@ TESTATOB(RGB565, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB1555, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB4444, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(AR30, 4, 4, 1, ARGB, 4, 4, 1, 0)
-TESTATOB(YUY2, 2, 4, 1, ARGB, 4, 4, 1, 4)
-TESTATOB(UYVY, 2, 4, 1, ARGB, 4, 4, 1, 4)
+TESTATOB(YUY2, 2, 4, 1, ARGB, 4, 4, 1, ARM_YUV_ERROR)
+TESTATOB(UYVY, 2, 4, 1, ARGB, 4, 4, 1, ARM_YUV_ERROR)
 TESTATOB(YUY2, 2, 4, 1, Y, 1, 1, 1, 0)
 TESTATOB(I400, 1, 1, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(J400, 1, 1, 1, ARGB, 4, 4, 1, 0)
