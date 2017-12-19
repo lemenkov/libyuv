@@ -443,6 +443,15 @@ int ARGB4444ToARGB(const uint8* src_frame,
                    int width,
                    int height);
 
+// Convert AR30 To ARGB.
+LIBYUV_API
+int AR30ToARGB(const uint8* src_ar30,
+               int src_stride_ar30,
+               uint8* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
 #ifdef HAVE_JPEG
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.

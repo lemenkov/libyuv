@@ -1072,6 +1072,7 @@ TESTATOB(RGB24, 3, 3, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(RGB565, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB1555, 2, 2, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB4444, 2, 2, 1, ARGB, 4, 4, 1, 0)
+TESTATOB(AR30, 4, 4, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(YUY2, 2, 4, 1, ARGB, 4, 4, 1, 4)
 TESTATOB(UYVY, 2, 4, 1, ARGB, 4, 4, 1, 4)
 TESTATOB(YUY2, 2, 4, 1, Y, 1, 1, 1, 0)
@@ -1718,6 +1719,8 @@ TESTPLANARTOBD(I420, 2, 2, RGB565, 2, 2, 1, 9, ARGB, 4)
 TESTPTOB(TestYUY2ToNV12, YUY2ToI420, YUY2ToNV12)
 TESTPTOB(TestUYVYToNV12, UYVYToI420, UYVYToNV12)
 
+// Transitive tests.  A to B to C is same as A to C.
+
 #define TESTPLANARTOEI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, SUB_B, BPP_B, \
                        W1280, N, NEG, OFF, FMT_C, BPP_C)                      \
   TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##_##FMT_C##N) {             \
@@ -1882,6 +1885,59 @@ TESTPLANARTOE(I422, 2, 1, UYVY, 2, 4, ARGB, 4)
 
 TESTQPLANARTOE(I420Alpha, 2, 2, ARGB, 1, 4, ABGR, 4)
 TESTQPLANARTOE(I420Alpha, 2, 2, ABGR, 1, 4, ARGB, 4)
+
+#define TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, W1280, N, NEG, \
+                      OFF, FMT_C, BPP_C)                                       \
+  TEST_F(LibYUVConvertTest, FMT_A##To##FMT_B##_##FMT_C##N) {                   \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                            \
+    const int kHeight = benchmark_height_;                                     \
+    const int kStrideA = SUBSAMPLE(kWidth, SUB_A) * BPP_A;                     \
+    const int kStrideB = SUBSAMPLE(kWidth, SUB_B) * BPP_B;                     \
+    align_buffer_page_end(src_argb_a, kStrideA* kHeight + OFF);                \
+    align_buffer_page_end(dst_argb_b, kStrideB* kHeight + OFF);                \
+    MemRandomize(src_argb_a + OFF, kStrideA * kHeight);                        \
+    memset(dst_argb_b + OFF, 1, kStrideB * kHeight);                           \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                          \
+      FMT_A##To##FMT_B(src_argb_a + OFF, kStrideA, dst_argb_b + OFF, kStrideB, \
+                       kWidth, NEG kHeight);                                   \
+    }                                                                          \
+    /* Convert to a 3rd format in 1 step and 2 steps and compare  */           \
+    const int kStrideC = kWidth * BPP_C;                                       \
+    align_buffer_page_end(dst_argb_c, kStrideC* kHeight + OFF);                \
+    align_buffer_page_end(dst_argb_bc, kStrideC* kHeight + OFF);               \
+    memset(dst_argb_c + OFF, 2, kStrideC * kHeight);                           \
+    memset(dst_argb_bc + OFF, 3, kStrideC * kHeight);                          \
+    FMT_A##To##FMT_C(src_argb_a + OFF, kStrideA, dst_argb_c + OFF, kStrideC,   \
+                     kWidth, NEG kHeight);                                     \
+    /* Convert B to C */                                                       \
+    FMT_B##To##FMT_C(dst_argb_b + OFF, kStrideB, dst_argb_bc + OFF, kStrideC,  \
+                     kWidth, kHeight);                                         \
+    for (int i = 0; i < kStrideC * kHeight; i += 4) {                          \
+      EXPECT_EQ(dst_argb_c[i + OFF + 0], dst_argb_bc[i + OFF + 0]);            \
+      EXPECT_EQ(dst_argb_c[i + OFF + 1], dst_argb_bc[i + OFF + 1]);            \
+      EXPECT_EQ(dst_argb_c[i + OFF + 2], dst_argb_bc[i + OFF + 2]);            \
+      EXPECT_NEAR(dst_argb_c[i + OFF + 3], dst_argb_bc[i + OFF + 3], 64);      \
+    }                                                                          \
+    free_aligned_buffer_page_end(src_argb_a);                                  \
+    free_aligned_buffer_page_end(dst_argb_b);                                  \
+    free_aligned_buffer_page_end(dst_argb_c);                                  \
+    free_aligned_buffer_page_end(dst_argb_bc);                                 \
+  }
+
+#define TESTPLANETOE(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, FMT_C, BPP_C) \
+  TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B,                    \
+                benchmark_width_ - 4, _Any, +, 0, FMT_C, BPP_C)              \
+  TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, benchmark_width_,  \
+                _Unaligned, +, 1, FMT_C, BPP_C)                              \
+  TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, benchmark_width_,  \
+                _Invert, -, 0, FMT_C, BPP_C)                                 \
+  TESTPLANETOEI(FMT_A, SUB_A, BPP_A, FMT_B, SUB_B, BPP_B, benchmark_width_,  \
+                _Opt, +, 0, FMT_C, BPP_C)
+
+// Caveat: Destination needs to be 4 bytes
+TESTPLANETOE(ARGB, 1, 4, AR30, 1, 4, ARGB, 4)
+
+// TESTPLANETOE(ARGB, 1, 4, BGRA, 1, 4, ARGB, 4)
 
 TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   // 2x2 frames

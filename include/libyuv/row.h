@@ -1601,6 +1601,7 @@ void RAWToRGB24Row_C(const uint8* src_raw, uint8* dst_rgb24, int width);
 void RGB565ToARGBRow_C(const uint8* src_rgb, uint8* dst_argb, int width);
 void ARGB1555ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGB4444ToARGBRow_C(const uint8* src_argb, uint8* dst_argb, int width);
+void AR30ToARGBRow_C(const uint8* src_ar30, uint8* dst_argb, int width);
 void RGB24ToARGBRow_Any_SSSE3(const uint8* src_rgb24,
                               uint8* dst_argb,
                               int width);

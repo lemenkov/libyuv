@@ -1504,6 +1504,40 @@ int ARGB4444ToARGB(const uint8* src_argb4444,
   return 0;
 }
 
+// Convert AR30 to ARGB.
+LIBYUV_API
+int AR30ToARGB(const uint8* src_ar30,
+               int src_stride_ar30,
+               uint8* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  int y;
+  void (*AR30ToARGBRow)(const uint8* src_ar30, uint8* dst_argb, int width) =
+      AR30ToARGBRow_C;
+  if (!src_ar30 || !dst_argb || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_stride_ar30 = -src_stride_ar30;
+  }
+  // Coalesce rows.
+  if (src_stride_ar30 == width * 2 && dst_stride_argb == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_ar30 = dst_stride_argb = 0;
+  }
+  for (y = 0; y < height; ++y) {
+    AR30ToARGBRow(src_ar30, dst_argb, width);
+    src_ar30 += src_stride_ar30;
+    dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
 // Convert NV12 to ARGB with matrix
 static int NV12ToARGBMatrix(const uint8* src_y,
                             int src_stride_y,
