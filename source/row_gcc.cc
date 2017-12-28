@@ -2981,7 +2981,7 @@ void Convert16To8Row_SSSE3(const uint16* src_y,
   // clang-format on
 }
 
-#ifdef HAS_MULTIPLYROW_16_AVX2
+#ifdef HAS_CONVERT16TO8ROW_AVX2
 void Convert16To8Row_AVX2(const uint16* src_y,
                           uint8* dst_y,
                           int scale,
@@ -3014,7 +3014,81 @@ void Convert16To8Row_AVX2(const uint16* src_y,
   : "memory", "cc", "xmm0", "xmm1", "xmm2");
   // clang-format on
 }
-#endif  // HAS_MULTIPLYROW_16_AVX2
+#endif  // HAS_CONVERT16TO8ROW_AVX2
+
+// Use scale to convert to lsb formats depending how many bits there are:
+// 512 = 9 bits
+// 1024 = 10 bits
+// 4096 = 12 bits
+// TODO(fbarchard): reduce to SSE2
+void Convert8To16Row_SSE2(const uint8* src_y,
+                          uint16* dst_y,
+                          int scale,
+                          int width) {
+  // clang-format off
+  asm volatile (
+    "movd      %3,%%xmm2                      \n"
+    "punpcklwd %%xmm2,%%xmm2                  \n"
+    "pshufd    $0x0,%%xmm2,%%xmm2             \n"
+
+    // 32 pixels per loop.
+    LABELALIGN
+    "1:                                       \n"
+    "movdqu    (%0),%%xmm0                    \n"
+    "movdqa    %%xmm0,%%xmm1                  \n"
+    "punpcklbw %%xmm0,%%xmm0                  \n"
+    "punpckhbw %%xmm1,%%xmm1                  \n"
+    "add       $0x10,%0                       \n"
+    "pmulhuw   %%xmm2,%%xmm0                  \n"
+    "pmulhuw   %%xmm2,%%xmm1                  \n"
+    "movdqu    %%xmm0,(%1)                    \n"
+    "movdqu    %%xmm1,0x10(%1)                \n"
+    "add       $0x20,%1                       \n"
+    "sub       $0x10,%2                       \n"
+    "jg        1b                             \n"
+  : "+r"(src_y),   // %0
+    "+r"(dst_y),   // %1
+    "+r"(width)    // %2
+  : "r"(scale)     // %3
+  : "memory", "cc", "xmm0", "xmm1", "xmm2");
+  // clang-format on
+}
+
+#ifdef HAS_CONVERT8TO16ROW_AVX2
+void Convert8To16Row_AVX2(const uint8* src_y,
+                          uint16* dst_y,
+                          int scale,
+                          int width) {
+  // clang-format off
+  asm volatile (
+    "vmovd      %3,%%xmm2                      \n"
+    "vpunpcklwd %%xmm2,%%xmm2,%%xmm2           \n"
+    "vbroadcastss %%xmm2,%%ymm2                \n"
+
+    // 32 pixels per loop.
+    LABELALIGN
+    "1:                                        \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
+    "add       $0x20,%0                        \n"
+    "vpunpckhbw %%ymm0,%%ymm0,%%ymm1           \n"
+    "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
+    "vpmulhuw  %%ymm2,%%ymm0,%%ymm0            \n"
+    "vpmulhuw  %%ymm2,%%ymm1,%%ymm1            \n"
+    "vmovdqu   %%ymm0,(%1)                     \n"
+    "vmovdqu   %%ymm1,0x20(%1)                 \n"
+    "add       $0x40,%1                        \n"
+    "sub       $0x20,%2                        \n"
+    "jg        1b                              \n"
+    "vzeroupper                                \n"
+  : "+r"(src_y),   // %0
+    "+r"(dst_y),   // %1
+    "+r"(width)    // %2
+  : "r"(scale)     // %3
+  : "memory", "cc", "xmm0", "xmm1", "xmm2");
+  // clang-format on
+}
+#endif  // HAS_CONVERT8TO16ROW_AVX2
 
 #ifdef HAS_SPLITRGBROW_SSSE3
 

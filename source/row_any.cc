@@ -699,26 +699,38 @@ ANY11P(ARGBShuffleRow_Any_MSA, ARGBShuffleRow_MSA, const uint8*, 4, 4, 7)
 #undef ANY11P
 
 // Any 1 to 1 with parameter and shorts.  BPP measures in shorts.
-#define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                            \
-  void NAMEANY(const uint16* src_ptr, uint8* dst_ptr, int scale, int width) { \
-    SIMD_ALIGNED(uint16 temp[32]);                                            \
-    SIMD_ALIGNED(uint8 out[32]);                                              \
-    memset(temp, 0, 64); /* for msan */                                       \
-    int r = width & MASK;                                                     \
-    int n = width & ~MASK;                                                    \
-    if (n > 0) {                                                              \
-      ANY_SIMD(src_ptr, dst_ptr, scale, n);                                   \
-    }                                                                         \
-    memcpy(temp, src_ptr + n, r * SBPP);                                      \
-    ANY_SIMD(temp, out, scale, MASK + 1);                                     \
-    memcpy(dst_ptr + n, out, r * BPP);                                        \
+#define ANY11C(NAMEANY, ANY_SIMD, SBPP, BPP, STYPE, DTYPE, MASK)             \
+  void NAMEANY(const STYPE* src_ptr, DTYPE* dst_ptr, int scale, int width) { \
+    SIMD_ALIGNED(STYPE temp[32]);                                            \
+    SIMD_ALIGNED(DTYPE out[32]);                                             \
+    memset(temp, 0, 32 * SBPP); /* for msan */                               \
+    int r = width & MASK;                                                    \
+    int n = width & ~MASK;                                                   \
+    if (n > 0) {                                                             \
+      ANY_SIMD(src_ptr, dst_ptr, scale, n);                                  \
+    }                                                                        \
+    memcpy(temp, src_ptr + n, r * SBPP);                                     \
+    ANY_SIMD(temp, out, scale, MASK + 1);                                    \
+    memcpy(dst_ptr + n, out, r * BPP);                                       \
   }
 
 #ifdef HAS_CONVERT16TO8ROW_SSSE3
-ANY11C(Convert16To8Row_Any_SSSE3, Convert16To8Row_SSSE3, 2, 1, 15)
+ANY11C(Convert16To8Row_Any_SSSE3,
+       Convert16To8Row_SSSE3,
+       2,
+       1,
+       uint16,
+       uint8,
+       15)
 #endif
 #ifdef HAS_CONVERT16TO8ROW_AVX2
-ANY11C(Convert16To8Row_Any_AVX2, Convert16To8Row_AVX2, 2, 1, 31)
+ANY11C(Convert16To8Row_Any_AVX2, Convert16To8Row_AVX2, 2, 1, uint16, uint8, 31)
+#endif
+#ifdef HAS_CONVERT8TO16ROW_SSE2
+ANY11C(Convert8To16Row_Any_SSE2, Convert8To16Row_SSE2, 1, 2, uint8, uint16, 15)
+#endif
+#ifdef HAS_CONVERT8TO16ROW_AVX2
+ANY11C(Convert8To16Row_Any_AVX2, Convert8To16Row_AVX2, 1, 2, uint8, uint16, 31)
 #endif
 #undef ANY11C
 
