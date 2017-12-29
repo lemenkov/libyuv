@@ -21,7 +21,22 @@ extern "C" {
 
 // See Also convert.h for conversions from formats to I420.
 
-// I420Copy in convert to I420ToI420.
+// Convert 8 bit YUV to 10 bit.
+#define H420ToH010 I420ToI010
+int I420ToI010(const uint8* src_y,
+               int src_stride_y,
+               const uint8* src_u,
+               int src_stride_u,
+               const uint8* src_v,
+               int src_stride_v,
+               uint16* dst_y,
+               int dst_stride_y,
+               uint16* dst_u,
+               int dst_stride_u,
+               uint16* dst_v,
+               int dst_stride_v,
+               int width,
+               int height);
 
 LIBYUV_API
 int I420ToI422(const uint8* src_y,

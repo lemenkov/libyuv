@@ -97,6 +97,7 @@ int I010Copy(const uint16* src_y,
              int height);
 
 // Convert 10 bit YUV to 8 bit
+#define H010ToH420 I010ToI420
 LIBYUV_API
 int I010ToI420(const uint16* src_y,
                int src_stride_y,

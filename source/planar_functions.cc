@@ -163,9 +163,59 @@ void Convert16To8Plane(const uint16* src_y,
   }
 #endif
 
-  // Copy plane
+  // Convert plane
   for (y = 0; y < height; ++y) {
     Convert16To8Row(src_y, dst_y, scale, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
+}
+
+// Convert a plane of 8 bit data to 16 bit
+LIBYUV_API
+void Convert8To16Plane(const uint8* src_y,
+                       int src_stride_y,
+                       uint16* dst_y,
+                       int dst_stride_y,
+                       int scale,  // 16384 for 10 bits
+                       int width,
+                       int height) {
+  int y;
+  void (*Convert8To16Row)(const uint8* src_y, uint16* dst_y, int scale,
+                          int width) = Convert8To16Row_C;
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_y = dst_y + (height - 1) * dst_stride_y;
+    dst_stride_y = -dst_stride_y;
+  }
+  // Coalesce rows.
+  if (src_stride_y == width && dst_stride_y == width) {
+    width *= height;
+    height = 1;
+    src_stride_y = dst_stride_y = 0;
+  }
+#if defined(HAS_CONVERT8TO16ROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    Convert8To16Row = Convert8To16Row_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      Convert8To16Row = Convert8To16Row_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_CONVERT8TO16ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    Convert8To16Row = Convert8To16Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      Convert8To16Row = Convert8To16Row_AVX2;
+    }
+  }
+#endif
+
+  // Convert plane
+  for (y = 0; y < height; ++y) {
+    Convert8To16Row(src_y, dst_y, scale, width);
     src_y += src_stride_y;
     dst_y += dst_stride_y;
   }

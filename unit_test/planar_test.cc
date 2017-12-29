@@ -2776,6 +2776,38 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
 }
 #endif  // HAS_CONVERT16TO8ROW_AVX2
 
+TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
+  const int kPixels = benchmark_width_ * benchmark_height_;
+  align_buffer_page_end(src_pixels_y, kPixels);
+  align_buffer_page_end(dst_pixels_y_opt, kPixels * 2);
+  align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
+
+  MemRandomize(src_pixels_y, kPixels);
+  memset(dst_pixels_y_opt, 0, kPixels * 2);
+  memset(dst_pixels_y_c, 1, kPixels * 2);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  Convert8To16Plane(src_pixels_y, benchmark_width_,
+                    reinterpret_cast<uint16*>(dst_pixels_y_c), benchmark_width_,
+                    1024, benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    Convert8To16Plane(src_pixels_y, benchmark_width_,
+                      reinterpret_cast<uint16*>(dst_pixels_y_opt),
+                      benchmark_width_, 1024, benchmark_width_,
+                      benchmark_height_);
+  }
+
+  for (int i = 0; i < kPixels * 2; ++i) {
+    EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_y);
+  free_aligned_buffer_page_end(dst_pixels_y_opt);
+  free_aligned_buffer_page_end(dst_pixels_y_c);
+}
+
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_CONVERT8TO16ROW_AVX2
 TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
@@ -2785,9 +2817,8 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
   align_buffer_page_end(dst_pixels_y_c, kPixels * 2);
 
   MemRandomize(src_pixels_y, kPixels);
-
-  memset(dst_pixels_y_opt, 0, kPixels);
-  memset(dst_pixels_y_c, 1, kPixels);
+  memset(dst_pixels_y_opt, 0, kPixels * 2);
+  memset(dst_pixels_y_c, 1, kPixels * 2);
 
   Convert8To16Row_C(src_pixels_y, reinterpret_cast<uint16*>(dst_pixels_y_c),
                     1024, kPixels);
@@ -2810,7 +2841,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
     }
   }
 
-  for (int i = 0; i < kPixels; ++i) {
+  for (int i = 0; i < kPixels * 2; ++i) {
     EXPECT_EQ(dst_pixels_y_opt[i], dst_pixels_y_c[i]);
   }
 

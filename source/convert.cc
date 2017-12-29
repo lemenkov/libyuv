@@ -62,7 +62,7 @@ static int I4xxToI420(const uint8* src_y,
   return 0;
 }
 
-// Copy I420 with optional flipping
+// Copy I420 with optional flipping.
 // TODO(fbarchard): Use Scale plane which supports mirroring, but ensure
 // is does row coalescing.
 LIBYUV_API
@@ -106,7 +106,7 @@ int I420Copy(const uint8* src_y,
   return 0;
 }
 
-// Copy I010 with optional flipping
+// Copy I010 with optional flipping.
 LIBYUV_API
 int I010Copy(const uint16* src_y,
              int src_stride_y,
@@ -148,7 +148,7 @@ int I010Copy(const uint16* src_y,
   return 0;
 }
 
-// Convert 10 bit YUV to 8 bit
+// Convert 10 bit YUV to 8 bit.
 LIBYUV_API
 int I010ToI420(const uint16* src_y,
                int src_stride_y,
