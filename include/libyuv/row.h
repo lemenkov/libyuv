@@ -40,11 +40,6 @@ extern "C" {
 // define LIBYUV_DISABLE_X86
 #endif
 #endif
-// True if compiling for SSSE3 as a requirement.
-#if defined(__SSSE3__) || (defined(_M_IX86_FP) && (_M_IX86_FP >= 3))
-#define LIBYUV_SSSE3_ONLY
-#endif
-
 #if defined(__native_client__)
 #define LIBYUV_DISABLE_NEON
 #endif
@@ -85,7 +80,6 @@ extern "C" {
 #define HAS_ARGB4444TOARGBROW_SSE2
 #define HAS_ARGBEXTRACTALPHAROW_SSE2
 #define HAS_ARGBSETROW_X86
-#define HAS_ARGBSHUFFLEROW_SSE2
 #define HAS_ARGBSHUFFLEROW_SSSE3
 #define HAS_ARGBTOARGB1555ROW_SSE2
 #define HAS_ARGBTOARGB4444ROW_SSE2
@@ -1536,10 +1530,6 @@ void ARGBShuffleRow_C(const uint8* src_argb,
                       uint8* dst_argb,
                       const uint8* shuffler,
                       int width);
-void ARGBShuffleRow_SSE2(const uint8* src_argb,
-                         uint8* dst_argb,
-                         const uint8* shuffler,
-                         int width);
 void ARGBShuffleRow_SSSE3(const uint8* src_argb,
                           uint8* dst_argb,
                           const uint8* shuffler,
@@ -1556,10 +1546,6 @@ void ARGBShuffleRow_MSA(const uint8* src_argb,
                         uint8* dst_argb,
                         const uint8* shuffler,
                         int width);
-void ARGBShuffleRow_Any_SSE2(const uint8* src_argb,
-                             uint8* dst_argb,
-                             const uint8* shuffler,
-                             int width);
 void ARGBShuffleRow_Any_SSSE3(const uint8* src_argb,
                               uint8* dst_argb,
                               const uint8* shuffler,

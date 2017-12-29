@@ -681,9 +681,6 @@ ANY11P(ARGBToRGB565DitherRow_Any_MSA,
        2,
        7)
 #endif
-#ifdef HAS_ARGBSHUFFLEROW_SSE2
-ANY11P(ARGBShuffleRow_Any_SSE2, ARGBShuffleRow_SSE2, const uint8*, 4, 4, 3)
-#endif
 #ifdef HAS_ARGBSHUFFLEROW_SSSE3
 ANY11P(ARGBShuffleRow_Any_SSSE3, ARGBShuffleRow_SSSE3, const uint8*, 4, 4, 7)
 #endif

@@ -2647,14 +2647,6 @@ int ARGBShuffle(const uint8* src_bgra,
     height = 1;
     src_stride_bgra = dst_stride_argb = 0;
   }
-#if defined(HAS_ARGBSHUFFLEROW_SSE2)
-  if (TestCpuFlag(kCpuHasSSE2)) {
-    ARGBShuffleRow = ARGBShuffleRow_Any_SSE2;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBShuffleRow = ARGBShuffleRow_SSE2;
-    }
-  }
-#endif
 #if defined(HAS_ARGBSHUFFLEROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
     ARGBShuffleRow = ARGBShuffleRow_Any_SSSE3;
