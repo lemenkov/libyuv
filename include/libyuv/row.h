@@ -2755,9 +2755,6 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_NEON(const uint8* src_argb, uint8* dst_argb, int width);
 void ARGBAttenuateRow_MSA(const uint8* src_argb, uint8* dst_argb, int width);
-void ARGBAttenuateRow_Any_SSE2(const uint8* src_argb,
-                               uint8* dst_argb,
-                               int width);
 void ARGBAttenuateRow_Any_SSSE3(const uint8* src_argb,
                                 uint8* dst_argb,
                                 int width);
