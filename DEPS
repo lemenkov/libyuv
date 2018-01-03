@@ -5,7 +5,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling lss
   # and whatever else without interference from each other.
-  'lss_revision': '63f24c8221a229f677d26ebe8f3d1528a9d787ac',
+  'lss_revision': 'e6527b0cd469e3ff5764785dadcb39bf7d787154',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
