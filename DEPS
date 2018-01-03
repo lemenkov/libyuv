@@ -45,45 +45,65 @@ deps = {
     Var('chromium_git') + '/external/github.com/gflags/gflags' + '@' + '03bebcb065c83beff83d50ae025a55a4bf94dfca',
   'src/third_party/gtest-parallel':
     Var('chromium_git') + '/external/webrtc/deps/third_party/gtest-parallel' + '@' + '1dad0e9f6d82ff994130b529d7d814b40eb32b0e',
-}
 
-deps_os = {
-  'android': {
-    'src/base':
-      Var('chromium_git') + '/chromium/src/base' + '@' + '9b543d487c7c38be191c6180001ff9ce186ae326',
-    'src/third_party/android_tools':
-      Var('chromium_git') + '/android_tools.git' + '@' + 'aadb2fed04af8606545b0afe4e3060bc1a15fad7',
-    'src/third_party/ced/src':
-      Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '94c367a1fe3a13207f4b22604fcfd1d9f9ddf6d9',
-    'src/third_party/icu':
-      Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
-    'src/third_party/jsr-305/src':
-      Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
-    'src/third_party/junit/src':
-      Var('chromium_git') + '/external/junit.git' + '@' + '64155f8a9babcfcf4263cf4d08253a1556e75481',
-    'src/third_party/lss':
-      Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
-    'src/third_party/mockito/src':
-      Var('chromium_git') + '/external/mockito/mockito.git' + '@' + 'de83ad4598ad4cf5ea53c69a8a8053780b04b850',
-    'src/third_party/requests/src':
-      Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
-    'src/third_party/robolectric/robolectric':
-      Var('chromium_git') + '/external/robolectric.git' + '@' + 'b02c65cc6d7465f58f0de48a39914aa905692afa',
-    'src/third_party/ub-uiautomator/lib':
-      Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
+  'src/third_party/lss': {
+    'url': Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
+    'condition': 'checkout_android or checkout_linux',
   },
-  'ios': {
-    'src/ios':
-      Var('chromium_git') + '/chromium/src/ios' + '@' + '39c4b2fcf73f5b1e82af3b9c57267c17217d6a30',
+
+  # Android deps:
+  'src/base': {
+    'url': Var('chromium_git') + '/chromium/src/base' + '@' + '9b543d487c7c38be191c6180001ff9ce186ae326',
+    'condition': 'checkout_android',
   },
-  'unix': {
-    'src/third_party/lss':
-      Var('chromium_git') + '/linux-syscall-support.git' + '@' + Var('lss_revision'),
+  'src/third_party/android_tools': {
+    'url': Var('chromium_git') + '/android_tools.git' + '@' + 'aadb2fed04af8606545b0afe4e3060bc1a15fad7',
+    'condition': 'checkout_android',
   },
-  'win': {
-    # Dependencies used by libjpeg-turbo
-    'src/third_party/yasm/binaries':
-      Var('chromium_git') + '/chromium/deps/yasm/binaries.git' + '@' + '52f9b3f4b0aa06da24ef8b123058bb61ee468881',
+  'src/third_party/ced/src': {
+    'url': Var('chromium_git') + '/external/github.com/google/compact_enc_det.git' + '@' + '94c367a1fe3a13207f4b22604fcfd1d9f9ddf6d9',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/icu': {
+    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '08cb956852a5ccdba7f9c941728bb833529ba3c6',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/jsr-305/src': {
+    'url': Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/junit/src': {
+    'url': Var('chromium_git') + '/external/junit.git' + '@' + '64155f8a9babcfcf4263cf4d08253a1556e75481',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/mockito/src': {
+    'url': Var('chromium_git') + '/external/mockito/mockito.git' + '@' + 'de83ad4598ad4cf5ea53c69a8a8053780b04b850',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/requests/src': {
+    'url': Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/robolectric/robolectric': {
+    'url': Var('chromium_git') + '/external/robolectric.git' + '@' + 'b02c65cc6d7465f58f0de48a39914aa905692afa',
+    'condition': 'checkout_android',
+  },
+  'src/third_party/ub-uiautomator/lib': {
+    'url': Var('chromium_git') + '/chromium/third_party/ub-uiautomator.git' + '@' + '00270549ce3161ae72ceb24712618ea28b4f9434',
+    'condition': 'checkout_android',
+  },
+
+  # iOS deps:
+  'src/ios': {
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '39c4b2fcf73f5b1e82af3b9c57267c17217d6a30',
+    'condition': 'checkout_ios'
+  },
+
+  # Win deps:
+  # Dependencies used by libjpeg-turbo
+  'src/third_party/yasm/binaries': {
+    'url': Var('chromium_git') + '/chromium/deps/yasm/binaries.git' + '@' + '52f9b3f4b0aa06da24ef8b123058bb61ee468881',
+    'condition': 'checkout_win',
   },
 }
 
