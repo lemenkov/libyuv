@@ -1623,6 +1623,20 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        " MEMLEA(0x8, [y_buf]) ",%[y_buf]               \n"
 
+// Read 4 UV from 422 10 bit, upsample to 8 UV
+// TODO(fbarchard): Consider shufb to replace pack/unpack
+#define READYUV422_10 \
+  "movq       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
+    MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
+    "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
+    "punpcklwd  %%xmm1,%%xmm0                                   \n"            \
+    "psraw      $0x2,%%xmm0                                     \n" \
+    "packuswb   %%xmm0,%%xmm0                                   \n" \
+    "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
+    "movdqu     " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "psllw      $0x6,%%xmm4                                     \n" \
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]               \n"
+
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422 \
   "movd       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
@@ -1847,6 +1861,36 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     LABELALIGN
     "1:                                        \n"
     READYUV422
+    YUVTORGB(yuvconstants)
+    STOREARGB
+    "sub       $0x8,%[width]                   \n"
+    "jg        1b                              \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+
+// 10 bit YUV to ARGB
+void OMITFP I210ToARGBRow_SSSE3(const uint16* y_buf,
+                                const uint16* u_buf,
+                                const uint16* v_buf,
+                                uint8* dst_argb,
+                                const struct YuvConstants* yuvconstants,
+                                int width) {
+  asm volatile (
+    YUVTORGB_SETUP(yuvconstants)
+    "sub       %[u_buf],%[v_buf]               \n"
+    "pcmpeqb   %%xmm5,%%xmm5                   \n"
+
+    LABELALIGN
+    "1:                                        \n"
+    READYUV422_10
     YUVTORGB(yuvconstants)
     STOREARGB
     "sub       $0x8,%[width]                   \n"

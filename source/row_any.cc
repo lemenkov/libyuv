@@ -194,6 +194,32 @@ ANY31C(I422ToRGB565Row_Any_MSA, I422ToRGB565Row_MSA, 1, 0, 2, 7)
 #endif
 #undef ANY31C
 
+// 64 byte per row for future AVX2
+// Any 3 planes of 16 bit to 1 with yuvconstants
+// TODO(fbarchard): consider
+#define ANY31CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
+  void NAMEANY(const T* y_buf, const T* u_buf, const T* v_buf, uint8* dst_ptr, \
+               const struct YuvConstants* yuvconstants, int width) {           \
+    SIMD_ALIGNED(T temp[16 * 3]);                                              \
+    SIMD_ALIGNED(uint8 out[64]);                                               \
+    memset(temp, 0, 16 * 3 * SBPP); /* for YUY2 and msan */                    \
+    int r = width & MASK;                                                      \
+    int n = width & ~MASK;                                                     \
+    if (n > 0) {                                                               \
+      ANY_SIMD(y_buf, u_buf, v_buf, dst_ptr, yuvconstants, n);                 \
+    }                                                                          \
+    memcpy(temp, y_buf + n, r * SBPP);                                         \
+    memcpy(temp + 16, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
+    memcpy(temp + 32, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
+    ANY_SIMD(temp, temp + 16, temp + 32, out, yuvconstants, MASK + 1);        \
+    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, out, SS(r, DUVSHIFT) * BPP);       \
+  }
+
+#ifdef HAS_I210TOARGBROW_SSSE3
+ANY31CT(I210ToARGBRow_Any_SSSE3, I210ToARGBRow_SSSE3, 1, 0, uint16, 2, 4, 7)
+#endif
+#undef ANY31CT
+
 // Any 2 planes to 1.
 #define ANY21(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)       \
   void NAMEANY(const uint8* y_buf, const uint8* uv_buf, uint8* dst_ptr, \

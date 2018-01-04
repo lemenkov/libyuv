@@ -265,6 +265,8 @@ extern "C" {
 #define HAS_ARGBTOAR30ROW_SSSE3
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
+// I210 is for H010.  2 = 422.  I for 601 vs H for 709.
+#define HAS_I210TOARGBROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #endif
@@ -1735,9 +1737,9 @@ void I422ToARGBRow_C(const uint8* src_y,
                      uint8* dst_argb,
                      const struct YuvConstants* yuvconstants,
                      int width);
-void I422ToARGBRow_C(const uint8* src_y,
-                     const uint8* src_u,
-                     const uint8* src_v,
+void I210ToARGBRow_C(const uint16* src_y,
+                     const uint16* src_u,
+                     const uint16* src_v,
                      uint8* dst_argb,
                      const struct YuvConstants* yuvconstants,
                      int width);
@@ -1807,12 +1809,6 @@ void I422ToARGBRow_AVX2(const uint8* src_y,
                         uint8* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
-void I422ToARGBRow_AVX2(const uint8* src_y,
-                        const uint8* src_u,
-                        const uint8* src_v,
-                        uint8* dst_argb,
-                        const struct YuvConstants* yuvconstants,
-                        int width);
 void I422ToRGBARow_AVX2(const uint8* src_y,
                         const uint8* src_u,
                         const uint8* src_v,
@@ -1849,6 +1845,13 @@ void I422ToARGBRow_SSSE3(const uint8* src_y,
                          uint8* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width);
+
+void I210ToARGBRow_SSSE3(const uint16* src_y,
+                         const uint16* src_u,
+                         const uint16* src_v,
+                         uint8* dst_argb,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
 void I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
                               const uint8* u_buf,
                               const uint8* v_buf,
@@ -1863,12 +1866,6 @@ void I422AlphaToARGBRow_AVX2(const uint8* y_buf,
                              uint8* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width);
-void I422ToARGBRow_SSSE3(const uint8* src_y,
-                         const uint8* src_u,
-                         const uint8* src_v,
-                         uint8* dst_argb,
-                         const struct YuvConstants* yuvconstants,
-                         int width);
 void NV12ToARGBRow_SSSE3(const uint8* src_y,
                          const uint8* src_uv,
                          uint8* dst_argb,
@@ -1996,6 +1993,12 @@ void I444ToARGBRow_Any_AVX2(const uint8* src_y,
 void I422ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
+                             uint8* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I210ToARGBRow_Any_SSSE3(const uint16* src_y,
+                             const uint16* src_u,
+                             const uint16* src_v,
                              uint8* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width);
