@@ -211,7 +211,7 @@ ANY31C(I422ToRGB565Row_Any_MSA, I422ToRGB565Row_MSA, 1, 0, 2, 7)
     memcpy(temp, y_buf + n, r * SBPP);                                         \
     memcpy(temp + 16, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
     memcpy(temp + 32, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT) * SBPP);          \
-    ANY_SIMD(temp, temp + 16, temp + 32, out, yuvconstants, MASK + 1);        \
+    ANY_SIMD(temp, temp + 16, temp + 32, out, yuvconstants, MASK + 1);         \
     memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, out, SS(r, DUVSHIFT) * BPP);       \
   }
 

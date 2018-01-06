@@ -1625,16 +1625,18 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
 
 // Read 4 UV from 422 10 bit, upsample to 8 UV
 // TODO(fbarchard): Consider shufb to replace pack/unpack
+// TODO(fbarchard): Consider pmulhuw to replace psraw
+// TODO(fbarchard): Consider pmullw to replace psllw and allow different bits.
 #define READYUV422_10 \
   "movq       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
     MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
     "punpcklwd  %%xmm1,%%xmm0                                   \n"            \
-    "psraw      $0x2,%%xmm0                                     \n" \
-    "packuswb   %%xmm0,%%xmm0                                   \n" \
+    "psraw      $0x2,%%xmm0                                     \n"            \
+    "packuswb   %%xmm0,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movdqu     " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
-    "psllw      $0x6,%%xmm4                                     \n" \
+    "psllw      $0x6,%%xmm4                                     \n"            \
     "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]               \n"
 
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
