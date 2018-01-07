@@ -76,6 +76,32 @@ int I010ToARGB(const uint16* src_y,
                int width,
                int height);
 
+// Convert I010 to ARGB.
+LIBYUV_API
+int I010ToARGB(const uint16* src_y,
+               int src_stride_y,
+               const uint16* src_u,
+               int src_stride_u,
+               const uint16* src_v,
+               int src_stride_v,
+               uint8* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert I010 to ABGR.
+LIBYUV_API
+int I010ToABGR(const uint16* src_y,
+               int src_stride_y,
+               const uint16* src_u,
+               int src_stride_u,
+               const uint16* src_v,
+               int src_stride_v,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
 // Convert H010 to ARGB.
 LIBYUV_API
 int H010ToARGB(const uint16* src_y,
@@ -86,6 +112,19 @@ int H010ToARGB(const uint16* src_y,
                int src_stride_v,
                uint8* dst_argb,
                int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert H010 to ABGR.
+LIBYUV_API
+int H010ToABGR(const uint16* src_y,
+               int src_stride_y,
+               const uint16* src_u,
+               int src_stride_u,
+               const uint16* src_v,
+               int src_stride_v,
+               uint8* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height);
 
