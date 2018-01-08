@@ -329,7 +329,7 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(width)   // %2
   :
-  : "memory", "cc", "eax", NACL_R14
+  : "memory", "cc", "eax",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -380,7 +380,7 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(width)   // %2
   :
-  : "memory", "cc", "eax", NACL_R14
+  : "memory", "cc", "eax",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -418,7 +418,7 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(width)   // %2
   :
-  : "memory", "cc", "eax", NACL_R14
+  : "memory", "cc", "eax",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -1033,7 +1033,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0,
     "m"(kARGBToV),  // %5
     "m"(kARGBToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
@@ -1101,7 +1101,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0,
     "m"(kARGBToV),   // %6
     "m"(kARGBToU),   // %7
     "m"(kShufARGBToUV_AVX)  // %8
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -1166,7 +1166,7 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0,
     "m"(kARGBToVJ),  // %6
     "m"(kARGBToUJ),  // %7
     "m"(kShufARGBToUV_AVX)  // %8
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -1234,7 +1234,7 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0,
     "m"(kARGBToVJ),  // %5
     "m"(kARGBToUJ),  // %6
     "m"(kAddUVJ128)  // %7
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
@@ -1294,7 +1294,7 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb,
   : "m"(kARGBToV),  // %4
     "m"(kARGBToU),  // %5
     "m"(kAddUV128)  // %6
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6"
   );
 }
@@ -1395,7 +1395,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0,
     "m"(kBGRAToV),  // %5
     "m"(kBGRAToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
@@ -1530,7 +1530,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0,
     "m"(kABGRToV),  // %5
     "m"(kABGRToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
@@ -1595,7 +1595,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "m"(kRGBAToV),  // %5
     "m"(kRGBAToU),  // %6
     "m"(kAddUV128)  // %7
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm6", "xmm7"
   );
 }
@@ -1798,7 +1798,7 @@ void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -1844,7 +1844,7 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
   : [yuvconstants]"r"(yuvconstants),  // %[yuvconstants]
     [kShuffleMaskARGBToRGB24_0]"m"(kShuffleMaskARGBToRGB24_0),
     [kShuffleMaskARGBToRGB24]"m"(kShuffleMaskARGBToRGB24)
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
@@ -1873,7 +1873,7 @@ void OMITFP I422ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -1903,7 +1903,7 @@ void OMITFP I210ToARGBRow_SSSE3(const uint16* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -1939,7 +1939,7 @@ void OMITFP I422AlphaToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
 #endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2083,7 +2083,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     [dst_rgba]"+r"(dst_rgba),  // %[dst_rgba]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS
+  : "memory", "cc", YUVTORGB_REGS
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -2267,7 +2267,7 @@ void OMITFP I444ToARGBRow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS_AVX2
+  : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -2302,7 +2302,7 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS_AVX2
+  : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -2342,7 +2342,7 @@ void OMITFP I422AlphaToARGBRow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
 #endif
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS_AVX2
+  : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2387,7 +2387,7 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-  : "memory", "cc", NACL_R14 YUVTORGB_REGS_AVX2
+  : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -2641,7 +2641,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kShuffleMirror) // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm5"
   );
 }
@@ -2667,7 +2667,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kShuffleMirror) // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm5"
   );
 }
@@ -2702,7 +2702,7 @@ void MirrorUVRow_SSSE3(const uint8* src,
     "+r"(dst_v),    // %2
     "+r"(temp_width)  // %3
   : "m"(kShuffleMirrorUV)  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1"
   );
 }
@@ -2754,7 +2754,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     "+r"(dst),  // %1
     "+r"(temp_width)  // %2
   : "m"(kARGBShuffleMirror_AVX2) // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm5"
   );
 }
@@ -2794,7 +2794,7 @@ void SplitUVRow_AVX2(const uint8* src_uv,
     "+r"(dst_v),      // %2
     "+r"(width)         // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -2833,7 +2833,7 @@ void SplitUVRow_SSE2(const uint8* src_uv,
     "+r"(dst_v),      // %2
     "+r"(width)         // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -2867,7 +2867,7 @@ void MergeUVRow_AVX2(const uint8* src_u,
     "+r"(dst_uv),    // %2
     "+r"(width)      // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2"
   );
 }
@@ -2899,7 +2899,7 @@ void MergeUVRow_SSE2(const uint8* src_u,
     "+r"(dst_uv),    // %2
     "+r"(width)      // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2"
   );
 }
@@ -3226,7 +3226,7 @@ void SplitRGBRow_SSSE3(const uint8* src_rgb,
     "m"(kShuffleMaskRGBToB0),   // %11
     "m"(kShuffleMaskRGBToB1),   // %12
     "m"(kShuffleMaskRGBToB2)    // %13
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2"
   );
 }
@@ -3323,7 +3323,7 @@ void MergeRGBRow_SSSE3(const uint8* src_r,
     "m"(kShuffleMaskRToRGB2),   // %11
     "m"(kShuffleMaskGToRGB2),   // %12
     "m"(kShuffleMaskBToRGB2)    // %13
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2"
   );
 }
@@ -3706,7 +3706,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   : "r"((intptr_t)(stride_yuy2))  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -3743,7 +3743,7 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -3808,7 +3808,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   : "r"((intptr_t)(stride_uyvy))  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -3845,7 +3845,7 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -3918,7 +3918,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   : "r"((intptr_t)(stride_yuy2))  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -3958,7 +3958,7 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -4025,7 +4025,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   : "r"((intptr_t)(stride_uyvy))  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -4065,7 +4065,7 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     "+r"(dst_v),       // %2
     "+r"(width)          // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm5"
   );
 }
@@ -4405,7 +4405,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb,
     "+r"(width),        // %2
     "=&r"(alpha)        // %3
   : "r"(fixed_invtbl8)  // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -4474,7 +4474,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb,
     "=&r"(alpha)         // %3
   : "r"(fixed_invtbl8),  // %4
     "m"(kUnattenShuffleAlpha_AVX2)  // %5
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -5008,7 +5008,7 @@ void SobelXRow_SSE2(const uint8* src_y0,
     "+r"(dst_sobelx),  // %3
     "+r"(width)        // %4
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -5062,7 +5062,7 @@ void SobelYRow_SSE2(const uint8* src_y0,
     "+r"(dst_sobely),  // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -5115,7 +5115,7 @@ void SobelRow_SSE2(const uint8* src_sobelx,
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -5148,7 +5148,7 @@ void SobelToPlaneRow_SSE2(const uint8* src_sobelx,
     "+r"(dst_y),       // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1"
   );
 }
@@ -5200,7 +5200,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx,
     "+r"(dst_argb),    // %2
     "+r"(width)        // %3
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -5416,7 +5416,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
     "+rm"(count)    // %3
   : "r"((intptr_t)(width)),  // %4
     "rm"(area)     // %5
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
@@ -5505,7 +5505,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb,
     "+rm"(width),    // %4
     "=&r"(temp)      // %5
   :
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -5588,7 +5588,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     "+rm"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc", "eax", NACL_R14
+  : "memory", "cc", "eax",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -5666,7 +5666,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     "+cm"(dst_width),  // %2
     "+r"(source_y_fraction)  // %3
   : "r"((intptr_t)(src_stride))  // %4
-  : "memory", "cc", "eax", NACL_R14
+  : "memory", "cc", "eax",
     "xmm0", "xmm1", "xmm2", "xmm4", "xmm5"
   );
 }
@@ -5763,7 +5763,7 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
       "+r"(dst_frame),  // %3
       "+rm"(width)  // %4
     :
-    : "memory", "cc", NACL_R14
+    : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
@@ -5799,7 +5799,7 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
       "+r"(dst_frame),  // %3
       "+rm"(width)  // %4
     :
-    : "memory", "cc", NACL_R14
+    : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }

@@ -186,7 +186,7 @@ void ScaleRowDown2Box_SSSE3(const uint8* src_ptr,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   : "r"((intptr_t)(src_stride))   // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -291,7 +291,7 @@ void ScaleRowDown2Box_AVX2(const uint8* src_ptr,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   : "r"((intptr_t)(src_stride))   // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
   );
 }
@@ -379,7 +379,7 @@ void ScaleRowDown4Box_SSSE3(const uint8* src_ptr,
     "+r"(dst_width),   // %2
     "=&r"(stridex3)    // %3
   : "r"((intptr_t)(src_stride))    // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -469,7 +469,7 @@ void ScaleRowDown4Box_AVX2(const uint8* src_ptr,
     "+r"(dst_width)   // %2
   : "r"((intptr_t)(src_stride)),  // %3
     "r"((intptr_t)(src_stride * 3))   // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
 }
@@ -574,7 +574,7 @@ void ScaleRowDown34_1_Box_SSSE3(const uint8* src_ptr,
     "+r"(dst_width)  // %2
   : "r"((intptr_t)(src_stride)),  // %3
     "m"(kMadd21)     // %4
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -644,7 +644,7 @@ void ScaleRowDown34_0_Box_SSSE3(const uint8* src_ptr,
       "+r"(dst_width)  // %2
     : "r"((intptr_t)(src_stride)),  // %3
       "m"(kMadd21)     // %4
-    : "memory", "cc", NACL_R14
+    : "memory", "cc",
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -722,7 +722,7 @@ void ScaleRowDown38_2_Box_SSSE3(const uint8* src_ptr,
     "+r"(dst_ptr),     // %1
     "+r"(dst_width)    // %2
   : "r"((intptr_t)(src_stride))  // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
@@ -786,7 +786,7 @@ void ScaleRowDown38_3_Box_SSSE3(const uint8* src_ptr,
     "+r"(dst_ptr),    // %1
     "+r"(dst_width)   // %2
   : "r"((intptr_t)(src_stride))   // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -949,7 +949,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr,
     "m"(kFsub80),       // %8
     "m"(kFadd40)        // %9
 #endif
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7"
   );
 }
@@ -1059,7 +1059,7 @@ void ScaleARGBRowDown2Box_SSE2(const uint8* src_argb,
     "+r"(dst_argb),   // %1
     "+r"(dst_width)   // %2
   : "r"((intptr_t)(src_stride))   // %3
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
@@ -1096,7 +1096,7 @@ void ScaleARGBRowDownEven_SSE2(const uint8* src_argb,
     "+r"(dst_argb),       // %2
     "+r"(dst_width),      // %3
     "=&r"(src_stepx_x12)  // %4
-  :: "memory", "cc", NACL_R14
+  :: "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
@@ -1144,7 +1144,7 @@ void ScaleARGBRowDownEvenBox_SSE2(const uint8* src_argb,
     "+rm"(dst_width),      // %3
     "=&r"(src_stepx_x12),  // %4
     "+r"(row1)             // %5
-  :: "memory", "cc", NACL_R14
+  :: "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3"
   );
 }
@@ -1214,7 +1214,7 @@ void ScaleARGBCols_SSE2(uint8* dst_argb,
     "+r"(dst_width)    // %4
   : "rm"(x),           // %5
     "rm"(dx)           // %6
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4"
   );
 }
@@ -1245,7 +1245,7 @@ void ScaleARGBColsUp2_SSE2(uint8* dst_argb,
   : "+r"(dst_argb),    // %0
     "+r"(src_argb),    // %1
     "+r"(dst_width)    // %2
-  :: "memory", "cc", NACL_R14
+  :: "memory", "cc",
     "xmm0", "xmm1"
   );
 }
@@ -1334,7 +1334,7 @@ void ScaleARGBFilterCols_SSSE3(uint8* dst_argb,
     "=&r"(x1)          // %4
   : "rm"(x),           // %5
     "rm"(dx)           // %6
-  : "memory", "cc", NACL_R14
+  : "memory", "cc",
     "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6"
   );
 }
