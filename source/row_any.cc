@@ -194,9 +194,8 @@ ANY31C(I422ToRGB565Row_Any_MSA, I422ToRGB565Row_MSA, 1, 0, 2, 7)
 #endif
 #undef ANY31C
 
-// 64 byte per row for future AVX2
 // Any 3 planes of 16 bit to 1 with yuvconstants
-// TODO(fbarchard): consider
+// TODO(fbarchard): consider sharing this code with ANY31C
 #define ANY31CT(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, T, SBPP, BPP, MASK)      \
   void NAMEANY(const T* y_buf, const T* u_buf, const T* v_buf, uint8* dst_ptr, \
                const struct YuvConstants* yuvconstants, int width) {           \
@@ -217,6 +216,9 @@ ANY31C(I422ToRGB565Row_Any_MSA, I422ToRGB565Row_MSA, 1, 0, 2, 7)
 
 #ifdef HAS_I210TOARGBROW_SSSE3
 ANY31CT(I210ToARGBRow_Any_SSSE3, I210ToARGBRow_SSSE3, 1, 0, uint16, 2, 4, 7)
+#endif
+#ifdef HAS_I210TOARGBROW_AVX2
+ANY31CT(I210ToARGBRow_Any_AVX2, I210ToARGBRow_AVX2, 1, 0, uint16, 2, 4, 15)
 #endif
 #undef ANY31CT
 

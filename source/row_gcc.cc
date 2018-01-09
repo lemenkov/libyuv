@@ -1627,7 +1627,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
 // TODO(fbarchard): Consider shufb to replace pack/unpack
 // TODO(fbarchard): Consider pmulhuw to replace psraw
 // TODO(fbarchard): Consider pmullw to replace psllw and allow different bits.
-#define READYUV422_10 \
+#define READYUV210 \
   "movq       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
     MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        " MEMLEA(0x8, [u_buf]) ",%[u_buf]               \n"            \
@@ -1637,7 +1637,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
     "movdqu     " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
     "psllw      $0x6,%%xmm4                                     \n"            \
-    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]               \n"
+    "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]              \n"
 
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422 \
@@ -1892,7 +1892,7 @@ void OMITFP I210ToARGBRow_SSSE3(const uint16* y_buf,
 
     LABELALIGN
     "1:                                        \n"
-    READYUV422_10
+    READYUV210
     YUVTORGB(yuvconstants)
     STOREARGB
     "sub       $0x8,%[width]                   \n"
@@ -1968,7 +1968,7 @@ void OMITFP NV12ToARGBRow_SSSE3(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-    : "memory", "cc", YUVTORGB_REGS  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2115,6 +2115,23 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        " MEMLEA(0x10, [y_buf]) ",%[y_buf]                  \n"
+
+// Read 8 UV from 210 10 bit, upsample to 16 UV
+// TODO(fbarchard): Consider vshufb to replace pack/unpack
+// TODO(fbarchard): Consider vunpcklpd to combine the 2 registers into 1.
+#define READYUV210_AVX2 \
+  "vmovdqu     " MEMACCESS([u_buf]) ",%%xmm0                     \n"           \
+    MEMOPREG(vmovdqu, 0x00, [u_buf], [v_buf], 1, xmm1)                         \
+    "lea        " MEMLEA(0x10, [u_buf]) ",%[u_buf]               \n"           \
+    "vpermq     $0xd8,%%ymm0,%%ymm0                              \n"           \
+    "vpermq     $0xd8,%%ymm1,%%ymm1                              \n"           \
+    "vpunpcklwd %%ymm1,%%ymm0,%%ymm0                             \n"           \
+    "vpsraw     $0x2,%%ymm0,%%ymm0                               \n"           \
+    "vpackuswb  %%ymm0,%%ymm0,%%ymm0                             \n"           \
+    "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                             \n"           \
+    "vmovdqu    " MEMACCESS([y_buf]) ",%%ymm4                    \n"           \
+    "vpsllw     $0x6,%%ymm4,%%ymm4                               \n"           \
+    "lea        " MEMLEA(0x20, [y_buf]) ",%[y_buf]               \n"
 
 // Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
 #define READYUVA422_AVX2 \
@@ -2307,6 +2324,41 @@ void OMITFP I422ToARGBRow_AVX2(const uint8* y_buf,
   );
 }
 #endif  // HAS_I422TOARGBROW_AVX2
+
+#if defined(HAS_I210TOARGBROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 ARGB (64 bytes).
+void OMITFP I210ToARGBRow_AVX2(const uint16* y_buf,
+                               const uint16* u_buf,
+                               const uint16* v_buf,
+                               uint8* dst_argb,
+                               const struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX2(yuvconstants)
+    "sub       %[u_buf],%[v_buf]               \n"
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"
+
+    LABELALIGN
+    "1:                                        \n"
+    READYUV210_AVX2
+    YUVTORGB_AVX2(yuvconstants)
+    STOREARGB_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_argb]"+r"(dst_argb),  // %[dst_argb]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS_AVX2
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I210TOARGBROW_AVX2
 
 #if defined(HAS_I422ALPHATOARGBROW_AVX2)
 // 16 pixels
