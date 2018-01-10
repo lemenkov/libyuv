@@ -235,9 +235,9 @@ uint32 SumSquareError_SSE2(const uint8* src_a, const uint8* src_b, int count) {
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
-    "lea       " MEMLEA(0x10, 0) ",%0          \n"
+    "lea       0x10(%0),%0                     \n"
     "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
-    "lea       " MEMLEA(0x10, 1) ",%1          \n"
+    "lea       0x10(%1),%1                     \n"
     "movdqa    %%xmm1,%%xmm3                   \n"
     "psubusb   %%xmm2,%%xmm1                   \n"
     "psubusb   %%xmm3,%%xmm2                   \n"
@@ -302,7 +302,7 @@ uint32 HashDjb2_SSE41(const uint8* src, int count, uint32 seed) {
     LABELALIGN
   "1:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
-    "lea       " MEMLEA(0x10, 0) ",%0          \n"
+    "lea       0x10(%0),%0                     \n"
     "pmulld    %%xmm6,%%xmm0                   \n"
     "movdqa    %5,%%xmm5                       \n"
     "movdqa    %%xmm1,%%xmm2                   \n"
