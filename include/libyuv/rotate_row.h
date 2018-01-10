@@ -18,9 +18,13 @@ namespace libyuv {
 extern "C" {
 #endif
 
-#if defined(__pnacl__) || defined(__CLR_VER) || \
+#if defined(__pnacl__) || defined(__CLR_VER) ||            \
+    (defined(__native_client__) && defined(__x86_64__)) || \
     (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
 #define LIBYUV_DISABLE_X86
+#endif
+#if defined(__native_client__)
+#define LIBYUV_DISABLE_NEON
 #endif
 // MemorySanitizer does not support assembly code yet. http://crbug.com/344505
 #if defined(__has_feature)
@@ -34,21 +38,18 @@ extern "C" {
 #define HAS_TRANSPOSEUVWX8_SSE2
 #endif
 
-// The following are available for GCC 32 or 64 bit but not NaCL for 64 bit:
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__i386__) ||           \
-     (defined(__x86_64__) && !defined(__native_client__)))
+// The following are available for GCC 32 or 64 bit:
+#if !defined(LIBYUV_DISABLE_X86) && (defined(__i386__) || defined(__x86_64__))
 #define HAS_TRANSPOSEWX8_SSSE3
 #endif
 
-// The following are available for 64 bit GCC but not NaCL:
-#if !defined(LIBYUV_DISABLE_X86) && !defined(__native_client__) && \
-    defined(__x86_64__)
+// The following are available for 64 bit GCC:
+#if !defined(LIBYUV_DISABLE_X86) && defined(__x86_64__)
 #define HAS_TRANSPOSEWX8_FAST_SSSE3
 #define HAS_TRANSPOSEUVWX8_SSE2
 #endif
 
-#if !defined(LIBYUV_DISABLE_NEON) && !defined(__native_client__) && \
+#if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
 #define HAS_TRANSPOSEWX8_NEON
 #define HAS_TRANSPOSEUVWX8_NEON

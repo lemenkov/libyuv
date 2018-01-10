@@ -1997,7 +1997,7 @@ void OMITFP NV21ToARGBRow_SSSE3(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleNV21]"m"(kShuffleNV21)
-    : "memory", "cc", YUVTORGB_REGS  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2025,7 +2025,7 @@ void OMITFP YUY2ToARGBRow_SSSE3(const uint8* yuy2_buf,
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleYUY2Y]"m"(kShuffleYUY2Y),
     [kShuffleYUY2UV]"m"(kShuffleYUY2UV)
-    : "memory", "cc", YUVTORGB_REGS  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2053,7 +2053,7 @@ void OMITFP UYVYToARGBRow_SSSE3(const uint8* uyvy_buf,
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleUYVYY]"m"(kShuffleUYVYY),
     [kShuffleUYVYUV]"m"(kShuffleUYVYUV)
-    : "memory", "cc", YUVTORGB_REGS  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2471,7 +2471,7 @@ void OMITFP NV12ToARGBRow_AVX2(const uint8* y_buf,
     [dst_argb]"+r"(dst_argb),  // %[dst_argb]
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
-    : "memory", "cc", YUVTORGB_REGS_AVX2  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS_AVX2
     "xmm0", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2505,7 +2505,7 @@ void OMITFP NV21ToARGBRow_AVX2(const uint8* y_buf,
     [width]"+rm"(width)    // %[width]
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleNV21]"m"(kShuffleNV21)
-    : "memory", "cc", YUVTORGB_REGS_AVX2  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS_AVX2
       "xmm0", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2538,7 +2538,7 @@ void OMITFP YUY2ToARGBRow_AVX2(const uint8* yuy2_buf,
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleYUY2Y]"m"(kShuffleYUY2Y),
     [kShuffleYUY2UV]"m"(kShuffleYUY2UV)
-    : "memory", "cc", YUVTORGB_REGS_AVX2  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS_AVX2
       "xmm0", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -2571,7 +2571,7 @@ void OMITFP UYVYToARGBRow_AVX2(const uint8* uyvy_buf,
   : [yuvconstants]"r"(yuvconstants), // %[yuvconstants]
     [kShuffleUYVYY]"m"(kShuffleUYVYY),
     [kShuffleUYVYUV]"m"(kShuffleUYVYUV)
-    : "memory", "cc", YUVTORGB_REGS_AVX2  // Does not use r14.
+    : "memory", "cc", YUVTORGB_REGS_AVX2
       "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
   );
   // clang-format on
@@ -3449,7 +3449,7 @@ void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
 // Multiple of 1.
 void CopyRow_ERMS(const uint8* src, uint8* dst, int width) {
   size_t width_tmp = (size_t)(width);
-  asm volatile("rep movsb " MEMMOVESTRING(0, 1) "          \n"
+  asm volatile("rep movsb                      \n"
                : "+S"(src),       // %0
                  "+D"(dst),       // %1
                  "+c"(width_tmp)  // %2
@@ -3668,7 +3668,7 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 void SetRow_X86(uint8* dst, uint8 v8, int width) {
   size_t width_tmp = (size_t)(width >> 2);
   const uint32 v32 = v8 * 0x01010101u;  // Duplicate byte to all bytes.
-  asm volatile("rep stosl " MEMSTORESTRING(eax, 0) "       \n"
+  asm volatile("rep stosl                      \n"
                : "+D"(dst),       // %0
                  "+c"(width_tmp)  // %1
                : "a"(v32)         // %2
@@ -3677,7 +3677,7 @@ void SetRow_X86(uint8* dst, uint8 v8, int width) {
 
 void SetRow_ERMS(uint8* dst, uint8 v8, int width) {
   size_t width_tmp = (size_t)(width);
-  asm volatile("rep stosb " MEMSTORESTRING(al, 0) "        \n"
+  asm volatile("rep stosb                      \n"
                : "+D"(dst),       // %0
                  "+c"(width_tmp)  // %1
                : "a"(v8)          // %2
@@ -3686,7 +3686,7 @@ void SetRow_ERMS(uint8* dst, uint8 v8, int width) {
 
 void ARGBSetRow_X86(uint8* dst_argb, uint32 v32, int width) {
   size_t width_tmp = (size_t)(width);
-  asm volatile("rep stosl " MEMSTORESTRING(eax, 0) "       \n"
+  asm volatile("rep stosl                      \n"
                : "+D"(dst_argb),  // %0
                  "+c"(width_tmp)  // %1
                : "a"(v32)         // %2
@@ -5707,7 +5707,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     // Blend 100 / 0 - Copy row unchanged.
     LABELALIGN
   "100:                                        \n"
-    "rep movsb " MEMMOVESTRING(1,0) "          \n"
+    "rep movsb                                 \n"
     "jmp       999f                            \n"
 
   "99:                                         \n"

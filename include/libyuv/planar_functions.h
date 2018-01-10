@@ -22,6 +22,24 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// TODO(fbarchard): Move cpu macros to row.h
+#if defined(__pnacl__) || defined(__CLR_VER) ||            \
+    (defined(__native_client__) && defined(__x86_64__)) || \
+    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
+#define LIBYUV_DISABLE_X86
+#endif
+// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
+#if defined(__has_feature)
+#if __has_feature(memory_sanitizer)
+#define LIBYUV_DISABLE_X86
+#endif
+#endif
+// The following are available on all x86 platforms:
+#if !defined(LIBYUV_DISABLE_X86) && \
+    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
+#define HAS_ARGBAFFINEROW_SSE2
+#endif
+
 // Copy a plane of data.
 LIBYUV_API
 void CopyPlane(const uint8* src_y,
@@ -763,22 +781,6 @@ int I420Interpolate(const uint8* src0_y,
                     int height,
                     int interpolation);
 
-#if defined(__pnacl__) || defined(__CLR_VER) || \
-    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
-#define LIBYUV_DISABLE_X86
-#endif
-// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
-#if defined(__has_feature)
-#if __has_feature(memory_sanitizer)
-#define LIBYUV_DISABLE_X86
-#endif
-#endif
-// The following are available on all x86 platforms:
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
-#define HAS_ARGBAFFINEROW_SSE2
-#endif
-
 // Row function for copying pixels from a source with a slope to a row
 // of destination. Useful for scaling, rotation, mirror, texture mapping.
 LIBYUV_API
@@ -787,6 +789,7 @@ void ARGBAffineRow_C(const uint8* src_argb,
                      uint8* dst_argb,
                      const float* uv_dudv,
                      int width);
+// TODO(fbarchard): Move ARGBAffineRow_SSE2 to row.h
 LIBYUV_API
 void ARGBAffineRow_SSE2(const uint8* src_argb,
                         int src_argb_stride,
