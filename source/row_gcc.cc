@@ -1087,7 +1087,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0,
     "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
 
     "vextractf128 $0x0,%%ymm0,(%1)             \n"
-    VEXTOPMEM(vextractf128,1,ymm0,0x0,1,2,1) // vextractf128 $1,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x1,%%ymm0,0x0(%1,%2,1)     \n"
     "lea        0x10(%1),%1                    \n"
     "sub        $0x20,%3                       \n"
     "jg         1b                             \n"
@@ -1152,7 +1152,7 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0,
     "vpshufb    %8,%%ymm0,%%ymm0               \n"
 
     "vextractf128 $0x0,%%ymm0,(%1)             \n"
-    VEXTOPMEM(vextractf128,1,ymm0,0x0,1,2,1) // vextractf128 $1,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x1,%%ymm0,0x0(%1,%2,1)     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -2907,9 +2907,9 @@ void MergeUVRow_AVX2(const uint8* src_u,
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm2           \n"
     "vpunpckhbw %%ymm1,%%ymm0,%%ymm0           \n"
     "vextractf128 $0x0,%%ymm2,(%2)             \n"
-    "vextractf128 $0x0,%%ymm0,0x10(%2)              \n"
-    "vextractf128 $0x1,%%ymm2,0x20(%2)              \n"
-    "vextractf128 $0x1,%%ymm0,0x30(%2)              \n"
+    "vextractf128 $0x0,%%ymm0,0x10(%2)         \n"
+    "vextractf128 $0x1,%%ymm2,0x20(%2)         \n"
+    "vextractf128 $0x1,%%ymm0,0x30(%2)         \n"
     "lea       0x40(%2),%2                     \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -3960,7 +3960,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2,
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1,(%1)             \n"
-    VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x0,%%ymm0,0x00(%1,%2,1)    \n"
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -4000,7 +4000,7 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1,(%1)             \n"
-    VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x0,%%ymm0,0x00(%1,%2,1)    \n"
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -4067,7 +4067,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy,
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1,(%1)             \n"
-    VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x0,%%ymm0,0x00(%1,%2,1)    \n"
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -4107,7 +4107,7 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
     "vextractf128 $0x0,%%ymm1,(%1)             \n"
-    VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
+    "vextractf128 $0x0,%%ymm0,0x00(%1,%2,1)    \n"
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
