@@ -580,9 +580,7 @@ extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  // BT.709
   #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
   #opcode " %%" #reg "," #offset "(%" #base ",%" #index "," #scale ")\n"
-#define VMEMOPREG(opcode, offset, base, index, scale, reg1, reg2)    \
-  #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg1 \
-          ",%%" #reg2 "\n"
+
 
 // Intel Code Analizer markers.  Insert IACA_START IACA_END around code to be
 // measured and then run with iaca -64 libyuv_unittest.

@@ -1061,10 +1061,10 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0,
     "vmovdqu    0x20(%0),%%ymm1                \n"
     "vmovdqu    0x40(%0),%%ymm2                \n"
     "vmovdqu    0x60(%0),%%ymm3                \n"
-    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
-    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
-    VMEMOPREG(vpavgb,0x40,0,4,1,ymm2,ymm2)
-    VMEMOPREG(vpavgb,0x60,0,4,1,ymm3,ymm3)
+    "vpavgb    0x00(%0,%4,1),%%ymm0,%%ymm0     \n"
+    "vpavgb    0x20(%0,%4,1),%%ymm1,%%ymm1     \n"
+    "vpavgb    0x40(%0,%4,1),%%ymm2,%%ymm2     \n"
+    "vpavgb    0x60(%0,%4,1),%%ymm3,%%ymm3     \n"
     "lea        0x80(%0),%0                    \n"
     "vshufps    $0x88,%%ymm1,%%ymm0,%%ymm4     \n"
     "vshufps    $0xdd,%%ymm1,%%ymm0,%%ymm0     \n"
@@ -1125,10 +1125,10 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0,
     "vmovdqu    0x20(%0),%%ymm1                \n"
     "vmovdqu    0x40(%0),%%ymm2                \n"
     "vmovdqu    0x60(%0),%%ymm3                \n"
-    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
-    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
-    VMEMOPREG(vpavgb,0x40,0,4,1,ymm2,ymm2)
-    VMEMOPREG(vpavgb,0x60,0,4,1,ymm3,ymm3)
+    "vpavgb    0x00(%0,%4,1),%%ymm0,%%ymm0     \n"
+    "vpavgb    0x20(%0,%4,1),%%ymm1,%%ymm1     \n"
+    "vpavgb    0x40(%0,%4,1),%%ymm2,%%ymm2     \n"
+    "vpavgb    0x60(%0,%4,1),%%ymm3,%%ymm3     \n"
     "lea       0x80(%0),%0                     \n"
     "vshufps    $0x88,%%ymm1,%%ymm0,%%ymm4     \n"
     "vshufps    $0xdd,%%ymm1,%%ymm0,%%ymm0     \n"
@@ -2796,7 +2796,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    VMEMOPREG(vpermd,-0x20,0,2,4,ymm5,ymm0) // vpermd -0x20(%0,%2,4),ymm5,ymm0
+    "vpermd    -0x20(%0,%2,4),%%ymm5,%%ymm0     \n"
     "vmovdqu    %%ymm0,(%1)                    \n"
     "lea        0x20(%1),%1                    \n"
     "sub        $0x8,%2                        \n"
@@ -3946,8 +3946,8 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2,
     "1:                                        \n"
     "vmovdqu   (%0),%%ymm0                     \n"
     "vmovdqu   0x20(%0),%%ymm1                 \n"
-    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
-    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
+    "vpavgb    0x00(%0,%4,1),%%ymm0,%%ymm0     \n"
+    "vpavgb    0x20(%0,%4,1),%%ymm1,%%ymm1     \n"
     "lea       0x40(%0),%0                     \n"
     "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
     "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
@@ -4053,8 +4053,8 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy,
     "1:                                        \n"
     "vmovdqu   (%0),%%ymm0                     \n"
     "vmovdqu   0x20(%0),%%ymm1                 \n"
-    VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
-    VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
+    "vpavgb    0x00(%0,%4,1),%%ymm0,%%ymm0     \n"
+    "vpavgb    0x20(%0,%4,1),%%ymm1,%%ymm1     \n"
     "lea       0x40(%0),%0                     \n"
     "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
     "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
@@ -5697,7 +5697,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     LABELALIGN
   "50:                                         \n"
     "vmovdqu    (%1),%%ymm0                    \n"
-    VMEMOPREG(vpavgb,0x00,1,4,1,ymm0,ymm0)     // vpavgb (%1,%4,1),%%ymm0,%%ymm0
+    "vpavgb    0x00(%1,%4,1),%%ymm0,%%ymm0     \n"
     MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
