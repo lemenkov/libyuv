@@ -158,7 +158,7 @@ void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width) {
     "pslld     $0x18,%%xmm5                    \n"
     LABELALIGN
     "1:                                        \n"
-    "movq      " MEMACCESS(0) ",%%xmm0         \n"
+    "movq      (%0),%%xmm0                     \n"
     "lea       0x8(%0),%0                      \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
@@ -166,8 +166,8 @@ void J400ToARGBRow_SSE2(const uint8* src_y, uint8* dst_argb, int width) {
     "punpckhwd %%xmm1,%%xmm1                   \n"
     "por       %%xmm5,%%xmm0                   \n"
     "por       %%xmm5,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -187,9 +187,9 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width) {
     "movdqa    %3,%%xmm4                       \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm3                 \n"
     "lea       0x30(%0),%0                     \n"
     "movdqa    %%xmm3,%%xmm2                   \n"
     "palignr   $0x8,%%xmm1,%%xmm2              \n"
@@ -197,16 +197,16 @@ void RGB24ToARGBRow_SSSE3(const uint8* src_rgb24, uint8* dst_argb, int width) {
     "por       %%xmm5,%%xmm2                   \n"
     "palignr   $0xc,%%xmm0,%%xmm1              \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x20,1) "   \n"
+    "movdqu    %%xmm2,0x20(%1)                 \n"
     "por       %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm4,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "por       %%xmm5,%%xmm1                   \n"
     "palignr   $0x4,%%xmm3,%%xmm3              \n"
     "pshufb    %%xmm4,%%xmm3                   \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "por       %%xmm5,%%xmm3                   \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x30,1) "   \n"
+    "movdqu    %%xmm3,0x30(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -225,9 +225,9 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int width) {
     "movdqa    %3,%%xmm4                       \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm3                 \n"
     "lea       0x30(%0),%0                     \n"
     "movdqa    %%xmm3,%%xmm2                   \n"
     "palignr   $0x8,%%xmm1,%%xmm2              \n"
@@ -235,16 +235,16 @@ void RAWToARGBRow_SSSE3(const uint8* src_raw, uint8* dst_argb, int width) {
     "por       %%xmm5,%%xmm2                   \n"
     "palignr   $0xc,%%xmm0,%%xmm1              \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x20,1) "   \n"
+    "movdqu    %%xmm2,0x20(%1)                 \n"
     "por       %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm4,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "por       %%xmm5,%%xmm1                   \n"
     "palignr   $0x4,%%xmm3,%%xmm3              \n"
     "pshufb    %%xmm4,%%xmm3                   \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "por       %%xmm5,%%xmm3                   \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x30,1) "   \n"
+    "movdqu    %%xmm3,0x30(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -263,16 +263,16 @@ void RAWToRGB24Row_SSSE3(const uint8* src_raw, uint8* dst_rgb24, int width) {
    "movdqa     %5,%%xmm5                       \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x4,0) ",%%xmm1    \n"
-    "movdqu    " MEMACCESS2(0x8,0) ",%%xmm2    \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x4(%0),%%xmm1                  \n"
+    "movdqu    0x8(%0),%%xmm2                  \n"
     "lea       0x18(%0),%0                     \n"
     "pshufb    %%xmm3,%%xmm0                   \n"
     "pshufb    %%xmm4,%%xmm1                   \n"
     "pshufb    %%xmm5,%%xmm2                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
-    "movq      %%xmm1," MEMACCESS2(0x8,1) "    \n"
-    "movq      %%xmm2," MEMACCESS2(0x10,1) "   \n"
+    "movq      %%xmm0,(%1)                     \n"
+    "movq      %%xmm1,0x8(%1)                  \n"
+    "movq      %%xmm2,0x10(%1)                 \n"
     "lea       0x18(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -305,7 +305,7 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "sub       %0,%1                           \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "pand      %%xmm3,%%xmm1                   \n"
@@ -352,7 +352,7 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "sub       %0,%1                           \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "psllw     $0x1,%%xmm1                     \n"
@@ -396,7 +396,7 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "sub       %0,%1                           \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "pand      %%xmm4,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm2                   \n"
@@ -428,10 +428,10 @@ void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int width) {
     "movdqa    %3,%%xmm6                       \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "lea       0x40(%0),%0                     \n"
     "pshufb    %%xmm6,%%xmm0                   \n"
     "pshufb    %%xmm6,%%xmm1                   \n"
@@ -443,13 +443,13 @@ void ARGBToRGB24Row_SSSE3(const uint8* src, uint8* dst, int width) {
     "movdqa    %%xmm2,%%xmm5                   \n"
     "por       %%xmm4,%%xmm0                   \n"
     "pslldq    $0x8,%%xmm5                     \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "por       %%xmm5,%%xmm1                   \n"
     "psrldq    $0x8,%%xmm2                     \n"
     "pslldq    $0x4,%%xmm3                     \n"
     "por       %%xmm3,%%xmm2                   \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x20,1) "   \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
+    "movdqu    %%xmm2,0x20(%1)                 \n"
     "lea       0x30(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -466,10 +466,10 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "movdqa    %3,%%xmm6                       \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "lea       0x40(%0),%0                     \n"
     "pshufb    %%xmm6,%%xmm0                   \n"
     "pshufb    %%xmm6,%%xmm1                   \n"
@@ -481,13 +481,13 @@ void ARGBToRAWRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "movdqa    %%xmm2,%%xmm5                   \n"
     "por       %%xmm4,%%xmm0                   \n"
     "pslldq    $0x8,%%xmm5                     \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "por       %%xmm5,%%xmm1                   \n"
     "psrldq    $0x8,%%xmm2                     \n"
     "pslldq    $0x4,%%xmm3                     \n"
     "por       %%xmm3,%%xmm2                   \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x20,1) "   \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
+    "movdqu    %%xmm2,0x20(%1)                 \n"
     "lea       0x30(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -510,7 +510,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int width) {
     "pslld     $0xb,%%xmm5                     \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "pslld     $0x8,%%xmm0                     \n"
@@ -524,7 +524,7 @@ void ARGBToRGB565Row_SSE2(const uint8* src, uint8* dst, int width) {
     "por       %%xmm1,%%xmm0                   \n"
     "packssdw  %%xmm0,%%xmm0                   \n"
     "lea       0x10(%0),%0                     \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -641,7 +641,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "movdqa    %%xmm0,%%xmm3                   \n"
@@ -658,7 +658,7 @@ void ARGBToARGB1555Row_SSE2(const uint8* src, uint8* dst, int width) {
     "por       %%xmm2,%%xmm0                   \n"
     "packssdw  %%xmm0,%%xmm0                   \n"
     "lea       0x10(%0),%0                     \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -679,7 +679,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "pand      %%xmm3,%%xmm0                   \n"
     "pand      %%xmm4,%%xmm1                   \n"
@@ -688,7 +688,7 @@ void ARGBToARGB4444Row_SSE2(const uint8* src, uint8* dst, int width) {
     "por       %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
     "lea       0x10(%0),%0                     \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -815,10 +815,10 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -830,7 +830,7 @@ void ARGBToYRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -854,10 +854,10 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -870,7 +870,7 @@ void ARGBToYJRow_SSSE3(const uint8* src_argb, uint8* dst_y, int width) {
     "psrlw     $0x7,%%xmm0                     \n"
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -897,10 +897,10 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
-    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
-    "vmovdqu    " MEMACCESS2(0x40,0) ",%%ymm2  \n"
-    "vmovdqu    " MEMACCESS2(0x60,0) ",%%ymm3  \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vmovdqu    0x20(%0),%%ymm1                \n"
+    "vmovdqu    0x40(%0),%%ymm2                \n"
+    "vmovdqu    0x60(%0),%%ymm3                \n"
     "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
     "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
     "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
@@ -913,7 +913,7 @@ void ARGBToYRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
     "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
     "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
     "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"  // add 16 for Y
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -939,10 +939,10 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
-    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
-    "vmovdqu    " MEMACCESS2(0x40,0) ",%%ymm2  \n"
-    "vmovdqu    " MEMACCESS2(0x60,0) ",%%ymm3  \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vmovdqu    0x20(%0),%%ymm1                \n"
+    "vmovdqu    0x40(%0),%%ymm2                \n"
+    "vmovdqu    0x60(%0),%%ymm3                \n"
     "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
     "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
     "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
@@ -956,7 +956,7 @@ void ARGBToYJRow_AVX2(const uint8* src_argb, uint8* dst_y, int width) {
     "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
     "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
     "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -986,16 +986,16 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
     MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
 
@@ -1020,7 +1020,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
+    "movlps    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps    %%xmm0,(%1,%2,1)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -1057,10 +1057,10 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
-    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
-    "vmovdqu    " MEMACCESS2(0x40,0) ",%%ymm2  \n"
-    "vmovdqu    " MEMACCESS2(0x60,0) ",%%ymm3  \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vmovdqu    0x20(%0),%%ymm1                \n"
+    "vmovdqu    0x40(%0),%%ymm2                \n"
+    "vmovdqu    0x60(%0),%%ymm3                \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
     VMEMOPREG(vpavgb,0x40,0,4,1,ymm2,ymm2)
@@ -1086,7 +1086,7 @@ void ARGBToUVRow_AVX2(const uint8* src_argb0,
     "vpshufb    %8,%%ymm0,%%ymm0               \n"
     "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
 
-    "vextractf128 $0x0,%%ymm0," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm0,(%1)             \n"
     VEXTOPMEM(vextractf128,1,ymm0,0x0,1,2,1) // vextractf128 $1,%%ymm0,(%1,%2,1)
     "lea        0x10(%1),%1                    \n"
     "sub        $0x20,%3                       \n"
@@ -1121,10 +1121,10 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
-    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
-    "vmovdqu    " MEMACCESS2(0x40,0) ",%%ymm2  \n"
-    "vmovdqu    " MEMACCESS2(0x60,0) ",%%ymm3  \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vmovdqu    0x20(%0),%%ymm1                \n"
+    "vmovdqu    0x40(%0),%%ymm2                \n"
+    "vmovdqu    0x60(%0),%%ymm3                \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
     VMEMOPREG(vpavgb,0x40,0,4,1,ymm2,ymm2)
@@ -1151,7 +1151,7 @@ void ARGBToUVJRow_AVX2(const uint8* src_argb0,
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpshufb    %8,%%ymm0,%%ymm0               \n"
 
-    "vextractf128 $0x0,%%ymm0," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm0,(%1)             \n"
     VEXTOPMEM(vextractf128,1,ymm0,0x0,1,2,1) // vextractf128 $1,%%ymm0,(%1,%2,1)
     "lea       0x10(%1),%1                     \n"
     "sub       $0x20,%3                        \n"
@@ -1186,16 +1186,16 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
     MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
 
@@ -1221,7 +1221,7 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0,
     "psraw     $0x8,%%xmm0                     \n"
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
+    "movlps    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -1253,10 +1253,10 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -1267,11 +1267,11 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb,
     "psraw     $0x8,%%xmm2                     \n"
     "packsswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     "pmaddubsw %%xmm3,%%xmm0                   \n"
     "pmaddubsw %%xmm3,%%xmm1                   \n"
     "pmaddubsw %%xmm3,%%xmm2                   \n"
@@ -1307,10 +1307,10 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -1322,7 +1322,7 @@ void BGRAToYRow_SSSE3(const uint8* src_bgra, uint8* dst_y, int width) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -1348,16 +1348,16 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
     MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
 
@@ -1382,7 +1382,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
+    "movlps    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -1407,10 +1407,10 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -1422,7 +1422,7 @@ void ABGRToYRow_SSSE3(const uint8* src_abgr, uint8* dst_y, int width) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -1442,10 +1442,10 @@ void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm2                   \n"
@@ -1457,7 +1457,7 @@ void RGBAToYRow_SSSE3(const uint8* src_rgba, uint8* dst_y, int width) {
     "psrlw     $0x7,%%xmm2                     \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -1483,16 +1483,16 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
     MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
 
@@ -1517,7 +1517,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
+    "movlps    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -1548,16 +1548,16 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm7)            //  movdqu (%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x10,0,4,1,xmm7)            //  movdqu 0x10(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
     MEMOPREG(movdqu,0x20,0,4,1,xmm7)            //  movdqu 0x20(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm2                   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm6   \n"
+    "movdqu    0x30(%0),%%xmm6                 \n"
     MEMOPREG(movdqu,0x30,0,4,1,xmm7)            //  movdqu 0x30(%0,%4,1),%%xmm7
     "pavgb     %%xmm7,%%xmm6                   \n"
 
@@ -1582,7 +1582,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
-    "movlps    %%xmm0," MEMACCESS(1) "         \n"
+    "movlps    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -1604,22 +1604,22 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
 
 // Read 8 UV from 444
 #define READYUV444 \
-  "movq       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
+  "movq       (%[u_buf]),%%xmm0                                 \n"            \
     MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        0x8(%[u_buf]),%[u_buf]                          \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movq       (%[y_buf]),%%xmm4                               \n"            \
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        0x8(%[y_buf]),%[y_buf]                          \n"
 
 // Read 4 UV from 422, upsample to 8 UV
 #define READYUV422 \
-  "movd       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
+  "movd       (%[u_buf]),%%xmm0                                 \n"            \
     MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        0x4(%[u_buf]),%[u_buf]                          \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movq       (%[y_buf]),%%xmm4                               \n"            \
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        0x8(%[y_buf]),%[y_buf]                          \n"
 
@@ -1628,73 +1628,73 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
 // TODO(fbarchard): Consider pmulhuw to replace psraw
 // TODO(fbarchard): Consider pmullw to replace psllw and allow different bits.
 #define READYUV210 \
-  "movq       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
+  "movq       (%[u_buf]),%%xmm0                                 \n"            \
     MEMOPREG(movq, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        0x8(%[u_buf]),%[u_buf]                          \n"            \
     "punpcklwd  %%xmm1,%%xmm0                                   \n"            \
     "psraw      $0x2,%%xmm0                                     \n"            \
     "packuswb   %%xmm0,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "movdqu     " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movdqu     (%[y_buf]),%%xmm4                               \n"            \
     "psllw      $0x6,%%xmm4                                     \n"            \
     "lea        0x10(%[y_buf]),%[y_buf]                         \n"
 
 // Read 4 UV from 422, upsample to 8 UV.  With 8 Alpha.
 #define READYUVA422 \
-  "movd       " MEMACCESS([u_buf]) ",%%xmm0                     \n"            \
+  "movd       (%[u_buf]),%%xmm0                                 \n"            \
     MEMOPREG(movd, 0x00, [u_buf], [v_buf], 1, xmm1)                            \
     "lea        0x4(%[u_buf]),%[u_buf]                          \n"            \
     "punpcklbw  %%xmm1,%%xmm0                                   \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movq       (%[y_buf]),%%xmm4                               \n"            \
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        0x8(%[y_buf]),%[y_buf]                          \n"            \
-    "movq       " MEMACCESS([a_buf]) ",%%xmm5                   \n"            \
+    "movq       (%[a_buf]),%%xmm5                               \n"            \
     "lea        0x8(%[a_buf]),%[a_buf]                          \n"
 
 // Read 4 UV from NV12, upsample to 8 UV
 #define READNV12 \
-  "movq       " MEMACCESS([uv_buf]) ",%%xmm0                    \n"            \
+  "movq       (%[uv_buf]),%%xmm0                                \n"            \
     "lea        0x8(%[uv_buf]),%[uv_buf]                        \n"            \
     "punpcklwd  %%xmm0,%%xmm0                                   \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movq       (%[y_buf]),%%xmm4                               \n"            \
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        0x8(%[y_buf]),%[y_buf]                          \n"
 
 // Read 4 VU from NV21, upsample to 8 UV
 #define READNV21 \
-  "movq       " MEMACCESS([vu_buf]) ",%%xmm0                    \n"            \
+  "movq       (%[vu_buf]),%%xmm0                                \n"            \
     "lea        0x8(%[vu_buf]),%[vu_buf]                        \n"            \
     "pshufb     %[kShuffleNV21], %%xmm0                         \n"            \
-    "movq       " MEMACCESS([y_buf]) ",%%xmm4                   \n"            \
+    "movq       (%[y_buf]),%%xmm4                               \n"            \
     "punpcklbw  %%xmm4,%%xmm4                                   \n"            \
     "lea        0x8(%[y_buf]),%[y_buf]                          \n"
 
 // Read 4 YUY2 with 8 Y and update 4 UV to 8 UV.
 #define READYUY2 \
-  "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm4                  \n"            \
+  "movdqu     (%[yuy2_buf]),%%xmm4                              \n"            \
     "pshufb     %[kShuffleYUY2Y], %%xmm4                        \n"            \
-    "movdqu     " MEMACCESS([yuy2_buf]) ",%%xmm0                \n"            \
+    "movdqu     (%[yuy2_buf]),%%xmm0                            \n"            \
     "pshufb     %[kShuffleYUY2UV], %%xmm0                       \n"            \
     "lea        0x10(%[yuy2_buf]),%[yuy2_buf]                   \n"
 
 // Read 4 UYVY with 8 Y and update 4 UV to 8 UV.
 #define READUYVY \
-  "movdqu     " MEMACCESS([uyvy_buf]) ",%%xmm4                  \n"            \
+  "movdqu     (%[uyvy_buf]),%%xmm4                              \n"            \
     "pshufb     %[kShuffleUYVYY], %%xmm4                        \n"            \
-    "movdqu     " MEMACCESS([uyvy_buf]) ",%%xmm0                \n"            \
+    "movdqu     (%[uyvy_buf]),%%xmm0                            \n"            \
     "pshufb     %[kShuffleUYVYUV], %%xmm0                       \n"            \
     "lea        0x10(%[uyvy_buf]),%[uyvy_buf]                   \n"
 
 #if defined(__x86_64__)
 #define YUVTORGB_SETUP(yuvconstants) \
-  "movdqa     " MEMACCESS([yuvconstants]) ",%%xmm8              \n"            \
-    "movdqa     " MEMACCESS2(32, [yuvconstants]) ",%%xmm9       \n"            \
-    "movdqa     " MEMACCESS2(64, [yuvconstants]) ",%%xmm10      \n"            \
-    "movdqa     " MEMACCESS2(96, [yuvconstants]) ",%%xmm11      \n"            \
-    "movdqa     " MEMACCESS2(128, [yuvconstants]) ",%%xmm12     \n"            \
-    "movdqa     " MEMACCESS2(160, [yuvconstants]) ",%%xmm13     \n"            \
-    "movdqa     " MEMACCESS2(192, [yuvconstants]) ",%%xmm14     \n"
+  "movdqa     (%[yuvconstants]),%%xmm8                          \n"            \
+    "movdqa     32(%[yuvconstants]),%%xmm9                      \n"            \
+    "movdqa     64(%[yuvconstants]),%%xmm10                     \n"            \
+    "movdqa     96(%[yuvconstants]),%%xmm11                     \n"            \
+    "movdqa     128(%[yuvconstants]),%%xmm12                    \n"            \
+    "movdqa     160(%[yuvconstants]),%%xmm13                    \n"            \
+    "movdqa     192(%[yuvconstants]),%%xmm14                    \n"
 // Convert 8 pixels: 8 UV and 8 Y
 #define YUVTORGB(yuvconstants)                                    \
   "movdqa     %%xmm0,%%xmm1                                   \n" \
@@ -1729,16 +1729,16 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
   "movdqa     %%xmm0,%%xmm1                                     \n"            \
     "movdqa     %%xmm0,%%xmm2                                   \n"            \
     "movdqa     %%xmm0,%%xmm3                                   \n"            \
-    "movdqa     " MEMACCESS2(96, [yuvconstants]) ",%%xmm0       \n"            \
-    "pmaddubsw  " MEMACCESS([yuvconstants]) ",%%xmm1            \n"            \
+    "movdqa     96(%[yuvconstants]),%%xmm0                      \n"            \
+    "pmaddubsw  (%[yuvconstants]),%%xmm1                        \n"            \
     "psubw      %%xmm1,%%xmm0                                   \n"            \
-    "movdqa     " MEMACCESS2(128, [yuvconstants]) ",%%xmm1      \n"            \
-    "pmaddubsw  " MEMACCESS2(32, [yuvconstants]) ",%%xmm2       \n"            \
+    "movdqa     128(%[yuvconstants]),%%xmm1                     \n"            \
+    "pmaddubsw  32(%[yuvconstants]),%%xmm2                      \n"            \
     "psubw      %%xmm2,%%xmm1                                   \n"            \
-    "movdqa     " MEMACCESS2(160, [yuvconstants]) ",%%xmm2      \n"            \
-    "pmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%xmm3       \n"            \
+    "movdqa     160(%[yuvconstants]),%%xmm2                     \n"            \
+    "pmaddubsw  64(%[yuvconstants]),%%xmm3                      \n"            \
     "psubw      %%xmm3,%%xmm2                                   \n"            \
-    "pmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%xmm4      \n"            \
+    "pmulhuw    192(%[yuvconstants]),%%xmm4                     \n"            \
     "paddsw     %%xmm4,%%xmm0                                   \n"            \
     "paddsw     %%xmm4,%%xmm1                                   \n"            \
     "paddsw     %%xmm4,%%xmm2                                   \n"            \
@@ -1758,8 +1758,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "movdqa     %%xmm0,%%xmm1                                    \n"           \
     "punpcklwd  %%xmm2,%%xmm0                                    \n"           \
     "punpckhwd  %%xmm2,%%xmm1                                    \n"           \
-    "movdqu     %%xmm0," MEMACCESS([dst_argb]) "                 \n"           \
-    "movdqu     %%xmm1," MEMACCESS2(0x10, [dst_argb]) "          \n"           \
+    "movdqu     %%xmm0,(%[dst_argb])                             \n"           \
+    "movdqu     %%xmm1,0x10(%[dst_argb])                         \n"           \
     "lea        0x20(%[dst_argb]), %[dst_argb]                   \n"
 
 // Store 8 RGBA values.
@@ -1770,8 +1770,8 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "movdqa    %%xmm5,%%xmm0                                     \n"           \
     "punpcklwd %%xmm1,%%xmm5                                     \n"           \
     "punpckhwd %%xmm1,%%xmm0                                     \n"           \
-    "movdqu    %%xmm5," MEMACCESS([dst_rgba]) "                  \n"           \
-    "movdqu    %%xmm0," MEMACCESS2(0x10, [dst_rgba]) "           \n"           \
+    "movdqu    %%xmm5,(%[dst_rgba])                              \n"           \
+    "movdqu    %%xmm0,0x10(%[dst_rgba])                          \n"           \
     "lea       0x20(%[dst_rgba]),%[dst_rgba]                     \n"
 
 void OMITFP I444ToARGBRow_SSSE3(const uint8* y_buf,
@@ -1827,8 +1827,8 @@ void OMITFP I422ToRGB24Row_SSSE3(const uint8* y_buf,
     "pshufb    %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm6,%%xmm1                   \n"
     "palignr   $0xc,%%xmm0,%%xmm1              \n"
-    "movq      %%xmm0," MEMACCESS([dst_rgb24]) "\n"
-    "movdqu    %%xmm1," MEMACCESS2(0x8,[dst_rgb24]) "\n"
+    "movq      %%xmm0,(%[dst_rgb24])            \n"
+    "movdqu    %%xmm1,0x8(%[dst_rgb24])              \n"
     "lea       0x18(%[dst_rgb24]),%[dst_rgb24]           \n"
     "subl      $0x8,%[width]                   \n"
     "jg        1b                              \n"
@@ -2092,26 +2092,26 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 // Read 16 UV from 444
 #define READYUV444_AVX2 \
-  "vmovdqu    " MEMACCESS([u_buf]) ",%%xmm0                         \n"        \
+  "vmovdqu    (%[u_buf]),%%xmm0                                     \n"        \
     MEMOPREG(vmovdqu, 0x00, [u_buf], [v_buf], 1, xmm1)                         \
     "lea        0x10(%[u_buf]),%[u_buf]                             \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpermq     $0xd8,%%ymm1,%%ymm1                                 \n"        \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vmovdqu    (%[y_buf]),%%xmm4                                   \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        0x10(%[y_buf]),%[y_buf]                             \n"
 
 // Read 8 UV from 422, upsample to 16 UV.
 #define READYUV422_AVX2 \
-  "vmovq      " MEMACCESS([u_buf]) ",%%xmm0                         \n"        \
+  "vmovq      (%[u_buf]),%%xmm0                                     \n"        \
     MEMOPREG(vmovq, 0x00, [u_buf], [v_buf], 1, xmm1)                           \
     "lea        0x8(%[u_buf]),%[u_buf]                              \n"        \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vmovdqu    (%[y_buf]),%%xmm4                                   \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        0x10(%[y_buf]),%[y_buf]                             \n"
@@ -2120,7 +2120,7 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 // TODO(fbarchard): Consider vshufb to replace pack/unpack
 // TODO(fbarchard): Consider vunpcklpd to combine the 2 registers into 1.
 #define READYUV210_AVX2 \
-  "vmovdqu     " MEMACCESS([u_buf]) ",%%xmm0                     \n"           \
+  "vmovdqu     (%[u_buf]),%%xmm0                                 \n"           \
     MEMOPREG(vmovdqu, 0x00, [u_buf], [v_buf], 1, xmm1)                         \
     "lea        0x10(%[u_buf]),%[u_buf]                          \n"           \
     "vpermq     $0xd8,%%ymm0,%%ymm0                              \n"           \
@@ -2129,73 +2129,73 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpsraw     $0x2,%%ymm0,%%ymm0                               \n"           \
     "vpackuswb  %%ymm0,%%ymm0,%%ymm0                             \n"           \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                             \n"           \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%ymm4                    \n"           \
+    "vmovdqu    (%[y_buf]),%%ymm4                                \n"           \
     "vpsllw     $0x6,%%ymm4,%%ymm4                               \n"           \
     "lea        0x20(%[y_buf]),%[y_buf]                          \n"
 
 // Read 8 UV from 422, upsample to 16 UV.  With 16 Alpha.
 #define READYUVA422_AVX2 \
-  "vmovq      " MEMACCESS([u_buf]) ",%%xmm0                         \n"        \
+  "vmovq      (%[u_buf]),%%xmm0                                     \n"        \
     MEMOPREG(vmovq, 0x00, [u_buf], [v_buf], 1, xmm1)                           \
     "lea        0x8(%[u_buf]),%[u_buf]                              \n"        \
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm0                                \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vmovdqu    (%[y_buf]),%%xmm4                                   \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        0x10(%[y_buf]),%[y_buf]                             \n"        \
-    "vmovdqu    " MEMACCESS([a_buf]) ",%%xmm5                       \n"        \
+    "vmovdqu    (%[a_buf]),%%xmm5                                   \n"        \
     "vpermq     $0xd8,%%ymm5,%%ymm5                                 \n"        \
     "lea        0x10(%[a_buf]),%[a_buf]                             \n"
 
 // Read 8 UV from NV12, upsample to 16 UV.
 #define READNV12_AVX2 \
-  "vmovdqu    " MEMACCESS([uv_buf]) ",%%xmm0                        \n"        \
+  "vmovdqu    (%[uv_buf]),%%xmm0                                    \n"        \
     "lea        0x10(%[uv_buf]),%[uv_buf]                           \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpunpcklwd %%ymm0,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vmovdqu    (%[y_buf]),%%xmm4                                   \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        0x10(%[y_buf]),%[y_buf]                             \n"
 
 // Read 8 VU from NV21, upsample to 16 UV.
 #define READNV21_AVX2 \
-  "vmovdqu    " MEMACCESS([vu_buf]) ",%%xmm0                        \n"        \
+  "vmovdqu    (%[vu_buf]),%%xmm0                                    \n"        \
     "lea        0x10(%[vu_buf]),%[vu_buf]                           \n"        \
     "vpermq     $0xd8,%%ymm0,%%ymm0                                 \n"        \
     "vpshufb     %[kShuffleNV21], %%ymm0, %%ymm0                    \n"        \
-    "vmovdqu    " MEMACCESS([y_buf]) ",%%xmm4                       \n"        \
+    "vmovdqu    (%[y_buf]),%%xmm4                                   \n"        \
     "vpermq     $0xd8,%%ymm4,%%ymm4                                 \n"        \
     "vpunpcklbw %%ymm4,%%ymm4,%%ymm4                                \n"        \
     "lea        0x10(%[y_buf]),%[y_buf]                             \n"
 
 // Read 8 YUY2 with 16 Y and upsample 8 UV to 16 UV.
 #define READYUY2_AVX2 \
-  "vmovdqu    " MEMACCESS([yuy2_buf]) ",%%ymm4                      \n"        \
+  "vmovdqu    (%[yuy2_buf]),%%ymm4                                  \n"        \
     "vpshufb    %[kShuffleYUY2Y], %%ymm4, %%ymm4                    \n"        \
-    "vmovdqu    " MEMACCESS([yuy2_buf]) ",%%ymm0                    \n"        \
+    "vmovdqu    (%[yuy2_buf]),%%ymm0                                \n"        \
     "vpshufb    %[kShuffleYUY2UV], %%ymm0, %%ymm0                   \n"        \
     "lea        0x20(%[yuy2_buf]),%[yuy2_buf]                       \n"
 
 // Read 8 UYVY with 16 Y and upsample 8 UV to 16 UV.
 #define READUYVY_AVX2 \
-  "vmovdqu     " MEMACCESS([uyvy_buf]) ",%%ymm4                     \n"        \
+  "vmovdqu     (%[uyvy_buf]),%%ymm4                                 \n"        \
     "vpshufb     %[kShuffleUYVYY], %%ymm4, %%ymm4                   \n"        \
-    "vmovdqu     " MEMACCESS([uyvy_buf]) ",%%ymm0                   \n"        \
+    "vmovdqu     (%[uyvy_buf]),%%ymm0                               \n"        \
     "vpshufb     %[kShuffleUYVYUV], %%ymm0, %%ymm0                  \n"        \
     "lea        0x20(%[uyvy_buf]),%[uyvy_buf]                       \n"
 
 #if defined(__x86_64__)
 #define YUVTORGB_SETUP_AVX2(yuvconstants) \
-  "vmovdqa     " MEMACCESS([yuvconstants]) ",%%ymm8              \n"           \
-    "vmovdqa     " MEMACCESS2(32, [yuvconstants]) ",%%ymm9       \n"           \
-    "vmovdqa     " MEMACCESS2(64, [yuvconstants]) ",%%ymm10      \n"           \
-    "vmovdqa     " MEMACCESS2(96, [yuvconstants]) ",%%ymm11      \n"           \
-    "vmovdqa     " MEMACCESS2(128, [yuvconstants]) ",%%ymm12     \n"           \
-    "vmovdqa     " MEMACCESS2(160, [yuvconstants]) ",%%ymm13     \n"           \
-    "vmovdqa     " MEMACCESS2(192, [yuvconstants]) ",%%ymm14     \n"
+  "vmovdqa     (%[yuvconstants]),%%ymm8                          \n"           \
+    "vmovdqa     32(%[yuvconstants]),%%ymm9                      \n"           \
+    "vmovdqa     64(%[yuvconstants]),%%ymm10                     \n"           \
+    "vmovdqa     96(%[yuvconstants]),%%ymm11                     \n"           \
+    "vmovdqa     128(%[yuvconstants]),%%ymm12                    \n"           \
+    "vmovdqa     160(%[yuvconstants]),%%ymm13                    \n"           \
+    "vmovdqa     192(%[yuvconstants]),%%ymm14                    \n"
 
 #define YUVTORGB_AVX2(yuvconstants)                                   \
   "vpmaddubsw  %%ymm10,%%ymm0,%%ymm2                              \n" \
@@ -2222,16 +2222,16 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
 
 #define YUVTORGB_SETUP_AVX2(yuvconstants)
 #define YUVTORGB_AVX2(yuvconstants) \
-  "vpmaddubsw  " MEMACCESS2(64, [yuvconstants]) ",%%ymm0,%%ymm2     \n"        \
-    "vpmaddubsw  " MEMACCESS2(32, [yuvconstants]) ",%%ymm0,%%ymm1   \n"        \
-    "vpmaddubsw  " MEMACCESS([yuvconstants]) ",%%ymm0,%%ymm0        \n"        \
-    "vmovdqu     " MEMACCESS2(160, [yuvconstants]) ",%%ymm3         \n"        \
+  "vpmaddubsw  64(%[yuvconstants]),%%ymm0,%%ymm2                    \n"        \
+    "vpmaddubsw  32(%[yuvconstants]),%%ymm0,%%ymm1                  \n"        \
+    "vpmaddubsw  (%[yuvconstants]),%%ymm0,%%ymm0                    \n"        \
+    "vmovdqu     160(%[yuvconstants]),%%ymm3                        \n"        \
     "vpsubw      %%ymm2,%%ymm3,%%ymm2                               \n"        \
-    "vmovdqu     " MEMACCESS2(128, [yuvconstants]) ",%%ymm3         \n"        \
+    "vmovdqu     128(%[yuvconstants]),%%ymm3                        \n"        \
     "vpsubw      %%ymm1,%%ymm3,%%ymm1                               \n"        \
-    "vmovdqu     " MEMACCESS2(96, [yuvconstants]) ",%%ymm3          \n"        \
+    "vmovdqu     96(%[yuvconstants]),%%ymm3                         \n"        \
     "vpsubw      %%ymm0,%%ymm3,%%ymm0                               \n"        \
-    "vpmulhuw    " MEMACCESS2(192, [yuvconstants]) ",%%ymm4,%%ymm4  \n"        \
+    "vpmulhuw    192(%[yuvconstants]),%%ymm4,%%ymm4                 \n"        \
     "vpaddsw     %%ymm4,%%ymm0,%%ymm0                               \n"        \
     "vpaddsw     %%ymm4,%%ymm1,%%ymm1                               \n"        \
     "vpaddsw     %%ymm4,%%ymm2,%%ymm2                               \n"        \
@@ -2252,8 +2252,8 @@ void OMITFP I422ToRGBARow_SSSE3(const uint8* y_buf,
     "vpermq     $0xd8,%%ymm2,%%ymm2                                 \n"        \
     "vpunpcklwd %%ymm2,%%ymm0,%%ymm1                                \n"        \
     "vpunpckhwd %%ymm2,%%ymm0,%%ymm0                                \n"        \
-    "vmovdqu    %%ymm1," MEMACCESS([dst_argb]) "                    \n"        \
-    "vmovdqu    %%ymm0," MEMACCESS2(0x20, [dst_argb]) "             \n"        \
+    "vmovdqu    %%ymm1,(%[dst_argb])                                \n"        \
+    "vmovdqu    %%ymm0,0x20(%[dst_argb])                            \n"        \
     "lea       0x40(%[dst_argb]), %[dst_argb]                       \n"
 
 #ifdef HAS_I444TOARGBROW_AVX2
@@ -2427,8 +2427,8 @@ void OMITFP I422ToRGBARow_AVX2(const uint8* y_buf,
     "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
     "vpunpcklwd %%ymm1,%%ymm2,%%ymm0           \n"
     "vpunpckhwd %%ymm1,%%ymm2,%%ymm1           \n"
-    "vmovdqu    %%ymm0," MEMACCESS([dst_argb]) "\n"
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20,[dst_argb]) "\n"
+    "vmovdqu    %%ymm0,(%[dst_argb])            \n"
+    "vmovdqu    %%ymm1,0x20(%[dst_argb])              \n"
     "lea       0x40(%[dst_argb]),%[dst_argb]           \n"
     "sub       $0x10,%[width]                  \n"
     "jg        1b                              \n"
@@ -2593,7 +2593,7 @@ void I400ToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
     LABELALIGN
     "1:                                        \n"
     // Step 1: Scale Y contribution to 8 G values. G = (y - 16) * 1.164
-    "movq      " MEMACCESS(0) ",%%xmm0         \n"
+    "movq      (%0),%%xmm0                     \n"
     "lea       0x8(%0),%0                      \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
@@ -2608,8 +2608,8 @@ void I400ToARGBRow_SSE2(const uint8* y_buf, uint8* dst_argb, int width) {
     "punpckhwd %%xmm1,%%xmm1                   \n"
     "por       %%xmm4,%%xmm0                   \n"
     "por       %%xmm4,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
 
     "sub       $0x8,%2                         \n"
@@ -2641,7 +2641,7 @@ void I400ToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     LABELALIGN
     "1:                                        \n"
     // Step 1: Scale Y contribution to 16 G values. G = (y - 16) * 1.164
-    "vmovdqu    " MEMACCESS(0) ",%%xmm0        \n"
+    "vmovdqu    (%0),%%xmm0                    \n"
     "lea        0x10(%0),%0                    \n"
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpunpcklbw %%ymm0,%%ymm0,%%ymm0           \n"
@@ -2655,8 +2655,8 @@ void I400ToARGBRow_AVX2(const uint8* y_buf, uint8* dst_argb, int width) {
     "vpunpckhwd %%ymm1,%%ymm1,%%ymm1           \n"
     "vpor       %%ymm4,%%ymm0,%%ymm0           \n"
     "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
-    "vmovdqu    %%ymm1," MEMACCESS2(0x20,1) "  \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
+    "vmovdqu    %%ymm1,0x20(%1)                \n"
     "lea       0x40(%1),%1                     \n"
     "sub        $0x10,%2                       \n"
     "jg        1b                              \n"
@@ -2685,7 +2685,7 @@ void MirrorRow_SSSE3(const uint8* src, uint8* dst, int width) {
     "1:                                        \n"
     MEMOPREG(movdqu,-0x10,0,2,1,xmm0)          //  movdqu -0x10(%0,%2),%%xmm0
     "pshufb    %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -2710,7 +2710,7 @@ void MirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     MEMOPREG(vmovdqu,-0x20,0,2,1,ymm0)         //  vmovdqu -0x20(%0,%2),%%ymm0
     "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n"
     "vpermq     $0x4e,%%ymm0,%%ymm0            \n"
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -2741,10 +2741,10 @@ void MirrorUVRow_SSSE3(const uint8* src,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "lea       -0x10(%0),%0                    \n"
     "pshufb    %%xmm1,%%xmm0                   \n"
-    "movlpd    %%xmm0," MEMACCESS(1) "         \n"
+    "movlpd    %%xmm0,(%1)                     \n"
     MEMOPMEM(movhpd,xmm0,0x00,1,2,1)           //  movhpd    %%xmm0,(%1,%2)
     "lea       0x8(%1),%1                      \n"
     "sub       $8,%3                           \n"
@@ -2769,10 +2769,10 @@ void ARGBMirrorRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "pshufd    $0x1b,%%xmm0,%%xmm0             \n"
     "lea       -0x10(%0),%0                    \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -2797,7 +2797,7 @@ void ARGBMirrorRow_AVX2(const uint8* src, uint8* dst, int width) {
     LABELALIGN
     "1:                                        \n"
     VMEMOPREG(vpermd,-0x20,0,2,4,ymm5,ymm0) // vpermd -0x20(%0,%2,4),ymm5,ymm0
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     "lea        0x20(%1),%1                    \n"
     "sub        $0x8,%2                        \n"
     "jg         1b                             \n"
@@ -2824,8 +2824,8 @@ void SplitUVRow_AVX2(const uint8* src_uv,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
-    "vmovdqu    " MEMACCESS2(0x20,0) ",%%ymm1  \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
+    "vmovdqu    0x20(%0),%%ymm1                \n"
     "lea        0x40(%0),%0                    \n"
     "vpsrlw     $0x8,%%ymm0,%%ymm2             \n"
     "vpsrlw     $0x8,%%ymm1,%%ymm3             \n"
@@ -2835,7 +2835,7 @@ void SplitUVRow_AVX2(const uint8* src_uv,
     "vpackuswb  %%ymm3,%%ymm2,%%ymm2           \n"
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     MEMOPMEM(vmovdqu,ymm2,0x00,1,2,1)           //  vmovdqu %%ymm2,(%1,%2)
     "lea        0x20(%1),%1                    \n"
     "sub        $0x20,%3                       \n"
@@ -2864,8 +2864,8 @@ void SplitUVRow_SSE2(const uint8* src_uv,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS2(0x10,0) ",%%xmm1  \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     0x10(%0),%%xmm1                \n"
     "lea        0x20(%0),%0                    \n"
     "movdqa     %%xmm0,%%xmm2                  \n"
     "movdqa     %%xmm1,%%xmm3                  \n"
@@ -2875,7 +2875,7 @@ void SplitUVRow_SSE2(const uint8* src_uv,
     "psrlw      $0x8,%%xmm2                    \n"
     "psrlw      $0x8,%%xmm3                    \n"
     "packuswb   %%xmm3,%%xmm2                  \n"
-    "movdqu     %%xmm0," MEMACCESS(1) "        \n"
+    "movdqu     %%xmm0,(%1)                    \n"
     MEMOPMEM(movdqu,xmm2,0x00,1,2,1)           //  movdqu     %%xmm2,(%1,%2)
     "lea        0x10(%1),%1                    \n"
     "sub        $0x10,%3                       \n"
@@ -2901,15 +2901,15 @@ void MergeUVRow_AVX2(const uint8* src_u,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
     MEMOPREG(vmovdqu,0x00,0,1,1,ymm1)           //  vmovdqu (%0,%1,1),%%ymm1
     "lea       0x20(%0),%0                     \n"
     "vpunpcklbw %%ymm1,%%ymm0,%%ymm2           \n"
     "vpunpckhbw %%ymm1,%%ymm0,%%ymm0           \n"
-    "vextractf128 $0x0,%%ymm2," MEMACCESS(2) " \n"
-    "vextractf128 $0x0,%%ymm0," MEMACCESS2(0x10,2) "\n"
-    "vextractf128 $0x1,%%ymm2," MEMACCESS2(0x20,2) "\n"
-    "vextractf128 $0x1,%%ymm0," MEMACCESS2(0x30,2) "\n"
+    "vextractf128 $0x0,%%ymm2,(%2)             \n"
+    "vextractf128 $0x0,%%ymm0,0x10(%2)              \n"
+    "vextractf128 $0x1,%%ymm2,0x20(%2)              \n"
+    "vextractf128 $0x1,%%ymm0,0x30(%2)              \n"
     "lea       0x40(%2),%2                     \n"
     "sub       $0x20,%3                        \n"
     "jg        1b                              \n"
@@ -2935,14 +2935,14 @@ void MergeUVRow_SSE2(const uint8* src_u,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,1,1,xmm1)           //  movdqu    (%0,%1,1),%%xmm1
     "lea       0x10(%0),%0                     \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
     "punpcklbw %%xmm1,%%xmm0                   \n"
     "punpckhbw %%xmm1,%%xmm2                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x10,2) "   \n"
+    "movdqu    %%xmm0,(%2)                     \n"
+    "movdqu    %%xmm2,0x10(%2)                 \n"
     "lea       0x20(%2),%2                     \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -3229,37 +3229,37 @@ void SplitRGBRow_SSSE3(const uint8* src_rgb,
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS2(0x10,0) ",%%xmm1  \n"
-    "movdqu     " MEMACCESS2(0x20,0) ",%%xmm2  \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     0x10(%0),%%xmm1                \n"
+    "movdqu     0x20(%0),%%xmm2                \n"
     "pshufb     %5, %%xmm0                     \n"
     "pshufb     %6, %%xmm1                     \n"
     "pshufb     %7, %%xmm2                     \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS(1) "        \n"
+    "movdqu     %%xmm0,(%1)                    \n"
     "lea        0x10(%1),%1                    \n"
 
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS2(0x10,0) ",%%xmm1  \n"
-    "movdqu     " MEMACCESS2(0x20,0) ",%%xmm2  \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     0x10(%0),%%xmm1                \n"
+    "movdqu     0x20(%0),%%xmm2                \n"
     "pshufb     %8, %%xmm0                     \n"
     "pshufb     %9, %%xmm1                     \n"
     "pshufb     %10, %%xmm2                    \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS(2) "        \n"
+    "movdqu     %%xmm0,(%2)                    \n"
     "lea        0x10(%2),%2                    \n"
 
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS2(0x10,0) ",%%xmm1  \n"
-    "movdqu     " MEMACCESS2(0x20,0) ",%%xmm2  \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     0x10(%0),%%xmm1                \n"
+    "movdqu     0x20(%0),%%xmm2                \n"
     "pshufb     %11, %%xmm0                    \n"
     "pshufb     %12, %%xmm1                    \n"
     "pshufb     %13, %%xmm2                    \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS(3) "        \n"
+    "movdqu     %%xmm0,(%3)                    \n"
     "lea        0x10(%3),%3                    \n"
     "lea        0x30(%0),%0                    \n"
     "sub        $0x10,%4                       \n"
@@ -3325,35 +3325,35 @@ void MergeRGBRow_SSSE3(const uint8* src_r,
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS(1) ",%%xmm1        \n"
-    "movdqu     " MEMACCESS(2) ",%%xmm2        \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     (%1),%%xmm1                    \n"
+    "movdqu     (%2),%%xmm2                    \n"
     "pshufb     %5, %%xmm0                     \n"
     "pshufb     %6, %%xmm1                     \n"
     "pshufb     %7, %%xmm2                     \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS(3) "        \n"
+    "movdqu     %%xmm0,(%3)                    \n"
 
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS(1) ",%%xmm1        \n"
-    "movdqu     " MEMACCESS(2) ",%%xmm2        \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     (%1),%%xmm1                    \n"
+    "movdqu     (%2),%%xmm2                    \n"
     "pshufb     %8, %%xmm0                     \n"
     "pshufb     %9, %%xmm1                     \n"
     "pshufb     %10, %%xmm2                    \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS2(16, 3) "   \n"
+    "movdqu     %%xmm0,16(%3)                  \n"
 
-    "movdqu     " MEMACCESS(0) ",%%xmm0        \n"
-    "movdqu     " MEMACCESS(1) ",%%xmm1        \n"
-    "movdqu     " MEMACCESS(2) ",%%xmm2        \n"
+    "movdqu     (%0),%%xmm0                    \n"
+    "movdqu     (%1),%%xmm1                    \n"
+    "movdqu     (%2),%%xmm2                    \n"
     "pshufb     %11, %%xmm0                    \n"
     "pshufb     %12, %%xmm1                    \n"
     "pshufb     %13, %%xmm2                    \n"
     "por        %%xmm1,%%xmm0                  \n"
     "por        %%xmm2,%%xmm0                  \n"
-    "movdqu     %%xmm0," MEMACCESS2(32, 3) "   \n"
+    "movdqu     %%xmm0,32(%3)                  \n"
 
     "lea        0x10(%0),%0                    \n"
     "lea        0x10(%1),%1                    \n"
@@ -3391,11 +3391,11 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqa    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqa    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqa    (%0),%%xmm0                     \n"
+    "movdqa    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
-    "movdqa    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqa    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqa    %%xmm0,(%1)                     \n"
+    "movdqa    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -3403,11 +3403,11 @@ void CopyRow_SSE2(const uint8* src, uint8* dst, int count) {
 
     LABELALIGN
   "2:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        2b                              \n"
@@ -3427,11 +3427,11 @@ void CopyRow_AVX(const uint8* src, uint8* dst, int count) {
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
-    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
-    "vmovdqu   %%ymm1," MEMACCESS2(0x20,1) "   \n"
+    "vmovdqu   %%ymm0,(%1)                     \n"
+    "vmovdqu   %%ymm1,0x20(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x40,%2                        \n"
     "jg        1b                              \n"
@@ -3469,19 +3469,19 @@ void ARGBCopyAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm2                     \n"
+    "movdqu    0x10(%0),%%xmm3                 \n"
     "lea       0x20(%0),%0                     \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm4         \n"
-    "movdqu    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
+    "movdqu    (%1),%%xmm4                     \n"
+    "movdqu    0x10(%1),%%xmm5                 \n"
     "pand      %%xmm0,%%xmm2                   \n"
     "pand      %%xmm0,%%xmm3                   \n"
     "pand      %%xmm1,%%xmm4                   \n"
     "pand      %%xmm1,%%xmm5                   \n"
     "por       %%xmm4,%%xmm2                   \n"
     "por       %%xmm5,%%xmm3                   \n"
-    "movdqu    %%xmm2," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm2,(%1)                     \n"
+    "movdqu    %%xmm3,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -3504,13 +3504,13 @@ void ARGBCopyAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm1         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm2   \n"
+    "vmovdqu   (%0),%%ymm1                     \n"
+    "vmovdqu   0x20(%0),%%ymm2                 \n"
     "lea       0x40(%0),%0                     \n"
-    "vpblendvb %%ymm0," MEMACCESS(1) ",%%ymm1,%%ymm1        \n"
-    "vpblendvb %%ymm0," MEMACCESS2(0x20,1) ",%%ymm2,%%ymm2  \n"
-    "vmovdqu   %%ymm1," MEMACCESS(1) "         \n"
-    "vmovdqu   %%ymm2," MEMACCESS2(0x20,1) "   \n"
+    "vpblendvb %%ymm0,(%1),%%ymm1,%%ymm1                    \n"
+    "vpblendvb %%ymm0,0x20(%1),%%ymm2,%%ymm2                \n"
+    "vmovdqu   %%ymm1,(%1)                     \n"
+    "vmovdqu   %%ymm2,0x20(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -3531,14 +3531,14 @@ void ARGBExtractAlphaRow_SSE2(const uint8* src_argb, uint8* dst_a, int width) {
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ", %%xmm0        \n"
-    "movdqu    " MEMACCESS2(0x10, 0) ", %%xmm1 \n"
+    "movdqu    (%0), %%xmm0                    \n"
+    "movdqu    0x10(%0), %%xmm1                \n"
     "lea       0x20(%0), %0                    \n"
     "psrld     $0x18, %%xmm0                   \n"
     "psrld     $0x18, %%xmm1                   \n"
     "packssdw  %%xmm1, %%xmm0                  \n"
     "packuswb  %%xmm0, %%xmm0                  \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1), %1                     \n"
     "sub       $0x8, %2                        \n"
     "jg        1b                              \n"
@@ -3564,12 +3564,12 @@ void ARGBExtractAlphaRow_AVX2(const uint8* src_argb, uint8* dst_a, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ", %%ymm0        \n"
-    "vmovdqu   " MEMACCESS2(0x20, 0) ", %%ymm1 \n"
+    "vmovdqu   (%0), %%ymm0                    \n"
+    "vmovdqu   0x20(%0), %%ymm1                \n"
     "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n" // vpsrld $0x18, %%ymm0
     "vpshufb    %%ymm5,%%ymm1,%%ymm1           \n"
-    "vmovdqu   " MEMACCESS2(0x40, 0) ", %%ymm2 \n"
-    "vmovdqu   " MEMACCESS2(0x60, 0) ", %%ymm3 \n"
+    "vmovdqu   0x40(%0), %%ymm2                \n"
+    "vmovdqu   0x60(%0), %%ymm3                \n"
     "lea       0x80(%0), %0                    \n"
     "vpackssdw  %%ymm1, %%ymm0, %%ymm0         \n"  // mutates
     "vpshufb    %%ymm5,%%ymm2,%%ymm2           \n"
@@ -3577,7 +3577,7 @@ void ARGBExtractAlphaRow_AVX2(const uint8* src_argb, uint8* dst_a, int width) {
     "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // mutates
     "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
     "vpermd     %%ymm0,%%ymm4,%%ymm0           \n"  // unmutate.
-    "vmovdqu    %%ymm0," MEMACCESS(1) "        \n"
+    "vmovdqu    %%ymm0,(%1)                    \n"
     "lea       0x20(%1),%1                     \n"
     "sub        $0x20, %2                      \n"
     "jg         1b                             \n"
@@ -3604,21 +3604,21 @@ void ARGBCopyYToAlphaRow_SSE2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movq      " MEMACCESS(0) ",%%xmm2         \n"
+    "movq      (%0),%%xmm2                     \n"
     "lea       0x8(%0),%0                      \n"
     "punpcklbw %%xmm2,%%xmm2                   \n"
     "punpckhwd %%xmm2,%%xmm3                   \n"
     "punpcklwd %%xmm2,%%xmm2                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm4         \n"
-    "movdqu    " MEMACCESS2(0x10,1) ",%%xmm5   \n"
+    "movdqu    (%1),%%xmm4                     \n"
+    "movdqu    0x10(%1),%%xmm5                 \n"
     "pand      %%xmm0,%%xmm2                   \n"
     "pand      %%xmm0,%%xmm3                   \n"
     "pand      %%xmm1,%%xmm4                   \n"
     "pand      %%xmm1,%%xmm5                   \n"
     "por       %%xmm4,%%xmm2                   \n"
     "por       %%xmm5,%%xmm3                   \n"
-    "movdqu    %%xmm2," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm2,(%1)                     \n"
+    "movdqu    %%xmm3,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -3641,15 +3641,15 @@ void ARGBCopyYToAlphaRow_AVX2(const uint8* src, uint8* dst, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vpmovzxbd " MEMACCESS(0) ",%%ymm1         \n"
-    "vpmovzxbd " MEMACCESS2(0x8,0) ",%%ymm2    \n"
+    "vpmovzxbd (%0),%%ymm1                     \n"
+    "vpmovzxbd 0x8(%0),%%ymm2                  \n"
     "lea       0x10(%0),%0                     \n"
     "vpslld    $0x18,%%ymm1,%%ymm1             \n"
     "vpslld    $0x18,%%ymm2,%%ymm2             \n"
-    "vpblendvb %%ymm0," MEMACCESS(1) ",%%ymm1,%%ymm1        \n"
-    "vpblendvb %%ymm0," MEMACCESS2(0x20,1) ",%%ymm2,%%ymm2  \n"
-    "vmovdqu   %%ymm1," MEMACCESS(1) "         \n"
-    "vmovdqu   %%ymm2," MEMACCESS2(0x20,1) "   \n"
+    "vpblendvb %%ymm0,(%1),%%ymm1,%%ymm1                    \n"
+    "vpblendvb %%ymm0,0x20(%1),%%ymm2,%%ymm2                \n"
+    "vmovdqu   %%ymm1,(%1)                     \n"
+    "vmovdqu   %%ymm2,0x20(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -3702,13 +3702,13 @@ void YUY2ToYRow_SSE2(const uint8* src_yuy2, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -3733,8 +3733,8 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm2)           //  movdqu  (%0,%4,1),%%xmm2
     MEMOPREG(movdqu,0x10,0,4,1,xmm3)           //  movdqu  0x10(%0,%4,1),%%xmm3
     "lea       0x20(%0),%0                     \n"
@@ -3748,7 +3748,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -3774,8 +3774,8 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
@@ -3785,7 +3785,7 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -3804,13 +3804,13 @@ void UYVYToYRow_SSE2(const uint8* src_uyvy, uint8* dst_y, int width) {
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -3835,8 +3835,8 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     MEMOPREG(movdqu,0x00,0,4,1,xmm2)           //  movdqu  (%0,%4,1),%%xmm2
     MEMOPREG(movdqu,0x10,0,4,1,xmm3)           //  movdqu  0x10(%0,%4,1),%%xmm3
     "lea       0x20(%0),%0                     \n"
@@ -3850,7 +3850,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -3876,8 +3876,8 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
 
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
     "pand      %%xmm5,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
@@ -3887,7 +3887,7 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
@@ -3911,14 +3911,14 @@ void YUY2ToYRow_AVX2(const uint8* src_yuy2, uint8* dst_y, int width) {
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
     "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
     "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
     "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
+    "vmovdqu   %%ymm0,(%1)                     \n"
     "lea      0x20(%1),%1                      \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -3944,8 +3944,8 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
     "lea       0x40(%0),%0                     \n"
@@ -3959,7 +3959,7 @@ void YUY2ToUVRow_AVX2(const uint8* src_yuy2,
     "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm1,(%1)             \n"
     VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
@@ -3986,8 +3986,8 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
     "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
     "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
@@ -3999,7 +3999,7 @@ void YUY2ToUV422Row_AVX2(const uint8* src_yuy2,
     "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm1,(%1)             \n"
     VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
@@ -4019,14 +4019,14 @@ void UYVYToYRow_AVX2(const uint8* src_uyvy, uint8* dst_y, int width) {
   asm volatile (
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
     "vpsrlw    $0x8,%%ymm0,%%ymm0              \n"
     "vpsrlw    $0x8,%%ymm1,%%ymm1              \n"
     "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
+    "vmovdqu   %%ymm0,(%1)                     \n"
     "lea      0x20(%1),%1                      \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -4051,8 +4051,8 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     VMEMOPREG(vpavgb,0x00,0,4,1,ymm0,ymm0)     // vpavgb (%0,%4,1),%%ymm0,%%ymm0
     VMEMOPREG(vpavgb,0x20,0,4,1,ymm1,ymm1)
     "lea       0x40(%0),%0                     \n"
@@ -4066,7 +4066,7 @@ void UYVYToUVRow_AVX2(const uint8* src_uyvy,
     "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm1,(%1)             \n"
     VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
@@ -4093,8 +4093,8 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
 
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
     "vpand     %%ymm5,%%ymm0,%%ymm0            \n"
     "vpand     %%ymm5,%%ymm1,%%ymm1            \n"
@@ -4106,7 +4106,7 @@ void UYVYToUV422Row_AVX2(const uint8* src_uyvy,
     "vpackuswb %%ymm0,%%ymm0,%%ymm0            \n"
     "vpermq    $0xd8,%%ymm1,%%ymm1             \n"
     "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
-    "vextractf128 $0x0,%%ymm1," MEMACCESS(1) " \n"
+    "vextractf128 $0x0,%%ymm1,(%1)             \n"
     VEXTOPMEM(vextractf128,0,ymm0,0x00,1,2,1) // vextractf128 $0x0,%%ymm0,(%1,%2,1)
     "lea      0x10(%1),%1                      \n"
     "sub       $0x20,%3                        \n"
@@ -4148,16 +4148,16 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
   "40:                                         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm3         \n"
+    "movdqu    (%0),%%xmm3                     \n"
     "lea       0x10(%0),%0                     \n"
     "movdqa    %%xmm3,%%xmm0                   \n"
     "pxor      %%xmm4,%%xmm3                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
+    "movdqu    (%1),%%xmm2                     \n"
     "pshufb    %4,%%xmm3                       \n"
     "pand      %%xmm6,%%xmm2                   \n"
     "paddw     %%xmm7,%%xmm3                   \n"
     "pmullw    %%xmm3,%%xmm2                   \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
+    "movdqu    (%1),%%xmm1                     \n"
     "lea       0x10(%1),%1                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "por       %%xmm4,%%xmm0                   \n"
@@ -4166,7 +4166,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0,
     "paddusb   %%xmm2,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jge       40b                             \n"
@@ -4177,16 +4177,16 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0,
 
     // 1 pixel loop.
   "91:                                         \n"
-    "movd      " MEMACCESS(0) ",%%xmm3         \n"
+    "movd      (%0),%%xmm3                     \n"
     "lea       0x4(%0),%0                      \n"
     "movdqa    %%xmm3,%%xmm0                   \n"
     "pxor      %%xmm4,%%xmm3                   \n"
-    "movd      " MEMACCESS(1) ",%%xmm2         \n"
+    "movd      (%1),%%xmm2                     \n"
     "pshufb    %4,%%xmm3                       \n"
     "pand      %%xmm6,%%xmm2                   \n"
     "paddw     %%xmm7,%%xmm3                   \n"
     "pmullw    %%xmm3,%%xmm2                   \n"
-    "movd      " MEMACCESS(1) ",%%xmm1         \n"
+    "movd      (%1),%%xmm1                     \n"
     "lea       0x4(%1),%1                      \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "por       %%xmm4,%%xmm0                   \n"
@@ -4195,7 +4195,7 @@ void ARGBBlendRow_SSSE3(const uint8* src_argb0,
     "paddusb   %%xmm2,%%xmm0                   \n"
     "pand      %%xmm5,%%xmm1                   \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
-    "movd      %%xmm0," MEMACCESS(2) "         \n"
+    "movd      %%xmm0,(%2)                     \n"
     "lea       0x4(%2),%2                      \n"
     "sub       $0x1,%3                         \n"
     "jge       91b                             \n"
@@ -4341,24 +4341,24 @@ void ARGBAttenuateRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "pshufb    %%xmm4,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
+    "movdqu    (%0),%%xmm1                     \n"
     "punpcklbw %%xmm1,%%xmm1                   \n"
     "pmulhuw   %%xmm1,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
+    "movdqu    (%0),%%xmm1                     \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
+    "movdqu    (%0),%%xmm2                     \n"
     "punpckhbw %%xmm2,%%xmm2                   \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
+    "movdqu    (%0),%%xmm2                     \n"
     "lea       0x10(%0),%0                     \n"
     "pand      %%xmm3,%%xmm2                   \n"
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "por       %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -4389,7 +4389,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm6        \n"
+    "vmovdqu    (%0),%%ymm6                    \n"
     "vpunpcklbw %%ymm6,%%ymm6,%%ymm0           \n"
     "vpunpckhbw %%ymm6,%%ymm6,%%ymm1           \n"
     "vpshufb    %%ymm4,%%ymm0,%%ymm2           \n"
@@ -4426,21 +4426,21 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movzb     " MEMACCESS2(0x03,0) ",%3       \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movzb     0x03(%0),%3                     \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
     MEMOPREG(movd,0x00,4,3,4,xmm2)             //  movd      0x0(%4,%3,4),%%xmm2
-    "movzb     " MEMACCESS2(0x07,0) ",%3       \n"
+    "movzb     0x07(%0),%3                     \n"
     MEMOPREG(movd,0x00,4,3,4,xmm3)             //  movd      0x0(%4,%3,4),%%xmm3
     "pshuflw   $0x40,%%xmm2,%%xmm2             \n"
     "pshuflw   $0x40,%%xmm3,%%xmm3             \n"
     "movlhps   %%xmm3,%%xmm2                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
-    "movzb     " MEMACCESS2(0x0b,0) ",%3       \n"
+    "movdqu    (%0),%%xmm1                     \n"
+    "movzb     0x0b(%0),%3                     \n"
     "punpckhbw %%xmm1,%%xmm1                   \n"
     MEMOPREG(movd,0x00,4,3,4,xmm2)             //  movd      0x0(%4,%3,4),%%xmm2
-    "movzb     " MEMACCESS2(0x0f,0) ",%3       \n"
+    "movzb     0x0f(%0),%3                     \n"
     MEMOPREG(movd,0x00,4,3,4,xmm3)             //  movd      0x0(%4,%3,4),%%xmm3
     "pshuflw   $0x40,%%xmm2,%%xmm2             \n"
     "pshuflw   $0x40,%%xmm3,%%xmm3             \n"
@@ -4448,7 +4448,7 @@ void ARGBUnattenuateRow_SSE2(const uint8* src_argb,
     "pmulhuw   %%xmm2,%%xmm1                   \n"
     "lea       0x10(%0),%0                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -4480,24 +4480,24 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb,
     LABELALIGN
     "1:                                        \n"
     // replace VPGATHER
-    "movzb     " MEMACCESS2(0x03,0) ",%3       \n"
+    "movzb     0x03(%0),%3                     \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm0)             //  vmovd 0x0(%4,%3,4),%%xmm0
-    "movzb     " MEMACCESS2(0x07,0) ",%3       \n"
+    "movzb     0x07(%0),%3                     \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm1)             //  vmovd 0x0(%4,%3,4),%%xmm1
-    "movzb     " MEMACCESS2(0x0b,0) ",%3       \n"
+    "movzb     0x0b(%0),%3                     \n"
     "vpunpckldq %%xmm1,%%xmm0,%%xmm6           \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm2)             //  vmovd 0x0(%4,%3,4),%%xmm2
-    "movzb     " MEMACCESS2(0x0f,0) ",%3       \n"
+    "movzb     0x0f(%0),%3                     \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm3)             //  vmovd 0x0(%4,%3,4),%%xmm3
-    "movzb     " MEMACCESS2(0x13,0) ",%3       \n"
+    "movzb     0x13(%0),%3                     \n"
     "vpunpckldq %%xmm3,%%xmm2,%%xmm7           \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm0)             //  vmovd 0x0(%4,%3,4),%%xmm0
-    "movzb     " MEMACCESS2(0x17,0) ",%3       \n"
+    "movzb     0x17(%0),%3                     \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm1)             //  vmovd 0x0(%4,%3,4),%%xmm1
-    "movzb     " MEMACCESS2(0x1b,0) ",%3       \n"
+    "movzb     0x1b(%0),%3                     \n"
     "vpunpckldq %%xmm1,%%xmm0,%%xmm0           \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm2)             //  vmovd 0x0(%4,%3,4),%%xmm2
-    "movzb     " MEMACCESS2(0x1f,0) ",%3       \n"
+    "movzb     0x1f(%0),%3                     \n"
     MEMOPREG(vmovd,0x00,4,3,4,xmm3)             //  vmovd 0x0(%4,%3,4),%%xmm3
     "vpunpckldq %%xmm3,%%xmm2,%%xmm2           \n"
     "vpunpcklqdq %%xmm7,%%xmm6,%%xmm3          \n"
@@ -4505,7 +4505,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb,
     "vinserti128 $0x1,%%xmm0,%%ymm3,%%ymm3     \n"
     // end of VPGATHER
 
-    "vmovdqu    " MEMACCESS(0) ",%%ymm6        \n"
+    "vmovdqu    (%0),%%ymm6                    \n"
     "vpunpcklbw %%ymm6,%%ymm6,%%ymm0           \n"
     "vpunpckhbw %%ymm6,%%ymm6,%%ymm1           \n"
     "vpunpcklwd %%ymm3,%%ymm3,%%ymm2           \n"
@@ -4542,16 +4542,16 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "pmaddubsw %%xmm4,%%xmm0                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "phaddw    %%xmm1,%%xmm0                   \n"
     "paddw     %%xmm5,%%xmm0                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm2                     \n"
+    "movdqu    0x10(%0),%%xmm3                 \n"
     "lea       0x20(%0),%0                     \n"
     "psrld     $0x18,%%xmm2                    \n"
     "psrld     $0x18,%%xmm3                    \n"
@@ -4563,8 +4563,8 @@ void ARGBGrayRow_SSSE3(const uint8* src_argb, uint8* dst_argb, int width) {
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm3,%%xmm0                   \n"
     "punpckhwd %%xmm3,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -4603,30 +4603,30 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm6   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm6                 \n"
     "pmaddubsw %%xmm2,%%xmm0                   \n"
     "pmaddubsw %%xmm2,%%xmm6                   \n"
     "phaddw    %%xmm6,%%xmm0                   \n"
     "psrlw     $0x7,%%xmm0                     \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm5         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm5                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "pmaddubsw %%xmm3,%%xmm5                   \n"
     "pmaddubsw %%xmm3,%%xmm1                   \n"
     "phaddw    %%xmm1,%%xmm5                   \n"
     "psrlw     $0x7,%%xmm5                     \n"
     "packuswb  %%xmm5,%%xmm5                   \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm5         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm5                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "pmaddubsw %%xmm4,%%xmm5                   \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "phaddw    %%xmm1,%%xmm5                   \n"
     "psrlw     $0x7,%%xmm5                     \n"
     "packuswb  %%xmm5,%%xmm5                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm6         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm6                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "psrld     $0x18,%%xmm6                    \n"
     "psrld     $0x18,%%xmm1                    \n"
     "packuswb  %%xmm1,%%xmm6                   \n"
@@ -4635,8 +4635,8 @@ void ARGBSepiaRow_SSSE3(uint8* dst_argb, int width) {
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklwd %%xmm5,%%xmm0                   \n"
     "punpckhwd %%xmm5,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(0) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,0) "   \n"
+    "movdqu    %%xmm0,(%0)                     \n"
+    "movdqu    %%xmm1,0x10(%0)                 \n"
     "lea       0x20(%0),%0                     \n"
     "sub       $0x8,%1                         \n"
     "jg        1b                              \n"
@@ -4659,7 +4659,7 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb,
                               const int8* matrix_argb,
                               int width) {
   asm volatile (
-    "movdqu    " MEMACCESS(3) ",%%xmm5         \n"
+    "movdqu    (%3),%%xmm5                     \n"
     "pshufd    $0x00,%%xmm5,%%xmm2             \n"
     "pshufd    $0x55,%%xmm5,%%xmm3             \n"
     "pshufd    $0xaa,%%xmm5,%%xmm4             \n"
@@ -4668,12 +4668,12 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm7   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm7                 \n"
     "pmaddubsw %%xmm2,%%xmm0                   \n"
     "pmaddubsw %%xmm2,%%xmm7                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm6         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm6                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "pmaddubsw %%xmm3,%%xmm6                   \n"
     "pmaddubsw %%xmm3,%%xmm1                   \n"
     "phaddsw   %%xmm7,%%xmm0                   \n"
@@ -4683,13 +4683,13 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb,
     "packuswb  %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm6,%%xmm6                   \n"
     "punpcklbw %%xmm6,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm7   \n"
+    "movdqu    (%0),%%xmm1                     \n"
+    "movdqu    0x10(%0),%%xmm7                 \n"
     "pmaddubsw %%xmm4,%%xmm1                   \n"
     "pmaddubsw %%xmm4,%%xmm7                   \n"
     "phaddsw   %%xmm7,%%xmm1                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm6         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm7   \n"
+    "movdqu    (%0),%%xmm6                     \n"
+    "movdqu    0x10(%0),%%xmm7                 \n"
     "pmaddubsw %%xmm5,%%xmm6                   \n"
     "pmaddubsw %%xmm5,%%xmm7                   \n"
     "phaddsw   %%xmm7,%%xmm6                   \n"
@@ -4701,8 +4701,8 @@ void ARGBColorMatrixRow_SSSE3(const uint8* src_argb,
     "movdqa    %%xmm0,%%xmm6                   \n"
     "punpcklwd %%xmm1,%%xmm0                   \n"
     "punpckhwd %%xmm1,%%xmm6                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm6," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm6,0x10(%1)                 \n"
     "lea       0x20(%0),%0                     \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
@@ -4741,21 +4741,21 @@ void ARGBQuantizeRow_SSE2(uint8* dst_argb,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "pmulhuw   %%xmm2,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm1         \n"
+    "movdqu    (%0),%%xmm1                     \n"
     "punpckhbw %%xmm5,%%xmm1                   \n"
     "pmulhuw   %%xmm2,%%xmm1                   \n"
     "pmullw    %%xmm3,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm7         \n"
+    "movdqu    (%0),%%xmm7                     \n"
     "pmullw    %%xmm3,%%xmm1                   \n"
     "pand      %%xmm6,%%xmm7                   \n"
     "paddw     %%xmm4,%%xmm0                   \n"
     "paddw     %%xmm4,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
     "por       %%xmm7,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(0) "         \n"
+    "movdqu    %%xmm0,(%0)                     \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x4,%1                         \n"
     "jg        1b                              \n"
@@ -4784,7 +4784,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "lea       0x10(%0),%0                     \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm0,%%xmm0                   \n"
@@ -4794,7 +4794,7 @@ void ARGBShadeRow_SSE2(const uint8* src_argb,
     "psrlw     $0x8,%%xmm0                     \n"
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm0,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x4,%2                         \n"
     "jg        1b                              \n"
@@ -4820,9 +4820,9 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "lea       0x10(%0),%0                     \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm2         \n"
+    "movdqu    (%1),%%xmm2                     \n"
     "lea       0x10(%1),%1                     \n"
     "movdqu    %%xmm0,%%xmm1                   \n"
     "movdqu    %%xmm2,%%xmm3                   \n"
@@ -4833,7 +4833,7 @@ void ARGBMultiplyRow_SSE2(const uint8* src_argb0,
     "pmulhuw   %%xmm2,%%xmm0                   \n"
     "pmulhuw   %%xmm3,%%xmm1                   \n"
     "packuswb  %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jg        1b                              \n"
@@ -4860,9 +4860,9 @@ void ARGBMultiplyRow_AVX2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm1        \n"
+    "vmovdqu    (%0),%%ymm1                    \n"
     "lea        0x20(%0),%0                    \n"
-    "vmovdqu    " MEMACCESS(1) ",%%ymm3        \n"
+    "vmovdqu    (%1),%%ymm3                    \n"
     "lea        0x20(%1),%1                    \n"
     "vpunpcklbw %%ymm1,%%ymm1,%%ymm0           \n"
     "vpunpckhbw %%ymm1,%%ymm1,%%ymm1           \n"
@@ -4871,7 +4871,7 @@ void ARGBMultiplyRow_AVX2(const uint8* src_argb0,
     "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
     "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
-    "vmovdqu    %%ymm0," MEMACCESS(2) "        \n"
+    "vmovdqu    %%ymm0,(%2)                    \n"
     "lea       0x20(%2),%2                     \n"
     "sub        $0x8,%3                        \n"
     "jg        1b                              \n"
@@ -4899,12 +4899,12 @@ void ARGBAddRow_SSE2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "lea       0x10(%0),%0                     \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
+    "movdqu    (%1),%%xmm1                     \n"
     "lea       0x10(%1),%1                     \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jg        1b                              \n"
@@ -4929,11 +4929,11 @@ void ARGBAddRow_AVX2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
     "lea        0x20(%0),%0                    \n"
-    "vpaddusb   " MEMACCESS(1) ",%%ymm0,%%ymm0 \n"
+    "vpaddusb   (%1),%%ymm0,%%ymm0             \n"
     "lea        0x20(%1),%1                    \n"
-    "vmovdqu    %%ymm0," MEMACCESS(2) "        \n"
+    "vmovdqu    %%ymm0,(%2)                    \n"
     "lea        0x20(%2),%2                    \n"
     "sub        $0x8,%3                        \n"
     "jg        1b                              \n"
@@ -4959,12 +4959,12 @@ void ARGBSubtractRow_SSE2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     "lea       0x10(%0),%0                     \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm1         \n"
+    "movdqu    (%1),%%xmm1                     \n"
     "lea       0x10(%1),%1                     \n"
     "psubusb   %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jg        1b                              \n"
@@ -4989,11 +4989,11 @@ void ARGBSubtractRow_AVX2(const uint8* src_argb0,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm0        \n"
+    "vmovdqu    (%0),%%ymm0                    \n"
     "lea        0x20(%0),%0                    \n"
-    "vpsubusb   " MEMACCESS(1) ",%%ymm0,%%ymm0 \n"
+    "vpsubusb   (%1),%%ymm0,%%ymm0             \n"
     "lea        0x20(%1),%1                    \n"
-    "vmovdqu    %%ymm0," MEMACCESS(2) "        \n"
+    "vmovdqu    %%ymm0,(%2)                    \n"
     "lea        0x20(%2),%2                    \n"
     "sub        $0x8,%3                        \n"
     "jg         1b                             \n"
@@ -5028,8 +5028,8 @@ void SobelXRow_SSE2(const uint8* src_y0,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movq      " MEMACCESS(0) ",%%xmm0         \n"
-    "movq      " MEMACCESS2(0x2,0) ",%%xmm1    \n"
+    "movq      (%0),%%xmm0                     \n"
+    "movq      0x2(%0),%%xmm1                  \n"
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "psubw     %%xmm1,%%xmm0                   \n"
@@ -5083,17 +5083,17 @@ void SobelYRow_SSE2(const uint8* src_y0,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movq      " MEMACCESS(0) ",%%xmm0         \n"
+    "movq      (%0),%%xmm0                     \n"
     MEMOPREG(movq,0x00,0,1,1,xmm1)             //  movq      (%0,%1,1),%%xmm1
     "punpcklbw %%xmm5,%%xmm0                   \n"
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "psubw     %%xmm1,%%xmm0                   \n"
-    "movq      " MEMACCESS2(0x1,0) ",%%xmm1    \n"
+    "movq      0x1(%0),%%xmm1                  \n"
     MEMOPREG(movq,0x01,0,1,1,xmm2)             //  movq      0x1(%0,%1,1),%%xmm2
     "punpcklbw %%xmm5,%%xmm1                   \n"
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "psubw     %%xmm2,%%xmm1                   \n"
-    "movq      " MEMACCESS2(0x2,0) ",%%xmm2    \n"
+    "movq      0x2(%0),%%xmm2                  \n"
     MEMOPREG(movq,0x02,0,1,1,xmm3)             //  movq      0x2(%0,%1,1),%%xmm3
     "punpcklbw %%xmm5,%%xmm2                   \n"
     "punpcklbw %%xmm5,%%xmm3                   \n"
@@ -5138,7 +5138,7 @@ void SobelRow_SSE2(const uint8* src_sobelx,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,1,1,xmm1)           //  movdqu    (%0,%1,1),%%xmm1
     "lea       0x10(%0),%0                     \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
@@ -5155,10 +5155,10 @@ void SobelRow_SSE2(const uint8* src_sobelx,
     "punpckhwd %%xmm0,%%xmm0                   \n"
     "por       %%xmm5,%%xmm3                   \n"
     "por       %%xmm5,%%xmm0                   \n"
-    "movdqu    %%xmm1," MEMACCESS(2) "         \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x10,2) "   \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x20,2) "   \n"
-    "movdqu    %%xmm0," MEMACCESS2(0x30,2) "   \n"
+    "movdqu    %%xmm1,(%2)                     \n"
+    "movdqu    %%xmm2,0x10(%2)                 \n"
+    "movdqu    %%xmm3,0x20(%2)                 \n"
+    "movdqu    %%xmm0,0x30(%2)                 \n"
     "lea       0x40(%2),%2                     \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -5187,11 +5187,11 @@ void SobelToPlaneRow_SSE2(const uint8* src_sobelx,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,1,1,xmm1)           //  movdqu    (%0,%1,1),%%xmm1
     "lea       0x10(%0),%0                     \n"
     "paddusb   %%xmm1,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -5223,7 +5223,7 @@ void SobelXYRow_SSE2(const uint8* src_sobelx,
     // 8 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,0,1,1,xmm1)           //  movdqu    (%0,%1,1),%%xmm1
     "lea       0x10(%0),%0                     \n"
     "movdqa    %%xmm0,%%xmm2                   \n"
@@ -5240,10 +5240,10 @@ void SobelXYRow_SSE2(const uint8* src_sobelx,
     "movdqa    %%xmm1,%%xmm7                   \n"
     "punpcklwd %%xmm0,%%xmm7                   \n"
     "punpckhwd %%xmm0,%%xmm1                   \n"
-    "movdqu    %%xmm6," MEMACCESS(2) "         \n"
-    "movdqu    %%xmm4," MEMACCESS2(0x10,2) "   \n"
-    "movdqu    %%xmm7," MEMACCESS2(0x20,2) "   \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x30,2) "   \n"
+    "movdqu    %%xmm6,(%2)                     \n"
+    "movdqu    %%xmm4,0x10(%2)                 \n"
+    "movdqu    %%xmm7,0x20(%2)                 \n"
+    "movdqu    %%xmm1,0x30(%2)                 \n"
     "lea       0x40(%2),%2                     \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -5276,7 +5276,7 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row,
     // 4 pixel loop.
     LABELALIGN
     "40:                                       \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm2         \n"
+    "movdqu    (%0),%%xmm2                     \n"
     "lea       0x10(%0),%0                     \n"
     "movdqa    %%xmm2,%%xmm4                   \n"
     "punpcklbw %%xmm1,%%xmm2                   \n"
@@ -5288,22 +5288,22 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row,
     "punpcklwd %%xmm1,%%xmm4                   \n"
     "punpckhwd %%xmm1,%%xmm5                   \n"
     "paddd     %%xmm2,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(2) ",%%xmm2         \n"
+    "movdqu    (%2),%%xmm2                     \n"
     "paddd     %%xmm0,%%xmm2                   \n"
     "paddd     %%xmm3,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x10,2) ",%%xmm3   \n"
+    "movdqu    0x10(%2),%%xmm3                 \n"
     "paddd     %%xmm0,%%xmm3                   \n"
     "paddd     %%xmm4,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x20,2) ",%%xmm4   \n"
+    "movdqu    0x20(%2),%%xmm4                 \n"
     "paddd     %%xmm0,%%xmm4                   \n"
     "paddd     %%xmm5,%%xmm0                   \n"
-    "movdqu    " MEMACCESS2(0x30,2) ",%%xmm5   \n"
+    "movdqu    0x30(%2),%%xmm5                 \n"
     "lea       0x40(%2),%2                     \n"
     "paddd     %%xmm0,%%xmm5                   \n"
-    "movdqu    %%xmm2," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm3," MEMACCESS2(0x10,1) "   \n"
-    "movdqu    %%xmm4," MEMACCESS2(0x20,1) "   \n"
-    "movdqu    %%xmm5," MEMACCESS2(0x30,1) "   \n"
+    "movdqu    %%xmm2,(%1)                     \n"
+    "movdqu    %%xmm3,0x10(%1)                 \n"
+    "movdqu    %%xmm4,0x20(%1)                 \n"
+    "movdqu    %%xmm5,0x30(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x4,%3                         \n"
     "jge       40b                             \n"
@@ -5315,15 +5315,15 @@ void ComputeCumulativeSumRow_SSE2(const uint8* row,
     // 1 pixel loop.
     LABELALIGN
     "10:                                       \n"
-    "movd      " MEMACCESS(0) ",%%xmm2         \n"
+    "movd      (%0),%%xmm2                     \n"
     "lea       0x4(%0),%0                      \n"
     "punpcklbw %%xmm1,%%xmm2                   \n"
     "punpcklwd %%xmm1,%%xmm2                   \n"
     "paddd     %%xmm2,%%xmm0                   \n"
-    "movdqu    " MEMACCESS(2) ",%%xmm2         \n"
+    "movdqu    (%2),%%xmm2                     \n"
     "lea       0x10(%2),%2                     \n"
     "paddd     %%xmm0,%%xmm2                   \n"
-    "movdqu    %%xmm2," MEMACCESS(1) "         \n"
+    "movdqu    %%xmm2,(%1)                     \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x1,%3                         \n"
     "jge       10b                             \n"
@@ -5369,19 +5369,19 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
     // 4 pixel small loop.
     LABELALIGN
   "4:                                          \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
     MEMOPREG(psubd,0x10,0,4,4,xmm1)            // psubd    0x10(%0,%4,4),%%xmm1
     MEMOPREG(psubd,0x20,0,4,4,xmm2)            // psubd    0x20(%0,%4,4),%%xmm2
     MEMOPREG(psubd,0x30,0,4,4,xmm3)            // psubd    0x30(%0,%4,4),%%xmm3
     "lea       0x40(%0),%0                     \n"
-    "psubd     " MEMACCESS(1) ",%%xmm0         \n"
-    "psubd     " MEMACCESS2(0x10,1) ",%%xmm1   \n"
-    "psubd     " MEMACCESS2(0x20,1) ",%%xmm2   \n"
-    "psubd     " MEMACCESS2(0x30,1) ",%%xmm3   \n"
+    "psubd     (%1),%%xmm0                     \n"
+    "psubd     0x10(%1),%%xmm1                 \n"
+    "psubd     0x20(%1),%%xmm2                 \n"
+    "psubd     0x30(%1),%%xmm3                 \n"
     MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
     MEMOPREG(paddd,0x10,1,4,4,xmm1)            // paddd    0x10(%1,%4,4),%%xmm1
     MEMOPREG(paddd,0x20,1,4,4,xmm2)            // paddd    0x20(%1,%4,4),%%xmm2
@@ -5392,7 +5392,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
     "pmulhuw   %%xmm5,%%xmm0                   \n"
     "pmulhuw   %%xmm5,%%xmm2                   \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jge       4b                              \n"
@@ -5401,19 +5401,19 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
   // 4 pixel loop                              \n"
     LABELALIGN
   "40:                                         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
-    "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
-    "movdqu    " MEMACCESS2(0x30,0) ",%%xmm3   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
+    "movdqu    0x20(%0),%%xmm2                 \n"
+    "movdqu    0x30(%0),%%xmm3                 \n"
     MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
     MEMOPREG(psubd,0x10,0,4,4,xmm1)            // psubd    0x10(%0,%4,4),%%xmm1
     MEMOPREG(psubd,0x20,0,4,4,xmm2)            // psubd    0x20(%0,%4,4),%%xmm2
     MEMOPREG(psubd,0x30,0,4,4,xmm3)            // psubd    0x30(%0,%4,4),%%xmm3
     "lea       0x40(%0),%0                     \n"
-    "psubd     " MEMACCESS(1) ",%%xmm0         \n"
-    "psubd     " MEMACCESS2(0x10,1) ",%%xmm1   \n"
-    "psubd     " MEMACCESS2(0x20,1) ",%%xmm2   \n"
-    "psubd     " MEMACCESS2(0x30,1) ",%%xmm3   \n"
+    "psubd     (%1),%%xmm0                     \n"
+    "psubd     0x10(%1),%%xmm1                 \n"
+    "psubd     0x20(%1),%%xmm2                 \n"
+    "psubd     0x30(%1),%%xmm3                 \n"
     MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
     MEMOPREG(paddd,0x10,1,4,4,xmm1)            // paddd    0x10(%1,%4,4),%%xmm1
     MEMOPREG(paddd,0x20,1,4,4,xmm2)            // paddd    0x20(%1,%4,4),%%xmm2
@@ -5434,7 +5434,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
     "packssdw  %%xmm1,%%xmm0                   \n"
     "packssdw  %%xmm3,%%xmm2                   \n"
     "packuswb  %%xmm2,%%xmm0                   \n"
-    "movdqu    %%xmm0," MEMACCESS(2) "         \n"
+    "movdqu    %%xmm0,(%2)                     \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%3                         \n"
     "jge       40b                             \n"
@@ -5446,10 +5446,10 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
   // 1 pixel loop                              \n"
     LABELALIGN
   "10:                                         \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
+    "movdqu    (%0),%%xmm0                     \n"
     MEMOPREG(psubd,0x00,0,4,4,xmm0)            // psubd    0x00(%0,%4,4),%%xmm0
     "lea       0x10(%0),%0                     \n"
-    "psubd     " MEMACCESS(1) ",%%xmm0         \n"
+    "psubd     (%1),%%xmm0                     \n"
     MEMOPREG(paddd,0x00,1,4,4,xmm0)            // paddd    0x00(%1,%4,4),%%xmm0
     "lea       0x10(%1),%1                     \n"
     "cvtdq2ps  %%xmm0,%%xmm0                   \n"
@@ -5457,7 +5457,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
     "cvtps2dq  %%xmm0,%%xmm0                   \n"
     "packssdw  %%xmm0,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movd      %%xmm0," MEMACCESS(2) "         \n"
+    "movd      %%xmm0,(%2)                     \n"
     "lea       0x4(%2),%2                      \n"
     "sub       $0x1,%3                         \n"
     "jge       10b                             \n"
@@ -5485,8 +5485,8 @@ void ARGBAffineRow_SSE2(const uint8* src_argb,
   intptr_t src_argb_stride_temp = src_argb_stride;
   intptr_t temp;
   asm volatile (
-    "movq      " MEMACCESS(3) ",%%xmm2         \n"
-    "movq      " MEMACCESS2(0x08,3) ",%%xmm7   \n"
+    "movq      (%3),%%xmm2                     \n"
+    "movq      0x08(%3),%%xmm7                 \n"
     "shl       $0x10,%1                        \n"
     "add       $0x4,%1                         \n"
     "movd      %1,%%xmm5                       \n"
@@ -5519,7 +5519,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb,
     MEMOPREG(movd,0x00,0,5,1,xmm6)             //  movd      (%0,%5,1),%%xmm6
     "punpckldq %%xmm6,%%xmm1                   \n"
     "addps     %%xmm4,%%xmm2                   \n"
-    "movq      %%xmm1," MEMACCESS(2) "         \n"
+    "movq      %%xmm1,(%2)                     \n"
     "movd      %%xmm0,%k1                      \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
     "movd      %%xmm0,%k5                      \n"
@@ -5527,7 +5527,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb,
     MEMOPREG(movd,0x00,0,5,1,xmm6)             //  movd      (%0,%5,1),%%xmm6
     "punpckldq %%xmm6,%%xmm0                   \n"
     "addps     %%xmm4,%%xmm3                   \n"
-    "movq      %%xmm0," MEMACCESS2(0x08,2) "   \n"
+    "movq      %%xmm0,0x08(%2)                 \n"
     "lea       0x10(%2),%2                     \n"
     "sub       $0x4,%4                         \n"
     "jge       40b                             \n"
@@ -5545,7 +5545,7 @@ void ARGBAffineRow_SSE2(const uint8* src_argb,
     "addps     %%xmm7,%%xmm2                   \n"
     "movd      %%xmm0,%k1                      \n"
     MEMOPREG(movd,0x00,0,1,1,xmm0)             //  movd      (%0,%1,1),%%xmm0
-    "movd      %%xmm0," MEMACCESS(2) "         \n"
+    "movd      %%xmm0,(%2)                     \n"
     "lea       0x04(%2),%2                     \n"
     "sub       $0x1,%4                         \n"
     "jge       10b                             \n"
@@ -5591,7 +5591,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     // General purpose row blend.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    (%1),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,1,4,1,xmm2)
     "movdqa     %%xmm0,%%xmm1                  \n"
     "punpcklbw  %%xmm2,%%xmm0                  \n"
@@ -5616,7 +5616,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     // Blend 50 / 50.
     LABELALIGN
   "50:                                         \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    (%1),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,1,4,1,xmm1)
     "pavgb     %%xmm1,%%xmm0                   \n"
     MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
@@ -5628,7 +5628,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     // Blend 100 / 0 - Copy row unchanged.
     LABELALIGN
   "100:                                        \n"
-    "movdqu    " MEMACCESS(1) ",%%xmm0         \n"
+    "movdqu    (%1),%%xmm0                     \n"
     MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
@@ -5674,7 +5674,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     // General purpose row blend.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
+    "vmovdqu    (%1),%%ymm0                    \n"
     MEMOPREG(vmovdqu,0x00,1,4,1,ymm2)
     "vpunpckhbw %%ymm2,%%ymm0,%%ymm1           \n"
     "vpunpcklbw %%ymm2,%%ymm0,%%ymm0           \n"
@@ -5696,7 +5696,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     // Blend 50 / 50.
     LABELALIGN
   "50:                                         \n"
-    "vmovdqu    " MEMACCESS(1) ",%%ymm0        \n"
+    "vmovdqu    (%1),%%ymm0                    \n"
     VMEMOPREG(vpavgb,0x00,1,4,1,ymm0,ymm0)     // vpavgb (%1,%4,1),%%ymm0,%%ymm0
     MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
     "lea       0x20(%1),%1                     \n"
@@ -5731,16 +5731,16 @@ void ARGBShuffleRow_SSSE3(const uint8* src_argb,
                           const uint8* shuffler,
                           int width) {
   asm volatile (
-    "movdqu    " MEMACCESS(3) ",%%xmm5         \n"
+    "movdqu    (%3),%%xmm5                     \n"
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
-    "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
+    "movdqu    (%0),%%xmm0                     \n"
+    "movdqu    0x10(%0),%%xmm1                 \n"
     "lea       0x20(%0),%0                     \n"
     "pshufb    %%xmm5,%%xmm0                   \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
-    "movdqu    %%xmm0," MEMACCESS(1) "         \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,1) "   \n"
+    "movdqu    %%xmm0,(%1)                     \n"
+    "movdqu    %%xmm1,0x10(%1)                 \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -5761,16 +5761,16 @@ void ARGBShuffleRow_AVX2(const uint8* src_argb,
                          const uint8* shuffler,
                          int width) {
   asm volatile (
-    "vbroadcastf128 " MEMACCESS(3) ",%%ymm5    \n"
+    "vbroadcastf128 (%3),%%ymm5                \n"
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu   " MEMACCESS(0) ",%%ymm0         \n"
-    "vmovdqu   " MEMACCESS2(0x20,0) ",%%ymm1   \n"
+    "vmovdqu   (%0),%%ymm0                     \n"
+    "vmovdqu   0x20(%0),%%ymm1                 \n"
     "lea       0x40(%0),%0                     \n"
     "vpshufb   %%ymm5,%%ymm0,%%ymm0            \n"
     "vpshufb   %%ymm5,%%ymm1,%%ymm1            \n"
-    "vmovdqu   %%ymm0," MEMACCESS(1) "         \n"
-    "vmovdqu   %%ymm1," MEMACCESS2(0x20,1) "   \n"
+    "vmovdqu   %%ymm0,(%1)                     \n"
+    "vmovdqu   %%ymm1,0x20(%1)                 \n"
     "lea       0x40(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -5795,17 +5795,17 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
     "sub       %1,%2                             \n"
     LABELALIGN
     "1:                                          \n"
-    "movq      " MEMACCESS(1) ",%%xmm2           \n"
+    "movq      (%1),%%xmm2                       \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       0x8(%1),%1                        \n"
     "punpcklbw %%xmm3,%%xmm2                     \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0           \n"
+    "movdqu    (%0),%%xmm0                       \n"
     "lea       0x10(%0),%0                       \n"
     "movdqa    %%xmm0,%%xmm1                     \n"
     "punpcklbw %%xmm2,%%xmm0                     \n"
     "punpckhbw %%xmm2,%%xmm1                     \n"
-    "movdqu    %%xmm0," MEMACCESS(3) "           \n"
-    "movdqu    %%xmm1," MEMACCESS2(0x10,3) "     \n"
+    "movdqu    %%xmm0,(%3)                       \n"
+    "movdqu    %%xmm1,0x10(%3)                   \n"
     "lea       0x20(%3),%3                       \n"
     "sub       $0x10,%4                          \n"
     "jg         1b                               \n"
@@ -5831,17 +5831,17 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
     "sub        %1,%2                            \n"
     LABELALIGN
     "1:                                          \n"
-    "movq      " MEMACCESS(1) ",%%xmm2           \n"
+    "movq      (%1),%%xmm2                       \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       0x8(%1),%1                        \n"
     "punpcklbw %%xmm3,%%xmm2                     \n"
-    "movdqu    " MEMACCESS(0) ",%%xmm0           \n"
+    "movdqu    (%0),%%xmm0                       \n"
     "movdqa    %%xmm2,%%xmm1                     \n"
     "lea       0x10(%0),%0                       \n"
     "punpcklbw %%xmm0,%%xmm1                     \n"
     "punpckhbw %%xmm0,%%xmm2                     \n"
-    "movdqu    %%xmm1," MEMACCESS(3) "           \n"
-    "movdqu    %%xmm2," MEMACCESS2(0x10,3) "     \n"
+    "movdqu    %%xmm1,(%3)                       \n"
+    "movdqu    %%xmm2,0x10(%3)                   \n"
     "lea       0x20(%3),%3                       \n"
     "sub       $0x10,%4                          \n"
     "jg         1b                               \n"
@@ -5868,7 +5868,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     // 2 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movq      " MEMACCESS(0) ",%%xmm0         \n"
+    "movq      (%0),%%xmm0                     \n"
     "lea       0x8(%0),%0                      \n"
     "punpcklbw %%xmm3,%%xmm0                   \n"
     "movdqa    %%xmm0,%%xmm4                   \n"
@@ -5878,20 +5878,20 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     "cvtdq2ps  %%xmm4,%%xmm4                   \n"
     "movdqa    %%xmm0,%%xmm1                   \n"
     "movdqa    %%xmm4,%%xmm5                   \n"
-    "mulps     " MEMACCESS2(0x10,3) ",%%xmm0   \n"
-    "mulps     " MEMACCESS2(0x10,3) ",%%xmm4   \n"
-    "addps     " MEMACCESS(3) ",%%xmm0         \n"
-    "addps     " MEMACCESS(3) ",%%xmm4         \n"
+    "mulps     0x10(%3),%%xmm0                 \n"
+    "mulps     0x10(%3),%%xmm4                 \n"
+    "addps     (%3),%%xmm0                     \n"
+    "addps     (%3),%%xmm4                     \n"
     "movdqa    %%xmm1,%%xmm2                   \n"
     "movdqa    %%xmm5,%%xmm6                   \n"
     "mulps     %%xmm1,%%xmm2                   \n"
     "mulps     %%xmm5,%%xmm6                   \n"
     "mulps     %%xmm2,%%xmm1                   \n"
     "mulps     %%xmm6,%%xmm5                   \n"
-    "mulps     " MEMACCESS2(0x20,3) ",%%xmm2   \n"
-    "mulps     " MEMACCESS2(0x20,3) ",%%xmm6   \n"
-    "mulps     " MEMACCESS2(0x30,3) ",%%xmm1   \n"
-    "mulps     " MEMACCESS2(0x30,3) ",%%xmm5   \n"
+    "mulps     0x20(%3),%%xmm2                 \n"
+    "mulps     0x20(%3),%%xmm6                 \n"
+    "mulps     0x30(%3),%%xmm1                 \n"
+    "mulps     0x30(%3),%%xmm5                 \n"
     "addps     %%xmm2,%%xmm0                   \n"
     "addps     %%xmm6,%%xmm4                   \n"
     "addps     %%xmm1,%%xmm0                   \n"
@@ -5900,7 +5900,7 @@ void ARGBPolynomialRow_SSE2(const uint8* src_argb,
     "cvttps2dq %%xmm4,%%xmm4                   \n"
     "packuswb  %%xmm4,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    "movq      %%xmm0," MEMACCESS(1) "         \n"
+    "movq      %%xmm0,(%1)                     \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x2,%2                         \n"
     "jg        1b                              \n"
@@ -5920,15 +5920,15 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
                             const float* poly,
                             int width) {
   asm volatile (
-    "vbroadcastf128 " MEMACCESS(3) ",%%ymm4     \n"
-    "vbroadcastf128 " MEMACCESS2(0x10,3) ",%%ymm5 \n"
-    "vbroadcastf128 " MEMACCESS2(0x20,3) ",%%ymm6 \n"
-    "vbroadcastf128 " MEMACCESS2(0x30,3) ",%%ymm7 \n"
+    "vbroadcastf128 (%3),%%ymm4                 \n"
+    "vbroadcastf128 0x10(%3),%%ymm5               \n"
+    "vbroadcastf128 0x20(%3),%%ymm6               \n"
+    "vbroadcastf128 0x30(%3),%%ymm7               \n"
 
     // 2 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vpmovzxbd   " MEMACCESS(0) ",%%ymm0       \n"  // 2 ARGB pixels
+    "vpmovzxbd   (%0),%%ymm0                   \n"  // 2 ARGB pixels
     "lea         0x8(%0),%0                    \n"
     "vcvtdq2ps   %%ymm0,%%ymm0                 \n"  // X 8 floats
     "vmulps      %%ymm0,%%ymm0,%%ymm2          \n"  // X * X
@@ -5940,7 +5940,7 @@ void ARGBPolynomialRow_AVX2(const uint8* src_argb,
     "vpackusdw   %%ymm0,%%ymm0,%%ymm0          \n"
     "vpermq      $0xd8,%%ymm0,%%ymm0           \n"
     "vpackuswb   %%xmm0,%%xmm0,%%xmm0          \n"
-    "vmovq       %%xmm0," MEMACCESS(1) "       \n"
+    "vmovq       %%xmm0,(%1)                   \n"
     "lea         0x8(%1),%1                    \n"
     "sub         $0x2,%2                       \n"
     "jg          1b                            \n"
@@ -5968,7 +5968,7 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu      " MEMACCESS(0) ",%%xmm2       \n"  // 8 shorts
+    "movdqu      (%0),%%xmm2                   \n"  // 8 shorts
     "add         $0x10,%0                      \n"
     "movdqa      %%xmm2,%%xmm3                 \n"
     "punpcklwd   %%xmm5,%%xmm2                 \n"  // 8 ints in xmm2/1
@@ -6004,7 +6004,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vmovdqu    " MEMACCESS(0) ",%%ymm2        \n"  // 16 shorts
+    "vmovdqu    (%0),%%ymm2                    \n"  // 16 shorts
     "add        $0x20,%0                       \n"
     "vpunpckhwd %%ymm5,%%ymm2,%%ymm3           \n"  // mutates
     "vpunpcklwd %%ymm5,%%ymm2,%%ymm2           \n"
@@ -6043,8 +6043,8 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
-    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
+    "vpmovzxwd   (%0),%%ymm2                   \n"  // 16 shorts -> 16 ints
+    "vpmovzxwd   0x10(%0),%%ymm3               \n"
     "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
     "vmulps      %%ymm2,%%ymm4,%%ymm2          \n"
@@ -6078,8 +6078,8 @@ void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float, int width) {
     // 16 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "vpmovzxwd   " MEMACCESS(0) ",%%ymm2       \n"  // 16 shorts -> 16 ints
-    "vpmovzxwd   " MEMACCESS2(0x10,0) ",%%ymm3 \n"
+    "vpmovzxwd   (%0),%%ymm2                   \n"  // 16 shorts -> 16 ints
+    "vpmovzxwd   0x10(%0),%%ymm3               \n"
     "vcvtdq2ps   %%ymm2,%%ymm2                 \n"
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
     "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
@@ -6110,19 +6110,19 @@ void ARGBColorTableRow_X86(uint8* dst_argb,
     // 1 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movzb     " MEMACCESS(0) ",%1             \n"
+    "movzb     (%0),%1                         \n"
     "lea       0x4(%0),%0                      \n"
     "movzb     0x00(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
-    "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
+    "mov       %b1,-0x4(%0)                    \n"
+    "movzb     -0x3(%0),%1                     \n"
     "movzb     0x01(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
-    "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
+    "mov       %b1,-0x3(%0)                    \n"
+    "movzb     -0x2(%0),%1                     \n"
     "movzb     0x02(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
-    "movzb     " MEMACCESS2(-0x1,0) ",%1       \n"
+    "mov       %b1,-0x2(%0)                    \n"
+    "movzb     -0x1(%0),%1                     \n"
     "movzb     0x03(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x1,0) "      \n"
+    "mov       %b1,-0x1(%0)                    \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
   : "+r"(dst_argb),     // %0
@@ -6141,16 +6141,16 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
     // 1 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movzb     " MEMACCESS(0) ",%1             \n"
+    "movzb     (%0),%1                         \n"
     "lea       0x4(%0),%0                      \n"
     "movzb     0x00(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
-    "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
+    "mov       %b1,-0x4(%0)                    \n"
+    "movzb     -0x3(%0),%1                     \n"
     "movzb     0x01(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
-    "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
+    "mov       %b1,-0x3(%0)                    \n"
+    "movzb     -0x2(%0),%1                     \n"
     "movzb     0x02(%3,%1,4),%1                \n"
-    "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
+    "mov       %b1,-0x2(%0)                    \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
   : "+r"(dst_argb),     // %0
@@ -6180,7 +6180,7 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     // 4 pixel loop.
     LABELALIGN
     "1:                                        \n"
-    "movdqu    " MEMACCESS(2) ",%%xmm0         \n"
+    "movdqu    (%2),%%xmm0                     \n"
     "pmaddubsw %%xmm3,%%xmm0                   \n"
     "phaddw    %%xmm0,%%xmm0                   \n"
     "pand      %%xmm4,%%xmm0                   \n"
@@ -6189,64 +6189,64 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     " MEMACCESS(2) ",%0             \n"
+    "movzb     (%2),%0                         \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS(3) "            \n"
-    "movzb     " MEMACCESS2(0x1,2) ",%0        \n"
+    "mov       %b0,(%3)                        \n"
+    "movzb     0x1(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x1,3) "       \n"
-    "movzb     " MEMACCESS2(0x2,2) ",%0        \n"
+    "mov       %b0,0x1(%3)                     \n"
+    "movzb     0x2(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x2,3) "       \n"
-    "movzb     " MEMACCESS2(0x3,2) ",%0        \n"
-    "mov       %b0," MEMACCESS2(0x3,3) "       \n"
+    "mov       %b0,0x2(%3)                     \n"
+    "movzb     0x3(%2),%0                      \n"
+    "mov       %b0,0x3(%3)                     \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     " MEMACCESS2(0x4,2) ",%0        \n"
+    "movzb     0x4(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x4,3) "       \n"
-    "movzb     " MEMACCESS2(0x5,2) ",%0        \n"
+    "mov       %b0,0x4(%3)                     \n"
+    "movzb     0x5(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x5,3) "       \n"
-    "movzb     " MEMACCESS2(0x6,2) ",%0        \n"
+    "mov       %b0,0x5(%3)                     \n"
+    "movzb     0x6(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x6,3) "       \n"
-    "movzb     " MEMACCESS2(0x7,2) ",%0        \n"
-    "mov       %b0," MEMACCESS2(0x7,3) "       \n"
+    "mov       %b0,0x6(%3)                     \n"
+    "movzb     0x7(%2),%0                      \n"
+    "mov       %b0,0x7(%3)                     \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
-    "movzb     " MEMACCESS2(0x8,2) ",%0        \n"
+    "movzb     0x8(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x8,3) "       \n"
-    "movzb     " MEMACCESS2(0x9,2) ",%0        \n"
+    "mov       %b0,0x8(%3)                     \n"
+    "movzb     0x9(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0x9,3) "       \n"
-    "movzb     " MEMACCESS2(0xa,2) ",%0        \n"
+    "mov       %b0,0x9(%3)                     \n"
+    "movzb     0xa(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0xa,3) "       \n"
-    "movzb     " MEMACCESS2(0xb,2) ",%0        \n"
-    "mov       %b0," MEMACCESS2(0xb,3) "       \n"
+    "mov       %b0,0xa(%3)                     \n"
+    "movzb     0xb(%2),%0                      \n"
+    "mov       %b0,0xb(%3)                     \n"
 
     "movd      %%xmm0,%k1                      \n"  // 32 bit offset
     "add       %5,%1                           \n"
 
-    "movzb     " MEMACCESS2(0xc,2) ",%0        \n"
+    "movzb     0xc(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0xc,3) "       \n"
-    "movzb     " MEMACCESS2(0xd,2) ",%0        \n"
+    "mov       %b0,0xc(%3)                     \n"
+    "movzb     0xd(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0xd,3) "       \n"
-    "movzb     " MEMACCESS2(0xe,2) ",%0        \n"
+    "mov       %b0,0xd(%3)                     \n"
+    "movzb     0xe(%2),%0                      \n"
     "movzb     0x00(%1,%0,1),%0                \n"
-    "mov       %b0," MEMACCESS2(0xe,3) "       \n"
-    "movzb     " MEMACCESS2(0xf,2) ",%0        \n"
-    "mov       %b0," MEMACCESS2(0xf,3) "       \n"
+    "mov       %b0,0xe(%3)                     \n"
+    "movzb     0xf(%2),%0                      \n"
+    "mov       %b0,0xf(%3)                     \n"
     "lea       0x10(%2),%2                     \n"
     "lea       0x10(%3),%3                     \n"
     "sub       $0x4,%4                         \n"

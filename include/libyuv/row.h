@@ -576,8 +576,6 @@ extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  // BT.709
 #endif
 
 // NaCL macros for GCC x64 - deprecated.
-#define MEMACCESS(base) "(%" #base ")"
-#define MEMACCESS2(offset, base) #offset "(%" #base ")"
 #define MEMOPREG(opcode, offset, base, index, scale, reg) \
   #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
 #define MEMOPMEM(opcode, reg, offset, base, index, scale) \
