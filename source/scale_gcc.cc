@@ -890,10 +890,10 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr,
   "2:                                          \n"
     "movdqa    %%xmm2,%%xmm1                   \n"
     "paddd     %%xmm3,%%xmm2                   \n"
-    MEMOPARG(movzwl,0x00,1,3,1,k2)             //  movzwl  (%1,%3,1),%k2
+    "movzwl    0x00(%1,%3,1),%k2               \n"
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm1                     \n"
-    MEMOPARG(movzwl,0x00,1,4,1,k2)             //  movzwl  (%1,%4,1),%k2
+    "movzwl    0x00(%1,%4,1),%k2               \n"
     "movd      %k2,%%xmm4                      \n"
     "pshufb    %%xmm5,%%xmm1                   \n"
     "punpcklwd %%xmm4,%%xmm0                   \n"
@@ -916,7 +916,7 @@ void ScaleFilterCols_SSSE3(uint8* dst_ptr,
   "29:                                         \n"
     "addl      $0x1,%5                         \n"
     "jl        99f                             \n"
-    MEMOPARG(movzwl,0x00,1,3,1,k2)             //  movzwl  (%1,%3,1),%k2
+    "movzwl    0x00(%1,%3,1),%k2               \n"
     "movd      %k2,%%xmm0                      \n"
     "psrlw     $0x9,%%xmm2                     \n"
     "pshufb    %%xmm5,%%xmm2                   \n"

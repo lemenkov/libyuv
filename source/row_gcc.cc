@@ -5368,7 +5368,7 @@ void CumulativeSumToAverageRow_SSE2(const int32* topleft,
 
     // 4 pixel small loop.
     LABELALIGN
-  "4:                                         \n"
+  "4:                                          \n"
     "movdqu    " MEMACCESS(0) ",%%xmm0         \n"
     "movdqu    " MEMACCESS2(0x10,0) ",%%xmm1   \n"
     "movdqu    " MEMACCESS2(0x20,0) ",%%xmm2   \n"
@@ -5794,7 +5794,7 @@ void I422ToYUY2Row_SSE2(const uint8* src_y,
   asm volatile (
     "sub       %1,%2                             \n"
     LABELALIGN
-    "1:                                        \n"
+    "1:                                          \n"
     "movq      " MEMACCESS(1) ",%%xmm2           \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       0x8(%1),%1                        \n"
@@ -5830,7 +5830,7 @@ void I422ToUYVYRow_SSE2(const uint8* src_y,
   asm volatile (
     "sub        %1,%2                            \n"
     LABELALIGN
-    "1:                                        \n"
+    "1:                                          \n"
     "movq      " MEMACCESS(1) ",%%xmm2           \n"
     MEMOPREG(movq,0x00,1,2,1,xmm3)               //  movq    (%1,%2,1),%%xmm3
     "lea       0x8(%1),%1                        \n"
@@ -6112,16 +6112,16 @@ void ARGBColorTableRow_X86(uint8* dst_argb,
     "1:                                        \n"
     "movzb     " MEMACCESS(0) ",%1             \n"
     "lea       0x4(%0),%0                      \n"
-    MEMOPARG(movzb,0x00,3,1,4,1) "             \n"  // movzb (%3,%1,4),%1
+    "movzb     0x00(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
     "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
-    MEMOPARG(movzb,0x01,3,1,4,1) "             \n"  // movzb 0x1(%3,%1,4),%1
+    "movzb     0x01(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
     "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
-    MEMOPARG(movzb,0x02,3,1,4,1) "             \n"  // movzb 0x2(%3,%1,4),%1
+    "movzb     0x02(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
     "movzb     " MEMACCESS2(-0x1,0) ",%1       \n"
-    MEMOPARG(movzb,0x03,3,1,4,1) "             \n"  // movzb 0x3(%3,%1,4),%1
+    "movzb     0x03(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x1,0) "      \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
@@ -6143,13 +6143,13 @@ void RGBColorTableRow_X86(uint8* dst_argb, const uint8* table_argb, int width) {
     "1:                                        \n"
     "movzb     " MEMACCESS(0) ",%1             \n"
     "lea       0x4(%0),%0                      \n"
-    MEMOPARG(movzb,0x00,3,1,4,1) "             \n"  // movzb (%3,%1,4),%1
+    "movzb     0x00(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x4,0) "      \n"
     "movzb     " MEMACCESS2(-0x3,0) ",%1       \n"
-    MEMOPARG(movzb,0x01,3,1,4,1) "             \n"  // movzb 0x1(%3,%1,4),%1
+    "movzb     0x01(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x3,0) "      \n"
     "movzb     " MEMACCESS2(-0x2,0) ",%1       \n"
-    MEMOPARG(movzb,0x02,3,1,4,1) "             \n"  // movzb 0x2(%3,%1,4),%1
+    "movzb     0x02(%3,%1,4),%1                \n"
     "mov       %b1," MEMACCESS2(-0x2,0) "      \n"
     "dec       %2                              \n"
     "jg        1b                              \n"
@@ -6190,13 +6190,13 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
     "movzb     " MEMACCESS(2) ",%0             \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS(3) "            \n"
     "movzb     " MEMACCESS2(0x1,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x1,3) "       \n"
     "movzb     " MEMACCESS2(0x2,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x2,3) "       \n"
     "movzb     " MEMACCESS2(0x3,2) ",%0        \n"
     "mov       %b0," MEMACCESS2(0x3,3) "       \n"
@@ -6206,13 +6206,13 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
     "movzb     " MEMACCESS2(0x4,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x4,3) "       \n"
     "movzb     " MEMACCESS2(0x5,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x5,3) "       \n"
     "movzb     " MEMACCESS2(0x6,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x6,3) "       \n"
     "movzb     " MEMACCESS2(0x7,2) ",%0        \n"
     "mov       %b0," MEMACCESS2(0x7,3) "       \n"
@@ -6222,13 +6222,13 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "pshufd    $0x39,%%xmm0,%%xmm0             \n"
 
     "movzb     " MEMACCESS2(0x8,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x8,3) "       \n"
     "movzb     " MEMACCESS2(0x9,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0x9,3) "       \n"
     "movzb     " MEMACCESS2(0xa,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0xa,3) "       \n"
     "movzb     " MEMACCESS2(0xb,2) ",%0        \n"
     "mov       %b0," MEMACCESS2(0xb,3) "       \n"
@@ -6237,13 +6237,13 @@ void ARGBLumaColorTableRow_SSSE3(const uint8* src_argb,
     "add       %5,%1                           \n"
 
     "movzb     " MEMACCESS2(0xc,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0xc,3) "       \n"
     "movzb     " MEMACCESS2(0xd,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0xd,3) "       \n"
     "movzb     " MEMACCESS2(0xe,2) ",%0        \n"
-    MEMOPARG(movzb,0x00,1,0,1,0) "             \n"  // movzb     (%1,%0,1),%0
+    "movzb     0x00(%1,%0,1),%0                \n"
     "mov       %b0," MEMACCESS2(0xe,3) "       \n"
     "movzb     " MEMACCESS2(0xf,2) ",%0        \n"
     "mov       %b0," MEMACCESS2(0xf,3) "       \n"
