@@ -320,8 +320,8 @@ void RGB565ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "movdqa    %%xmm1,%%xmm2                   \n"
     "punpcklbw %%xmm0,%%xmm1                   \n"
     "punpckhbw %%xmm0,%%xmm2                   \n"
-    MEMOPMEM(movdqu,xmm1,0x00,1,0,2)           //  movdqu  %%xmm1,(%1,%0,2)
-    MEMOPMEM(movdqu,xmm2,0x10,1,0,2)           //  movdqu  %%xmm2,0x10(%1,%0,2)
+    "movdqu    %%xmm1,0x00(%1,%0,2)            \n"
+    "movdqu    %%xmm2,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -371,8 +371,8 @@ void ARGB1555ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "movdqa    %%xmm1,%%xmm2                   \n"
     "punpcklbw %%xmm0,%%xmm1                   \n"
     "punpckhbw %%xmm0,%%xmm2                   \n"
-    MEMOPMEM(movdqu,xmm1,0x00,1,0,2)           //  movdqu  %%xmm1,(%1,%0,2)
-    MEMOPMEM(movdqu,xmm2,0x10,1,0,2)           //  movdqu  %%xmm2,0x10(%1,%0,2)
+    "movdqu    %%xmm1,0x00(%1,%0,2)            \n"
+    "movdqu    %%xmm2,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -409,8 +409,8 @@ void ARGB4444ToARGBRow_SSE2(const uint8* src, uint8* dst, int width) {
     "movdqa    %%xmm0,%%xmm1                   \n"
     "punpcklbw %%xmm2,%%xmm0                   \n"
     "punpckhbw %%xmm2,%%xmm1                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,2)           //  movdqu  %%xmm0,(%1,%0,2)
-    MEMOPMEM(movdqu,xmm1,0x10,1,0,2)           //  movdqu  %%xmm1,0x10(%1,%0,2)
+    "movdqu    %%xmm0,0x00(%1,%0,2)            \n"
+    "movdqu    %%xmm1,0x10(%1,%0,2)            \n"
     "lea       0x10(%0),%0                     \n"
     "sub       $0x8,%2                         \n"
     "jg        1b                              \n"
@@ -1021,7 +1021,7 @@ void ARGBToUVRow_SSSE3(const uint8* src_argb0,
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
     "movlps    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps    %%xmm0,(%1,%2,1)
+    "movhps    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -1222,7 +1222,7 @@ void ARGBToUVJRow_SSSE3(const uint8* src_argb0,
     "psraw     $0x8,%%xmm1                     \n"
     "packsswb  %%xmm1,%%xmm0                   \n"
     "movlps    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
+    "movhps    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -1283,7 +1283,7 @@ void ARGBToUV444Row_SSSE3(const uint8* src_argb,
     "packsswb  %%xmm2,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
     "lea       0x40(%0),%0                     \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,2,1)           //  movdqu  %%xmm0,(%1,%2,1)
+    "movdqu    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -1383,7 +1383,7 @@ void BGRAToUVRow_SSSE3(const uint8* src_bgra0,
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
     "movlps    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
+    "movhps    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -1518,7 +1518,7 @@ void ABGRToUVRow_SSSE3(const uint8* src_abgr0,
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
     "movlps    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
+    "movhps    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -1583,7 +1583,7 @@ void RGBAToUVRow_SSSE3(const uint8* src_rgba0,
     "packsswb  %%xmm1,%%xmm0                   \n"
     "paddb     %%xmm5,%%xmm0                   \n"
     "movlps    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhps,xmm0,0x00,1,2,1)           //  movhps  %%xmm0,(%1,%2,1)
+    "movhps    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -2745,7 +2745,7 @@ void MirrorUVRow_SSSE3(const uint8* src,
     "lea       -0x10(%0),%0                    \n"
     "pshufb    %%xmm1,%%xmm0                   \n"
     "movlpd    %%xmm0,(%1)                     \n"
-    MEMOPMEM(movhpd,xmm0,0x00,1,2,1)           //  movhpd    %%xmm0,(%1,%2)
+    "movhpd    %%xmm0,0x00(%1,%2,1)            \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $8,%3                           \n"
     "jg        1b                              \n"
@@ -2836,7 +2836,7 @@ void SplitUVRow_AVX2(const uint8* src_uv,
     "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
     "vpermq     $0xd8,%%ymm2,%%ymm2            \n"
     "vmovdqu    %%ymm0,(%1)                    \n"
-    MEMOPMEM(vmovdqu,ymm2,0x00,1,2,1)           //  vmovdqu %%ymm2,(%1,%2)
+    "vmovdqu    %%ymm2,0x00(%1,%2,1)            \n"
     "lea        0x20(%1),%1                    \n"
     "sub        $0x20,%3                       \n"
     "jg         1b                             \n"
@@ -2876,7 +2876,7 @@ void SplitUVRow_SSE2(const uint8* src_uv,
     "psrlw      $0x8,%%xmm3                    \n"
     "packuswb   %%xmm3,%%xmm2                  \n"
     "movdqu     %%xmm0,(%1)                    \n"
-    MEMOPMEM(movdqu,xmm2,0x00,1,2,1)           //  movdqu     %%xmm2,(%1,%2)
+    "movdqu    %%xmm2,0x00(%1,%2,1)            \n"
     "lea        0x10(%1),%1                    \n"
     "sub        $0x10,%3                       \n"
     "jg         1b                             \n"
@@ -3749,7 +3749,7 @@ void YUY2ToUVRow_SSE2(const uint8* src_yuy2,
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
     "movq      %%xmm0,(%1)                     \n"
-    MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
+    "movq    %%xmm1,0x00(%1,%2,1)              \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -3786,7 +3786,7 @@ void YUY2ToUV422Row_SSE2(const uint8* src_yuy2,
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
     "movq      %%xmm0,(%1)                     \n"
-    MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
+    "movq    %%xmm1,0x00(%1,%2,1)              \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -3851,7 +3851,7 @@ void UYVYToUVRow_SSE2(const uint8* src_uyvy,
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
     "movq      %%xmm0,(%1)                     \n"
-    MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
+    "movq    %%xmm1,0x00(%1,%2,1)              \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -3888,7 +3888,7 @@ void UYVYToUV422Row_SSE2(const uint8* src_uyvy,
     "psrlw     $0x8,%%xmm1                     \n"
     "packuswb  %%xmm1,%%xmm1                   \n"
     "movq      %%xmm0,(%1)                     \n"
-    MEMOPMEM(movq,xmm1,0x00,1,2,1)             //  movq    %%xmm1,(%1,%2)
+    "movq    %%xmm1,0x00(%1,%2,1)              \n"
     "lea       0x8(%1),%1                      \n"
     "sub       $0x10,%3                        \n"
     "jg        1b                              \n"
@@ -4401,7 +4401,7 @@ void ARGBAttenuateRow_AVX2(const uint8* src_argb, uint8* dst_argb, int width) {
     "vpsrlw     $0x8,%%ymm1,%%ymm1             \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
     "vpor       %%ymm6,%%ymm0,%%ymm0           \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,0,1,1)          //  vmovdqu %%ymm0,(%0,%1)
+    "vmovdqu    %%ymm0,0x00(%0,%1,1)           \n"
     "lea       0x20(%0),%0                     \n"
     "sub        $0x8,%2                        \n"
     "jg        1b                              \n"
@@ -4515,7 +4515,7 @@ void ARGBUnattenuateRow_AVX2(const uint8* src_argb,
     "vpmulhuw   %%ymm2,%%ymm0,%%ymm0           \n"
     "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,0,1,1)          //  vmovdqu %%ymm0,(%0,%1)
+    "vmovdqu    %%ymm0,0x00(%0,%1,1)           \n"
     "lea       0x20(%0),%0                     \n"
     "sub        $0x8,%2                        \n"
     "jg        1b                              \n"
@@ -5050,7 +5050,7 @@ void SobelXRow_SSE2(const uint8* src_y0,
     "psubw     %%xmm0,%%xmm1                   \n"
     "pmaxsw    %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    MEMOPMEM(movq,xmm0,0x00,0,3,1)             //  movq      %%xmm0,(%0,%3,1)
+    "movq    %%xmm0,0x00(%0,%3,1)              \n"
     "lea       0x8(%0),%0                      \n"
     "sub       $0x8,%4                         \n"
     "jg        1b                              \n"
@@ -5105,7 +5105,7 @@ void SobelYRow_SSE2(const uint8* src_y0,
     "psubw     %%xmm0,%%xmm1                   \n"
     "pmaxsw    %%xmm1,%%xmm0                   \n"
     "packuswb  %%xmm0,%%xmm0                   \n"
-    MEMOPMEM(movq,xmm0,0x00,0,2,1)             //  movq      %%xmm0,(%0,%2,1)
+    "movq    %%xmm0,0x00(%0,%2,1)              \n"
     "lea       0x8(%0),%0                      \n"
     "sub       $0x8,%3                         \n"
     "jg        1b                              \n"
@@ -5607,7 +5607,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     "psrlw      $0x8,%%xmm2                    \n"
     "psrlw      $0x8,%%xmm3                    \n"
     "packuswb   %%xmm3,%%xmm2                  \n"
-    MEMOPMEM(movdqu,xmm2,0x00,1,0,1)
+    "movdqu    %%xmm2,0x00(%1,%0,1)            \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        1b                              \n"
@@ -5619,7 +5619,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     "movdqu    (%1),%%xmm0                     \n"
     MEMOPREG(movdqu,0x00,1,4,1,xmm1)
     "pavgb     %%xmm1,%%xmm0                   \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
+    "movdqu    %%xmm0,0x00(%1,%0,1)            \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        50b                             \n"
@@ -5629,7 +5629,7 @@ void InterpolateRow_SSSE3(uint8* dst_ptr,
     LABELALIGN
   "100:                                        \n"
     "movdqu    (%1),%%xmm0                     \n"
-    MEMOPMEM(movdqu,xmm0,0x00,1,0,1)
+    "movdqu    %%xmm0,0x00(%1,%0,1)            \n"
     "lea       0x10(%1),%1                     \n"
     "sub       $0x10,%2                        \n"
     "jg        100b                            \n"
@@ -5687,7 +5687,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
     "vpsrlw     $0x8,%%ymm1,%%ymm1             \n"
     "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"
     "vpackuswb  %%ymm1,%%ymm0,%%ymm0           \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "vmovdqu    %%ymm0,0x00(%1,%0,1)            \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        1b                              \n"
@@ -5698,7 +5698,7 @@ void InterpolateRow_AVX2(uint8* dst_ptr,
   "50:                                         \n"
     "vmovdqu    (%1),%%ymm0                    \n"
     "vpavgb    0x00(%1,%4,1),%%ymm0,%%ymm0     \n"
-    MEMOPMEM(vmovdqu,ymm0,0x00,1,0,1)
+    "vmovdqu    %%ymm0,0x00(%1,%0,1)            \n"
     "lea       0x20(%1),%1                     \n"
     "sub       $0x20,%2                        \n"
     "jg        50b                             \n"
@@ -5980,7 +5980,7 @@ void HalfFloatRow_SSE2(const uint16* src, uint16* dst, float scale, int width) {
     "psrld       $0xd,%%xmm2                   \n"
     "psrld       $0xd,%%xmm3                   \n"
     "packssdw    %%xmm3,%%xmm2                 \n"
-    MEMOPMEM(movdqu,xmm2,-0x10,0,1,1)
+    "movdqu    %%xmm2,-0x10(%0,%1,1)            \n"
     "sub         $0x8,%2                       \n"
     "jg          1b                            \n"
   : "+r"(src),    // %0
@@ -6015,7 +6015,7 @@ void HalfFloatRow_AVX2(const uint16* src, uint16* dst, float scale, int width) {
     "vpsrld     $0xd,%%ymm3,%%ymm3             \n"
     "vpsrld     $0xd,%%ymm2,%%ymm2             \n"
     "vpackssdw  %%ymm3, %%ymm2, %%ymm2         \n"  // unmutates
-    MEMOPMEM(vmovdqu,ymm2,-0x20,0,1,1)
+    "vmovdqu    %%ymm2,-0x20(%0,%1,1)            \n"
     "sub        $0x10,%2                       \n"
     "jg         1b                             \n"
 
@@ -6051,8 +6051,8 @@ void HalfFloatRow_F16C(const uint16* src, uint16* dst, float scale, int width) {
     "vmulps      %%ymm3,%%ymm4,%%ymm3          \n"
     "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
     "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
-    MEMOPMEM(vmovdqu,xmm2,0x00,0,1,1)
-    MEMOPMEM(vmovdqu,xmm3,0x10,0,1,1)
+    "vmovdqu    %%xmm2,0x00(%0,%1,1)            \n"
+    "vmovdqu    %%xmm3,0x10(%0,%1,1)            \n"
     "add         $0x20,%0                      \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
@@ -6084,8 +6084,8 @@ void HalfFloat1Row_F16C(const uint16* src, uint16* dst, float, int width) {
     "vcvtdq2ps   %%ymm3,%%ymm3                 \n"
     "vcvtps2ph   $3, %%ymm2, %%xmm2            \n"
     "vcvtps2ph   $3, %%ymm3, %%xmm3            \n"
-    MEMOPMEM(vmovdqu,xmm2,0x00,0,1,1)
-    MEMOPMEM(vmovdqu,xmm3,0x10,0,1,1)
+    "vmovdqu    %%xmm2,0x00(%0,%1,1)            \n"
+    "vmovdqu    %%xmm3,0x10(%0,%1,1)            \n"
     "add         $0x20,%0                      \n"
     "sub         $0x10,%2                      \n"
     "jg          1b                            \n"
