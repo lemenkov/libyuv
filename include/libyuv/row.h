@@ -169,7 +169,6 @@ extern "C" {
 
 // The following are available on all x86 platforms, but
 // require VS2012, clang 3.4 or gcc 4.7.
-// The code supports NaCL but requires a new compiler and validator.
 #if !defined(LIBYUV_DISABLE_X86) &&                          \
     (defined(VISUALC_HAS_AVX2) || defined(CLANG_HAS_AVX2) || \
      defined(GCC_HAS_AVX2))
@@ -574,10 +573,6 @@ extern const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants);  // BT.709
 #else
 #define LABELALIGN
 #endif
-
-// NaCL macros for GCC x64 - deprecated.
-#define MEMOPREG(opcode, offset, base, index, scale, reg) \
-  #opcode " " #offset "(%" #base ",%" #index "," #scale "),%%" #reg "\n"
 
 // Intel Code Analizer markers.  Insert IACA_START IACA_END around code to be
 // measured and then run with iaca -64 libyuv_unittest.
