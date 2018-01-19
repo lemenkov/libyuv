@@ -2015,9 +2015,9 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
 }
 #endif  // HAS_ARGBTOAR30ROW_AVX2
 
+// TODO(fbarchard): Fix clamping issue affected by U channel.
 #define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,      \
-                         ALIGN, YALIGN, W1280, DIFF, N, NEG, SOFF, DOFF,      \
-                         FMT_C, BPP_C)                                        \
+                         ALIGN, YALIGN, W1280, DIFF, N, NEG, SOFF, DOFF)      \
   TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                       \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
     const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                  \
@@ -2053,7 +2053,7 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
           dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);                \
     }                                                                         \
     int max_diff = 0;                                                         \
-    for (int i = 0; i < kWidth * BPP_C * kHeight; ++i) {                      \
+    for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                      \
       int abs_diff = abs(static_cast<int>(dst_argb_c[i + DOFF]) -             \
                          static_cast<int>(dst_argb_opt[i + DOFF]));           \
       if (abs_diff > max_diff) {                                              \
@@ -2069,25 +2069,21 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   }
 
 #define TESTPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
-                        YALIGN, DIFF, FMT_C, BPP_C)                            \
+                        YALIGN, DIFF)                                          \
   TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_ - 4, DIFF, _Any, +, 0, 0, FMT_C,   \
-                   BPP_C)                                                      \
+                   YALIGN, benchmark_width_ - 4, DIFF, _Any, +, 0, 0)          \
   TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, DIFF, _Unaligned, +, 1, 1, FMT_C, \
-                   BPP_C)                                                      \
+                   YALIGN, benchmark_width_, DIFF, _Unaligned, +, 1, 1)        \
   TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, DIFF, _Invert, -, 0, 0, FMT_C,    \
-                   BPP_C)                                                      \
+                   YALIGN, benchmark_width_, DIFF, _Invert, -, 0, 0)           \
   TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN,      \
-                   YALIGN, benchmark_width_, DIFF, _Opt, +, 0, 0, FMT_C,       \
-                   BPP_C)
+                   YALIGN, benchmark_width_, DIFF, _Opt, +, 0, 0)
 
-TESTPLANAR16TOB(H010, 2, 2, AR30, 4, 4, 1, 2, AR30, 4)
-TESTPLANAR16TOB(H010, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
-TESTPLANAR16TOB(H010, 2, 2, ABGR, 4, 4, 1, 2, ARGB, 4)
-TESTPLANAR16TOB(I010, 2, 2, ARGB, 4, 4, 1, 2, ARGB, 4)
-TESTPLANAR16TOB(I010, 2, 2, ABGR, 4, 4, 1, 2, ARGB, 4)
+TESTPLANAR16TOB(I010, 2, 2, ARGB, 4, 4, 1, 2)
+TESTPLANAR16TOB(I010, 2, 2, ABGR, 4, 4, 1, 2)
+TESTPLANAR16TOB(H010, 2, 2, ARGB, 4, 4, 1, 2)
+TESTPLANAR16TOB(H010, 2, 2, ABGR, 4, 4, 1, 2)
+TESTPLANAR16TOB(H010, 2, 2, AR30, 4, 4, 1, 2)
 
 static int Clamp(int y) {
   if (y < 0) {
@@ -2099,8 +2095,24 @@ static int Clamp(int y) {
   return y;
 }
 
+static int Clamp10(int y) {
+  if (y < 0) {
+    y = 0;
+  }
+  if (y > 1023) {
+    y = 1023;
+  }
+  return y;
+}
+
 TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   const int kSize = 256;
+  int histogram_b[256];
+  int histogram_g[256];
+  int histogram_r[256];
+  memset(histogram_b, 0, sizeof(histogram_b));
+  memset(histogram_g, 0, sizeof(histogram_g));
+  memset(histogram_r, 0, sizeof(histogram_r));
   align_buffer_page_end(orig_yuv, kSize + kSize / 2 * 2);
   align_buffer_page_end(argb_pixels, kSize * 4);
   uint8* orig_y = orig_yuv;
@@ -2119,18 +2131,45 @@ TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   H420ToARGB(orig_y, 0, orig_u, 0, orig_v, 0, argb_pixels, 0, kSize, 1);
 
   for (int i = 0; i < kSize; ++i) {
+    int b = argb_pixels[i * 4 + 0];
+    int g = argb_pixels[i * 4 + 1];
+    int r = argb_pixels[i * 4 + 2];
+    int a = argb_pixels[i * 4 + 3];
+    ++histogram_b[b];
+    ++histogram_g[g];
+    ++histogram_r[r];
     int expected_y = Clamp(static_cast<int>((i - 16) * 1.164f));
-    EXPECT_NEAR(argb_pixels[i * 4 + 0], expected_y, 1);
-    EXPECT_NEAR(argb_pixels[i * 4 + 1], expected_y, 1);
-    EXPECT_NEAR(argb_pixels[i * 4 + 2], expected_y, 1);
-    EXPECT_EQ(argb_pixels[i * 4 + 3], 255);
+    EXPECT_NEAR(b, expected_y, 1);
+    EXPECT_NEAR(g, expected_y, 1);
+    EXPECT_NEAR(r, expected_y, 1);
+    EXPECT_EQ(a, 255);
   }
+
+  int count_b = 0;
+  int count_g = 0;
+  int count_r = 0;
+  for (int i = 0; i < kSize; ++i) {
+    if (histogram_b[i])
+      ++count_b;
+    if (histogram_g[i])
+      ++count_g;
+    if (histogram_r[i])
+      ++count_r;
+  }
+  printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
+
   free_aligned_buffer_page_end(orig_yuv);
   free_aligned_buffer_page_end(argb_pixels);
 }
 
 TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   const int kSize = 1024;
+  int histogram_b[1024];
+  int histogram_g[1024];
+  int histogram_r[1024];
+  memset(histogram_b, 0, sizeof(histogram_b));
+  memset(histogram_g, 0, sizeof(histogram_g));
+  memset(histogram_r, 0, sizeof(histogram_r));
   align_buffer_page_end(orig_yuv, kSize * 2 + kSize / 2 * 2 * 2);
   align_buffer_page_end(argb_pixels, kSize * 4);
   uint16* orig_y = reinterpret_cast<uint16*>(orig_yuv);
@@ -2149,14 +2188,94 @@ TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   H010ToARGB(orig_y, 0, orig_u, 0, orig_v, 0, argb_pixels, 0, kSize, 1);
 
   for (int i = 0; i < kSize; ++i) {
+    int b = argb_pixels[i * 4 + 0];
+    int g = argb_pixels[i * 4 + 1];
+    int r = argb_pixels[i * 4 + 2];
+    int a = argb_pixels[i * 4 + 3];
+    ++histogram_b[b];
+    ++histogram_g[g];
+    ++histogram_r[r];
     int expected_y = Clamp(static_cast<int>((i - 64) * 1.164f / 4));
-    EXPECT_NEAR(argb_pixels[i * 4 + 0], expected_y, 1);
-    EXPECT_NEAR(argb_pixels[i * 4 + 1], expected_y, 1);
-    EXPECT_NEAR(argb_pixels[i * 4 + 2], expected_y, 1);
-    EXPECT_EQ(argb_pixels[i * 4 + 3], 255);
+    EXPECT_NEAR(b, expected_y, 1);
+    EXPECT_NEAR(g, expected_y, 1);
+    EXPECT_NEAR(r, expected_y, 1);
+    EXPECT_EQ(a, 255);
   }
+
+  int count_b = 0;
+  int count_g = 0;
+  int count_r = 0;
+  for (int i = 0; i < kSize; ++i) {
+    if (histogram_b[i])
+      ++count_b;
+    if (histogram_g[i])
+      ++count_g;
+    if (histogram_r[i])
+      ++count_r;
+  }
+  printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
+
   free_aligned_buffer_page_end(orig_yuv);
   free_aligned_buffer_page_end(argb_pixels);
+}
+
+// Caveat: Result is near due to float rounding in expected result.
+TEST_F(LibYUVConvertTest, TestH010ToAR30) {
+  const int kSize = 1024;
+  int histogram_b[1024];
+  int histogram_g[1024];
+  int histogram_r[1024];
+  memset(histogram_b, 0, sizeof(histogram_b));
+  memset(histogram_g, 0, sizeof(histogram_g));
+  memset(histogram_r, 0, sizeof(histogram_r));
+
+  align_buffer_page_end(orig_yuv, kSize * 2 + kSize / 2 * 2 * 2);
+  align_buffer_page_end(ar30_pixels, kSize * 4);
+  uint16* orig_y = reinterpret_cast<uint16*>(orig_yuv);
+  uint16* orig_u = orig_y + kSize;
+  uint16* orig_v = orig_u + kSize / 2;
+
+  // Test grey scale
+  for (int i = 0; i < kSize; ++i) {
+    orig_y[i] = i;
+  }
+  for (int i = 0; i < kSize / 2; ++i) {
+    orig_u[i] = 512;  // 512 is 0.
+    orig_v[i] = 512;
+  }
+
+  H010ToAR30(orig_y, 0, orig_u, 0, orig_v, 0, ar30_pixels, 0, kSize, 1);
+
+  for (int i = 0; i < kSize; ++i) {
+    int b10 = reinterpret_cast<uint32*>(ar30_pixels)[i] & 1023;
+    int g10 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 10) & 1023;
+    int r10 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 20) & 1023;
+    int a2 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 30) & 3;
+    ++histogram_b[b10];
+    ++histogram_g[g10];
+    ++histogram_r[r10];
+    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f));
+    EXPECT_NEAR(b10, expected_y, 4);
+    EXPECT_NEAR(g10, expected_y, 4);
+    EXPECT_NEAR(r10, expected_y, 4);
+    EXPECT_EQ(a2, 3);
+  }
+
+  int count_b = 0;
+  int count_g = 0;
+  int count_r = 0;
+  for (int i = 0; i < kSize; ++i) {
+    if (histogram_b[i])
+      ++count_b;
+    if (histogram_g[i])
+      ++count_g;
+    if (histogram_r[i])
+      ++count_r;
+  }
+  printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
+
+  free_aligned_buffer_page_end(orig_yuv);
+  free_aligned_buffer_page_end(ar30_pixels);
 }
 
 }  // namespace libyuv
