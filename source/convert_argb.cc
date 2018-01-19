@@ -413,7 +413,7 @@ int H422ToABGR(const uint8* src_y,
 // Convert 10 bit YUV to ARGB with matrix
 // TODO(fbarchard): Consider passing scale multiplier to I210ToARGB to
 // multiply 10 bit yuv into high bits to allow any number of bits.
-static int H010ToAR30Matrix(const uint16* src_y,
+static int I010ToAR30Matrix(const uint16* src_y,
                             int src_stride_y,
                             const uint16* src_u,
                             int src_stride_u,
@@ -425,12 +425,10 @@ static int H010ToAR30Matrix(const uint16* src_y,
                             int width,
                             int height) {
   int y;
-  void (*I210ToARGBRow)(const uint16* y_buf, const uint16* u_buf,
+  void (*I210ToAR30Row)(const uint16* y_buf, const uint16* u_buf,
                         const uint16* v_buf, uint8* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
-      I210ToARGBRow_C;
-  void (*ARGBToAR30Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
-      ARGBToAR30Row_C;
+      I210ToAR30Row_C;
   if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
     return -1;
   }
@@ -440,58 +438,49 @@ static int H010ToAR30Matrix(const uint16* src_y,
     dst_ar30 = dst_ar30 + (height - 1) * dst_stride_ar30;
     dst_stride_ar30 = -dst_stride_ar30;
   }
-#if defined(HAS_I210TOARGBROW_SSSE3)
+#if defined(HAS_I210TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    I210ToARGBRow = I210ToARGBRow_Any_SSSE3;
+    I210ToAR30Row = I210ToAR30Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      I210ToARGBRow = I210ToARGBRow_SSSE3;
+      I210ToAR30Row = I210ToAR30Row_SSSE3;
     }
   }
 #endif
-#if defined(HAS_I210TOARGBROW_AVX2)
+#if defined(HAS_I210TOAR30ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    I210ToARGBRow = I210ToARGBRow_Any_AVX2;
+    I210ToAR30Row = I210ToAR30Row_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      I210ToARGBRow = I210ToARGBRow_AVX2;
+      I210ToAR30Row = I210ToAR30Row_AVX2;
     }
   }
 #endif
-#if defined(HAS_ARGBTOAR30ROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToAR30Row = ARGBToAR30Row_Any_SSSE3;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBToAR30Row = ARGBToAR30Row_SSSE3;
+  for (y = 0; y < height; ++y) {
+    I210ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
+    dst_ar30 += dst_stride_ar30;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
     }
   }
-#endif
-#if defined(HAS_ARGBTOAR30ROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
-    if (IS_ALIGNED(width, 8)) {
-      ARGBToAR30Row = ARGBToAR30Row_AVX2;
-    }
-  }
-#endif
-
-  {
-    // Row buffers for 8 bit YUV and RGB.
-    align_buffer_64(row_argb, width * 4);
-
-    for (y = 0; y < height; ++y) {
-      I210ToARGBRow(src_y, src_u, src_v, row_argb, yuvconstants, width);
-      ARGBToAR30Row(row_argb, dst_ar30, width);
-      dst_ar30 += dst_stride_ar30;
-      src_y += src_stride_y;
-      if (y & 1) {
-        src_u += src_stride_u;
-        src_v += src_stride_v;
-      }
-    }
-
-    free_aligned_buffer_64(row_argb);
-  }
-
   return 0;
+}
+
+// Convert I010 to AR30.
+LIBYUV_API
+int I010ToAR30(const uint16* src_y,
+               int src_stride_y,
+               const uint16* src_u,
+               int src_stride_u,
+               const uint16* src_v,
+               int src_stride_v,
+               uint8* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height) {
+  return I010ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                          src_stride_v, dst_ar30, dst_stride_ar30,
+                          &kYuvI601Constants, width, height);
 }
 
 // Convert H010 to AR30.
@@ -506,7 +495,7 @@ int H010ToAR30(const uint16* src_y,
                int dst_stride_ar30,
                int width,
                int height) {
-  return H010ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+  return I010ToAR30Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
                           src_stride_v, dst_ar30, dst_stride_ar30,
                           &kYuvH709Constants, width, height);
 }

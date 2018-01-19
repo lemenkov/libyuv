@@ -11,6 +11,7 @@
 #include "libyuv/row.h"
 
 #include <string.h>  // For memcpy and memset.
+#include <stdio.h>
 
 #include "libyuv/basic_types.h"
 
@@ -31,9 +32,8 @@ static __inline int32 clamp255(int32 v) {
   return (((255 - (v)) >> 31) | (v)) & 255;
 }
 
-static __inline uint32 Clamp(int32 val) {
-  int v = clamp0(val);
-  return (uint32)(clamp255(v));
+static __inline int32 clamp1023(int32 v) {
+  return (((1023 - (v)) >> 31) | (v)) & 1023;
 }
 
 static __inline uint32 Abs(int32 v) {
@@ -49,15 +49,23 @@ static __inline int32 clamp255(int32 v) {
   return (v > 255) ? 255 : v;
 }
 
-static __inline uint32 Clamp(int32 val) {
-  int v = clamp0(val);
-  return (uint32)(clamp255(v));
+static __inline int32 clamp1023(int32 v) {
+  return (v > 1023) ? 1023 : v;
 }
 
 static __inline uint32 Abs(int32 v) {
   return (v < 0) ? -v : v;
 }
 #endif  // USE_BRANCHLESS
+static __inline uint32 Clamp(int32 val) {
+  int v = clamp0(val);
+  return (uint32)(clamp255(v));
+}
+
+static __inline uint32 Clamp10(int32 val) {
+  int v = clamp0(val);
+  return (uint32)(clamp1023(v));
+}
 
 #ifdef LIBYUV_LITTLE_ENDIAN
 #define WRITEWORD(p, v) *(uint32*)(p) = v
@@ -1340,6 +1348,56 @@ static __inline void YuvPixel10(uint16 y,
   *r = Clamp((int32)(-(v * vr) + y1 + br) >> 6);
 }
 
+// C reference code that mimics the YUV 16 bit assembly.
+static __inline void YuvPixel16(int16 y,
+                                int16 u,
+                                int16 v,
+                                int* b,
+                                int* g,
+                                int* r,
+                                const struct YuvConstants* yuvconstants) {
+#if defined(__aarch64__)
+  int ub = -yuvconstants->kUVToRB[0];
+  int ug = yuvconstants->kUVToG[0];
+  int vg = yuvconstants->kUVToG[1];
+  int vr = -yuvconstants->kUVToRB[1];
+  int bb = yuvconstants->kUVBiasBGR[0];
+  int bg = yuvconstants->kUVBiasBGR[1];
+  int br = yuvconstants->kUVBiasBGR[2];
+  int yg = yuvconstants->kYToRgb[0] / 0x0101;
+#elif defined(__arm__)
+  int ub = -yuvconstants->kUVToRB[0];
+  int ug = yuvconstants->kUVToG[0];
+  int vg = yuvconstants->kUVToG[4];
+  int vr = -yuvconstants->kUVToRB[4];
+  int bb = yuvconstants->kUVBiasBGR[0];
+  int bg = yuvconstants->kUVBiasBGR[1];
+  int br = yuvconstants->kUVBiasBGR[2];
+  int yg = yuvconstants->kYToRgb[0] / 0x0101;
+#else
+  int ub = yuvconstants->kUVToB[0];
+  int ug = yuvconstants->kUVToG[0];
+  int vg = yuvconstants->kUVToG[1];
+  int vr = yuvconstants->kUVToR[1];
+  int bb = yuvconstants->kUVBiasB[0];
+  int bg = yuvconstants->kUVBiasG[0];
+  int br = yuvconstants->kUVBiasR[0];
+  int yg = yuvconstants->kYToRgb[0];
+#endif
+
+  uint32 y1 = (uint32)((y << 6) * yg) >> 16;
+  u = clamp255(u >> 2);
+  v = clamp255(v >> 2);
+  *b = (int)(-(u * ub) + y1 + bb);
+  *g = (int)(-(u * ug + v * vg) + y1 + bg);
+  *r = (int)(-(v * vr) + y1 + br);
+
+  if ((int16)(*b & 0xffff) != *b) {
+  	printf("%d vs %d   bb %d y1 %d\n",(int16)*b, *b, bb, y1);
+  }
+
+}
+
 // Y contribution to R,G,B.  Scale and bias.
 #define YG 18997  /* round(1.164 * 64 * 256 * 256 / 257) */
 #define YGB -1160 /* 1.164 * 64 * -16 + 64 / 2 */
@@ -1457,6 +1515,48 @@ void I210ToARGBRow_C(const uint16* src_y,
     YuvPixel10(src_y[0], src_u[0], src_v[0], rgb_buf + 0, rgb_buf + 1,
                rgb_buf + 2, yuvconstants);
     rgb_buf[3] = 255;
+  }
+}
+
+static void StoreAR30(uint8* rgb_buf,
+                      int b,
+                      int g,
+                      int r) {
+  uint32 ar30;
+  b = b >> 4;  // convert 10.6 to 10 bit.
+  g = g >> 4;
+  r = r >> 4;
+  b = Clamp10(b);
+  g = Clamp10(g);
+  r = Clamp10(r);
+  ar30 = b | ((uint32)g << 10) | ((uint32)r << 20) | 0xc0000000;
+  (*(uint32*)rgb_buf) = ar30;
+}
+
+// 10 bit YUV to 10 bit AR30
+void I210ToAR30Row_C(const uint16* src_y,
+                     const uint16* src_u,
+                     const uint16* src_v,
+                     uint8* rgb_buf,
+                     const struct YuvConstants* yuvconstants,
+                     int width) {
+  int x;
+  int b;
+  int g;
+  int r;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvPixel16(src_y[0], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf, b, g, r);
+    YuvPixel16(src_y[1], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf + 4, b, g, r);
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel16(src_y[0], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf, b, g, r);
   }
 }
 

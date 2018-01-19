@@ -214,6 +214,9 @@ ANY31C(I422ToRGB565Row_Any_MSA, I422ToRGB565Row_MSA, 1, 0, 2, 7)
     memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, out, SS(r, DUVSHIFT) * BPP);       \
   }
 
+#ifdef HAS_I210TOAR30ROW_SSSE3
+ANY31CT(I210ToAR30Row_Any_SSSE3, I210ToAR30Row_SSSE3, 1, 0, uint16, 2, 4, 7)
+#endif
 #ifdef HAS_I210TOARGBROW_SSSE3
 ANY31CT(I210ToARGBRow_Any_SSSE3, I210ToARGBRow_SSSE3, 1, 0, uint16, 2, 4, 7)
 #endif
