@@ -136,20 +136,20 @@ namespace libyuv {
                  FMT_PLANAR, DST_T, DST_BPC, DST_SUBSAMP_X, DST_SUBSAMP_Y,     \
                  benchmark_width_, _Opt, +, 0)
 
-TESTPLANARTOP(I420, uint8, 1, 2, 2, I420, uint8, 1, 2, 2)
-TESTPLANARTOP(I422, uint8, 1, 2, 1, I420, uint8, 1, 2, 2)
-TESTPLANARTOP(I444, uint8, 1, 1, 1, I420, uint8, 1, 2, 2)
-TESTPLANARTOP(I420, uint8, 1, 2, 2, I422, uint8, 1, 2, 1)
-TESTPLANARTOP(I420, uint8, 1, 2, 2, I444, uint8, 1, 1, 1)
-TESTPLANARTOP(I420, uint8, 1, 2, 2, I420Mirror, uint8, 1, 2, 2)
-TESTPLANARTOP(I422, uint8, 1, 2, 1, I422, uint8, 1, 2, 1)
-TESTPLANARTOP(I444, uint8, 1, 1, 1, I444, uint8, 1, 1, 1)
-TESTPLANARTOP(I010, uint16, 2, 2, 2, I010, uint16, 2, 2, 2)
-TESTPLANARTOP(I010, uint16, 2, 2, 2, I420, uint8, 1, 2, 2)
-TESTPLANARTOP(I420, uint8, 1, 2, 2, I010, uint16, 2, 2, 2)
-TESTPLANARTOP(H010, uint16, 2, 2, 2, H010, uint16, 2, 2, 2)
-TESTPLANARTOP(H010, uint16, 2, 2, 2, H420, uint8, 1, 2, 2)
-TESTPLANARTOP(H420, uint8, 1, 2, 2, H010, uint16, 2, 2, 2)
+TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420, uint8_t, 1, 2, 2)
+TESTPLANARTOP(I422, uint8_t, 1, 2, 1, I420, uint8_t, 1, 2, 2)
+TESTPLANARTOP(I444, uint8_t, 1, 1, 1, I420, uint8_t, 1, 2, 2)
+TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I422, uint8_t, 1, 2, 1)
+TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I444, uint8_t, 1, 1, 1)
+TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I420Mirror, uint8_t, 1, 2, 2)
+TESTPLANARTOP(I422, uint8_t, 1, 2, 1, I422, uint8_t, 1, 2, 1)
+TESTPLANARTOP(I444, uint8_t, 1, 1, 1, I444, uint8_t, 1, 1, 1)
+TESTPLANARTOP(I010, uint16_t, 2, 2, 2, I010, uint16_t, 2, 2, 2)
+TESTPLANARTOP(I010, uint16_t, 2, 2, 2, I420, uint8_t, 1, 2, 2)
+TESTPLANARTOP(I420, uint8_t, 1, 2, 2, I010, uint16_t, 2, 2, 2)
+TESTPLANARTOP(H010, uint16_t, 2, 2, 2, H010, uint16_t, 2, 2, 2)
+TESTPLANARTOP(H010, uint16_t, 2, 2, 2, H420, uint8_t, 1, 2, 2)
+TESTPLANARTOP(H420, uint8_t, 1, 2, 2, H010, uint16_t, 2, 2, 2)
 
 // Test Android 420 to I420
 #define TESTAPLANARTOPI(SRC_FMT_PLANAR, PIXEL_STRIDE, SRC_SUBSAMP_X,          \
@@ -173,8 +173,8 @@ TESTPLANARTOP(H420, uint8, 1, 2, 2, H010, uint16, 2, 2, 2)
                                          SUBSAMPLE(kHeight, SUBSAMP_Y));      \
     align_buffer_page_end(dst_v_opt, SUBSAMPLE(kWidth, SUBSAMP_X) *           \
                                          SUBSAMPLE(kHeight, SUBSAMP_Y));      \
-    uint8* src_u = src_uv + OFF_U;                                            \
-    uint8* src_v = src_uv + (PIXEL_STRIDE == 1 ? kSizeUV : OFF_V);            \
+    uint8_t* src_u = src_uv + OFF_U;                                            \
+    uint8_t* src_v = src_uv + (PIXEL_STRIDE == 1 ? kSizeUV : OFF_V);            \
     int src_stride_uv = SUBSAMPLE(kWidth, SUBSAMP_X) * PIXEL_STRIDE;          \
     for (int i = 0; i < kHeight; ++i)                                         \
       for (int j = 0; j < kWidth; ++j)                                        \
@@ -1238,8 +1238,8 @@ TESTSYM(BGRAToARGB, 4, 4, 1)
 TESTSYM(ABGRToARGB, 4, 4, 1)
 
 TEST_F(LibYUVConvertTest, Test565) {
-  SIMD_ALIGNED(uint8 orig_pixels[256][4]);
-  SIMD_ALIGNED(uint8 pixels565[256][2]);
+  SIMD_ALIGNED(uint8_t orig_pixels[256][4]);
+  SIMD_ALIGNED(uint8_t pixels565[256][2]);
 
   for (int i = 0; i < 256; ++i) {
     for (int j = 0; j < 4; ++j) {
@@ -1247,7 +1247,7 @@ TEST_F(LibYUVConvertTest, Test565) {
     }
   }
   ARGBToRGB565(&orig_pixels[0][0], 0, &pixels565[0][0], 0, 256, 1);
-  uint32 checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
+  uint32_t checksum = HashDjb2(&pixels565[0][0], sizeof(pixels565), 5381);
   EXPECT_EQ(610919429u, checksum);
 }
 
@@ -1442,7 +1442,7 @@ TEST_F(LibYUVConvertTest, NV12Crop) {
   const int sample_size =
       kWidth * kHeight + kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y) * 2;
   align_buffer_page_end(src_y, sample_size);
-  uint8* src_uv = src_y + kWidth * kHeight;
+  uint8_t* src_uv = src_y + kWidth * kHeight;
 
   align_buffer_page_end(dst_y, kDestWidth * kDestHeight);
   align_buffer_page_end(dst_u, SUBSAMPLE(kDestWidth, SUBSAMP_X) *
@@ -1510,13 +1510,13 @@ TEST_F(LibYUVConvertTest, NV12Crop) {
 }
 
 TEST_F(LibYUVConvertTest, TestYToARGB) {
-  uint8 y[32];
-  uint8 expectedg[32];
+  uint8_t y[32];
+  uint8_t expectedg[32];
   for (int i = 0; i < 32; ++i) {
     y[i] = i * 5 + 17;
     expectedg[i] = static_cast<int>((y[i] - 16) * 1.164f + 0.5f);
   }
-  uint8 argb[32 * 4];
+  uint8_t argb[32 * 4];
   YToARGB(y, 0, argb, 0, 32, 1);
 
   for (int i = 0; i < 32; ++i) {
@@ -1528,7 +1528,7 @@ TEST_F(LibYUVConvertTest, TestYToARGB) {
   }
 }
 
-static const uint8 kNoDither4x4[16] = {
+static const uint8_t kNoDither4x4[16] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
@@ -1555,7 +1555,7 @@ TEST_F(LibYUVConvertTest, TestNoDither) {
 }
 
 // Ordered 4x4 dither for 888 to 565.  Values from 0 to 7.
-static const uint8 kDither565_4x4[16] = {
+static const uint8_t kDither565_4x4[16] = {
     0, 4, 1, 5, 6, 2, 7, 3, 1, 5, 0, 4, 7, 3, 6, 2,
 };
 
@@ -2031,25 +2031,25 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
     align_buffer_page_end(dst_argb_c, kStrideB* kHeight + DOFF);              \
     align_buffer_page_end(dst_argb_opt, kStrideB* kHeight + DOFF);            \
     for (int i = 0; i < kWidth * kHeight; ++i) {                              \
-      reinterpret_cast<uint16*>(src_y + SOFF)[i] = (fastrand() & 0x3ff);      \
+      reinterpret_cast<uint16_t*>(src_y + SOFF)[i] = (fastrand() & 0x3ff);      \
     }                                                                         \
     for (int i = 0; i < kSizeUV; ++i) {                                       \
-      reinterpret_cast<uint16*>(src_u + SOFF)[i] = (fastrand() & 0x3ff);      \
-      reinterpret_cast<uint16*>(src_v + SOFF)[i] = (fastrand() & 0x3ff);      \
+      reinterpret_cast<uint16_t*>(src_u + SOFF)[i] = (fastrand() & 0x3ff);      \
+      reinterpret_cast<uint16_t*>(src_v + SOFF)[i] = (fastrand() & 0x3ff);      \
     }                                                                         \
     memset(dst_argb_c + DOFF, 1, kStrideB * kHeight);                         \
     memset(dst_argb_opt + DOFF, 101, kStrideB * kHeight);                     \
     MaskCpuFlags(disable_cpu_flags_);                                         \
-    FMT_PLANAR##To##FMT_B(reinterpret_cast<uint16*>(src_y + SOFF), kWidth,    \
-                          reinterpret_cast<uint16*>(src_u + SOFF), kStrideUV, \
-                          reinterpret_cast<uint16*>(src_v + SOFF), kStrideUV, \
+    FMT_PLANAR##To##FMT_B(reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,    \
+                          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV, \
+                          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV, \
                           dst_argb_c + DOFF, kStrideB, kWidth, NEG kHeight);  \
     MaskCpuFlags(benchmark_cpu_info_);                                        \
     for (int i = 0; i < benchmark_iterations_; ++i) {                         \
       FMT_PLANAR##To##FMT_B(                                                  \
-          reinterpret_cast<uint16*>(src_y + SOFF), kWidth,                    \
-          reinterpret_cast<uint16*>(src_u + SOFF), kStrideUV,                 \
-          reinterpret_cast<uint16*>(src_v + SOFF), kStrideUV,                 \
+          reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                    \
+          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,                 \
+          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,                 \
           dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);                \
     }                                                                         \
     int max_diff = 0;                                                         \
@@ -2115,9 +2115,9 @@ TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   memset(histogram_r, 0, sizeof(histogram_r));
   align_buffer_page_end(orig_yuv, kSize + kSize / 2 * 2);
   align_buffer_page_end(argb_pixels, kSize * 4);
-  uint8* orig_y = orig_yuv;
-  uint8* orig_u = orig_y + kSize;
-  uint8* orig_v = orig_u + kSize / 2;
+  uint8_t* orig_y = orig_yuv;
+  uint8_t* orig_u = orig_y + kSize;
+  uint8_t* orig_v = orig_u + kSize / 2;
 
   // Test grey scale
   for (int i = 0; i < kSize; ++i) {
@@ -2172,9 +2172,9 @@ TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   memset(histogram_r, 0, sizeof(histogram_r));
   align_buffer_page_end(orig_yuv, kSize * 2 + kSize / 2 * 2 * 2);
   align_buffer_page_end(argb_pixels, kSize * 4);
-  uint16* orig_y = reinterpret_cast<uint16*>(orig_yuv);
-  uint16* orig_u = orig_y + kSize;
-  uint16* orig_v = orig_u + kSize / 2;
+  uint16_t* orig_y = reinterpret_cast<uint16_t*>(orig_yuv);
+  uint16_t* orig_u = orig_y + kSize;
+  uint16_t* orig_v = orig_u + kSize / 2;
 
   // Test grey scale
   for (int i = 0; i < kSize; ++i) {
@@ -2231,9 +2231,9 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
 
   align_buffer_page_end(orig_yuv, kSize * 2 + kSize / 2 * 2 * 2);
   align_buffer_page_end(ar30_pixels, kSize * 4);
-  uint16* orig_y = reinterpret_cast<uint16*>(orig_yuv);
-  uint16* orig_u = orig_y + kSize;
-  uint16* orig_v = orig_u + kSize / 2;
+  uint16_t* orig_y = reinterpret_cast<uint16_t*>(orig_yuv);
+  uint16_t* orig_u = orig_y + kSize;
+  uint16_t* orig_v = orig_u + kSize / 2;
 
   // Test grey scale
   for (int i = 0; i < kSize; ++i) {
@@ -2247,10 +2247,10 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
   H010ToAR30(orig_y, 0, orig_u, 0, orig_v, 0, ar30_pixels, 0, kSize, 1);
 
   for (int i = 0; i < kSize; ++i) {
-    int b10 = reinterpret_cast<uint32*>(ar30_pixels)[i] & 1023;
-    int g10 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 10) & 1023;
-    int r10 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 20) & 1023;
-    int a2 = (reinterpret_cast<uint32*>(ar30_pixels)[i] >> 30) & 3;
+    int b10 = reinterpret_cast<uint32_t*>(ar30_pixels)[i] & 1023;
+    int g10 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 10) & 1023;
+    int r10 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 20) & 1023;
+    int a2 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 30) & 3;
     ++histogram_b[b10];
     ++histogram_g[g10];
     ++histogram_r[r10];

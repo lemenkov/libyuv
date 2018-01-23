@@ -14,14 +14,14 @@
 namespace libyuv {
 
 TEST_F(LibYUVBaseTest, SizeOfTypes) {
-  int8 i8 = -1;
-  uint8 u8 = 1u;
-  int16 i16 = -1;
-  uint16 u16 = 1u;
-  int32 i32 = -1;
-  uint32 u32 = 1u;
-  int64 i64 = -1;
-  uint64 u64 = 1u;
+  int8_t i8 = -1;
+  uint8_t u8 = 1u;
+  int16_t i16 = -1;
+  uint16_t u16 = 1u;
+  int32_t i32 = -1;
+  uint32_t u32 = 1u;
+  int64_t i64 = -1;
+  uint64_t u64 = 1u;
   EXPECT_EQ(1u, sizeof(i8));
   EXPECT_EQ(1u, sizeof(u8));
   EXPECT_EQ(2u, sizeof(i16));

@@ -23,23 +23,23 @@
 #ifndef INT_TYPES_DEFINED
 #define INT_TYPES_DEFINED
 #ifdef COMPILER_MSVC
-typedef unsigned __int64 uint64;
-typedef __int64 int64;
+typedef unsigned __int64 uint64_t;
+typedef __int64 int64_t;
 #else  // COMPILER_MSVC
 #if defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long uint64;  // NOLINT
-typedef long int64;            // NOLINT
+typedef unsigned long uint64_t;  // NOLINT
+typedef long int64_t;            // NOLINT
 #else  // defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long long uint64;  // NOLINT
-typedef long long int64;            // NOLINT
+typedef unsigned long long uint64_t;  // NOLINT
+typedef long long int64_t;            // NOLINT
 #endif  // __LP64__
 #endif  // COMPILER_MSVC
-typedef unsigned int uint32;
-typedef int int32;
-typedef unsigned short uint16;  // NOLINT
-typedef short int16;            // NOLINT
-typedef unsigned char uint8;
-typedef signed char int8;
+typedef unsigned int uint32_t;
+typedef int int32_t;
+typedef unsigned short uint16_t;  // NOLINT
+typedef short int16_t;            // NOLINT
+typedef unsigned char uint8_t;
+typedef signed char int8_t;
 #endif  // INT_TYPES_DEFINED
 #endif  // GG_LONGLONG
 
