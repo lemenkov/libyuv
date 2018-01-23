@@ -1261,6 +1261,8 @@ const struct YuvConstants SIMD_ALIGNED(kYvuH709Constants) = {
 #undef YG
 
 // C reference code that mimics the YUV assembly.
+// Reads 8 bit YUV and leaves result as 16 bit.
+
 static __inline void YuvPixel(uint8 y,
                               uint8 u,
                               uint8 v,
@@ -1303,14 +1305,14 @@ static __inline void YuvPixel(uint8 y,
   *r = Clamp((int32)(-(v * vr) + y1 + br) >> 6);
 }
 
-// C reference code that mimics the YUV 10 bit assembly.
-static __inline void YuvPixel10(uint16 y,
-                                uint16 u,
-                                uint16 v,
-                                uint8* b,
-                                uint8* g,
-                                uint8* r,
-                                const struct YuvConstants* yuvconstants) {
+// Reads 8 bit YUV and leaves result as 16 bit.
+static __inline void YuvPixel8_16(uint8 y,
+                                  uint8 u,
+                                  uint8 v,
+                                  int* b,
+                                  int* g,
+                                  int* r,
+                                  const struct YuvConstants* yuvconstants) {
 #if defined(__aarch64__)
   int ub = -yuvconstants->kUVToRB[0];
   int ug = yuvconstants->kUVToG[0];
@@ -1340,15 +1342,14 @@ static __inline void YuvPixel10(uint16 y,
   int yg = yuvconstants->kYToRgb[0];
 #endif
 
-  uint32 y1 = (uint32)((y << 6) * yg) >> 16;
-  u = clamp255(u >> 2);
-  v = clamp255(v >> 2);
-  *b = Clamp((int32)(-(u * ub) + y1 + bb) >> 6);
-  *g = Clamp((int32)(-(u * ug + v * vg) + y1 + bg) >> 6);
-  *r = Clamp((int32)(-(v * vr) + y1 + br) >> 6);
+  uint32 y1 = (uint32)(y * 0x0101 * yg) >> 16;
+  *b = (int)(-(u * ub) + y1 + bb);
+  *g = (int)(-(u * ug + v * vg) + y1 + bg);
+  *r = (int)(-(v * vr) + y1 + br);
 }
 
 // C reference code that mimics the YUV 16 bit assembly.
+// Reads 10 bit YUV and leaves result as 16 bit.
 static __inline void YuvPixel16(int16 y,
                                 int16 u,
                                 int16 v,
@@ -1391,11 +1392,24 @@ static __inline void YuvPixel16(int16 y,
   *b = (int)(-(u * ub) + y1 + bb);
   *g = (int)(-(u * ug + v * vg) + y1 + bg);
   *r = (int)(-(v * vr) + y1 + br);
+}
 
-  if ((int16)(*b & 0xffff) != *b) {
-  	printf("%d vs %d   bb %d y1 %d\n",(int16)*b, *b, bb, y1);
-  }
-
+// C reference code that mimics the YUV 10 bit assembly.
+// Reads 10 bit YUV and clamps down to 8 bit RGB.
+static __inline void YuvPixel10(uint16 y,
+                                uint16 u,
+                                uint16 v,
+                                uint8* b,
+                                uint8* g,
+                                uint8* r,
+                                const struct YuvConstants* yuvconstants) {
+  int b16;
+  int g16;
+  int r16;
+  YuvPixel16(y, u, v, &b16, &g16, &r16, yuvconstants);
+  *b = Clamp(b16 >> 6);
+  *g = Clamp(g16 >> 6);
+  *r = Clamp(r16 >> 6);
 }
 
 // Y contribution to R,G,B.  Scale and bias.
@@ -1556,6 +1570,35 @@ void I210ToAR30Row_C(const uint16* src_y,
   }
   if (width & 1) {
     YuvPixel16(src_y[0], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf, b, g, r);
+  }
+}
+
+
+// 8 bit YUV to 10 bit AR30
+// Uses same code as 10 bit YUV bit shifts the 8 bit values up to 10 bits.
+void I422ToAR30Row_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* rgb_buf,
+                     const struct YuvConstants* yuvconstants,
+                     int width) {
+  int x;
+  int b;
+  int g;
+  int r;
+  for (x = 0; x < width - 1; x += 2) {
+    YuvPixel8_16(src_y[0], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf, b, g, r);
+    YuvPixel8_16(src_y[1], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
+    StoreAR30(rgb_buf + 4, b, g, r);
+    src_y += 2;
+    src_u += 1;
+    src_v += 1;
+    rgb_buf += 8;  // Advance 2 pixels.
+  }
+  if (width & 1) {
+    YuvPixel8_16(src_y[0], src_u[0], src_v[0], &b, &g, &r, yuvconstants);
     StoreAR30(rgb_buf, b, g, r);
   }
 }

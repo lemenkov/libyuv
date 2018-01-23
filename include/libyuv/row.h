@@ -258,6 +258,7 @@ extern "C" {
 // I210 is for H010.  2 = 422.  I for 601 vs H for 709.
 #define HAS_I210TOAR30ROW_SSSE3
 #define HAS_I210TOARGBROW_SSSE3
+#define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #endif
@@ -1683,6 +1684,12 @@ void I422ToARGBRow_C(const uint8* src_y,
                      uint8* dst_argb,
                      const struct YuvConstants* yuvconstants,
                      int width);
+void I422ToAR30Row_C(const uint8* src_y,
+                     const uint8* src_u,
+                     const uint8* src_v,
+                     uint8* dst_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width);
 void I210ToAR30Row_C(const uint16* src_y,
                      const uint16* src_u,
                      const uint16* src_v,
@@ -1798,6 +1805,12 @@ void I422ToARGBRow_SSSE3(const uint8* src_y,
                          const struct YuvConstants* yuvconstants,
                          int width);
 
+void I422ToAR30Row_SSSE3(const uint8* src_y,
+                         const uint8* src_u,
+                         const uint8* src_v,
+                         uint8* dst_ar30,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
 void I210ToAR30Row_SSSE3(const uint16* src_y,
                          const uint16* src_u,
                          const uint16* src_v,
@@ -1958,6 +1971,12 @@ void I422ToARGBRow_Any_SSSE3(const uint8* src_y,
                              const uint8* src_u,
                              const uint8* src_v,
                              uint8* dst_argb,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I422ToAR30Row_Any_SSSE3(const uint8* src_y,
+                             const uint8* src_u,
+                             const uint8* src_v,
+                             uint8* dst_ar30,
                              const struct YuvConstants* yuvconstants,
                              int width);
 void I210ToAR30Row_Any_SSSE3(const uint16* src_y,

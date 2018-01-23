@@ -1149,12 +1149,10 @@ static int I420ToAR30Matrix(const uint8* src_y,
                             int width,
                             int height) {
   int y;
-  void (*I422ToARGBRow)(const uint8* y_buf, const uint8* u_buf,
+  void (*I422ToAR30Row)(const uint8* y_buf, const uint8* u_buf,
                         const uint8* v_buf, uint8* rgb_buf,
                         const struct YuvConstants* yuvconstants, int width) =
-      I422ToARGBRow_C;
-  void (*ARGBToAR30Row)(const uint8* src_argb, uint8* dst_rgb, int width) =
-      ARGBToAR30Row_C;
+      I422ToAR30Row_C;
 
   if (!src_y || !src_u || !src_v || !dst_ar30 || width <= 0 || height == 0) {
     return -1;
@@ -1166,71 +1164,31 @@ static int I420ToAR30Matrix(const uint8* src_y,
     dst_stride_ar30 = -dst_stride_ar30;
   }
 
-#if defined(HAS_ARGBTOAR30ROW_SSSE3)
+#if defined(HAS_I422TOAR30ROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToAR30Row = ARGBToAR30Row_Any_SSSE3;
-    if (IS_ALIGNED(width, 4)) {
-      ARGBToAR30Row = ARGBToAR30Row_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOAR30ROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBToAR30Row = ARGBToAR30Row_Any_AVX2;
+    I422ToAR30Row = I422ToAR30Row_Any_SSSE3;
     if (IS_ALIGNED(width, 8)) {
-      ARGBToAR30Row = ARGBToAR30Row_AVX2;
+      I422ToAR30Row = I422ToAR30Row_SSSE3;
     }
   }
 #endif
-#if defined(HAS_I422TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    I422ToARGBRow = I422ToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_I422TOARGBROW_AVX2)
+#if defined(HAS_I422TOAR30ROW_AVX2)
   if (TestCpuFlag(kCpuHasAVX2)) {
-    I422ToARGBRow = I422ToARGBRow_Any_AVX2;
+    I422ToAR30Row = I422ToAR30Row_Any_AVX2;
     if (IS_ALIGNED(width, 16)) {
-      I422ToARGBRow = I422ToARGBRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_I422TOARGBROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    I422ToARGBRow = I422ToARGBRow_Any_NEON;
-    if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_I422TOARGBROW_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    I422ToARGBRow = I422ToARGBRow_Any_MSA;
-    if (IS_ALIGNED(width, 8)) {
-      I422ToARGBRow = I422ToARGBRow_MSA;
+      I422ToAR30Row = I422ToAR30Row_AVX2;
     }
   }
 #endif
 
-  {
-    // Row buffer for ARGB.
-    align_buffer_64(row_argb, width * 4);
-
-    for (y = 0; y < height; ++y) {
-      I422ToARGBRow(src_y, src_u, src_v, row_argb, yuvconstants, width);
-      ARGBToAR30Row(row_argb, dst_ar30, width);
-      dst_ar30 += dst_stride_ar30;
-      src_y += src_stride_y;
-      if (y & 1) {
-        src_u += src_stride_u;
-        src_v += src_stride_v;
-      }
+  for (y = 0; y < height; ++y) {
+    I422ToAR30Row(src_y, src_u, src_v, dst_ar30, yuvconstants, width);
+    dst_ar30 += dst_stride_ar30;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_u += src_stride_u;
+      src_v += src_stride_v;
     }
-
-    free_aligned_buffer_64(row_argb);
   }
   return 0;
 }
