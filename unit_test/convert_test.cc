@@ -173,8 +173,8 @@ TESTPLANARTOP(H420, uint8_t, 1, 2, 2, H010, uint16_t, 2, 2, 2)
                                          SUBSAMPLE(kHeight, SUBSAMP_Y));      \
     align_buffer_page_end(dst_v_opt, SUBSAMPLE(kWidth, SUBSAMP_X) *           \
                                          SUBSAMPLE(kHeight, SUBSAMP_Y));      \
-    uint8_t* src_u = src_uv + OFF_U;                                            \
-    uint8_t* src_v = src_uv + (PIXEL_STRIDE == 1 ? kSizeUV : OFF_V);            \
+    uint8_t* src_u = src_uv + OFF_U;                                          \
+    uint8_t* src_v = src_uv + (PIXEL_STRIDE == 1 ? kSizeUV : OFF_V);          \
     int src_stride_uv = SUBSAMPLE(kWidth, SUBSAMP_X) * PIXEL_STRIDE;          \
     for (int i = 0; i < kHeight; ++i)                                         \
       for (int j = 0; j < kWidth; ++j)                                        \
@@ -2016,56 +2016,57 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
 #endif  // HAS_ARGBTOAR30ROW_AVX2
 
 // TODO(fbarchard): Fix clamping issue affected by U channel.
-#define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,      \
-                         ALIGN, YALIGN, W1280, DIFF, N, NEG, SOFF, DOFF)      \
-  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                       \
-    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
-    const int kHeight = ALIGNINT(benchmark_height_, YALIGN);                  \
-    const int kStrideB = ALIGNINT(kWidth * BPP_B, ALIGN);                     \
-    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                       \
-    const int kSizeUV = kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y);            \
-    const int kBpc = 2;                                                       \
-    align_buffer_page_end(src_y, kWidth* kHeight* kBpc + SOFF);               \
-    align_buffer_page_end(src_u, kSizeUV* kBpc + SOFF);                       \
-    align_buffer_page_end(src_v, kSizeUV* kBpc + SOFF);                       \
-    align_buffer_page_end(dst_argb_c, kStrideB* kHeight + DOFF);              \
-    align_buffer_page_end(dst_argb_opt, kStrideB* kHeight + DOFF);            \
-    for (int i = 0; i < kWidth * kHeight; ++i) {                              \
-      reinterpret_cast<uint16_t*>(src_y + SOFF)[i] = (fastrand() & 0x3ff);      \
-    }                                                                         \
-    for (int i = 0; i < kSizeUV; ++i) {                                       \
-      reinterpret_cast<uint16_t*>(src_u + SOFF)[i] = (fastrand() & 0x3ff);      \
-      reinterpret_cast<uint16_t*>(src_v + SOFF)[i] = (fastrand() & 0x3ff);      \
-    }                                                                         \
-    memset(dst_argb_c + DOFF, 1, kStrideB * kHeight);                         \
-    memset(dst_argb_opt + DOFF, 101, kStrideB * kHeight);                     \
-    MaskCpuFlags(disable_cpu_flags_);                                         \
-    FMT_PLANAR##To##FMT_B(reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,    \
-                          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV, \
-                          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV, \
-                          dst_argb_c + DOFF, kStrideB, kWidth, NEG kHeight);  \
-    MaskCpuFlags(benchmark_cpu_info_);                                        \
-    for (int i = 0; i < benchmark_iterations_; ++i) {                         \
-      FMT_PLANAR##To##FMT_B(                                                  \
-          reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                    \
-          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,                 \
-          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,                 \
-          dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);                \
-    }                                                                         \
-    int max_diff = 0;                                                         \
-    for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                      \
-      int abs_diff = abs(static_cast<int>(dst_argb_c[i + DOFF]) -             \
-                         static_cast<int>(dst_argb_opt[i + DOFF]));           \
-      if (abs_diff > max_diff) {                                              \
-        max_diff = abs_diff;                                                  \
-      }                                                                       \
-    }                                                                         \
-    EXPECT_LE(max_diff, DIFF);                                                \
-    free_aligned_buffer_page_end(src_y);                                      \
-    free_aligned_buffer_page_end(src_u);                                      \
-    free_aligned_buffer_page_end(src_v);                                      \
-    free_aligned_buffer_page_end(dst_argb_c);                                 \
-    free_aligned_buffer_page_end(dst_argb_opt);                               \
+#define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,   \
+                         ALIGN, YALIGN, W1280, DIFF, N, NEG, SOFF, DOFF)   \
+  TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                    \
+    const int kWidth = ((W1280) > 0) ? (W1280) : 1;                        \
+    const int kHeight = ALIGNINT(benchmark_height_, YALIGN);               \
+    const int kStrideB = ALIGNINT(kWidth * BPP_B, ALIGN);                  \
+    const int kStrideUV = SUBSAMPLE(kWidth, SUBSAMP_X);                    \
+    const int kSizeUV = kStrideUV * SUBSAMPLE(kHeight, SUBSAMP_Y);         \
+    const int kBpc = 2;                                                    \
+    align_buffer_page_end(src_y, kWidth* kHeight* kBpc + SOFF);            \
+    align_buffer_page_end(src_u, kSizeUV* kBpc + SOFF);                    \
+    align_buffer_page_end(src_v, kSizeUV* kBpc + SOFF);                    \
+    align_buffer_page_end(dst_argb_c, kStrideB* kHeight + DOFF);           \
+    align_buffer_page_end(dst_argb_opt, kStrideB* kHeight + DOFF);         \
+    for (int i = 0; i < kWidth * kHeight; ++i) {                           \
+      reinterpret_cast<uint16_t*>(src_y + SOFF)[i] = (fastrand() & 0x3ff); \
+    }                                                                      \
+    for (int i = 0; i < kSizeUV; ++i) {                                    \
+      reinterpret_cast<uint16_t*>(src_u + SOFF)[i] = (fastrand() & 0x3ff); \
+      reinterpret_cast<uint16_t*>(src_v + SOFF)[i] = (fastrand() & 0x3ff); \
+    }                                                                      \
+    memset(dst_argb_c + DOFF, 1, kStrideB * kHeight);                      \
+    memset(dst_argb_opt + DOFF, 101, kStrideB * kHeight);                  \
+    MaskCpuFlags(disable_cpu_flags_);                                      \
+    FMT_PLANAR##To##FMT_B(                                                 \
+        reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,                 \
+        reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,              \
+        reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,              \
+        dst_argb_c + DOFF, kStrideB, kWidth, NEG kHeight);                 \
+    MaskCpuFlags(benchmark_cpu_info_);                                     \
+    for (int i = 0; i < benchmark_iterations_; ++i) {                      \
+      FMT_PLANAR##To##FMT_B(                                               \
+          reinterpret_cast<uint16_t*>(src_y + SOFF), kWidth,               \
+          reinterpret_cast<uint16_t*>(src_u + SOFF), kStrideUV,            \
+          reinterpret_cast<uint16_t*>(src_v + SOFF), kStrideUV,            \
+          dst_argb_opt + DOFF, kStrideB, kWidth, NEG kHeight);             \
+    }                                                                      \
+    int max_diff = 0;                                                      \
+    for (int i = 0; i < kWidth * BPP_B * kHeight; ++i) {                   \
+      int abs_diff = abs(static_cast<int>(dst_argb_c[i + DOFF]) -          \
+                         static_cast<int>(dst_argb_opt[i + DOFF]));        \
+      if (abs_diff > max_diff) {                                           \
+        max_diff = abs_diff;                                               \
+      }                                                                    \
+    }                                                                      \
+    EXPECT_LE(max_diff, DIFF);                                             \
+    free_aligned_buffer_page_end(src_y);                                   \
+    free_aligned_buffer_page_end(src_u);                                   \
+    free_aligned_buffer_page_end(src_v);                                   \
+    free_aligned_buffer_page_end(dst_argb_c);                              \
+    free_aligned_buffer_page_end(dst_argb_opt);                            \
   }
 
 #define TESTPLANAR16TOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, ALIGN, \
