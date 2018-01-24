@@ -2106,6 +2106,7 @@ static int Clamp10(int y) {
   return y;
 }
 
+// Test 8 bit YUV to 8 bit RGB
 TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   const int kSize = 256;
   int histogram_b[256];
@@ -2163,6 +2164,7 @@ TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   free_aligned_buffer_page_end(argb_pixels);
 }
 
+// Test 10 bit YUV to 8 bit RGB
 TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   const int kSize = 1024;
   int histogram_b[1024];
@@ -2220,6 +2222,7 @@ TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   free_aligned_buffer_page_end(argb_pixels);
 }
 
+// Test 10 bit YUV to 10 bit RGB
 // Caveat: Result is near due to float rounding in expected result.
 TEST_F(LibYUVConvertTest, TestH010ToAR30) {
   const int kSize = 1024;
@@ -2266,6 +2269,65 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
   int count_g = 0;
   int count_r = 0;
   for (int i = 0; i < kSize; ++i) {
+    if (histogram_b[i])
+      ++count_b;
+    if (histogram_g[i])
+      ++count_g;
+    if (histogram_r[i])
+      ++count_r;
+  }
+  printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
+
+  free_aligned_buffer_page_end(orig_yuv);
+  free_aligned_buffer_page_end(ar30_pixels);
+}
+
+// Test 8 bit YUV to 10 bit RGB
+TEST_F(LibYUVConvertTest, TestH420ToAR30) {
+  const int kSize = 256;
+  const int kHistSize = 1024;
+  int histogram_b[kHistSize];
+  int histogram_g[kHistSize];
+  int histogram_r[kHistSize];
+  memset(histogram_b, 0, sizeof(histogram_b));
+  memset(histogram_g, 0, sizeof(histogram_g));
+  memset(histogram_r, 0, sizeof(histogram_r));
+  align_buffer_page_end(orig_yuv, kSize + kSize / 2 * 2);
+  align_buffer_page_end(ar30_pixels, kSize * 4);
+  uint8_t* orig_y = orig_yuv;
+  uint8_t* orig_u = orig_y + kSize;
+  uint8_t* orig_v = orig_u + kSize / 2;
+
+  // Test grey scale
+  for (int i = 0; i < kSize; ++i) {
+    orig_y[i] = i;
+  }
+  for (int i = 0; i < kSize / 2; ++i) {
+    orig_u[i] = 128;  // 128 is 0.
+    orig_v[i] = 128;
+  }
+
+  H420ToAR30(orig_y, 0, orig_u, 0, orig_v, 0, ar30_pixels, 0, kSize, 1);
+
+  for (int i = 0; i < kSize; ++i) {
+    int b10 = reinterpret_cast<uint32_t*>(ar30_pixels)[i] & 1023;
+    int g10 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 10) & 1023;
+    int r10 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 20) & 1023;
+    int a2 = (reinterpret_cast<uint32_t*>(ar30_pixels)[i] >> 30) & 3;
+    ++histogram_b[b10];
+    ++histogram_g[g10];
+    ++histogram_r[r10];
+    int expected_y = Clamp10(static_cast<int>((i - 16) * 1.164f * 4.f));
+    EXPECT_NEAR(b10, expected_y, 4);
+    EXPECT_NEAR(g10, expected_y, 4);
+    EXPECT_NEAR(r10, expected_y, 4);
+    EXPECT_EQ(a2, 3);
+  }
+
+  int count_b = 0;
+  int count_g = 0;
+  int count_r = 0;
+  for (int i = 0; i < kHistSize; ++i) {
     if (histogram_b[i])
       ++count_b;
     if (histogram_g[i])
