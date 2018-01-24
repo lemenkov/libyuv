@@ -11,37 +11,33 @@
 #ifndef INCLUDE_LIBYUV_BASIC_TYPES_H_
 #define INCLUDE_LIBYUV_BASIC_TYPES_H_
 
-#include <stddef.h>  // for NULL, size_t
+#include <stddef.h>  // For size_t and NULL
+
+#if !defined(INT_TYPES_DEFINED) && !defined(GG_LONGLONG)
+#define INT_TYPES_DEFINED
 
 #if defined(_MSC_VER) && (_MSC_VER < 1600)
 #include <sys/types.h>  // for uintptr_t on x86
-#else
-#include <stdint.h>  // for uintptr_t
-#endif
-
-#ifndef GG_LONGLONG
-#ifndef INT_TYPES_DEFINED
-#define INT_TYPES_DEFINED
-#ifdef COMPILER_MSVC
 typedef unsigned __int64 uint64_t;
 typedef __int64 int64_t;
-#else  // COMPILER_MSVC
-#if defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long uint64_t;  // NOLINT
-typedef long int64_t;            // NOLINT
-#else  // defined(__LP64__) && !defined(__OpenBSD__) && !defined(__APPLE__)
-typedef unsigned long long uint64_t;  // NOLINT
-typedef long long int64_t;            // NOLINT
-#endif  // __LP64__
-#endif  // COMPILER_MSVC
 typedef unsigned int uint32_t;
 typedef int int32_t;
-typedef unsigned short uint16_t;  // NOLINT
-typedef short int16_t;            // NOLINT
+typedef unsigned short uint16_t;
+typedef short int16_t;
 typedef unsigned char uint8_t;
 typedef signed char int8_t;
+#else
+#include <stdint.h>  // for uintptr_t and C99 types
+#endif  // defined(_MSC_VER) && (_MSC_VER < 1600)
+typedef uint64_t uint64;
+typedef int64_t int64;
+typedef uint32_t uint32;
+typedef int32_t int32;
+typedef uint16_t uint16;
+typedef int16_t int16;
+typedef uint8_t uint8;
+typedef int8_t int8;
 #endif  // INT_TYPES_DEFINED
-#endif  // GG_LONGLONG
 
 #if !defined(LIBYUV_API)
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -61,6 +57,7 @@ typedef signed char int8_t;
 #endif  // __GNUC__
 #endif  // LIBYUV_API
 
+// TODO(fbarchard): Remove bool macros.
 #define LIBYUV_BOOL int
 #define LIBYUV_FALSE 0
 #define LIBYUV_TRUE 1
