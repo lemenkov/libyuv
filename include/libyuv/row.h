@@ -272,6 +272,7 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
+#define HAS_I422TOAR30ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
 #endif
@@ -1905,6 +1906,12 @@ void I210ToARGBRow_SSSE3(const uint16_t* src_y,
                          uint8_t* dst_argb,
                          const struct YuvConstants* yuvconstants,
                          int width);
+void I422ToAR30Row_AVX2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_ar30,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
 void I210ToARGBRow_AVX2(const uint16_t* src_y,
                         const uint16_t* src_u,
                         const uint16_t* src_v,
@@ -2073,6 +2080,12 @@ void I210ToARGBRow_Any_SSSE3(const uint16_t* src_y,
                              uint8_t* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width);
+void I422ToAR30Row_Any_AVX2(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            uint8_t* dst_ar30,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
 void I210ToARGBRow_Any_AVX2(const uint16_t* src_y,
                             const uint16_t* src_u,
                             const uint16_t* src_v,
