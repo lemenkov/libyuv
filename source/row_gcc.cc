@@ -2501,6 +2501,46 @@ void OMITFP I210ToARGBRow_AVX2(const uint16_t* y_buf,
 }
 #endif  // HAS_I210TOARGBROW_AVX2
 
+#if defined(HAS_I210TOAR30ROW_AVX2)
+// 16 pixels
+// 8 UV values upsampled to 16 UV, mixed with 16 Y producing 16 AR30 (64 bytes).
+void OMITFP I210ToAR30Row_AVX2(const uint16_t* y_buf,
+                               const uint16_t* u_buf,
+                               const uint16_t* v_buf,
+                               uint8_t* dst_ar30,
+                               const struct YuvConstants* yuvconstants,
+                               int width) {
+  asm volatile (
+    YUVTORGB_SETUP_AVX2(yuvconstants)
+    "sub       %[u_buf],%[v_buf]               \n"
+    "vpcmpeqb  %%ymm5,%%ymm5,%%ymm5            \n"  // AR30 constants
+    "vpsrlw    $14,%%ymm5,%%ymm5               \n"
+    "vpsllw    $4,%%ymm5,%%ymm5                \n"  // 2 alpha bits
+    "vpxor     %%ymm6,%%ymm6,%%ymm6            \n"  // 0 for min
+    "vpcmpeqb  %%ymm7,%%ymm7,%%ymm7            \n"  // 1023 for max
+    "vpsrlw    $6,%%ymm7,%%ymm7                \n"
+
+    LABELALIGN
+    "1:                                        \n"
+    READYUV210_AVX2
+    YUVTORGB16_AVX2(yuvconstants)
+    STOREAR30_AVX2
+    "sub       $0x10,%[width]                  \n"
+    "jg        1b                              \n"
+
+    "vzeroupper                                \n"
+  : [y_buf]"+r"(y_buf),    // %[y_buf]
+    [u_buf]"+r"(u_buf),    // %[u_buf]
+    [v_buf]"+r"(v_buf),    // %[v_buf]
+    [dst_ar30]"+r"(dst_ar30),  // %[dst_ar30]
+    [width]"+rm"(width)    // %[width]
+  : [yuvconstants]"r"(yuvconstants)  // %[yuvconstants]
+  : "memory", "cc", YUVTORGB_REGS_AVX2
+    "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5"
+  );
+}
+#endif  // HAS_I210TOAR30ROW_AVX2
+
 #if defined(HAS_I422ALPHATOARGBROW_AVX2)
 // 16 pixels
 // 8 UV values upsampled to 16 UV, mixed with 16 Y and 16 A producing 16 ARGB.
