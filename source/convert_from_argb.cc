@@ -1217,6 +1217,55 @@ int ARGBToARGB4444(const uint8_t* src_argb,
   return 0;
 }
 
+// Convert ABGR To AR30.
+LIBYUV_API
+int ABGRToAR30(const uint8_t* src_abgr,
+               int src_stride_abgr,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height) {
+  int y;
+  void (*ABGRToAR30Row)(const uint8_t* src_abgr, uint8_t* dst_rgb, int width) =
+      ABGRToAR30Row_C;
+  if (!src_abgr || !dst_ar30 || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_abgr = src_abgr + (height - 1) * src_stride_abgr;
+    src_stride_abgr = -src_stride_abgr;
+  }
+  // Coalesce rows.
+  if (src_stride_abgr == width * 4 && dst_stride_ar30 == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_abgr = dst_stride_ar30 = 0;
+  }
+#if defined(HAS_ABGRTOAR30ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    ABGRToAR30Row = ABGRToAR30Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 4)) {
+      ABGRToAR30Row = ABGRToAR30Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_ABGRTOAR30ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    ABGRToAR30Row = ABGRToAR30Row_Any_AVX2;
+    if (IS_ALIGNED(width, 8)) {
+      ABGRToAR30Row = ABGRToAR30Row_AVX2;
+    }
+  }
+#endif
+  for (y = 0; y < height; ++y) {
+    ABGRToAR30Row(src_abgr, dst_ar30, width);
+    src_abgr += src_stride_abgr;
+    dst_ar30 += dst_stride_ar30;
+  }
+  return 0;
+}
+
 // Convert ARGB To AR30.
 LIBYUV_API
 int ARGBToAR30(const uint8_t* src_argb,

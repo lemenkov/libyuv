@@ -252,6 +252,7 @@ extern "C" {
 // TODO(fbarchard): Port to Visual C
 #if !defined(LIBYUV_DISABLE_X86) && \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER)))
+#define HAS_ABGRTOAR30ROW_SSSE3
 #define HAS_ARGBTOAR30ROW_SSSE3
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
@@ -268,6 +269,7 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
+#define HAS_ABGRTOAR30ROW_AVX2
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
@@ -1688,7 +1690,8 @@ void ARGBToARGB1555Row_SSE2(const uint8_t* src_argb,
 void ARGBToARGB4444Row_SSE2(const uint8_t* src_argb,
                             uint8_t* dst_rgb,
                             int width);
-void ARGBToAR30Row_SSSE3(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
+void ABGRToAR30Row_SSSE3(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
+void ARGBToAR30Row_SSSE3(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
 void ARGBToRGB565DitherRow_C(const uint8_t* src_argb,
                              uint8_t* dst_rgb,
@@ -1710,7 +1713,8 @@ void ARGBToARGB1555Row_AVX2(const uint8_t* src_argb,
 void ARGBToARGB4444Row_AVX2(const uint8_t* src_argb,
                             uint8_t* dst_rgb,
                             int width);
-void ARGBToAR30Row_AVX2(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
+void ABGRToAR30Row_AVX2(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
+void ARGBToAR30Row_AVX2(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
 void ARGBToRGB24Row_NEON(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRAWRow_NEON(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
@@ -1745,7 +1749,8 @@ void ARGBToRAWRow_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToRGB565Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToARGB1555Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
 void ARGBToARGB4444Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
-void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
+void ABGRToAR30Row_C(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
+void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
 void J400ToARGBRow_SSE2(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_AVX2(const uint8_t* src_y, uint8_t* dst_argb, int width);
@@ -2407,9 +2412,8 @@ void ARGBToARGB1555Row_Any_SSE2(const uint8_t* src_argb,
 void ARGBToARGB4444Row_Any_SSE2(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
                                 int width);
-void ARGBToAR30Row_Any_SSSE3(const uint8_t* src_argb,
-                             uint8_t* dst_rgb,
-                             int width);
+void ABGRToAR30Row_Any_SSSE3(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
+void ARGBToAR30Row_Any_SSSE3(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
 void ARGBToRGB565DitherRow_Any_SSE2(const uint8_t* src_argb,
                                     uint8_t* dst_rgb,
@@ -2429,9 +2433,8 @@ void ARGBToARGB1555Row_Any_AVX2(const uint8_t* src_argb,
 void ARGBToARGB4444Row_Any_AVX2(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
                                 int width);
-void ARGBToAR30Row_Any_AVX2(const uint8_t* src_argb,
-                            uint8_t* dst_rgb,
-                            int width);
+void ABGRToAR30Row_Any_AVX2(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
+void ARGBToAR30Row_Any_AVX2(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
 void ARGBToRGB24Row_Any_NEON(const uint8_t* src_argb,
                              uint8_t* dst_rgb,

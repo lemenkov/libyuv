@@ -55,6 +55,15 @@ int ARGBToRGBA(const uint8_t* src_argb,
                int width,
                int height);
 
+// Convert ABGR To AR30.
+LIBYUV_API
+int ABGRToAR30(const uint8_t* src_abgr,
+               int src_stride_abgr,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
 // Convert ARGB To AR30.
 LIBYUV_API
 int ARGBToAR30(const uint8_t* src_argb,

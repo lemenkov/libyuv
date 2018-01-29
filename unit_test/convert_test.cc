@@ -41,6 +41,7 @@ namespace libyuv {
 
 // Alias to copy pixels as is
 #define AR30ToAR30 ARGBCopy
+#define ABGRToABGR ARGBCopy
 
 #define SUBSAMPLE(v, a) ((((v) + (a)-1)) / (a))
 
@@ -1065,6 +1066,7 @@ TESTATOB(ARGB, 4, 4, 1, RGB24, 3, 3, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RGB565, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB1555, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB4444, 2, 2, 1, 0)
+TESTATOB(ABGR, 4, 4, 1, AR30, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, AR30, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, YUY2, 2, 4, 1, 4)
 TESTATOB(ARGB, 4, 4, 1, UYVY, 2, 4, 1, 4)
@@ -1945,9 +1947,9 @@ TESTQPLANARTOE(I420Alpha, 2, 2, ABGR, 1, 4, ARGB, 4)
 
 // Caveat: Destination needs to be 4 bytes
 TESTPLANETOE(ARGB, 1, 4, AR30, 1, 4, ARGB, 4)
+TESTPLANETOE(ABGR, 1, 4, AR30, 1, 4, ABGR, 4)
 TESTPLANETOE(AR30, 1, 4, ARGB, 1, 4, ABGR, 4)
-
-// TESTPLANETOE(ARGB, 1, 4, AR30, 1, 4, ABGR, 4)
+TESTPLANETOE(AR30, 1, 4, ABGR, 1, 4, ARGB, 4)
 
 TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   // 2x2 frames
@@ -2017,6 +2019,40 @@ TEST_F(LibYUVConvertTest, ARGBToAR30Row_Opt) {
   free_aligned_buffer_page_end(dst_c);
 }
 #endif  // HAS_ARGBTOAR30ROW_AVX2
+
+#ifdef HAS_ABGRTOAR30ROW_AVX2
+TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
+  // ABGRToAR30Row_AVX2 expects a multiple of 8 pixels.
+  const int kPixels = (benchmark_width_ * benchmark_height_ + 7) & ~7;
+  align_buffer_page_end(src, kPixels * 4);
+  align_buffer_page_end(dst_opt, kPixels * 4);
+  align_buffer_page_end(dst_c, kPixels * 4);
+  MemRandomize(src, kPixels * 4);
+  memset(dst_opt, 0, kPixels * 4);
+  memset(dst_c, 1, kPixels * 4);
+
+  ABGRToAR30Row_C(src, dst_c, kPixels);
+
+  int has_avx2 = TestCpuFlag(kCpuHasAVX2);
+  int has_ssse3 = TestCpuFlag(kCpuHasSSSE3);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    if (has_avx2) {
+      ABGRToAR30Row_AVX2(src, dst_opt, kPixels);
+    } else if (has_ssse3) {
+      ABGRToAR30Row_SSSE3(src, dst_opt, kPixels);
+    } else {
+      ABGRToAR30Row_C(src, dst_opt, kPixels);
+    }
+  }
+  for (int i = 0; i < kPixels * 4; ++i) {
+    EXPECT_EQ(dst_opt[i], dst_c[i]);
+  }
+
+  free_aligned_buffer_page_end(src);
+  free_aligned_buffer_page_end(dst_opt);
+  free_aligned_buffer_page_end(dst_c);
+}
+#endif  // HAS_ABGRTOAR30ROW_AVX2
 
 // TODO(fbarchard): Fix clamping issue affected by U channel.
 #define TESTPLANAR16TOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,   \

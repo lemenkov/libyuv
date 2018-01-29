@@ -730,6 +730,10 @@ result left 10 to position the A and G channels.
 // Shuffle table for converting RAW to RGB24.  Last 8.
 static const uvec8 kShuffleRB30 = {128u, 0u, 128u, 2u,  128u, 4u,  128u, 6u,
                                    128u, 8u, 128u, 10u, 128u, 12u, 128u, 14u};
+
+static const uvec8 kShuffleBR30 = {128u, 2u,  128u, 0u, 128u, 6u,  128u, 4u,
+                                   128u, 10u, 128u, 8u, 128u, 14u, 128u, 12u};
+
 static const uint32_t kMulRB10 = 1028 * 16 * 65536 + 1028;
 static const uint32_t kMaskRB10 = 0x3ff003ff;
 static const uint32_t kMaskAG10 = 0xc000ff00;
@@ -774,8 +778,46 @@ void ARGBToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 
-#ifdef HAS_ARGBTOAR30ROW_AVX2
+void ABGRToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "movdqa     %3,%%xmm2                     \n"  // shuffler for RB
+      "movd       %4,%%xmm3                     \n"  // multipler for RB
+      "movd       %5,%%xmm4                     \n"  // mask for R10 B10
+      "movd       %6,%%xmm5                     \n"  // mask for AG
+      "movd       %7,%%xmm6                     \n"  // multipler for AG
+      "pshufd     $0x0,%%xmm3,%%xmm3            \n"
+      "pshufd     $0x0,%%xmm4,%%xmm4            \n"
+      "pshufd     $0x0,%%xmm5,%%xmm5            \n"
+      "pshufd     $0x0,%%xmm6,%%xmm6            \n"
+      "sub        %0,%1                         \n"
 
+      "1:                                       \n"
+      "movdqu     (%0),%%xmm0                   \n"  // fetch 4 ABGR pixels
+      "movdqa     %%xmm0,%%xmm1                 \n"
+      "pshufb     %%xmm2,%%xmm1                 \n"  // R0B0
+      "pand       %%xmm5,%%xmm0                 \n"  // A0G0
+      "pmulhuw    %%xmm3,%%xmm1                 \n"  // X2 R16 X4  B10
+      "pmulhuw    %%xmm6,%%xmm0                 \n"  // X10 A2 X10 G10
+      "pand       %%xmm4,%%xmm1                 \n"  // X2 R10 X10 B10
+      "pslld      $10,%%xmm0                    \n"  // A2 x10 G10 x10
+      "por        %%xmm1,%%xmm0                 \n"  // A2 R10 G10 B10
+      "movdqu     %%xmm0,(%1,%0)                \n"  // store 4 AR30 pixels
+      "add        $0x10,%0                      \n"
+      "sub        $0x4,%2                       \n"
+      "jg         1b                            \n"
+
+      : "+r"(src),          // %0
+        "+r"(dst),          // %1
+        "+r"(width)         // %2
+      : "m"(kShuffleBR30),  // %3  reversed shuffler
+        "m"(kMulRB10),      // %4
+        "m"(kMaskRB10),     // %5
+        "m"(kMaskAG10),     // %6
+        "m"(kMulAG10)       // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+
+#ifdef HAS_ARGBTOAR30ROW_AVX2
 void ARGBToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm2                  \n"  // shuffler for RB
@@ -804,6 +846,43 @@ void ARGBToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
         "+r"(dst),          // %1
         "+r"(width)         // %2
       : "m"(kShuffleRB30),  // %3
+        "m"(kMulRB10),      // %4
+        "m"(kMaskRB10),     // %5
+        "m"(kMaskAG10),     // %6
+        "m"(kMulAG10)       // %7
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+#endif
+
+#ifdef HAS_ABGRTOAR30ROW_AVX2
+void ABGRToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vbroadcastf128 %3,%%ymm2                  \n"  // shuffler for RB
+      "vbroadcastss  %4,%%ymm3                   \n"  // multipler for RB
+      "vbroadcastss  %5,%%ymm4                   \n"  // mask for R10 B10
+      "vbroadcastss  %6,%%ymm5                   \n"  // mask for AG
+      "vbroadcastss  %7,%%ymm6                   \n"  // multipler for AG
+      "sub        %0,%1                          \n"
+
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"  // fetch 8 ABGR pixels
+      "vpshufb    %%ymm2,%%ymm0,%%ymm1           \n"  // R0B0
+      "vpand      %%ymm5,%%ymm0,%%ymm0           \n"  // A0G0
+      "vpmulhuw   %%ymm3,%%ymm1,%%ymm1           \n"  // X2 R16 X4  B10
+      "vpmulhuw   %%ymm6,%%ymm0,%%ymm0           \n"  // X10 A2 X10 G10
+      "vpand      %%ymm4,%%ymm1,%%ymm1           \n"  // X2 R10 X10 B10
+      "vpslld     $10,%%ymm0,%%ymm0              \n"  // A2 x10 G10 x10
+      "vpor       %%ymm1,%%ymm0,%%ymm0           \n"  // A2 R10 G10 B10
+      "vmovdqu    %%ymm0,(%1,%0)                 \n"  // store 8 AR30 pixels
+      "add        $0x20,%0                       \n"
+      "sub        $0x8,%2                        \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
+
+      : "+r"(src),          // %0
+        "+r"(dst),          // %1
+        "+r"(width)         // %2
+      : "m"(kShuffleBR30),  // %3  reversed shuffler
         "m"(kMulRB10),      // %4
         "m"(kMaskRB10),     // %5
         "m"(kMaskAG10),     // %6

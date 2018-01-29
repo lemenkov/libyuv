@@ -348,15 +348,28 @@ void ARGBToARGB4444Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   }
 }
 
-void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
+void ABGRToAR30Row_C(const uint8_t* src_abgr, uint8_t* dst_ar30, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint32_t b0 = (src_abgr[0] >> 6) | ((uint32_t)(src_abgr[0]) << 2);
+    uint32_t g0 = (src_abgr[1] >> 6) | ((uint32_t)(src_abgr[1]) << 2);
+    uint32_t r0 = (src_abgr[2] >> 6) | ((uint32_t)(src_abgr[2]) << 2);
+    uint32_t a0 = (src_abgr[3] >> 6);
+    *(uint32_t*)(dst_ar30) = r0 | (g0 << 10) | (b0 << 20) | (a0 << 30);
+    dst_ar30 += 4;
+    src_abgr += 4;
+  }
+}
+
+void ARGBToAR30Row_C(const uint8_t* src_argb, uint8_t* dst_ar30, int width) {
   int x;
   for (x = 0; x < width; ++x) {
     uint32_t b0 = (src_argb[0] >> 6) | ((uint32_t)(src_argb[0]) << 2);
     uint32_t g0 = (src_argb[1] >> 6) | ((uint32_t)(src_argb[1]) << 2);
     uint32_t r0 = (src_argb[2] >> 6) | ((uint32_t)(src_argb[2]) << 2);
     uint32_t a0 = (src_argb[3] >> 6);
-    *(uint32_t*)(dst_rgb) = b0 | (g0 << 10) | (r0 << 20) | (a0 << 30);
-    dst_rgb += 4;
+    *(uint32_t*)(dst_ar30) = b0 | (g0 << 10) | (r0 << 20) | (a0 << 30);
+    dst_ar30 += 4;
     src_argb += 4;
   }
 }
