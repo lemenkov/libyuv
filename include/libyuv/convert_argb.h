@@ -530,6 +530,15 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int width,
                int height);
 
+// Convert AR30 To ABGR.
+LIBYUV_API
+int AR30ToABGR(const uint8_t* src_ar30,
+               int src_stride_ar30,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
 #ifdef HAVE_JPEG
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.

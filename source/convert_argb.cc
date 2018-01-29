@@ -1445,8 +1445,6 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int width,
                int height) {
   int y;
-  void (*AR30ToARGBRow)(const uint8_t* src_ar30, uint8_t* dst_argb, int width) =
-      AR30ToARGBRow_C;
   if (!src_ar30 || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
@@ -1463,9 +1461,41 @@ int AR30ToARGB(const uint8_t* src_ar30,
     src_stride_ar30 = dst_stride_argb = 0;
   }
   for (y = 0; y < height; ++y) {
-    AR30ToARGBRow(src_ar30, dst_argb, width);
+    AR30ToARGBRow_C(src_ar30, dst_argb, width);
     src_ar30 += src_stride_ar30;
     dst_argb += dst_stride_argb;
+  }
+  return 0;
+}
+
+// Convert AR30 to ABGR.
+LIBYUV_API
+int AR30ToABGR(const uint8_t* src_ar30,
+               int src_stride_ar30,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height) {
+  int y;
+  if (!src_ar30 || !dst_abgr || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_stride_ar30 = -src_stride_ar30;
+  }
+  // Coalesce rows.
+  if (src_stride_ar30 == width * 4 && dst_stride_abgr == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_ar30 = dst_stride_abgr = 0;
+  }
+  for (y = 0; y < height; ++y) {
+    AR30ToABGRRow_C(src_ar30, dst_abgr, width);
+    src_ar30 += src_stride_ar30;
+    dst_abgr += dst_stride_abgr;
   }
   return 0;
 }

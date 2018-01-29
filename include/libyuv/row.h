@@ -1613,6 +1613,7 @@ void RGB565ToARGBRow_C(const uint8_t* src_rgb, uint8_t* dst_argb, int width);
 void ARGB1555ToARGBRow_C(const uint8_t* src_argb, uint8_t* dst_argb, int width);
 void ARGB4444ToARGBRow_C(const uint8_t* src_argb, uint8_t* dst_argb, int width);
 void AR30ToARGBRow_C(const uint8_t* src_ar30, uint8_t* dst_argb, int width);
+void AR30ToABGRRow_C(const uint8_t* src_ar30, uint8_t* dst_abgr, int width);
 void RGB24ToARGBRow_Any_SSSE3(const uint8_t* src_rgb24,
                               uint8_t* dst_argb,
                               int width);
