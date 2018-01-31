@@ -1324,6 +1324,7 @@ void ScaleARGBFilterCols_SSSE3(uint8_t* dst_argb,
       "movd      %%xmm0,(%0)                     \n"
 
       LABELALIGN "99:                            \n"  // clang-format error.
+
       : "+r"(dst_argb),    // %0
         "+r"(src_argb),    // %1
         "+rm"(dst_width),  // %2

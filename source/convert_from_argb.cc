@@ -583,6 +583,14 @@ int ARGBToYUY2(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_I422TOYUY2ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I422ToYUY2Row = I422ToYUY2Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToYUY2Row = I422ToYUY2Row_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_I422TOYUY2ROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     I422ToYUY2Row = I422ToYUY2Row_Any_NEON;
@@ -709,6 +717,14 @@ int ARGBToUYVY(const uint8_t* src_argb,
     I422ToUYVYRow = I422ToUYVYRow_Any_SSE2;
     if (IS_ALIGNED(width, 16)) {
       I422ToUYVYRow = I422ToUYVYRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_I422TOUYVYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    I422ToUYVYRow = I422ToUYVYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      I422ToUYVYRow = I422ToUYVYRow_AVX2;
     }
   }
 #endif

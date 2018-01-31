@@ -6041,6 +6041,88 @@ void I422ToUYVYRow_SSE2(const uint8_t* src_y,
 }
 #endif  // HAS_I422TOUYVYROW_SSE2
 
+#ifdef HAS_I422TOYUY2ROW_AVX2
+// TODO(fbarchard): Consider vmovhps to avoid vpermq
+
+void I422ToYUY2Row_AVX2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_frame,
+                        int width) {
+  asm volatile(
+
+      "sub       %1,%2                             \n"
+
+      LABELALIGN
+      "1:                                          \n"
+      "vmovdqu    (%1),%%xmm2                      \n"
+      "vmovdqu    0x00(%1,%2,1),%%xmm3             \n"
+      "lea        0x10(%1),%1                      \n"
+      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
+      "vpermq     $0xd8,%%ymm3,%%ymm3              \n"
+      "vpunpcklbw %%ymm3,%%ymm2,%%ymm2             \n"
+      "vmovdqu    (%0),%%ymm0                      \n"
+      "lea        0x20(%0),%0                      \n"
+      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
+      "vpermq     $0xd8,%%ymm0,%%ymm0              \n"
+      "vpunpckhbw %%ymm2,%%ymm0,%%ymm1             \n"
+      "vpunpcklbw %%ymm2,%%ymm0,%%ymm0             \n"
+      "vmovdqu    %%ymm0,(%3)                      \n"
+      "vmovdqu    %%ymm1,0x20(%3)                  \n"
+      "lea        0x40(%3),%3                      \n"
+      "sub        $0x20,%4                         \n"
+      "jg         1b                               \n"
+      "vzeroupper                                  \n"
+      : "+r"(src_y),      // %0
+        "+r"(src_u),      // %1
+        "+r"(src_v),      // %2
+        "+r"(dst_frame),  // %3
+        "+rm"(width)      // %4
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+}
+#endif  // HAS_I422TOYUY2ROW_AVX2
+
+#ifdef HAS_I422TOUYVYROW_AVX2
+void I422ToUYVYRow_AVX2(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_frame,
+                        int width) {
+  asm volatile(
+
+      "sub        %1,%2                            \n"
+
+      LABELALIGN
+      "1:                                          \n"
+      "vmovdqu    (%1),%%xmm2                      \n"
+      "vmovdqu    0x00(%1,%2,1),%%xmm3             \n"
+      "lea        0x10(%1),%1                      \n"
+      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
+      "vpermq     $0xd8,%%ymm3,%%ymm3              \n"
+      "vpunpcklbw %%ymm3,%%ymm2,%%ymm2             \n"
+      "vmovdqu    (%0),%%ymm0                      \n"
+      "lea        0x20(%0),%0                      \n"
+      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
+      "vpermq     $0xd8,%%ymm0,%%ymm0              \n"
+      "vpunpcklbw %%ymm0,%%ymm2,%%ymm1             \n"
+      "vpunpckhbw %%ymm0,%%ymm2,%%ymm2             \n"
+      "vmovdqu    %%ymm1,(%3)                      \n"
+      "vmovdqu    %%ymm2,0x20(%3)                  \n"
+      "lea        0x40(%3),%3                      \n"
+      "sub        $0x20,%4                         \n"
+      "jg         1b                               \n"
+      "vzeroupper                                  \n"
+      : "+r"(src_y),      // %0
+        "+r"(src_u),      // %1
+        "+r"(src_v),      // %2
+        "+r"(dst_frame),  // %3
+        "+rm"(width)      // %4
+      :
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+}
+#endif  // HAS_I422TOUYVYROW_AVX2
+
 #ifdef HAS_ARGBPOLYNOMIALROW_SSE2
 void ARGBPolynomialRow_SSE2(const uint8_t* src_argb,
                             uint8_t* dst_argb,
