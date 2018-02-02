@@ -5973,19 +5973,20 @@ void ARGBShuffleRow_AVX2(const uint8_t* src_argb,
 void I422ToYUY2Row_SSE2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* dst_frame,
+                        uint8_t* dst_yuy2,
                         int width) {
   asm volatile(
 
       "sub       %1,%2                             \n"
+
       LABELALIGN
       "1:                                          \n"
       "movq      (%1),%%xmm2                       \n"
-      "movq      0x00(%1,%2,1),%%xmm3              \n"
-      "lea       0x8(%1),%1                        \n"
-      "punpcklbw %%xmm3,%%xmm2                     \n"
+      "movq      0x00(%1,%2,1),%%xmm1              \n"
+      "add       $0x8,%1                           \n"
+      "punpcklbw %%xmm1,%%xmm2                     \n"
       "movdqu    (%0),%%xmm0                       \n"
-      "lea       0x10(%0),%0                       \n"
+      "add       $0x10,%0                          \n"
       "movdqa    %%xmm0,%%xmm1                     \n"
       "punpcklbw %%xmm2,%%xmm0                     \n"
       "punpckhbw %%xmm2,%%xmm1                     \n"
@@ -5994,13 +5995,13 @@ void I422ToYUY2Row_SSE2(const uint8_t* src_y,
       "lea       0x20(%3),%3                       \n"
       "sub       $0x10,%4                          \n"
       "jg         1b                               \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_u),      // %1
-        "+r"(src_v),      // %2
-        "+r"(dst_frame),  // %3
-        "+rm"(width)      // %4
+      : "+r"(src_y),     // %0
+        "+r"(src_u),     // %1
+        "+r"(src_v),     // %2
+        "+r"(dst_yuy2),  // %3
+        "+rm"(width)     // %4
       :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_I422TOYUY2ROW_SSE2
 
@@ -6008,7 +6009,7 @@ void I422ToYUY2Row_SSE2(const uint8_t* src_y,
 void I422ToUYVYRow_SSE2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* dst_frame,
+                        uint8_t* dst_uyvy,
                         int width) {
   asm volatile(
 
@@ -6017,12 +6018,12 @@ void I422ToUYVYRow_SSE2(const uint8_t* src_y,
       LABELALIGN
       "1:                                          \n"
       "movq      (%1),%%xmm2                       \n"
-      "movq      0x00(%1,%2,1),%%xmm3              \n"
-      "lea       0x8(%1),%1                        \n"
-      "punpcklbw %%xmm3,%%xmm2                     \n"
+      "movq      0x00(%1,%2,1),%%xmm1              \n"
+      "add       $0x8,%1                           \n"
+      "punpcklbw %%xmm1,%%xmm2                     \n"
       "movdqu    (%0),%%xmm0                       \n"
       "movdqa    %%xmm2,%%xmm1                     \n"
-      "lea       0x10(%0),%0                       \n"
+      "add       $0x10,%0                          \n"
       "punpcklbw %%xmm0,%%xmm1                     \n"
       "punpckhbw %%xmm0,%%xmm2                     \n"
       "movdqu    %%xmm1,(%3)                       \n"
@@ -6030,23 +6031,21 @@ void I422ToUYVYRow_SSE2(const uint8_t* src_y,
       "lea       0x20(%3),%3                       \n"
       "sub       $0x10,%4                          \n"
       "jg         1b                               \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_u),      // %1
-        "+r"(src_v),      // %2
-        "+r"(dst_frame),  // %3
-        "+rm"(width)      // %4
+      : "+r"(src_y),     // %0
+        "+r"(src_u),     // %1
+        "+r"(src_v),     // %2
+        "+r"(dst_uyvy),  // %3
+        "+rm"(width)     // %4
       :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_I422TOUYVYROW_SSE2
 
 #ifdef HAS_I422TOYUY2ROW_AVX2
-// TODO(fbarchard): Consider vmovhps to avoid vpermq
-
 void I422ToYUY2Row_AVX2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* dst_frame,
+                        uint8_t* dst_yuy2,
                         int width) {
   asm volatile(
 
@@ -6054,30 +6053,30 @@ void I422ToYUY2Row_AVX2(const uint8_t* src_y,
 
       LABELALIGN
       "1:                                          \n"
-      "vpmovzxbw  (%1),%%ymm2                      \n"
-      "vpmovzxbw  0x00(%1,%2,1),%%ymm3             \n"
+      "vpmovzxbw  (%1),%%ymm1                      \n"
+      "vpmovzxbw  0x00(%1,%2,1),%%ymm2             \n"
       "add        $0x10,%1                         \n"
-      "vpsllw     $0x8,%%ymm3,%%ymm3               \n"
-      "vpor       %%ymm3,%%ymm2,%%ymm2             \n"
+      "vpsllw     $0x8,%%ymm2,%%ymm2               \n"
+      "vpor       %%ymm1,%%ymm2,%%ymm2             \n"
       "vmovdqu    (%0),%%ymm0                      \n"
       "add        $0x20,%0                         \n"
-      "vpunpckhbw %%ymm2,%%ymm0,%%ymm1             \n"
-      "vpunpcklbw %%ymm2,%%ymm0,%%ymm0             \n"
-      "vextractf128 $0x0,%%ymm0,(%3)               \n"
-      "vextractf128 $0x0,%%ymm1,0x10(%3)           \n"
-      "vextractf128 $0x1,%%ymm0,0x20(%3)           \n"
-      "vextractf128 $0x1,%%ymm1,0x30(%3)           \n"
+      "vpunpcklbw %%ymm2,%%ymm0,%%ymm1             \n"
+      "vpunpckhbw %%ymm2,%%ymm0,%%ymm2             \n"
+      "vextractf128 $0x0,%%ymm1,(%3)               \n"
+      "vextractf128 $0x0,%%ymm2,0x10(%3)           \n"
+      "vextractf128 $0x1,%%ymm1,0x20(%3)           \n"
+      "vextractf128 $0x1,%%ymm2,0x30(%3)           \n"
       "lea        0x40(%3),%3                      \n"
       "sub        $0x20,%4                         \n"
       "jg         1b                               \n"
       "vzeroupper                                  \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_u),      // %1
-        "+r"(src_v),      // %2
-        "+r"(dst_frame),  // %3
-        "+rm"(width)      // %4
+      : "+r"(src_y),     // %0
+        "+r"(src_u),     // %1
+        "+r"(src_v),     // %2
+        "+r"(dst_yuy2),  // %3
+        "+rm"(width)     // %4
       :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_I422TOYUY2ROW_AVX2
 
@@ -6085,7 +6084,7 @@ void I422ToYUY2Row_AVX2(const uint8_t* src_y,
 void I422ToUYVYRow_AVX2(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* dst_frame,
+                        uint8_t* dst_uyvy,
                         int width) {
   asm volatile(
 
@@ -6093,31 +6092,30 @@ void I422ToUYVYRow_AVX2(const uint8_t* src_y,
 
       LABELALIGN
       "1:                                          \n"
-      "vmovdqu    (%1),%%xmm2                      \n"
-      "vmovdqu    0x00(%1,%2,1),%%xmm3             \n"
-      "lea        0x10(%1),%1                      \n"
-      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
-      "vpermq     $0xd8,%%ymm3,%%ymm3              \n"
-      "vpunpcklbw %%ymm3,%%ymm2,%%ymm2             \n"
+      "vpmovzxbw  (%1),%%ymm1                      \n"
+      "vpmovzxbw  0x00(%1,%2,1),%%ymm2             \n"
+      "add        $0x10,%1                         \n"
+      "vpsllw     $0x8,%%ymm2,%%ymm2               \n"
+      "vpor       %%ymm1,%%ymm2,%%ymm2             \n"
       "vmovdqu    (%0),%%ymm0                      \n"
-      "lea        0x20(%0),%0                      \n"
-      "vpermq     $0xd8,%%ymm2,%%ymm2              \n"
-      "vpermq     $0xd8,%%ymm0,%%ymm0              \n"
+      "add        $0x20,%0                         \n"
       "vpunpcklbw %%ymm0,%%ymm2,%%ymm1             \n"
       "vpunpckhbw %%ymm0,%%ymm2,%%ymm2             \n"
-      "vmovdqu    %%ymm1,(%3)                      \n"
-      "vmovdqu    %%ymm2,0x20(%3)                  \n"
+      "vextractf128 $0x0,%%ymm1,(%3)               \n"
+      "vextractf128 $0x0,%%ymm2,0x10(%3)           \n"
+      "vextractf128 $0x1,%%ymm1,0x20(%3)           \n"
+      "vextractf128 $0x1,%%ymm2,0x30(%3)           \n"
       "lea        0x40(%3),%3                      \n"
       "sub        $0x20,%4                         \n"
       "jg         1b                               \n"
       "vzeroupper                                  \n"
-      : "+r"(src_y),      // %0
-        "+r"(src_u),      // %1
-        "+r"(src_v),      // %2
-        "+r"(dst_frame),  // %3
-        "+rm"(width)      // %4
+      : "+r"(src_y),     // %0
+        "+r"(src_u),     // %1
+        "+r"(src_v),     // %2
+        "+r"(dst_uyvy),  // %3
+        "+rm"(width)     // %4
       :
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2");
 }
 #endif  // HAS_I422TOUYVYROW_AVX2
 
