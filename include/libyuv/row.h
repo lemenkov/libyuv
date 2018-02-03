@@ -645,10 +645,10 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
-void I422AlphaToARGBRow_NEON(const uint8_t* y_buf,
-                             const uint8_t* u_buf,
-                             const uint8_t* v_buf,
-                             const uint8_t* a_buf,
+void I422AlphaToARGBRow_NEON(const uint8_t* src_y,
+                             const uint8_t* src_u,
+                             const uint8_t* src_v,
+                             const uint8_t* src_a,
                              uint8_t* dst_argb,
                              const struct YuvConstants* yuvconstants,
                              int width);
@@ -1517,7 +1517,7 @@ void SetRow_Any_NEON(uint8_t* dst, uint8_t v8, int count);
 
 void ARGBSetRow_C(uint8_t* dst_argb, uint32_t v32, int count);
 void ARGBSetRow_X86(uint8_t* dst_argb, uint32_t v32, int count);
-void ARGBSetRow_NEON(uint8_t* dst_argb, uint32_t v32, int count);
+void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int count);
 void ARGBSetRow_Any_NEON(uint8_t* dst_argb, uint32_t v32, int count);
 void ARGBSetRow_MSA(uint8_t* dst_argb, uint32_t v32, int count);
 void ARGBSetRow_Any_MSA(uint8_t* dst_argb, uint32_t v32, int count);
@@ -1718,14 +1718,14 @@ void ARGBToARGB4444Row_AVX2(const uint8_t* src_argb,
 void ABGRToAR30Row_AVX2(const uint8_t* src_abgr, uint8_t* dst_ar30, int width);
 void ARGBToAR30Row_AVX2(const uint8_t* src_argb, uint8_t* dst_ar30, int width);
 
-void ARGBToRGB24Row_NEON(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
-void ARGBToRAWRow_NEON(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
-void ARGBToRGB565Row_NEON(const uint8_t* src_argb, uint8_t* dst_rgb, int width);
+void ARGBToRGB24Row_NEON(const uint8_t* src_argb, uint8_t* dst_rgb24, int width);
+void ARGBToRAWRow_NEON(const uint8_t* src_argb, uint8_t* dst_raw, int width);
+void ARGBToRGB565Row_NEON(const uint8_t* src_argb, uint8_t* dst_rgb565, int width);
 void ARGBToARGB1555Row_NEON(const uint8_t* src_argb,
-                            uint8_t* dst_rgb,
+                            uint8_t* dst_argb1555,
                             int width);
 void ARGBToARGB4444Row_NEON(const uint8_t* src_argb,
-                            uint8_t* dst_rgb,
+                            uint8_t* dst_argb4444,
                             int width);
 void ARGBToRGB565DitherRow_NEON(const uint8_t* src_argb,
                                 uint8_t* dst_rgb,
@@ -2243,7 +2243,7 @@ void ARGBBlendRow_SSSE3(const uint8_t* src_argb,
                         const uint8_t* src_argb1,
                         uint8_t* dst_argb,
                         int width);
-void ARGBBlendRow_NEON(const uint8_t* src_argb,
+void ARGBBlendRow_NEON(const uint8_t* src_argb0,
                        const uint8_t* src_argb1,
                        uint8_t* dst_argb,
                        int width);
@@ -2305,7 +2305,7 @@ void ARGBMultiplyRow_Any_AVX2(const uint8_t* src_argb,
                               const uint8_t* src_argb1,
                               uint8_t* dst_argb,
                               int width);
-void ARGBMultiplyRow_NEON(const uint8_t* src_argb,
+void ARGBMultiplyRow_NEON(const uint8_t* src_argb0,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width);
@@ -2343,7 +2343,7 @@ void ARGBAddRow_Any_AVX2(const uint8_t* src_argb,
                          const uint8_t* src_argb1,
                          uint8_t* dst_argb,
                          int width);
-void ARGBAddRow_NEON(const uint8_t* src_argb,
+void ARGBAddRow_NEON(const uint8_t* src_argb0,
                      const uint8_t* src_argb1,
                      uint8_t* dst_argb,
                      int width);
@@ -2382,7 +2382,7 @@ void ARGBSubtractRow_Any_AVX2(const uint8_t* src_argb,
                               const uint8_t* src_argb1,
                               uint8_t* dst_argb,
                               int width);
-void ARGBSubtractRow_NEON(const uint8_t* src_argb,
+void ARGBSubtractRow_NEON(const uint8_t* src_argb0,
                           const uint8_t* src_argb1,
                           uint8_t* dst_argb,
                           int width);
@@ -3089,8 +3089,8 @@ void InterpolateRow_AVX2(uint8_t* dst_ptr,
                          int source_y_fraction);
 void InterpolateRow_NEON(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,
-                         ptrdiff_t src_stride_ptr,
-                         int width,
+                         ptrdiff_t src_stride,
+                         int dst_width,
                          int source_y_fraction);
 void InterpolateRow_MSA(uint8_t* dst_ptr,
                         const uint8_t* src_ptr,
