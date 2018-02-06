@@ -1735,44 +1735,6 @@ int Scale(const uint8_t* src_y,
                    dst_height, interpolate ? kFilterBox : kFilterNone);
 }
 
-// Deprecated api
-LIBYUV_API
-int ScaleOffset(const uint8_t* src,
-                int src_width,
-                int src_height,
-                uint8_t* dst,
-                int dst_width,
-                int dst_height,
-                int dst_yoffset,
-                LIBYUV_BOOL interpolate) {
-  // Chroma requires offset to multiple of 2.
-  int dst_yoffset_even = dst_yoffset & ~1;
-  int src_halfwidth = SUBSAMPLE(src_width, 1, 1);
-  int src_halfheight = SUBSAMPLE(src_height, 1, 1);
-  int dst_halfwidth = SUBSAMPLE(dst_width, 1, 1);
-  int dst_halfheight = SUBSAMPLE(dst_height, 1, 1);
-  int aheight = dst_height - dst_yoffset_even * 2;  // actual output height
-  const uint8_t* src_y = src;
-  const uint8_t* src_u = src + src_width * src_height;
-  const uint8_t* src_v =
-      src + src_width * src_height + src_halfwidth * src_halfheight;
-  uint8_t* dst_y = dst + dst_yoffset_even * dst_width;
-  uint8_t* dst_u =
-      dst + dst_width * dst_height + (dst_yoffset_even >> 1) * dst_halfwidth;
-  uint8_t* dst_v = dst + dst_width * dst_height +
-                   dst_halfwidth * dst_halfheight +
-                   (dst_yoffset_even >> 1) * dst_halfwidth;
-  if (!src || src_width <= 0 || src_height <= 0 || !dst || dst_width <= 0 ||
-      dst_height <= 0 || dst_yoffset_even < 0 ||
-      dst_yoffset_even >= dst_height) {
-    return -1;
-  }
-  return I420Scale(src_y, src_width, src_u, src_halfwidth, src_v, src_halfwidth,
-                   src_width, src_height, dst_y, dst_width, dst_u,
-                   dst_halfwidth, dst_v, dst_halfwidth, dst_width, aheight,
-                   interpolate ? kFilterBox : kFilterNone);
-}
-
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

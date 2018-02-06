@@ -370,7 +370,7 @@ void I422ToUYVYRow_MSA(const uint8_t* src_y,
 void I422ToARGBRow_MSA(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -390,18 +390,18 @@ void I422ToARGBRow_MSA(const uint8_t* src_y,
     src1 = (v16u8)__msa_ilvr_b((v16i8)src2, (v16i8)src1);
     YUVTORGB(src0, src1, vec_ubvr, vec_ugvg, vec_bb, vec_bg, vec_br, vec_yg,
              vec0, vec1, vec2);
-    STOREARGB(vec0, vec1, vec2, alpha, rgb_buf);
+    STOREARGB(vec0, vec1, vec2, alpha, dst_argb);
     src_y += 8;
     src_u += 4;
     src_v += 4;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
 void I422ToRGBARow_MSA(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -421,11 +421,11 @@ void I422ToRGBARow_MSA(const uint8_t* src_y,
     src1 = (v16u8)__msa_ilvr_b((v16i8)src2, (v16i8)src1);
     YUVTORGB(src0, src1, vec_ubvr, vec_ugvg, vec_bb, vec_bg, vec_br, vec_yg,
              vec0, vec1, vec2);
-    STOREARGB(alpha, vec0, vec1, vec2, rgb_buf);
+    STOREARGB(alpha, vec0, vec1, vec2, dst_argb);
     src_y += 8;
     src_u += 4;
     src_v += 4;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
@@ -433,7 +433,7 @@ void I422AlphaToARGBRow_MSA(const uint8_t* src_y,
                             const uint8_t* src_u,
                             const uint8_t* src_v,
                             const uint8_t* src_a,
-                            uint8_t* rgb_buf,
+                            uint8_t* dst_argb,
                             const struct YuvConstants* yuvconstants,
                             int width) {
   int x;
@@ -457,19 +457,19 @@ void I422AlphaToARGBRow_MSA(const uint8_t* src_y,
     YUVTORGB(src0, src1, vec_ubvr, vec_ugvg, vec_bb, vec_bg, vec_br, vec_yg,
              vec0, vec1, vec2);
     src3 = (v16u8)__msa_ilvr_b((v16i8)src3, (v16i8)src3);
-    STOREARGB(vec0, vec1, vec2, src3, rgb_buf);
+    STOREARGB(vec0, vec1, vec2, src3, dst_argb);
     src_y += 8;
     src_u += 4;
     src_v += 4;
     src_a += 8;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
 void I422ToRGB24Row_MSA(const uint8_t* src_y,
                         const uint8_t* src_u,
                         const uint8_t* src_v,
-                        uint8_t* rgb_buf,
+                        uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int32_t width) {
   int x;
@@ -510,12 +510,12 @@ void I422ToRGB24Row_MSA(const uint8_t* src_y,
     dst0 = (v16u8)__msa_vshf_b(shuffler0, (v16i8)reg3, (v16i8)reg0);
     dst1 = (v16u8)__msa_vshf_b(shuffler1, (v16i8)reg3, (v16i8)reg1);
     dst2 = (v16u8)__msa_vshf_b(shuffler2, (v16i8)reg3, (v16i8)reg2);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
-    ST_UB(dst2, (rgb_buf + 32));
+    ST_UB2(dst0, dst1, dst_argb, 16);
+    ST_UB(dst2, (dst_argb + 32));
     src_y += 16;
     src_u += 8;
     src_v += 8;
-    rgb_buf += 48;
+    dst_argb += 48;
   }
 }
 
@@ -2229,7 +2229,7 @@ void RAWToUVRow_MSA(const uint8_t* src_rgb0,
 
 void NV12ToARGBRow_MSA(const uint8_t* src_y,
                        const uint8_t* src_uv,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -2257,16 +2257,16 @@ void NV12ToARGBRow_MSA(const uint8_t* src_y,
     res1 = (v16u8)__msa_ilvev_b((v16i8)alpha, (v16i8)vec1);
     dst0 = (v16u8)__msa_ilvr_b((v16i8)res1, (v16i8)res0);
     dst1 = (v16u8)__msa_ilvl_b((v16i8)res1, (v16i8)res0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    ST_UB2(dst0, dst1, dst_argb, 16);
     src_y += 8;
     src_uv += 8;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
 void NV12ToRGB565Row_MSA(const uint8_t* src_y,
                          const uint8_t* src_uv,
-                         uint8_t* rgb_buf,
+                         uint8_t* dst_rgb565,
                          const struct YuvConstants* yuvconstants,
                          int width) {
   int x;
@@ -2293,16 +2293,16 @@ void NV12ToRGB565Row_MSA(const uint8_t* src_y,
     vec1 = (vec1 >> 2) << 5;
     vec2 = (vec2 >> 3) << 11;
     dst0 = (v16u8)(vec0 | vec1 | vec2);
-    ST_UB(dst0, rgb_buf);
+    ST_UB(dst0, dst_rgb565);
     src_y += 8;
     src_uv += 8;
-    rgb_buf += 16;
+    dst_rgb565 += 16;
   }
 }
 
 void NV21ToARGBRow_MSA(const uint8_t* src_y,
                        const uint8_t* src_vu,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -2332,10 +2332,10 @@ void NV21ToARGBRow_MSA(const uint8_t* src_y,
     res1 = (v16u8)__msa_ilvev_b((v16i8)alpha, (v16i8)vec1);
     dst0 = (v16u8)__msa_ilvr_b((v16i8)res1, (v16i8)res0);
     dst1 = (v16u8)__msa_ilvl_b((v16i8)res1, (v16i8)res0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    ST_UB2(dst0, dst1, dst_argb, 16);
     src_y += 8;
     src_vu += 8;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
@@ -2669,7 +2669,7 @@ void RGBAToUVRow_MSA(const uint8_t* src_rgb0,
 void I444ToARGBRow_MSA(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -2726,15 +2726,15 @@ void I444ToARGBRow_MSA(const uint8_t* src_y,
     vec1 = (v8u16)__msa_ilvev_b((v16i8)alpha, (v16i8)vec2);
     dst0 = (v16u8)__msa_ilvr_h((v8i16)vec1, (v8i16)vec0);
     dst1 = (v16u8)__msa_ilvl_h((v8i16)vec1, (v8i16)vec0);
-    ST_UB2(dst0, dst1, rgb_buf, 16);
+    ST_UB2(dst0, dst1, dst_argb, 16);
     src_y += 8;
     src_u += 8;
     src_v += 8;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
-void I400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* rgb_buf, int width) {
+void I400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   int x;
   v16u8 src0, res0, res1, res2, res3, res4, dst0, dst1, dst2, dst3;
   v8i16 vec0, vec1;
@@ -2780,9 +2780,9 @@ void I400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* rgb_buf, int width) {
     dst1 = (v16u8)__msa_ilvl_b((v16i8)res3, (v16i8)res1);
     dst2 = (v16u8)__msa_ilvr_b((v16i8)res4, (v16i8)res2);
     dst3 = (v16u8)__msa_ilvl_b((v16i8)res4, (v16i8)res2);
-    ST_UB4(dst0, dst1, dst2, dst3, rgb_buf, 16);
+    ST_UB4(dst0, dst1, dst2, dst3, dst_argb, 16);
     src_y += 16;
-    rgb_buf += 64;
+    dst_argb += 64;
   }
 }
 
@@ -2808,7 +2808,7 @@ void J400ToARGBRow_MSA(const uint8_t* src_y, uint8_t* dst_argb, int width) {
 }
 
 void YUY2ToARGBRow_MSA(const uint8_t* src_yuy2,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -2829,14 +2829,14 @@ void YUY2ToARGBRow_MSA(const uint8_t* src_yuy2,
     src2 = (v16u8)__msa_pckod_b((v16i8)src0, (v16i8)src0);
     YUVTORGB(src1, src2, vec_ubvr, vec_ugvg, vec_bb, vec_bg, vec_br, vec_yg,
              vec0, vec1, vec2);
-    STOREARGB(vec0, vec1, vec2, alpha, rgb_buf);
+    STOREARGB(vec0, vec1, vec2, alpha, dst_argb);
     src_yuy2 += 16;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 
 void UYVYToARGBRow_MSA(const uint8_t* src_uyvy,
-                       uint8_t* rgb_buf,
+                       uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width) {
   int x;
@@ -2857,9 +2857,9 @@ void UYVYToARGBRow_MSA(const uint8_t* src_uyvy,
     src2 = (v16u8)__msa_pckev_b((v16i8)src0, (v16i8)src0);
     YUVTORGB(src1, src2, vec_ubvr, vec_ugvg, vec_bb, vec_bg, vec_br, vec_yg,
              vec0, vec1, vec2);
-    STOREARGB(vec0, vec1, vec2, alpha, rgb_buf);
+    STOREARGB(vec0, vec1, vec2, alpha, dst_argb);
     src_uyvy += 16;
-    rgb_buf += 32;
+    dst_argb += 32;
   }
 }
 

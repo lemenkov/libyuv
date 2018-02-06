@@ -629,7 +629,7 @@ void MergeRGBRow_NEON(const uint8_t* src_r,
 }
 
 // Copy multiple of 32.
-void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int count) {
+void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "1:                                        \n"
       "ldp        q0, q1, [%0], #32              \n"
@@ -638,14 +638,14 @@ void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int count) {
       "b.gt       1b                             \n"
       : "+r"(src),                  // %0
         "+r"(dst),                  // %1
-        "+r"(count)                 // %2  // Output registers
+        "+r"(width)                 // %2  // Output registers
       :                             // Input registers
       : "cc", "memory", "v0", "v1"  // Clobber List
       );
 }
 
-// SetRow writes 'count' bytes using an 8 bit value repeated.
-void SetRow_NEON(uint8_t* dst, uint8_t v8, int count) {
+// SetRow writes 'width' bytes using an 8 bit value repeated.
+void SetRow_NEON(uint8_t* dst, uint8_t v8, int width) {
   asm volatile(
       "dup        v0.16b, %w2                    \n"  // duplicate 16 bytes
       "1:                                        \n"
@@ -653,12 +653,12 @@ void SetRow_NEON(uint8_t* dst, uint8_t v8, int count) {
       "st1        {v0.16b}, [%0], #16            \n"  // store
       "b.gt       1b                             \n"
       : "+r"(dst),   // %0
-        "+r"(count)  // %1
+        "+r"(width)  // %1
       : "r"(v8)      // %2
       : "cc", "memory", "v0");
 }
 
-void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int count) {
+void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width) {
   asm volatile(
       "dup        v0.4s, %w2                     \n"  // duplicate 4 ints
       "1:                                        \n"
@@ -666,7 +666,7 @@ void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int count) {
       "st1        {v0.16b}, [%0], #16            \n"  // store
       "b.gt       1b                             \n"
       : "+r"(dst),   // %0
-        "+r"(count)  // %1
+        "+r"(width)  // %1
       : "r"(v32)     // %2
       : "cc", "memory", "v0");
 }
@@ -2600,7 +2600,10 @@ void SobelYRow_NEON(const uint8_t* src_y0,
 }
 
 // Caveat - rounds float to half float whereas scaling version truncates.
-void HalfFloat1Row_NEON(const uint16_t* src, uint16_t* dst, float, int width) {
+void HalfFloat1Row_NEON(const uint16_t* src,
+                        uint16_t* dst,
+                        float /*unused*/,
+                        int width) {
   asm volatile(
       "1:                                        \n"
       "ld1        {v1.16b}, [%0], #16            \n"  // load 8 shorts

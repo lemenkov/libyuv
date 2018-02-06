@@ -114,8 +114,8 @@ int I420ToYUY2(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_frame,
-               int dst_stride_frame,
+               uint8_t* dst_yuy2,
+               int dst_stride_yuy2,
                int width,
                int height);
 
@@ -126,8 +126,8 @@ int I420ToUYVY(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_frame,
-               int dst_stride_frame,
+               uint8_t* dst_uyvy,
+               int dst_stride_uyvy,
                int width,
                int height);
 
@@ -150,8 +150,8 @@ int I420ToBGRA(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+               uint8_t* dst_bgra,
+               int dst_stride_bgra,
                int width,
                int height);
 
@@ -162,8 +162,8 @@ int I420ToABGR(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height);
 
@@ -186,8 +186,8 @@ int I420ToRGB24(const uint8_t* src_y,
                 int src_stride_u,
                 const uint8_t* src_v,
                 int src_stride_v,
-                uint8_t* dst_frame,
-                int dst_stride_frame,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
                 int width,
                 int height);
 
@@ -198,8 +198,8 @@ int I420ToRAW(const uint8_t* src_y,
               int src_stride_u,
               const uint8_t* src_v,
               int src_stride_v,
-              uint8_t* dst_frame,
-              int dst_stride_frame,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
               int width,
               int height);
 
@@ -210,8 +210,8 @@ int H420ToRGB24(const uint8_t* src_y,
                 int src_stride_u,
                 const uint8_t* src_v,
                 int src_stride_v,
-                uint8_t* dst_frame,
-                int dst_stride_frame,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
                 int width,
                 int height);
 
@@ -222,8 +222,8 @@ int H420ToRAW(const uint8_t* src_y,
               int src_stride_u,
               const uint8_t* src_v,
               int src_stride_v,
-              uint8_t* dst_frame,
-              int dst_stride_frame,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
               int width,
               int height);
 
@@ -234,8 +234,8 @@ int I420ToRGB565(const uint8_t* src_y,
                  int src_stride_u,
                  const uint8_t* src_v,
                  int src_stride_v,
-                 uint8_t* dst_frame,
-                 int dst_stride_frame,
+                 uint8_t* dst_rgb565,
+                 int dst_stride_rgb565,
                  int width,
                  int height);
 
@@ -246,8 +246,8 @@ int I422ToRGB565(const uint8_t* src_y,
                  int src_stride_u,
                  const uint8_t* src_v,
                  int src_stride_v,
-                 uint8_t* dst_frame,
-                 int dst_stride_frame,
+                 uint8_t* dst_rgb565,
+                 int dst_stride_rgb565,
                  int width,
                  int height);
 
@@ -262,8 +262,8 @@ int I420ToRGB565Dither(const uint8_t* src_y,
                        int src_stride_u,
                        const uint8_t* src_v,
                        int src_stride_v,
-                       uint8_t* dst_frame,
-                       int dst_stride_frame,
+                       uint8_t* dst_rgb565,
+                       int dst_stride_rgb565,
                        const uint8_t* dither4x4,
                        int width,
                        int height);
@@ -275,8 +275,8 @@ int I420ToARGB1555(const uint8_t* src_y,
                    int src_stride_u,
                    const uint8_t* src_v,
                    int src_stride_v,
-                   uint8_t* dst_frame,
-                   int dst_stride_frame,
+                   uint8_t* dst_argb1555,
+                   int dst_stride_argb1555,
                    int width,
                    int height);
 
@@ -287,8 +287,8 @@ int I420ToARGB4444(const uint8_t* src_y,
                    int src_stride_u,
                    const uint8_t* src_v,
                    int src_stride_v,
-                   uint8_t* dst_frame,
-                   int dst_stride_frame,
+                   uint8_t* dst_argb4444,
+                   int dst_stride_argb4444,
                    int width,
                    int height);
 
@@ -332,7 +332,7 @@ int ConvertFromI420(const uint8_t* y,
                     int dst_sample_stride,
                     int width,
                     int height,
-                    uint32_t format);
+                    uint32_t fourcc);
 
 #ifdef __cplusplus
 }  // extern "C"

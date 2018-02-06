@@ -45,8 +45,8 @@ int I420Rotate(const uint8_t* src_y,
                int dst_stride_u,
                uint8_t* dst_v,
                int dst_stride_v,
-               int src_width,
-               int src_height,
+               int width,
+               int height,
                enum RotationMode mode);
 
 // Rotate NV12 input and store in I420.
@@ -61,8 +61,8 @@ int NV12ToI420Rotate(const uint8_t* src_y,
                      int dst_stride_u,
                      uint8_t* dst_v,
                      int dst_stride_v,
-                     int src_width,
-                     int src_height,
+                     int width,
+                     int height,
                      enum RotationMode mode);
 
 // Rotate a plane by 0, 90, 180, or 270.
@@ -71,8 +71,8 @@ int RotatePlane(const uint8_t* src,
                 int src_stride,
                 uint8_t* dst,
                 int dst_stride,
-                int src_width,
-                int src_height,
+                int width,
+                int height,
                 enum RotationMode mode);
 
 // Rotate planes by 90, 180, 270. Deprecated.

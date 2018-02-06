@@ -118,17 +118,6 @@ int Scale(const uint8_t* src_y,
           int dst_height,
           LIBYUV_BOOL interpolate);
 
-// Legacy API.  Deprecated.
-LIBYUV_API
-int ScaleOffset(const uint8_t* src_i420,
-                int src_width,
-                int src_height,
-                uint8_t* dst_i420,
-                int dst_width,
-                int dst_height,
-                int dst_yoffset,
-                LIBYUV_BOOL interpolate);
-
 // For testing, allow disabling of specialized scalers.
 LIBYUV_API
 void SetUseReferenceImpl(LIBYUV_BOOL use);

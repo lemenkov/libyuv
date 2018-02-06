@@ -28,7 +28,7 @@ typedef unsigned char uint8_t;
 typedef signed char int8_t;
 #else
 #include <stdint.h>  // for uintptr_t and C99 types
-#endif  // defined(_MSC_VER) && (_MSC_VER < 1600)
+#endif               // defined(_MSC_VER) && (_MSC_VER < 1600)
 typedef uint64_t uint64;
 typedef int64_t int64;
 typedef uint32_t uint32;

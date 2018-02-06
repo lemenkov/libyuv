@@ -360,8 +360,8 @@ int ARGBToNV21(const uint8_t* src_argb,
                int src_stride_argb,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height) {
   int y;
@@ -372,8 +372,8 @@ int ARGBToNV21(const uint8_t* src_argb,
   void (*ARGBToYRow)(const uint8_t* src_argb, uint8_t* dst_y, int width) =
       ARGBToYRow_C;
   void (*MergeUVRow_)(const uint8_t* src_u, const uint8_t* src_v,
-                      uint8_t* dst_uv, int width) = MergeUVRow_C;
-  if (!src_argb || !dst_y || !dst_uv || width <= 0 || height == 0) {
+                      uint8_t* dst_vu, int width) = MergeUVRow_C;
+  if (!src_argb || !dst_y || !dst_vu || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -473,16 +473,16 @@ int ARGBToNV21(const uint8_t* src_argb,
 
     for (y = 0; y < height - 1; y += 2) {
       ARGBToUVRow(src_argb, src_stride_argb, row_u, row_v, width);
-      MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
+      MergeUVRow_(row_v, row_u, dst_vu, halfwidth);
       ARGBToYRow(src_argb, dst_y, width);
       ARGBToYRow(src_argb + src_stride_argb, dst_y + dst_stride_y, width);
       src_argb += src_stride_argb * 2;
       dst_y += dst_stride_y * 2;
-      dst_uv += dst_stride_uv;
+      dst_vu += dst_stride_vu;
     }
     if (height & 1) {
       ARGBToUVRow(src_argb, 0, row_u, row_v, width);
-      MergeUVRow_(row_v, row_u, dst_uv, halfwidth);
+      MergeUVRow_(row_v, row_u, dst_vu, halfwidth);
       ARGBToYRow(src_argb, dst_y, width);
     }
     free_aligned_buffer_64(row_u);

@@ -373,8 +373,8 @@ int I420Rect(uint8_t* dst_y,
 LIBYUV_API
 int ARGBRect(uint8_t* dst_argb,
              int dst_stride_argb,
-             int x,
-             int y,
+             int dst_x,
+             int dst_y,
              int width,
              int height,
              uint32_t value);
@@ -392,8 +392,8 @@ int ARGBGrayTo(const uint8_t* src_argb,
 LIBYUV_API
 int ARGBGray(uint8_t* dst_argb,
              int dst_stride_argb,
-             int x,
-             int y,
+             int dst_x,
+             int dst_y,
              int width,
              int height);
 
@@ -401,8 +401,8 @@ int ARGBGray(uint8_t* dst_argb,
 LIBYUV_API
 int ARGBSepia(uint8_t* dst_argb,
               int dst_stride_argb,
-              int x,
-              int y,
+              int dst_x,
+              int dst_y,
               int width,
               int height);
 
@@ -431,8 +431,8 @@ LIBYUV_API
 int RGBColorMatrix(uint8_t* dst_argb,
                    int dst_stride_argb,
                    const int8_t* matrix_rgb,
-                   int x,
-                   int y,
+                   int dst_x,
+                   int dst_y,
                    int width,
                    int height);
 
@@ -442,8 +442,8 @@ LIBYUV_API
 int ARGBColorTable(uint8_t* dst_argb,
                    int dst_stride_argb,
                    const uint8_t* table_argb,
-                   int x,
-                   int y,
+                   int dst_x,
+                   int dst_y,
                    int width,
                    int height);
 
@@ -453,8 +453,8 @@ LIBYUV_API
 int RGBColorTable(uint8_t* dst_argb,
                   int dst_stride_argb,
                   const uint8_t* table_argb,
-                  int x,
-                  int y,
+                  int dst_x,
+                  int dst_y,
                   int width,
                   int height);
 
@@ -466,7 +466,7 @@ int ARGBLumaColorTable(const uint8_t* src_argb,
                        int src_stride_argb,
                        uint8_t* dst_argb,
                        int dst_stride_argb,
-                       const uint8_t* luma_rgb_table,
+                       const uint8_t* luma,
                        int width,
                        int height);
 
@@ -508,8 +508,8 @@ int ARGBQuantize(uint8_t* dst_argb,
                  int scale,
                  int interval_size,
                  int interval_offset,
-                 int x,
-                 int y,
+                 int dst_x,
+                 int dst_y,
                  int width,
                  int height);
 
@@ -653,8 +653,8 @@ int I422ToYUY2(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_frame,
-               int dst_stride_frame,
+               uint8_t* dst_yuy2,
+               int dst_stride_yuy2,
                int width,
                int height);
 
@@ -666,8 +666,8 @@ int I422ToUYVY(const uint8_t* src_y,
                int src_stride_u,
                const uint8_t* src_v,
                int src_stride_v,
-               uint8_t* dst_frame,
-               int dst_stride_frame,
+               uint8_t* dst_uyvy,
+               int dst_stride_uyvy,
                int width,
                int height);
 

@@ -584,7 +584,7 @@ void MergeRGBRow_NEON(const uint8_t* src_r,
 }
 
 // Copy multiple of 32.  vld4.8  allow unaligned and is fastest on a15.
-void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int count) {
+void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "1:                                        \n"
       "vld1.8     {d0, d1, d2, d3}, [%0]!        \n"  // load 32
@@ -593,14 +593,14 @@ void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int count) {
       "bgt        1b                             \n"
       : "+r"(src),                  // %0
         "+r"(dst),                  // %1
-        "+r"(count)                 // %2  // Output registers
+        "+r"(width)                 // %2  // Output registers
       :                             // Input registers
       : "cc", "memory", "q0", "q1"  // Clobber List
       );
 }
 
-// SetRow writes 'count' bytes using an 8 bit value repeated.
-void SetRow_NEON(uint8_t* dst, uint8_t v8, int count) {
+// SetRow writes 'width' bytes using an 8 bit value repeated.
+void SetRow_NEON(uint8_t* dst, uint8_t v8, int width) {
   asm volatile(
       "vdup.8    q0, %2                          \n"  // duplicate 16 bytes
       "1:                                        \n"
@@ -608,13 +608,13 @@ void SetRow_NEON(uint8_t* dst, uint8_t v8, int count) {
       "vst1.8    {q0}, [%0]!                     \n"  // store
       "bgt       1b                              \n"
       : "+r"(dst),   // %0
-        "+r"(count)  // %1
+        "+r"(width)  // %1
       : "r"(v8)      // %2
       : "cc", "memory", "q0");
 }
 
-// ARGBSetRow writes 'count' pixels using an 32 bit value repeated.
-void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int count) {
+// ARGBSetRow writes 'width' pixels using an 32 bit value repeated.
+void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width) {
   asm volatile(
       "vdup.u32  q0, %2                          \n"  // duplicate 4 ints
       "1:                                        \n"
@@ -622,7 +622,7 @@ void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int count) {
       "vst1.8    {q0}, [%0]!                     \n"  // store
       "bgt       1b                              \n"
       : "+r"(dst),   // %0
-        "+r"(count)  // %1
+        "+r"(width)  // %1
       : "r"(v32)     // %2
       : "cc", "memory", "q0");
 }
@@ -2552,7 +2552,10 @@ void SobelYRow_NEON(const uint8_t* src_y0,
       );
 }
 
-void HalfFloat1Row_NEON(const uint16_t* src, uint16_t* dst, float, int width) {
+void HalfFloat1Row_NEON(const uint16_t* src,
+                        uint16_t* dst,
+                        float /*unused*/,
+                        int width) {
   asm volatile(
       "vdup.32    q0, %3                         \n"
 

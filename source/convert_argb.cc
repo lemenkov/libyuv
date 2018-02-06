@@ -1570,8 +1570,8 @@ static int NV12ToARGBMatrix(const uint8_t* src_y,
 // Convert NV21 to ARGB with matrix
 static int NV21ToARGBMatrix(const uint8_t* src_y,
                             int src_stride_y,
-                            const uint8_t* src_uv,
-                            int src_stride_uv,
+                            const uint8_t* src_vu,
+                            int src_stride_vu,
                             uint8_t* dst_argb,
                             int dst_stride_argb,
                             const struct YuvConstants* yuvconstants,
@@ -1581,7 +1581,7 @@ static int NV21ToARGBMatrix(const uint8_t* src_y,
   void (*NV21ToARGBRow)(
       const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
       const struct YuvConstants* yuvconstants, int width) = NV21ToARGBRow_C;
-  if (!src_y || !src_uv || !dst_argb || width <= 0 || height == 0) {
+  if (!src_y || !src_vu || !dst_argb || width <= 0 || height == 0) {
     return -1;
   }
   // Negative height means invert the image.
@@ -1624,11 +1624,11 @@ static int NV21ToARGBMatrix(const uint8_t* src_y,
 #endif
 
   for (y = 0; y < height; ++y) {
-    NV21ToARGBRow(src_y, src_uv, dst_argb, yuvconstants, width);
+    NV21ToARGBRow(src_y, src_vu, dst_argb, yuvconstants, width);
     dst_argb += dst_stride_argb;
     src_y += src_stride_y;
     if (y & 1) {
-      src_uv += src_stride_uv;
+      src_vu += src_stride_vu;
     }
   }
   return 0;
@@ -1652,13 +1652,13 @@ int NV12ToARGB(const uint8_t* src_y,
 LIBYUV_API
 int NV21ToARGB(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_uv,
-               int src_stride_uv,
+               const uint8_t* src_vu,
+               int src_stride_vu,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int width,
                int height) {
-  return NV21ToARGBMatrix(src_y, src_stride_y, src_uv, src_stride_uv, dst_argb,
+  return NV21ToARGBMatrix(src_y, src_stride_y, src_vu, src_stride_vu, dst_argb,
                           dst_stride_argb, &kYuvI601Constants, width, height);
 }
 

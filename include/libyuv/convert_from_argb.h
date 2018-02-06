@@ -86,8 +86,8 @@ int ARGBToRGB24(const uint8_t* src_argb,
 LIBYUV_API
 int ARGBToRAW(const uint8_t* src_argb,
               int src_stride_argb,
-              uint8_t* dst_rgb,
-              int dst_stride_rgb,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
               int width,
               int height);
 

@@ -3626,7 +3626,7 @@ void MergeRGBRow_SSSE3(const uint8_t* src_r,
 #endif  // HAS_MERGERGBROW_SSSE3
 
 #ifdef HAS_COPYROW_SSE2
-void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int count) {
+void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "test       $0xf,%0                        \n"
       "jne        2f                             \n"
@@ -3659,14 +3659,14 @@ void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int count) {
       LABELALIGN "9:                             \n"
       : "+r"(src),   // %0
         "+r"(dst),   // %1
-        "+r"(count)  // %2
+        "+r"(width)  // %2
       :
       : "memory", "cc", "xmm0", "xmm1");
 }
 #endif  // HAS_COPYROW_SSE2
 
 #ifdef HAS_COPYROW_AVX
-void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int count) {
+void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
 
       LABELALIGN
@@ -3681,7 +3681,7 @@ void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int count) {
       "jg        1b                              \n"
       : "+r"(src),   // %0
         "+r"(dst),   // %1
-        "+r"(count)  // %2
+        "+r"(width)  // %2
       :
       : "memory", "cc", "xmm0", "xmm1");
 }

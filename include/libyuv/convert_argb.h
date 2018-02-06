@@ -269,8 +269,8 @@ int NV12ToABGR(const uint8_t* src_y,
 LIBYUV_API
 int NV21ToABGR(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_uv,
-               int src_stride_uv,
+               const uint8_t* src_vu,
+               int src_stride_vu,
                uint8_t* dst_abgr,
                int dst_stride_abgr,
                int width,
@@ -448,8 +448,8 @@ int H010ToAR30(const uint16_t* src_y,
 
 // BGRA little endian (argb in memory) to ARGB.
 LIBYUV_API
-int BGRAToARGB(const uint8_t* src_frame,
-               int src_stride_frame,
+int BGRAToARGB(const uint8_t* src_bgra,
+               int src_stride_bgra,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int width,
@@ -457,8 +457,8 @@ int BGRAToARGB(const uint8_t* src_frame,
 
 // ABGR little endian (rgba in memory) to ARGB.
 LIBYUV_API
-int ABGRToARGB(const uint8_t* src_frame,
-               int src_stride_frame,
+int ABGRToARGB(const uint8_t* src_abgr,
+               int src_stride_abgr,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int width,
@@ -466,8 +466,8 @@ int ABGRToARGB(const uint8_t* src_frame,
 
 // RGBA little endian (abgr in memory) to ARGB.
 LIBYUV_API
-int RGBAToARGB(const uint8_t* src_frame,
-               int src_stride_frame,
+int RGBAToARGB(const uint8_t* src_rgba,
+               int src_stride_rgba,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int width,
@@ -478,8 +478,8 @@ int RGBAToARGB(const uint8_t* src_frame,
 
 // RGB little endian (bgr in memory) to ARGB.
 LIBYUV_API
-int RGB24ToARGB(const uint8_t* src_frame,
-                int src_stride_frame,
+int RGB24ToARGB(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
                 uint8_t* dst_argb,
                 int dst_stride_argb,
                 int width,
@@ -487,8 +487,8 @@ int RGB24ToARGB(const uint8_t* src_frame,
 
 // RGB big endian (rgb in memory) to ARGB.
 LIBYUV_API
-int RAWToARGB(const uint8_t* src_frame,
-              int src_stride_frame,
+int RAWToARGB(const uint8_t* src_raw,
+              int src_stride_raw,
               uint8_t* dst_argb,
               int dst_stride_argb,
               int width,
@@ -496,8 +496,8 @@ int RAWToARGB(const uint8_t* src_frame,
 
 // RGB16 (RGBP fourcc) little endian to ARGB.
 LIBYUV_API
-int RGB565ToARGB(const uint8_t* src_frame,
-                 int src_stride_frame,
+int RGB565ToARGB(const uint8_t* src_rgb565,
+                 int src_stride_rgb565,
                  uint8_t* dst_argb,
                  int dst_stride_argb,
                  int width,
@@ -505,8 +505,8 @@ int RGB565ToARGB(const uint8_t* src_frame,
 
 // RGB15 (RGBO fourcc) little endian to ARGB.
 LIBYUV_API
-int ARGB1555ToARGB(const uint8_t* src_frame,
-                   int src_stride_frame,
+int ARGB1555ToARGB(const uint8_t* src_argb1555,
+                   int src_stride_argb1555,
                    uint8_t* dst_argb,
                    int dst_stride_argb,
                    int width,
@@ -514,8 +514,8 @@ int ARGB1555ToARGB(const uint8_t* src_frame,
 
 // RGB12 (R444 fourcc) little endian to ARGB.
 LIBYUV_API
-int ARGB4444ToARGB(const uint8_t* src_frame,
-                   int src_stride_frame,
+int ARGB4444ToARGB(const uint8_t* src_argb4444,
+                   int src_stride_argb4444,
                    uint8_t* dst_argb,
                    int dst_stride_argb,
                    int width,
@@ -582,7 +582,7 @@ int Android420ToABGR(const uint8_t* src_y,
                      int height);
 
 // Convert camera sample to ARGB with cropping, rotation and vertical flip.
-// "src_size" is needed to parse MJPG.
+// "sample_size" is needed to parse MJPG.
 // "dst_stride_argb" number of bytes in a row of the dst_argb plane.
 //   Normally this would be the same as dst_width, with recommended alignment
 //   to 16 bytes for better efficiency.
@@ -601,11 +601,11 @@ int Android420ToABGR(const uint8_t* src_y,
 //    Must be less than or equal to src_width/src_height
 //    Cropping parameters are pre-rotation.
 // "rotation" can be 0, 90, 180 or 270.
-// "format" is a fourcc. ie 'I420', 'YUY2'
+// "fourcc" is a fourcc. ie 'I420', 'YUY2'
 // Returns 0 for successful; -1 for invalid parameter. Non-zero for failure.
 LIBYUV_API
-int ConvertToARGB(const uint8_t* src_frame,
-                  size_t src_size,
+int ConvertToARGB(const uint8_t* sample,
+                  size_t sample_size,
                   uint8_t* dst_argb,
                   int dst_stride_argb,
                   int crop_x,
@@ -615,7 +615,7 @@ int ConvertToARGB(const uint8_t* src_frame,
                   int crop_width,
                   int crop_height,
                   enum RotationMode rotation,
-                  uint32_t format);
+                  uint32_t fourcc);
 
 #ifdef __cplusplus
 }  // extern "C"
