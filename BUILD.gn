@@ -48,6 +48,7 @@ group("default") {
 
 group("libyuv") {
   all_dependent_configs = [ ":libyuv_config" ]
+  deps = []
 
   if (is_win && target_cpu == "x64") {
     # Compile with clang in order to get inline assembly
@@ -60,13 +61,19 @@ group("libyuv") {
     ]
   }
 
+  if (libyuv_use_neon) {
+    deps += [ ":libyuv_neon" ]
+  }
+
+  if (libyuv_use_msa) {
+    deps += [ ":libyuv_msa" ]
+  }
+
   if (!is_ios) {
     # Make sure that clients of libyuv link with libjpeg. This can't go in
     # libyuv_internal because in Windows x64 builds that will generate a clang
     # build of libjpeg, and we don't want two copies.
-    deps = [
-      "//third_party:jpeg",
-    ]
+    deps += [ "//third_party:jpeg" ]
   }
 }
 
@@ -147,14 +154,6 @@ static_library("libyuv_internal") {
     deps += [ "//third_party:jpeg_includes" ]
   }
 
-  if (libyuv_use_neon) {
-    deps += [ ":libyuv_neon" ]
-  }
-
-  if (libyuv_use_msa) {
-    deps += [ ":libyuv_msa" ]
-  }
-
   # Always enable optimization for Release and NaCl builds (to workaround
   # crbug.com/538243).
   if (!is_debug || is_nacl) {
@@ -174,6 +173,7 @@ static_library("libyuv_internal") {
     ]
   }
 }
+
 if (libyuv_use_neon) {
   static_library("libyuv_neon") {
     sources = [
@@ -186,6 +186,10 @@ if (libyuv_use_neon) {
       "source/row_neon64.cc",
       "source/scale_neon.cc",
       "source/scale_neon64.cc",
+    ]
+
+    deps = [
+      ":libyuv_internal",
     ]
 
     public_configs = [ ":libyuv_config" ]
@@ -215,6 +219,10 @@ if (libyuv_use_msa) {
       "source/rotate_msa.cc",
       "source/row_msa.cc",
       "source/scale_msa.cc",
+    ]
+
+    deps = [
+      ":libyuv_internal",
     ]
 
     public_configs = [ ":libyuv_config" ]
