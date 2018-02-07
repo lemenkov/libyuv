@@ -88,10 +88,12 @@ static double FinalizeSSIM(double iw,
   double sxx = xxm * iw - iwx * iwx;
   double syy = yym * iw - iwy * iwy;
   // small errors are possible, due to rounding. Clamp to zero.
-  if (sxx < 0.)
+  if (sxx < 0.) {
     sxx = 0.;
-  if (syy < 0.)
+  }
+  if (syy < 0.) {
     syy = 0.;
+  }
   const double sxsy = sqrt(sxx * syy);
   const double sxy = xym * iw - iwx * iwy;
   static const double C11 = (0.01 * 0.01) * (255 * 255);
@@ -122,8 +124,9 @@ double GetSSIM(const uint8_t* org,
   rec += (yo - KERNEL) * stride;
   rec += (xo - KERNEL);
   for (int y_ = 0; y_ < KERNEL_SIZE; ++y_, org += stride, rec += stride) {
-    if (((yo - KERNEL + y_) < 0) || ((yo - KERNEL + y_) >= H))
+    if (((yo - KERNEL + y_) < 0) || ((yo - KERNEL + y_) >= H)) {
       continue;
+    }
     const int Wy = K[y_];
     for (int x_ = 0; x_ < KERNEL_SIZE; ++x_) {
       const int Wxy = Wy * K[x_];

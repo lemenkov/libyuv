@@ -1390,8 +1390,9 @@ TEST_F(LibYUVPlanarTest, TestCopyPlane) {
   }
 
   for (i = 0; i < y_plane_size; ++i) {
-    if (dst_c[i] != dst_opt[i])
+    if (dst_c[i] != dst_opt[i]) {
       ++err;
+    }
   }
 
   free_aligned_buffer_page_end(orig_y);

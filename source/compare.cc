@@ -263,8 +263,9 @@ double SumSquareErrorToPsnr(uint64_t sse, uint64_t count) {
     psnr = kMaxPsnr;  // Limit to prevent divide by 0
   }
 
-  if (psnr > kMaxPsnr)
+  if (psnr > kMaxPsnr) {
     psnr = kMaxPsnr;
+  }
 
   return psnr;
 }

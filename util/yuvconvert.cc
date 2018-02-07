@@ -79,8 +79,9 @@ void PrintHelp(const char* program) {
 }
 
 void ParseOptions(int argc, const char* argv[]) {
-  if (argc <= 1)
+  if (argc <= 1) {
     PrintHelp(argv[0]);
+  }
   for (int c = 1; c < argc; ++c) {
     if (!strcmp(argv[c], "-v")) {
       verbose = true;
@@ -265,14 +266,16 @@ int main(int argc, const char* argv[]) {
 
   int number_of_frames;
   for (number_of_frames = 0;; ++number_of_frames) {
-    if (num_frames && number_of_frames >= num_frames)
+    if (num_frames && number_of_frames >= num_frames) {
       break;
+    }
 
     // Load original YUV or ARGB frame.
     size_t bytes_org =
         fread(ch_org, sizeof(uint8_t), static_cast<size_t>(org_size), file_org);
-    if (bytes_org < static_cast<size_t>(org_size))
+    if (bytes_org < static_cast<size_t>(org_size)) {
       break;
+    }
 
     // TODO(fbarchard): Attenuate doesnt need to know dimensions.
     // ARGB attenuate frame
@@ -331,14 +334,16 @@ int main(int argc, const char* argv[]) {
         size_t bytes_rec =
             fwrite(ch_rec, sizeof(uint8_t), static_cast<size_t>(total_size),
                    file_rec[cur_rec]);
-        if (bytes_rec < static_cast<size_t>(total_size))
+        if (bytes_rec < static_cast<size_t>(total_size)) {
           break;
+        }
       } else {
         size_t bytes_rec =
             fwrite(ch_dst, sizeof(uint8_t), static_cast<size_t>(dst_size),
                    file_rec[cur_rec]);
-        if (bytes_rec < static_cast<size_t>(dst_size))
+        if (bytes_rec < static_cast<size_t>(dst_size)) {
           break;
+        }
       }
       if (verbose) {
         printf("%5d", number_of_frames);

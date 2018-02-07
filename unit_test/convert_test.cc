@@ -2191,12 +2191,15 @@ TEST_F(LibYUVConvertTest, TestH420ToARGB) {
   int count_g = 0;
   int count_r = 0;
   for (int i = 0; i < kSize; ++i) {
-    if (histogram_b[i])
+    if (histogram_b[i]) {
       ++count_b;
-    if (histogram_g[i])
+    }
+    if (histogram_g[i]) {
       ++count_g;
-    if (histogram_r[i])
+    }
+    if (histogram_r[i]) {
       ++count_r;
+    }
   }
   printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
 
@@ -2249,12 +2252,15 @@ TEST_F(LibYUVConvertTest, TestH010ToARGB) {
   int count_g = 0;
   int count_r = 0;
   for (int i = 0; i < kSize; ++i) {
-    if (histogram_b[i])
+    if (histogram_b[i]) {
       ++count_b;
-    if (histogram_g[i])
+    }
+    if (histogram_g[i]) {
       ++count_g;
-    if (histogram_r[i])
+    }
+    if (histogram_r[i]) {
       ++count_r;
+    }
   }
   printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
 
@@ -2309,12 +2315,15 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
   int count_g = 0;
   int count_r = 0;
   for (int i = 0; i < kSize; ++i) {
-    if (histogram_b[i])
+    if (histogram_b[i]) {
       ++count_b;
-    if (histogram_g[i])
+    }
+    if (histogram_g[i]) {
       ++count_g;
-    if (histogram_r[i])
+    }
+    if (histogram_r[i]) {
       ++count_r;
+    }
   }
   printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
 
@@ -2368,12 +2377,15 @@ TEST_F(LibYUVConvertTest, TestH420ToAR30) {
   int count_g = 0;
   int count_r = 0;
   for (int i = 0; i < kHistSize; ++i) {
-    if (histogram_b[i])
+    if (histogram_b[i]) {
       ++count_b;
-    if (histogram_g[i])
+    }
+    if (histogram_g[i]) {
       ++count_g;
-    if (histogram_r[i])
+    }
+    if (histogram_r[i]) {
       ++count_r;
+    }
   }
   printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
 

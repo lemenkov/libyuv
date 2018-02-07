@@ -504,9 +504,10 @@ TEST_F(LibYUVCompareTest, BenchmarkPsnr_Opt) {
   MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i)
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     CalcFramePsnr(src_a, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
+  }
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
   printf("BenchmarkPsnr_Opt - %8.2f us opt\n", opt_time * 1e6);
@@ -528,9 +529,10 @@ TEST_F(LibYUVCompareTest, BenchmarkPsnr_Unaligned) {
   MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i)
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     CalcFramePsnr(src_a + 1, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
+  }
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
   printf("BenchmarkPsnr_Opt - %8.2f us opt\n", opt_time * 1e6);
@@ -629,9 +631,10 @@ TEST_F(LibYUVCompareTest, DISABLED_BenchmarkSsim_Opt) {
   MaskCpuFlags(benchmark_cpu_info_);
 
   double opt_time = get_time();
-  for (int i = 0; i < benchmark_iterations_; ++i)
+  for (int i = 0; i < benchmark_iterations_; ++i) {
     CalcFrameSsim(src_a, benchmark_width_, src_b, benchmark_width_,
                   benchmark_width_, benchmark_height_);
+  }
 
   opt_time = (get_time() - opt_time) / benchmark_iterations_;
   printf("BenchmarkSsim_Opt - %8.2f us opt\n", opt_time * 1e6);

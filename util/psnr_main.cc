@@ -109,10 +109,12 @@ bool ExtractResolutionFromFilename(const char* name,
 // This can be useful when comparing codecs that are inconsistant about Y
 uint8_t ScaleY(uint8_t y) {
   int ny = (y - 16) * 256 / 224;
-  if (ny < 0)
+  if (ny < 0) {
     ny = 0;
-  if (ny > 255)
+  }
+  if (ny > 255) {
     ny = 255;
+  }
   return static_cast<uint8_t>(ny);
 }
 
@@ -150,8 +152,9 @@ void PrintHelp(const char* program) {
 }
 
 void ParseOptions(int argc, const char* argv[]) {
-  if (argc <= 1)
+  if (argc <= 1) {
     PrintHelp(argv[0]);
+  }
   for (int c = 1; c < argc; ++c) {
     if (!strcmp(argv[c], "-v")) {
       verbose = true;
@@ -301,12 +304,15 @@ bool UpdateMetrics(uint8_t* ch_org,
   cur_distortion_psnr->all += distorted_frame->all;
 
   bool ismin = false;
-  if (distorted_frame->y < cur_distortion_psnr->min_y)
+  if (distorted_frame->y < cur_distortion_psnr->min_y) {
     cur_distortion_psnr->min_y = distorted_frame->y;
-  if (distorted_frame->u < cur_distortion_psnr->min_u)
+  }
+  if (distorted_frame->u < cur_distortion_psnr->min_u) {
     cur_distortion_psnr->min_u = distorted_frame->u;
-  if (distorted_frame->v < cur_distortion_psnr->min_v)
+  }
+  if (distorted_frame->v < cur_distortion_psnr->min_v) {
     cur_distortion_psnr->min_v = distorted_frame->v;
+  }
   if (distorted_frame->all < cur_distortion_psnr->min_all) {
     cur_distortion_psnr->min_all = distorted_frame->all;
     cur_distortion_psnr->min_frame = number_of_frames;
@@ -429,8 +435,9 @@ int main(int argc, const char* argv[]) {
 
   int number_of_frames;
   for (number_of_frames = 0;; ++number_of_frames) {
-    if (num_frames && number_of_frames >= num_frames)
+    if (num_frames && number_of_frames >= num_frames) {
       break;
+    }
 
     size_t bytes_org = fread(ch_org, sizeof(uint8_t), total_size, file_org);
     if (bytes_org < total_size) {
@@ -482,7 +489,7 @@ int main(int argc, const char* argv[]) {
         printf("%5d", number_of_frames);
       }
       if (do_psnr) {
-        metric distorted_frame;
+        metric distorted_frame = {};
         metric* cur_distortion_psnr = &distortion_psnr[cur_rec];
         bool ismin = UpdateMetrics(ch_org, ch_rec, y_size, uv_size, total_size,
                                    number_of_frames, cur_distortion_psnr,
@@ -496,7 +503,7 @@ int main(int argc, const char* argv[]) {
         }
       }
       if (do_ssim) {
-        metric distorted_frame;
+        metric distorted_frame = {};
         metric* cur_distortion_ssim = &distortion_ssim[cur_rec];
         bool ismin = UpdateMetrics(ch_org, ch_rec, y_size, uv_size, total_size,
                                    number_of_frames, cur_distortion_ssim,

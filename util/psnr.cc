@@ -280,8 +280,9 @@ double ComputeSumSquareError(const uint8_t* src_a,
 // Returns 128.0 (kMaxPSNR) if sse is 0 (perfect match).
 double ComputePSNR(double sse, double size) {
   const double kMINSSE = 255.0 * 255.0 * size / pow(10.0, kMaxPSNR / 10.0);
-  if (sse <= kMINSSE)
+  if (sse <= kMINSSE) {
     sse = kMINSSE;  // Produces max PSNR of 128
+  }
   return 10.0 * log10(255.0 * 255.0 * size / sse);
 }
 
