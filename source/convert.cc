@@ -1709,14 +1709,15 @@ int Android420ToI420(const uint8_t* src_y,
     CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, halfwidth, halfheight);
     return 0;
     // Split UV planes - NV21
-  } else if (src_pixel_stride_uv == 2 && vu_off == -1 &&
-             src_stride_u == src_stride_v) {
+  }
+  if (src_pixel_stride_uv == 2 && vu_off == -1 &&
+      src_stride_u == src_stride_v) {
     SplitUVPlane(src_v, src_stride_v, dst_v, dst_stride_v, dst_u, dst_stride_u,
                  halfwidth, halfheight);
     return 0;
     // Split UV planes - NV12
-  } else if (src_pixel_stride_uv == 2 && vu_off == 1 &&
-             src_stride_u == src_stride_v) {
+  }
+  if (src_pixel_stride_uv == 2 && vu_off == 1 && src_stride_u == src_stride_v) {
     SplitUVPlane(src_u, src_stride_u, dst_u, dst_stride_u, dst_v, dst_stride_v,
                  halfwidth, halfheight);
     return 0;

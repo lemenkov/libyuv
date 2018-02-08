@@ -1944,13 +1944,14 @@ int Android420ToARGBMatrix(const uint8_t* src_y,
                             src_stride_v, dst_argb, dst_stride_argb,
                             yuvconstants, width, height);
     // NV21
-  } else if (src_pixel_stride_uv == 2 && vu_off == -1 &&
-             src_stride_u == src_stride_v) {
+  }
+  if (src_pixel_stride_uv == 2 && vu_off == -1 &&
+      src_stride_u == src_stride_v) {
     return NV21ToARGBMatrix(src_y, src_stride_y, src_v, src_stride_v, dst_argb,
                             dst_stride_argb, yuvconstants, width, height);
     // NV12
-  } else if (src_pixel_stride_uv == 2 && vu_off == 1 &&
-             src_stride_u == src_stride_v) {
+  }
+  if (src_pixel_stride_uv == 2 && vu_off == 1 && src_stride_u == src_stride_v) {
     return NV12ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, dst_argb,
                             dst_stride_argb, yuvconstants, width, height);
   }
