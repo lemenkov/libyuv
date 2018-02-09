@@ -1445,8 +1445,8 @@ void Convert16To8Row_Any_AVX2(const uint16_t* src_ptr,
                               int scale,
                               int width);
 
-void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int count);
-void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int count);
+void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_MIPS(const uint8_t* src, uint8_t* dst, int count);
