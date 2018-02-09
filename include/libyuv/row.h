@@ -1445,10 +1445,11 @@ void Convert16To8Row_Any_AVX2(const uint16_t* src_ptr,
                               int scale,
                               int width);
 
-void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int width);
-void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_SSE2(const uint8_t* src, uint8_t* dst, int count);
+void CopyRow_AVX(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_ERMS(const uint8_t* src, uint8_t* dst, int width);
 void CopyRow_NEON(const uint8_t* src, uint8_t* dst, int width);
+void CopyRow_MIPS(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_C(const uint8_t* src, uint8_t* dst, int count);
 void CopyRow_Any_SSE2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void CopyRow_Any_AVX(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
@@ -1630,14 +1631,14 @@ void ARGB1555ToARGBRow_Any_SSE2(const uint8_t* src_ptr,
 void ARGB4444ToARGBRow_Any_SSE2(const uint8_t* src_ptr,
                                 uint8_t* dst_ptr,
                                 int width);
-void RGB565ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
-                              uint8_t* dst_ptr,
+void RGB565ToARGBRow_Any_AVX2(const uint8_t* src_rgb565,
+                              uint8_t* dst_argb,
                               int width);
-void ARGB1555ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
-                                uint8_t* dst_ptr,
+void ARGB1555ToARGBRow_Any_AVX2(const uint8_t* src_argb1555,
+                                uint8_t* dst_argb,
                                 int width);
-void ARGB4444ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
-                                uint8_t* dst_ptr,
+void ARGB4444ToARGBRow_Any_AVX2(const uint8_t* src_argb4444,
+                                uint8_t* dst_argb,
                                 int width);
 
 void RGB24ToARGBRow_Any_NEON(const uint8_t* src_ptr,
@@ -1751,9 +1752,7 @@ void J400ToARGBRow_C(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_Any_SSE2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
-void J400ToARGBRow_Any_AVX2(const uint8_t* src_ptr,
-                            uint8_t* dst_ptr,
-                            int width);
+void J400ToARGBRow_Any_AVX2(const uint8_t* src_y, uint8_t* dst_argb, int width);
 void J400ToARGBRow_Any_NEON(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,
                             int width);
@@ -2431,14 +2430,14 @@ void ARGBToRGB565DitherRow_Any_AVX2(const uint8_t* src_ptr,
                                     const uint32_t param,
                                     int width);
 
-void ARGBToRGB565Row_Any_AVX2(const uint8_t* src_ptr,
-                              uint8_t* dst_ptr,
+void ARGBToRGB565Row_Any_AVX2(const uint8_t* src_argb,
+                              uint8_t* dst_rgb,
                               int width);
-void ARGBToARGB1555Row_Any_AVX2(const uint8_t* src_ptr,
-                                uint8_t* dst_ptr,
+void ARGBToARGB1555Row_Any_AVX2(const uint8_t* src_argb,
+                                uint8_t* dst_rgb,
                                 int width);
-void ARGBToARGB4444Row_Any_AVX2(const uint8_t* src_ptr,
-                                uint8_t* dst_ptr,
+void ARGBToARGB4444Row_Any_AVX2(const uint8_t* src_argb,
+                                uint8_t* dst_rgb,
                                 int width);
 void ABGRToAR30Row_Any_AVX2(const uint8_t* src_ptr,
                             uint8_t* dst_ptr,

@@ -19,8 +19,11 @@ namespace libyuv {
 // Tests FourCC codes in video common, which are used for ConvertToI420().
 
 static bool TestValidChar(uint32_t onecc) {
-  return (onecc >= '0' && onecc <= '9') || (onecc >= 'A' && onecc <= 'Z') ||
-         (onecc >= 'a' && onecc <= 'z') || (onecc == ' ') || (onecc == 0xff);
+  if ((onecc >= '0' && onecc <= '9') || (onecc >= 'A' && onecc <= 'Z') ||
+      (onecc >= 'a' && onecc <= 'z') || (onecc == ' ') || (onecc == 0xff)) {
+    return true;
+  }
+  return false;
 }
 
 static bool TestValidFourCC(uint32_t fourcc, int bpp) {
