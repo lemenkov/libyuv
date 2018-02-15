@@ -2122,9 +2122,11 @@ TEST_F(LibYUVConvertTest, ABGRToAR30Row_Opt) {
 TESTPLANAR16TOB(I010, 2, 2, ARGB, 4, 4, 1, 2)
 TESTPLANAR16TOB(I010, 2, 2, ABGR, 4, 4, 1, 2)
 TESTPLANAR16TOB(I010, 2, 2, AR30, 4, 4, 1, 2)
+TESTPLANAR16TOB(I010, 2, 2, AB30, 4, 4, 1, 2)
 TESTPLANAR16TOB(H010, 2, 2, ARGB, 4, 4, 1, 2)
 TESTPLANAR16TOB(H010, 2, 2, ABGR, 4, 4, 1, 2)
 TESTPLANAR16TOB(H010, 2, 2, AR30, 4, 4, 1, 2)
+TESTPLANAR16TOB(H010, 2, 2, AB30, 4, 4, 1, 2)
 
 static int Clamp(int y) {
   if (y < 0) {
@@ -2329,6 +2331,69 @@ TEST_F(LibYUVConvertTest, TestH010ToAR30) {
 
   free_aligned_buffer_page_end(orig_yuv);
   free_aligned_buffer_page_end(ar30_pixels);
+}
+
+// Test 10 bit YUV to 10 bit RGB
+// Caveat: Result is near due to float rounding in expected result.
+TEST_F(LibYUVConvertTest, TestH010ToAB30) {
+  const int kSize = 1024;
+  int histogram_b[1024];
+  int histogram_g[1024];
+  int histogram_r[1024];
+  memset(histogram_b, 0, sizeof(histogram_b));
+  memset(histogram_g, 0, sizeof(histogram_g));
+  memset(histogram_r, 0, sizeof(histogram_r));
+
+  align_buffer_page_end(orig_yuv, kSize * 2 + kSize / 2 * 2 * 2);
+  align_buffer_page_end(ab30_pixels, kSize * 4);
+  uint16_t* orig_y = reinterpret_cast<uint16_t*>(orig_yuv);
+  uint16_t* orig_u = orig_y + kSize;
+  uint16_t* orig_v = orig_u + kSize / 2;
+
+  // Test grey scale
+  for (int i = 0; i < kSize; ++i) {
+    orig_y[i] = i;
+  }
+  for (int i = 0; i < kSize / 2; ++i) {
+    orig_u[i] = 512;  // 512 is 0.
+    orig_v[i] = 512;
+  }
+
+  H010ToAB30(orig_y, 0, orig_u, 0, orig_v, 0, ab30_pixels, 0, kSize, 1);
+
+  for (int i = 0; i < kSize; ++i) {
+    int r10 = reinterpret_cast<uint32_t*>(ab30_pixels)[i] & 1023;
+    int g10 = (reinterpret_cast<uint32_t*>(ab30_pixels)[i] >> 10) & 1023;
+    int b10 = (reinterpret_cast<uint32_t*>(ab30_pixels)[i] >> 20) & 1023;
+    int a2 = (reinterpret_cast<uint32_t*>(ab30_pixels)[i] >> 30) & 3;
+    ++histogram_b[b10];
+    ++histogram_g[g10];
+    ++histogram_r[r10];
+    int expected_y = Clamp10(static_cast<int>((i - 64) * 1.164f));
+    EXPECT_NEAR(b10, expected_y, 4);
+    EXPECT_NEAR(g10, expected_y, 4);
+    EXPECT_NEAR(r10, expected_y, 4);
+    EXPECT_EQ(a2, 3);
+  }
+
+  int count_b = 0;
+  int count_g = 0;
+  int count_r = 0;
+  for (int i = 0; i < kSize; ++i) {
+    if (histogram_b[i]) {
+      ++count_b;
+    }
+    if (histogram_g[i]) {
+      ++count_g;
+    }
+    if (histogram_r[i]) {
+      ++count_r;
+    }
+  }
+  printf("uniques: B %d, G, %d, R %d\n", count_b, count_g, count_r);
+
+  free_aligned_buffer_page_end(orig_yuv);
+  free_aligned_buffer_page_end(ab30_pixels);
 }
 
 // Test 8 bit YUV to 10 bit RGB

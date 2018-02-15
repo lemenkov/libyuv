@@ -50,11 +50,12 @@ The following is extracted from video_common.h as a complete list of formats sup
       // 1 Secondary YUV format: row biplanar.
       FOURCC_M420 = FOURCC('M', '4', '2', '0'),
 
-      // 10 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc
+      // 11 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc
       FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
       FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
       FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
       FOURCC_AR30 = FOURCC('A', 'R', '3', '0'),  // 10 bit per channel. 2101010.
+      FOURCC_AB30 = FOURCC('A', 'B', '3', '0'),  // ABGR version of 10 bit
       FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
       FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
       FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),

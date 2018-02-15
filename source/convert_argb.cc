@@ -500,6 +500,40 @@ int H010ToAR30(const uint16_t* src_y,
                           &kYuvH709Constants, width, height);
 }
 
+// Convert I010 to AB30.
+LIBYUV_API
+int I010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height) {
+  return I010ToAR30Matrix(src_y, src_stride_y, src_v,
+                          src_stride_v, src_u, src_stride_u, dst_ab30, dst_stride_ab30,
+                          &kYvuI601Constants, width, height);
+}
+
+// Convert H010 to AB30.
+LIBYUV_API
+int H010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height) {
+  return I010ToAR30Matrix(src_y, src_stride_y, src_v,
+                          src_stride_v, src_u, src_stride_u, dst_ab30, dst_stride_ab30,
+                          &kYvuH709Constants, width, height);
+}
+
 // Convert 10 bit YUV to ARGB with matrix
 static int I010ToARGBMatrix(const uint16_t* src_y,
                             int src_stride_y,
@@ -1950,8 +1984,8 @@ int Android420ToARGBMatrix(const uint8_t* src_y,
     return NV21ToARGBMatrix(src_y, src_stride_y, src_v, src_stride_v, dst_argb,
                             dst_stride_argb, yuvconstants, width, height);
     // NV12
-  } else if (src_pixel_stride_uv == 2 && vu_off == 1 &&
-             src_stride_u == src_stride_v) {
+  }
+  if (src_pixel_stride_uv == 2 && vu_off == 1 && src_stride_u == src_stride_v) {
     return NV12ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, dst_argb,
                             dst_stride_argb, yuvconstants, width, height);
   }

@@ -556,9 +556,9 @@ JpegSubsamplingType MJpegDecoder::JpegSubsamplingTypeHelper(
     if (subsample_x[0] == 1 && subsample_y[0] == 1 && subsample_x[1] == 2 &&
         subsample_y[1] == 1 && subsample_x[2] == 2 && subsample_y[2] == 1) {
       return kJpegYuv422;
-    } else if (subsample_x[0] == 1 && subsample_y[0] == 1 &&
-               subsample_x[1] == 1 && subsample_y[1] == 1 &&
-               subsample_x[2] == 1 && subsample_y[2] == 1) {
+    }
+    if (subsample_x[0] == 1 && subsample_y[0] == 1 && subsample_x[1] == 1 &&
+        subsample_y[1] == 1 && subsample_x[2] == 1 && subsample_y[2] == 1) {
       return kJpegYuv444;
     }
   } else if (number_of_components == 1) {  // Grey-scale images.

@@ -446,6 +446,32 @@ int H010ToAR30(const uint16_t* src_y,
                int width,
                int height);
 
+// Convert I010 to AB30.
+LIBYUV_API
+int I010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
+// Convert H010 to AB30.
+LIBYUV_API
+int H010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
 // BGRA little endian (argb in memory) to ARGB.
 LIBYUV_API
 int BGRAToARGB(const uint8_t* src_bgra,
@@ -529,6 +555,8 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int dst_stride_argb,
                int width,
                int height);
+
+#define AB30ToABGR
 
 // Convert AR30 To ABGR.
 LIBYUV_API
