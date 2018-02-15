@@ -1534,6 +1534,38 @@ int AR30ToABGR(const uint8_t* src_ar30,
   return 0;
 }
 
+// Convert AR30 to AB30.
+LIBYUV_API
+int AR30ToAB30(const uint8_t* src_ar30,
+               int src_stride_ar30,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height) {
+  int y;
+  if (!src_ar30 || !dst_ab30 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ar30 = src_ar30 + (height - 1) * src_stride_ar30;
+    src_stride_ar30 = -src_stride_ar30;
+  }
+  // Coalesce rows.
+  if (src_stride_ar30 == width * 4 && dst_stride_ab30 == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_ar30 = dst_stride_ab30 = 0;
+  }
+  for (y = 0; y < height; ++y) {
+    AR30ToAB30Row_C(src_ar30, dst_ab30, width);
+    src_ar30 += src_stride_ar30;
+    dst_ab30 += dst_stride_ab30;
+  }
+  return 0;
+}
+
 // Convert NV12 to ARGB with matrix
 static int NV12ToARGBMatrix(const uint8_t* src_y,
                             int src_stride_y,

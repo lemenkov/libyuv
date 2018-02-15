@@ -547,6 +547,12 @@ int ARGB4444ToARGB(const uint8_t* src_argb4444,
                    int width,
                    int height);
 
+
+// Aliases
+#define AB30ToARGB AR30ToABGR
+#define AB30ToABGR AR30ToARGB
+#define AB30ToAR30 AR30ToAB30
+
 // Convert AR30 To ARGB.
 LIBYUV_API
 int AR30ToARGB(const uint8_t* src_ar30,
@@ -556,7 +562,6 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int width,
                int height);
 
-#define AB30ToABGR
 
 // Convert AR30 To ABGR.
 LIBYUV_API
@@ -564,6 +569,15 @@ int AR30ToABGR(const uint8_t* src_ar30,
                int src_stride_ar30,
                uint8_t* dst_abgr,
                int dst_stride_abgr,
+               int width,
+               int height);
+
+// Convert AR30 To AB30.
+LIBYUV_API
+int AR30ToAB30(const uint8_t* src_ar30,
+               int src_stride_ar30,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
                int width,
                int height);
 

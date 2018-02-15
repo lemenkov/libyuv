@@ -212,6 +212,20 @@ void AR30ToABGRRow_C(const uint8_t* src_ar30, uint8_t* dst_abgr, int width) {
   }
 }
 
+void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint32_t ar30 = *(uint32_t*)src_ar30;
+    uint32_t b = ar30 & 0x3ff;
+    uint32_t g = (ar30 >> 10) & 0x3ff;
+    uint32_t r = (ar30 >> 20) & 0x3ff;
+    uint32_t a = (ar30 >> 30) & 0x3;
+    *(uint32_t*)(dst_ab30) = r | (g << 10) | (b << 20) | (a << 30);
+    dst_ab30 += 4;
+    src_ar30 += 4;
+  }
+}
+
 void ARGBToRGB24Row_C(const uint8_t* src_argb, uint8_t* dst_rgb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
