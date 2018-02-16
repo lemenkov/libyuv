@@ -55,6 +55,10 @@ int ARGBToRGBA(const uint8_t* src_argb,
                int width,
                int height);
 
+// Aliases
+#define ARGBToAB30 ABGRToAR30
+#define ABGRToAB30 ARGBToAR30
+
 // Convert ABGR To AR30.
 LIBYUV_API
 int ABGRToAR30(const uint8_t* src_abgr,

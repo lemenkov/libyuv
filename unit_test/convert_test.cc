@@ -513,15 +513,21 @@ TESTBIPLANARTOP(NV21, 2, 2, I420, 2, 2)
     memset(dst_argb_c + OFF, 1, kStrideB * kHeight);                           \
     memset(dst_argb_opt + OFF, 101, kStrideB * kHeight);                       \
     MaskCpuFlags(disable_cpu_flags_);                                          \
+    double time0 = get_time();                                                 \
     FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,         \
                           src_v + OFF, kStrideUV, dst_argb_c + OFF, kStrideB,  \
                           kWidth, NEG kHeight);                                \
+    double time1 = get_time();                                                 \
     MaskCpuFlags(benchmark_cpu_info_);                                         \
     for (int i = 0; i < benchmark_iterations_; ++i) {                          \
       FMT_PLANAR##To##FMT_B(src_y + OFF, kWidth, src_u + OFF, kStrideUV,       \
                             src_v + OFF, kStrideUV, dst_argb_opt + OFF,        \
                             kStrideB, kWidth, NEG kHeight);                    \
     }                                                                          \
+    double time2 = get_time();                                                 \
+    printf(" %8d us C - %8d us OPT\n",                                         \
+         static_cast<int>((time1 - time0) * 1e6),                              \
+         static_cast<int>((time2 - time1) * 1e6 / benchmark_iterations_));     \
     int max_diff = 0;                                                          \
     /* Convert to ARGB so 565 is expanded to bytes that can be compared. */    \
     align_buffer_page_end(dst_argb32_c, kWidth* BPP_C* kHeight);               \
@@ -1952,6 +1958,10 @@ TESTPLANETOE(ARGB, 1, 4, AR30, 1, 4, ARGB, 4)
 TESTPLANETOE(ABGR, 1, 4, AR30, 1, 4, ABGR, 4)
 TESTPLANETOE(AR30, 1, 4, ARGB, 1, 4, ABGR, 4)
 TESTPLANETOE(AR30, 1, 4, ABGR, 1, 4, ARGB, 4)
+TESTPLANETOE(ARGB, 1, 4, AB30, 1, 4, ARGB, 4)
+TESTPLANETOE(ABGR, 1, 4, AB30, 1, 4, ABGR, 4)
+TESTPLANETOE(AB30, 1, 4, ARGB, 1, 4, ABGR, 4)
+TESTPLANETOE(AB30, 1, 4, ABGR, 1, 4, ARGB, 4)
 
 TEST_F(LibYUVConvertTest, RotateWithARGBSource) {
   // 2x2 frames

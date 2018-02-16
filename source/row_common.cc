@@ -182,14 +182,11 @@ void AR30ToARGBRow_C(const uint8_t* src_ar30, uint8_t* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
     uint32_t ar30 = *(uint32_t*)src_ar30;
-    uint32_t b = ar30 & 0x3ff;
-    uint32_t g = (ar30 >> 10) & 0x3ff;
-    uint32_t r = (ar30 >> 20) & 0x3ff;
-    uint32_t a = (ar30 >> 30) & 0x3;
-    dst_argb[0] = b >> 2;
-    dst_argb[1] = g >> 2;
-    dst_argb[2] = r >> 2;
-    dst_argb[3] = a * 0x55;
+    uint32_t b = (ar30 >> 2) & 0xff;
+    uint32_t g = (ar30 >> 12) & 0xff;
+    uint32_t r = (ar30 >> 22) & 0xff;
+    uint32_t a = (ar30 >> 30) * 0x55;  // Replicate 2 bits to 8 bits.
+    *(uint32_t*)(dst_argb) = b | (g << 8) | (r << 16) | (a << 24);
     dst_argb += 4;
     src_ar30 += 4;
   }
@@ -199,14 +196,11 @@ void AR30ToABGRRow_C(const uint8_t* src_ar30, uint8_t* dst_abgr, int width) {
   int x;
   for (x = 0; x < width; ++x) {
     uint32_t ar30 = *(uint32_t*)src_ar30;
-    uint32_t b = ar30 & 0x3ff;
-    uint32_t g = (ar30 >> 10) & 0x3ff;
-    uint32_t r = (ar30 >> 20) & 0x3ff;
-    uint32_t a = (ar30 >> 30) & 0x3;
-    dst_abgr[0] = r >> 2;
-    dst_abgr[1] = g >> 2;
-    dst_abgr[2] = b >> 2;
-    dst_abgr[3] = a * 0x55;
+    uint32_t b = (ar30 >> 2) & 0xff;
+    uint32_t g = (ar30 >> 12) & 0xff;
+    uint32_t r = (ar30 >> 22) & 0xff;
+    uint32_t a = (ar30 >> 30) * 0x55;  // Replicate 2 bits to 8 bits.
+    *(uint32_t*)(dst_abgr) = r | (g << 8) | (b << 16) | (a << 24);
     dst_abgr += 4;
     src_ar30 += 4;
   }
@@ -217,10 +211,9 @@ void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
   for (x = 0; x < width; ++x) {
     uint32_t ar30 = *(uint32_t*)src_ar30;
     uint32_t b = ar30 & 0x3ff;
-    uint32_t g = (ar30 >> 10) & 0x3ff;
+    uint32_t ga = ar30 & 0xc00ffc00;
     uint32_t r = (ar30 >> 20) & 0x3ff;
-    uint32_t a = (ar30 >> 30) & 0x3;
-    *(uint32_t*)(dst_ab30) = r | (g << 10) | (b << 20) | (a << 30);
+    *(uint32_t*)(dst_ab30) = r | ga | (b << 20);
     dst_ab30 += 4;
     src_ar30 += 4;
   }
