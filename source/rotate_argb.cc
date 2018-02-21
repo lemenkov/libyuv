@@ -14,7 +14,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/row.h"
-#include "libyuv/scale_row.h" /* for ScaleARGBRowDownEven_ */
+#include "libyuv/scale_row.h"   /* for ScaleARGBRowDownEven_ */
 
 #ifdef __cplusplus
 namespace libyuv {
@@ -29,9 +29,9 @@ static void ARGBTranspose(const uint8_t* src_argb,
                           int height) {
   int i;
   int src_pixel_step = src_stride_argb >> 2;
-  void (*ScaleARGBRowDownEven)(
-      const uint8_t* src_argb, ptrdiff_t src_stride_argb, int src_step,
-      uint8_t* dst_argb, int dst_width) = ScaleARGBRowDownEven_C;
+  void (*ScaleARGBRowDownEven)(const uint8_t* src_argb, ptrdiff_t src_stride_argb,
+                               int src_step, uint8_t* dst_argb, int dst_width) =
+      ScaleARGBRowDownEven_C;
 #if defined(HAS_SCALEARGBROWDOWNEVEN_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ScaleARGBRowDownEven = ScaleARGBRowDownEven_Any_SSE2;
@@ -75,8 +75,7 @@ void ARGBRotate90(const uint8_t* src_argb,
   // of the buffer and flip the sign of the source stride.
   src_argb += src_stride_argb * (height - 1);
   src_stride_argb = -src_stride_argb;
-  ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width,
-                height);
+  ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width, height);
 }
 
 void ARGBRotate270(const uint8_t* src_argb,
@@ -90,8 +89,7 @@ void ARGBRotate270(const uint8_t* src_argb,
   // of the buffer and flip the sign of the destination stride.
   dst_argb += dst_stride_argb * (width - 1);
   dst_stride_argb = -dst_stride_argb;
-  ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width,
-                height);
+  ARGBTranspose(src_argb, src_stride_argb, dst_argb, dst_stride_argb, width, height);
 }
 
 void ARGBRotate180(const uint8_t* src_argb,
@@ -108,8 +106,7 @@ void ARGBRotate180(const uint8_t* src_argb,
   int y;
   void (*ARGBMirrorRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) =
       ARGBMirrorRow_C;
-  void (*CopyRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) =
-      CopyRow_C;
+  void (*CopyRow)(const uint8_t* src_argb, uint8_t* dst_argb, int width) = CopyRow_C;
 #if defined(HAS_ARGBMIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBMirrorRow = ARGBMirrorRow_Any_NEON;
@@ -167,7 +164,7 @@ void ARGBRotate180(const uint8_t* src_argb,
   for (y = 0; y < half_height; ++y) {
     ARGBMirrorRow(src_argb, row, width);      // Mirror first row into a buffer
     ARGBMirrorRow(src_bot, dst_argb, width);  // Mirror last row into first row
-    CopyRow(row, dst_bot, width * 4);  // Copy first mirrored row into last
+    CopyRow(row, dst_bot, width * 4);    // Copy first mirrored row into last
     src_argb += src_stride_argb;
     dst_argb += dst_stride_argb;
     src_bot -= src_stride_argb;

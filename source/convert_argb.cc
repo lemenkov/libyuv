@@ -512,8 +512,8 @@ int I010ToAB30(const uint16_t* src_y,
                int dst_stride_ab30,
                int width,
                int height) {
-  return I010ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
-                          src_stride_u, dst_ab30, dst_stride_ab30,
+  return I010ToAR30Matrix(src_y, src_stride_y, src_v,
+                          src_stride_v, src_u, src_stride_u, dst_ab30, dst_stride_ab30,
                           &kYvuI601Constants, width, height);
 }
 
@@ -529,8 +529,8 @@ int H010ToAB30(const uint16_t* src_y,
                int dst_stride_ab30,
                int width,
                int height) {
-  return I010ToAR30Matrix(src_y, src_stride_y, src_v, src_stride_v, src_u,
-                          src_stride_u, dst_ab30, dst_stride_ab30,
+  return I010ToAR30Matrix(src_y, src_stride_y, src_v,
+                          src_stride_v, src_u, src_stride_u, dst_ab30, dst_stride_ab30,
                           &kYvuH709Constants, width, height);
 }
 
