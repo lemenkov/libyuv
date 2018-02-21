@@ -113,9 +113,12 @@ void I444ToARGBRow_NEON(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(
+
       YUVTORGB_SETUP
       "vmov.u8    d23, #255                      \n"
-      "1:                                        \n" READYUV444 YUVTORGB
+      "1:                                        \n"
+
+      READYUV444 YUVTORGB
       "subs       %4, %4, #8                     \n"
       "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
       "bgt        1b                             \n"
@@ -139,9 +142,12 @@ void I422ToARGBRow_NEON(const uint8_t* src_y,
                         const struct YuvConstants* yuvconstants,
                         int width) {
   asm volatile(
+
       YUVTORGB_SETUP
       "vmov.u8    d23, #255                      \n"
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %4, %4, #8                     \n"
       "vst4.8     {d20, d21, d22, d23}, [%3]!    \n"
       "bgt        1b                             \n"
@@ -166,8 +172,12 @@ void I422AlphaToARGBRow_NEON(const uint8_t* src_y,
                              const struct YuvConstants* yuvconstants,
                              int width) {
   asm volatile(
+
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %5, %5, #8                     \n"
       "vld1.8     {d23}, [%3]!                   \n"
       "vst4.8     {d20, d21, d22, d23}, [%4]!    \n"
@@ -194,7 +204,9 @@ void I422ToRGBARow_NEON(const uint8_t* src_y,
                         int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %4, %4, #8                     \n"
       "vmov.u8    d19, #255                      \n"  // d19 modified by
                                                       // YUVTORGB
@@ -220,8 +232,12 @@ void I422ToRGB24Row_NEON(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants,
                          int width) {
   asm volatile(
+
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %4, %4, #8                     \n"
       "vst3.8     {d20, d21, d22}, [%3]!         \n"
       "bgt        1b                             \n"
@@ -253,8 +269,13 @@ void I422ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
-      "subs       %4, %4, #8                     \n" ARGBTORGB565
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
+
+      "subs       %4, %4, #8                     \n"
+
+      ARGBTORGB565
       "vst1.8     {q0}, [%3]!                    \n"  // store 8 pixels RGB565.
       "bgt        1b                             \n"
       : "+r"(src_y),       // %0
@@ -286,10 +307,15 @@ void I422ToARGB1555Row_NEON(const uint8_t* src_y,
                             const struct YuvConstants* yuvconstants,
                             int width) {
   asm volatile(
+
       YUVTORGB_SETUP
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %4, %4, #8                     \n"
-      "vmov.u8    d23, #255                      \n" ARGBTOARGB1555
+      "vmov.u8    d23, #255                      \n"
+
+      ARGBTOARGB1555
       "vst1.8     {q0}, [%3]!                    \n"  // store 8 pixels
                                                       // ARGB1555.
       "bgt        1b                             \n"
@@ -325,9 +351,13 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
       YUVTORGB_SETUP
       "vmov.u8    d4, #0x0f                      \n"  // bits to clear with
                                                       // vbic.
-      "1:                                        \n" READYUV422 YUVTORGB
+      "1:                                        \n"
+
+      READYUV422 YUVTORGB
       "subs       %4, %4, #8                     \n"
-      "vmov.u8    d23, #255                      \n" ARGBTOARGB4444
+      "vmov.u8    d23, #255                      \n"
+
+      ARGBTOARGB4444
       "vst1.8     {q0}, [%3]!                    \n"  // store 8 pixels
                                                       // ARGB4444.
       "bgt        1b                             \n"
@@ -346,9 +376,12 @@ void I422ToARGB4444Row_NEON(const uint8_t* src_y,
 
 void I400ToARGBRow_NEON(const uint8_t* src_y, uint8_t* dst_argb, int width) {
   asm volatile(
+
       YUVTORGB_SETUP
       "vmov.u8    d23, #255                      \n"
-      "1:                                        \n" READYUV400 YUVTORGB
+      "1:                                        \n"
+
+      READYUV400 YUVTORGB
       "subs       %2, %2, #8                     \n"
       "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
       "bgt        1b                             \n"
@@ -385,22 +418,27 @@ void NV12ToARGBRow_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  asm volatile(YUVTORGB_SETUP
-               "vmov.u8    d23, #255                      \n"
-               "1:                                        \n" READNV12 YUVTORGB
-               "subs       %3, %3, #8                     \n"
-               "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
-               "bgt        1b                             \n"
-               : "+r"(src_y),     // %0
-                 "+r"(src_uv),    // %1
-                 "+r"(dst_argb),  // %2
-                 "+r"(width)      // %3
-               : [kUVToRB] "r"(&yuvconstants->kUVToRB),
-                 [kUVToG] "r"(&yuvconstants->kUVToG),
-                 [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
-                 [kYToRgb] "r"(&yuvconstants->kYToRgb)
-               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9",
-                 "q10", "q11", "q12", "q13", "q14", "q15");
+  asm volatile(
+
+      YUVTORGB_SETUP
+      "vmov.u8    d23, #255                      \n"
+
+      "1:                                        \n"
+
+      READNV12 YUVTORGB
+      "subs       %3, %3, #8                     \n"
+      "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
+      "bgt        1b                             \n"
+      : "+r"(src_y),     // %0
+        "+r"(src_uv),    // %1
+        "+r"(dst_argb),  // %2
+        "+r"(width)      // %3
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
 }
 
 void NV21ToARGBRow_NEON(const uint8_t* src_y,
@@ -408,22 +446,27 @@ void NV21ToARGBRow_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  asm volatile(YUVTORGB_SETUP
-               "vmov.u8    d23, #255                      \n"
-               "1:                                        \n" READNV21 YUVTORGB
-               "subs       %3, %3, #8                     \n"
-               "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
-               "bgt        1b                             \n"
-               : "+r"(src_y),     // %0
-                 "+r"(src_vu),    // %1
-                 "+r"(dst_argb),  // %2
-                 "+r"(width)      // %3
-               : [kUVToRB] "r"(&yuvconstants->kUVToRB),
-                 [kUVToG] "r"(&yuvconstants->kUVToG),
-                 [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
-                 [kYToRgb] "r"(&yuvconstants->kYToRgb)
-               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9",
-                 "q10", "q11", "q12", "q13", "q14", "q15");
+  asm volatile(
+
+      YUVTORGB_SETUP
+      "vmov.u8    d23, #255                      \n"
+
+      "1:                                        \n"
+
+      READNV21 YUVTORGB
+      "subs       %3, %3, #8                     \n"
+      "vst4.8     {d20, d21, d22, d23}, [%2]!    \n"
+      "bgt        1b                             \n"
+      : "+r"(src_y),     // %0
+        "+r"(src_vu),    // %1
+        "+r"(dst_argb),  // %2
+        "+r"(width)      // %3
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
 }
 
 void NV12ToRGB565Row_NEON(const uint8_t* src_y,
@@ -433,8 +476,13 @@ void NV12ToRGB565Row_NEON(const uint8_t* src_y,
                           int width) {
   asm volatile(
       YUVTORGB_SETUP
-      "1:                                        \n" READNV12 YUVTORGB
-      "subs       %3, %3, #8                     \n" ARGBTORGB565
+      "1:                                        \n"
+
+      READNV12 YUVTORGB
+
+      "subs       %3, %3, #8                     \n"
+
+      ARGBTORGB565
       "vst1.8     {q0}, [%2]!                    \n"  // store 8 pixels RGB565.
       "bgt        1b                             \n"
       : "+r"(src_y),       // %0
@@ -453,42 +501,50 @@ void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  asm volatile(YUVTORGB_SETUP
-               "vmov.u8    d23, #255                      \n"
-               "1:                                        \n" READYUY2 YUVTORGB
-               "subs       %2, %2, #8                     \n"
-               "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
-               "bgt        1b                             \n"
-               : "+r"(src_yuy2),  // %0
-                 "+r"(dst_argb),  // %1
-                 "+r"(width)      // %2
-               : [kUVToRB] "r"(&yuvconstants->kUVToRB),
-                 [kUVToG] "r"(&yuvconstants->kUVToG),
-                 [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
-                 [kYToRgb] "r"(&yuvconstants->kYToRgb)
-               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9",
-                 "q10", "q11", "q12", "q13", "q14", "q15");
+  asm volatile(
+
+      YUVTORGB_SETUP
+      "vmov.u8    d23, #255                      \n"
+      "1:                                        \n"
+
+      READYUY2 YUVTORGB
+      "subs       %2, %2, #8                     \n"
+      "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+      "bgt        1b                             \n"
+      : "+r"(src_yuy2),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
 }
 
 void UYVYToARGBRow_NEON(const uint8_t* src_uyvy,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width) {
-  asm volatile(YUVTORGB_SETUP
-               "vmov.u8    d23, #255                      \n"
-               "1:                                        \n" READUYVY YUVTORGB
-               "subs       %2, %2, #8                     \n"
-               "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
-               "bgt        1b                             \n"
-               : "+r"(src_uyvy),  // %0
-                 "+r"(dst_argb),  // %1
-                 "+r"(width)      // %2
-               : [kUVToRB] "r"(&yuvconstants->kUVToRB),
-                 [kUVToG] "r"(&yuvconstants->kUVToG),
-                 [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
-                 [kYToRgb] "r"(&yuvconstants->kYToRgb)
-               : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9",
-                 "q10", "q11", "q12", "q13", "q14", "q15");
+  asm volatile(
+
+      YUVTORGB_SETUP
+      "vmov.u8    d23, #255                      \n"
+      "1:                                        \n"
+
+      READUYVY YUVTORGB
+      "subs       %2, %2, #8                     \n"
+      "vst4.8     {d20, d21, d22, d23}, [%1]!    \n"
+      "bgt        1b                             \n"
+      : "+r"(src_uyvy),  // %0
+        "+r"(dst_argb),  // %1
+        "+r"(width)      // %2
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
 }
 
 // Reads 16 pairs of UV and write even values to dst_u and odd to dst_v.

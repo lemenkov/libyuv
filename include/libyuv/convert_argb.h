@@ -547,7 +547,6 @@ int ARGB4444ToARGB(const uint8_t* src_argb4444,
                    int width,
                    int height);
 
-
 // Aliases
 #define AB30ToARGB AR30ToABGR
 #define AB30ToABGR AR30ToARGB
@@ -561,7 +560,6 @@ int AR30ToARGB(const uint8_t* src_ar30,
                int dst_stride_argb,
                int width,
                int height);
-
 
 // Convert AR30 To ABGR.
 LIBYUV_API
