@@ -526,8 +526,8 @@ TESTBIPLANARTOP(NV21, 2, 2, I420, 2, 2)
     }                                                                          \
     double time2 = get_time();                                                 \
     printf(" %8d us C - %8d us OPT\n",                                         \
-         static_cast<int>((time1 - time0) * 1e6),                              \
-         static_cast<int>((time2 - time1) * 1e6 / benchmark_iterations_));     \
+           static_cast<int>((time1 - time0) * 1e6),                            \
+           static_cast<int>((time2 - time1) * 1e6 / benchmark_iterations_));   \
     int max_diff = 0;                                                          \
     /* Convert to ARGB so 565 is expanded to bytes that can be compared. */    \
     align_buffer_page_end(dst_argb32_c, kWidth* BPP_C* kHeight);               \
