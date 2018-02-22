@@ -424,6 +424,60 @@ void NV21ToARGBRow_NEON(const uint8_t* src_y,
                  "q10", "q11", "q12", "q13", "q14", "q15");
 }
 
+void NV12ToRGB24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_uv,
+                         uint8_t* dst_rgb24,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  asm volatile(
+
+      YUVTORGB_SETUP
+
+      "1:                                        \n"
+
+      READNV12 YUVTORGB
+      "subs       %3, %3, #8                     \n"
+      "vst3.8     {d20, d21, d22}, [%2]!         \n"
+      "bgt        1b                             \n"
+      : "+r"(src_y),      // %0
+        "+r"(src_uv),     // %1
+        "+r"(dst_rgb24),  // %2
+        "+r"(width)       // %3
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
+}
+
+void NV21ToRGB24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_rgb24,
+                         const struct YuvConstants* yuvconstants,
+                         int width) {
+  asm volatile(
+
+      YUVTORGB_SETUP
+
+      "1:                                        \n"
+
+      READNV21 YUVTORGB
+      "subs       %3, %3, #8                     \n"
+      "vst3.8     {d20, d21, d22}, [%2]!         \n"
+      "bgt        1b                             \n"
+      : "+r"(src_y),      // %0
+        "+r"(src_vu),     // %1
+        "+r"(dst_rgb24),  // %2
+        "+r"(width)       // %3
+      : [kUVToRB] "r"(&yuvconstants->kUVToRB),
+        [kUVToG] "r"(&yuvconstants->kUVToG),
+        [kUVBiasBGR] "r"(&yuvconstants->kUVBiasBGR),
+        [kYToRgb] "r"(&yuvconstants->kYToRgb)
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q8", "q9", "q10", "q11",
+        "q12", "q13", "q14", "q15");
+}
+
 void NV12ToRGB565Row_NEON(const uint8_t* src_y,
                           const uint8_t* src_uv,
                           uint8_t* dst_rgb565,

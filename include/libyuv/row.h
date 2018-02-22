@@ -326,8 +326,10 @@ extern "C" {
 #define HAS_MIRRORROW_NEON
 #define HAS_MIRRORUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
+#define HAS_NV12TORGB24ROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
 #define HAS_NV21TOARGBROW_NEON
+#define HAS_NV21TORGB24ROW_NEON
 #define HAS_RAWTOARGBROW_NEON
 #define HAS_RAWTORGB24ROW_NEON
 #define HAS_RAWTOUVROW_NEON
@@ -703,6 +705,16 @@ void NV21ToARGBRow_NEON(const uint8_t* src_y,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
                         int width);
+void NV12ToRGB24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_uv,
+                         uint8_t* dst_rgb24,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void NV21ToRGB24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_rgb24,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
 void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
                         const struct YuvConstants* yuvconstants,
@@ -1815,6 +1827,16 @@ void NV21ToARGBRow_C(const uint8_t* src_y,
                      uint8_t* rgb_buf,
                      const struct YuvConstants* yuvconstants,
                      int width);
+void NV12ToRGB24Row_C(const uint8_t* src_y,
+                      const uint8_t* src_uv,
+                      uint8_t* rgb_buf,
+                      const struct YuvConstants* yuvconstants,
+                      int width);
+void NV21ToRGB24Row_C(const uint8_t* src_y,
+                      const uint8_t* src_vu,
+                      uint8_t* rgb_buf,
+                      const struct YuvConstants* yuvconstants,
+                      int width);
 void YUY2ToARGBRow_C(const uint8_t* src_yuy2,
                      uint8_t* rgb_buf,
                      const struct YuvConstants* yuvconstants,
@@ -2545,6 +2567,16 @@ void NV21ToARGBRow_Any_NEON(const uint8_t* y_buf,
                             uint8_t* dst_ptr,
                             const struct YuvConstants* yuvconstants,
                             int width);
+void NV12ToRGB24Row_Any_NEON(const uint8_t* y_buf,
+                             const uint8_t* uv_buf,
+                             uint8_t* dst_ptr,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void NV21ToRGB24Row_Any_NEON(const uint8_t* y_buf,
+                             const uint8_t* uv_buf,
+                             uint8_t* dst_ptr,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
 void NV12ToRGB565Row_Any_NEON(const uint8_t* y_buf,
                               const uint8_t* uv_buf,
                               uint8_t* dst_ptr,

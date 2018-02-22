@@ -1757,6 +1757,124 @@ int NV21ToABGR(const uint8_t* src_y,
                           dst_stride_abgr, &kYvuI601Constants, width, height);
 }
 
+// TODO(fbarchard): Consider SSSE3 2 step conversion.
+// Convert NV12 to RGB24 with matrix
+static int NV12ToRGB24Matrix(const uint8_t* src_y,
+                             int src_stride_y,
+                             const uint8_t* src_uv,
+                             int src_stride_uv,
+                             uint8_t* dst_rgb24,
+                             int dst_stride_rgb24,
+                             const struct YuvConstants* yuvconstants,
+                             int width,
+                             int height) {
+  int y;
+  void (*NV12ToRGB24Row)(
+      const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = NV12ToRGB24Row_C;
+  if (!src_y || !src_uv || !dst_rgb24 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_stride_rgb24 = -dst_stride_rgb24;
+  }
+#if defined(HAS_NV12TORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    NV12ToRGB24Row = NV12ToRGB24Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV12ToRGB24Row = NV12ToRGB24Row_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    NV12ToRGB24Row(src_y, src_uv, dst_rgb24, yuvconstants, width);
+    dst_rgb24 += dst_stride_rgb24;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_uv += src_stride_uv;
+    }
+  }
+  return 0;
+}
+
+// Convert NV21 to RGB24 with matrix
+static int NV21ToRGB24Matrix(const uint8_t* src_y,
+                             int src_stride_y,
+                             const uint8_t* src_vu,
+                             int src_stride_vu,
+                             uint8_t* dst_rgb24,
+                             int dst_stride_rgb24,
+                             const struct YuvConstants* yuvconstants,
+                             int width,
+                             int height) {
+  int y;
+  void (*NV21ToRGB24Row)(
+      const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* rgb_buf,
+      const struct YuvConstants* yuvconstants, int width) = NV21ToRGB24Row_C;
+  if (!src_y || !src_vu || !dst_rgb24 || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    dst_rgb24 = dst_rgb24 + (height - 1) * dst_stride_rgb24;
+    dst_stride_rgb24 = -dst_stride_rgb24;
+  }
+#if defined(HAS_NV21TORGB24ROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    NV21ToRGB24Row = NV21ToRGB24Row_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      NV21ToRGB24Row = NV21ToRGB24Row_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    NV21ToRGB24Row(src_y, src_vu, dst_rgb24, yuvconstants, width);
+    dst_rgb24 += dst_stride_rgb24;
+    src_y += src_stride_y;
+    if (y & 1) {
+      src_vu += src_stride_vu;
+    }
+  }
+  return 0;
+}
+
+// TODO(fbarchard): \(fbarchard): NV12ToRAW can be implemented by mirrored
+// matrix. Convert NV12 to RGB24.
+LIBYUV_API
+int NV12ToRGB24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_uv,
+                int src_stride_uv,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height) {
+  return NV12ToRGB24Matrix(src_y, src_stride_y, src_uv, src_stride_uv,
+                           dst_rgb24, dst_stride_rgb24, &kYuvI601Constants,
+                           width, height);
+}
+
+// Convert NV21 to RGB24.
+LIBYUV_API
+int NV21ToRGB24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_vu,
+                int src_stride_vu,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height) {
+  return NV21ToRGB24Matrix(src_y, src_stride_y, src_vu, src_stride_vu,
+                           dst_rgb24, dst_stride_rgb24, &kYuvI601Constants,
+                           width, height);
+}
+
 // Convert M420 to ARGB.
 LIBYUV_API
 int M420ToARGB(const uint8_t* src_m420,
