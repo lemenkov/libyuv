@@ -2774,6 +2774,14 @@ void HalfFloatRow_C(const uint16_t* src,
   }
 }
 
+void ByteToFloatRow_C(const uint8_t* src, float* dst, float scale, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    float value = src[i] * scale;
+    dst[i] = value;
+  }
+}
+
 void ARGBLumaColorTableRow_C(const uint8_t* src_argb,
                              uint8_t* dst_argb,
                              int width,

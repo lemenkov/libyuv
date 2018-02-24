@@ -498,6 +498,10 @@ int HalfFloatPlane(const uint16_t* src_y,
                    int width,
                    int height);
 
+// Convert a buffer of bytes to floats, scale the values and store as floats.
+LIBYUV_API
+int ByteToFloat(const uint8_t* src_y, float* dst_y, float scale, int width);
+
 // Quantize a rectangle of ARGB. Alpha unaffected.
 // scale is a 16 bit fractional fixed point scaler between 0 and 65535.
 // interval_size should be a value between 1 and 255.

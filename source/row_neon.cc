@@ -2659,6 +2659,32 @@ void HalfFloatRow_NEON(const uint16_t* src,
       : "cc", "memory", "q0", "q1", "q2", "q3");
 }
 
+void ByteToFloatRow_NEON(const uint8_t* src,
+                         float* dst,
+                         float scale,
+                         int width) {
+  asm volatile(
+      "vdup.32    q0, %3                         \n"
+
+      "1:                                        \n"
+      "vld1.8     {d2}, [%0]!                    \n"  // load 8 bytes
+      "subs       %2, %2, #8                     \n"  // 8 pixels per loop
+      "vmovl.u8   q1, d2                         \n"  // 8 shorts
+      "vmovl.u16  q2, d2                         \n"  // 8 ints
+      "vmovl.u16  q3, d3                         \n"
+      "vcvt.f32.u32  q2, q2                      \n"  // 8 floats
+      "vcvt.f32.u32  q3, q3                      \n"
+      "vmul.f32   q2, q2, d0[0]                  \n"  // scale
+      "vmul.f32   q3, q3, d0[0]                  \n"
+      "vst1.8     {q2, q3}, [%1]!                \n"  // store 8 floats
+      "bgt        1b                             \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      : "r"(scale)   // %3
+      : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..
 
 #ifdef __cplusplus

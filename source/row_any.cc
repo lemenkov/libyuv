@@ -807,37 +807,52 @@ ANY11C(Convert8To16Row_Any_AVX2,
 #undef ANY11C
 
 // Any 1 to 1 with parameter and shorts to byte.  BPP measures in shorts.
-#define ANY11P16(NAMEANY, ANY_SIMD, T, SBPP, BPP, MASK)             \
-  void NAMEANY(const uint16_t* src_ptr, uint16_t* dst_ptr, T param, \
-               int width) {                                         \
-    SIMD_ALIGNED(uint16_t temp[32 * 2]);                            \
-    memset(temp, 0, 64); /* for msan */                             \
-    int r = width & MASK;                                           \
-    int n = width & ~MASK;                                          \
-    if (n > 0) {                                                    \
-      ANY_SIMD(src_ptr, dst_ptr, param, n);                         \
-    }                                                               \
-    memcpy(temp, src_ptr + n, r * SBPP);                            \
-    ANY_SIMD(temp, temp + 16, param, MASK + 1);                     \
-    memcpy(dst_ptr + n, temp + 16, r * BPP);                        \
+#define ANY11P16(NAMEANY, ANY_SIMD, ST, T, SBPP, BPP, MASK)             \
+  void NAMEANY(const ST* src_ptr, T* dst_ptr, float param, int width) { \
+    SIMD_ALIGNED(ST temp[32]);                                          \
+    SIMD_ALIGNED(T out[32]);                                            \
+    memset(temp, 0, SBPP * 32); /* for msan */                          \
+    int r = width & MASK;                                               \
+    int n = width & ~MASK;                                              \
+    if (n > 0) {                                                        \
+      ANY_SIMD(src_ptr, dst_ptr, param, n);                             \
+    }                                                                   \
+    memcpy(temp, src_ptr + n, r * SBPP);                                \
+    ANY_SIMD(temp, out, param, MASK + 1);                               \
+    memcpy(dst_ptr + n, out, r * BPP);                                  \
   }
 
 #ifdef HAS_HALFFLOATROW_SSE2
-ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, float, 2, 2, 7)
+ANY11P16(HalfFloatRow_Any_SSE2, HalfFloatRow_SSE2, uint16_t, uint16_t, 2, 2, 7)
 #endif
 #ifdef HAS_HALFFLOATROW_AVX2
-ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, float, 2, 2, 15)
+ANY11P16(HalfFloatRow_Any_AVX2, HalfFloatRow_AVX2, uint16_t, uint16_t, 2, 2, 15)
 #endif
 #ifdef HAS_HALFFLOATROW_F16C
-ANY11P16(HalfFloatRow_Any_F16C, HalfFloatRow_F16C, float, 2, 2, 15)
-ANY11P16(HalfFloat1Row_Any_F16C, HalfFloat1Row_F16C, float, 2, 2, 15)
+ANY11P16(HalfFloatRow_Any_F16C, HalfFloatRow_F16C, uint16_t, uint16_t, 2, 2, 15)
+ANY11P16(HalfFloat1Row_Any_F16C,
+         HalfFloat1Row_F16C,
+         uint16_t,
+         uint16_t,
+         2,
+         2,
+         15)
 #endif
 #ifdef HAS_HALFFLOATROW_NEON
-ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, float, 2, 2, 7)
-ANY11P16(HalfFloat1Row_Any_NEON, HalfFloat1Row_NEON, float, 2, 2, 7)
+ANY11P16(HalfFloatRow_Any_NEON, HalfFloatRow_NEON, uint16_t, uint16_t, 2, 2, 7)
+ANY11P16(HalfFloat1Row_Any_NEON,
+         HalfFloat1Row_NEON,
+         uint16_t,
+         uint16_t,
+         2,
+         2,
+         7)
 #endif
 #ifdef HAS_HALFFLOATROW_MSA
-ANY11P16(HalfFloatRow_Any_MSA, HalfFloatRow_MSA, float, 2, 2, 31)
+ANY11P16(HalfFloatRow_Any_MSA, HalfFloatRow_MSA, uint16_t, uint16_t, 2, 2, 31)
+#endif
+#ifdef HAS_BYTETOFLOATROW_NEON
+ANY11P16(ByteToFloatRow_Any_NEON, ByteToFloatRow_NEON, uint8_t, float, 1, 3, 7)
 #endif
 #undef ANY11P16
 

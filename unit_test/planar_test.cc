@@ -2168,6 +2168,52 @@ TEST_F(LibYUVPlanarTest, TestHalfFloatPlane_12bit_One) {
   EXPECT_LE(diff, 1);
 }
 
+float TestByteToFloat(int benchmark_width,
+                      int benchmark_height,
+                      int benchmark_iterations,
+                      int disable_cpu_flags,
+                      int benchmark_cpu_info,
+                      float scale) {
+  int i, j;
+  const int y_plane_size = benchmark_width * benchmark_height;
+
+  align_buffer_page_end(orig_y, y_plane_size * (1 + 4 + 4));
+  float* dst_opt = reinterpret_cast<float*>(orig_y + y_plane_size);
+  float* dst_c = reinterpret_cast<float*>(orig_y + y_plane_size * 5);
+
+  MemRandomize(orig_y, y_plane_size);
+  memset(dst_c, 0, y_plane_size * 4);
+  memset(dst_opt, 1, y_plane_size * 4);
+
+  // Disable all optimizations.
+  MaskCpuFlags(disable_cpu_flags);
+  ByteToFloat(orig_y, dst_c, scale, y_plane_size);
+
+  // Enable optimizations.
+  MaskCpuFlags(benchmark_cpu_info);
+  for (j = 0; j < benchmark_iterations; j++) {
+    ByteToFloat(orig_y, dst_opt, scale, y_plane_size);
+  }
+
+  float max_diff = 0;
+  for (i = 0; i < y_plane_size; ++i) {
+    float abs_diff = fabs(dst_c[i] - dst_opt[i]);
+    if (abs_diff > max_diff) {
+      max_diff = abs_diff;
+    }
+  }
+
+  free_aligned_buffer_page_end(orig_y);
+  return max_diff;
+}
+
+TEST_F(LibYUVPlanarTest, TestByteToFloat) {
+  float diff = TestByteToFloat(benchmark_width_, benchmark_height_,
+                               benchmark_iterations_, disable_cpu_flags_,
+                               benchmark_cpu_info_, 1.0f);
+  EXPECT_EQ(0.f, diff);
+}
+
 TEST_F(LibYUVPlanarTest, TestARGBLumaColorTable) {
   SIMD_ALIGNED(uint8_t orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8_t dst_pixels_opt[1280][4]);

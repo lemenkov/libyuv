@@ -2700,6 +2700,30 @@ void HalfFloatRow_NEON(const uint16_t* src,
       : "cc", "memory", "v1", "v2", "v3");
 }
 
+void ByteToFloatRow_NEON(const uint8_t* src,
+                         float* dst,
+                         float scale,
+                         int width) {
+  asm volatile(
+      "1:                                        \n"
+      "ld1        {v1.8b}, [%0], #8              \n"  // load 8 bytes
+      "subs       %w2, %w2, #8                   \n"  // 8 pixels per loop
+      "uxtl       v1.8h, v1.8b                   \n"  // 8 shorts
+      "uxtl       v2.4s, v1.4h                   \n"  // 8 ints
+      "uxtl2      v3.4s, v1.8h                   \n"
+      "scvtf      v2.4s, v2.4s                   \n"  // 8 floats
+      "scvtf      v3.4s, v3.4s                   \n"
+      "fmul       v2.4s, v2.4s, %3.s[0]          \n"  // scale
+      "fmul       v3.4s, v3.4s, %3.s[0]          \n"
+      "st1        {v2.16b, v3.16b}, [%1], #32    \n"  // store 8 floats
+      "b.gt       1b                             \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      : "w"(scale)   // %3
+      : "cc", "memory", "v1", "v2", "v3");
+}
+
 float ScaleMaxSamples_NEON(const float* src,
                            float* dst,
                            float scale,

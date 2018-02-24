@@ -3123,6 +3123,27 @@ int HalfFloatPlane(const uint16_t* src_y,
   return 0;
 }
 
+// Convert a buffer of bytes to floats, scale the values and store as floats.
+LIBYUV_API
+int ByteToFloat(const uint8_t* src_y, float* dst_y, float scale, int width) {
+  void (*ByteToFloatRow)(const uint8_t* src, float* dst, float scale,
+                         int width) = ByteToFloatRow_C;
+  if (!src_y || !dst_y || width <= 0) {
+    return -1;
+  }
+#if defined(HAS_BYTETOFLOATROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    ByteToFloatRow = ByteToFloatRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      ByteToFloatRow = ByteToFloatRow_NEON;
+    }
+  }
+#endif
+
+  ByteToFloatRow(src_y, dst_y, scale, width);
+  return 0;
+}
+
 // Apply a lumacolortable to each ARGB pixel.
 LIBYUV_API
 int ARGBLumaColorTable(const uint8_t* src_argb,
