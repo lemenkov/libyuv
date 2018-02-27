@@ -104,20 +104,21 @@ int MJPGSize(const uint8_t* sample,
 }
 
 // MJPG (Motion JPeg) to I420
-// TODO(fbarchard): review w and h requirement. dw and dh may be enough.
+// TODO(fbarchard): review src_width and src_height requirement. dst_width and
+// dst_height may be enough.
 LIBYUV_API
 int MJPGToI420(const uint8_t* sample,
                size_t sample_size,
-               uint8_t* y,
-               int y_stride,
-               uint8_t* u,
-               int u_stride,
-               uint8_t* v,
-               int v_stride,
-               int w,
-               int h,
-               int dw,
-               int dh) {
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_u,
+               int dst_stride_u,
+               uint8_t* dst_v,
+               int dst_stride_v,
+               int src_width,
+               int src_height,
+               int dst_width,
+               int dst_height) {
   if (sample_size == kUnknownDataSize) {
     // ERROR: MJPEG frame size unknown
     return -1;
@@ -126,14 +127,15 @@ int MJPGToI420(const uint8_t* sample,
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
   LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
-  if (ret &&
-      (mjpeg_decoder.GetWidth() != w || mjpeg_decoder.GetHeight() != h)) {
+  if (ret && (mjpeg_decoder.GetWidth() != src_width ||
+              mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
     mjpeg_decoder.UnloadFrame();
     return 1;  // runtime failure
   }
   if (ret) {
-    I420Buffers bufs = {y, y_stride, u, u_stride, v, v_stride, dw, dh};
+    I420Buffers bufs = {dst_y, dst_stride_y, dst_u,     dst_stride_u,
+                        dst_v, dst_stride_v, dst_width, dst_height};
     // YUV420
     if (mjpeg_decoder.GetColorSpace() == MJpegDecoder::kColorSpaceYCbCr &&
         mjpeg_decoder.GetNumComponents() == 3 &&
@@ -143,7 +145,8 @@ int MJPGToI420(const uint8_t* sample,
         mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
         mjpeg_decoder.GetVertSampFactor(2) == 1 &&
         mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegCopyI420, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegCopyI420, &bufs, dst_width,
+                                           dst_height);
       // YUV422
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
@@ -154,7 +157,8 @@ int MJPGToI420(const uint8_t* sample,
                mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
                mjpeg_decoder.GetVertSampFactor(2) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToI420, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToI420, &bufs, dst_width,
+                                           dst_height);
       // YUV444
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
@@ -165,14 +169,16 @@ int MJPGToI420(const uint8_t* sample,
                mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
                mjpeg_decoder.GetVertSampFactor(2) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToI420, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToI420, &bufs, dst_width,
+                                           dst_height);
       // YUV400
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceGrayscale &&
                mjpeg_decoder.GetNumComponents() == 1 &&
                mjpeg_decoder.GetVertSampFactor(0) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(0) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToI420, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToI420, &bufs, dst_width,
+                                           dst_height);
     } else {
       // TODO(fbarchard): Implement conversion for any other colorspace/sample
       // factors that occur in practice.
@@ -236,16 +242,17 @@ static void JpegI400ToARGB(void* opaque,
 }
 
 // MJPG (Motion JPeg) to ARGB
-// TODO(fbarchard): review w and h requirement. dw and dh may be enough.
+// TODO(fbarchard): review src_width and src_height requirement. dst_width and
+// dst_height may be enough.
 LIBYUV_API
 int MJPGToARGB(const uint8_t* sample,
                size_t sample_size,
-               uint8_t* argb,
-               int argb_stride,
-               int w,
-               int h,
-               int dw,
-               int dh) {
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int src_width,
+               int src_height,
+               int dst_width,
+               int dst_height) {
   if (sample_size == kUnknownDataSize) {
     // ERROR: MJPEG frame size unknown
     return -1;
@@ -254,14 +261,14 @@ int MJPGToARGB(const uint8_t* sample,
   // TODO(fbarchard): Port MJpeg to C.
   MJpegDecoder mjpeg_decoder;
   LIBYUV_BOOL ret = mjpeg_decoder.LoadFrame(sample, sample_size);
-  if (ret &&
-      (mjpeg_decoder.GetWidth() != w || mjpeg_decoder.GetHeight() != h)) {
+  if (ret && (mjpeg_decoder.GetWidth() != src_width ||
+              mjpeg_decoder.GetHeight() != src_height)) {
     // ERROR: MJPEG frame has unexpected dimensions
     mjpeg_decoder.UnloadFrame();
     return 1;  // runtime failure
   }
   if (ret) {
-    ARGBBuffers bufs = {argb, argb_stride, dw, dh};
+    ARGBBuffers bufs = {dst_argb, dst_stride_argb, dst_width, dst_height};
     // YUV420
     if (mjpeg_decoder.GetColorSpace() == MJpegDecoder::kColorSpaceYCbCr &&
         mjpeg_decoder.GetNumComponents() == 3 &&
@@ -271,7 +278,8 @@ int MJPGToARGB(const uint8_t* sample,
         mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
         mjpeg_decoder.GetVertSampFactor(2) == 1 &&
         mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI420ToARGB, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI420ToARGB, &bufs, dst_width,
+                                           dst_height);
       // YUV422
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
@@ -282,7 +290,8 @@ int MJPGToARGB(const uint8_t* sample,
                mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
                mjpeg_decoder.GetVertSampFactor(2) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToARGB, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI422ToARGB, &bufs, dst_width,
+                                           dst_height);
       // YUV444
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceYCbCr &&
@@ -293,14 +302,16 @@ int MJPGToARGB(const uint8_t* sample,
                mjpeg_decoder.GetHorizSampFactor(1) == 1 &&
                mjpeg_decoder.GetVertSampFactor(2) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(2) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToARGB, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI444ToARGB, &bufs, dst_width,
+                                           dst_height);
       // YUV400
     } else if (mjpeg_decoder.GetColorSpace() ==
                    MJpegDecoder::kColorSpaceGrayscale &&
                mjpeg_decoder.GetNumComponents() == 1 &&
                mjpeg_decoder.GetVertSampFactor(0) == 1 &&
                mjpeg_decoder.GetHorizSampFactor(0) == 1) {
-      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToARGB, &bufs, dw, dh);
+      ret = mjpeg_decoder.DecodeToCallback(&JpegI400ToARGB, &bufs, dst_width,
+                                           dst_height);
     } else {
       // TODO(fbarchard): Implement conversion for any other colorspace/sample
       // factors that occur in practice.
