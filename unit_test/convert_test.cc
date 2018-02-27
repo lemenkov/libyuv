@@ -51,12 +51,16 @@ namespace libyuv {
                        SRC_SUBSAMP_Y, FMT_PLANAR, DST_T, DST_BPC,             \
                        DST_SUBSAMP_X, DST_SUBSAMP_Y, W1280, N, NEG, OFF)      \
   TEST_F(LibYUVConvertTest, SRC_FMT_PLANAR##To##FMT_PLANAR##N) {              \
-    assert(SRC_BPC == 1 || SRC_BPC == 2);                                     \
-    assert(DST_BPC == 1 || DST_BPC == 2);                                     \
-    assert(SRC_SUBSAMP_X == 1 || SRC_SUBSAMP_X == 2);                         \
-    assert(SRC_SUBSAMP_Y == 1 || SRC_SUBSAMP_Y == 2);                         \
-    assert(DST_SUBSAMP_X == 1 || DST_SUBSAMP_X == 2);                         \
-    assert(DST_SUBSAMP_Y == 1 || DST_SUBSAMP_Y == 2);                         \
+    static_assert(SRC_BPC == 1 || SRC_BPC == 2, "SRC BPC unsupported");       \
+    static_assert(DST_BPC == 1 || DST_BPC == 2, "DST BPC unsupported");       \
+    static_assert(SRC_SUBSAMP_X == 1 || SRC_SUBSAMP_X == 2,                   \
+                  "DST SRC_SUBSAMP_X unsupported");                           \
+    static_assert(SRC_SUBSAMP_Y == 1 || SRC_SUBSAMP_Y == 2,                   \
+                  "DST SRC_SUBSAMP_Y unsupported");                           \
+    static_assert(DST_SUBSAMP_X == 1 || DST_SUBSAMP_X == 2,                   \
+                  "DST DST_SUBSAMP_X unsupported");                           \
+    static_assert(DST_SUBSAMP_Y == 1 || DST_SUBSAMP_Y == 2,                   \
+                  "DST DST_SUBSAMP_Y unsupported");                           \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                           \
     const int kHeight = benchmark_height_;                                    \
     const int kSrcHalfWidth = SUBSAMPLE(kWidth, SRC_SUBSAMP_X);               \
