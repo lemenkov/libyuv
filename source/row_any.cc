@@ -341,18 +341,18 @@ ANY21(SobelXYRow_Any_MSA, SobelXYRow_MSA, 0, 1, 1, 4, 15)
 #define ANY21C(NAMEANY, ANY_SIMD, UVSHIFT, SBPP, SBPP2, BPP, MASK)            \
   void NAMEANY(const uint8_t* y_buf, const uint8_t* uv_buf, uint8_t* dst_ptr, \
                const struct YuvConstants* yuvconstants, int width) {          \
-    SIMD_ALIGNED(uint8_t temp[64 * 3]);                                       \
-    memset(temp, 0, 64 * 2); /* for msan */                                   \
+    SIMD_ALIGNED(uint8_t temp[128 * 3]);                                      \
+    memset(temp, 0, 128 * 2); /* for msan */                                  \
     int r = width & MASK;                                                     \
     int n = width & ~MASK;                                                    \
     if (n > 0) {                                                              \
       ANY_SIMD(y_buf, uv_buf, dst_ptr, yuvconstants, n);                      \
     }                                                                         \
     memcpy(temp, y_buf + n * SBPP, r * SBPP);                                 \
-    memcpy(temp + 64, uv_buf + (n >> UVSHIFT) * SBPP2,                        \
+    memcpy(temp + 128, uv_buf + (n >> UVSHIFT) * SBPP2,                       \
            SS(r, UVSHIFT) * SBPP2);                                           \
-    ANY_SIMD(temp, temp + 64, temp + 128, yuvconstants, MASK + 1);            \
-    memcpy(dst_ptr + n * BPP, temp + 128, r * BPP);                           \
+    ANY_SIMD(temp, temp + 128, temp + 256, yuvconstants, MASK + 1);           \
+    memcpy(dst_ptr + n * BPP, temp + 256, r * BPP);                           \
   }
 
 // Biplanar to RGB.
@@ -385,6 +385,18 @@ ANY21C(NV12ToRGB24Row_Any_NEON, NV12ToRGB24Row_NEON, 1, 1, 2, 3, 7)
 #endif
 #ifdef HAS_NV21TORGB24ROW_NEON
 ANY21C(NV21ToRGB24Row_Any_NEON, NV21ToRGB24Row_NEON, 1, 1, 2, 3, 7)
+#endif
+#ifdef HAS_NV12TORGB24ROW_SSSE3
+ANY21C(NV12ToRGB24Row_Any_SSSE3, NV12ToRGB24Row_SSSE3, 1, 1, 2, 3, 15)
+#endif
+#ifdef HAS_NV21TORGB24ROW_SSSE3
+ANY21C(NV21ToRGB24Row_Any_SSSE3, NV21ToRGB24Row_SSSE3, 1, 1, 2, 3, 15)
+#endif
+#ifdef HAS_NV12TORGB24ROW_AVX2
+ANY21C(NV12ToRGB24Row_Any_AVX2, NV12ToRGB24Row_AVX2, 1, 1, 2, 3, 31)
+#endif
+#ifdef HAS_NV21TORGB24ROW_AVX2
+ANY21C(NV21ToRGB24Row_Any_AVX2, NV21ToRGB24Row_AVX2, 1, 1, 2, 3, 31)
 #endif
 #ifdef HAS_NV12TORGB565ROW_SSSE3
 ANY21C(NV12ToRGB565Row_Any_SSSE3, NV12ToRGB565Row_SSSE3, 1, 1, 2, 2, 7)

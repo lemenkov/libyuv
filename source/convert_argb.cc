@@ -1789,6 +1789,22 @@ static int NV12ToRGB24Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_NV12TORGB24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    NV12ToRGB24Row = NV12ToRGB24Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      NV12ToRGB24Row = NV12ToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_NV12TORGB24ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    NV12ToRGB24Row = NV12ToRGB24Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      NV12ToRGB24Row = NV12ToRGB24Row_AVX2;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     NV12ToRGB24Row(src_y, src_uv, dst_rgb24, yuvconstants, width);
@@ -1832,6 +1848,22 @@ static int NV21ToRGB24Matrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_NV21TORGB24ROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    NV21ToRGB24Row = NV21ToRGB24Row_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      NV21ToRGB24Row = NV21ToRGB24Row_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_NV21TORGB24ROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    NV21ToRGB24Row = NV21ToRGB24Row_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      NV21ToRGB24Row = NV21ToRGB24Row_AVX2;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     NV21ToRGB24Row(src_y, src_vu, dst_rgb24, yuvconstants, width);
@@ -1844,8 +1876,8 @@ static int NV21ToRGB24Matrix(const uint8_t* src_y,
   return 0;
 }
 
-// TODO(fbarchard): \(fbarchard): NV12ToRAW can be implemented by mirrored
-// matrix. Convert NV12 to RGB24.
+// TODO(fbarchard): NV12ToRAW can be implemented by mirrored matrix.
+// Convert NV12 to RGB24.
 LIBYUV_API
 int NV12ToRGB24(const uint8_t* src_y,
                 int src_stride_y,
