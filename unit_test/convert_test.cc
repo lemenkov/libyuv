@@ -1022,15 +1022,9 @@ TESTATOBIPLANAR(UYVY, 2, 4, NV12, 2, 2)
       MaskCpuFlags(benchmark_cpu_info_);                                   \
       FMT_A##To##FMT_B(src_argb, kStrideA, dst_argb_opt, kStrideB, kWidth, \
                        kHeight);                                           \
-      int max_diff = 0;                                                    \
       for (int i = 0; i < kStrideB * kHeightB; ++i) {                      \
-        int abs_diff = abs(static_cast<int>(dst_argb_c[i]) -               \
-                           static_cast<int>(dst_argb_opt[i]));             \
-        if (abs_diff > max_diff) {                                         \
-          max_diff = abs_diff;                                             \
-        }                                                                  \
+        EXPECT_NEAR(dst_argb_c[i], dst_argb_opt[i], DIFF);                 \
       }                                                                    \
-      EXPECT_LE(max_diff, DIFF);                                           \
       free_aligned_buffer_page_end(src_argb);                              \
       free_aligned_buffer_page_end(dst_argb_c);                            \
       free_aligned_buffer_page_end(dst_argb_opt);                          \
@@ -1050,6 +1044,7 @@ TESTATOBIPLANAR(UYVY, 2, 4, NV12, 2, 2)
   TESTATOBRANDOM(FMT_A, BPP_A, STRIDE_A, HEIGHT_A, FMT_B, BPP_B, STRIDE_B, \
                  HEIGHT_B, DIFF)
 
+// TODO(fbarchard): make ARM version of C code that matches NEON.
 TESTATOB(ARGB, 4, 4, 1, ARGB, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, BGRA, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ABGR, 4, 4, 1, 0)
@@ -2456,6 +2451,30 @@ TEST_F(LibYUVConvertTest, TestH420ToAR30) {
 
   free_aligned_buffer_page_end(orig_yuv);
   free_aligned_buffer_page_end(ar30_pixels);
+}
+
+// Test RGB24 to ARGB and back to RGB24
+TEST_F(LibYUVConvertTest, TestARGBToRGB24) {
+  const int kSize = 256;
+  align_buffer_page_end(orig_rgb24, kSize * 3);
+  align_buffer_page_end(argb_pixels, kSize * 4);
+  align_buffer_page_end(dest_rgb24, kSize * 3);
+
+  // Test grey scale
+  for (int i = 0; i < kSize * 3; ++i) {
+    orig_rgb24[i] = i;
+  }
+
+  RGB24ToARGB(orig_rgb24, 0, argb_pixels, 0, kSize, 1);
+  ARGBToRGB24(argb_pixels, 0, dest_rgb24, 0, kSize, 1);
+
+  for (int i = 0; i < kSize * 3; ++i) {
+    EXPECT_EQ(orig_rgb24[i], dest_rgb24[i]);
+  }
+
+  free_aligned_buffer_page_end(orig_rgb24);
+  free_aligned_buffer_page_end(argb_pixels);
+  free_aligned_buffer_page_end(dest_rgb24);
 }
 
 }  // namespace libyuv

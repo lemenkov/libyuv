@@ -3004,8 +3004,11 @@ void NV12ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV12ToARGBRow_AVX2(src_y, src_uv, row, yuvconstants, twidth);
-    // TODO(fbarchard): ARGBToRGB24Row_AVX2
+#if defined(HAS_ARGBTORGB24ROW_AVX2)
+    ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
+#else
     ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
+#endif
     src_y += twidth;
     src_uv += twidth;
     dst_rgb24 += twidth * 3;
@@ -3025,8 +3028,11 @@ void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     NV21ToARGBRow_AVX2(src_y, src_vu, row, yuvconstants, twidth);
-    // TODO(fbarchard): ARGBToRGB24Row_AVX2
+#if defined(HAS_ARGBTORGB24ROW_AVX2)
+    ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
+#else
     ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
+#endif
     src_y += twidth;
     src_vu += twidth;
     dst_rgb24 += twidth * 3;
@@ -3124,8 +3130,11 @@ void I422ToRGB24Row_AVX2(const uint8_t* src_y,
   while (width > 0) {
     int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
     I422ToARGBRow_AVX2(src_y, src_u, src_v, row, yuvconstants, twidth);
-    // TODO(fbarchard): ARGBToRGB24Row_AVX2
+#if defined(HAS_ARGBTORGB24ROW_AVX2)
+    ARGBToRGB24Row_AVX2(row, dst_rgb24, twidth);
+#else
     ARGBToRGB24Row_SSSE3(row, dst_rgb24, twidth);
+#endif
     src_y += twidth;
     src_u += twidth / 2;
     src_v += twidth / 2;

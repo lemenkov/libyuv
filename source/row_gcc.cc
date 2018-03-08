@@ -505,6 +505,97 @@ void ARGBToRAWRow_SSSE3(const uint8_t* src, uint8_t* dst, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 
+// vpermd for 12+12 to 24
+static const lvec32 kPermdRGB24_AVX = {0, 1, 2, 4, 5, 6, 3, 7};
+
+void ARGBToRGB24Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vbroadcastf128 %3,%%ymm6                  \n"
+      "vmovdqa    %4,%%ymm7                      \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "vmovdqu    0x20(%0),%%ymm1                \n"
+      "vmovdqu    0x40(%0),%%ymm2                \n"
+      "vmovdqu    0x60(%0),%%ymm3                \n"
+      "lea        0x80(%0),%0                    \n"
+      "vpshufb    %%ymm6,%%ymm0,%%ymm0           \n"  // xxx0yyy0
+      "vpshufb    %%ymm6,%%ymm1,%%ymm1           \n"
+      "vpshufb    %%ymm6,%%ymm2,%%ymm2           \n"
+      "vpshufb    %%ymm6,%%ymm3,%%ymm3           \n"
+      "vpermd     %%ymm0,%%ymm7,%%ymm0           \n"  // pack to 24 bytes
+      "vpermd     %%ymm1,%%ymm7,%%ymm1           \n"
+      "vpermd     %%ymm2,%%ymm7,%%ymm2           \n"
+      "vpermd     %%ymm3,%%ymm7,%%ymm3           \n"
+      "vpermq     $0x3f,%%ymm1,%%ymm4            \n"  // combine 24 + 8
+      "vpor       %%ymm4,%%ymm0,%%ymm0           \n"
+      "vmovdqu    %%ymm0,(%1)                    \n"
+      "vpermq     $0xf9,%%ymm1,%%ymm1            \n"  // combine 16 + 16
+      "vpermq     $0x4f,%%ymm2,%%ymm4            \n"
+      "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
+      "vmovdqu    %%ymm1,0x20(%1)                \n"
+      "vpermq     $0xfe,%%ymm2,%%ymm2            \n"  // combine 8 + 24
+      "vpermq     $0x93,%%ymm3,%%ymm3            \n"
+      "vpor       %%ymm3,%%ymm2,%%ymm2           \n"
+      "vmovdqu    %%ymm2,0x40(%1)                \n"
+      "lea        0x60(%1),%1                    \n"
+      "sub        $0x20,%2                       \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
+      : "+r"(src),                     // %0
+        "+r"(dst),                     // %1
+        "+r"(width)                    // %2
+      : "m"(kShuffleMaskARGBToRGB24),  // %3
+        "m"(kPermdRGB24_AVX)           // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+
+void ARGBToRAWRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
+  asm volatile(
+      "vbroadcastf128 %3,%%ymm6                  \n"
+      "vmovdqa    %4,%%ymm7                      \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "vmovdqu    0x20(%0),%%ymm1                \n"
+      "vmovdqu    0x40(%0),%%ymm2                \n"
+      "vmovdqu    0x60(%0),%%ymm3                \n"
+      "lea        0x80(%0),%0                    \n"
+      "vpshufb    %%ymm6,%%ymm0,%%ymm0           \n"  // xxx0yyy0
+      "vpshufb    %%ymm6,%%ymm1,%%ymm1           \n"
+      "vpshufb    %%ymm6,%%ymm2,%%ymm2           \n"
+      "vpshufb    %%ymm6,%%ymm3,%%ymm3           \n"
+      "vpermd     %%ymm0,%%ymm7,%%ymm0           \n"  // pack to 24 bytes
+      "vpermd     %%ymm1,%%ymm7,%%ymm1           \n"
+      "vpermd     %%ymm2,%%ymm7,%%ymm2           \n"
+      "vpermd     %%ymm3,%%ymm7,%%ymm3           \n"
+      "vpermq     $0x3f,%%ymm1,%%ymm4            \n"  // combine 24 + 8
+      "vpor       %%ymm4,%%ymm0,%%ymm0           \n"
+      "vmovdqu    %%ymm0,(%1)                    \n"
+      "vpermq     $0xf9,%%ymm1,%%ymm1            \n"  // combine 16 + 16
+      "vpermq     $0x4f,%%ymm2,%%ymm4            \n"
+      "vpor       %%ymm4,%%ymm1,%%ymm1           \n"
+      "vmovdqu    %%ymm1,0x20(%1)                \n"
+      "vpermq     $0xfe,%%ymm2,%%ymm2            \n"  // combine 8 + 24
+      "vpermq     $0x93,%%ymm3,%%ymm3            \n"
+      "vpor       %%ymm3,%%ymm2,%%ymm2           \n"
+      "vmovdqu    %%ymm2,0x40(%1)                \n"
+      "lea        0x60(%1),%1                    \n"
+      "sub        $0x20,%2                       \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
+      : "+r"(src),                     // %0
+        "+r"(dst),                     // %1
+        "+r"(width)                    // %2
+      : "m"(kShuffleMaskARGBToRAW),    // %3
+        "m"(kPermdRGB24_AVX)           // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+
 void ARGBToRGB565Row_SSE2(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "pcmpeqb   %%xmm3,%%xmm3                   \n"

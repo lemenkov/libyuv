@@ -123,27 +123,28 @@ ANY31(BlendPlaneRow_Any_SSSE3, BlendPlaneRow_SSSE3, 0, 0, 1, 7)
 // Note that odd width replication includes 444 due to implementation
 // on arm that subsamples 444 to 422 internally.
 // Any 3 planes to 1 with yuvconstants
-#define ANY31C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)                \
-  void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,                     \
-               const uint8_t* v_buf, uint8_t* dst_ptr,                         \
-               const struct YuvConstants* yuvconstants, int width) {           \
-    SIMD_ALIGNED(uint8_t temp[64 * 4]);                                        \
-    memset(temp, 0, 64 * 3); /* for YUY2 and msan */                           \
-    int r = width & MASK;                                                      \
-    int n = width & ~MASK;                                                     \
-    if (n > 0) {                                                               \
-      ANY_SIMD(y_buf, u_buf, v_buf, dst_ptr, yuvconstants, n);                 \
-    }                                                                          \
-    memcpy(temp, y_buf + n, r);                                                \
-    memcpy(temp + 64, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));                 \
-    memcpy(temp + 128, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));                \
-    if (width & 1) {                                                           \
-      temp[64 + SS(r, UVSHIFT)] = temp[64 + SS(r, UVSHIFT) - 1];               \
-      temp[128 + SS(r, UVSHIFT)] = temp[128 + SS(r, UVSHIFT) - 1];             \
-    }                                                                          \
-    ANY_SIMD(temp, temp + 64, temp + 128, temp + 192, yuvconstants, MASK + 1); \
-    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 192,                        \
-           SS(r, DUVSHIFT) * BPP);                                             \
+#define ANY31C(NAMEANY, ANY_SIMD, UVSHIFT, DUVSHIFT, BPP, MASK)      \
+  void NAMEANY(const uint8_t* y_buf, const uint8_t* u_buf,           \
+               const uint8_t* v_buf, uint8_t* dst_ptr,               \
+               const struct YuvConstants* yuvconstants, int width) { \
+    SIMD_ALIGNED(uint8_t temp[128 * 4]);                             \
+    memset(temp, 0, 128 * 3); /* for YUY2 and msan */                \
+    int r = width & MASK;                                            \
+    int n = width & ~MASK;                                           \
+    if (n > 0) {                                                     \
+      ANY_SIMD(y_buf, u_buf, v_buf, dst_ptr, yuvconstants, n);       \
+    }                                                                \
+    memcpy(temp, y_buf + n, r);                                      \
+    memcpy(temp + 128, u_buf + (n >> UVSHIFT), SS(r, UVSHIFT));      \
+    memcpy(temp + 256, v_buf + (n >> UVSHIFT), SS(r, UVSHIFT));      \
+    if (width & 1) {                                                 \
+      temp[128 + SS(r, UVSHIFT)] = temp[128 + SS(r, UVSHIFT) - 1];   \
+      temp[256 + SS(r, UVSHIFT)] = temp[256 + SS(r, UVSHIFT) - 1];   \
+    }                                                                \
+    ANY_SIMD(temp, temp + 128, temp + 256, temp + 384, yuvconstants, \
+             MASK + 1);                                              \
+    memcpy(dst_ptr + (n >> DUVSHIFT) * BPP, temp + 384,              \
+           SS(r, DUVSHIFT) * BPP);                                   \
   }
 
 #ifdef HAS_I422TOARGBROW_SSSE3
@@ -161,10 +162,10 @@ ANY31C(I422ToRGBARow_Any_SSSE3, I422ToRGBARow_SSSE3, 1, 0, 4, 7)
 ANY31C(I422ToARGB4444Row_Any_SSSE3, I422ToARGB4444Row_SSSE3, 1, 0, 2, 7)
 ANY31C(I422ToARGB1555Row_Any_SSSE3, I422ToARGB1555Row_SSSE3, 1, 0, 2, 7)
 ANY31C(I422ToRGB565Row_Any_SSSE3, I422ToRGB565Row_SSSE3, 1, 0, 2, 7)
-ANY31C(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, 1, 0, 3, 7)
+ANY31C(I422ToRGB24Row_Any_SSSE3, I422ToRGB24Row_SSSE3, 1, 0, 3, 15)
 #endif  // HAS_I444TOARGBROW_SSSE3
 #ifdef HAS_I422TORGB24ROW_AVX2
-ANY31C(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, 1, 0, 3, 15)
+ANY31C(I422ToRGB24Row_Any_AVX2, I422ToRGB24Row_AVX2, 1, 0, 3, 31)
 #endif
 #ifdef HAS_I422TOARGBROW_AVX2
 ANY31C(I422ToARGBRow_Any_AVX2, I422ToARGBRow_AVX2, 1, 0, 4, 15)
@@ -442,6 +443,12 @@ ANY11(ARGBToRAWRow_Any_SSSE3, ARGBToRAWRow_SSSE3, 0, 4, 3, 15)
 ANY11(ARGBToRGB565Row_Any_SSE2, ARGBToRGB565Row_SSE2, 0, 4, 2, 3)
 ANY11(ARGBToARGB1555Row_Any_SSE2, ARGBToARGB1555Row_SSE2, 0, 4, 2, 3)
 ANY11(ARGBToARGB4444Row_Any_SSE2, ARGBToARGB4444Row_SSE2, 0, 4, 2, 3)
+#endif
+#if defined(HAS_ARGBTORGB24ROW_AVX2)
+ANY11(ARGBToRGB24Row_Any_AVX2, ARGBToRGB24Row_AVX2, 0, 4, 3, 31)
+#endif
+#if defined(HAS_ARGBTORAWROW_AVX2)
+ANY11(ARGBToRAWRow_Any_AVX2, ARGBToRAWRow_AVX2, 0, 4, 3, 31)
 #endif
 #if defined(HAS_ARGBTORGB565ROW_AVX2)
 ANY11(ARGBToRGB565Row_Any_AVX2, ARGBToRGB565Row_AVX2, 0, 4, 2, 7)
