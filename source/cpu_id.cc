@@ -287,7 +287,24 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   if (TestEnv("LIBYUV_DISABLE_AVX512BW")) {
     cpu_info &= ~kCpuHasAVX512BW;
   }
-
+  if (TestEnv("LIBYUV_DISABLE_AVX512VL")) {
+    cpu_info &= ~kCpuHasAVX512VL;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AVX512VBMI")) {
+    cpu_info &= ~kCpuHasAVX512VBMI;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AVX512VBMI2")) {
+    cpu_info &= ~kCpuHasAVX512VBMI2;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AVX512VBITALG")) {
+    cpu_info &= ~kCpuHasAVX512VBITALG;
+  }
+  if (TestEnv("LIBYUV_DISABLE_AVX512VPOPCNTDQ")) {
+    cpu_info &= ~kCpuHasAVX512VPOPCNTDQ;
+  }
+  if (TestEnv("LIBYUV_DISABLE_GFNI")) {
+    cpu_info &= ~kCpuHasGFNI;
+  }
 #endif
 #if defined(__mips__) && defined(__linux__)
 #if defined(__mips_msa)
