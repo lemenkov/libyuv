@@ -43,7 +43,6 @@ cc_library {
         "source/scale_neon.cc",
         "source/scale_neon64.cc",
         "source/video_common.cc",
-
         "source/convert_jpeg.cc",
         "source/mjpeg_decoder.cc",
         "source/mjpeg_validate.cc",

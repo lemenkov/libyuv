@@ -277,6 +277,7 @@ extern "C" {
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
+#define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
@@ -1706,6 +1707,8 @@ void ARGBToAR30Row_SSSE3(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRAWRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBToRGB24Row_AVX2(const uint8_t* src, uint8_t* dst, int width);
 
+void ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width);
+
 void ARGBToRGB565DitherRow_C(const uint8_t* src_argb,
                              uint8_t* dst_rgb,
                              const uint32_t dither4,
@@ -2497,12 +2500,13 @@ void ABGRToAR30Row_Any_SSSE3(const uint8_t* src_ptr,
 void ARGBToAR30Row_Any_SSSE3(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
-void ARGBToRAWRow_Any_AVX2(const uint8_t* src_ptr,
-                             uint8_t* dst_ptr,
-                             int width);
+void ARGBToRAWRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBToRGB24Row_Any_AVX2(const uint8_t* src_ptr,
                              uint8_t* dst_ptr,
                              int width);
+void ARGBToRGB24Row_Any_AVX512VBMI(const uint8_t* src_ptr,
+                                   uint8_t* dst_ptr,
+                                   int width);
 void ARGBToRGB565DitherRow_Any_SSE2(const uint8_t* src_ptr,
                                     uint8_t* dst_ptr,
                                     const uint32_t param,
