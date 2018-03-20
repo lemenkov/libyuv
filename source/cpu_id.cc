@@ -19,10 +19,6 @@
 #include <immintrin.h>  // For _xgetbv()
 #endif
 
-#if !defined(__native_client__)
-#include <stdlib.h>  // For getenv()
-#endif
-
 // For ArmCpuCaps() but unittested on all platforms
 #include <stdio.h>
 #include <string.h>
@@ -195,25 +191,6 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
   return 0;
 }
 
-// Test environment variable for disabling CPU features. Any non-zero value
-// to disable. Zero ignored to make it easy to set the variable on/off.
-#if !defined(__native_client__) && !defined(_M_ARM)
-
-static LIBYUV_BOOL TestEnv(const char* name) {
-  const char* var = getenv(name);
-  if (var) {
-    if (var[0] != '0') {
-      return LIBYUV_TRUE;
-    }
-  }
-  return LIBYUV_FALSE;
-}
-#else  // nacl does not support getenv().
-static LIBYUV_BOOL TestEnv(const char*) {
-  return LIBYUV_FALSE;
-}
-#endif
-
 static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info = 0;
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
@@ -251,69 +228,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
       cpu_info |= (cpu_info7[2] & 0x00000100) ? kCpuHasGFNI : 0;
     }
   }
-
-  // TODO(fbarchard): Consider moving these to gtest
-  // Environment variable overrides for testing.
-  if (TestEnv("LIBYUV_DISABLE_X86")) {
-    cpu_info &= ~kCpuHasX86;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE2")) {
-    cpu_info &= ~kCpuHasSSE2;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSSE3")) {
-    cpu_info &= ~kCpuHasSSSE3;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE41")) {
-    cpu_info &= ~kCpuHasSSE41;
-  }
-  if (TestEnv("LIBYUV_DISABLE_SSE42")) {
-    cpu_info &= ~kCpuHasSSE42;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX")) {
-    cpu_info &= ~kCpuHasAVX;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX2")) {
-    cpu_info &= ~kCpuHasAVX2;
-  }
-  if (TestEnv("LIBYUV_DISABLE_ERMS")) {
-    cpu_info &= ~kCpuHasERMS;
-  }
-  if (TestEnv("LIBYUV_DISABLE_FMA3")) {
-    cpu_info &= ~kCpuHasFMA3;
-  }
-  if (TestEnv("LIBYUV_DISABLE_F16C")) {
-    cpu_info &= ~kCpuHasF16C;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512BW")) {
-    cpu_info &= ~kCpuHasAVX512BW;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VL")) {
-    cpu_info &= ~kCpuHasAVX512VL;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VBMI")) {
-    cpu_info &= ~kCpuHasAVX512VBMI;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VBMI2")) {
-    cpu_info &= ~kCpuHasAVX512VBMI2;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VBITALG")) {
-    cpu_info &= ~kCpuHasAVX512VBITALG;
-  }
-  if (TestEnv("LIBYUV_DISABLE_AVX512VPOPCNTDQ")) {
-    cpu_info &= ~kCpuHasAVX512VPOPCNTDQ;
-  }
-  if (TestEnv("LIBYUV_DISABLE_GFNI")) {
-    cpu_info &= ~kCpuHasGFNI;
-  }
 #endif
 #if defined(__mips__) && defined(__linux__)
 #if defined(__mips_msa)
   cpu_info = MipsCpuCaps("/proc/cpuinfo", " msa");
 #endif
   cpu_info |= kCpuHasMIPS;
-  if (getenv("LIBYUV_DISABLE_MSA")) {
-    cpu_info &= ~kCpuHasMSA;
-  }
 #endif
 #if defined(__arm__) || defined(__aarch64__)
 // gcc -mfpu=neon defines __ARM_NEON__
@@ -332,13 +252,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   cpu_info = ArmCpuCaps("/proc/cpuinfo");
 #endif
   cpu_info |= kCpuHasARM;
-  if (TestEnv("LIBYUV_DISABLE_NEON")) {
-    cpu_info &= ~kCpuHasNEON;
-  }
 #endif  // __arm__
-  if (TestEnv("LIBYUV_DISABLE_ASM")) {
-    cpu_info = 0;
-  }
   cpu_info |= kCpuInitialized;
   return cpu_info;
 }
