@@ -261,11 +261,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 LIBYUV_API
 int MaskCpuFlags(int enable_flags) {
   int cpu_info = GetCpuFlags() & enable_flags;
-#ifdef __ATOMIC_RELAXED
-  __atomic_store_n(&cpu_info_, cpu_info, __ATOMIC_RELAXED);
-#else
-  cpu_info_ = cpu_info;
-#endif
+  SetCpuFlags(cpu_info);
   return cpu_info;
 }
 

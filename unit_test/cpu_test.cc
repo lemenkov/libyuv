@@ -158,4 +158,27 @@ TEST_F(LibYUVBaseTest, TestLinuxNeon) {
 #endif
 }
 
+TEST_F(LibYUVBaseTest, TestSetCpuFlags) {
+  // Reset any masked flags that may have been set so auto init is enabled.
+  MaskCpuFlags(0);
+
+  int original_cpu_flags = TestCpuFlag(-1);
+
+  // Test setting different CPU configurations.
+  int cpu_flags = kCpuHasARM | kCpuHasNEON | kCpuInitialized;
+  SetCpuFlags(cpu_flags);
+  EXPECT_EQ(cpu_flags, TestCpuFlag(-1));
+
+  cpu_flags = kCpuHasX86 | kCpuInitialized;
+  SetCpuFlags(cpu_flags);
+  EXPECT_EQ(cpu_flags, TestCpuFlag(-1));
+
+  // Test that setting 0 turns auto-init back on.
+  SetCpuFlags(0);
+  EXPECT_EQ(original_cpu_flags, TestCpuFlag(-1));
+
+  // Restore the CPU flag mask.
+  MaskCpuFlags(benchmark_cpu_info_);
+}
+
 }  // namespace libyuv
