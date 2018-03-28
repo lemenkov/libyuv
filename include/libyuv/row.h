@@ -55,9 +55,9 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
-// clang >= 6.0.0 required for AVX512.
+// clang >= 7.0.0 required for AVX512.
 #if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
-#if (__clang_major__ >= 6)
+#if (__clang_major__ >= 7)
 #define CLANG_HAS_AVX512 1
 #endif  // clang >= 6
 #endif  // __clang__
