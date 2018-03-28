@@ -55,6 +55,13 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
+// clang >= 6.0.0 required for AVX512.
+#if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
+#if (__clang_major__ >= 6)
+#define CLANG_HAS_AVX512 1
+#endif  // clang >= 6
+#endif  // __clang__
+
 // Visual C 2012 required for AVX2.
 #if defined(_M_IX86) && !defined(__clang__) && defined(_MSC_VER) && \
     _MSC_VER >= 1700
@@ -277,7 +284,6 @@ extern "C" {
 #define HAS_ARGBTOAR30ROW_AVX2
 #define HAS_ARGBTORAWROW_AVX2
 #define HAS_ARGBTORGB24ROW_AVX2
-#define HAS_ARGBTORGB24ROW_AVX512VBMI
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
@@ -287,6 +293,14 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+#endif
+
+// The following are available for AVX512 clang x86 platforms:
+// TODO(fbarchard): Port to GCC and Visual C
+#if !defined(LIBYUV_DISABLE_X86) &&                                       \
+    (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
+    (defined(CLANG_HAS_AVX512))
+#define HAS_ARGBTORGB24ROW_AVX512VBMI
 #endif
 
 // The following are available on Neon platforms:

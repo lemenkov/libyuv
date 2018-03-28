@@ -505,6 +505,7 @@ void ARGBToRAWRow_SSSE3(const uint8_t* src, uint8_t* dst, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 
+#ifdef HAS_ARGBTORGB24ROW_AVX2
 // vpermd for 12+12 to 24
 static const lvec32 kPermdRGB24_AVX = {0, 1, 2, 4, 5, 6, 3, 7};
 
@@ -551,9 +552,9 @@ void ARGBToRGB24Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
+#endif
 
-// TODO(fbarchard): Detect compiler can di avx512 and add ifdefs
-
+#ifdef HAS_ARGBTORGB24ROW_AVX512VBMI
 // Shuffle table for converting ARGBToRGB24
 static const ulvec8 kPermARGBToRGB24_0 = {
     0u,  1u,  2u,  4u,  5u,  6u,  8u,  9u,  10u, 12u, 13u,
@@ -599,7 +600,9 @@ void ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width) {
         "m"(kPermARGBToRGB24_2)   // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm5", "xmm6", "xmm7");
 }
+#endif
 
+#ifdef HAS_ARGBTORAWROW_AVX2
 void ARGBToRAWRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm6                  \n"
@@ -643,6 +646,7 @@ void ARGBToRAWRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
         "xmm7");
 }
+#endif
 
 void ARGBToRGB565Row_SSE2(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
