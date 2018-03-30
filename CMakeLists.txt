@@ -72,7 +72,11 @@ if(TEST)
     target_link_libraries(libyuv_unittest glibc-compat)
   endif()
 
-  target_link_libraries(libyuv_unittest gflags)
+  find_library(GFLAGS_LIBRARY gflags)
+  if(NOT GFLAGS_LIBRARY STREQUAL "GFLAGS_LIBRARY-NOTFOUND")
+    target_link_libraries(libyuv_unittest gflags)
+    add_definitions(-DLIBYUV_USE_GFLAGS)
+  endif()
 endif()
 
 
