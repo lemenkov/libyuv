@@ -569,7 +569,8 @@ static const ulvec8 kPermARGBToRGB24_2 = {
     36u, 37u, 38u, 40u, 41u, 42u, 44u, 45u, 46u, 48u, 49u,
     50u, 52u, 53u, 54u, 56u, 57u, 58u, 60u, 61u, 62u};
 
-void ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width) {
+void __attribute__ ((__target__ ("avx512vbmi")))
+  ARGBToRGB24Row_AVX512VBMI(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       "vmovdqa    %3,%%ymm5                      \n"
       "vmovdqa    %4,%%ymm6                      \n"
