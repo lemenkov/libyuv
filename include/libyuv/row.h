@@ -55,11 +55,12 @@ extern "C" {
 #endif  // clang >= 3.4
 #endif  // __clang__
 
-// clang >= 7.0.0 required for AVX512.
+// clang >= 6.0.0 required for AVX512.
+// TODO(fbarchard): fix xcode 9 ios b/789.
 #if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
-#if (__clang_major__ >= 7)
+#if (__clang_major__ >= 7) && !defined(__APPLE_EMBEDDED_SIMULATOR__)
 #define CLANG_HAS_AVX512 1
-#endif  // clang >= 6
+#endif  // clang >= 7
 #endif  // __clang__
 
 // Visual C 2012 required for AVX2.
@@ -297,6 +298,7 @@ extern "C" {
 
 // The following are available for AVX512 clang x86 platforms:
 // TODO(fbarchard): Port to GCC and Visual C
+// TODO(fbarchard): re-enable HAS_ARGBTORGB24ROW_AVX512VBMI. Issue libyuv:789
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX512))
