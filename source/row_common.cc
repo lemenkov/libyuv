@@ -181,7 +181,7 @@ void ARGB4444ToARGBRow_C(const uint8_t* src_argb4444,
 void AR30ToARGBRow_C(const uint8_t* src_ar30, uint8_t* dst_argb, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    uint32_t ar30 = *(uint32_t*)src_ar30;
+    uint32_t ar30 = *(const uint32_t*)src_ar30;
     uint32_t b = (ar30 >> 2) & 0xff;
     uint32_t g = (ar30 >> 12) & 0xff;
     uint32_t r = (ar30 >> 22) & 0xff;
@@ -195,7 +195,7 @@ void AR30ToARGBRow_C(const uint8_t* src_ar30, uint8_t* dst_argb, int width) {
 void AR30ToABGRRow_C(const uint8_t* src_ar30, uint8_t* dst_abgr, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    uint32_t ar30 = *(uint32_t*)src_ar30;
+    uint32_t ar30 = *(const uint32_t*)src_ar30;
     uint32_t b = (ar30 >> 2) & 0xff;
     uint32_t g = (ar30 >> 12) & 0xff;
     uint32_t r = (ar30 >> 22) & 0xff;
@@ -209,7 +209,7 @@ void AR30ToABGRRow_C(const uint8_t* src_ar30, uint8_t* dst_abgr, int width) {
 void AR30ToAB30Row_C(const uint8_t* src_ar30, uint8_t* dst_ab30, int width) {
   int x;
   for (x = 0; x < width; ++x) {
-    uint32_t ar30 = *(uint32_t*)src_ar30;
+    uint32_t ar30 = *(const uint32_t*)src_ar30;
     uint32_t b = ar30 & 0x3ff;
     uint32_t ga = ar30 & 0xc00ffc00;
     uint32_t r = (ar30 >> 20) & 0x3ff;
