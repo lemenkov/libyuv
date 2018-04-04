@@ -1050,8 +1050,8 @@ int ARGBToRGB565Dither(const uint8_t* src_argb,
 
   for (y = 0; y < height; ++y) {
     ARGBToRGB565DitherRow(src_argb, dst_rgb565,
-                          *(uint32_t*)(dither4x4 + ((y & 3) << 2)),  // NOLINT
-                          width); /* NOLINT */
+                          *(const uint32_t*)(dither4x4 + ((y & 3) << 2)),
+                          width);
     src_argb += src_stride_argb;
     dst_rgb565 += dst_stride_rgb565;
   }

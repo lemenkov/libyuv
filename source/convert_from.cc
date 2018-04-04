@@ -1154,8 +1154,8 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     for (y = 0; y < height; ++y) {
       I422ToARGBRow(src_y, src_u, src_v, row_argb, &kYuvI601Constants, width);
       ARGBToRGB565DitherRow(row_argb, dst_rgb565,
-                            *(uint32_t*)(dither4x4 + ((y & 3) << 2)),  // NOLINT
-                            width);                                    // NOLINT
+                            *(const uint32_t*)(dither4x4 + ((y & 3) << 2)),
+                            width);
       dst_rgb565 += dst_stride_rgb565;
       src_y += src_stride_y;
       if (y & 1) {
