@@ -345,11 +345,9 @@ def UpdateDepsFile(deps_filename, old_cr_revision, new_cr_revision,
           'contains all platforms in the target_os list, i.e.\n'
           'target_os = ["android", "unix", "mac", "ios", "win"];\n'
           'Then run "gclient sync" again.' % local_dep_dir)
-    _, stderr = _RunCommand(
-      ['roll-dep-svn', '--no-verify-revision', dep.path, dep.new_rev],
-      working_dir=CHECKOUT_SRC_DIR, ignore_exit_code=True)
-    if stderr:
-      logging.warning('roll-dep-svn: %s', stderr)
+    _RunCommand(
+      ['gclient', 'setdep', '--revision', '%s@%s' % (dep.path, dep.new_rev)],
+      working_dir=CHECKOUT_SRC_DIR)
 
 
 def _IsTreeClean():
