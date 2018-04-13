@@ -2762,6 +2762,13 @@ void ARGBPolynomialRow_C(const uint8_t* src_argb,
 // simply extract the low bits of the exponent and the high
 // bits of the mantissa from our float and we're done.
 
+// Work around GCC 7 punning warning -Wstrict-aliasing
+#if defined(__GNUC__)
+typedef uint32_t __attribute__((__may_alias__)) uint32_alias_t;
+#else
+typedef uint32_t uint32_alias_t;
+#endif
+
 void HalfFloatRow_C(const uint16_t* src,
                     uint16_t* dst,
                     float scale,
@@ -2770,7 +2777,7 @@ void HalfFloatRow_C(const uint16_t* src,
   float mult = 1.9259299444e-34f * scale;
   for (i = 0; i < width; ++i) {
     float value = src[i] * mult;
-    dst[i] = (uint16_t)((*(uint32_t*)&value) >> 13);
+    dst[i] = (uint16_t)((*(const uint32_alias_t*)&value) >> 13);
   }
 }
 
