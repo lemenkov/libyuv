@@ -46,7 +46,7 @@ int ConvertToARGB(const uint8_t* sample,
   const uint8_t* src;
   const uint8_t* src_uv;
   int abs_src_height = (src_height < 0) ? -src_height : src_height;
-  int inv_crop_height = (crop_height < 0) ? -crop_height : crop_height;
+  int inv_crop_height;
   int r = 0;
 
   // One pass rotation is available for some formats. For the rest, convert
@@ -59,18 +59,16 @@ int ConvertToARGB(const uint8_t* sample,
   uint8_t* dest_argb = dst_argb;
   int dest_dst_stride_argb = dst_stride_argb;
   uint8_t* rotate_buffer = NULL;
-  int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
 
   if (dst_argb == NULL || sample == NULL || src_width <= 0 || crop_width <= 0 ||
-      src_height == 0 || crop_height == 0) {
+      src_height == 0 || crop_height <= 0) {
     return -1;
   }
-  if (src_height < 0) {
-    inv_crop_height = -inv_crop_height;
-  }
+
+  inv_crop_height = (src_height < 0) ? -crop_height : crop_height;
 
   if (need_buf) {
-    int argb_size = crop_width * 4 * abs_crop_height;
+    int argb_size = crop_width * 4 * crop_height;
     rotate_buffer = (uint8_t*)malloc(argb_size); /* NOLINT */
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
@@ -147,13 +145,13 @@ int ConvertToARGB(const uint8_t* sample,
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
+      src_uv = sample + aligned_src_width * (abs_src_height + crop_y / 2) + crop_x;
       r = NV12ToARGB(src, src_width, src_uv, aligned_src_width, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
       break;
     case FOURCC_NV21:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + aligned_src_width * (src_height + crop_y / 2) + crop_x;
+      src_uv = sample + aligned_src_width * (abs_src_height + crop_y / 2) + crop_x;
       // Call NV12 but with u and v parameters swapped.
       r = NV21ToARGB(src, src_width, src_uv, aligned_src_width, dst_argb,
                      dst_stride_argb, crop_width, inv_crop_height);
@@ -252,7 +250,7 @@ int ConvertToARGB(const uint8_t* sample,
   if (need_buf) {
     if (!r) {
       r = ARGBRotate(dst_argb, dst_stride_argb, dest_argb, dest_dst_stride_argb,
-                     crop_width, abs_crop_height, rotation);
+                     crop_width, crop_height, rotation);
     }
     free(rotate_buffer);
   } else if (rotation) {

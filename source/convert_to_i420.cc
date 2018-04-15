@@ -46,8 +46,6 @@ int ConvertToI420(const uint8_t* sample,
   const uint8_t* src;
   const uint8_t* src_uv;
   const int abs_src_height = (src_height < 0) ? -src_height : src_height;
-  // TODO(nisse): Why allow crop_height < 0?
-  const int abs_crop_height = (crop_height < 0) ? -crop_height : crop_height;
   int r = 0;
   LIBYUV_BOOL need_buf =
       (rotation && format != FOURCC_I420 && format != FOURCC_NV12 &&
@@ -60,13 +58,14 @@ int ConvertToI420(const uint8_t* sample,
   int tmp_u_stride = dst_stride_u;
   int tmp_v_stride = dst_stride_v;
   uint8_t* rotate_buffer = NULL;
-  const int inv_crop_height =
-      (src_height < 0) ? -abs_crop_height : abs_crop_height;
+  int inv_crop_height;
 
   if (!dst_y || !dst_u || !dst_v || !sample || src_width <= 0 ||
-      crop_width <= 0 || src_height == 0 || crop_height == 0) {
+      crop_width <= 0 || src_height == 0 || crop_height <= 0) {
     return -1;
   }
+
+  inv_crop_height = (src_height < 0) ? -crop_height : crop_height;
 
   // One pass rotation is available for some formats. For the rest, convert
   // to I420 (with optional vertical flipping) into a temporary I420 buffer,
@@ -74,8 +73,8 @@ int ConvertToI420(const uint8_t* sample,
   // For in-place conversion, if destination dst_y is same as source sample,
   // also enable temporary buffer.
   if (need_buf) {
-    int y_size = crop_width * abs_crop_height;
-    int uv_size = ((crop_width + 1) / 2) * ((abs_crop_height + 1) / 2);
+    int y_size = crop_width * crop_height;
+    int uv_size = ((crop_width + 1) / 2) * ((crop_height + 1) / 2);
     rotate_buffer = (uint8_t*)malloc(y_size + uv_size * 2); /* NOLINT */
     if (!rotate_buffer) {
       return 1;  // Out of memory runtime error.
@@ -163,7 +162,7 @@ int ConvertToI420(const uint8_t* sample,
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + (src_width * src_height) +
+      src_uv = sample + (src_width * abs_src_height) +
                ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       r = NV12ToI420Rotate(src, src_width, src_uv, aligned_src_width, dst_y,
                            dst_stride_y, dst_u, dst_stride_u, dst_v,
@@ -171,7 +170,7 @@ int ConvertToI420(const uint8_t* sample,
       break;
     case FOURCC_NV21:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + (src_width * src_height) +
+      src_uv = sample + (src_width * abs_src_height) +
                ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       // Call NV12 but with dst_u and dst_v parameters swapped.
       r = NV12ToI420Rotate(src, src_width, src_uv, aligned_src_width, dst_y,
@@ -261,7 +260,7 @@ int ConvertToI420(const uint8_t* sample,
     if (!r) {
       r = I420Rotate(dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v,
                      dst_stride_v, tmp_y, tmp_y_stride, tmp_u, tmp_u_stride,
-                     tmp_v, tmp_v_stride, crop_width, abs_crop_height,
+                     tmp_v, tmp_v_stride, crop_width, crop_height,
                      rotation);
     }
     free(rotate_buffer);
