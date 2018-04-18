@@ -210,6 +210,8 @@ def BuildDepsentryDict(deps_dict):
     for path, deps_url_spec in deps_subdict.iteritems():
       # The deps url is either an URL and a condition, or just the URL.
       if isinstance(deps_url_spec, dict):
+        if deps_url_spec.get('dep_type') == 'cipd':
+          continue
         deps_url = deps_url_spec['url']
       else:
         deps_url = deps_url_spec
