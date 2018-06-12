@@ -155,6 +155,7 @@ int ConvertToI420(const uint8_t* sample,
                      dst_stride_u, dst_v, dst_stride_v, crop_width,
                      inv_crop_height);
       break;
+    // TODO(fbarchard): Add AR30 and AB30
     case FOURCC_I400:
       src = sample + src_width * crop_y + crop_x;
       r = I400ToI420(src, src_width, dst_y, dst_stride_y, dst_u, dst_stride_u,
@@ -163,7 +164,7 @@ int ConvertToI420(const uint8_t* sample,
     // Biplanar formats
     case FOURCC_NV12:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + (src_width * src_height) +
+      src_uv = sample + (src_width * abs_src_height) +
                ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       r = NV12ToI420Rotate(src, src_width, src_uv, aligned_src_width, dst_y,
                            dst_stride_y, dst_u, dst_stride_u, dst_v,
@@ -171,7 +172,7 @@ int ConvertToI420(const uint8_t* sample,
       break;
     case FOURCC_NV21:
       src = sample + (src_width * crop_y + crop_x);
-      src_uv = sample + (src_width * src_height) +
+      src_uv = sample + (src_width * abs_src_height) +
                ((crop_y / 2) * aligned_src_width) + ((crop_x / 2) * 2);
       // Call NV12 but with dst_u and dst_v parameters swapped.
       r = NV12ToI420Rotate(src, src_width, src_uv, aligned_src_width, dst_y,
