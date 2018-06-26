@@ -16,25 +16,25 @@
 #include <stdint.h>
 
 #if (__mips_isa_rev >= 6)
-#define LW(psrc)                                        \
-  ({                                                    \
-    const uint8_t* psrc_lw_m = (const uint8_t*)(psrc);  \
-    uint32_t val_m;                                     \
-    asm volatile("lw  %[val_m],  %[psrc_lw_m]  \n"      \
-                 : [val_m] "=r"(val_m)                  \
-                 : [psrc_lw_m] "m"(*psrc_lw_m));        \
-    val_m;                                              \
+#define LW(psrc)                                       \
+  ({                                                   \
+    const uint8_t* psrc_lw_m = (const uint8_t*)(psrc); \
+    uint32_t val_m;                                    \
+    asm volatile("lw  %[val_m],  %[psrc_lw_m]  \n"     \
+                 : [val_m] "=r"(val_m)                 \
+                 : [psrc_lw_m] "m"(*psrc_lw_m));       \
+    val_m;                                             \
   })
 
 #if (__mips == 64)
-#define LD(psrc)                                        \
-  ({                                                    \
-    const uint8_t* psrc_ld_m = (const uint8_t*)(psrc);  \
-    uint64_t val_m = 0;                                 \
-    asm volatile("ld  %[val_m],  %[psrc_ld_m]  \n"      \
-                 : [val_m] "=r"(val_m)                  \
-                 : [psrc_ld_m] "m"(*psrc_ld_m));        \
-    val_m;                                              \
+#define LD(psrc)                                       \
+  ({                                                   \
+    const uint8_t* psrc_ld_m = (const uint8_t*)(psrc); \
+    uint64_t val_m = 0;                                \
+    asm volatile("ld  %[val_m],  %[psrc_ld_m]  \n"     \
+                 : [val_m] "=r"(val_m)                 \
+                 : [psrc_ld_m] "m"(*psrc_ld_m));       \
+    val_m;                                             \
   })
 #else  // !(__mips == 64)
 #define LD(psrc)                                                         \
@@ -81,25 +81,25 @@
   })
 #endif  // !(__mips == 64)
 #else   // !(__mips_isa_rev >= 6)
-#define LW(psrc)                                        \
-  ({                                                    \
-    const uint8_t* psrc_lw_m = (const uint8_t*)(psrc);  \
-    uint32_t val_m;                                     \
-    asm volatile("ulw  %[val_m],  %[psrc_lw_m]  \n"     \
-                 : [val_m] "=r"(val_m)                  \
-                 : [psrc_lw_m] "m"(*psrc_lw_m));        \
-    val_m;                                              \
+#define LW(psrc)                                       \
+  ({                                                   \
+    const uint8_t* psrc_lw_m = (const uint8_t*)(psrc); \
+    uint32_t val_m;                                    \
+    asm volatile("ulw  %[val_m],  %[psrc_lw_m]  \n"    \
+                 : [val_m] "=r"(val_m)                 \
+                 : [psrc_lw_m] "m"(*psrc_lw_m));       \
+    val_m;                                             \
   })
 
 #if (__mips == 64)
-#define LD(psrc)                                        \
-  ({                                                    \
-    const uint8_t* psrc_ld_m = (const uint8_t*)(psrc);  \
-    uint64_t val_m = 0;                                 \
-    asm volatile("uld  %[val_m],  %[psrc_ld_m]  \n"     \
-                 : [val_m] "=r"(val_m)                  \
-                 : [psrc_ld_m] "m"(*psrc_ld_m));        \
-    val_m;                                              \
+#define LD(psrc)                                       \
+  ({                                                   \
+    const uint8_t* psrc_ld_m = (const uint8_t*)(psrc); \
+    uint64_t val_m = 0;                                \
+    asm volatile("uld  %[val_m],  %[psrc_ld_m]  \n"    \
+                 : [val_m] "=r"(val_m)                 \
+                 : [psrc_ld_m] "m"(*psrc_ld_m));       \
+    val_m;                                             \
   })
 #else  // !(__mips == 64)
 #define LD(psrc)                                                         \
