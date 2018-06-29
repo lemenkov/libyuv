@@ -56,9 +56,10 @@ extern "C" {
 #endif  // __clang__
 
 // clang >= 6.0.0 required for AVX512.
-// TODO(fbarchard): fix xcode 9 ios b/789.
 #if defined(__clang__) && (defined(__x86_64__) || defined(__i386__))
-#if (__clang_major__ >= 7) && !defined(__APPLE_EMBEDDED_SIMULATOR__)
+// clang in xcode follows a different versioning scheme.
+// TODO(fbarchard): fix xcode 9 ios b/789.
+#if (__clang_major__ >= 7) && !defined(__APPLE__)
 #define CLANG_HAS_AVX512 1
 #endif  // clang >= 7
 #endif  // __clang__
