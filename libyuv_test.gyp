@@ -95,6 +95,12 @@
             'LIBYUV_MSA'
           ],
         }],
+        [ '(target_arch == "mipsel" or target_arch == "mips64el") \
+          and (mips_mmi == 1)', {
+          'defines': [
+            'LIBYUV_MMI'
+          ],
+        }],
       ], # conditions
       'defines': [
         # Enable the following 3 macros to turn off assembly for specified CPU.

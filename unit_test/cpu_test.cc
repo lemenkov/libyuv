@@ -67,6 +67,8 @@ TEST_F(LibYUVBaseTest, TestCpuHas) {
   printf("Has MIPS %d\n", has_mips);
   int has_msa = TestCpuFlag(kCpuHasMSA);
   printf("Has MSA %d\n", has_msa);
+  int has_mmi = TestCpuFlag(kCpuHasMMI);
+  printf("Has MMI %d\n", has_mmi);
 #endif
 }
 

@@ -173,6 +173,9 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
     if (strcmp(ase, " msa") == 0) {
       return kCpuHasMSA;
     }
+    if (strcmp(ase, " mmi") == 0) {
+      return kCpuHasMMI;
+    }
     return 0;
   }
   while (fgets(cpuinfo_line, sizeof(cpuinfo_line) - 1, f)) {
@@ -182,6 +185,15 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
         fclose(f);
         if (strcmp(ase, " msa") == 0) {
           return kCpuHasMSA;
+        }
+        return 0;
+      }
+    } else if(memcmp(cpuinfo_line, "cpu model", 9) == 0) {
+      char* p = strstr(cpuinfo_line, "Loongson-3");
+      if (p) {
+        fclose(f);
+        if (strcmp(ase, " mmi") == 0) {
+          return kCpuHasMMI;
         }
         return 0;
       }
@@ -232,6 +244,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 #if defined(__mips__) && defined(__linux__)
 #if defined(__mips_msa)
   cpu_info = MipsCpuCaps("/proc/cpuinfo", " msa");
+#elif defined(_MIPS_ARCH_LOONGSON3A)
+  cpu_info = MipsCpuCaps("/proc/cpuinfo", " mmi");
 #endif
   cpu_info |= kCpuHasMIPS;
 #endif

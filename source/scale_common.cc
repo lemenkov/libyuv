@@ -1073,6 +1073,14 @@ void ScalePlaneVertical(int src_height,
     }
   }
 #endif
+#if defined(HAS_INTERPOLATEROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    InterpolateRow = InterpolateRow_Any_MMI;
+    if (IS_ALIGNED(dst_width_bytes, 8)) {
+      InterpolateRow = InterpolateRow_MMI;
+    }
+  }
+#endif
   for (j = 0; j < dst_height; ++j) {
     int yi;
     int yf;

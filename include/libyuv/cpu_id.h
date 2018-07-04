@@ -48,6 +48,7 @@ static const int kCpuHasAVX512VPOPCNTDQ = 0x100000;
 // These flags are only valid on MIPS processors.
 static const int kCpuHasMIPS = 0x200000;
 static const int kCpuHasMSA = 0x400000;
+static const int kCpuHasMMI = 0x800000;
 
 // Optional init function. TestCpuFlag does an auto-init.
 // Returns cpu_info flags.

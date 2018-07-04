@@ -502,6 +502,18 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
+#if defined(HAS_YUY2TOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    YUY2ToYRow = YUY2ToYRow_Any_MMI;
+    YUY2ToUVRow = YUY2ToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      YUY2ToYRow = YUY2ToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        YUY2ToUVRow = YUY2ToUVRow_MMI;
+      }
+    }
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     YUY2ToUVRow(src_yuy2, src_stride_yuy2, dst_u, dst_v, width);
@@ -580,6 +592,16 @@ int UYVYToI420(const uint8_t* src_uyvy,
     if (IS_ALIGNED(width, 32)) {
       UYVYToYRow = UYVYToYRow_MSA;
       UYVYToUVRow = UYVYToUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_UYVYTOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    UYVYToYRow = UYVYToYRow_Any_MMI;
+    UYVYToUVRow = UYVYToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 16)) {
+      UYVYToYRow = UYVYToYRow_MMI;
+      UYVYToUVRow = UYVYToUVRow_MMI;
     }
   }
 #endif
@@ -679,6 +701,22 @@ int ARGBToI420(const uint8_t* src_argb,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBToYRow = ARGBToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTOUVROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBToUVRow = ARGBToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 16)) {
+      ARGBToUVRow = ARGBToUVRow_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     ARGBToUVRow(src_argb, src_stride_argb, dst_u, dst_v, width);
@@ -762,6 +800,22 @@ int BGRAToI420(const uint8_t* src_bgra,
     BGRAToUVRow = BGRAToUVRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       BGRAToUVRow = BGRAToUVRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_BGRATOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    BGRAToYRow = BGRAToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      BGRAToYRow = BGRAToYRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_BGRATOUVROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    BGRAToUVRow = BGRAToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 16)) {
+      BGRAToUVRow = BGRAToUVRow_MMI;
     }
   }
 #endif
@@ -851,6 +905,22 @@ int ABGRToI420(const uint8_t* src_abgr,
     }
   }
 #endif
+#if defined(HAS_ABGRTOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ABGRToYRow = ABGRToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      ABGRToYRow = ABGRToYRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_ABGRTOUVROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ABGRToUVRow = ABGRToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 16)) {
+      ABGRToUVRow = ABGRToUVRow_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     ABGRToUVRow(src_abgr, src_stride_abgr, dst_u, dst_v, width);
@@ -937,6 +1007,22 @@ int RGBAToI420(const uint8_t* src_rgba,
     }
   }
 #endif
+#if defined(HAS_RGBATOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RGBAToYRow = RGBAToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      RGBAToYRow = RGBAToYRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOUVROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RGBAToUVRow = RGBAToUVRow_Any_MMI;
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToUVRow = RGBAToUVRow_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height - 1; y += 2) {
     RGBAToUVRow(src_rgba, src_stride_rgba, dst_u, dst_v, width);
@@ -967,7 +1053,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
                 int width,
                 int height) {
   int y;
-#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA))
+#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA) || defined(HAS_RGB24TOYROW_MMI))
   void (*RGB24ToUVRow)(const uint8_t* src_rgb24, int src_stride_rgb24,
                        uint8_t* dst_u, uint8_t* dst_v, int width) =
       RGB24ToUVRow_C;
@@ -1013,6 +1099,17 @@ int RGB24ToI420(const uint8_t* src_rgb24,
       RGB24ToUVRow = RGB24ToUVRow_MSA;
     }
   }
+#elif defined(HAS_RGB24TOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RGB24ToUVRow = RGB24ToUVRow_Any_MMI;
+    RGB24ToYRow = RGB24ToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      RGB24ToYRow = RGB24ToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        RGB24ToUVRow = RGB24ToUVRow_MMI;
+      }
+    }
+  }
 // Other platforms do intermediate conversion from RGB24 to ARGB.
 #else
 #if defined(HAS_RGB24TOARGBROW_SSSE3)
@@ -1046,14 +1143,14 @@ int RGB24ToI420(const uint8_t* src_rgb24,
 #endif
 
   {
-#if !(defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA))
+#if !(defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA) || defined(HAS_RGB24TOYROW_MMI))
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA))
+#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA) || defined(HAS_RGB24TOYROW_MMI))
       RGB24ToUVRow(src_rgb24, src_stride_rgb24, dst_u, dst_v, width);
       RGB24ToYRow(src_rgb24, dst_y, width);
       RGB24ToYRow(src_rgb24 + src_stride_rgb24, dst_y + dst_stride_y, width);
@@ -1070,7 +1167,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA))
+#if (defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA) || defined(HAS_RGB24TOYROW_MMI))
       RGB24ToUVRow(src_rgb24, 0, dst_u, dst_v, width);
       RGB24ToYRow(src_rgb24, dst_y, width);
 #else
@@ -1079,7 +1176,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
       ARGBToYRow(row, dst_y, width);
 #endif
     }
-#if !(defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA))
+#if !(defined(HAS_RGB24TOYROW_NEON) || defined(HAS_RGB24TOYROW_MSA) || defined(HAS_RGB24TOYROW_MMI))
     free_aligned_buffer_64(row);
 #endif
   }
@@ -1099,7 +1196,7 @@ int RAWToI420(const uint8_t* src_raw,
               int width,
               int height) {
   int y;
-#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA))
+#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI))
   void (*RAWToUVRow)(const uint8_t* src_raw, int src_stride_raw, uint8_t* dst_u,
                      uint8_t* dst_v, int width) = RAWToUVRow_C;
   void (*RAWToYRow)(const uint8_t* src_raw, uint8_t* dst_y, int width) =
@@ -1144,6 +1241,17 @@ int RAWToI420(const uint8_t* src_raw,
       RAWToUVRow = RAWToUVRow_MSA;
     }
   }
+#elif defined(HAS_RAWTOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RAWToUVRow = RAWToUVRow_Any_MMI;
+    RAWToYRow = RAWToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      RAWToYRow = RAWToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        RAWToUVRow = RAWToUVRow_MMI;
+      }
+    }
+  }
 // Other platforms do intermediate conversion from RAW to ARGB.
 #else
 #if defined(HAS_RAWTOARGBROW_SSSE3)
@@ -1177,14 +1285,14 @@ int RAWToI420(const uint8_t* src_raw,
 #endif
 
   {
-#if !(defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA))
+#if !(defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI))
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA))
+#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI))
       RAWToUVRow(src_raw, src_stride_raw, dst_u, dst_v, width);
       RAWToYRow(src_raw, dst_y, width);
       RAWToYRow(src_raw + src_stride_raw, dst_y + dst_stride_y, width);
@@ -1201,7 +1309,7 @@ int RAWToI420(const uint8_t* src_raw,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA))
+#if (defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI))
       RAWToUVRow(src_raw, 0, dst_u, dst_v, width);
       RAWToYRow(src_raw, dst_y, width);
 #else
@@ -1210,7 +1318,7 @@ int RAWToI420(const uint8_t* src_raw,
       ARGBToYRow(row, dst_y, width);
 #endif
     }
-#if !(defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA))
+#if !(defined(HAS_RAWTOYROW_NEON) || defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI))
     free_aligned_buffer_64(row);
 #endif
   }
@@ -1230,7 +1338,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
                  int width,
                  int height) {
   int y;
-#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA))
+#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_MMI))
   void (*RGB565ToUVRow)(const uint8_t* src_rgb565, int src_stride_rgb565,
                         uint8_t* dst_u, uint8_t* dst_v, int width) =
       RGB565ToUVRow_C;
@@ -1276,6 +1384,17 @@ int RGB565ToI420(const uint8_t* src_rgb565,
       RGB565ToUVRow = RGB565ToUVRow_MSA;
     }
   }
+#elif defined(HAS_RGB565TOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RGB565ToUVRow = RGB565ToUVRow_Any_MMI;
+    RGB565ToYRow = RGB565ToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      RGB565ToYRow = RGB565ToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        RGB565ToUVRow = RGB565ToUVRow_MMI;
+      }
+    }
+  }
 // Other platforms do intermediate conversion from RGB565 to ARGB.
 #else
 #if defined(HAS_RGB565TOARGBROW_SSE2)
@@ -1316,13 +1435,13 @@ int RGB565ToI420(const uint8_t* src_rgb565,
 #endif
 #endif
   {
-#if !(defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA))
+#if !(defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_MMI))
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
     for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA))
+#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_MMI))
       RGB565ToUVRow(src_rgb565, src_stride_rgb565, dst_u, dst_v, width);
       RGB565ToYRow(src_rgb565, dst_y, width);
       RGB565ToYRow(src_rgb565 + src_stride_rgb565, dst_y + dst_stride_y, width);
@@ -1339,7 +1458,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA))
+#if (defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_MMI))
       RGB565ToUVRow(src_rgb565, 0, dst_u, dst_v, width);
       RGB565ToYRow(src_rgb565, dst_y, width);
 #else
@@ -1348,7 +1467,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
       ARGBToYRow(row, dst_y, width);
 #endif
     }
-#if !(defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA))
+#if !(defined(HAS_RGB565TOYROW_NEON) || defined(HAS_RGB565TOYROW_MSA) || defined(HAS_RGB565TOYROW_MMI))
     free_aligned_buffer_64(row);
 #endif
   }
@@ -1368,7 +1487,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
                    int width,
                    int height) {
   int y;
-#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA))
+#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_MMI))
   void (*ARGB1555ToUVRow)(const uint8_t* src_argb1555, int src_stride_argb1555,
                           uint8_t* dst_u, uint8_t* dst_v, int width) =
       ARGB1555ToUVRow_C;
@@ -1415,6 +1534,17 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
       ARGB1555ToUVRow = ARGB1555ToUVRow_MSA;
     }
   }
+#elif defined(HAS_ARGB1555TOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGB1555ToUVRow = ARGB1555ToUVRow_Any_MMI;
+    ARGB1555ToYRow = ARGB1555ToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB1555ToYRow = ARGB1555ToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        ARGB1555ToUVRow = ARGB1555ToUVRow_MMI;
+      }
+    }
+  }
 // Other platforms do intermediate conversion from ARGB1555 to ARGB.
 #else
 #if defined(HAS_ARGB1555TOARGBROW_SSE2)
@@ -1455,14 +1585,14 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
 #endif
 #endif
   {
-#if !(defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA))
+#if !(defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_MMI))
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA))
+#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_MMI))
       ARGB1555ToUVRow(src_argb1555, src_stride_argb1555, dst_u, dst_v, width);
       ARGB1555ToYRow(src_argb1555, dst_y, width);
       ARGB1555ToYRow(src_argb1555 + src_stride_argb1555, dst_y + dst_stride_y,
@@ -1481,7 +1611,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA))
+#if (defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_MMI))
       ARGB1555ToUVRow(src_argb1555, 0, dst_u, dst_v, width);
       ARGB1555ToYRow(src_argb1555, dst_y, width);
 #else
@@ -1490,7 +1620,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
       ARGBToYRow(row, dst_y, width);
 #endif
     }
-#if !(defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA))
+#if !(defined(HAS_ARGB1555TOYROW_NEON) || defined(HAS_ARGB1555TOYROW_MSA) || defined(HAS_ARGB1555TOYROW_MMI))
     free_aligned_buffer_64(row);
 #endif
   }
@@ -1510,7 +1640,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int width,
                    int height) {
   int y;
-#if defined(HAS_ARGB4444TOYROW_NEON)
+#if (defined(HAS_ARGB4444TOYROW_NEON) || defined(HAS_ARGB4444TOYROW_MMI))
   void (*ARGB4444ToUVRow)(const uint8_t* src_argb4444, int src_stride_argb4444,
                           uint8_t* dst_u, uint8_t* dst_v, int width) =
       ARGB4444ToUVRow_C;
@@ -1545,6 +1675,17 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
       ARGB4444ToYRow = ARGB4444ToYRow_NEON;
       if (IS_ALIGNED(width, 16)) {
         ARGB4444ToUVRow = ARGB4444ToUVRow_NEON;
+      }
+    }
+  }
+#elif defined(HAS_ARGB4444TOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGB4444ToUVRow = ARGB4444ToUVRow_Any_MMI;
+    ARGB4444ToYRow = ARGB4444ToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      ARGB4444ToYRow = ARGB4444ToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        ARGB4444ToUVRow = ARGB4444ToUVRow_MMI;
       }
     }
   }
@@ -1606,17 +1747,29 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
     }
   }
 #endif
+#if defined(HAS_ARGBTOYROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBToUVRow = ARGBToUVRow_Any_MMI;
+    ARGBToYRow = ARGBToYRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      ARGBToYRow = ARGBToYRow_MMI;
+      if (IS_ALIGNED(width, 16)) {
+        ARGBToUVRow = ARGBToUVRow_MMI;
+      }
+    }
+  }
+#endif
 #endif
 
   {
-#if !defined(HAS_ARGB4444TOYROW_NEON)
+#if !(defined(HAS_ARGB4444TOYROW_NEON) || defined(HAS_ARGB4444TOYROW_MMI))
     // Allocate 2 rows of ARGB.
     const int kRowSize = (width * 4 + 31) & ~31;
     align_buffer_64(row, kRowSize * 2);
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
-#if defined(HAS_ARGB4444TOYROW_NEON)
+#if (defined(HAS_ARGB4444TOYROW_NEON) || defined(HAS_ARGB4444TOYROW_MMI))
       ARGB4444ToUVRow(src_argb4444, src_stride_argb4444, dst_u, dst_v, width);
       ARGB4444ToYRow(src_argb4444, dst_y, width);
       ARGB4444ToYRow(src_argb4444 + src_stride_argb4444, dst_y + dst_stride_y,
@@ -1635,7 +1788,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if defined(HAS_ARGB4444TOYROW_NEON)
+#if (defined(HAS_ARGB4444TOYROW_NEON) || defined(HAS_ARGB4444TOYROW_MMI))
       ARGB4444ToUVRow(src_argb4444, 0, dst_u, dst_v, width);
       ARGB4444ToYRow(src_argb4444, dst_y, width);
 #else
@@ -1644,7 +1797,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
       ARGBToYRow(row, dst_y, width);
 #endif
     }
-#if !defined(HAS_ARGB4444TOYROW_NEON)
+#if !(defined(HAS_ARGB4444TOYROW_NEON) || defined(HAS_ARGB4444TOYROW_MMI))
     free_aligned_buffer_64(row);
 #endif
   }
