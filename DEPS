@@ -801,7 +801,7 @@ hooks = [
     'pattern': '.',
     # When adding a new sdk extras package to download, add the package
     # directory and zip file to .gitignore in third_party/android_tools.
-    'action': ['python',
+    'action': ['vpython',
                'src/build/android/play_services/update.py',
                'download'
     ],
