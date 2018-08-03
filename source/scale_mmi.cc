@@ -23,6 +23,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// This module is for Mips MMI.
 #if !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 // CPU agnostic row functions
@@ -1120,7 +1121,7 @@ void ScaleRowUp2_16_MMI(const uint16_t* src_ptr,
       : "memory");
 }
 
-#endif
+#endif  // !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -17,6 +17,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// This module is for Mips MMI.
 #if !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 // Hakmem method for hamming distance.
@@ -113,7 +114,8 @@ uint32_t SumSquareError_MMI(const uint8_t* src_a,
 
   return sse;
 }
-#endif
+
+#endif  // !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 #ifdef __cplusplus
 }  // extern "C"

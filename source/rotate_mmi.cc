@@ -16,6 +16,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
+// This module is for Mips MMI.
 #if !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 void TransposeWx8_MMI(const uint8_t* src,
@@ -282,7 +283,7 @@ void TransposeUVWx8_MMI(const uint8_t* src,
       : "memory");
 }
 
-#endif
+#endif  // !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 
 #ifdef __cplusplus
 }  // extern "C"
