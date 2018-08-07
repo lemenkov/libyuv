@@ -115,7 +115,6 @@ extern "C" {
 #define HAS_FIXEDDIV_MIPS
 #define HAS_SCALEARGBCOLS_MMI
 #define HAS_SCALEARGBCOLSUP2_MMI
-#define HAS_SCALEARGBFILTERCOLS_MMI
 #define HAS_SCALEARGBROWDOWN2_MMI
 #define HAS_SCALEARGBROWDOWNEVEN_MMI
 #define HAS_SCALEROWDOWN2_MMI
@@ -592,21 +591,11 @@ void ScaleARGBCols_Any_MSA(uint8_t* dst_ptr,
                            int dst_width,
                            int x,
                            int dx);
-void ScaleARGBFilterCols_MMI(uint8_t* dst_argb,
-                             const uint8_t* src_argb,
-                             int dst_width,
-                             int x,
-                             int dx);
 void ScaleARGBCols_MMI(uint8_t* dst_argb,
                        const uint8_t* src_argb,
                        int dst_width,
                        int x,
                        int dx);
-void ScaleARGBFilterCols_Any_MMI(uint8_t* dst_ptr,
-                                 const uint8_t* src_ptr,
-                                 int dst_width,
-                                 int x,
-                                 int dx);
 void ScaleARGBCols_Any_MMI(uint8_t* dst_ptr,
                            const uint8_t* src_ptr,
                            int dst_width,

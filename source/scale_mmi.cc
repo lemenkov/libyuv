@@ -38,10 +38,12 @@ void ScaleRowDown2_MMI(const uint8_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
       "psrlh      %[src0],         %[src0],           %[shift]      \n\t"
 
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "psrlh      %[src1],         %[src1],           %[shift]      \n\t"
 
       "packushb   %[dest],         %[src0],           %[src1]       \n\t"
@@ -72,9 +74,11 @@ void ScaleRowDown2Linear_MMI(const uint8_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],          0x00(%[src_ptr])                \n\t"
+      "gsldrc1    %[src0],          0x00(%[src_ptr])                \n\t"
+      "gsldlc1    %[src0],          0x07(%[src_ptr])                \n\t"
       "and        %[dest0],         %[src0],          %[mask]       \n\t"
-      "ldc1       %[src1],          0x08(%[src_ptr])                \n\t"
+      "gsldrc1    %[src1],          0x08(%[src_ptr])                \n\t"
+      "gsldlc1    %[src1],          0x0f(%[src_ptr])                \n\t"
       "and        %[dest1],         %[src1],          %[mask]       \n\t"
       "packushb   %[dest0],         %[dest0],         %[dest1]      \n\t"
 
@@ -114,11 +118,13 @@ void ScaleRowDown2Box_MMI(const uint8_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[s0],            0x00(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x00(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x07(%[s])                      \n\t"
       "psrlh      %[s1],            %[s0],            %[shift1]     \n\t"
       "and        %[s0],            %[s0],            %[mask]       \n\t"
 
-      "ldc1       %[t0],            0x00(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x00(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x07(%[t])                      \n\t"
       "psrlh      %[t1],            %[t0],            %[shift1]     \n\t"
       "and        %[t0],            %[t0],            %[mask]       \n\t"
 
@@ -128,11 +134,13 @@ void ScaleRowDown2Box_MMI(const uint8_t* src_ptr,
       "paddh      %[dest0],         %[dest0],         %[ph]         \n\t"
       "psrlh      %[dest0],         %[dest0],         %[shift0]     \n\t"
 
-      "ldc1       %[s0],            0x08(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x08(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x0f(%[s])                      \n\t"
       "psrlh      %[s1],            %[s0],            %[shift1]     \n\t"
       "and        %[s0],            %[s0],            %[mask]       \n\t"
 
-      "ldc1       %[t0],            0x08(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x08(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x0f(%[t])                      \n\t"
       "psrlh      %[t1],            %[t0],            %[shift1]     \n\t"
       "and        %[t0],            %[t0],            %[mask]       \n\t"
 
@@ -172,8 +180,10 @@ void ScaleARGBRowDown2_MMI(const uint8_t* src_argb,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "punpckhwd  %[dest],         %[src0],           %[src1]       \n\t"
 
       "gssdlc1    %[dest],         0x07(%[dst_ptr])                 \n\t"
@@ -237,12 +247,14 @@ void ScaleARGBRowDown2Box_MMI(const uint8_t* src_argb,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[s0],            0x00(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x00(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x07(%[s])                      \n\t"
       "punpcklbh  %[s_lo],          %[s0],           %[mask]        \n\t"
       "punpckhbh  %[s_hi],          %[s0],           %[mask]        \n\t"
       "paddh      %[dest_lo],       %[s_lo],         %[s_hi]        \n\t"
 
-      "ldc1       %[t0],            0x00(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x00(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x07(%[t])                      \n\t"
       "punpcklbh  %[t_lo],          %[t0],           %[mask]        \n\t"
       "punpckhbh  %[t_hi],          %[t0],           %[mask]        \n\t"
       "paddh      %[dest_lo],       %[dest_lo],      %[t_lo]        \n\t"
@@ -251,12 +263,14 @@ void ScaleARGBRowDown2Box_MMI(const uint8_t* src_argb,
       "paddh      %[dest_lo],      %[dest_lo],       %[ph]          \n\t"
       "psrlh      %[dest_lo],      %[dest_lo],       %[shfit]       \n\t"
 
-      "ldc1       %[s0],            0x08(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x08(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x0f(%[s])                      \n\t"
       "punpcklbh  %[s_lo],          %[s0],           %[mask]        \n\t"
       "punpckhbh  %[s_hi],          %[s0],           %[mask]        \n\t"
       "paddh      %[dest_hi],       %[s_lo],         %[s_hi]        \n\t"
 
-      "ldc1       %[t0],            0x08(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x08(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x0f(%[t])                      \n\t"
       "punpcklbh  %[t_lo],          %[t0],           %[mask]        \n\t"
       "punpckhbh  %[t_hi],          %[t0],           %[mask]        \n\t"
       "paddh      %[dest_hi],       %[dest_hi],      %[t_lo]        \n\t"
@@ -293,10 +307,12 @@ void ScaleRowDown2_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
       "psrlw      %[src0],         %[src0],           %[shift]      \n\t"
 
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "psrlw      %[src1],         %[src1],           %[shift]      \n\t"
 
       "packsswh   %[dest],         %[src0],           %[src1]       \n\t"
@@ -324,8 +340,10 @@ void ScaleRowDown2Linear_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "punpcklhw  %[dest_lo],      %[src0],           %[src1]       \n\t"
       "punpckhhw  %[dest_hi],      %[src0],           %[src1]       \n\t"
 
@@ -364,11 +382,13 @@ void ScaleRowDown2Box_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[s0],            0x00(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x00(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x07(%[s])                      \n\t"
       "psrlw      %[s1],            %[s0],            %[shift0]     \n\t"
       "and        %[s0],            %[s0],            %[mask]       \n\t"
 
-      "ldc1       %[t0],            0x00(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x00(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x07(%[t])                      \n\t"
       "psrlw      %[t1],            %[t0],            %[shift0]     \n\t"
       "and        %[t0],            %[t0],            %[mask]       \n\t"
 
@@ -378,11 +398,13 @@ void ScaleRowDown2Box_16_MMI(const uint16_t* src_ptr,
       "paddw      %[dest0],         %[dest0],         %[ph]         \n\t"
       "psrlw      %[dest0],         %[dest0],         %[shift1]     \n\t"
 
-      "ldc1       %[s0],            0x08(%[s])                      \n\t"
+      "gsldrc1    %[s0],            0x08(%[s])                      \n\t"
+      "gsldlc1    %[s0],            0x0f(%[s])                      \n\t"
       "psrlw      %[s1],            %[s0],            %[shift0]     \n\t"
       "and        %[s0],            %[s0],            %[mask]       \n\t"
 
-      "ldc1       %[t0],            0x08(%[t])                      \n\t"
+      "gsldrc1    %[t0],            0x08(%[t])                      \n\t"
+      "gsldlc1    %[t0],            0x0f(%[t])                      \n\t"
       "psrlw      %[t1],            %[t0],            %[shift0]     \n\t"
       "and        %[t0],            %[t0],            %[mask]       \n\t"
 
@@ -425,18 +447,22 @@ void ScaleRowDown4_MMI(const uint8_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
       "psrlw      %[src0],         %[src0],           %[shift]      \n\t"
       "and        %[src0],         %[src0],           %[mask]       \n\t"
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "psrlw      %[src1],         %[src1],           %[shift]      \n\t"
       "and        %[src1],         %[src1],           %[mask]       \n\t"
       "packsswh   %[dest_lo],      %[src0],           %[src1]       \n\t"
 
-      "ldc1       %[src0],         0x10(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x10(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x17(%[src_ptr])                 \n\t"
       "psrlw      %[src0],         %[src0],           %[shift]      \n\t"
       "and        %[src0],         %[src0],           %[mask]       \n\t"
-      "ldc1       %[src1],         0x18(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x18(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x1f(%[src_ptr])                 \n\t"
       "psrlw      %[src1],         %[src1],           %[shift]      \n\t"
       "and        %[src1],         %[src1],           %[mask]       \n\t"
       "packsswh   %[dest_hi],      %[src0],           %[src1]       \n\t"
@@ -469,13 +495,17 @@ void ScaleRowDown4_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],         0x00(%[src_ptr])                 \n\t"
-      "ldc1       %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x07(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x08(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x0f(%[src_ptr])                 \n\t"
       "punpckhhw  %[dest_lo],      %[src0],           %[src1]       \n\t"
       "punpcklhw  %[dest_lo],      %[dest_lo],        %[mask]       \n\t"
 
-      "ldc1       %[src0],         0x10(%[src_ptr])                 \n\t"
-      "ldc1       %[src1],         0x18(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src0],         0x10(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src0],         0x17(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src1],         0x18(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src1],         0x1f(%[src_ptr])                 \n\t"
       "punpckhhw  %[dest_hi],      %[src0],           %[src1]       \n\t"
       "punpcklhw  %[dest_hi],      %[dest_hi],        %[mask]       \n\t"
 
@@ -691,7 +721,8 @@ void ScaleColsUp2_16_MMI(uint16_t* dst_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src],          0x00(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src],          0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src],          0x07(%[src_ptr])                 \n\t"
 
       "punpcklhw  %[dest],         %[src],            %[src]        \n\t"
       "gssdlc1    %[dest],         0x07(%[dst_ptr])                 \n\t"
@@ -721,9 +752,11 @@ void ScaleAddRow_MMI(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) {
       "punpcklbh  %[src_lo],       %[src],            %[mask]       \n\t"
       "punpckhbh  %[src_hi],       %[src],            %[mask]       \n\t"
 
-      "ldc1       %[dest0],        0x00(%[dst_ptr])                 \n\t"
+      "gsldrc1    %[dest0],        0x00(%[dst_ptr])                 \n\t"
+      "gsldlc1    %[dest0],        0x07(%[dst_ptr])                 \n\t"
       "paddush    %[dest0],        %[dest0],          %[src_lo]     \n\t"
-      "ldc1       %[dest1],        0x08(%[dst_ptr])                 \n\t"
+      "gsldrc1    %[dest1],        0x08(%[dst_ptr])                 \n\t"
+      "gsldlc1    %[dest1],        0x0f(%[dst_ptr])                 \n\t"
       "paddush    %[dest1],        %[dest1],          %[src_hi]     \n\t"
 
       "gssdlc1    %[dest0],        0x07(%[dst_ptr])                 \n\t"
@@ -750,16 +783,19 @@ void ScaleAddRow_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src],          0x00(%[src_ptr])                 \n\t"
+      "gsldrc1    %[src],          0x00(%[src_ptr])                 \n\t"
+      "gsldlc1    %[src],          0x07(%[src_ptr])                 \n\t"
       "punpcklhw  %[src_lo],       %[src],            %[mask]       \n\t"
       "punpckhhw  %[src_hi],       %[src],            %[mask]       \n\t"
 
-      "ldc1       %[dest0],        0x00(%[dst_ptr])                 \n\t"
+      "gsldrc1    %[dest0],        0x00(%[dst_ptr])                 \n\t"
+      "gsldlc1    %[dest0],        0x07(%[dst_ptr])                 \n\t"
       "paddw      %[dest0],        %[dest0],          %[src_lo]     \n\t"
       "gssdlc1    %[dest0],        0x07(%[dst_ptr])                 \n\t"
       "gssdrc1    %[dest0],        0x00(%[dst_ptr])                 \n\t"
 
-      "ldc1       %[dest1],        0x08(%[dst_ptr])                 \n\t"
+      "gsldrc1    %[dest1],        0x08(%[dst_ptr])                 \n\t"
+      "gsldlc1    %[dest1],        0x0f(%[dst_ptr])                 \n\t"
       "paddw      %[dest1],        %[dest1],          %[src_hi]     \n\t"
       "gssdlc1    %[dest1],        0x0f(%[dst_ptr])                 \n\t"
       "gssdrc1    %[dest1],        0x08(%[dst_ptr])                 \n\t"
@@ -922,7 +958,8 @@ void ScaleARGBColsUp2_MMI(uint8_t* dst_argb,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src],           0x00(%[src_ptr])                \n\t"
+      "gsldrc1    %[src],           0x00(%[src_ptr])                \n\t"
+      "gsldlc1    %[src],           0x07(%[src_ptr])                \n\t"
       "punpcklwd  %[dest0],         %[src],           %[src]        \n\t"
       "gssdlc1    %[dest0],         0x07(%[dst_ptr])                \n\t"
       "gssdrc1    %[dest0],         0x00(%[dst_ptr])                \n\t"
@@ -936,67 +973,6 @@ void ScaleARGBColsUp2_MMI(uint8_t* dst_argb,
       "bnez       %[width],         1b                              \n\t"
       : [dest0] "=&f"(dest0), [dest1] "=&f"(dest1), [src] "=&f"(src)
       : [src_ptr] "r"(src_argb), [dst_ptr] "r"(dst_argb), [width] "r"(dst_width)
-      : "memory");
-}
-
-void ScaleARGBFilterCols_MMI(uint8_t* dst_argb,
-                             const uint8_t* src_argb,
-                             int dst_width,
-                             int x,
-                             int dx) {
-  uint64_t dest, src, src_hi, src_lo;
-  int xi, xf, nxf;
-  int64_t fxf, fnxf;
-
-  const uint8_t* src_ptr = src_argb;
-
-  const uint64_t mask0 = 0;
-  const uint64_t mask1 = 0x7fULL;
-
-  const uint64_t shift2 = 2;
-  const uint64_t shift9 = 9;
-  const uint64_t shift7 = 7;
-  const uint64_t shift16 = 16;
-
-  __asm__ volatile(
-      "1:                                                           \n\t"
-      "dsrl       %[xi],            %[x],             %[shift16]    \n\t"
-      "dsll       %[xi],            %[xi],            %[shift2]     \n\t"
-
-      "dadd       %[src_ptr],       %[src_argb],      %[xi]         \n\t"
-      "ldc1       %[src],           0x00(%[src_ptr])                \n\t"
-      "punpcklbh  %[src_lo],        %[src],           %[mask0]      \n\t"
-      "punpckhbh  %[src_hi],        %[src],           %[mask0]      \n\t"
-
-      "dsrl       %[xf],            %[x],             %[shift9]     \n\t"
-      "andi       %[xf],            %[xf],            0x7f          \n\t"
-      "xori       %[nxf],           %[xf],            0x7f          \n\t"
-      "dmtc1      %[xf],            %[fxf]                          \n\t"
-      "pshufh     %[fxf],           %[fxf],           %[mask0]      \n\t"
-      "dmtc1      %[nxf],           %[fnxf]                         \n\t"
-      "pshufh     %[fnxf],          %[fnxf],          %[mask0]      \n\t"
-
-      "pmullh     %[src_lo],        %[src_lo],        %[fnxf]       \n\t"
-      "pmullh     %[src_hi],        %[src_hi],        %[fxf]        \n\t"
-      "paddh      %[dest],          %[src_lo],        %[src_hi]     \n\t"
-      "psrlh      %[dest],          %[dest],          %[shift7]     \n\t"
-      "packushb   %[dest],          %[dest],          %[mask0]      \n\t"
-
-      "dadd       %[x],             %[x],             %[dx]         \n\t"
-
-      "swc1       %[dest],          0x00(%[dst_ptr])                \n\t"
-
-      "daddiu     %[dst_ptr],       %[dst_ptr],       0x04          \n\t"
-      "daddi      %[width],         %[width],        -0x01          \n\t"
-      "bnez       %[width],         1b                              \n\t"
-      : [src] "=&f"(src), [dest] "=&f"(dest), [src_hi] "=&f"(src_hi),
-        [src_lo] "=&f"(src_lo), [fxf] "=&f"(fxf), [fnxf] "=&f"(fnxf),
-        [xi] "=&r"(xi), [xf] "=&r"(xf), [nxf] "=&r"(nxf)
-      : [src_argb] "r"(src_argb), [src_ptr] "r"(src_ptr),
-        [dst_ptr] "r"(dst_argb), [width] "r"(dst_width), [x] "r"(x),
-        [dx] "r"(dx), [mask0] "f"(mask0), [mask1] "f"(mask1),
-        [shift2] "r"(shift2), [shift7] "f"(shift7), [shift9] "r"(shift9),
-        [shift16] "r"(shift16)
       : "memory");
 }
 
@@ -1058,9 +1034,11 @@ void ScaleRowUp2_16_MMI(const uint16_t* src_ptr,
 
   __asm__ volatile(
       "1:                                                           \n\t"
-      "ldc1       %[src0],          0x00(%[src1_ptr])               \n\t"
+      "gsldrc1    %[src0],          0x00(%[src1_ptr])               \n\t"
+      "gsldlc1    %[src0],          0x07(%[src1_ptr])               \n\t"
       "pmaddhw    %[dest04],        %[src0],          %[mask0]      \n\t"
-      "ldc1       %[src1],          0x00(%[src2_ptr])               \n\t"
+      "gsldrc1    %[src1],          0x00(%[src2_ptr])               \n\t"
+      "gsldlc1    %[src1],          0x07(%[src2_ptr])               \n\t"
       "pmaddhw    %[dest],          %[src1],          %[mask1]      \n\t"
       "paddw      %[dest04],        %[dest04],        %[dest]       \n\t"
       "paddw      %[dest04],        %[dest04],        %[ph]         \n\t"
@@ -1072,9 +1050,11 @@ void ScaleRowUp2_16_MMI(const uint16_t* src_ptr,
       "paddw      %[dest15],        %[dest15],        %[ph]         \n\t"
       "psrlw      %[dest15],        %[dest15],        %[shift]      \n\t"
 
-      "ldc1       %[src0],          0x02(%[src1_ptr])               \n\t"
+      "gsldrc1    %[src0],          0x02(%[src1_ptr])               \n\t"
+      "gsldlc1    %[src0],          0x09(%[src1_ptr])               \n\t"
       "pmaddhw    %[dest26],        %[src0],          %[mask0]      \n\t"
-      "ldc1       %[src1],          0x02(%[src2_ptr])               \n\t"
+      "gsldrc1    %[src1],          0x02(%[src2_ptr])               \n\t"
+      "gsldlc1    %[src1],          0x09(%[src2_ptr])               \n\t"
       "pmaddhw    %[dest],          %[src1],          %[mask1]      \n\t"
       "paddw      %[dest26],        %[dest26],        %[dest]       \n\t"
       "paddw      %[dest26],        %[dest26],        %[ph]         \n\t"
