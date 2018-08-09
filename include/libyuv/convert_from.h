@@ -240,6 +240,30 @@ int I420ToRGB565(const uint8_t* src_y,
                  int height);
 
 LIBYUV_API
+int J420ToRGB565(const uint8_t* src_y,
+                 int src_stride_y,
+                 const uint8_t* src_u,
+                 int src_stride_u,
+                 const uint8_t* src_v,
+                 int src_stride_v,
+                 uint8_t* dst_frame,
+                 int dst_stride_frame,
+                 int width,
+                 int height);
+
+LIBYUV_API
+int H420ToRGB565(const uint8_t* src_y,
+                 int src_stride_y,
+                 const uint8_t* src_u,
+                 int src_stride_u,
+                 const uint8_t* src_v,
+                 int src_stride_v,
+                 uint8_t* dst_frame,
+                 int dst_stride_frame,
+                 int width,
+                 int height);
+
+LIBYUV_API
 int I422ToRGB565(const uint8_t* src_y,
                  int src_stride_y,
                  const uint8_t* src_u,
