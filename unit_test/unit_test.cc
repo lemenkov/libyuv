@@ -66,6 +66,9 @@ int TestCpuEnv(int cpu_info) {
   if (TestEnv("LIBYUV_DISABLE_MSA")) {
     cpu_info &= ~libyuv::kCpuHasMSA;
   }
+  if (TestEnv("LIBYUV_DISABLE_MMI")) {
+    cpu_info &= ~libyuv::kCpuHasMMI;
+  }
 #endif
 #if !defined(__pnacl__) && !defined(__CLR_VER) &&                   \
     (defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \

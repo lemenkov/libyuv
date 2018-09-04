@@ -27,7 +27,7 @@ Then you'll get a .gclient file like:
       },
     ];
 
-For iOS add `;target_os=['ios'];` to your OSX .gclient and run `GYP_DEFINES="OS=ios" gclient sync.`
+For iOS add `;target_os=['ios'];` to your OSX .gclient and run `gclient sync.`
 
 Browse the Git reprository: https://chromium.googlesource.com/libyuv/libyuv/+/master
 
@@ -48,10 +48,7 @@ For Android add `;target_os=['android'];` to your Linux .gclient
 
 Then run:
 
-    export GYP_DEFINES="OS=android"
     gclient sync
-
-The sync will generate native build files for your environment using gyp (Windows: Visual Studio, OSX: XCode, Linux: make). This generation can also be forced manually: `gclient runhooks`
 
 To get just the source (not buildable):
 
@@ -135,8 +132,8 @@ ia32
 
 mips
 
-    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=true"
-    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true is_clang=true"
+    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
+    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
     ninja -v -C out/Debug libyuv_unittest
     ninja -v -C out/Release libyuv_unittest
 
@@ -182,8 +179,8 @@ Running test with C code:
 
 mips
 
-   gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false is_clang=false use_sysroot=false use_gold=false"
-   gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false is_clang=false use_sysroot=false use_gold=false"
+   gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false use_sysroot=false use_gold=false"
+   gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false use_sysroot=false use_gold=false"
    ninja -v -C out/Debug libyuv_unittest
    ninja -v -C out/Release libyuv_unittest
 
