@@ -34,7 +34,7 @@ SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES VERSION "0.0.0" SOVERSION 0 
 
 # this creates the conversion tool
 ADD_EXECUTABLE			( yuvconvert ${ly_base_dir}/util/yuvconvert.cc )
-TARGET_LINK_LIBRARIES	( yuvconvert ${ly_lib_static} )
+TARGET_LINK_LIBRARIES	( yuvconvert ${ly_lib_shared} )
 
 
 INCLUDE ( FindJPEG )
@@ -61,7 +61,7 @@ if(TEST)
   endif()
 
   add_executable(libyuv_unittest ${ly_unittest_sources})
-  target_link_libraries(libyuv_unittest ${ly_lib_name} ${GTEST_LIBRARY})
+  target_link_libraries(libyuv_unittest ${ly_lib_shared} ${GTEST_LIBRARY})
   find_library(PTHREAD_LIBRARY pthread)
   if(NOT PTHREAD_LIBRARY STREQUAL "PTHREAD_LIBRARY-NOTFOUND")
     target_link_libraries(libyuv_unittest pthread)
