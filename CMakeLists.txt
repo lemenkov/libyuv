@@ -28,15 +28,9 @@ SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES PREFIX "lib" )
 
 SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES VERSION "0.0.0" SOVERSION 0 )
 
-# this creates the conversion tool
-ADD_EXECUTABLE			( yuvconvert ${ly_base_dir}/util/yuvconvert.cc )
-TARGET_LINK_LIBRARIES	( yuvconvert ${ly_lib_shared} )
-
-
 INCLUDE ( FindJPEG )
 if (JPEG_FOUND)
   include_directories( ${JPEG_INCLUDE_DIR} )
-  target_link_libraries( yuvconvert ${JPEG_LIBRARY} )
   add_definitions( -DHAVE_JPEG )
 endif()
 
@@ -78,9 +72,8 @@ if(TEST)
 endif()
 
 
-# install the conversion tool, .so, and all the header files
-INSTALL ( PROGRAMS ${CMAKE_BINARY_DIR}/yuvconvert			DESTINATION bin )
-INSTALL ( TARGETS ${ly_lib_shared} LIBRARY				DESTINATION lib RUNTIME DESTINATION bin )
+# install .so, and all the header files
+INSTALL ( TARGETS ${ly_lib_shared} LIBRARY				DESTINATION lib )
 INSTALL ( DIRECTORY ${PROJECT_SOURCE_DIR}/include/		DESTINATION include )
 
 # create the .deb and .rpm packages using cpack
