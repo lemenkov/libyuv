@@ -73,7 +73,7 @@ endif()
 
 
 # install .so, and all the header files
-INSTALL ( TARGETS ${ly_lib_shared} LIBRARY				DESTINATION lib )
+INSTALL ( TARGETS ${ly_lib_shared} LIBRARY				DESTINATION lib${LIB_SUFFIX} )
 INSTALL ( DIRECTORY ${PROJECT_SOURCE_DIR}/include/		DESTINATION include )
 
 # create the .deb and .rpm packages using cpack
