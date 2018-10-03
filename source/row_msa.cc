@@ -163,14 +163,14 @@ extern "C" {
     v8u16 reg0_m, reg1_m, reg2_m, reg3_m, reg4_m, reg5_m, reg6_m, reg7_m; \
     v8u16 reg8_m, reg9_m;                                                 \
                                                                           \
-    src0_m = (v16u8)__msa_ld_b((void*)s, 0);                             \
-    src1_m = (v16u8)__msa_ld_b((void*)s, 16);                            \
-    src2_m = (v16u8)__msa_ld_b((void*)s, 32);                            \
-    src3_m = (v16u8)__msa_ld_b((void*)s, 48);                            \
-    src4_m = (v16u8)__msa_ld_b((void*)t, 0);                             \
-    src5_m = (v16u8)__msa_ld_b((void*)t, 16);                            \
-    src6_m = (v16u8)__msa_ld_b((void*)t, 32);                            \
-    src7_m = (v16u8)__msa_ld_b((void*)t, 48);                            \
+    src0_m = (v16u8)__msa_ld_b((void*)s, 0);                              \
+    src1_m = (v16u8)__msa_ld_b((void*)s, 16);                             \
+    src2_m = (v16u8)__msa_ld_b((void*)s, 32);                             \
+    src3_m = (v16u8)__msa_ld_b((void*)s, 48);                             \
+    src4_m = (v16u8)__msa_ld_b((void*)t, 0);                              \
+    src5_m = (v16u8)__msa_ld_b((void*)t, 16);                             \
+    src6_m = (v16u8)__msa_ld_b((void*)t, 32);                             \
+    src7_m = (v16u8)__msa_ld_b((void*)t, 48);                             \
     vec0_m = (v16u8)__msa_ilvr_b((v16i8)src0_m, (v16i8)src4_m);           \
     vec1_m = (v16u8)__msa_ilvr_b((v16i8)src1_m, (v16i8)src5_m);           \
     vec2_m = (v16u8)__msa_ilvr_b((v16i8)src2_m, (v16i8)src6_m);           \
@@ -201,14 +201,14 @@ extern "C" {
     reg1_m = (v8u16)__msa_srai_h((v8i16)reg1_m, 2);                       \
     argb0 = (v16u8)__msa_pckev_b((v16i8)reg9_m, (v16i8)reg8_m);           \
     argb1 = (v16u8)__msa_pckev_b((v16i8)reg1_m, (v16i8)reg0_m);           \
-    src0_m = (v16u8)__msa_ld_b((void*)s, 64);                            \
-    src1_m = (v16u8)__msa_ld_b((void*)s, 80);                            \
-    src2_m = (v16u8)__msa_ld_b((void*)s, 96);                            \
-    src3_m = (v16u8)__msa_ld_b((void*)s, 112);                           \
-    src4_m = (v16u8)__msa_ld_b((void*)t, 64);                            \
-    src5_m = (v16u8)__msa_ld_b((void*)t, 80);                            \
-    src6_m = (v16u8)__msa_ld_b((void*)t, 96);                            \
-    src7_m = (v16u8)__msa_ld_b((void*)t, 112);                           \
+    src0_m = (v16u8)__msa_ld_b((void*)s, 64);                             \
+    src1_m = (v16u8)__msa_ld_b((void*)s, 80);                             \
+    src2_m = (v16u8)__msa_ld_b((void*)s, 96);                             \
+    src3_m = (v16u8)__msa_ld_b((void*)s, 112);                            \
+    src4_m = (v16u8)__msa_ld_b((void*)t, 64);                             \
+    src5_m = (v16u8)__msa_ld_b((void*)t, 80);                             \
+    src6_m = (v16u8)__msa_ld_b((void*)t, 96);                             \
+    src7_m = (v16u8)__msa_ld_b((void*)t, 112);                            \
     vec2_m = (v16u8)__msa_ilvr_b((v16i8)src0_m, (v16i8)src4_m);           \
     vec3_m = (v16u8)__msa_ilvr_b((v16i8)src1_m, (v16i8)src5_m);           \
     vec4_m = (v16u8)__msa_ilvr_b((v16i8)src2_m, (v16i8)src6_m);           \

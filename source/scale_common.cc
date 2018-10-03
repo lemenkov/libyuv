@@ -542,7 +542,9 @@ void ScaleFilterCols64_C(uint8_t* dst_ptr,
 
 // Same as 8 bit arm blender but return is cast to uint16_t
 #define BLENDER(a, b, f) \
-  (uint16_t)((int)(a) + (int)((((int64_t)((f)) * ((int64_t)(b) - (int)(a))) + 0x8000) >> 16))
+  (uint16_t)(            \
+      (int)(a) +         \
+      (int)((((int64_t)((f)) * ((int64_t)(b) - (int)(a))) + 0x8000) >> 16))
 
 void ScaleFilterCols_16_C(uint16_t* dst_ptr,
                           const uint16_t* src_ptr,

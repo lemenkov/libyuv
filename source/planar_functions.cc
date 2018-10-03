@@ -3539,7 +3539,7 @@ int ARGBExtractAlpha(const uint8_t* src_argb,
 #if defined(HAS_ARGBEXTRACTALPHAROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ARGBExtractAlphaRow = IS_ALIGNED(width, 8) ? ARGBExtractAlphaRow_MMI
-                                                : ARGBExtractAlphaRow_Any_MMI;
+                                               : ARGBExtractAlphaRow_Any_MMI;
   }
 #endif
 

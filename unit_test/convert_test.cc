@@ -1506,6 +1506,78 @@ TEST_F(LibYUVConvertTest, NV12Crop) {
   free_aligned_buffer_page_end(src_y);
 }
 
+TEST_F(LibYUVConvertTest, I420CropOddY) {
+  const int SUBSAMP_X = 2;
+  const int SUBSAMP_Y = 2;
+  const int kWidth = benchmark_width_;
+  const int kHeight = benchmark_height_;
+  const int crop_y = 1;
+  const int kDestWidth = benchmark_width_;
+  const int kDestHeight = benchmark_height_ - crop_y * 2;
+  const int kStrideU = SUBSAMPLE(kWidth, SUBSAMP_X);
+  const int kStrideV = SUBSAMPLE(kWidth, SUBSAMP_X);
+  const int sample_size = kWidth * kHeight +
+                          kStrideU * SUBSAMPLE(kHeight, SUBSAMP_Y) +
+                          kStrideV * SUBSAMPLE(kHeight, SUBSAMP_Y);
+  align_buffer_page_end(src_y, sample_size);
+  uint8_t* src_u = src_y + kWidth * kHeight;
+  uint8_t* src_v = src_u + kStrideU * SUBSAMPLE(kHeight, SUBSAMP_Y);
+
+  align_buffer_page_end(dst_y, kDestWidth * kDestHeight);
+  align_buffer_page_end(dst_u, SUBSAMPLE(kDestWidth, SUBSAMP_X) *
+                                   SUBSAMPLE(kDestHeight, SUBSAMP_Y));
+  align_buffer_page_end(dst_v, SUBSAMPLE(kDestWidth, SUBSAMP_X) *
+                                   SUBSAMPLE(kDestHeight, SUBSAMP_Y));
+
+  for (int i = 0; i < kHeight * kWidth; ++i) {
+    src_y[i] = (fastrand() & 0xff);
+  }
+  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y) * kStrideU; ++i) {
+    src_u[i] = (fastrand() & 0xff);
+  }
+  for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y) * kStrideV; ++i) {
+    src_v[i] = (fastrand() & 0xff);
+  }
+  memset(dst_y, 1, kDestWidth * kDestHeight);
+  memset(dst_u, 2,
+         SUBSAMPLE(kDestWidth, SUBSAMP_X) * SUBSAMPLE(kDestHeight, SUBSAMP_Y));
+  memset(dst_v, 3,
+         SUBSAMPLE(kDestWidth, SUBSAMP_X) * SUBSAMPLE(kDestHeight, SUBSAMP_Y));
+
+  MaskCpuFlags(benchmark_cpu_info_);
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    ConvertToI420(src_y, sample_size, dst_y, kDestWidth, dst_u,
+                  SUBSAMPLE(kDestWidth, SUBSAMP_X), dst_v,
+                  SUBSAMPLE(kDestWidth, SUBSAMP_X), 0, crop_y, kWidth, kHeight,
+                  kDestWidth, kDestHeight, libyuv::kRotate0,
+                  libyuv::FOURCC_I420);
+  }
+
+  for (int i = 0; i < kDestHeight; ++i) {
+    for (int j = 0; j < kDestWidth; ++j) {
+      EXPECT_EQ(src_y[crop_y * kWidth + i * kWidth + j],
+                dst_y[i * kDestWidth + j]);
+    }
+  }
+  for (int i = 0; i < SUBSAMPLE(kDestHeight, SUBSAMP_Y); ++i) {
+    for (int j = 0; j < SUBSAMPLE(kDestWidth, SUBSAMP_X); ++j) {
+      EXPECT_EQ(src_u[(crop_y / 2 + i) * kStrideU + j],
+                dst_u[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]);
+    }
+  }
+  for (int i = 0; i < SUBSAMPLE(kDestHeight, SUBSAMP_Y); ++i) {
+    for (int j = 0; j < SUBSAMPLE(kDestWidth, SUBSAMP_X); ++j) {
+      EXPECT_EQ(src_v[(crop_y / 2 + i) * kStrideV + j],
+                dst_v[i * SUBSAMPLE(kDestWidth, SUBSAMP_X) + j]);
+    }
+  }
+
+  free_aligned_buffer_page_end(dst_y);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(src_y);
+}
+
 TEST_F(LibYUVConvertTest, TestYToARGB) {
   uint8_t y[32];
   uint8_t expectedg[32];

@@ -4595,10 +4595,10 @@ void SobelYRow_MMI(const uint8_t* src_y0,
       "daddiu    %[width],      %[width],      -8       \n\t"
       "bgtz      %[width],      1b                      \n\t"
       "nop                                              \n\t"
-      : [sobel] "=&f"(sobel), [y00] "=&f"(y00), [y01] "=&f"(y01), [y02] "=&f"(y02),
-        [y10] "=&f"(y10), [y11] "=&f"(y11), [y12] "=&f"(y12)
-      : [src_y0] "r"(src_y0), [src_y1] "r"(src_y1), [dst_sobely] "r"(dst_sobely),
-        [width] "r"(width), [zero] "f"(zero)
+      : [sobel] "=&f"(sobel), [y00] "=&f"(y00), [y01] "=&f"(y01),
+        [y02] "=&f"(y02), [y10] "=&f"(y10), [y11] "=&f"(y11), [y12] "=&f"(y12)
+      : [src_y0] "r"(src_y0), [src_y1] "r"(src_y1),
+        [dst_sobely] "r"(dst_sobely), [width] "r"(width), [zero] "f"(zero)
       : "memory");
 }
 
@@ -5720,8 +5720,7 @@ void InterpolateRow_MMI(uint8_t* dst_ptr,
         "bgtz   %[width],   1b                \n\t"
         "nop                                  \n\t"
         :
-        : [dst_ptr] "r"(dst_ptr), [src_ptr] "r"(src_ptr),
-          [width] "r"(width)
+        : [dst_ptr] "r"(dst_ptr), [src_ptr] "r"(src_ptr), [width] "r"(width)
         : "memory");
     return;
   }
@@ -5794,9 +5793,10 @@ void InterpolateRow_MMI(uint8_t* dst_ptr,
       "nop                                              \n\t"
       : [t0] "=&f"(temp), [d0] "=&f"(data[0]), [d1] "=&f"(data[1]),
         [d2] "=&f"(data[2]), [d3] "=&f"(data[3])
-      : [src_ptr] "r"(src_ptr), [src_ptr1] "r"(src_ptr1), [dst_ptr] "r"(dst_ptr),
-        [width] "r"(width), [fy1] "f"(source_y_fraction), [fy0] "f"(fy0),
-        [c0] "f"(c0), [shift] "f"(shift), [zero] "f"(zero)
+      : [src_ptr] "r"(src_ptr), [src_ptr1] "r"(src_ptr1),
+        [dst_ptr] "r"(dst_ptr), [width] "r"(width),
+        [fy1] "f"(source_y_fraction), [fy0] "f"(fy0), [c0] "f"(c0),
+        [shift] "f"(shift), [zero] "f"(zero)
       : "memory");
 }
 

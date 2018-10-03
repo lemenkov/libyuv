@@ -193,15 +193,15 @@ int ConvertToI420(const uint8_t* sample,
       int halfwidth = (src_width + 1) / 2;
       int halfheight = (abs_src_height + 1) / 2;
       if (format == FOURCC_YV12) {
-        src_v = sample + src_width * abs_src_height +
-                (halfwidth * crop_y + crop_x) / 2;
+        src_v = sample + src_width * abs_src_height + halfwidth * (crop_y / 2) +
+                (crop_x / 2);
         src_u = sample + src_width * abs_src_height +
-                halfwidth * (halfheight + crop_y / 2) + crop_x / 2;
+                halfwidth * (halfheight + (crop_y / 2)) + (crop_x / 2);
       } else {
-        src_u = sample + src_width * abs_src_height +
-                (halfwidth * crop_y + crop_x) / 2;
+        src_u = sample + src_width * abs_src_height + halfwidth * (crop_y / 2) +
+                (crop_x / 2);
         src_v = sample + src_width * abs_src_height +
-                halfwidth * (halfheight + crop_y / 2) + crop_x / 2;
+                halfwidth * (halfheight + (crop_y / 2)) + (crop_x / 2);
       }
       r = I420Rotate(src_y, src_width, src_u, halfwidth, src_v, halfwidth,
                      dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v,
@@ -216,14 +216,14 @@ int ConvertToI420(const uint8_t* sample,
       int halfwidth = (src_width + 1) / 2;
       if (format == FOURCC_YV16) {
         src_v = sample + src_width * abs_src_height + halfwidth * crop_y +
-                crop_x / 2;
+                (crop_x / 2);
         src_u = sample + src_width * abs_src_height +
-                halfwidth * (abs_src_height + crop_y) + crop_x / 2;
+                halfwidth * (abs_src_height + crop_y) + (crop_x / 2);
       } else {
         src_u = sample + src_width * abs_src_height + halfwidth * crop_y +
-                crop_x / 2;
+                (crop_x / 2);
         src_v = sample + src_width * abs_src_height +
-                halfwidth * (abs_src_height + crop_y) + crop_x / 2;
+                halfwidth * (abs_src_height + crop_y) + (crop_x / 2);
       }
       r = I422ToI420(src_y, src_width, src_u, halfwidth, src_v, halfwidth,
                      dst_y, dst_stride_y, dst_u, dst_stride_u, dst_v,

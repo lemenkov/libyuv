@@ -188,7 +188,7 @@ LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name,
         }
         return 0;
       }
-    } else if(memcmp(cpuinfo_line, "cpu model", 9) == 0) {
+    } else if (memcmp(cpuinfo_line, "cpu model", 9) == 0) {
       char* p = strstr(cpuinfo_line, "Loongson-3");
       if (p) {
         fclose(f);

@@ -186,11 +186,10 @@ static void ScalePlaneDown2_16(int src_width,
 #endif
 #if defined(HAS_SCALEROWDOWN2_16_MMI)
   if (TestCpuFlag(kCpuHasMMI) && IS_ALIGNED(dst_width, 4)) {
-    ScaleRowDown2 =
-        filtering == kFilterNone
-            ? ScaleRowDown2_16_MMI
-            : (filtering == kFilterLinear ? ScaleRowDown2Linear_16_MMI
-                                          : ScaleRowDown2Box_16_MMI);
+    ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_16_MMI
+                                             : (filtering == kFilterLinear
+                                                    ? ScaleRowDown2Linear_16_MMI
+                                                    : ScaleRowDown2Box_16_MMI);
   }
 #endif
 
@@ -319,8 +318,7 @@ static void ScalePlaneDown4_16(int src_width,
 #endif
 #if defined(HAS_SCALEROWDOWN4_16_MMI)
   if (TestCpuFlag(kCpuHasMMI) && IS_ALIGNED(dst_width, 8)) {
-    ScaleRowDown4 =
-        filtering ? ScaleRowDown4Box_16_MMI : ScaleRowDown4_16_MMI;
+    ScaleRowDown4 = filtering ? ScaleRowDown4Box_16_MMI : ScaleRowDown4_16_MMI;
   }
 #endif
 
