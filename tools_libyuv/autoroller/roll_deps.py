@@ -8,7 +8,7 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 # This is a modified copy of the script in
-# https://chromium.googlesource.com/external/webrtc/+/master/tools-webrtc/autoroller/roll_deps.py
+# https://webrtc.googlesource.com/src/+/master/tools_webrtc/autoroller/roll_deps.py
 # customized for libyuv.
 
 
@@ -109,7 +109,7 @@ def _RunCommand(command, working_dir=None, ignore_exit_code=False,
   logging.debug('CMD: %s CWD: %s', ' '.join(command), working_dir)
   env = os.environ.copy()
   if extra_env:
-    assert all(type(value) == str for value in extra_env.values())
+    assert all(isinstance(value, str) for value in extra_env.values())
     logging.debug('extra env: %s', extra_env)
     env.update(extra_env)
   p = subprocess.Popen(command, stdout=subprocess.PIPE,
@@ -397,13 +397,17 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run, rietveld_email=None):
+def _UploadCL(dry_run):
   logging.info('Uploading CL...')
   if not dry_run:
-    cmd = ['git', 'cl', 'upload', '-f']
-    if rietveld_email:
-      cmd.append('--email=%s' % rietveld_email)
-    _RunCommand(cmd, extra_env={'EDITOR': 'true'})
+    cmd = ['git', 'cl', 'upload', '--force', '--bypass-hooks']
+    extra_env = {
+        'EDITOR': 'true',
+        'SKIP_GCE_AUTH_FOR_GIT': '1',
+    }
+    stdout, stderr = _RunCommand(cmd, extra_env=extra_env)
+    logging.debug('Output from "git cl upload":\nstdout:\n%s\n\nstderr:\n%s',
+        stdout, stderr)
 
 
 def _SendToCQ(dry_run, skip_cq):
@@ -420,10 +424,6 @@ def main():
   p.add_argument('-r', '--revision',
                  help=('Chromium Git revision to roll to. Defaults to the '
                        'Chromium HEAD revision if omitted.'))
-  p.add_argument('-u', '--rietveld-email',
-                 help=('E-mail address to use for creating the CL at Rietveld'
-                       'If omitted a previously cached one will be used or an '
-                       'error will be thrown during upload.'))
   p.add_argument('--dry-run', action='store_true', default=False,
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
@@ -478,7 +478,7 @@ def main():
   _CreateRollBranch(opts.dry_run)
   UpdateDepsFile(deps_filename, current_cr_rev, new_cr_rev, changed_deps)
   _LocalCommit(commit_msg, opts.dry_run)
-  _UploadCL(opts.dry_run, opts.rietveld_email)
+  _UploadCL(opts.dry_run)
   _SendToCQ(opts.dry_run, opts.skip_cq)
   return 0
 
