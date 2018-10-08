@@ -246,8 +246,8 @@ int J420ToRGB565(const uint8_t* src_y,
                  int src_stride_u,
                  const uint8_t* src_v,
                  int src_stride_v,
-                 uint8_t* dst_frame,
-                 int dst_stride_frame,
+                 uint8_t* dst_rgb565,
+                 int dst_stride_rgb565,
                  int width,
                  int height);
 
@@ -258,8 +258,8 @@ int H420ToRGB565(const uint8_t* src_y,
                  int src_stride_u,
                  const uint8_t* src_v,
                  int src_stride_v,
-                 uint8_t* dst_frame,
-                 int dst_stride_frame,
+                 uint8_t* dst_rgb565,
+                 int dst_stride_rgb565,
                  int width,
                  int height);
 
