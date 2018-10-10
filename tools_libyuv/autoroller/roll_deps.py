@@ -22,7 +22,7 @@ import os
 import re
 import subprocess
 import sys
-import urllib
+import urllib2
 
 
 # Skip these dependencies (list without solution name prefix).
@@ -90,7 +90,7 @@ def ParseCommitPosition(commit_message):
   for line in reversed(commit_message.splitlines()):
     m = COMMIT_POSITION_RE.match(line.strip())
     if m:
-      return m.group(1)
+      return int(m.group(1))
   logging.error('Failed to parse commit position id from:\n%s\n',
                 commit_message)
   sys.exit(-1)
@@ -169,7 +169,7 @@ def ReadRemoteCrCommit(revision):
 
 def ReadUrlContent(url):
   """Connect to a remote host and read the contents. Returns a list of lines."""
-  conn = urllib.urlopen(url)
+  conn = urllib2.urlopen(url)
   try:
     return conn.readlines()
   except IOError as e:
@@ -397,24 +397,36 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run):
-  logging.info('Uploading CL...')
-  if not dry_run:
-    cmd = ['git', 'cl', 'upload', '--force', '--bypass-hooks']
-    extra_env = {
-        'EDITOR': 'true',
-        'SKIP_GCE_AUTH_FOR_GIT': '1',
-    }
-    stdout, stderr = _RunCommand(cmd, extra_env=extra_env)
-    logging.debug('Output from "git cl upload":\nstdout:\n%s\n\nstderr:\n%s',
-        stdout, stderr)
+def ChooseCQMode(skip_cq, cq_over, current_commit_pos, new_commit_pos):
+  if skip_cq:
+    return 0
+  if (new_commit_pos - current_commit_pos) < cq_over:
+    return 1
+  return 2
 
 
-def _SendToCQ(dry_run, skip_cq):
-  logging.info('Sending the CL to the CQ...')
-  if not dry_run and not skip_cq:
-    _RunCommand(['git', 'cl', 'set_commit'])
-    logging.info('Sent the CL to the CQ.')
+def _UploadCL(commit_queue_mode):
+  """Upload the committed changes as a changelist to Gerrit.
+
+  commit_queue_mode:
+    - 2: Submit to commit queue.
+    - 1: Run trybots but do not submit to CQ.
+    - 0: Skip CQ, upload only.
+  """
+  cmd = ['git', 'cl', 'upload', '--force', '--bypass-hooks', '--send-mail']
+  if commit_queue_mode >= 2:
+    logging.info('Sending the CL to the CQ...')
+    cmd.extend(['--use-commit-queue'])
+  elif commit_queue_mode >= 1:
+    logging.info('Starting CQ dry run...')
+    cmd.extend(['--cq-dry-run'])
+  extra_env = {
+      'EDITOR': 'true',
+      'SKIP_GCE_AUTH_FOR_GIT': '1',
+  }
+  stdout, stderr = _RunCommand(cmd, extra_env=extra_env)
+  logging.debug('Output from "git cl upload":\nstdout:\n%s\n\nstderr:\n%s',
+      stdout, stderr)
 
 
 def main():
@@ -432,8 +444,12 @@ def main():
                  default=False,
                  help=('Ignore if the current branch is not master or if there '
                        'are uncommitted changes (default: %(default)s).'))
-  p.add_argument('--skip-cq', action='store_true', default=False,
-                 help='Skip sending the CL to the CQ (default: %(default)s)')
+  grp = p.add_mutually_exclusive_group()
+  grp.add_argument('--skip-cq', action='store_true', default=False,
+                   help='Skip sending the CL to the CQ (default: %(default)s)')
+  grp.add_argument('--cq-over', type=int, default=1,
+                   help=('Commit queue dry run if the revision difference '
+                         'is below this number (default: %(default)s)'))
   p.add_argument('-v', '--verbose', action='store_true', default=False,
                  help='Be extra verbose in printing of log messages.')
   opts = p.parse_args()
@@ -478,8 +494,11 @@ def main():
   _CreateRollBranch(opts.dry_run)
   UpdateDepsFile(deps_filename, current_cr_rev, new_cr_rev, changed_deps)
   _LocalCommit(commit_msg, opts.dry_run)
-  _UploadCL(opts.dry_run)
-  _SendToCQ(opts.dry_run, opts.skip_cq)
+  commit_queue_mode = ChooseCQMode(opts.skip_cq, opts.cq_over,
+                                   current_commit_pos, new_commit_pos)
+  logging.info('Uploading CL...')
+  if not opts.dry_run:
+    _UploadCL(commit_queue_mode)
   return 0
 
 
