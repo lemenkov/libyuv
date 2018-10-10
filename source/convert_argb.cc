@@ -1940,7 +1940,6 @@ static int NV21ToRGB24Matrix(const uint8_t* src_y,
   return 0;
 }
 
-// TODO(fbarchard): NV12ToRAW can be implemented by mirrored matrix.
 // Convert NV12 to RGB24.
 LIBYUV_API
 int NV12ToRGB24(const uint8_t* src_y,
@@ -1968,6 +1967,36 @@ int NV21ToRGB24(const uint8_t* src_y,
                 int height) {
   return NV21ToRGB24Matrix(src_y, src_stride_y, src_vu, src_stride_vu,
                            dst_rgb24, dst_stride_rgb24, &kYuvI601Constants,
+                           width, height);
+}
+
+// Convert NV12 to RAW.
+LIBYUV_API
+int NV12ToRAW(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_uv,
+              int src_stride_uv,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
+              int width,
+              int height) {
+  return NV21ToRGB24Matrix(src_y, src_stride_y, src_uv, src_stride_uv,
+                           dst_raw, dst_stride_raw, &kYvuI601Constants,
+                           width, height);
+}
+
+// Convert NV21 to RAW.
+LIBYUV_API
+int NV21ToRAW(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_vu,
+              int src_stride_vu,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
+              int width,
+              int height) {
+  return NV12ToRGB24Matrix(src_y, src_stride_y, src_vu, src_stride_vu,
+                           dst_raw, dst_stride_raw, &kYvuI601Constants,
                            width, height);
 }
 
