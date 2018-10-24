@@ -284,8 +284,9 @@ extern "C" {
     (defined(CLANG_HAS_AVX2) || defined(GCC_HAS_AVX2))
 #define HAS_ABGRTOAR30ROW_AVX2
 #define HAS_ARGBTOAR30ROW_AVX2
-#define HAS_ARGBTORAWROW_AVX2
-#define HAS_ARGBTORGB24ROW_AVX2
+// Fix AVX2 b:118386049 segfault
+//#define HAS_ARGBTORAWROW_AVX2
+//#define HAS_ARGBTORGB24ROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
@@ -303,7 +304,8 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_X86) &&                                       \
     (defined(__x86_64__) || (defined(__i386__) && !defined(_MSC_VER))) && \
     (defined(CLANG_HAS_AVX512))
-#define HAS_ARGBTORGB24ROW_AVX512VBMI
+// Fix AVX2 b:118386049 segfault
+//#define HAS_ARGBTORGB24ROW_AVX512VBMI
 #endif
 
 // The following are available on Neon platforms:
