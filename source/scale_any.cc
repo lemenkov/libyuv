@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>  // For memset/memcpy
+
 #include "libyuv/scale.h"
 #include "libyuv/scale_row.h"
 
@@ -499,6 +501,45 @@ SDAANY(ScaleARGBRowDownEvenBox_Any_MMI,
        1)
 #endif
 
+#ifdef SASIMDONLY
+// This also works and uses memcpy and SIMD instead of C, but is slower on ARM
+
+// Add rows box filter scale down.  Using macro from row_any
+#define SAROW(NAMEANY, ANY_SIMD, SBPP, BPP, MASK)                      \
+  void NAMEANY(const uint8_t* src_ptr, uint16_t* dst_ptr, int width) { \
+    SIMD_ALIGNED(uint16_t dst_temp[32]);                               \
+    SIMD_ALIGNED(uint8_t src_temp[32]);                                \
+    memset(dst_temp, 0, 32 * 2); /* for msan */                        \
+    int r = width & MASK;                                              \
+    int n = width & ~MASK;                                             \
+    if (n > 0) {                                                       \
+      ANY_SIMD(src_ptr, dst_ptr, n);                                   \
+    }                                                                  \
+    memcpy(src_temp, src_ptr + n * SBPP, r * SBPP);                    \
+    memcpy(dst_temp, dst_ptr + n * BPP, r * BPP);                      \
+    ANY_SIMD(src_temp, dst_temp, MASK + 1);                            \
+    memcpy(dst_ptr + n * BPP, dst_temp, r * BPP);                      \
+  }
+
+#ifdef HAS_SCALEADDROW_SSE2
+SAROW(ScaleAddRow_Any_SSE2, ScaleAddRow_SSE2, 1, 2, 15)
+#endif
+#ifdef HAS_SCALEADDROW_AVX2
+SAROW(ScaleAddRow_Any_AVX2, ScaleAddRow_AVX2, 1, 2, 31)
+#endif
+#ifdef HAS_SCALEADDROW_NEON
+SAROW(ScaleAddRow_Any_NEON, ScaleAddRow_NEON, 1, 2, 15)
+#endif
+#ifdef HAS_SCALEADDROW_MSA
+SAROW(ScaleAddRow_Any_MSA, ScaleAddRow_MSA, 1, 2, 15)
+#endif
+#ifdef HAS_SCALEADDROW_MMI
+SAROW(ScaleAddRow_Any_MMI, ScaleAddRow_MMI, 1, 2, 7)
+#endif
+#undef SAANY
+
+#else
+
 // Add rows box filter scale down.
 #define SAANY(NAMEANY, SCALEADDROW_SIMD, SCALEADDROW_C, MASK)              \
   void NAMEANY(const uint8_t* src_ptr, uint16_t* dst_ptr, int src_width) { \
@@ -525,6 +566,8 @@ SAANY(ScaleAddRow_Any_MSA, ScaleAddRow_MSA, ScaleAddRow_C, 15)
 SAANY(ScaleAddRow_Any_MMI, ScaleAddRow_MMI, ScaleAddRow_C, 7)
 #endif
 #undef SAANY
+
+#endif  // SASIMDONLY
 
 #ifdef __cplusplus
 }  // extern "C"

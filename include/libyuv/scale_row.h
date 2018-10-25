@@ -58,6 +58,7 @@ extern "C" {
     (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
 #define HAS_FIXEDDIV1_X86
 #define HAS_FIXEDDIV_X86
+#define HAS_SCALEADDROW_SSE2
 #define HAS_SCALEARGBCOLS_SSE2
 #define HAS_SCALEARGBCOLSUP2_SSE2
 #define HAS_SCALEARGBFILTERCOLS_SSSE3
@@ -69,7 +70,6 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_SSSE3
 #define HAS_SCALEROWDOWN38_SSSE3
 #define HAS_SCALEROWDOWN4_SSSE3
-#define HAS_SCALEADDROW_SSE2
 #endif
 
 // The following are available on all x86 platforms, but
@@ -86,7 +86,9 @@ extern "C" {
 // The following are available on Neon platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__ARM_NEON__) || defined(LIBYUV_NEON) || defined(__aarch64__))
+#define HAS_SCALEADDROW_NEON
 #define HAS_SCALEARGBCOLS_NEON
+#define HAS_SCALEARGBFILTERCOLS_NEON
 #define HAS_SCALEARGBROWDOWN2_NEON
 #define HAS_SCALEARGBROWDOWNEVEN_NEON
 #define HAS_SCALEFILTERCOLS_NEON
@@ -94,7 +96,6 @@ extern "C" {
 #define HAS_SCALEROWDOWN34_NEON
 #define HAS_SCALEROWDOWN38_NEON
 #define HAS_SCALEROWDOWN4_NEON
-#define HAS_SCALEARGBFILTERCOLS_NEON
 #endif
 
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -113,18 +114,18 @@ extern "C" {
 #if !defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)
 #define HAS_FIXEDDIV1_MIPS
 #define HAS_FIXEDDIV_MIPS
+#define HAS_SCALEADDROW_16_MMI
+#define HAS_SCALEADDROW_MMI
 #define HAS_SCALEARGBCOLS_MMI
 #define HAS_SCALEARGBCOLSUP2_MMI
 #define HAS_SCALEARGBROWDOWN2_MMI
 #define HAS_SCALEARGBROWDOWNEVEN_MMI
-#define HAS_SCALEROWDOWN2_MMI
-#define HAS_SCALEROWDOWN4_MMI
-#define HAS_SCALEADDROW_MMI
-#define HAS_SCALEADDROW_16_MMI
-#define HAS_SCALEROWDOWN2_16_MMI
-#define HAS_SCALEROWDOWN4_16_MMI
-#define HAS_SCALECOLS_MMI
 #define HAS_SCALECOLS_16_MMI
+#define HAS_SCALECOLS_MMI
+#define HAS_SCALEROWDOWN2_16_MMI
+#define HAS_SCALEROWDOWN2_MMI
+#define HAS_SCALEROWDOWN4_16_MMI
+#define HAS_SCALEROWDOWN4_MMI
 #endif
 
 // Scale ARGB vertically with bilinear interpolation.

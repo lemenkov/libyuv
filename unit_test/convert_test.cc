@@ -1693,7 +1693,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 
@@ -1727,7 +1727,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToI420_NV21) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 
@@ -1786,7 +1786,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_420) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 
@@ -1816,7 +1816,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_422) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 
@@ -1846,7 +1846,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_400) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 
@@ -1876,7 +1876,7 @@ TEST_F(LibYUVConvertTest, TestMJPGToNV21_444) {
   EXPECT_EQ(0, ret);
 
   int half_width = (width + 1) / 2;
-  int half_height = (height + 1)/ 2;
+  int half_height = (height + 1) / 2;
   int benchmark_iterations = benchmark_iterations_ * benchmark_width_ *
                              benchmark_height_ / (width * height);
 

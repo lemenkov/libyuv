@@ -1980,9 +1980,8 @@ int NV12ToRAW(const uint8_t* src_y,
               int dst_stride_raw,
               int width,
               int height) {
-  return NV21ToRGB24Matrix(src_y, src_stride_y, src_uv, src_stride_uv,
-                           dst_raw, dst_stride_raw, &kYvuI601Constants,
-                           width, height);
+  return NV21ToRGB24Matrix(src_y, src_stride_y, src_uv, src_stride_uv, dst_raw,
+                           dst_stride_raw, &kYvuI601Constants, width, height);
 }
 
 // Convert NV21 to RAW.
@@ -1995,9 +1994,8 @@ int NV21ToRAW(const uint8_t* src_y,
               int dst_stride_raw,
               int width,
               int height) {
-  return NV12ToRGB24Matrix(src_y, src_stride_y, src_vu, src_stride_vu,
-                           dst_raw, dst_stride_raw, &kYvuI601Constants,
-                           width, height);
+  return NV12ToRGB24Matrix(src_y, src_stride_y, src_vu, src_stride_vu, dst_raw,
+                           dst_stride_raw, &kYvuI601Constants, width, height);
 }
 
 // Convert M420 to ARGB.
