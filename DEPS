@@ -227,6 +227,16 @@ deps = {
       'condition': 'checkout_android',
       'dep_type': 'cipd',
   },
+  'src/third_party/proguard': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/proguard',
+              'version': '3bd778c422ea5496de2ef25c007a517dbb5ce5ca',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
   'src/third_party/requests/src': {
     'url': Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
     'condition': 'checkout_android',
@@ -987,6 +997,4 @@ hooks = [
 recursedeps = [
   # buildtools provides clang_format, libc++, and libc++abi.
   'src/buildtools',
-  # android_tools manages the NDK.
-  'src/third_party/android_tools',
 ]
