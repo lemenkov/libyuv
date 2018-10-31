@@ -375,11 +375,13 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int height);
 
 #ifdef HAVE_JPEG
+// src_mjpg is pointer to raw jpeg bytes in memory
+// src_size_mjpg is size of jpeg in bytes
 // src_width/height provided by capture.
 // dst_width/height for clipping determine final size.
 LIBYUV_API
-int MJPGToI420(const uint8_t* sample,
-               size_t sample_size,
+int MJPGToI420(const uint8_t* src_mjpg,
+               size_t src_size_mjpg,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_u,
@@ -393,8 +395,8 @@ int MJPGToI420(const uint8_t* sample,
 
 // JPEG to NV21
 LIBYUV_API
-int MJPGToNV21(const uint8_t* sample,
-               size_t sample_size,
+int MJPGToNV21(const uint8_t* src_mjpg,
+               size_t src_size_mjpg,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_vu,
@@ -406,8 +408,8 @@ int MJPGToNV21(const uint8_t* sample,
 
 // Query size of MJPG in pixels.
 LIBYUV_API
-int MJPGSize(const uint8_t* sample,
-             size_t sample_size,
+int MJPGSize(const uint8_t* src_mjpg,
+             size_t src_size_mjpg,
              int* width,
              int* height);
 #endif

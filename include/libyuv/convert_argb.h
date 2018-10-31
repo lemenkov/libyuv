@@ -627,8 +627,8 @@ int AR30ToAB30(const uint8_t* src_ar30,
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.
 LIBYUV_API
-int MJPGToARGB(const uint8_t* sample,
-               size_t sample_size,
+int MJPGToARGB(const uint8_t* src_mjpg,
+               size_t src_size_mjpg,
                uint8_t* dst_argb,
                int dst_stride_argb,
                int src_width,
