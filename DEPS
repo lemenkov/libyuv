@@ -110,6 +110,16 @@ deps = {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + '130499e25286f4d56acafa252fee09f3cc595c49',
     'condition': 'checkout_android',
   },
+  'src/third_party/android_build_tools/aapt2': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_tools_aapt2',
+              'version': 'version:3.2.0-alpha18-4804415-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
   'src/third_party/byte_buddy': {
       'packages': [
           {
