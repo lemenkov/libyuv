@@ -1,7 +1,7 @@
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  'chromium_revision': 'af6fc95fe355184662cc07ef315821f190533268',
-  'swarming_revision': '7f463e66e1c4bb830ef3de9d046aa227d28e1b00',
+  'chromium_revision': '1ae58559b7be51433a031e81abd400cadf373767',
+  'swarming_revision': '157bec8a25cc4ebd6a16052510d08b05b6102aad',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling lss
   # and whatever else without interference from each other.
@@ -9,34 +9,34 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'b81a9c76c982129c6ec624367bcb0c0dca4a49d3',
+  'catapult_revision': 'eee0f6ad0df532b4ba3eee2bf04a5a155817586c',
 }
 
 deps = {
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '1caa03da844c72496e733bd51570eb1467b9b37c',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '854ff0514a56dde0b7fc27a7a990c56cbd5f3fa7',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '13a00f110ef910a25763346d6538b60f12845656',
+    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '04161ec8d7c781e4498c699254c69ba0dd959fde',
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '84700d98096f8c8986ef2538bb58dd61427f04c4',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '7d3e0c43d6f1de35b7fab6b54b89b8ea91d37b67',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'e6fa7d7040e57ca1ab3b9dd95051c6219ccabc86',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'ebb1b22c255852aef5c8052d0331b8d58c2d92f2',
   'src/third_party/catapult':
     Var('chromium_git') + '/catapult.git' + '@' + Var('catapult_revision'),
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/freetype/src':
-    Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + 'fb0d66d04c4dd8d7f9604af1a6001b2737cb5098',
+    Var('chromium_git') + '/chromium/src/third_party/freetype2.git' + '@' + '3dd4e76b19f3cd4f706c3455d6ae01765d07eee5',
   'src/third_party/googletest/src':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '879ac092fde0a19e1b3a61b2546b2a422b1528bc',
   'src/third_party/harfbuzz-ng/src':
-    Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '1f14107f71a6c3da8270ed21c3588f945fa91733',
+    Var('chromium_git') + '/external/github.com/harfbuzz/harfbuzz.git' + '@' + '574d888c8a409295a952361a39c8e83a52a0fc3d',
   'src/third_party/libjpeg_turbo':
     Var('chromium_git') + '/chromium/deps/libjpeg_turbo.git' + '@' + '61a2bbaa9aec89cb2c882d87ace6aba9aee49bb9',
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'e11649fb4c9294e584741a16ff81e7baad22a844',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '94c5e5f5d952f02064fec937188a624b55dc2422',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
@@ -69,7 +69,7 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/base': {
-    'url': Var('chromium_git') + '/chromium/src/base' + '@' + 'd22bc40061733370ed1bf2a7c57ca0d61d9ca257',
+    'url': Var('chromium_git') + '/chromium/src/base' + '@' + '295ee1c89adb91e19157480896ed884ff6c0f77d',
     'condition': 'checkout_android',
   },
   'src/third_party/bazel': {
@@ -173,7 +173,7 @@ deps = {
       'dep_type': 'cipd',
   },
   'src/third_party/icu': {
-    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '45f655f2feb7069a7b9b47d1b1a596807bfd4220',
+    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '407b39301e71006b68bd38e770f35d32398a7b14',
   },
   'src/third_party/icu4j': {
       'packages': [
@@ -292,7 +292,7 @@ deps = {
 
   # iOS deps:
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'ad120aa0d2c2d02fd1b1fdbfe2a7ff951fba171b',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'e217e3709fdf67ac304fcdd4926ec9e7174766f2',
     'condition': 'checkout_ios'
   },
 
