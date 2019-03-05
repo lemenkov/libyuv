@@ -880,6 +880,76 @@ int UYVYToI420(const uint8_t* src_uyvy,
   return 0;
 }
 
+// Convert AYUV to NV21.
+LIBYUV_API
+int AYUVToNV21(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
+               int width,
+               int height) {
+  int y;
+  void (*AYUVToVURow)(const uint8_t* src_ayuv, int src_stride_ayuv,
+                      uint8_t* dst_vu, int width) =
+      AYUVToVURow_C;
+  void (*AYUVToYRow)(const uint8_t* src_ayuv, uint8_t* dst_y, int width) =
+      AYUVToYRow_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ayuv = src_ayuv + (height - 1) * src_stride_ayuv;
+    src_stride_ayuv = -src_stride_ayuv;
+  }
+// place holders for future intel code
+#if defined(HAS_AYUVTOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    AYUVToVURow = AYUVToVURow_Any_SSE2;
+    AYUVToYRow = AYUVToYRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      AYUVToVURow = AYUVToVURow_SSE2;
+      AYUVToYRow = AYUVToYRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    AYUVToVURow = AYUVToVURow_Any_AVX2;
+    AYUVToYRow = AYUVToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      AYUVToVURow = AYUVToVURow_AVX2;
+      AYUVToYRow = AYUVToYRow_AVX2;
+    }
+  }
+#endif
+
+#if defined(HAS_AYUVTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AYUVToYRow = AYUVToYRow_Any_NEON;
+    AYUVToVURow = AYUVToVURow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      AYUVToYRow = AYUVToYRow_NEON;
+      AYUVToVURow = AYUVToVURow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height - 1; y += 2) {
+    AYUVToVURow(src_ayuv, src_stride_ayuv, dst_vu, width);
+    AYUVToYRow(src_ayuv, dst_y, width);
+    AYUVToYRow(src_ayuv + src_stride_ayuv, dst_y + dst_stride_y, width);
+    src_ayuv += src_stride_ayuv * 2;
+    dst_y += dst_stride_y * 2;
+    dst_vu += dst_stride_vu;
+  }
+  if (height & 1) {
+    AYUVToVURow(src_ayuv, 0, dst_vu, width);
+    AYUVToYRow(src_ayuv, dst_y, width);
+  }
+  return 0;
+}
+
 // Convert ARGB to I420.
 LIBYUV_API
 int ARGBToI420(const uint8_t* src_argb,
@@ -2164,6 +2234,7 @@ int Android420ToI420(const uint8_t* src_y,
   }
   return 0;
 }
+
 
 #ifdef __cplusplus
 }  // extern "C"

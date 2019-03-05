@@ -295,6 +295,8 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+// TODO(fbarchard): Fix AVX2 version of YUV24
+// #define HAS_NV21TOYUV24ROW_AVX2
 #endif
 
 // The following are available for AVX512 clang x86 platforms:
@@ -330,6 +332,8 @@ extern "C" {
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
 #define HAS_ARGBTOYROW_NEON
+#define HAS_AYUVTOVUROW_NEON
+#define HAS_AYUVTOYROW_NEON
 #define HAS_BGRATOUVROW_NEON
 #define HAS_BGRATOYROW_NEON
 #define HAS_BYTETOFLOATROW_NEON
@@ -355,6 +359,7 @@ extern "C" {
 #define HAS_NV12TORGB565ROW_NEON
 #define HAS_NV21TOARGBROW_NEON
 #define HAS_NV21TORGB24ROW_NEON
+#define HAS_NV21TOYUV24ROW_NEON
 #define HAS_RAWTOARGBROW_NEON
 #define HAS_RAWTORGB24ROW_NEON
 #define HAS_RAWTOUVROW_NEON
@@ -402,6 +407,7 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#define HAS_FLOATDIVTOBYTEROW_NEON
 #define HAS_SCALESUMSAMPLES_NEON
 #endif
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -814,6 +820,10 @@ void NV21ToRGB24Row_NEON(const uint8_t* src_y,
                          const uint8_t* src_vu,
                          uint8_t* dst_rgb24,
                          const struct YuvConstants* yuvconstants,
+                         int width);
+void NV21ToYUV24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_yuv24,
                          int width);
 void YUY2ToARGBRow_NEON(const uint8_t* src_yuy2,
                         uint8_t* dst_argb,
@@ -2183,6 +2193,10 @@ void NV21ToRGB24Row_C(const uint8_t* src_y,
                       uint8_t* rgb_buf,
                       const struct YuvConstants* yuvconstants,
                       int width);
+void NV21ToYUV24Row_C(const uint8_t* src_y,
+                      const uint8_t* src_vu,
+                      uint8_t* dst_yuv24,
+                      int width);
 void YUY2ToARGBRow_C(const uint8_t* src_yuy2,
                      uint8_t* rgb_buf,
                      const struct YuvConstants* yuvconstants,
@@ -2348,6 +2362,10 @@ void NV21ToRGB24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_vu,
                          uint8_t* dst_rgb24,
                          const struct YuvConstants* yuvconstants,
+                         int width);
+void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_yuv24,
                          int width);
 void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
                           const uint8_t* src_uv,
@@ -2553,6 +2571,10 @@ void NV21ToRGB24Row_Any_AVX2(const uint8_t* y_buf,
                              const uint8_t* uv_buf,
                              uint8_t* dst_ptr,
                              const struct YuvConstants* yuvconstants,
+                             int width);
+void NV21ToYUV24Row_Any_AVX2(const uint8_t* src_y,
+                             const uint8_t* src_vu,
+                             uint8_t* dst_yuv24,
                              int width);
 void NV12ToRGB565Row_Any_SSSE3(const uint8_t* y_buf,
                                const uint8_t* uv_buf,
@@ -3027,6 +3049,10 @@ void NV21ToRGB24Row_Any_NEON(const uint8_t* y_buf,
                              uint8_t* dst_ptr,
                              const struct YuvConstants* yuvconstants,
                              int width);
+void NV21ToYUV24Row_Any_NEON(const uint8_t* src_y,
+                             const uint8_t* src_vu,
+                             uint8_t* dst_yuv24,
+                             int width);
 void NV12ToRGB565Row_Any_NEON(const uint8_t* y_buf,
                               const uint8_t* uv_buf,
                               uint8_t* dst_ptr,
@@ -3344,6 +3370,19 @@ void UYVYToUV422Row_Any_MMI(const uint8_t* src_ptr,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
                             int width);
+
+void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
+void AYUVToVURow_C(const uint8_t* src_ayuv, int stride_ayuv,
+                   uint8_t* dst_vu,
+                   int width);
+void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
+void AYUVToVURow_NEON(const uint8_t* src_ayuv, int stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width);
+void AYUVToYRow_Any_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
+void AYUVToVURow_Any_NEON(const uint8_t* src_ayuv, int stride_ayuv,
+                          uint8_t* dst_vu,
+                          int width);
 
 void I422ToYUY2Row_C(const uint8_t* src_y,
                      const uint8_t* src_u,
@@ -3959,6 +3998,18 @@ float ScaleSumSamples_NEON(const float* src,
                            int width);
 void ScaleSamples_C(const float* src, float* dst, float scale, int width);
 void ScaleSamples_NEON(const float* src, float* dst, float scale, int width);
+
+void FloatDivToByteRow_C(const float* src_weights,
+                         const float* src_values,
+                         uint8_t* dst_out,
+                         uint8_t* dst_mask,
+                         int width);
+void FloatDivToByteRow_NEON(const float* src_weights,
+                            const float* src_values,
+                            uint8_t* dst_out,
+                            uint8_t* dst_mask,
+                            int width);
+
 
 #ifdef __cplusplus
 }  // extern "C"

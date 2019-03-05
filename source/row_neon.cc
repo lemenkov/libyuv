@@ -2685,6 +2685,77 @@ void ByteToFloatRow_NEON(const uint8_t* src,
       : "cc", "memory", "q1", "q2", "q3");
 }
 
+// Convert biplanar NV21 to packed YUV24
+void NV21ToYUV24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                         uint8_t* dst_yuv24,
+                         int width) {
+  asm volatile (
+  "1:                                          \n"
+    "vld1.8    {q2}, [%0]!                     \n"  // load 16 Y values
+    "vld2.8    {d0, d2}, [%1]!                 \n"  // load 8 VU values
+    "vmov      d1, d0                          \n"
+    "vzip.u8   d0, d1                          \n"  // VV
+    "vmov      d3, d2                          \n"
+    "vzip.u8   d2, d3                          \n"  // UU
+    "subs      %3, %3, #16                     \n"  // 16 pixels per loop
+    "vst3.8    {d0, d2, d4}, [%2]!             \n"  // store 16 YUV pixels
+    "vst3.8    {d1, d3, d5}, [%2]!             \n"
+    "bgt        1b                             \n"
+    : "+r"(src_y),      // %0
+      "+r"(src_vu),     // %1
+      "+r"(dst_yuv24),  // %2
+      "+r"(width)       // %3
+    :
+    : "cc", "memory", "q0", "q1", "q2");
+}
+
+void AYUVToVURow_NEON(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width) {
+  asm volatile (
+    "add        %1, %0, %1                     \n"  // src_stride + src_AYUV
+    "1:                                        \n"
+    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 AYUV pixels.
+    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 AYUV pixels.
+    "vpaddl.u8  q0, q0                         \n"  // V 16 bytes -> 8 shorts.
+    "vpaddl.u8  q1, q1                         \n"  // U 16 bytes -> 8 shorts.
+    "vld4.8     {d8, d10, d12, d14}, [%1]!     \n"  // load 8 more AYUV pixels.
+    "vld4.8     {d9, d11, d13, d15}, [%1]!     \n"  // load last 8 AYUV pixels.
+    "vpadal.u8  q0, q4                         \n"  // B 16 bytes -> 8 shorts.
+    "vpadal.u8  q1, q5                         \n"  // G 16 bytes -> 8 shorts.
+    "vqrshrun.s16 d0, q0, #2                   \n"  // 2x2 average
+    "vqrshrun.s16 d1, q1, #2                   \n"
+    "subs       %3, %3, #16                    \n"  // 16 processed per loop.
+    "vst2.8     {d0, d1}, [%2]!                \n"  // store 8 pixels VU.
+    "bgt        1b                             \n"
+  : "+r"(src_ayuv),        // %0
+    "+r"(src_stride_ayuv), // %1
+    "+r"(dst_vu),          // %2
+    "+r"(width)            // %3
+  :
+  : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7"
+  );
+}
+
+// Copy row of AYUV Y's into Y.
+// Similar to ARGBExtractAlphaRow_NEON
+void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  asm volatile (
+  "1:                                          \n"
+    "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 AYUV pixels
+    "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 AYUV pixels
+    "subs       %2, %2, #16                    \n"  // 16 processed per loop
+    "vst1.8     {q2}, [%1]!                    \n"  // store 16 Y's.
+    "bgt       1b                              \n"
+   : "+r"(src_ayuv),   // %0
+      "+r"(dst_y),     // %1
+      "+r"(width)      // %2
+    :
+    : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__ARM_NEON__)..
 
 #ifdef __cplusplus

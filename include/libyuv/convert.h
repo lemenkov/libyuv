@@ -226,6 +226,17 @@ int UYVYToI420(const uint8_t* src_uyvy,
                int width,
                int height);
 
+// Convert AYUV to NV21.
+LIBYUV_API
+int AYUVToNV21(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
+               int width,
+               int height);
+
 // Convert M420 to I420.
 LIBYUV_API
 int M420ToI420(const uint8_t* src_m420,
@@ -375,13 +386,11 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int height);
 
 #ifdef HAVE_JPEG
-// src_mjpg is pointer to raw jpeg bytes in memory
-// src_size_mjpg is size of jpeg in bytes
 // src_width/height provided by capture.
 // dst_width/height for clipping determine final size.
 LIBYUV_API
-int MJPGToI420(const uint8_t* src_mjpg,
-               size_t src_size_mjpg,
+int MJPGToI420(const uint8_t* sample,
+               size_t sample_size,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_u,
@@ -395,8 +404,8 @@ int MJPGToI420(const uint8_t* src_mjpg,
 
 // JPEG to NV21
 LIBYUV_API
-int MJPGToNV21(const uint8_t* src_mjpg,
-               size_t src_size_mjpg,
+int MJPGToNV21(const uint8_t* sample,
+               size_t sample_size,
                uint8_t* dst_y,
                int dst_stride_y,
                uint8_t* dst_vu,
@@ -408,8 +417,8 @@ int MJPGToNV21(const uint8_t* src_mjpg,
 
 // Query size of MJPG in pixels.
 LIBYUV_API
-int MJPGSize(const uint8_t* src_mjpg,
-             size_t src_size_mjpg,
+int MJPGSize(const uint8_t* sample,
+             size_t sample_size,
              int* width,
              int* height);
 #endif

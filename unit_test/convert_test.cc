@@ -680,7 +680,7 @@ TESTPLANARTOB(H420, 2, 2, AR30, 4, 4, 1)
 TESTQPLANARTOB(I420Alpha, 2, 2, ARGB, 4, 4, 1, 2)
 TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1, 2)
 
-#define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,       \
+#define TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,\
                          W1280, DIFF, N, NEG, OFF)                             \
   TEST_F(LibYUVConvertTest, FMT_PLANAR##To##FMT_B##N) {                        \
     const int kWidth = ((W1280) > 0) ? (W1280) : 1;                            \
@@ -716,9 +716,9 @@ TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1, 2)
     align_buffer_page_end(dst_argb32_opt, kWidth * 4 * kHeight);               \
     memset(dst_argb32_c, 2, kWidth * 4 * kHeight);                             \
     memset(dst_argb32_opt, 102, kWidth * 4 * kHeight);                         \
-    FMT_B##ToARGB(dst_argb_c, kStrideB, dst_argb32_c, kWidth * 4, kWidth,      \
+    FMT_C##ToARGB(dst_argb_c, kStrideB, dst_argb32_c, kWidth * 4, kWidth,      \
                   kHeight);                                                    \
-    FMT_B##ToARGB(dst_argb_opt, kStrideB, dst_argb32_opt, kWidth * 4, kWidth,  \
+    FMT_C##ToARGB(dst_argb_opt, kStrideB, dst_argb32_opt, kWidth * 4, kWidth,  \
                   kHeight);                                                    \
     int max_diff = 0;                                                          \
     for (int i = 0; i < kHeight; ++i) {                                        \
@@ -740,25 +740,27 @@ TESTQPLANARTOB(I420Alpha, 2, 2, ABGR, 4, 4, 1, 2)
     free_aligned_buffer_page_end(dst_argb32_opt);                              \
   }
 
-#define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B, DIFF) \
-  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+#define TESTBIPLANARTOB(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C,       \
+                        BPP_B, DIFF)                                          \
+  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,     \
                    benchmark_width_ - 4, DIFF, _Any, +, 0)                    \
-  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,     \
                    benchmark_width_, DIFF, _Unaligned, +, 1)                  \
-  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,     \
                    benchmark_width_, DIFF, _Invert, -, 0)                     \
-  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, BPP_B,            \
+  TESTBIPLANARTOBI(FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y, FMT_B, FMT_C, BPP_B,     \
                    benchmark_width_, DIFF, _Opt, +, 0)
 
-TESTBIPLANARTOB(NV12, 2, 2, ARGB, 4, 2)
-TESTBIPLANARTOB(NV21, 2, 2, ARGB, 4, 2)
-TESTBIPLANARTOB(NV12, 2, 2, ABGR, 4, 2)
-TESTBIPLANARTOB(NV21, 2, 2, ABGR, 4, 2)
-TESTBIPLANARTOB(NV12, 2, 2, RGB24, 3, 2)
-TESTBIPLANARTOB(NV21, 2, 2, RGB24, 3, 2)
-TESTBIPLANARTOB(NV12, 2, 2, RAW, 3, 2)
-TESTBIPLANARTOB(NV21, 2, 2, RAW, 3, 2)
-TESTBIPLANARTOB(NV12, 2, 2, RGB565, 2, 9)
+TESTBIPLANARTOB(NV12, 2, 2, ARGB, ARGB, 4, 2)
+TESTBIPLANARTOB(NV21, 2, 2, ARGB, ARGB, 4, 2)
+TESTBIPLANARTOB(NV12, 2, 2, ABGR, ABGR, 4, 2)
+TESTBIPLANARTOB(NV21, 2, 2, ABGR, ABGR, 4, 2)
+TESTBIPLANARTOB(NV12, 2, 2, RGB24, RGB24, 3, 2)
+TESTBIPLANARTOB(NV21, 2, 2, RGB24, RGB24, 3, 2)
+TESTBIPLANARTOB(NV12, 2, 2, RAW, RAW, 3, 2)
+TESTBIPLANARTOB(NV21, 2, 2, RAW, RAW, 3, 2)
+TESTBIPLANARTOB(NV12, 2, 2, RGB565, RGB565, 2, 9)
+TESTBIPLANARTOB(NV21, 2, 2, YUV24, RAW, 3, 2)
 
 #ifdef DO_THREE_PLANES
 // Do 3 allocations for yuv.  conventional but slower.
@@ -978,6 +980,7 @@ TESTATOBIPLANAR(ARGB, 1, 4, NV12, 2, 2)
 TESTATOBIPLANAR(ARGB, 1, 4, NV21, 2, 2)
 TESTATOBIPLANAR(YUY2, 2, 4, NV12, 2, 2)
 TESTATOBIPLANAR(UYVY, 2, 4, NV12, 2, 2)
+TESTATOBIPLANAR(AYUV, 1, 4, NV21, 2, 2)
 
 #define TESTATOBI(FMT_A, BPP_A, STRIDE_A, HEIGHT_A, FMT_B, BPP_B, STRIDE_B,  \
                   HEIGHT_B, W1280, DIFF, N, NEG, OFF)                        \

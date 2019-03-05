@@ -2876,6 +2876,113 @@ void GaussRow_NEON(const uint32_t* src, uint16_t* dst, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
+// Convert biplanar NV21 to packed YUV24
+void NV21ToYUV24Row_NEON(const uint8_t* src_y,
+                         const uint8_t* src_vu,
+                          uint8_t* dst_yuv24,
+                          int width) {
+  asm volatile (
+  "1:                                          \n"
+    "ld1        {v2.16b}, [%0], #16            \n"  // load 16 Y values
+    "ld2        {v0.8b, v1.8b}, [%1], #16      \n"  // load 8 VU values
+    "zip1       v0.16b, v0.16b, v0.16b         \n"  // replicate V values
+    "zip1       v1.16b, v1.16b, v1.16b         \n"  // replicate U values
+    "subs       %w3, %w3, #16                  \n"  // 16 pixels per loop
+    "st3        {v0.16b,v1.16b,v2.16b}, [%2], #48 \n"  // store 16 YUV pixels
+    "b.gt       1b                             \n"
+    : "+r"(src_y),      // %0
+      "+r"(src_vu),     // %1
+      "+r"(dst_yuv24),  // %2
+      "+r"(width)       // %3
+    :
+    : "cc", "memory", "v0", "v1", "v2");
+}
+
+void AYUVToVURow_NEON(const uint8_t* src_ayuv,
+                      int src_stride_ayuv,
+                      uint8_t* dst_vu,
+                      int width) {
+  const uint8_t* src_ayuv_1 = src_ayuv + src_stride_ayuv;
+  asm volatile(
+
+  "1:                                          \n"
+    "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels.
+    "uaddlp     v0.8h, v0.16b                  \n"  // V 16 bytes -> 8 shorts.
+    "uaddlp     v1.8h, v1.16b                  \n"  // U 16 bytes -> 8 shorts.
+    "ld4        {v4.16b,v5.16b,v6.16b,v7.16b}, [%1], #64 \n"  // load next 16
+    "uadalp     v0.8h, v4.16b                  \n"  // V 16 bytes -> 8 shorts.
+    "uadalp     v1.8h, v5.16b                  \n"  // U 16 bytes -> 8 shorts.
+    "uqrshrn    v0.8b, v0.8h, #2               \n"  // 2x2 average
+    "uqrshrn    v1.8b, v1.8h, #2               \n"
+    "subs       %w3, %w3, #16                  \n"  // 16 processed per loop.
+    "st2        {v0.8b,v1.8b}, [%2], #16       \n"  // store 8 pixels VU.
+    "b.gt       1b                             \n"
+  : "+r"(src_ayuv),  // %0
+    "+r"(src_ayuv_1),  // %1
+    "+r"(dst_vu),     // %2
+    "+r"(width)        // %3
+  :
+  : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7"
+  );
+}
+
+// Copy row of AYUV Y's into Y
+void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
+  asm volatile (
+  "1:                                          \n"
+    "ld4        {v0.16b,v1.16b,v2.16b,v3.16b}, [%0], #64 \n"  // load 16 pixels
+    "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop
+    "st1        {v2.16b}, [%1], #16            \n"  // store 16 Y pixels
+    "b.gt       1b                             \n"
+    : "+r"(src_ayuv),   // %0
+      "+r"(dst_y),      // %1
+      "+r"(width)       // %2
+    :
+    : "cc", "memory", "v0", "v1", "v2", "v3");
+}
+
+void FloatDivToByteRow_NEON(const float* src_weights,
+                            const float* src_values,
+                            uint8_t* dst_out,
+                            uint8_t* dst_mask,
+                            int width) {
+  asm volatile(
+      "movi       v0.4s, #0                      \n"
+
+      "1:                                        \n"
+      "ld1        {v1.4s,v2.4s}, [%0], #32       \n"  // load 8 float weights
+      "ld1        {v3.4s,v4.4s}, [%1], #32       \n"  // load 8 float values
+      "subs       %w4, %w4, #8                   \n"  // 8 pixels per loop
+
+      "fdiv       v1.4s, v3.4s, v1.4s            \n"  // values / weights
+      "fdiv       v2.4s, v4.4s, v2.4s            \n"
+
+      "fcvtzu     v1.4s, v1.4s                   \n"  // float to int
+      "fcvtzu     v2.4s, v2.4s                   \n"  // float to int
+      "uqxtn      v1.4h, v1.4s                   \n"  // 8 shorts
+      "uqxtn2     v1.8h, v2.4s                   \n"
+      "uqxtn      v1.8b, v1.8h                   \n"  // 8 bytes
+ 
+      "st1        {v1.8b}, [%2], #8              \n"  // store 8 byte out
+
+      "fcmgt      v5.4s, v1.4s, v0.4s            \n"  // cmp weight to zero
+      "fcmgt      v6.4s, v2.4s, v0.4s            \n"
+      "uqxtn      v5.4h, v5.4s                   \n"  // 8 shorts
+      "uqxtn2     v5.8h, v6.4s                   \n"
+      "uqxtn      v5.8b, v1.8h                   \n"  // 8 bytes
+
+      "st1        {v5.8b}, [%3], #8              \n"  // store 8 byte mask
+
+      "b.gt       1b                             \n"
+      : "+r"(src_weights), // %0
+        "+r"(src_values),  // %1
+        "+r"(dst_out),     // %2
+        "+r"(dst_mask),    // %3
+        "+r"(width)        // %4
+      :
+      : "cc", "memory", "v1", "v2", "v3", "v4", "v5", "v6");
+}
+
 #endif  // !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
 
 #ifdef __cplusplus
