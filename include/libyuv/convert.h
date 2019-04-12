@@ -226,6 +226,17 @@ int UYVYToI420(const uint8_t* src_uyvy,
                int width,
                int height);
 
+// Convert AYUV to NV12.
+LIBYUV_API
+int AYUVToNV12(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
 // Convert AYUV to NV21.
 LIBYUV_API
 int AYUVToNV21(const uint8_t* src_ayuv,

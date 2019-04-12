@@ -880,6 +880,75 @@ int UYVYToI420(const uint8_t* src_uyvy,
   return 0;
 }
 
+// Convert AYUV to NV12.
+LIBYUV_API
+int AYUVToNV12(const uint8_t* src_ayuv,
+               int src_stride_ayuv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  int y;
+  void (*AYUVToUVRow)(const uint8_t* src_ayuv, int src_stride_ayuv,
+                      uint8_t* dst_uv, int width) = AYUVToUVRow_C;
+  void (*AYUVToYRow)(const uint8_t* src_ayuv, uint8_t* dst_y, int width) =
+      AYUVToYRow_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_ayuv = src_ayuv + (height - 1) * src_stride_ayuv;
+    src_stride_ayuv = -src_stride_ayuv;
+  }
+// place holders for future intel code
+#if defined(HAS_AYUVTOYROW_SSE2)
+  if (TestCpuFlag(kCpuHasSSE2)) {
+    AYUVToUVRow = AYUVToUVRow_Any_SSE2;
+    AYUVToYRow = AYUVToYRow_Any_SSE2;
+    if (IS_ALIGNED(width, 16)) {
+      AYUVToUVRow = AYUVToUVRow_SSE2;
+      AYUVToYRow = AYUVToYRow_SSE2;
+    }
+  }
+#endif
+#if defined(HAS_AYUVTOYROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    AYUVToUVRow = AYUVToUVRow_Any_AVX2;
+    AYUVToYRow = AYUVToYRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      AYUVToUVRow = AYUVToUVRow_AVX2;
+      AYUVToYRow = AYUVToYRow_AVX2;
+    }
+  }
+#endif
+
+#if defined(HAS_AYUVTOYROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    AYUVToYRow = AYUVToYRow_Any_NEON;
+    AYUVToUVRow = AYUVToUVRow_Any_NEON;
+    if (IS_ALIGNED(width, 16)) {
+      AYUVToYRow = AYUVToYRow_NEON;
+      AYUVToUVRow = AYUVToUVRow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height - 1; y += 2) {
+    AYUVToUVRow(src_ayuv, src_stride_ayuv, dst_uv, width);
+    AYUVToYRow(src_ayuv, dst_y, width);
+    AYUVToYRow(src_ayuv + src_stride_ayuv, dst_y + dst_stride_y, width);
+    src_ayuv += src_stride_ayuv * 2;
+    dst_y += dst_stride_y * 2;
+    dst_uv += dst_stride_uv;
+  }
+  if (height & 1) {
+    AYUVToUVRow(src_ayuv, 0, dst_uv, width);
+    AYUVToYRow(src_ayuv, dst_y, width);
+  }
+  return 0;
+}
+
 // Convert AYUV to NV21.
 LIBYUV_API
 int AYUVToNV21(const uint8_t* src_ayuv,
@@ -892,8 +961,7 @@ int AYUVToNV21(const uint8_t* src_ayuv,
                int height) {
   int y;
   void (*AYUVToVURow)(const uint8_t* src_ayuv, int src_stride_ayuv,
-                      uint8_t* dst_vu, int width) =
-      AYUVToVURow_C;
+                      uint8_t* dst_vu, int width) = AYUVToVURow_C;
   void (*AYUVToYRow)(const uint8_t* src_ayuv, uint8_t* dst_y, int width) =
       AYUVToYRow_C;
   // Negative height means invert the image.
@@ -2234,7 +2302,6 @@ int Android420ToI420(const uint8_t* src_y,
   }
   return 0;
 }
-
 
 #ifdef __cplusplus
 }  // extern "C"

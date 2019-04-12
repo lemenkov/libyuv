@@ -2008,10 +2008,8 @@ int NV21ToYUV24(const uint8_t* src_y,
                 int width,
                 int height) {
   int y;
-  void (*NV21ToYUV24Row)(const uint8_t* src_y,
-                         const uint8_t* src_vu,
-                          uint8_t* dst_yuv24,
-                          int width) = NV21ToYUV24Row_C;
+  void (*NV21ToYUV24Row)(const uint8_t* src_y, const uint8_t* src_vu,
+                         uint8_t* dst_yuv24, int width) = NV21ToYUV24Row_C;
   if (!src_y || !src_vu || !dst_yuv24 || width <= 0 || height == 0) {
     return -1;
   }

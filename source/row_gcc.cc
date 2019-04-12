@@ -5238,7 +5238,7 @@ void ARGBMultiplyRow_AVX2(const uint8_t* src_argb0,
         ,
         "xmm0", "xmm1", "xmm2", "xmm3", "xmm5"
 #endif
-      );
+  );
 }
 #endif  // HAS_ARGBMULTIPLYROW_AVX2
 
@@ -6669,7 +6669,6 @@ void ARGBLumaColorTableRow_SSSE3(const uint8_t* src_argb,
 }
 #endif  // HAS_ARGBLUMACOLORTABLEROW_SSSE3
 
-
 #ifdef HAS_NV21TOYUV24ROW_AVX2
 
 // begin NV21ToYUV24Row_C avx2 constants
@@ -6723,48 +6722,54 @@ void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
                          const uint8_t* src_vu,
                          uint8_t* dst_yuv24,
                          int width) {
-
   uint8_t* src_y_ptr;
   uint64_t src_offset = 0;
   uint64_t width64;
 
   width64 = width;
-  src_y_ptr = (uint8_t *) src_y;
+  src_y_ptr = (uint8_t*)src_y;
 
   asm volatile(
-      "vmovdqu     %5, %%ymm0 \n"  //init blend value
-      "vmovdqu     %6, %%ymm1 \n"  //init blend value
-      "vmovdqu     %7, %%ymm2 \n"  //init blend value
-//      "sub         $0x20, %3  \n"  //sub 32 from width for final loop
+      "vmovdqu     %5, %%ymm0 \n"  // init blend value
+      "vmovdqu     %6, %%ymm1 \n"  // init blend value
+      "vmovdqu     %7, %%ymm2 \n"  // init blend value
+      //      "sub         $0x20, %3  \n"  //sub 32 from width for final loop
 
       LABELALIGN
-      "1:                                             \n" //label 1
-      "vmovdqu     (%0,%4), %%ymm3                    \n" //src_y
-      "vmovdqu     1(%1,%4), %%ymm4                   \n" //src_uv+1
-      "vmovdqu     (%1), %%ymm5                       \n" //src_uv
-      "vpshufb     %8, %%ymm3, %%ymm13                \n" //y, kSHUF0 for shuf
-      "vpshufb     %9, %%ymm4, %%ymm14                \n" //uv+1, kSHUF1 for shuf
-      "vpshufb     %10, %%ymm5, %%ymm15               \n" //uv, kSHUF2 for shuf
-      "vpshufb     %11, %%ymm3, %%ymm3                \n" //y kSHUF3 for shuf
-      "vpshufb     %12, %%ymm4, %%ymm4                \n" //uv+1 kSHUF4 for shuf
-      "vpblendvb   %%ymm0, %%ymm14, %%ymm13, %%ymm12  \n" //blend 0
-      "vpblendvb   %%ymm0, %%ymm13, %%ymm14, %%ymm14  \n" //blend 0 
-      "vpblendvb   %%ymm2, %%ymm15, %%ymm12, %%ymm12  \n" //blend 2
-      "vpblendvb   %%ymm1, %%ymm15, %%ymm14, %%ymm13  \n" //blend 1
-      "vpshufb     %13, %%ymm5, %%ymm15               \n" //shuffle const
-      "vpor        %%ymm4, %%ymm3, %%ymm5             \n" //get results
-      "vmovdqu     %%ymm12, 0x20(%2)                  \n" //store dst_yuv+20h
-      "vpor        %%ymm15, %%ymm5, %%ymm3            \n" //get results
-      "add         $0x20, %4                          \n" //add to src buffer ptr
-      "vinserti128 $0x1, %%xmm3, %%ymm13, %%ymm4      \n" //insert
-      "vperm2i128  $0x31, %%ymm13, %%ymm3, %%ymm5     \n" //insert
-      "vmovdqu     %%ymm4, (%2)                       \n" //store dst_yuv
-      "vmovdqu     %%ymm5, 0x40(%2)                   \n" //store dst_yuv+40h
-      "add         $0x60,%2                           \n" //add to dst buffer ptr
-//      "cmp         %3, %4                             \n" //(width64 - 32 bytes) and src_offset
-      "sub         $0x20,%3                           \n" // 32 pixels per loop
+      "1:                                             \n"  // label 1
+      "vmovdqu     (%0,%4), %%ymm3                    \n"  // src_y
+      "vmovdqu     1(%1,%4), %%ymm4                   \n"  // src_uv+1
+      "vmovdqu     (%1), %%ymm5                       \n"  // src_uv
+      "vpshufb     %8, %%ymm3, %%ymm13                \n"  // y, kSHUF0 for shuf
+      "vpshufb     %9, %%ymm4, %%ymm14                \n"  // uv+1, kSHUF1 for
+                                                           // shuf
+      "vpshufb     %10, %%ymm5, %%ymm15               \n"  // uv, kSHUF2 for
+                                                           // shuf
+      "vpshufb     %11, %%ymm3, %%ymm3                \n"  // y kSHUF3 for shuf
+      "vpshufb     %12, %%ymm4, %%ymm4                \n"  // uv+1 kSHUF4 for
+                                                           // shuf
+      "vpblendvb   %%ymm0, %%ymm14, %%ymm13, %%ymm12  \n"  // blend 0
+      "vpblendvb   %%ymm0, %%ymm13, %%ymm14, %%ymm14  \n"  // blend 0
+      "vpblendvb   %%ymm2, %%ymm15, %%ymm12, %%ymm12  \n"  // blend 2
+      "vpblendvb   %%ymm1, %%ymm15, %%ymm14, %%ymm13  \n"  // blend 1
+      "vpshufb     %13, %%ymm5, %%ymm15               \n"  // shuffle const
+      "vpor        %%ymm4, %%ymm3, %%ymm5             \n"  // get results
+      "vmovdqu     %%ymm12, 0x20(%2)                  \n"  // store dst_yuv+20h
+      "vpor        %%ymm15, %%ymm5, %%ymm3            \n"  // get results
+      "add         $0x20, %4                          \n"  // add to src buffer
+                                                           // ptr
+      "vinserti128 $0x1, %%xmm3, %%ymm13, %%ymm4      \n"  // insert
+      "vperm2i128  $0x31, %%ymm13, %%ymm3, %%ymm5     \n"  // insert
+      "vmovdqu     %%ymm4, (%2)                       \n"  // store dst_yuv
+      "vmovdqu     %%ymm5, 0x40(%2)                   \n"  // store dst_yuv+40h
+      "add         $0x60,%2                           \n"  // add to dst buffer
+                                                           // ptr
+      //      "cmp         %3, %4                             \n" //(width64 -
+      //      32 bytes) and src_offset
+      "sub         $0x20,%3                           \n"  // 32 pixels per loop
       "jg          1b                                 \n"
-      "vzeroupper                                     \n" //sse-avx2 transistions
+      "vzeroupper                                     \n"  // sse-avx2
+                                                           // transistions
 
       : "+r"(src_y),      //%0
         "+r"(src_vu),     //%1
@@ -6780,7 +6785,8 @@ void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
         "m"(kSHUF3),      //%11
         "m"(kSHUF4),      //%12
         "m"(kSHUF5)       //%13
-      : "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm12", "xmm13", "xmm14", "xmm15");
+      : "memory", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm12",
+        "xmm13", "xmm14", "xmm15");
 }
 #endif  // HAS_NV21TOYUV24ROW_AVX2
 
