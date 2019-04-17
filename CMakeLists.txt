@@ -31,6 +31,7 @@ SET_TARGET_PROPERTIES	( ${ly_lib_shared} PROPERTIES VERSION "0.0.0" SOVERSION 0 
 INCLUDE ( FindJPEG )
 if (JPEG_FOUND)
   include_directories( ${JPEG_INCLUDE_DIR} )
+  target_link_libraries( ${ly_lib_shared} ${JPEG_LIBRARY} )
   add_definitions( -DHAVE_JPEG )
 endif()
 
