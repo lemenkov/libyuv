@@ -3186,7 +3186,8 @@ TEST_F(LibYUVPlanarTest, TestGaussRow_Opt) {
   }
   GaussRow_C(&orig_pixels[0], &dst_pixels_c[0], 640);
   for (int i = 0; i < benchmark_pixels_div1280_ * 2; ++i) {
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
       GaussRow_NEON(&orig_pixels[0], &dst_pixels_opt[0], 640);
@@ -3239,7 +3240,8 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
              &orig_pixels[640 * 3], &orig_pixels[640 * 4], &dst_pixels_c[0],
              640);
   for (int i = 0; i < benchmark_pixels_div1280_ * 2; ++i) {
-#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+#if !defined(LIBYUV_DISABLE_NEON) && \
+    (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
       GaussCol_NEON(&orig_pixels[0], &orig_pixels[640], &orig_pixels[640 * 2],

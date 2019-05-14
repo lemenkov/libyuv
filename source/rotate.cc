@@ -521,28 +521,19 @@ int I444Rotate(const uint8_t* src_y,
       CopyPlane(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
     case libyuv::kRotate90:
-      RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y,
-        width, height);
-      RotatePlane90(src_u, src_stride_u, dst_u, dst_stride_u,
-       width, height);
-      RotatePlane90(src_v, src_stride_v, dst_v, dst_stride_v,
-       width, height);
+      RotatePlane90(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+      RotatePlane90(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
+      RotatePlane90(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
     case libyuv::kRotate270:
-      RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y,
-        width, height);
-      RotatePlane270(src_u, src_stride_u, dst_u, dst_stride_u,
-        width, height);
-      RotatePlane270(src_v, src_stride_v, dst_v, dst_stride_v,
-        width, height);
+      RotatePlane270(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+      RotatePlane270(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
+      RotatePlane270(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
     case libyuv::kRotate180:
-      RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y,
-        width, height);
-      RotatePlane180(src_u, src_stride_u, dst_u, dst_stride_u,
-        width, height);
-      RotatePlane180(src_v, src_stride_v, dst_v, dst_stride_v,
-        width, height);
+      RotatePlane180(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+      RotatePlane180(src_u, src_stride_u, dst_u, dst_stride_u, width, height);
+      RotatePlane180(src_v, src_stride_v, dst_v, dst_stride_v, width, height);
       return 0;
     default:
       break;

@@ -1793,8 +1793,9 @@ int NV21ToARGB(const uint8_t* src_y,
 }
 
 // Convert NV12 to ABGR.
-// To output ABGR instead of ARGB swap the UV and use a mirrrored yuc matrix.
+// To output ABGR instead of ARGB swap the UV and use a mirrored yuv matrix.
 // To swap the UV use NV12 instead of NV21.LIBYUV_API
+LIBYUV_API
 int NV12ToABGR(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_uv,

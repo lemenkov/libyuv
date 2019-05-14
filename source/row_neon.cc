@@ -2685,6 +2685,84 @@ void ByteToFloatRow_NEON(const uint8_t* src,
       : "cc", "memory", "q1", "q2", "q3");
 }
 
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussCol_NEON(const uint16_t* src0,
+                   const uint16_t* src1,
+                   const uint16_t* src2,
+                   const uint16_t* src3,
+                   const uint16_t* src4,
+                   uint32_t* dst,
+                   int width) {
+  asm volatile(
+      "vmov.u16   d6, #4                         \n"  // constant 4
+      "vmov.u16   d7, #6                         \n"  // constant 6
+
+      "1:                                        \n"
+      "vld1.16    {q1}, [%0]!                    \n"  // load 8 samples, 5 rows
+      "vld1.16    {q2}, [%4]!                    \n"
+      "vaddl.u16  q0, d2, d4                     \n"  // * 1
+      "vaddl.u16  q1, d3, d5                     \n"  // * 1
+      "vld1.16    {q2}, [%1]!                    \n"
+      "vmlal.u16  q0, d4, d6                     \n"  // * 4
+      "vmlal.u16  q1, d5, d6                     \n"  // * 4
+      "vld1.16    {q2}, [%2]!                    \n"
+      "vmlal.u16  q0, d4, d7                     \n"  // * 6
+      "vmlal.u16  q1, d5, d7                     \n"  // * 6
+      "vld1.16    {q2}, [%3]!                    \n"
+      "vmlal.u16  q0, d4, d6                     \n"  // * 4
+      "vmlal.u16  q1, d5, d6                     \n"  // * 4
+      "subs       %6, %6, #8                     \n"  // 8 processed per loop
+      "vst1.32    {q0, q1}, [%5]!                \n"  // store 8 samples
+      "bgt        1b                             \n"
+      : "+r"(src0),  // %0
+        "+r"(src1),  // %1
+        "+r"(src2),  // %2
+        "+r"(src3),  // %3
+        "+r"(src4),  // %4
+        "+r"(dst),   // %5
+        "+r"(width)  // %6
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3");
+}
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussRow_NEON(const uint32_t* src, uint16_t* dst, int width) {
+  const uint32_t* src1 = src + 1;
+  const uint32_t* src2 = src + 2;
+  const uint32_t* src3 = src + 3;
+  asm volatile(
+      "vmov.u32    q10, #4                        \n"  // constant 4
+      "vmov.u32    q11, #6                        \n"  // constant 6
+
+      "1:                                        \n"
+      "vld1.32     {q0, q1}, [%0]!               \n"  // load 12 source samples
+      "vld1.32     {q2}, [%0]                    \n"
+      "vadd.u32    q0, q0, q1                    \n"  // * 1
+      "vadd.u32    q1, q1, q2                    \n"  // * 1
+      "vld1.32     {q2, q3}, [%2]!               \n"
+      "vmla.u32    q0, q2, q11                   \n"  // * 6
+      "vmla.u32    q1, q3, q11                   \n"  // * 6
+      "vld1.32     {q2, q3}, [%1]!               \n"
+      "vld1.32     {q8, q9}, [%3]!               \n"
+      "vadd.u32    q2, q2, q8                    \n"  // add rows for * 4
+      "vadd.u32    q3, q3, q9                    \n"
+      "vmla.u32    q0, q2, q10                   \n"  // * 4
+      "vmla.u32    q1, q3, q10                   \n"  // * 4
+      "subs        %5, %5, #8                    \n"  // 8 processed per loop
+      "vqshrn.u32  d0, q0, #8                    \n"  // round and pack
+      "vqshrn.u32  d1, q1, #8                    \n"
+      "vst1.u16    {q0}, [%4]!                   \n"  // store 8 samples
+      "bgt         1b                            \n"
+      : "+r"(src),   // %0
+        "+r"(src1),  // %1
+        "+r"(src2),  // %2
+        "+r"(src3),  // %3
+        "+r"(dst),   // %4
+        "+r"(width)  // %5
+      :
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q8", "q9", "q10", "q11");
+}
+
 // Convert biplanar NV21 to packed YUV24
 void NV21ToYUV24Row_NEON(const uint8_t* src_y,
                          const uint8_t* src_vu,

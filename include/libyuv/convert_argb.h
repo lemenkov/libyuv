@@ -256,6 +256,7 @@ int NV21ToARGB(const uint8_t* src_y,
                int height);
 
 // Convert NV12 to ABGR.
+LIBYUV_API
 int NV12ToABGR(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_uv,
