@@ -344,6 +344,19 @@ int RGB24ToI420(const uint8_t* src_rgb24,
                 int width,
                 int height);
 
+// RGB little endian (bgr in memory) to J420.
+LIBYUV_API
+int RGB24ToJ420(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
+                uint8_t* dst_y,
+                int dst_stride_y,
+                uint8_t* dst_u,
+                int dst_stride_u,
+                uint8_t* dst_v,
+                int dst_stride_v,
+                int width,
+                int height);
+
 // RGB big endian (rgb in memory) to I420.
 LIBYUV_API
 int RAWToI420(const uint8_t* src_raw,
@@ -395,6 +408,15 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
                    int dst_stride_v,
                    int width,
                    int height);
+
+// RGB little endian (bgr in memory) to J400.
+LIBYUV_API
+int RGB24ToJ400(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
+                uint8_t* dst_yj,
+                int dst_stride_yj,
+                int width,
+                int height);
 
 #ifdef HAVE_JPEG
 // src_width/height provided by capture.
