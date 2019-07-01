@@ -2986,8 +2986,8 @@ void FloatDivToByteRow_NEON(const float* src_weights,
       "fdiv       v1.4s, v3.4s, v1.4s            \n"  // values / weights
       "fdiv       v2.4s, v4.4s, v2.4s            \n"
 
-      "fcvtzu     v1.4s, v1.4s                   \n"  // float to int
-      "fcvtzu     v2.4s, v2.4s                   \n"  // float to int
+      "fcvtas     v1.4s, v1.4s                   \n"  // float to int
+      "fcvtas     v2.4s, v2.4s                   \n"  // float to int
       "uqxtn      v1.4h, v1.4s                   \n"  // 8 shorts
       "uqxtn2     v1.8h, v2.4s                   \n"
       "uqxtn      v1.8b, v1.8h                   \n"  // 8 bytes

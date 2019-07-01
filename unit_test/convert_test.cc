@@ -1390,6 +1390,7 @@ TEST_F(LibYUVConvertTest, ValidateJpeg) {
   // EOI, SOI. Expect pass.
   orig_pixels[0] = 0xff;
   orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[2] = 0xff;
   orig_pixels[kSize - kOff + 0] = 0xff;
   orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
   for (int times = 0; times < benchmark_iterations_; ++times) {
@@ -1416,6 +1417,7 @@ TEST_F(LibYUVConvertTest, ValidateJpegLarge) {
   // EOI, SOI. Expect pass.
   orig_pixels[0] = 0xff;
   orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[2] = 0xff;
   orig_pixels[kSize - kOff + 0] = 0xff;
   orig_pixels[kSize - kOff + 1] = 0xd9;  // EOI.
   for (int times = 0; times < benchmark_iterations_; ++times) {
@@ -1449,6 +1451,7 @@ TEST_F(LibYUVConvertTest, InvalidateJpeg) {
   // SOI but no EOI. Expect fail.
   orig_pixels[0] = 0xff;
   orig_pixels[1] = 0xd8;  // SOI.
+  orig_pixels[2] = 0xff;
   for (int times = 0; times < benchmark_iterations_; ++times) {
     EXPECT_FALSE(ValidateJpeg(orig_pixels, kSize));
   }
@@ -1466,13 +1469,14 @@ TEST_F(LibYUVConvertTest, InvalidateJpeg) {
 TEST_F(LibYUVConvertTest, FuzzJpeg) {
   // SOI but no EOI. Expect fail.
   for (int times = 0; times < benchmark_iterations_; ++times) {
-    const int kSize = fastrand() % 5000 + 2;
+    const int kSize = fastrand() % 5000 + 3;
     align_buffer_page_end(orig_pixels, kSize);
     MemRandomize(orig_pixels, kSize);
 
     // Add SOI so frame will be scanned.
     orig_pixels[0] = 0xff;
     orig_pixels[1] = 0xd8;  // SOI.
+    orig_pixels[2] = 0xff;
     orig_pixels[kSize - 1] = 0xff;
     ValidateJpeg(orig_pixels,
                  kSize);  // Failure normally expected.
