@@ -6120,24 +6120,24 @@ void I422ToYUY2Row_SSE2(const uint8_t* src_y,
                         int width) {
   asm volatile(
 
-      "sub       %1,%2                             \n"
+      "sub       %1,%2                           \n"
 
       LABELALIGN
-      "1:                                          \n"
-      "movq      (%1),%%xmm2                       \n"
-      "movq      0x00(%1,%2,1),%%xmm1              \n"
-      "add       $0x8,%1                           \n"
-      "punpcklbw %%xmm1,%%xmm2                     \n"
-      "movdqu    (%0),%%xmm0                       \n"
-      "add       $0x10,%0                          \n"
-      "movdqa    %%xmm0,%%xmm1                     \n"
-      "punpcklbw %%xmm2,%%xmm0                     \n"
-      "punpckhbw %%xmm2,%%xmm1                     \n"
-      "movdqu    %%xmm0,(%3)                       \n"
-      "movdqu    %%xmm1,0x10(%3)                   \n"
-      "lea       0x20(%3),%3                       \n"
-      "sub       $0x10,%4                          \n"
-      "jg         1b                               \n"
+      "1:                                        \n"
+      "movq      (%1),%%xmm2                     \n"
+      "movq      0x00(%1,%2,1),%%xmm1            \n"
+      "add       $0x8,%1                         \n"
+      "punpcklbw %%xmm1,%%xmm2                   \n"
+      "movdqu    (%0),%%xmm0                     \n"
+      "add       $0x10,%0                        \n"
+      "movdqa    %%xmm0,%%xmm1                   \n"
+      "punpcklbw %%xmm2,%%xmm0                   \n"
+      "punpckhbw %%xmm2,%%xmm1                   \n"
+      "movdqu    %%xmm0,(%3)                     \n"
+      "movdqu    %%xmm1,0x10(%3)                 \n"
+      "lea       0x20(%3),%3                     \n"
+      "sub       $0x10,%4                        \n"
+      "jg         1b                             \n"
       : "+r"(src_y),     // %0
         "+r"(src_u),     // %1
         "+r"(src_v),     // %2
@@ -6156,24 +6156,24 @@ void I422ToUYVYRow_SSE2(const uint8_t* src_y,
                         int width) {
   asm volatile(
 
-      "sub        %1,%2                            \n"
+      "sub        %1,%2                          \n"
 
       LABELALIGN
-      "1:                                          \n"
-      "movq      (%1),%%xmm2                       \n"
-      "movq      0x00(%1,%2,1),%%xmm1              \n"
-      "add       $0x8,%1                           \n"
-      "punpcklbw %%xmm1,%%xmm2                     \n"
-      "movdqu    (%0),%%xmm0                       \n"
-      "movdqa    %%xmm2,%%xmm1                     \n"
-      "add       $0x10,%0                          \n"
-      "punpcklbw %%xmm0,%%xmm1                     \n"
-      "punpckhbw %%xmm0,%%xmm2                     \n"
-      "movdqu    %%xmm1,(%3)                       \n"
-      "movdqu    %%xmm2,0x10(%3)                   \n"
-      "lea       0x20(%3),%3                       \n"
-      "sub       $0x10,%4                          \n"
-      "jg         1b                               \n"
+      "1:                                        \n"
+      "movq      (%1),%%xmm2                     \n"
+      "movq      0x00(%1,%2,1),%%xmm1            \n"
+      "add       $0x8,%1                         \n"
+      "punpcklbw %%xmm1,%%xmm2                   \n"
+      "movdqu    (%0),%%xmm0                     \n"
+      "movdqa    %%xmm2,%%xmm1                   \n"
+      "add       $0x10,%0                        \n"
+      "punpcklbw %%xmm0,%%xmm1                   \n"
+      "punpckhbw %%xmm0,%%xmm2                   \n"
+      "movdqu    %%xmm1,(%3)                     \n"
+      "movdqu    %%xmm2,0x10(%3)                 \n"
+      "lea       0x20(%3),%3                     \n"
+      "sub       $0x10,%4                        \n"
+      "jg         1b                             \n"
       : "+r"(src_y),     // %0
         "+r"(src_u),     // %1
         "+r"(src_v),     // %2
@@ -6192,27 +6192,27 @@ void I422ToYUY2Row_AVX2(const uint8_t* src_y,
                         int width) {
   asm volatile(
 
-      "sub       %1,%2                             \n"
+      "sub       %1,%2                           \n"
 
       LABELALIGN
-      "1:                                          \n"
-      "vpmovzxbw  (%1),%%ymm1                      \n"
-      "vpmovzxbw  0x00(%1,%2,1),%%ymm2             \n"
-      "add        $0x10,%1                         \n"
-      "vpsllw     $0x8,%%ymm2,%%ymm2               \n"
-      "vpor       %%ymm1,%%ymm2,%%ymm2             \n"
-      "vmovdqu    (%0),%%ymm0                      \n"
-      "add        $0x20,%0                         \n"
-      "vpunpcklbw %%ymm2,%%ymm0,%%ymm1             \n"
-      "vpunpckhbw %%ymm2,%%ymm0,%%ymm2             \n"
-      "vextractf128 $0x0,%%ymm1,(%3)               \n"
-      "vextractf128 $0x0,%%ymm2,0x10(%3)           \n"
-      "vextractf128 $0x1,%%ymm1,0x20(%3)           \n"
-      "vextractf128 $0x1,%%ymm2,0x30(%3)           \n"
-      "lea        0x40(%3),%3                      \n"
-      "sub        $0x20,%4                         \n"
-      "jg         1b                               \n"
-      "vzeroupper                                  \n"
+      "1:                                        \n"
+      "vpmovzxbw  (%1),%%ymm1                    \n"
+      "vpmovzxbw  0x00(%1,%2,1),%%ymm2           \n"
+      "add        $0x10,%1                       \n"
+      "vpsllw     $0x8,%%ymm2,%%ymm2             \n"
+      "vpor       %%ymm1,%%ymm2,%%ymm2           \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "add        $0x20,%0                       \n"
+      "vpunpcklbw %%ymm2,%%ymm0,%%ymm1           \n"
+      "vpunpckhbw %%ymm2,%%ymm0,%%ymm2           \n"
+      "vextractf128 $0x0,%%ymm1,(%3)             \n"
+      "vextractf128 $0x0,%%ymm2,0x10(%3)         \n"
+      "vextractf128 $0x1,%%ymm1,0x20(%3)         \n"
+      "vextractf128 $0x1,%%ymm2,0x30(%3)         \n"
+      "lea        0x40(%3),%3                    \n"
+      "sub        $0x20,%4                       \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
       : "+r"(src_y),     // %0
         "+r"(src_u),     // %1
         "+r"(src_v),     // %2
@@ -6231,27 +6231,27 @@ void I422ToUYVYRow_AVX2(const uint8_t* src_y,
                         int width) {
   asm volatile(
 
-      "sub        %1,%2                            \n"
+      "sub        %1,%2                          \n"
 
       LABELALIGN
-      "1:                                          \n"
-      "vpmovzxbw  (%1),%%ymm1                      \n"
-      "vpmovzxbw  0x00(%1,%2,1),%%ymm2             \n"
-      "add        $0x10,%1                         \n"
-      "vpsllw     $0x8,%%ymm2,%%ymm2               \n"
-      "vpor       %%ymm1,%%ymm2,%%ymm2             \n"
-      "vmovdqu    (%0),%%ymm0                      \n"
-      "add        $0x20,%0                         \n"
-      "vpunpcklbw %%ymm0,%%ymm2,%%ymm1             \n"
-      "vpunpckhbw %%ymm0,%%ymm2,%%ymm2             \n"
-      "vextractf128 $0x0,%%ymm1,(%3)               \n"
-      "vextractf128 $0x0,%%ymm2,0x10(%3)           \n"
-      "vextractf128 $0x1,%%ymm1,0x20(%3)           \n"
-      "vextractf128 $0x1,%%ymm2,0x30(%3)           \n"
-      "lea        0x40(%3),%3                      \n"
-      "sub        $0x20,%4                         \n"
-      "jg         1b                               \n"
-      "vzeroupper                                  \n"
+      "1:                                        \n"
+      "vpmovzxbw  (%1),%%ymm1                    \n"
+      "vpmovzxbw  0x00(%1,%2,1),%%ymm2           \n"
+      "add        $0x10,%1                       \n"
+      "vpsllw     $0x8,%%ymm2,%%ymm2             \n"
+      "vpor       %%ymm1,%%ymm2,%%ymm2           \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "add        $0x20,%0                       \n"
+      "vpunpcklbw %%ymm0,%%ymm2,%%ymm1           \n"
+      "vpunpckhbw %%ymm0,%%ymm2,%%ymm2           \n"
+      "vextractf128 $0x0,%%ymm1,(%3)             \n"
+      "vextractf128 $0x0,%%ymm2,0x10(%3)         \n"
+      "vextractf128 $0x1,%%ymm1,0x20(%3)         \n"
+      "vextractf128 $0x1,%%ymm2,0x30(%3)         \n"
+      "lea        0x40(%3),%3                    \n"
+      "sub        $0x20,%4                       \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
       : "+r"(src_y),     // %0
         "+r"(src_u),     // %1
         "+r"(src_v),     // %2

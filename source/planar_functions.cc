@@ -516,8 +516,8 @@ int NV21ToNV12(const uint8_t* src_y,
                int width,
                int height) {
   int y;
-  void (*UVToVURow)(const uint8_t* src_uv, uint8_t* dst_vu, int width) =
-      UVToVURow_C;
+  void (*SwapUVRow)(const uint8_t* src_uv, uint8_t* dst_vu, int width) =
+      SwapUVRow_C;
 
   int halfwidth = (width + 1) >> 1;
   int halfheight = (height + 1) >> 1;
@@ -540,11 +540,11 @@ int NV21ToNV12(const uint8_t* src_y,
     src_stride_vu = dst_stride_uv = 0;
   }
 
-#if defined(HAS_UVToVUROW_NEON)
+#if defined(HAS_SWAPUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
-    UVToVURow = UVToVURow_Any_NEON;
+    SwapUVRow = SwapUVRow_Any_NEON;
     if (IS_ALIGNED(halfwidth, 16)) {
-      UVToVURow = UVToVURow_NEON;
+      SwapUVRow = SwapUVRow_NEON;
     }
   }
 #endif
@@ -553,7 +553,7 @@ int NV21ToNV12(const uint8_t* src_y,
   }
 
   for (y = 0; y < halfheight; ++y) {
-    UVToVURow(src_vu, dst_uv, halfwidth);
+    SwapUVRow(src_vu, dst_uv, halfwidth);
     src_vu += src_stride_vu;
     dst_uv += dst_stride_uv;
   }

@@ -2769,7 +2769,7 @@ void NV21ToYUV24Row_NEON(const uint8_t* src_y,
                          uint8_t* dst_yuv24,
                          int width) {
   asm volatile(
-      "1:                                          \n"
+      "1:                                        \n"
       "vld1.8    {q2}, [%0]!                     \n"  // load 16 Y values
       "vld2.8    {d0, d2}, [%1]!                 \n"  // load 8 VU values
       "vmov      d1, d0                          \n"
@@ -2854,7 +2854,7 @@ void AYUVToVURow_NEON(const uint8_t* src_ayuv,
 // Similar to ARGBExtractAlphaRow_NEON
 void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
   asm volatile(
-      "1:                                          \n"
+      "1:                                        \n"
       "vld4.8     {d0, d2, d4, d6}, [%0]!        \n"  // load 8 AYUV pixels
       "vld4.8     {d1, d3, d5, d7}, [%0]!        \n"  // load next 8 AYUV pixels
       "subs       %2, %2, #16                    \n"  // 16 processed per loop
@@ -2868,9 +2868,9 @@ void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
 }
 
 // Convert biplanar UV channel of NV12 to NV21
-void UVToVURow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
-      "1:                                          \n"
+      "1:                                        \n"
       "vld2.8     {d0, d2}, [%0]!                \n"  // load 16 UV values
       "vld2.8     {d1, d3}, [%0]!                \n"
       "vorr.u8    q2, q0, q0                     \n"  // move U after V

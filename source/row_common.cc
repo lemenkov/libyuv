@@ -3319,7 +3319,7 @@ void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
   }
 }
 
-void UVToVURow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
+void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   int x;
   for (x = 0; x < width; ++x) {
     uint8_t u = src_uv[0];
@@ -3328,19 +3328,6 @@ void UVToVURow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
     dst_vu[1] = u;
     src_uv += 2;
     dst_vu += 2;
-  }
-}
-
-// divide values by weights and provide mask to indicate weight of 0.
-void FloatDivToByteRow_C(const float* src_weights,
-                         const float* src_values,
-                         uint8_t* dst_out,
-                         uint8_t* dst_mask,
-                         int width) {
-  int x;
-  for (x = 0; x < width; ++x) {
-    dst_out[x] = Clamp(src_values[x] / src_weights[x]);
-    dst_mask[x] = src_weights[x] > 0 ? 0 : 0xff;
   }
 }
 

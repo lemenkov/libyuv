@@ -376,7 +376,7 @@ extern "C" {
 #define HAS_SETROW_NEON
 #define HAS_SPLITRGBROW_NEON
 #define HAS_SPLITUVROW_NEON
-#define HAS_UVToVUROW_NEON
+#define HAS_SWAPUVROW_NEON
 #define HAS_UYVYTOARGBROW_NEON
 #define HAS_UYVYTOUV422ROW_NEON
 #define HAS_UYVYTOUVROW_NEON
@@ -409,7 +409,6 @@ extern "C" {
 
 // The following are available on AArch64 platforms:
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
-#define HAS_FLOATDIVTOBYTEROW_NEON
 #define HAS_SCALESUMSAMPLES_NEON
 #endif
 #if !defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa)
@@ -3372,9 +3371,9 @@ void UYVYToUV422Row_Any_MMI(const uint8_t* src_ptr,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
                             int width);
-void UVToVURow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width);
-void UVToVURow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
-void UVToVURow_Any_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
 void AYUVToUVRow_C(const uint8_t* src_ayuv,
                    int stride_ayuv,
@@ -4017,17 +4016,6 @@ float ScaleSumSamples_NEON(const float* src,
                            int width);
 void ScaleSamples_C(const float* src, float* dst, float scale, int width);
 void ScaleSamples_NEON(const float* src, float* dst, float scale, int width);
-
-void FloatDivToByteRow_C(const float* src_weights,
-                         const float* src_values,
-                         uint8_t* dst_out,
-                         uint8_t* dst_mask,
-                         int width);
-void FloatDivToByteRow_NEON(const float* src_weights,
-                            const float* src_values,
-                            uint8_t* dst_out,
-                            uint8_t* dst_mask,
-                            int width);
 
 #ifdef __cplusplus
 }  // extern "C"
