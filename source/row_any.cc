@@ -710,6 +710,12 @@ ANY11(UYVYToYRow_Any_MMI, UYVYToYRow_MMI, 1, 4, 1, 15)
 #ifdef HAS_AYUVTOYROW_NEON
 ANY11(AYUVToYRow_Any_NEON, AYUVToYRow_NEON, 0, 4, 1, 15)
 #endif
+#ifdef HAS_SWAPUVROW_SSSE3
+ANY11(SwapUVRow_Any_SSSE3, SwapUVRow_SSSE3, 0, 2, 2, 15)
+#endif
+#ifdef HAS_SWAPUVROW_AVX2
+ANY11(SwapUVRow_Any_AVX2, SwapUVRow_AVX2, 0, 2, 2, 31)
+#endif
 #ifdef HAS_SWAPUVROW_NEON
 ANY11(SwapUVRow_Any_NEON, SwapUVRow_NEON, 0, 2, 2, 15)
 #endif

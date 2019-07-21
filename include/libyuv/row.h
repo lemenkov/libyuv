@@ -275,6 +275,7 @@ extern "C" {
 #define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
+#define HAS_SWAPUVROW_SSSE3
 #endif
 
 // The following are available for AVX2 gcc/clang x86 platforms:
@@ -295,6 +296,7 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+#define HAS_SWAPUVROW_AVX2
 // TODO(fbarchard): Fix AVX2 version of YUV24
 // #define HAS_NV21TOYUV24ROW_AVX2
 #endif
@@ -3374,6 +3376,10 @@ void UYVYToUV422Row_Any_MMI(const uint8_t* src_ptr,
 void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void SwapUVRow_Any_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
 void AYUVToUVRow_C(const uint8_t* src_ayuv,
                    int stride_ayuv,

@@ -6790,6 +6790,68 @@ void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
 }
 #endif  // HAS_NV21TOYUV24ROW_AVX2
 
+#ifdef HAS_SWAPUVROW_SSSE3
+
+// Shuffle table for reversing the bytes.
+static const uvec8 kShuffleUVToVU = {1u, 0u,  3u,  2u,  5u,  4u,  7u,  6u,
+                                     9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
+
+void SwapUVRow_SSSE3(const uint8_t* src_uv,
+                           uint8_t* dst_vu,
+                           int width) {
+  asm volatile(
+
+      "movdqu    %3,%%xmm5                      \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu    (%0),%%xmm0                     \n"
+      "movdqu    0x10(%0),%%xmm1                 \n"
+      "lea       0x20(%0),%0                     \n"
+      "pshufb    %%xmm5,%%xmm0                   \n"
+      "pshufb    %%xmm5,%%xmm1                   \n"
+      "movdqu    %%xmm0,(%1)                     \n"
+      "movdqu    %%xmm1,0x10(%1)                 \n"
+      "lea       0x20(%1),%1                     \n"
+      "sub       $0x10,%2                        \n"
+      "jg        1b                              \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_vu),  // %1
+        "+r"(width)    // %2
+      : "m"(kShuffleUVToVU)    // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm5");
+}
+#endif  // HAS_SWAPUVROW_SSSE3
+
+#ifdef HAS_SWAPUVROW_AVX2
+void SwapUVRow_AVX2(const uint8_t* src_uv,
+                          uint8_t* dst_vu,
+                          int width) {
+  asm volatile(
+
+      "vbroadcastf128 %3,%%ymm5                  \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu   (%0),%%ymm0                     \n"
+      "vmovdqu   0x20(%0),%%ymm1                 \n"
+      "lea       0x40(%0),%0                     \n"
+      "vpshufb   %%ymm5,%%ymm0,%%ymm0            \n"
+      "vpshufb   %%ymm5,%%ymm1,%%ymm1            \n"
+      "vmovdqu   %%ymm0,(%1)                     \n"
+      "vmovdqu   %%ymm1,0x20(%1)                 \n"
+      "lea       0x40(%1),%1                     \n"
+      "sub       $0x20,%2                        \n"
+      "jg        1b                              \n"
+      "vzeroupper                                \n"
+      : "+r"(src_uv),  // %0
+        "+r"(dst_vu),  // %1
+        "+r"(width)    // %2
+      : "m"(kShuffleUVToVU)    // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm5");
+}
+#endif  // HAS_SWAPUVROW_AVX2
+
 #endif  // defined(__x86_64__) || defined(__i386__)
 
 #ifdef __cplusplus
