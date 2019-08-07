@@ -3375,11 +3375,11 @@ void UYVYToUV422Row_Any_MMI(const uint8_t* src_ptr,
                             int width);
 void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width);
 void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
-void SwapUVRow_Any_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width);
-void SwapUVRow_Any_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width);
-void SwapUVRow_Any_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width);
+void SwapUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width);
 void AYUVToUVRow_C(const uint8_t* src_ayuv,
                    int stride_ayuv,

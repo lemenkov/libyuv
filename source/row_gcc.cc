@@ -6793,12 +6793,11 @@ void NV21ToYUV24Row_AVX2(const uint8_t* src_y,
 #ifdef HAS_SWAPUVROW_SSSE3
 
 // Shuffle table for reversing the bytes.
-static const uvec8 kShuffleUVToVU = {1u, 0u,  3u,  2u,  5u,  4u,  7u,  6u,
+static const uvec8 kShuffleUVToVU = {1u, 0u, 3u,  2u,  5u,  4u,  7u,  6u,
                                      9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
 
-void SwapUVRow_SSSE3(const uint8_t* src_uv,
-                           uint8_t* dst_vu,
-                           int width) {
+// Convert UV plane of NV12 to VU of NV21.
+void SwapUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
 
       "movdqu    %3,%%xmm5                      \n"
@@ -6815,18 +6814,16 @@ void SwapUVRow_SSSE3(const uint8_t* src_uv,
       "lea       0x20(%1),%1                     \n"
       "sub       $0x10,%2                        \n"
       "jg        1b                              \n"
-      : "+r"(src_uv),  // %0
-        "+r"(dst_vu),  // %1
-        "+r"(width)    // %2
-      : "m"(kShuffleUVToVU)    // %3
+      : "+r"(src_uv),        // %0
+        "+r"(dst_vu),        // %1
+        "+r"(width)          // %2
+      : "m"(kShuffleUVToVU)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
 #endif  // HAS_SWAPUVROW_SSSE3
 
 #ifdef HAS_SWAPUVROW_AVX2
-void SwapUVRow_AVX2(const uint8_t* src_uv,
-                          uint8_t* dst_vu,
-                          int width) {
+void SwapUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
 
       "vbroadcastf128 %3,%%ymm5                  \n"
@@ -6844,10 +6841,10 @@ void SwapUVRow_AVX2(const uint8_t* src_uv,
       "sub       $0x20,%2                        \n"
       "jg        1b                              \n"
       "vzeroupper                                \n"
-      : "+r"(src_uv),  // %0
-        "+r"(dst_vu),  // %1
-        "+r"(width)    // %2
-      : "m"(kShuffleUVToVU)    // %3
+      : "+r"(src_uv),        // %0
+        "+r"(dst_vu),        // %1
+        "+r"(width)          // %2
+      : "m"(kShuffleUVToVU)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm5");
 }
 #endif  // HAS_SWAPUVROW_AVX2

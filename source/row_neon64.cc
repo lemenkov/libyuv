@@ -2969,7 +2969,7 @@ void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
-// Convert biplanar UV channel of NV12 to NV21
+// Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
       "1:                                        \n"

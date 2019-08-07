@@ -3319,6 +3319,7 @@ void AYUVToYRow_C(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
   }
 }
 
+// Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   int x;
   for (x = 0; x < width; ++x) {
