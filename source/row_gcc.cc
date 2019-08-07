@@ -1154,6 +1154,48 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
 }
 #endif  // HAS_ARGBTOYROW_AVX2
 
+#ifdef HAS_ABGRTOYROW_AVX2
+// Convert 32 ABGR pixels (128 bytes) to 32 Y values.
+void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
+  asm volatile(
+      "vbroadcastf128 %3,%%ymm4                  \n"
+      "vbroadcastf128 %4,%%ymm5                  \n"
+      "vmovdqu    %5,%%ymm6                      \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "vmovdqu    0x20(%0),%%ymm1                \n"
+      "vmovdqu    0x40(%0),%%ymm2                \n"
+      "vmovdqu    0x60(%0),%%ymm3                \n"
+      "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
+      "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+      "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
+      "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
+      "lea       0x80(%0),%0                     \n"
+      "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
+      "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
+      "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
+      "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
+      "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
+      "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
+      "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"  // add 16 for Y
+      "vmovdqu    %%ymm0,(%1)                    \n"
+      "lea       0x20(%1),%1                     \n"
+      "sub       $0x20,%2                        \n"
+      "jg        1b                              \n"
+      "vzeroupper                                \n"
+      : "+r"(src_abgr),         // %0
+        "+r"(dst_y),            // %1
+        "+r"(width)             // %2
+      : "m"(kABGRToY),          // %3
+        "m"(kAddY16),           // %4
+        "m"(kPermdARGBToY_AVX)  // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+#endif  // HAS_ABGRTOYROW_AVX2
+
+
 #ifdef HAS_ARGBTOYJROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
 void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
@@ -1327,6 +1369,69 @@ void ARGBToUVRow_AVX2(const uint8_t* src_argb0,
         "xmm7");
 }
 #endif  // HAS_ARGBTOUVROW_AVX2
+
+#ifdef HAS_ABGRTOUVROW_AVX2
+void ABGRToUVRow_AVX2(const uint8_t* src_abgr0,
+                      int src_stride_abgr,
+                      uint8_t* dst_u,
+                      uint8_t* dst_v,
+                      int width) {
+  asm volatile(
+      "vbroadcastf128 %5,%%ymm5                  \n"
+      "vbroadcastf128 %6,%%ymm6                  \n"
+      "vbroadcastf128 %7,%%ymm7                  \n"
+      "sub        %1,%2                          \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"
+      "vmovdqu    0x20(%0),%%ymm1                \n"
+      "vmovdqu    0x40(%0),%%ymm2                \n"
+      "vmovdqu    0x60(%0),%%ymm3                \n"
+      "vpavgb    0x00(%0,%4,1),%%ymm0,%%ymm0     \n"
+      "vpavgb    0x20(%0,%4,1),%%ymm1,%%ymm1     \n"
+      "vpavgb    0x40(%0,%4,1),%%ymm2,%%ymm2     \n"
+      "vpavgb    0x60(%0,%4,1),%%ymm3,%%ymm3     \n"
+      "lea        0x80(%0),%0                    \n"
+      "vshufps    $0x88,%%ymm1,%%ymm0,%%ymm4     \n"
+      "vshufps    $0xdd,%%ymm1,%%ymm0,%%ymm0     \n"
+      "vpavgb     %%ymm4,%%ymm0,%%ymm0           \n"
+      "vshufps    $0x88,%%ymm3,%%ymm2,%%ymm4     \n"
+      "vshufps    $0xdd,%%ymm3,%%ymm2,%%ymm2     \n"
+      "vpavgb     %%ymm4,%%ymm2,%%ymm2           \n"
+
+      "vpmaddubsw %%ymm7,%%ymm0,%%ymm1           \n"
+      "vpmaddubsw %%ymm7,%%ymm2,%%ymm3           \n"
+      "vpmaddubsw %%ymm6,%%ymm0,%%ymm0           \n"
+      "vpmaddubsw %%ymm6,%%ymm2,%%ymm2           \n"
+      "vphaddw    %%ymm3,%%ymm1,%%ymm1           \n"
+      "vphaddw    %%ymm2,%%ymm0,%%ymm0           \n"
+      "vpsraw     $0x8,%%ymm1,%%ymm1             \n"
+      "vpsraw     $0x8,%%ymm0,%%ymm0             \n"
+      "vpacksswb  %%ymm0,%%ymm1,%%ymm0           \n"
+      "vpermq     $0xd8,%%ymm0,%%ymm0            \n"
+      "vpshufb    %8,%%ymm0,%%ymm0               \n"
+      "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"
+
+      "vextractf128 $0x0,%%ymm0,(%1)             \n"
+      "vextractf128 $0x1,%%ymm0,0x0(%1,%2,1)     \n"
+      "lea        0x10(%1),%1                    \n"
+      "sub        $0x20,%3                       \n"
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
+      : "+r"(src_abgr0),                   // %0
+        "+r"(dst_u),                       // %1
+        "+r"(dst_v),                       // %2
+        "+rm"(width)                       // %3
+      : "r"((intptr_t)(src_stride_abgr)),  // %4
+        "m"(kAddUV128),                    // %5
+        "m"(kABGRToV),                     // %6
+        "m"(kABGRToU),                     // %7
+        "m"(kShufARGBToUV_AVX)             // %8
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
+        "xmm7");
+}
+#endif  // HAS_ABGRTOUVROW_AVX2
 
 #ifdef HAS_ARGBTOUVJROW_AVX2
 void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
