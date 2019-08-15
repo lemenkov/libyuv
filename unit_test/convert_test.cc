@@ -12,8 +12,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
-
 #include "libyuv/basic_types.h"
 #include "libyuv/compare.h"
 #include "libyuv/convert.h"
@@ -28,6 +26,10 @@
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
 #include "libyuv/video_common.h"
+
+#ifdef ENABLE_ROW_TESTS
+#include "libyuv/row.h" /* For ARGBToAR30Row_AVX2 */
+#endif
 
 #if defined(__arm__) || defined(__aarch64__)
 // arm version subsamples by summing 4 pixels then multiplying by matrix with

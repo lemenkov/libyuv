@@ -12,9 +12,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-// row.h defines SIMD_ALIGNED, overriding unit_test.h
-// TODO(fbarchard): Remove row.h from unittests.  Test public functions.
-#include "libyuv/row.h" /* For ScaleSumSamples_Neon */
 
 #include "../unit_test/unit_test.h"
 #include "libyuv/compare.h"
@@ -25,6 +22,12 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+
+#ifdef ENABLE_ROW_TESTS
+// row.h defines SIMD_ALIGNED, overriding unit_test.h
+// TODO(fbarchard): Remove row.h from unittests.  Test public functions.
+#include "libyuv/row.h" /* For ScaleSumSamples_Neon */
+#endif
 
 namespace libyuv {
 
@@ -2816,6 +2819,7 @@ TEST_F(LibYUVPlanarTest, Convert16To8Plane) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 
+#ifdef ENABLE_ROW_TESTS
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_CONVERT16TO8ROW_AVX2
 TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
@@ -2861,6 +2865,7 @@ TEST_F(LibYUVPlanarTest, Convert16To8Row_Opt) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 #endif  // HAS_CONVERT16TO8ROW_AVX2
+#endif  // ENABLE_ROW_TESTS
 
 TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
   // Round count up to multiple of 16
@@ -2896,6 +2901,7 @@ TEST_F(LibYUVPlanarTest, Convert8To16Plane) {
   free_aligned_buffer_page_end(dst_pixels_y_c);
 }
 
+#ifdef ENABLE_ROW_TESTS
 // TODO(fbarchard): Improve test for more platforms.
 #ifdef HAS_CONVERT8TO16ROW_AVX2
 TEST_F(LibYUVPlanarTest, Convert8To16Row_Opt) {
@@ -3340,5 +3346,6 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
   free_aligned_buffer_page_end(src_pixels_vu);
   free_aligned_buffer_page_end(dst_pixels_uv);
 }
+#endif
 
 }  // namespace libyuv
