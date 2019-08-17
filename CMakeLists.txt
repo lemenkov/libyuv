@@ -10,6 +10,10 @@ if(POLICY CMP0064)
   cmake_policy(SET CMP0064 NEW)
 endif()
 
+if (${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
+  cmake_policy(SET CMP0042 NEW)
+endif ()
+
 SET ( ly_base_dir	${PROJECT_SOURCE_DIR} )
 SET ( ly_src_dir	${ly_base_dir}/source )
 SET ( ly_inc_dir	${ly_base_dir}/include )
