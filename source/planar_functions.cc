@@ -1766,6 +1766,14 @@ static int I422ToRGBAMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGBAROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToRGBARow = I422ToRGBARow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToRGBARow = I422ToRGBARow_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToRGBARow(src_y, src_u, src_v, dst_rgba, yuvconstants, width);
@@ -1865,6 +1873,14 @@ int NV12ToRGB565(const uint8_t* src_y,
     NV12ToRGB565Row = NV12ToRGB565Row_Any_MSA;
     if (IS_ALIGNED(width, 8)) {
       NV12ToRGB565Row = NV12ToRGB565Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_NV12TORGB565ROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    NV12ToRGB565Row = NV12ToRGB565Row_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      NV12ToRGB565Row = NV12ToRGB565Row_MMI;
     }
   }
 #endif
@@ -2078,6 +2094,14 @@ int ARGBRect(uint8_t* dst_argb,
     ARGBSetRow = ARGBSetRow_Any_MSA;
     if (IS_ALIGNED(width, 4)) {
       ARGBSetRow = ARGBSetRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBSETROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBSetRow = ARGBSetRow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBSetRow = ARGBSetRow_MMI;
     }
   }
 #endif

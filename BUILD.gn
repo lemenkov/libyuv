@@ -6,8 +6,8 @@
 # in the file PATENTS. All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("libyuv.gni")
 import("//testing/test.gni")
+import("libyuv.gni")
 
 declare_args() {
   # Set to false to disable building with gflags.
@@ -162,9 +162,8 @@ static_library("libyuv_internal") {
   # crbug.com/538243).
   if (!is_debug || is_nacl) {
     configs -= [ "//build/config/compiler:default_optimization" ]
-
     # Enable optimize for speed (-O2) over size (-Os).
-    configs += [ "//build/config/compiler:optimize_max" ]
+    #configs += [ "//build/config/compiler:optimize_max" ]
   }
 
   # To enable AVX2 or other cpu optimization, pass flag here

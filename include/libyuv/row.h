@@ -458,6 +458,8 @@ extern "C" {
 #define HAS_I422TOUYVYROW_MSA
 #define HAS_I422TOYUY2ROW_MSA
 #define HAS_I444TOARGBROW_MSA
+#define HAS_I422TOARGB1555ROW_MSA
+#define HAS_I422TORGB565ROW_MSA
 #define HAS_INTERPOLATEROW_MSA
 #define HAS_J400TOARGBROW_MSA
 #define HAS_MERGEUVROW_MSA
@@ -514,6 +516,7 @@ extern "C" {
 #define HAS_ARGBMIRRORROW_MMI
 #define HAS_ARGBMULTIPLYROW_MMI
 #define HAS_ARGBSEPIAROW_MMI
+#define HAS_ARGBSETROW_MMI
 #define HAS_ARGBSHADEROW_MMI
 #define HAS_ARGBSHUFFLEROW_MMI
 #define HAS_ARGBSUBTRACTROW_MMI
@@ -537,6 +540,8 @@ extern "C" {
 #define HAS_I400TOARGBROW_MMI
 #define HAS_I422TOUYVYROW_MMI
 #define HAS_I422TOYUY2ROW_MMI
+#define HAS_I422TOARGBROW_MMI
+#define HAS_I444TOARGBROW_MMI
 #define HAS_INTERPOLATEROW_MMI
 #define HAS_J400TOARGBROW_MMI
 #define HAS_MERGERGBROW_MMI
@@ -567,6 +572,20 @@ extern "C" {
 #define HAS_YUY2TOUV422ROW_MMI
 #define HAS_YUY2TOUVROW_MMI
 #define HAS_YUY2TOYROW_MMI
+#define HAS_I210TOARGBROW_MMI
+#define HAS_I422TOARGB4444ROW_MMI
+#define HAS_I422TOARGB1555ROW_MMI
+#define HAS_I422TORGB565ROW_MMI
+#define HAS_NV21TORGB24ROW_MMI
+#define HAS_NV12TORGB24ROW_MMI
+#define HAS_I422ALPHATOARGBROW_MMI
+#define HAS_I422TORGB24ROW_MMI
+#define HAS_NV12TOARGBROW_MMI
+#define HAS_NV21TOARGBROW_MMI
+#define HAS_NV12TORGB565ROW_MMI
+#define HAS_YUY2TOARGBROW_MMI
+#define HAS_UYVYTOARGBROW_MMI
+#define HAS_I422TORGBAROW_MMI
 #endif
 
 #if defined(_MSC_VER) && !defined(__CLR_VER) && !defined(__clang__)
@@ -844,6 +863,12 @@ void I444ToARGBRow_MSA(const uint8_t* src_y,
                        uint8_t* dst_argb,
                        const struct YuvConstants* yuvconstants,
                        int width);
+void I444ToARGBRow_MMI(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
 
 void I422ToARGBRow_MSA(const uint8_t* src_y,
                        const uint8_t* src_u,
@@ -852,6 +877,12 @@ void I422ToARGBRow_MSA(const uint8_t* src_y,
                        const struct YuvConstants* yuvconstants,
                        int width);
 void I422ToRGBARow_MSA(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I422ToARGBRow_MMI(const uint8_t* src_y,
                        const uint8_t* src_u,
                        const uint8_t* src_v,
                        uint8_t* dst_argb,
@@ -1847,6 +1878,8 @@ void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width);
 void ARGBSetRow_Any_NEON(uint8_t* dst_ptr, uint32_t v32, int width);
 void ARGBSetRow_MSA(uint8_t* dst_argb, uint32_t v32, int width);
 void ARGBSetRow_Any_MSA(uint8_t* dst_ptr, uint32_t v32, int width);
+void ARGBSetRow_MMI(uint8_t* dst_argb, uint32_t v32, int width);
+void ARGBSetRow_Any_MMI(uint8_t* dst_ptr, uint32_t v32, int width);
 
 // ARGBShufflers for BGRAToARGB etc.
 void ARGBShuffleRow_C(const uint8_t* src_argb,
@@ -3089,7 +3122,19 @@ void I444ToARGBRow_Any_MSA(const uint8_t* y_buf,
                            uint8_t* dst_ptr,
                            const struct YuvConstants* yuvconstants,
                            int width);
+void I444ToARGBRow_Any_MMI(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 void I422ToARGBRow_Any_MSA(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422ToARGBRow_Any_MMI(const uint8_t* y_buf,
                            const uint8_t* u_buf,
                            const uint8_t* v_buf,
                            uint8_t* dst_ptr,
@@ -4036,6 +4081,159 @@ float ScaleSumSamples_NEON(const float* src,
                            int width);
 void ScaleSamples_C(const float* src, float* dst, float scale, int width);
 void ScaleSamples_NEON(const float* src, float* dst, float scale, int width);
+
+void I210ToARGBRow_MMI(const uint16_t* src_y,
+                       const uint16_t* src_u,
+                       const uint16_t* src_v,
+                       uint8_t* rgb_buf,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I422ToRGBARow_MMI(const uint8_t* src_y,
+                       const uint8_t* src_u,
+                       const uint8_t* src_v,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I422AlphaToARGBRow_MMI(const uint8_t* src_y,
+                            const uint8_t* src_u,
+                            const uint8_t* src_v,
+                            const uint8_t* src_a,
+                            uint8_t* dst_argb,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void I422ToRGB24Row_MMI(const uint8_t* src_y,
+                        const uint8_t* src_u,
+                        const uint8_t* src_v,
+                        uint8_t* dst_argb,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void I422ToRGB565Row_MMI(const uint8_t* src_y,
+                         const uint8_t* src_u,
+                         const uint8_t* src_v,
+                         uint8_t* dst_rgb565,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void I422ToARGB4444Row_MMI(const uint8_t* src_y,
+                           const uint8_t* src_u,
+                           const uint8_t* src_v,
+                           uint8_t* dst_argb4444,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422ToARGB1555Row_MMI(const uint8_t* src_y,
+                           const uint8_t* src_u,
+                           const uint8_t* src_v,
+                           uint8_t* dst_argb1555,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void NV12ToARGBRow_MMI(const uint8_t* src_y,
+                       const uint8_t* src_uv,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void NV12ToRGB565Row_MMI(const uint8_t* src_y,
+                         const uint8_t* src_uv,
+                         uint8_t* dst_rgb565,
+                         const struct YuvConstants* yuvconstants,
+                         int width);
+void NV21ToARGBRow_MMI(const uint8_t* src_y,
+                       const uint8_t* src_vu,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void NV12ToRGB24Row_MMI(const uint8_t* src_y,
+                        const uint8_t* src_uv,
+                        uint8_t* dst_rgb24,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void NV21ToRGB24Row_MMI(const uint8_t* src_y,
+                        const uint8_t* src_vu,
+                        uint8_t* dst_rgb24,
+                        const struct YuvConstants* yuvconstants,
+                        int width);
+void YUY2ToARGBRow_MMI(const uint8_t* src_yuy2,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void UYVYToARGBRow_MMI(const uint8_t* src_uyvy,
+                       uint8_t* dst_argb,
+                       const struct YuvConstants* yuvconstants,
+                       int width);
+void I210ToARGBRow_Any_MMI(const uint16_t* y_buf,
+                           const uint16_t* u_buf,
+                           const uint16_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422ToRGBARow_Any_MMI(const uint8_t* y_buf,
+                           const uint8_t* u_buf,
+                           const uint8_t* v_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void I422AlphaToARGBRow_Any_MMI(const uint8_t* y_buf,
+                                const uint8_t* u_buf,
+                                const uint8_t* v_buf,
+                                const uint8_t* a_buf,
+                                uint8_t* dst_ptr,
+                                const struct YuvConstants* yuvconstants,
+                                int width);
+void I422ToRGB24Row_Any_MMI(const uint8_t* y_buf,
+                            const uint8_t* u_buf,
+                            const uint8_t* v_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void I422ToRGB565Row_Any_MMI(const uint8_t* y_buf,
+                             const uint8_t* u_buf,
+                             const uint8_t* v_buf,
+                             uint8_t* dst_ptr,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void I422ToARGB4444Row_Any_MMI(const uint8_t* y_buf,
+                               const uint8_t* u_buf,
+                               const uint8_t* v_buf,
+                               uint8_t* dst_ptr,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
+void I422ToARGB1555Row_Any_MMI(const uint8_t* y_buf,
+                               const uint8_t* u_buf,
+                               const uint8_t* v_buf,
+                               uint8_t* dst_ptr,
+                               const struct YuvConstants* yuvconstants,
+                               int width);
+void NV12ToARGBRow_Any_MMI(const uint8_t* y_buf,
+                           const uint8_t* uv_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void NV12ToRGB565Row_Any_MMI(const uint8_t* y_buf,
+                             const uint8_t* uv_buf,
+                             uint8_t* dst_ptr,
+                             const struct YuvConstants* yuvconstants,
+                             int width);
+void NV21ToARGBRow_Any_MMI(const uint8_t* y_buf,
+                           const uint8_t* uv_buf,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void NV12ToRGB24Row_Any_MMI(const uint8_t* y_buf,
+                            const uint8_t* uv_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void NV21ToRGB24Row_Any_MMI(const uint8_t* y_buf,
+                            const uint8_t* uv_buf,
+                            uint8_t* dst_ptr,
+                            const struct YuvConstants* yuvconstants,
+                            int width);
+void YUY2ToARGBRow_Any_MMI(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
+void UYVYToARGBRow_Any_MMI(const uint8_t* src_ptr,
+                           uint8_t* dst_ptr,
+                           const struct YuvConstants* yuvconstants,
+                           int width);
 
 #ifdef __cplusplus
 }  // extern "C"

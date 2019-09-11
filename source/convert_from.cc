@@ -592,6 +592,14 @@ static int I420ToRGBAMatrix(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TORGBAROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToRGBARow = I422ToRGBARow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToRGBARow = I422ToRGBARow_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToRGBARow(src_y, src_u, src_v, dst_rgba, yuvconstants, width);
@@ -696,6 +704,14 @@ static int I420ToRGB24Matrix(const uint8_t* src_y,
     I422ToRGB24Row = I422ToRGB24Row_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       I422ToRGB24Row = I422ToRGB24Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB24ROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToRGB24Row = I422ToRGB24Row_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToRGB24Row = I422ToRGB24Row_MMI;
     }
   }
 #endif
@@ -843,6 +859,14 @@ int I420ToARGB1555(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGB1555ROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToARGB1555Row = I422ToARGB1555Row_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToARGB1555Row = I422ToARGB1555Row_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToARGB1555Row(src_y, src_u, src_v, dst_argb1555, &kYuvI601Constants,
@@ -916,6 +940,14 @@ int I420ToARGB4444(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGB4444ROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToARGB4444Row = I422ToARGB4444Row_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToARGB4444Row = I422ToARGB4444Row_MMI;
+    }
+  }
+#endif
 
   for (y = 0; y < height; ++y) {
     I422ToARGB4444Row(src_y, src_u, src_v, dst_argb4444, &kYuvI601Constants,
@@ -986,6 +1018,14 @@ int I420ToRGB565Matrix(const uint8_t* src_y,
     I422ToRGB565Row = I422ToRGB565Row_Any_MSA;
     if (IS_ALIGNED(width, 8)) {
       I422ToRGB565Row = I422ToRGB565Row_MSA;
+    }
+  }
+#endif
+#if defined(HAS_I422TORGB565ROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToRGB565Row = I422ToRGB565Row_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToRGB565Row = I422ToRGB565Row_MMI;
     }
   }
 #endif
@@ -1192,6 +1232,14 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     }
   }
 #endif
+#if defined(HAS_I422TOARGBROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    I422ToARGBRow = I422ToARGBRow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      I422ToARGBRow = I422ToARGBRow_MMI;
+    }
+  }
+#endif
 #if defined(HAS_ARGBTORGB565DITHERROW_SSE2)
   if (TestCpuFlag(kCpuHasSSE2)) {
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_SSE2;
@@ -1221,6 +1269,14 @@ int I420ToRGB565Dither(const uint8_t* src_y,
     ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_MSA;
     if (IS_ALIGNED(width, 8)) {
       ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_ARGBTORGB565DITHERROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_Any_MMI;
+    if (IS_ALIGNED(width, 4)) {
+      ARGBToRGB565DitherRow = ARGBToRGB565DitherRow_MMI;
     }
   }
 #endif
