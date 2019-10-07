@@ -22,12 +22,15 @@ extern "C" {
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
 // Constants for ARGB
-static const vec8 kARGBToY = {13, 65, 33, 0, 13, 65, 33, 0,
-                              13, 65, 33, 0, 13, 65, 33, 0};
+static const uvec8 kARGBToY = {25u, 129u, 66u, 0u, 25u, 129u, 66u, 0u,
+                               25u, 129u, 66u, 0u, 25u, 129u, 66u, 0u};
 
 // JPeg full range.
-static const vec8 kARGBToYJ = {15, 75, 38, 0, 15, 75, 38, 0,
-                               15, 75, 38, 0, 15, 75, 38, 0};
+static const uvec8 kARGBToYJ = {29u, 150u, 77u, 0u, 29u, 150u, 77u, 0u,
+                                29u, 150u, 77u, 0u, 29u, 150u, 77u, 0u};
+
+static const uvec8 kRGBAToYJ = {0u, 29u, 150u, 77u, 0u, 29u, 150u, 77u,
+                                0u, 29u, 150u, 77u, 0u, 29u, 150u, 77u};
 #endif  // defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_ARGBGRAYROW_SSSE3)
 
 #if defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
@@ -45,8 +48,8 @@ static const vec8 kARGBToVJ = {-20, -107, 127, 0, -20, -107, 127, 0,
                                -20, -107, 127, 0, -20, -107, 127, 0};
 
 // Constants for BGRA
-static const vec8 kBGRAToY = {0, 33, 65, 13, 0, 33, 65, 13,
-                              0, 33, 65, 13, 0, 33, 65, 13};
+static const uvec8 kBGRAToY = {0u, 66u, 129u, 25u, 0u, 66u, 129u, 25u,
+                               0u, 66u, 129u, 25u, 0u, 66u, 129u, 25u};
 
 static const vec8 kBGRAToU = {0, -38, -74, 112, 0, -38, -74, 112,
                               0, -38, -74, 112, 0, -38, -74, 112};
@@ -55,8 +58,8 @@ static const vec8 kBGRAToV = {0, 112, -94, -18, 0, 112, -94, -18,
                               0, 112, -94, -18, 0, 112, -94, -18};
 
 // Constants for ABGR
-static const vec8 kABGRToY = {33, 65, 13, 0, 33, 65, 13, 0,
-                              33, 65, 13, 0, 33, 65, 13, 0};
+static const uvec8 kABGRToY = {66u, 129u, 25u, 0u, 66u, 129u, 25u, 0u,
+                               66u, 129u, 25u, 0u, 66u, 129u, 25u, 0u};
 
 static const vec8 kABGRToU = {-38, -74, 112, 0, -38, -74, 112, 0,
                               -38, -74, 112, 0, -38, -74, 112, 0};
@@ -65,8 +68,8 @@ static const vec8 kABGRToV = {112, -94, -18, 0, 112, -94, -18, 0,
                               112, -94, -18, 0, 112, -94, -18, 0};
 
 // Constants for RGBA.
-static const vec8 kRGBAToY = {0, 13, 65, 33, 0, 13, 65, 33,
-                              0, 13, 65, 33, 0, 13, 65, 33};
+static const uvec8 kRGBAToY = {0u, 25u, 129u, 66u, 0u, 25u, 129u, 66u,
+                               0u, 25u, 129u, 66u, 0u, 25u, 129u, 66u};
 
 static const vec8 kRGBAToU = {0, 112, -74, -38, 0, 112, -74, -38,
                               0, 112, -74, -38, 0, 112, -74, -38};
@@ -74,17 +77,15 @@ static const vec8 kRGBAToU = {0, 112, -74, -38, 0, 112, -74, -38,
 static const vec8 kRGBAToV = {0, -18, -94, 112, 0, -18, -94, 112,
                               0, -18, -94, 112, 0, -18, -94, 112};
 
-static const uvec8 kAddY16 = {16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
-                              16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u};
-
-// 7 bit fixed point 0.5.
-static const vec16 kAddYJ64 = {64, 64, 64, 64, 64, 64, 64, 64};
+static const uvec16 kAddY16 = {0x7e80u, 0x7e80u, 0x7e80u, 0x7e80u,
+                               0x7e80u, 0x7e80u, 0x7e80u, 0x7e80u};
 
 static const uvec8 kAddUV128 = {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
                                 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
-static const uvec16 kAddUVJ128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
+static const uvec16 kSub128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
                                   0x8080u, 0x8080u, 0x8080u, 0x8080u};
+
 #endif  // defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
 
 #ifdef HAS_RGB24TOARGBROW_SSSE3
@@ -1034,81 +1035,125 @@ void ABGRToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif
 
+// TODO(mraptis): Consider passing R, G, B multipliers as parameter.
+// round parameter is register containing value to add before shift.
+#define RGBTOY(round)                            \
+  "1:                                        \n" \
+  "movdqu    (%0),%%xmm0                     \n" \
+  "movdqu    0x10(%0),%%xmm1                 \n" \
+  "movdqu    0x20(%0),%%xmm2                 \n" \
+  "movdqu    0x30(%0),%%xmm3                 \n" \
+  "psubb     %%xmm5,%%xmm0                   \n" \
+  "psubb     %%xmm5,%%xmm1                   \n" \
+  "psubb     %%xmm5,%%xmm2                   \n" \
+  "psubb     %%xmm5,%%xmm3                   \n" \
+  "movdqu    %%xmm4,%%xmm6                   \n" \
+  "pmaddubsw %%xmm0,%%xmm6                   \n" \
+  "movdqu    %%xmm4,%%xmm0                   \n" \
+  "pmaddubsw %%xmm1,%%xmm0                   \n" \
+  "movdqu    %%xmm4,%%xmm1                   \n" \
+  "pmaddubsw %%xmm2,%%xmm1                   \n" \
+  "movdqu    %%xmm4,%%xmm2                   \n" \
+  "pmaddubsw %%xmm3,%%xmm2                   \n" \
+  "lea       0x40(%0),%0                     \n" \
+  "phaddw    %%xmm0,%%xmm6                   \n" \
+  "phaddw    %%xmm2,%%xmm1                   \n" \
+  "paddw     %%" #round ",%%xmm6             \n" \
+  "paddw     %%" #round ",%%xmm1             \n" \
+  "psrlw     $0x8,%%xmm6                     \n" \
+  "psrlw     $0x8,%%xmm1                     \n" \
+  "packuswb  %%xmm1,%%xmm6                   \n" \
+  "movdqu    %%xmm6,(%1)                     \n" \
+  "lea       0x10(%1),%1                     \n" \
+  "sub       $0x10,%2                        \n" \
+  "jg        1b                              \n"
+
+#define RGBTOY_AVX2(round)                                                  \
+  "1:                                        \n"                            \
+  "vmovdqu    (%0),%%ymm0                    \n"                            \
+  "vmovdqu    0x20(%0),%%ymm1                \n"                            \
+  "vmovdqu    0x40(%0),%%ymm2                \n"                            \
+  "vmovdqu    0x60(%0),%%ymm3                \n"                            \
+  "vpsubb     %%ymm5, %%ymm0, %%ymm0         \n"                            \
+  "vpsubb     %%ymm5, %%ymm1, %%ymm1         \n"                            \
+  "vpsubb     %%ymm5, %%ymm2, %%ymm2         \n"                            \
+  "vpsubb     %%ymm5, %%ymm3, %%ymm3         \n"                            \
+  "vpmaddubsw %%ymm0,%%ymm4,%%ymm0           \n"                            \
+  "vpmaddubsw %%ymm1,%%ymm4,%%ymm1           \n"                            \
+  "vpmaddubsw %%ymm2,%%ymm4,%%ymm2           \n"                            \
+  "vpmaddubsw %%ymm3,%%ymm4,%%ymm3           \n"                            \
+  "lea       0x80(%0),%0                     \n"                            \
+  "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n" /* mutates. */             \
+  "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"                            \
+  "vpaddw     %%" #round ",%%ymm0,%%ymm0     \n" /* Add .5 for rounding. */ \
+  "vpaddw     %%" #round ",%%ymm2,%%ymm2     \n"                            \
+  "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"                            \
+  "vpsrlw     $0x8,%%ymm2,%%ymm2             \n"                            \
+  "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n" /* mutates. */             \
+  "vpermd     %%ymm0,%%ymm6,%%ymm0           \n" /* unmutate. */            \
+  "vmovdqu    %%ymm0,(%1)                    \n"                            \
+  "lea       0x20(%1),%1                     \n"                            \
+  "sub       $0x20,%2                        \n"                            \
+  "jg        1b                              \n"                            \
+  "vzeroupper                                \n"
+
 #ifdef HAS_ARGBTOYROW_SSSE3
 // Convert 16 ARGB pixels (64 bytes) to 16 Y values.
 void ARGBToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   asm volatile(
       "movdqa    %3,%%xmm4                       \n"
       "movdqa    %4,%%xmm5                       \n"
+      "movdqa    %5,%%xmm7                       \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      "movdqu    0x10(%0),%%xmm1                 \n"
-      "movdqu    0x20(%0),%%xmm2                 \n"
-      "movdqu    0x30(%0),%%xmm3                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "pmaddubsw %%xmm4,%%xmm2                   \n"
-      "pmaddubsw %%xmm4,%%xmm3                   \n"
-      "lea       0x40(%0),%0                     \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "phaddw    %%xmm3,%%xmm2                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "psrlw     $0x7,%%xmm2                     \n"
-      "packuswb  %%xmm2,%%xmm0                   \n"
-      "paddb     %%xmm5,%%xmm0                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
-      "lea       0x10(%1),%1                     \n"
-      "sub       $0x10,%2                        \n"
-      "jg        1b                              \n"
+      RGBTOY(xmm7)
       : "+r"(src_argb),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kARGBToY),   // %3
-        "m"(kAddY16)     // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128),    // %4
+        "m"(kAddY16)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
 
 #ifdef HAS_ARGBTOYJROW_SSSE3
 // Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
-// Same as ARGBToYRow but different coefficients, no add 16, but do rounding.
+// Same as ARGBToYRow but different coefficients, no add 16.
 void ARGBToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   asm volatile(
       "movdqa    %3,%%xmm4                       \n"
       "movdqa    %4,%%xmm5                       \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      "movdqu    0x10(%0),%%xmm1                 \n"
-      "movdqu    0x20(%0),%%xmm2                 \n"
-      "movdqu    0x30(%0),%%xmm3                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "pmaddubsw %%xmm4,%%xmm2                   \n"
-      "pmaddubsw %%xmm4,%%xmm3                   \n"
-      "lea       0x40(%0),%0                     \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "phaddw    %%xmm3,%%xmm2                   \n"
-      "paddw     %%xmm5,%%xmm0                   \n"
-      "paddw     %%xmm5,%%xmm2                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "psrlw     $0x7,%%xmm2                     \n"
-      "packuswb  %%xmm2,%%xmm0                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
-      "lea       0x10(%1),%1                     \n"
-      "sub       $0x10,%2                        \n"
-      "jg        1b                              \n"
+      RGBTOY(xmm5)
       : "+r"(src_argb),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kARGBToYJ),  // %3
-        "m"(kAddYJ64)    // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128)     // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif  // HAS_ARGBTOYJROW_SSSE3
+
+#ifdef HAS_RGBATOYJROW_SSSE3
+// Convert 16 ARGB pixels (64 bytes) to 16 YJ values.
+// Same as ARGBToYRow but different coefficients, no add 16.
+void RGBAToYJRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  asm volatile(
+      "movdqa    %3,%%xmm4                       \n"
+      "movdqa    %4,%%xmm5                       \n"
+
+      LABELALIGN
+      RGBTOY(xmm5)
+      : "+r"(src_rgba),  // %0
+        "+r"(dst_y),     // %1
+        "+r"(width)      // %2
+      : "m"(kRGBAToYJ),  // %3
+        "m"(kSub128)     // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+}
+#endif  // HAS_RGBATOYJROW_SSSE3
 
 #ifdef HAS_ARGBTOYROW_AVX2
 // vpermd for vphaddw + vpackuswb vpermd.
@@ -1119,38 +1164,19 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
-      "vmovdqu    %5,%%ymm6                      \n"
+      "vbroadcastf128 %5,%%ymm7                  \n"
+      "vmovdqu    %6,%%ymm6                      \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "vmovdqu    (%0),%%ymm0                    \n"
-      "vmovdqu    0x20(%0),%%ymm1                \n"
-      "vmovdqu    0x40(%0),%%ymm2                \n"
-      "vmovdqu    0x60(%0),%%ymm3                \n"
-      "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
-      "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
-      "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
-      "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
-      "lea       0x80(%0),%0                     \n"
-      "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
-      "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
-      "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
-      "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
-      "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
-      "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
-      "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"  // add 16 for Y
-      "vmovdqu    %%ymm0,(%1)                    \n"
-      "lea       0x20(%1),%1                     \n"
-      "sub       $0x20,%2                        \n"
-      "jg        1b                              \n"
-      "vzeroupper                                \n"
+      RGBTOY_AVX2(ymm7)
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
       : "m"(kARGBToY),          // %3
-        "m"(kAddY16),           // %4
-        "m"(kPermdARGBToY_AVX)  // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+        "m"(kSub128),           // %4
+        "m"(kAddY16),           // %5
+        "m"(kPermdARGBToY_AVX)  // %6
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOYROW_AVX2
 
@@ -1160,41 +1186,21 @@ void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
   asm volatile(
       "vbroadcastf128 %3,%%ymm4                  \n"
       "vbroadcastf128 %4,%%ymm5                  \n"
-      "vmovdqu    %5,%%ymm6                      \n"
+      "vbroadcastf128 %5,%%ymm7                  \n"
+      "vmovdqu    %6,%%ymm6                      \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "vmovdqu    (%0),%%ymm0                    \n"
-      "vmovdqu    0x20(%0),%%ymm1                \n"
-      "vmovdqu    0x40(%0),%%ymm2                \n"
-      "vmovdqu    0x60(%0),%%ymm3                \n"
-      "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
-      "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
-      "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
-      "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
-      "lea       0x80(%0),%0                     \n"
-      "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
-      "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
-      "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
-      "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
-      "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
-      "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
-      "vpaddb     %%ymm5,%%ymm0,%%ymm0           \n"  // add 16 for Y
-      "vmovdqu    %%ymm0,(%1)                    \n"
-      "lea       0x20(%1),%1                     \n"
-      "sub       $0x20,%2                        \n"
-      "jg        1b                              \n"
-      "vzeroupper                                \n"
+      RGBTOY_AVX2(ymm7)
       : "+r"(src_abgr),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
       : "m"(kABGRToY),          // %3
-        "m"(kAddY16),           // %4
-        "m"(kPermdARGBToY_AVX)  // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
+        "m"(kSub128),           // %4
+        "m"(kAddY16),           // %5
+        "m"(kPermdARGBToY_AVX)  // %6
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ABGRTOYROW_AVX2
-
 
 #ifdef HAS_ARGBTOYJROW_AVX2
 // Convert 32 ARGB pixels (128 bytes) to 32 Y values.
@@ -1205,38 +1211,37 @@ void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "vmovdqu    %5,%%ymm6                      \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "vmovdqu    (%0),%%ymm0                    \n"
-      "vmovdqu    0x20(%0),%%ymm1                \n"
-      "vmovdqu    0x40(%0),%%ymm2                \n"
-      "vmovdqu    0x60(%0),%%ymm3                \n"
-      "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"
-      "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
-      "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
-      "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
-      "lea       0x80(%0),%0                     \n"
-      "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n"  // mutates.
-      "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"
-      "vpaddw     %%ymm5,%%ymm0,%%ymm0           \n"  // Add .5 for rounding.
-      "vpaddw     %%ymm5,%%ymm2,%%ymm2           \n"
-      "vpsrlw     $0x7,%%ymm0,%%ymm0             \n"
-      "vpsrlw     $0x7,%%ymm2,%%ymm2             \n"
-      "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n"  // mutates.
-      "vpermd     %%ymm0,%%ymm6,%%ymm0           \n"  // unmutate.
-      "vmovdqu    %%ymm0,(%1)                    \n"
-      "lea       0x20(%1),%1                     \n"
-      "sub       $0x20,%2                        \n"
-      "jg        1b                              \n"
-      "vzeroupper                                \n"
+      RGBTOY_AVX2(ymm5)
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
       : "m"(kARGBToYJ),         // %3
-        "m"(kAddYJ64),          // %4
+        "m"(kSub128),           // %4
+        "m"(kPermdARGBToY_AVX)  // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
+}
+#endif  // HAS_ARGBTOYJROW_AVX2
+
+#ifdef HAS_RGBATOYJROW_AVX2
+// Convert 32 ARGB pixels (128 bytes) to 32 Y values.
+void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
+  asm volatile(
+      "vbroadcastf128 %3,%%ymm4                  \n"
+      "vbroadcastf128 %4,%%ymm5                  \n"
+      "vmovdqu    %5,%%ymm6                      \n"
+
+      LABELALIGN
+      RGBTOY_AVX2(ymm5)
+      "vzeroupper                                \n"
+      : "+r"(src_rgba),         // %0
+        "+r"(dst_y),            // %1
+        "+r"(width)             // %2
+      : "m"(kRGBAToYJ),         // %3
+        "m"(kSub128),           // %4
         "m"(kPermdARGBToY_AVX)  // %5
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
-#endif  // HAS_ARGBTOYJROW_AVX2
+#endif  // HAS_RGBATOYJROW_AVX2
 
 #ifdef HAS_ARGBTOUVROW_SSSE3
 void ARGBToUVRow_SSSE3(const uint8_t* src_argb0,
@@ -1488,7 +1493,7 @@ void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
       : "r"((intptr_t)(src_stride_argb)),  // %4
-        "m"(kAddUVJ128),                   // %5
+        "m"(kSub128),                   // %5
         "m"(kARGBToVJ),                    // %6
         "m"(kARGBToUJ),                    // %7
         "m"(kShufARGBToUV_AVX)             // %8
@@ -1558,7 +1563,7 @@ void ARGBToUVJRow_SSSE3(const uint8_t* src_argb0,
       : "r"((intptr_t)(src_stride_argb)),  // %4
         "m"(kARGBToVJ),                    // %5
         "m"(kARGBToUJ),                    // %6
-        "m"(kAddUVJ128)                    // %7
+        "m"(kSub128)                    // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOUVJROW_SSSE3
@@ -1623,36 +1628,19 @@ void ARGBToUV444Row_SSSE3(const uint8_t* src_argb,
 
 void BGRAToYRow_SSSE3(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
   asm volatile(
-      "movdqa    %4,%%xmm5                       \n"
       "movdqa    %3,%%xmm4                       \n"
+      "movdqa    %4,%%xmm5                       \n"
+      "movdqa    %5,%%xmm7                       \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      "movdqu    0x10(%0),%%xmm1                 \n"
-      "movdqu    0x20(%0),%%xmm2                 \n"
-      "movdqu    0x30(%0),%%xmm3                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "pmaddubsw %%xmm4,%%xmm2                   \n"
-      "pmaddubsw %%xmm4,%%xmm3                   \n"
-      "lea       0x40(%0),%0                     \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "phaddw    %%xmm3,%%xmm2                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "psrlw     $0x7,%%xmm2                     \n"
-      "packuswb  %%xmm2,%%xmm0                   \n"
-      "paddb     %%xmm5,%%xmm0                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
-      "lea       0x10(%1),%1                     \n"
-      "sub       $0x10,%2                        \n"
-      "jg        1b                              \n"
+      RGBTOY(xmm7)
       : "+r"(src_bgra),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kBGRAToY),   // %3
-        "m"(kAddY16)     // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128),    // %4
+        "m"(kAddY16)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void BGRAToUVRow_SSSE3(const uint8_t* src_bgra0,
@@ -1720,70 +1708,36 @@ void BGRAToUVRow_SSSE3(const uint8_t* src_bgra0,
 
 void ABGRToYRow_SSSE3(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
   asm volatile(
-      "movdqa    %4,%%xmm5                       \n"
       "movdqa    %3,%%xmm4                       \n"
+      "movdqa    %4,%%xmm5                       \n"
+      "movdqa    %5,%%xmm7                       \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      "movdqu    0x10(%0),%%xmm1                 \n"
-      "movdqu    0x20(%0),%%xmm2                 \n"
-      "movdqu    0x30(%0),%%xmm3                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "pmaddubsw %%xmm4,%%xmm2                   \n"
-      "pmaddubsw %%xmm4,%%xmm3                   \n"
-      "lea       0x40(%0),%0                     \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "phaddw    %%xmm3,%%xmm2                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "psrlw     $0x7,%%xmm2                     \n"
-      "packuswb  %%xmm2,%%xmm0                   \n"
-      "paddb     %%xmm5,%%xmm0                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
-      "lea       0x10(%1),%1                     \n"
-      "sub       $0x10,%2                        \n"
-      "jg        1b                              \n"
+      RGBTOY(xmm7)
       : "+r"(src_abgr),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kABGRToY),   // %3
-        "m"(kAddY16)     // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128),    // %4
+        "m"(kAddY16)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
   asm volatile(
-      "movdqa    %4,%%xmm5                       \n"
       "movdqa    %3,%%xmm4                       \n"
+      "movdqa    %4,%%xmm5                       \n"
+      "movdqa    %5,%%xmm7                       \n"
 
       LABELALIGN
-      "1:                                        \n"
-      "movdqu    (%0),%%xmm0                     \n"
-      "movdqu    0x10(%0),%%xmm1                 \n"
-      "movdqu    0x20(%0),%%xmm2                 \n"
-      "movdqu    0x30(%0),%%xmm3                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "pmaddubsw %%xmm4,%%xmm2                   \n"
-      "pmaddubsw %%xmm4,%%xmm3                   \n"
-      "lea       0x40(%0),%0                     \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "phaddw    %%xmm3,%%xmm2                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "psrlw     $0x7,%%xmm2                     \n"
-      "packuswb  %%xmm2,%%xmm0                   \n"
-      "paddb     %%xmm5,%%xmm0                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
-      "lea       0x10(%1),%1                     \n"
-      "sub       $0x10,%2                        \n"
-      "jg        1b                              \n"
+      RGBTOY(xmm7)
       : "+r"(src_rgba),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kRGBAToY),   // %3
-        "m"(kAddY16)     // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128),    // %4
+        "m"(kAddY16)     // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void ABGRToUVRow_SSSE3(const uint8_t* src_abgr0,
@@ -4399,7 +4353,7 @@ void YUY2ToYRow_AVX2(const uint8_t* src_yuy2, uint8_t* dst_y, int width) {
       "vpackuswb %%ymm1,%%ymm0,%%ymm0            \n"
       "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
       "vmovdqu   %%ymm0,(%1)                     \n"
-      "lea      0x20(%1),%1                      \n"
+      "lea       0x20(%1),%1                     \n"
       "sub       $0x20,%2                        \n"
       "jg        1b                              \n"
       "vzeroupper                                \n"
@@ -4439,7 +4393,7 @@ void YUY2ToUVRow_AVX2(const uint8_t* src_yuy2,
       "vpermq    $0xd8,%%ymm0,%%ymm0             \n"
       "vextractf128 $0x0,%%ymm1,(%1)             \n"
       "vextractf128 $0x0,%%ymm0,0x00(%1,%2,1)    \n"
-      "lea      0x10(%1),%1                      \n"
+      "lea       0x10(%1),%1                     \n"
       "sub       $0x20,%3                        \n"
       "jg        1b                              \n"
       "vzeroupper                                \n"
@@ -5009,12 +4963,16 @@ void ARGBGrayRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
       "1:                                        \n"
       "movdqu    (%0),%%xmm0                     \n"
       "movdqu    0x10(%0),%%xmm1                 \n"
-      "pmaddubsw %%xmm4,%%xmm0                   \n"
-      "pmaddubsw %%xmm4,%%xmm1                   \n"
-      "phaddw    %%xmm1,%%xmm0                   \n"
-      "paddw     %%xmm5,%%xmm0                   \n"
-      "psrlw     $0x7,%%xmm0                     \n"
-      "packuswb  %%xmm0,%%xmm0                   \n"
+      "psubb     %%xmm5,%%xmm0                   \n"
+      "psubb     %%xmm5,%%xmm1                   \n"
+      "movdqu    %%xmm4,%%xmm6                   \n"
+      "pmaddubsw %%xmm0,%%xmm6                   \n"
+      "movdqu    %%xmm4,%%xmm0                   \n"
+      "pmaddubsw %%xmm1,%%xmm0                   \n"
+      "phaddw    %%xmm0,%%xmm6                   \n"
+      "paddw     %%xmm5,%%xmm6                   \n"
+      "psrlw     $0x8,%%xmm6                     \n"
+      "packuswb  %%xmm6,%%xmm6                   \n"
       "movdqu    (%0),%%xmm2                     \n"
       "movdqu    0x10(%0),%%xmm3                 \n"
       "lea       0x20(%0),%0                     \n"
@@ -5022,13 +4980,13 @@ void ARGBGrayRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
       "psrld     $0x18,%%xmm3                    \n"
       "packuswb  %%xmm3,%%xmm2                   \n"
       "packuswb  %%xmm2,%%xmm2                   \n"
-      "movdqa    %%xmm0,%%xmm3                   \n"
-      "punpcklbw %%xmm0,%%xmm0                   \n"
+      "movdqa    %%xmm6,%%xmm3                   \n"
+      "punpcklbw %%xmm6,%%xmm6                   \n"
       "punpcklbw %%xmm2,%%xmm3                   \n"
-      "movdqa    %%xmm0,%%xmm1                   \n"
-      "punpcklwd %%xmm3,%%xmm0                   \n"
+      "movdqa    %%xmm6,%%xmm1                   \n"
+      "punpcklwd %%xmm3,%%xmm6                   \n"
       "punpckhwd %%xmm3,%%xmm1                   \n"
-      "movdqu    %%xmm0,(%1)                     \n"
+      "movdqu    %%xmm6,(%1)                     \n"
       "movdqu    %%xmm1,0x10(%1)                 \n"
       "lea       0x20(%1),%1                     \n"
       "sub       $0x8,%2                         \n"
@@ -5037,8 +4995,8 @@ void ARGBGrayRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
         "+r"(dst_argb),  // %1
         "+r"(width)      // %2
       : "m"(kARGBToYJ),  // %3
-        "m"(kAddYJ64)    // %4
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+        "m"(kSub128)     // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6");
 }
 #endif  // HAS_ARGBGRAYROW_SSSE3
 

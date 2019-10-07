@@ -210,6 +210,15 @@ int ARGBToJ400(const uint8_t* src_argb,
                int width,
                int height);
 
+// Convert RGBA to J400. (JPeg full range).
+LIBYUV_API
+int RGBAToJ400(const uint8_t* src_rgba,
+               int src_stride_rgba,
+               uint8_t* dst_yj,
+               int dst_stride_yj,
+               int width,
+               int height);
+
 // Convert ARGB to I400.
 LIBYUV_API
 int ARGBToI400(const uint8_t* src_argb,

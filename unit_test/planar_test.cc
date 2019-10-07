@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 #include "../unit_test/unit_test.h"
 #include "libyuv/compare.h"
 #include "libyuv/convert.h"
@@ -281,6 +280,7 @@ TEST_F(LibYUVPlanarTest, TestARGBComputeCumulativeSum) {
   }
 }
 
+// near is for legacy platforms.
 TEST_F(LibYUVPlanarTest, TestARGBGray) {
   SIMD_ALIGNED(uint8_t orig_pixels[1280][4]);
   memset(orig_pixels, 0, sizeof(orig_pixels));
@@ -317,17 +317,17 @@ TEST_F(LibYUVPlanarTest, TestARGBGray) {
   orig_pixels[5][3] = 224u;
   // Do 16 to test asm version.
   ARGBGray(&orig_pixels[0][0], 0, 0, 0, 16, 1);
-  EXPECT_EQ(30u, orig_pixels[0][0]);
-  EXPECT_EQ(30u, orig_pixels[0][1]);
-  EXPECT_EQ(30u, orig_pixels[0][2]);
+  EXPECT_NEAR(29u, orig_pixels[0][0], 1);
+  EXPECT_NEAR(29u, orig_pixels[0][1], 1);
+  EXPECT_NEAR(29u, orig_pixels[0][2], 1);
   EXPECT_EQ(128u, orig_pixels[0][3]);
   EXPECT_EQ(149u, orig_pixels[1][0]);
   EXPECT_EQ(149u, orig_pixels[1][1]);
   EXPECT_EQ(149u, orig_pixels[1][2]);
   EXPECT_EQ(0u, orig_pixels[1][3]);
-  EXPECT_EQ(76u, orig_pixels[2][0]);
-  EXPECT_EQ(76u, orig_pixels[2][1]);
-  EXPECT_EQ(76u, orig_pixels[2][2]);
+  EXPECT_NEAR(77u, orig_pixels[2][0], 1);
+  EXPECT_NEAR(77u, orig_pixels[2][1], 1);
+  EXPECT_NEAR(77u, orig_pixels[2][2], 1);
   EXPECT_EQ(255u, orig_pixels[2][3]);
   EXPECT_EQ(0u, orig_pixels[3][0]);
   EXPECT_EQ(0u, orig_pixels[3][1]);
@@ -337,9 +337,9 @@ TEST_F(LibYUVPlanarTest, TestARGBGray) {
   EXPECT_EQ(255u, orig_pixels[4][1]);
   EXPECT_EQ(255u, orig_pixels[4][2]);
   EXPECT_EQ(255u, orig_pixels[4][3]);
-  EXPECT_EQ(96u, orig_pixels[5][0]);
-  EXPECT_EQ(96u, orig_pixels[5][1]);
-  EXPECT_EQ(96u, orig_pixels[5][2]);
+  EXPECT_NEAR(97u, orig_pixels[5][0], 1);
+  EXPECT_NEAR(97u, orig_pixels[5][1], 1);
+  EXPECT_NEAR(97u, orig_pixels[5][2], 1);
   EXPECT_EQ(224u, orig_pixels[5][3]);
   for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
@@ -389,30 +389,30 @@ TEST_F(LibYUVPlanarTest, TestARGBGrayTo) {
   orig_pixels[5][3] = 224u;
   // Do 16 to test asm version.
   ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 16, 1);
-  EXPECT_EQ(30u, gray_pixels[0][0]);
-  EXPECT_EQ(30u, gray_pixels[0][1]);
-  EXPECT_EQ(30u, gray_pixels[0][2]);
-  EXPECT_EQ(128u, gray_pixels[0][3]);
-  EXPECT_EQ(149u, gray_pixels[1][0]);
-  EXPECT_EQ(149u, gray_pixels[1][1]);
-  EXPECT_EQ(149u, gray_pixels[1][2]);
-  EXPECT_EQ(0u, gray_pixels[1][3]);
-  EXPECT_EQ(76u, gray_pixels[2][0]);
-  EXPECT_EQ(76u, gray_pixels[2][1]);
-  EXPECT_EQ(76u, gray_pixels[2][2]);
-  EXPECT_EQ(255u, gray_pixels[2][3]);
-  EXPECT_EQ(0u, gray_pixels[3][0]);
-  EXPECT_EQ(0u, gray_pixels[3][1]);
-  EXPECT_EQ(0u, gray_pixels[3][2]);
-  EXPECT_EQ(255u, gray_pixels[3][3]);
-  EXPECT_EQ(255u, gray_pixels[4][0]);
-  EXPECT_EQ(255u, gray_pixels[4][1]);
-  EXPECT_EQ(255u, gray_pixels[4][2]);
-  EXPECT_EQ(255u, gray_pixels[4][3]);
-  EXPECT_EQ(96u, gray_pixels[5][0]);
-  EXPECT_EQ(96u, gray_pixels[5][1]);
-  EXPECT_EQ(96u, gray_pixels[5][2]);
-  EXPECT_EQ(224u, gray_pixels[5][3]);
+  EXPECT_NEAR(30u, gray_pixels[0][0], 1);
+  EXPECT_NEAR(30u, gray_pixels[0][1], 1);
+  EXPECT_NEAR(30u, gray_pixels[0][2], 1);
+  EXPECT_NEAR(128u, gray_pixels[0][3], 1);
+  EXPECT_NEAR(149u, gray_pixels[1][0], 1);
+  EXPECT_NEAR(149u, gray_pixels[1][1], 1);
+  EXPECT_NEAR(149u, gray_pixels[1][2], 1);
+  EXPECT_NEAR(0u, gray_pixels[1][3], 1);
+  EXPECT_NEAR(76u, gray_pixels[2][0], 1);
+  EXPECT_NEAR(76u, gray_pixels[2][1], 1);
+  EXPECT_NEAR(76u, gray_pixels[2][2], 1);
+  EXPECT_NEAR(255u, gray_pixels[2][3], 1);
+  EXPECT_NEAR(0u, gray_pixels[3][0], 1);
+  EXPECT_NEAR(0u, gray_pixels[3][1], 1);
+  EXPECT_NEAR(0u, gray_pixels[3][2], 1);
+  EXPECT_NEAR(255u, gray_pixels[3][3], 1);
+  EXPECT_NEAR(255u, gray_pixels[4][0], 1);
+  EXPECT_NEAR(255u, gray_pixels[4][1], 1);
+  EXPECT_NEAR(255u, gray_pixels[4][2], 1);
+  EXPECT_NEAR(255u, gray_pixels[4][3], 1);
+  EXPECT_NEAR(96u, gray_pixels[5][0], 1);
+  EXPECT_NEAR(96u, gray_pixels[5][1], 1);
+  EXPECT_NEAR(96u, gray_pixels[5][2], 1);
+  EXPECT_NEAR(224u, gray_pixels[5][3], 1);
   for (int i = 0; i < 1280; ++i) {
     orig_pixels[i][0] = i;
     orig_pixels[i][1] = i / 2;
@@ -421,6 +421,20 @@ TEST_F(LibYUVPlanarTest, TestARGBGrayTo) {
   }
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
     ARGBGrayTo(&orig_pixels[0][0], 0, &gray_pixels[0][0], 0, 1280, 1);
+  }
+
+  for (int i = 0; i < 256; ++i) {
+    orig_pixels[i][0] = i;
+    orig_pixels[i][1] = i;
+    orig_pixels[i][2] = i;
+    orig_pixels[i][3] = i;
+  }
+  ARGBGray(&orig_pixels[0][0], 0, 0, 0, 256, 1);
+  for (int i = 0; i < 256; ++i) {
+    EXPECT_EQ(i, orig_pixels[i][0]);
+    EXPECT_EQ(i, orig_pixels[i][1]);
+    EXPECT_EQ(i, orig_pixels[i][2]);
+    EXPECT_EQ(i, orig_pixels[i][3]);
   }
 }
 

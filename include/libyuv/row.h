@@ -274,6 +274,7 @@ extern "C" {
 #define HAS_I210TOARGBROW_SSSE3
 #define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
+#define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
 #endif
@@ -298,6 +299,7 @@ extern "C" {
 #define HAS_I422TOYUY2ROW_AVX2
 #define HAS_MERGEUVROW_16_AVX2
 #define HAS_MULTIPLYROW_16_AVX2
+#define HAS_RGBATOYJROW_AVX2
 #define HAS_SWAPUVROW_AVX2
 // TODO(fbarchard): Fix AVX2 version of YUV24
 // #define HAS_NV21TOYUV24ROW_AVX2
@@ -335,6 +337,7 @@ extern "C" {
 #define HAS_ARGBTOUVJROW_NEON
 #define HAS_ARGBTOUVROW_NEON
 #define HAS_ARGBTOYJROW_NEON
+#define HAS_RGBATOYJROW_NEON
 #define HAS_ARGBTOYROW_NEON
 #define HAS_AYUVTOUVROW_NEON
 #define HAS_AYUVTOVUROW_NEON
@@ -951,6 +954,9 @@ void ARGBToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width);
+void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width);
+void RGBAToYJRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void RGBAToYJRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width);
 void BGRAToYRow_SSSE3(const uint8_t* src_bgra, uint8_t* dst_y, int width);
 void ABGRToYRow_SSSE3(const uint8_t* src_abgr, uint8_t* dst_y, int width);
 void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width);
@@ -958,6 +964,7 @@ void RGB24ToYRow_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_y, int width);
 void RAWToYRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_y, int width);
 void ARGBToYRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_NEON(const uint8_t* src_argb, uint8_t* dst_y, int width);
+void RGBAToYJRow_NEON(const uint8_t* src_rgba, uint8_t* dst_y, int width);
 void ARGBToYRow_MSA(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void ARGBToYJRow_MSA(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void ARGBToYRow_MMI(const uint8_t* src_argb0, uint8_t* dst_y, int width);
@@ -1149,6 +1156,7 @@ void ARGB4444ToYRow_MMI(const uint8_t* src_argb4444, uint8_t* dst_y, int width);
 
 void ARGBToYRow_C(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ARGBToYJRow_C(const uint8_t* src_argb, uint8_t* dst_y, int width);
+void RGBAToYJRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width);
 void BGRAToYRow_C(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void ABGRToYRow_C(const uint8_t* src_argb, uint8_t* dst_y, int width);
 void RGBAToYRow_C(const uint8_t* src_argb, uint8_t* dst_y, int width);
@@ -1159,6 +1167,7 @@ void ARGB1555ToYRow_C(const uint8_t* src_argb1555, uint8_t* dst_y, int width);
 void ARGB4444ToYRow_C(const uint8_t* src_argb4444, uint8_t* dst_y, int width);
 void ARGBToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBToYJRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void RGBAToYJRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void BGRAToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ABGRToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RGBAToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
@@ -1166,6 +1175,7 @@ void RGB24ToYRow_Any_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_y, int width);
 void RAWToYRow_Any_SSSE3(const uint8_t* src_raw, uint8_t* dst_y, int width);
 void ARGBToYRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBToYJRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void RGBAToYJRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void BGRAToYRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ABGRToYRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RGBAToYRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);

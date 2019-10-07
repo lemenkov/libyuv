@@ -2157,6 +2157,80 @@ int ARGBToJ400(const uint8_t* src_argb,
   return 0;
 }
 
+// Convert RGBA to J400.
+LIBYUV_API
+int RGBAToJ400(const uint8_t* src_rgba,
+               int src_stride_rgba,
+               uint8_t* dst_yj,
+               int dst_stride_yj,
+               int width,
+               int height) {
+  int y;
+  void (*RGBAToYJRow)(const uint8_t* src_rgba, uint8_t* dst_yj, int width) =
+      RGBAToYJRow_C;
+  if (!src_rgba || !dst_yj || width <= 0 || height == 0) {
+    return -1;
+  }
+  if (height < 0) {
+    height = -height;
+    src_rgba = src_rgba + (height - 1) * src_stride_rgba;
+    src_stride_rgba = -src_stride_rgba;
+  }
+  // Coalesce rows.
+  if (src_stride_rgba == width * 4 && dst_stride_yj == width) {
+    width *= height;
+    height = 1;
+    src_stride_rgba = dst_stride_yj = 0;
+  }
+#if defined(HAS_RGBATOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    RGBAToYJRow = RGBAToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToYJRow = RGBAToYJRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOYJROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGBAToYJRow = RGBAToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGBAToYJRow = RGBAToYJRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOYJROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    RGBAToYJRow = RGBAToYJRow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RGBAToYJRow = RGBAToYJRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOYJROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    RGBAToYJRow = RGBAToYJRow_Any_MSA;
+    if (IS_ALIGNED(width, 16)) {
+      RGBAToYJRow = RGBAToYJRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_RGBATOYJROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    RGBAToYJRow = RGBAToYJRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      RGBAToYJRow = RGBAToYJRow_MMI;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    RGBAToYJRow(src_rgba, dst_yj, width);
+    src_rgba += src_stride_rgba;
+    dst_yj += dst_stride_yj;
+  }
+  return 0;
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

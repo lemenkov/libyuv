@@ -39,7 +39,8 @@
 #define ARM_YUV_ERROR 0
 #endif
 
-// Some functions fail on big endian. Enable these tests on all cpus except PowerPC
+// Some functions fail on big endian. Enable these tests on all cpus except
+// PowerPC
 #if !defined(__powerpc__)
 #define LITTLE_ENDIAN_TEST 1
 #endif
@@ -684,6 +685,8 @@ TESTPLANARTOB(I420, 2, 2, ABGR, 4, 4, 1)
 TESTPLANARTOB(I420, 2, 2, RGBA, 4, 4, 1)
 TESTPLANARTOB(I420, 2, 2, RAW, 3, 3, 1)
 TESTPLANARTOB(I420, 2, 2, RGB24, 3, 3, 1)
+TESTPLANARTOB(J420, 2, 2, RAW, 3, 3, 1)
+TESTPLANARTOB(J420, 2, 2, RGB24, 3, 3, 1)
 TESTPLANARTOB(H420, 2, 2, RAW, 3, 3, 1)
 TESTPLANARTOB(H420, 2, 2, RGB24, 3, 3, 1)
 #ifdef LITTLE_ENDIAN_TEST
@@ -1209,8 +1212,9 @@ TESTATOB(ARGB, 4, 4, 1, ARGB1555, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGB4444, 2, 2, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, ARGBMirror, 4, 4, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, BGRA, 4, 4, 1, 0)
-TESTATOB(ARGB, 4, 4, 1, I400, 1, 1, 1, 2)
-TESTATOB(ARGB, 4, 4, 1, J400, 1, 1, 1, 2)
+TESTATOB(ARGB, 4, 4, 1, I400, 1, 1, 1, 0)
+TESTATOB(ARGB, 4, 4, 1, J400, 1, 1, 1, 0)
+TESTATOB(RGBA, 4, 4, 1, J400, 1, 1, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RAW, 3, 3, 1, 0)
 TESTATOB(ARGB, 4, 4, 1, RGB24, 3, 3, 1, 0)
 #ifdef LITTLE_ENDIAN_TEST

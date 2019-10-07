@@ -764,6 +764,42 @@ int I420ToRAW(const uint8_t* src_y,
                            width, height);
 }
 
+// Convert J420 to RGB24.
+LIBYUV_API
+int J420ToRGB24(const uint8_t* src_y,
+                int src_stride_y,
+                const uint8_t* src_u,
+                int src_stride_u,
+                const uint8_t* src_v,
+                int src_stride_v,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height) {
+  return I420ToRGB24Matrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                           src_stride_v, dst_rgb24, dst_stride_rgb24,
+                           &kYuvJPEGConstants, width, height);
+}
+
+// Convert J420 to RAW.
+LIBYUV_API
+int J420ToRAW(const uint8_t* src_y,
+              int src_stride_y,
+              const uint8_t* src_u,
+              int src_stride_u,
+              const uint8_t* src_v,
+              int src_stride_v,
+              uint8_t* dst_raw,
+              int dst_stride_raw,
+              int width,
+              int height) {
+  return I420ToRGB24Matrix(src_y, src_stride_y, src_v,
+                           src_stride_v,  // Swap U and V
+                           src_u, src_stride_u, dst_raw, dst_stride_raw,
+                           &kYvuJPEGConstants,  // Use Yvu matrix
+                           width, height);
+}
+
 // Convert H420 to RGB24.
 LIBYUV_API
 int H420ToRGB24(const uint8_t* src_y,
