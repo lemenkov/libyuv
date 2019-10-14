@@ -123,6 +123,21 @@ void RAWToARGBRow_C(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   }
 }
 
+void RAWToRGBARow_C(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  int x;
+  for (x = 0; x < width; ++x) {
+    uint8_t r = src_raw[0];
+    uint8_t g = src_raw[1];
+    uint8_t b = src_raw[2];
+    dst_rgba[0] = 255u;
+    dst_rgba[1] = b;
+    dst_rgba[2] = g;
+    dst_rgba[3] = r;
+    dst_rgba += 4;
+    src_raw += 3;
+  }
+}
+
 void RAWToRGB24Row_C(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
   int x;
   for (x = 0; x < width; ++x) {

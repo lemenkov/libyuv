@@ -576,6 +576,15 @@ int RAWToARGB(const uint8_t* src_raw,
               int width,
               int height);
 
+// RGB big endian (rgb in memory) to RGBA.
+LIBYUV_API
+int RAWToRGBA(const uint8_t* src_raw,
+              int src_stride_raw,
+              uint8_t* dst_rgba,
+              int dst_stride_rgba,
+              int width,
+              int height);
+
 // RGB16 (RGBP fourcc) little endian to ARGB.
 LIBYUV_API
 int RGB565ToARGB(const uint8_t* src_rgb565,

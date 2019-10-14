@@ -98,6 +98,10 @@ static const uvec8 kShuffleMaskRGB24ToARGB = {
 static const uvec8 kShuffleMaskRAWToARGB = {2u, 1u, 0u, 12u, 5u,  4u,  3u, 13u,
                                             8u, 7u, 6u, 14u, 11u, 10u, 9u, 15u};
 
+// Shuffle table for converting RAW to RGBA.
+static const uvec8 kShuffleMaskRAWToRGBA = {12u, 2u, 1u, 0u, 13u, 5u,  4u,  3u,
+                                            14u, 8u, 7u, 6u, 15u, 11u, 10u, 9u};
+
 // Shuffle table for converting RAW to RGB24.  First 8.
 static const uvec8 kShuffleMaskRAWToRGB24_0 = {
     2u,   1u,   0u,   5u,   4u,   3u,   8u,   7u,
@@ -257,6 +261,45 @@ void RAWToARGBRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
         "+r"(dst_argb),             // %1
         "+r"(width)                 // %2
       : "m"(kShuffleMaskRAWToARGB)  // %3
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+
+// Same code as RAWToARGB with different shuffler and A in low bits
+void RAWToRGBARow_SSSE3(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  asm volatile(
+      "pcmpeqb   %%xmm5,%%xmm5                   \n"  // 0x000000ff
+      "psrld     $0x18,%%xmm5                    \n"
+      "movdqa    %3,%%xmm4                       \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu    (%0),%%xmm0                     \n"
+      "movdqu    0x10(%0),%%xmm1                 \n"
+      "movdqu    0x20(%0),%%xmm3                 \n"
+      "lea       0x30(%0),%0                     \n"
+      "movdqa    %%xmm3,%%xmm2                   \n"
+      "palignr   $0x8,%%xmm1,%%xmm2              \n"
+      "pshufb    %%xmm4,%%xmm2                   \n"
+      "por       %%xmm5,%%xmm2                   \n"
+      "palignr   $0xc,%%xmm0,%%xmm1              \n"
+      "pshufb    %%xmm4,%%xmm0                   \n"
+      "movdqu    %%xmm2,0x20(%1)                 \n"
+      "por       %%xmm5,%%xmm0                   \n"
+      "pshufb    %%xmm4,%%xmm1                   \n"
+      "movdqu    %%xmm0,(%1)                     \n"
+      "por       %%xmm5,%%xmm1                   \n"
+      "palignr   $0x4,%%xmm3,%%xmm3              \n"
+      "pshufb    %%xmm4,%%xmm3                   \n"
+      "movdqu    %%xmm1,0x10(%1)                 \n"
+      "por       %%xmm5,%%xmm3                   \n"
+      "movdqu    %%xmm3,0x30(%1)                 \n"
+      "lea       0x40(%1),%1                     \n"
+      "sub       $0x10,%2                        \n"
+      "jg        1b                              \n"
+      : "+r"(src_raw),              // %0
+        "+r"(dst_rgba),             // %1
+        "+r"(width)                 // %2
+      : "m"(kShuffleMaskRAWToRGBA)  // %3
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
 }
 

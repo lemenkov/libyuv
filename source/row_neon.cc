@@ -781,6 +781,22 @@ void RAWToARGBRow_NEON(const uint8_t* src_raw, uint8_t* dst_argb, int width) {
   );
 }
 
+void RAWToRGBARow_NEON(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
+  asm volatile(
+      "vmov.u8    d0, #255                       \n"  // Alpha
+      "1:                                        \n"
+      "vld3.8     {d1, d2, d3}, [%0]!            \n"  // load 8 pixels of RAW.
+      "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+      "vswp.u8    d1, d3                         \n"  // swap R, B
+      "vst4.8     {d0, d1, d2, d3}, [%1]!        \n"  // store 8 pixels of RGBA.
+      "bgt        1b                             \n"
+      : "+r"(src_raw),   // %0
+        "+r"(dst_rgba),  // %1
+        "+r"(width)      // %2
+      :
+      : "cc", "memory", "d0", "d1", "d2", "d3"  // Clobber List
+  );
+}
 void RAWToRGB24Row_NEON(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
   asm volatile(
       "1:                                        \n"

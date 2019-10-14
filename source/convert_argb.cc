@@ -1349,6 +1349,57 @@ int RAWToARGB(const uint8_t* src_raw,
   return 0;
 }
 
+// Convert RAW to RGBA.
+LIBYUV_API
+int RAWToRGBA(const uint8_t* src_raw,
+              int src_stride_raw,
+              uint8_t* dst_rgba,
+              int dst_stride_rgba,
+              int width,
+              int height) {
+  int y;
+  void (*RAWToRGBARow)(const uint8_t* src_rgb, uint8_t* dst_rgba, int width) =
+      RAWToRGBARow_C;
+  if (!src_raw || !dst_rgba || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_raw = src_raw + (height - 1) * src_stride_raw;
+    src_stride_raw = -src_stride_raw;
+  }
+  // Coalesce rows.
+  if (src_stride_raw == width * 3 && dst_stride_rgba == width * 4) {
+    width *= height;
+    height = 1;
+    src_stride_raw = dst_stride_rgba = 0;
+  }
+#if defined(HAS_RAWTORGBAROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    RAWToRGBARow = RAWToRGBARow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RAWToRGBARow = RAWToRGBARow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RAWTORGBAROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    RAWToRGBARow = RAWToRGBARow_Any_NEON;
+    if (IS_ALIGNED(width, 8)) {
+      RAWToRGBARow = RAWToRGBARow_NEON;
+    }
+  }
+#endif
+
+  for (y = 0; y < height; ++y) {
+    RAWToRGBARow(src_raw, dst_rgba, width);
+    src_raw += src_stride_raw;
+    dst_rgba += dst_stride_rgba;
+  }
+  return 0;
+}
+
 // Convert RGB565 to ARGB.
 LIBYUV_API
 int RGB565ToARGB(const uint8_t* src_rgb565,
