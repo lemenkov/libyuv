@@ -3227,9 +3227,6 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
 float ScaleSumSamples_C(const float* src, float* dst, float scale, int width) {
   float fsum = 0.f;
   int i;
-#if defined(__clang__)
-#pragma clang loop vectorize_width(4)
-#endif
   for (i = 0; i < width; ++i) {
     float v = *src++;
     fsum += v * v;
