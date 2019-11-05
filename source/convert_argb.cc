@@ -251,6 +251,25 @@ int U420ToARGB(const uint8_t* src_y,
                           &kYuv2020Constants, width, height);
 }
 
+// Convert U420 to ABGR.
+LIBYUV_API
+int U420ToABGR(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height) {
+  return I420ToARGBMatrix(src_y, src_stride_y, src_v,
+                          src_stride_v,  // Swap U and V
+                          src_u, src_stride_u, dst_abgr, dst_stride_abgr,
+                          &kYvu2020Constants,  // Use Yvu matrix
+                          width, height);
+}
+
 // Convert I422 to ARGB with matrix
 static int I422ToARGBMatrix(const uint8_t* src_y,
                             int src_stride_y,
@@ -422,6 +441,23 @@ int H422ToARGB(const uint8_t* src_y,
   return I422ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
                           src_stride_v, dst_argb, dst_stride_argb,
                           &kYuvH709Constants, width, height);
+}
+
+// Convert U422 to ARGB.
+LIBYUV_API
+int U422ToARGB(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return I422ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                          src_stride_v, dst_argb, dst_stride_argb,
+                          &kYuv2020Constants, width, height);
 }
 
 // Convert H422 to ABGR.
@@ -716,6 +752,23 @@ int H010ToARGB(const uint16_t* src_y,
                           &kYuvH709Constants, width, height);
 }
 
+// Convert U010 to ARGB.
+LIBYUV_API
+int U010ToARGB(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height) {
+  return I010ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                          src_stride_v, dst_argb, dst_stride_argb,
+                          &kYuv2020Constants, width, height);
+}
+
 // Convert H010 to ABGR.
 LIBYUV_API
 int H010ToABGR(const uint16_t* src_y,
@@ -735,21 +788,23 @@ int H010ToABGR(const uint16_t* src_y,
                           width, height);
 }
 
-// Convert U422 to ARGB.
+// Convert U010 to ABGR.
 LIBYUV_API
-int U422ToARGB(const uint8_t* src_y,
+int U010ToABGR(const uint16_t* src_y,
                int src_stride_y,
-               const uint8_t* src_u,
+               const uint16_t* src_u,
                int src_stride_u,
-               const uint8_t* src_v,
+               const uint16_t* src_v,
                int src_stride_v,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
                int width,
                int height) {
-  return I422ToARGBMatrix(src_y, src_stride_y, src_u, src_stride_u, src_v,
-                          src_stride_v, dst_argb, dst_stride_argb,
-                          &kYuv2020Constants, width, height);
+  return I010ToARGBMatrix(src_y, src_stride_y, src_v,
+                          src_stride_v,  // Swap U and V
+                          src_u, src_stride_u, dst_abgr, dst_stride_abgr,
+                          &kYvu2020Constants,  // Use Yvu matrix
+                          width, height);
 }
 
 // Convert I444 to ARGB with matrix
