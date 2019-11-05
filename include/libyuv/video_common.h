@@ -82,15 +82,18 @@ enum FourCC {
   // 1 Primary Compressed YUV format.
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
 
-  // 11 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
+  // 14 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
   FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
   FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
   FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
-  FOURCC_J420 = FOURCC('J', '4', '2', '0'),
-  FOURCC_J400 = FOURCC('J', '4', '0', '0'),  // unofficial fourcc
-  FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // unofficial fourcc
-  FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // unofficial fourcc
+  FOURCC_J420 = FOURCC('J', '4', '2', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J422 = FOURCC('J', '4', '2', '2'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J444 = FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J400 = FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // bt.709, unofficial fourcc
+  FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // bt.709, unofficial fourcc
+  FOURCC_H444 = FOURCC('H', '4', '4', '4'),  // bt.709, unofficial fourcc
   FOURCC_U420 = FOURCC('U', '4', '2', '0'),  // bt.2020, unofficial fourcc
   FOURCC_U422 = FOURCC('U', '4', '2', '2'),  // bt.2020, unofficial fourcc
   FOURCC_U444 = FOURCC('U', '4', '4', '4'),  // bt.2020, unofficial fourcc
