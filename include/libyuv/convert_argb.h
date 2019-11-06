@@ -362,19 +362,6 @@ int I010ToARGB(const uint16_t* src_y,
                int width,
                int height);
 
-// Convert I010 to ARGB.
-LIBYUV_API
-int I010ToARGB(const uint16_t* src_y,
-               int src_stride_y,
-               const uint16_t* src_u,
-               int src_stride_u,
-               const uint16_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height);
-
 // Convert I010 to ABGR.
 LIBYUV_API
 int I010ToABGR(const uint16_t* src_y,
@@ -439,6 +426,85 @@ int U010ToABGR(const uint16_t* src_y,
                int dst_stride_abgr,
                int width,
                int height);
+
+// Convert I210 to ARGB.
+LIBYUV_API
+int I210ToARGB(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert I210 to ABGR.
+LIBYUV_API
+int I210ToABGR(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
+// Convert H210 to ARGB.
+LIBYUV_API
+int H210ToARGB(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert H210 to ABGR.
+LIBYUV_API
+int H210ToABGR(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
+// Convert U210 to ARGB.
+LIBYUV_API
+int U210ToARGB(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_argb,
+               int dst_stride_argb,
+               int width,
+               int height);
+
+// Convert U210 to ABGR.
+LIBYUV_API
+int U210ToABGR(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_abgr,
+               int dst_stride_abgr,
+               int width,
+               int height);
+
 // Convert I420 with Alpha to preattenuated ARGB.
 LIBYUV_API
 int I420AlphaToARGB(const uint8_t* src_y,
@@ -618,48 +684,9 @@ int UYVYToARGB(const uint8_t* src_uyvy,
                int width,
                int height);
 
-// Convert H010 to ARGB.
-LIBYUV_API
-int H010ToARGB(const uint16_t* src_y,
-               int src_stride_y,
-               const uint16_t* src_u,
-               int src_stride_u,
-               const uint16_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_argb,
-               int dst_stride_argb,
-               int width,
-               int height);
-
 // Convert I010 to AR30.
 LIBYUV_API
 int I010ToAR30(const uint16_t* src_y,
-               int src_stride_y,
-               const uint16_t* src_u,
-               int src_stride_u,
-               const uint16_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_ar30,
-               int dst_stride_ar30,
-               int width,
-               int height);
-
-// Convert H010 to AR30.
-LIBYUV_API
-int H010ToAR30(const uint16_t* src_y,
-               int src_stride_y,
-               const uint16_t* src_u,
-               int src_stride_u,
-               const uint16_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_ar30,
-               int dst_stride_ar30,
-               int width,
-               int height);
-
-// Convert U010 to AR30.
-LIBYUV_API
-int U010ToAR30(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,
                int src_stride_u,
@@ -683,6 +710,19 @@ int I010ToAB30(const uint16_t* src_y,
                int width,
                int height);
 
+// Convert H010 to AR30.
+LIBYUV_API
+int H010ToAR30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
 // Convert H010 to AB30.
 LIBYUV_API
 int H010ToAB30(const uint16_t* src_y,
@@ -696,9 +736,100 @@ int H010ToAB30(const uint16_t* src_y,
                int width,
                int height);
 
+// Convert U010 to AR30.
+LIBYUV_API
+int U010ToAR30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
 // Convert U010 to AB30.
 LIBYUV_API
 int U010ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
+// Convert I210 to AR30.
+LIBYUV_API
+int I210ToAR30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
+// Convert I210 to AB30.
+LIBYUV_API
+int I210ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
+// Convert H210 to AR30.
+LIBYUV_API
+int H210ToAR30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
+// Convert H210 to AB30.
+LIBYUV_API
+int H210ToAB30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ab30,
+               int dst_stride_ab30,
+               int width,
+               int height);
+
+// Convert U210 to AR30.
+LIBYUV_API
+int U210ToAR30(const uint16_t* src_y,
+               int src_stride_y,
+               const uint16_t* src_u,
+               int src_stride_u,
+               const uint16_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_ar30,
+               int dst_stride_ar30,
+               int width,
+               int height);
+
+// Convert U210 to AB30.
+LIBYUV_API
+int U210ToAB30(const uint16_t* src_y,
                int src_stride_y,
                const uint16_t* src_u,
                int src_stride_u,

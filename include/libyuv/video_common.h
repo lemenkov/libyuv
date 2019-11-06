@@ -59,9 +59,8 @@ enum FourCC {
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
-  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // unofficial fourcc. 10 bit lsb
-  FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020, unofficial fourcc.
-                                             // 10 bit lsb
+  FOURCC_I010 = FOURCC('I', '0', '1', '0'),  // bt.601 10 bit 420
+  FOURCC_I210 = FOURCC('I', '0', '1', '0'),  // bt.601 10 bit 422
 
   // 1 Secondary YUV format: row biplanar.
   FOURCC_M420 = FOURCC('M', '4', '2', '0'),
@@ -97,6 +96,10 @@ enum FourCC {
   FOURCC_U420 = FOURCC('U', '4', '2', '0'),  // bt.2020, unofficial fourcc
   FOURCC_U422 = FOURCC('U', '4', '2', '2'),  // bt.2020, unofficial fourcc
   FOURCC_U444 = FOURCC('U', '4', '4', '4'),  // bt.2020, unofficial fourcc
+  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 420
+  FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 420
+  FOURCC_H210 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 422
+  FOURCC_U210 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 422
 
   // 14 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
