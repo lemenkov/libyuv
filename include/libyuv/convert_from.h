@@ -23,6 +23,7 @@ extern "C" {
 
 // Convert 8 bit YUV to 10 bit.
 #define H420ToH010 I420ToI010
+LIBYUV_API
 int I420ToI010(const uint8_t* src_y,
                int src_stride_y,
                const uint8_t* src_u,
