@@ -682,22 +682,23 @@ void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width) {
 void MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       // Start at end of source row.
-      "mov        r3, #-16                       \n"
       "add        %0, %0, %2                     \n"
-      "sub        %0, #16                        \n"
+      "sub        %0, %0, #32                    \n"  // 32 bytes per loop
 
       "1:                                        \n"
-      "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
-      "subs       %2, #16                        \n"  // 16 pixels per loop.
-      "vrev64.8   q0, q0                         \n"
-      "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
-      "vst1.8     {d0}, [%1]!                    \n"
+      "vld1.8     {q1, q2}, [%0], %3             \n"  // src -= 32
+      "subs       %2, #32                        \n"  // 32 pixels per loop.
+      "vrev64.8   q0, q2                         \n"
+      "vrev64.8   q1, q1                         \n"
+      "vswp       d0, d1                         \n"
+      "vswp       d2, d3                         \n"
+      "vst1.8     {q0, q1}, [%1]!                \n"  // dst += 32
       "bgt        1b                             \n"
       : "+r"(src),   // %0
         "+r"(dst),   // %1
         "+r"(width)  // %2
-      :
-      : "cc", "memory", "r3", "q0");
+      : "r"(-32)     // %3
+      : "cc", "memory", "q0", "q1", "q2");
 }
 
 void MirrorUVRow_NEON(const uint8_t* src_uv,

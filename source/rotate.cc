@@ -142,7 +142,7 @@ void RotatePlane180(const uint8_t* src,
 #if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     MirrorRow = MirrorRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 32)) {
       MirrorRow = MirrorRow_NEON;
     }
   }
@@ -207,11 +207,11 @@ void RotatePlane180(const uint8_t* src,
 
   // Odd height will harmlessly mirror the middle row twice.
   for (y = 0; y < half_height; ++y) {
-    MirrorRow(src, row, width);  // Mirror first row into a buffer
-    src += src_stride;
+    CopyRow(src, row, width);        // Copy first row into buffer
     MirrorRow(src_bot, dst, width);  // Mirror last row into first row
+    MirrorRow(row, dst_bot, width);  // Mirror buffer into last row
+    src += src_stride;
     dst += dst_stride;
-    CopyRow(row, dst_bot, width);  // Copy first mirrored row into last
     src_bot -= src_stride;
     dst_bot -= dst_stride;
   }

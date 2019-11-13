@@ -1156,7 +1156,7 @@ ANY11M(MirrorRow_Any_AVX2, MirrorRow_AVX2, 1, 31)
 ANY11M(MirrorRow_Any_SSSE3, MirrorRow_SSSE3, 1, 15)
 #endif
 #ifdef HAS_MIRRORROW_NEON
-ANY11M(MirrorRow_Any_NEON, MirrorRow_NEON, 1, 15)
+ANY11M(MirrorRow_Any_NEON, MirrorRow_NEON, 1, 31)
 #endif
 #ifdef HAS_MIRRORROW_MSA
 ANY11M(MirrorRow_Any_MSA, MirrorRow_MSA, 1, 63)

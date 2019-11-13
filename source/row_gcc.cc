@@ -84,7 +84,7 @@ static const uvec8 kAddUV128 = {128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u,
                                 128u, 128u, 128u, 128u, 128u, 128u, 128u, 128u};
 
 static const uvec16 kSub128 = {0x8080u, 0x8080u, 0x8080u, 0x8080u,
-                               0x8080u, 0x8080u, 0x8080u, 0x8080u};
+                                  0x8080u, 0x8080u, 0x8080u, 0x8080u};
 
 #endif  // defined(HAS_ARGBTOYROW_SSSE3) || defined(HAS_I422TOARGBROW_SSSE3)
 
@@ -1101,10 +1101,8 @@ void ABGRToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
   "lea       0x40(%0),%0                     \n" \
   "phaddw    %%xmm0,%%xmm6                   \n" \
   "phaddw    %%xmm2,%%xmm1                   \n" \
-  "paddw     %%" #round                          \
-  ",%%xmm6             \n"                       \
-  "paddw     %%" #round                          \
-  ",%%xmm1             \n"                       \
+  "paddw     %%" #round ",%%xmm6             \n" \
+  "paddw     %%" #round ",%%xmm1             \n" \
   "psrlw     $0x8,%%xmm6                     \n" \
   "psrlw     $0x8,%%xmm1                     \n" \
   "packuswb  %%xmm1,%%xmm6                   \n" \
@@ -1113,35 +1111,33 @@ void ABGRToAR30Row_AVX2(const uint8_t* src, uint8_t* dst, int width) {
   "sub       $0x10,%2                        \n" \
   "jg        1b                              \n"
 
-#define RGBTOY_AVX2(round)                                       \
-  "1:                                        \n"                 \
-  "vmovdqu    (%0),%%ymm0                    \n"                 \
-  "vmovdqu    0x20(%0),%%ymm1                \n"                 \
-  "vmovdqu    0x40(%0),%%ymm2                \n"                 \
-  "vmovdqu    0x60(%0),%%ymm3                \n"                 \
-  "vpsubb     %%ymm5, %%ymm0, %%ymm0         \n"                 \
-  "vpsubb     %%ymm5, %%ymm1, %%ymm1         \n"                 \
-  "vpsubb     %%ymm5, %%ymm2, %%ymm2         \n"                 \
-  "vpsubb     %%ymm5, %%ymm3, %%ymm3         \n"                 \
-  "vpmaddubsw %%ymm0,%%ymm4,%%ymm0           \n"                 \
-  "vpmaddubsw %%ymm1,%%ymm4,%%ymm1           \n"                 \
-  "vpmaddubsw %%ymm2,%%ymm4,%%ymm2           \n"                 \
-  "vpmaddubsw %%ymm3,%%ymm4,%%ymm3           \n"                 \
-  "lea       0x80(%0),%0                     \n"                 \
-  "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n" /* mutates. */  \
-  "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"                 \
-  "vpaddw     %%" #round                                         \
-  ",%%ymm0,%%ymm0     \n" /* Add .5 for rounding. */             \
-  "vpaddw     %%" #round                                         \
-  ",%%ymm2,%%ymm2     \n"                                        \
-  "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"                 \
-  "vpsrlw     $0x8,%%ymm2,%%ymm2             \n"                 \
-  "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n" /* mutates. */  \
-  "vpermd     %%ymm0,%%ymm6,%%ymm0           \n" /* unmutate. */ \
-  "vmovdqu    %%ymm0,(%1)                    \n"                 \
-  "lea       0x20(%1),%1                     \n"                 \
-  "sub       $0x20,%2                        \n"                 \
-  "jg        1b                              \n"                 \
+#define RGBTOY_AVX2(round)                                                  \
+  "1:                                        \n"                            \
+  "vmovdqu    (%0),%%ymm0                    \n"                            \
+  "vmovdqu    0x20(%0),%%ymm1                \n"                            \
+  "vmovdqu    0x40(%0),%%ymm2                \n"                            \
+  "vmovdqu    0x60(%0),%%ymm3                \n"                            \
+  "vpsubb     %%ymm5, %%ymm0, %%ymm0         \n"                            \
+  "vpsubb     %%ymm5, %%ymm1, %%ymm1         \n"                            \
+  "vpsubb     %%ymm5, %%ymm2, %%ymm2         \n"                            \
+  "vpsubb     %%ymm5, %%ymm3, %%ymm3         \n"                            \
+  "vpmaddubsw %%ymm0,%%ymm4,%%ymm0           \n"                            \
+  "vpmaddubsw %%ymm1,%%ymm4,%%ymm1           \n"                            \
+  "vpmaddubsw %%ymm2,%%ymm4,%%ymm2           \n"                            \
+  "vpmaddubsw %%ymm3,%%ymm4,%%ymm3           \n"                            \
+  "lea       0x80(%0),%0                     \n"                            \
+  "vphaddw    %%ymm1,%%ymm0,%%ymm0           \n" /* mutates. */             \
+  "vphaddw    %%ymm3,%%ymm2,%%ymm2           \n"                            \
+  "vpaddw     %%" #round ",%%ymm0,%%ymm0     \n" /* Add .5 for rounding. */ \
+  "vpaddw     %%" #round ",%%ymm2,%%ymm2     \n"                            \
+  "vpsrlw     $0x8,%%ymm0,%%ymm0             \n"                            \
+  "vpsrlw     $0x8,%%ymm2,%%ymm2             \n"                            \
+  "vpackuswb  %%ymm2,%%ymm0,%%ymm0           \n" /* mutates. */             \
+  "vpermd     %%ymm0,%%ymm6,%%ymm0           \n" /* unmutate. */            \
+  "vmovdqu    %%ymm0,(%1)                    \n"                            \
+  "lea       0x20(%1),%1                     \n"                            \
+  "sub       $0x20,%2                        \n"                            \
+  "jg        1b                              \n"                            \
   "vzeroupper                                \n"
 
 #ifdef HAS_ARGBTOYROW_SSSE3
@@ -1152,15 +1148,15 @@ void ARGBToYRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "movdqa    %4,%%xmm5                       \n"
       "movdqa    %5,%%xmm7                       \n"
 
-      LABELALIGN RGBTOY(xmm7)
+      LABELALIGN
+      RGBTOY(xmm7)
       : "+r"(src_argb),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kARGBToY),   // %3
         "m"(kSub128),    // %4
         "m"(kAddY16)     // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOYROW_SSSE3
 
@@ -1172,7 +1168,8 @@ void ARGBToYJRow_SSSE3(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "movdqa    %3,%%xmm4                       \n"
       "movdqa    %4,%%xmm5                       \n"
 
-      LABELALIGN RGBTOY(xmm5)
+      LABELALIGN
+      RGBTOY(xmm5)
       : "+r"(src_argb),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
@@ -1190,7 +1187,8 @@ void RGBAToYJRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
       "movdqa    %3,%%xmm4                       \n"
       "movdqa    %4,%%xmm5                       \n"
 
-      LABELALIGN RGBTOY(xmm5)
+      LABELALIGN
+      RGBTOY(xmm5)
       : "+r"(src_rgba),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
@@ -1212,7 +1210,8 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "vbroadcastf128 %5,%%ymm7                  \n"
       "vmovdqu    %6,%%ymm6                      \n"
 
-      LABELALIGN RGBTOY_AVX2(ymm7)
+      LABELALIGN
+      RGBTOY_AVX2(ymm7)
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1220,8 +1219,7 @@ void ARGBToYRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
         "m"(kSub128),           // %4
         "m"(kAddY16),           // %5
         "m"(kPermdARGBToY_AVX)  // %6
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOYROW_AVX2
 
@@ -1234,7 +1232,8 @@ void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
       "vbroadcastf128 %5,%%ymm7                  \n"
       "vmovdqu    %6,%%ymm6                      \n"
 
-      LABELALIGN RGBTOY_AVX2(ymm7)
+      LABELALIGN
+      RGBTOY_AVX2(ymm7)
       : "+r"(src_abgr),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1242,8 +1241,7 @@ void ABGRToYRow_AVX2(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
         "m"(kSub128),           // %4
         "m"(kAddY16),           // %5
         "m"(kPermdARGBToY_AVX)  // %6
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ABGRTOYROW_AVX2
 
@@ -1255,15 +1253,15 @@ void ARGBToYJRow_AVX2(const uint8_t* src_argb, uint8_t* dst_y, int width) {
       "vbroadcastf128 %4,%%ymm5                  \n"
       "vmovdqu    %5,%%ymm6                      \n"
 
-      LABELALIGN RGBTOY_AVX2(ymm5)
+      LABELALIGN
+      RGBTOY_AVX2(ymm5)
       : "+r"(src_argb),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
       : "m"(kARGBToYJ),         // %3
         "m"(kSub128),           // %4
         "m"(kPermdARGBToY_AVX)  // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOYJROW_AVX2
 
@@ -1275,8 +1273,9 @@ void RGBAToYJRow_AVX2(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
       "vbroadcastf128 %4,%%ymm5                  \n"
       "vmovdqu    %5,%%ymm6                      \n"
 
-      LABELALIGN RGBTOY_AVX2(
-          ymm5) "vzeroupper                                \n"
+      LABELALIGN
+      RGBTOY_AVX2(ymm5)
+      "vzeroupper                                \n"
       : "+r"(src_rgba),         // %0
         "+r"(dst_y),            // %1
         "+r"(width)             // %2
@@ -1537,7 +1536,7 @@ void ARGBToUVJRow_AVX2(const uint8_t* src_argb0,
         "+r"(dst_v),                       // %2
         "+rm"(width)                       // %3
       : "r"((intptr_t)(src_stride_argb)),  // %4
-        "m"(kSub128),                      // %5
+        "m"(kSub128),                   // %5
         "m"(kARGBToVJ),                    // %6
         "m"(kARGBToUJ),                    // %7
         "m"(kShufARGBToUV_AVX)             // %8
@@ -1607,7 +1606,7 @@ void ARGBToUVJRow_SSSE3(const uint8_t* src_argb0,
       : "r"((intptr_t)(src_stride_argb)),  // %4
         "m"(kARGBToVJ),                    // %5
         "m"(kARGBToUJ),                    // %6
-        "m"(kSub128)                       // %7
+        "m"(kSub128)                    // %7
       : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm6", "xmm7");
 }
 #endif  // HAS_ARGBTOUVJROW_SSSE3
@@ -1676,15 +1675,15 @@ void BGRAToYRow_SSSE3(const uint8_t* src_bgra, uint8_t* dst_y, int width) {
       "movdqa    %4,%%xmm5                       \n"
       "movdqa    %5,%%xmm7                       \n"
 
-      LABELALIGN RGBTOY(xmm7)
+      LABELALIGN
+      RGBTOY(xmm7)
       : "+r"(src_bgra),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kBGRAToY),   // %3
         "m"(kSub128),    // %4
         "m"(kAddY16)     // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void BGRAToUVRow_SSSE3(const uint8_t* src_bgra0,
@@ -1756,15 +1755,15 @@ void ABGRToYRow_SSSE3(const uint8_t* src_abgr, uint8_t* dst_y, int width) {
       "movdqa    %4,%%xmm5                       \n"
       "movdqa    %5,%%xmm7                       \n"
 
-      LABELALIGN RGBTOY(xmm7)
+      LABELALIGN
+      RGBTOY(xmm7)
       : "+r"(src_abgr),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kABGRToY),   // %3
         "m"(kSub128),    // %4
         "m"(kAddY16)     // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
@@ -1773,15 +1772,15 @@ void RGBAToYRow_SSSE3(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
       "movdqa    %4,%%xmm5                       \n"
       "movdqa    %5,%%xmm7                       \n"
 
-      LABELALIGN RGBTOY(xmm7)
+      LABELALIGN
+      RGBTOY(xmm7)
       : "+r"(src_rgba),  // %0
         "+r"(dst_y),     // %1
         "+r"(width)      // %2
       : "m"(kRGBAToY),   // %3
         "m"(kSub128),    // %4
         "m"(kAddY16)     // %5
-      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6",
-        "xmm7");
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7");
 }
 
 void ABGRToUVRow_SSSE3(const uint8_t* src_abgr0,

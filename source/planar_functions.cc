@@ -734,7 +734,7 @@ void MirrorPlane(const uint8_t* src_y,
 #if defined(HAS_MIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     MirrorRow = MirrorRow_Any_NEON;
-    if (IS_ALIGNED(width, 16)) {
+    if (IS_ALIGNED(width, 32)) {
       MirrorRow = MirrorRow_NEON;
     }
   }

@@ -723,23 +723,29 @@ void ARGBSetRow_NEON(uint8_t* dst, uint32_t v32, int width) {
       : "cc", "memory", "v0");
 }
 
+// Shuffle table for reversing the bytes.
+static const uvec8 kShuffleMirror = {15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u,
+                                     7u,  6u,  5u,  4u,  3u,  2u,  1u, 0u};
+
 void MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       // Start at end of source row.
+      "ld1        {v3.16b}, [%4]                 \n"  // shuffler
       "add        %0, %0, %w2, sxtw              \n"
-      "sub        %0, %0, #16                    \n"
+      "sub        %0, %0, #32                    \n"
       "1:                                        \n"
-      "ld1        {v0.16b}, [%0], %3             \n"  // src -= 16
-      "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop.
-      "rev64      v0.16b, v0.16b                 \n"
-      "st1        {v0.D}[1], [%1], #8            \n"  // dst += 16
-      "st1        {v0.D}[0], [%1], #8            \n"
+      "ld1        {v1.16b,v2.16b}, [%0], %3      \n"  // src -= 32
+      "subs       %w2, %w2, #32                  \n"  // 32 pixels per loop.
+      "tbl        v1.16b, {v1.16b}, v3.16b       \n"
+      "tbl        v0.16b, {v2.16b}, v3.16b       \n"
+      "st1        {v0.16b, v1.16b}, [%1], #32    \n"  // store 32 pixels
       "b.gt       1b                             \n"
       : "+r"(src),           // %0
         "+r"(dst),           // %1
         "+r"(width)          // %2
-      : "r"((ptrdiff_t)-16)  // %3
-      : "cc", "memory", "v0");
+      : "r"((ptrdiff_t)-32), // %3
+        "r"(&kShuffleMirror) // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
 void MirrorUVRow_NEON(const uint8_t* src_uv,
