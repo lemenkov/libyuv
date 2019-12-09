@@ -743,6 +743,19 @@ int ARGBBlur(const uint8_t* src_argb,
              int height,
              int radius);
 
+// Gaussian 5x5 blur a float plane.
+// Coefficients of 1, 4, 6, 4, 1.
+// Each destination pixel is a blur of the 5x5
+// pixels from the source.
+// Source edges are clamped.
+LIBYUV_API
+int GaussPlane_F32(const float* src,
+                   int src_stride,
+                   float* dst,
+                   int dst_stride,
+                   int width,
+                   int height);
+
 // Multiply ARGB image by ARGB value.
 LIBYUV_API
 int ARGBShade(const uint8_t* src_argb,

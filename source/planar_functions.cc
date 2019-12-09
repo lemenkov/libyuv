@@ -3043,6 +3043,84 @@ int ARGBShuffle(const uint8_t* src_bgra,
   return 0;
 }
 
+// Gauss blur a float plane using Gaussian 5x5 filter with
+// coefficients of 1, 4, 6, 4, 1.
+// Each destination pixel is a blur of the 5x5
+// pixels from the source.
+// Source edges are clamped.
+// Edge is 2 pixels on each side, and interior is multiple of 4.
+LIBYUV_API
+int GaussPlane_F32(const float* src,
+                   int src_stride,
+                   float* dst,
+                   int dst_stride,
+                   int width,
+                   int height) {
+  int y;
+  void (*GaussCol_F32)(const float* src0,
+                       const float* src1,
+                       const float* src2,
+                       const float* src3,
+                       const float* src4,
+                       float* dst,
+                       int width) = GaussCol_F32_C;
+  void (*GaussRow_F32)(const float* src, float* dst, int width) = GaussRow_F32_C;
+  if (!src || !dst || width <= 0 || height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src = src + (height - 1) * src_stride;
+    src_stride = -src_stride;
+  }
+
+#if defined(HAS_GAUSSCOL_F32_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    GaussCol_F32 = GaussCol_F32_NEON;
+  }
+#endif
+#if defined(HAS_GAUSSROW_F32_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+    GaussRow_F32 = GaussRow_F32_NEON;
+  }
+#endif
+  {
+    // 2 pixels on each side, but aligned out to 16 bytes.
+    align_buffer_64(rowbuf, (4 + width + 4) * 4);
+    memset(rowbuf, 0, 16);
+    memset(rowbuf + (4 + width) * 4, 0, 16);
+    float* row = (float*)(rowbuf + 16);
+    const float* src0 = src;
+    const float* src1 = src;
+    const float* src2 = src;
+    const float* src3 = src2 + ((height > 1) ? src_stride : 0);
+    const float* src4 = src3 + ((height > 2) ? src_stride: 0);
+
+    for (y = 0; y < height; ++y) {
+
+      GaussCol_F32(src0, src1, src2, src3, src4, row, width);
+
+      // Extrude edge by 2 floats
+      row[-2] = row[-1] = row[0];
+      row[width + 1] = row[width] = row[width - 1];
+
+      GaussRow_F32(row - 2, dst, width);
+
+      src0 = src1;
+      src1 = src2;
+      src2 = src3;
+      src3 = src4;
+      if ((y + 2) < (height - 1)) {
+        src4 += src_stride;
+      }
+      dst += dst_stride;
+    }
+    free_aligned_buffer_64(rowbuf);
+  }
+  return 0;
+}
+
 // Sobel ARGB effect.
 static int ARGBSobelize(const uint8_t* src_argb,
                         int src_stride_argb,

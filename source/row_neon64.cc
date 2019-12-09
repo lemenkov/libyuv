@@ -2921,6 +2921,82 @@ void GaussRow_NEON(const uint32_t* src, uint16_t* dst, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
 }
 
+static const vecf32 kGaussCoefficients = {4.0f, 6.0f, 1.0f / 256.0f, 0.0f};
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussCol_F32_NEON(const float* src0,
+                       const float* src1,
+                       const float* src2,
+                       const float* src3,
+                       const float* src4,
+                       float* dst,
+                       int width) {
+  asm volatile(
+      "ld2r       {v6.4s, v7.4s}, [%7]           \n"  // constants 4 and 6
+
+      "1:                                        \n"
+      "ld1        {v0.4s, v1.4s}, [%0], #32      \n"  // load 8 samples, 5 rows
+      "ld1        {v2.4s, v3.4s}, [%1], #32      \n"
+      "fmla       v0.4s, v2.4s, v6.4s            \n"  // * 4
+      "ld1        {v4.4s, v5.4s}, [%2], #32      \n"
+      "fmla       v1.4s, v3.4s, v6.4s            \n"
+      "fmla       v0.4s, v4.4s, v7.4s            \n"  // * 6
+      "ld1        {v2.4s, v3.4s}, [%3], #32      \n"
+      "fmla       v1.4s, v5.4s, v7.4s            \n"
+      "fmla       v0.4s, v2.4s, v6.4s            \n"  // * 4
+      "ld1        {v4.4s, v5.4s}, [%4], #32      \n"
+      "fmla       v1.4s, v3.4s, v6.4s            \n"
+      "fadd       v0.4s, v0.4s, v4.4s            \n"  // * 1
+      "fadd       v1.4s, v1.4s, v5.4s            \n"
+      "subs       %w6, %w6, #8                   \n"  // 8 processed per loop
+      "st1        {v0.4s, v1.4s}, [%5], #32      \n"  // store 8 samples
+      "b.gt       1b                             \n"
+      : "+r"(src0),  // %0
+        "+r"(src1),  // %1
+        "+r"(src2),  // %2
+        "+r"(src3),  // %3
+        "+r"(src4),  // %4
+        "+r"(dst),   // %5
+        "+r"(width)  // %6
+      : "r"(&kGaussCoefficients) // %7
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7");
+}
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussRow_F32_NEON(const float* src,
+                       float* dst,
+                       int width) {
+  asm volatile(
+      "ld3r       {v6.4s, v7.4s, v8.4s}, [%3]    \n"  // constants 4, 6, 1/256
+
+      "1:                                        \n"
+      "ld1        {v0.4s, v1.4s, v2.4s}, [%0], %4\n"  // load 12 samples, 5 rows
+      "fadd       v0.4s, v0.4s, v1.4s            \n"  // * 1
+      "ld1        {v4.4s, v5.4s}, [%0], %5       \n"
+      "fadd       v1.4s, v1.4s, v2.4s            \n"
+      "fmla       v0.4s, v4.4s, v7.4s            \n"  // * 6
+      "ld1        {v2.4s, v3.4s}, [%0], %4       \n"
+      "fmla       v1.4s, v5.4s, v7.4s            \n"
+      "ld1        {v4.4s, v5.4s}, [%0], %6       \n"
+      "fadd       v2.4s, v2.4s, v4.4s            \n"
+      "fadd       v3.4s, v3.4s, v5.4s            \n"
+      "fmla       v0.4s, v2.4s, v6.4s            \n"  // * 4
+      "fmla       v1.4s, v3.4s, v6.4s            \n"
+      "fmul       v0.4s, v0.4s, v8.4s            \n"  // / 256
+      "fmul       v1.4s, v1.4s, v8.4s            \n"
+      "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+      "st1        {v0.4s, v1.4s}, [%1], #32      \n"  // store 8 samples
+      "b.gt       1b                             \n"
+      : "+r"(src),   // %0
+        "+r"(dst),   // %1
+        "+r"(width)  // %2
+      : "r"(&kGaussCoefficients), // %3
+        "r"(8LL),    // %4
+        "r"(-4LL),   // %5
+        "r"(20LL)    // %6
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8");
+}
+
 // Convert biplanar NV21 to packed YUV24
 void NV21ToYUV24Row_NEON(const uint8_t* src_y,
                          const uint8_t* src_vu,

@@ -3234,33 +3234,33 @@ extern "C" void GaussRow_NEON(const uint32_t* src, uint16_t* dst, int width);
 extern "C" void GaussRow_C(const uint32_t* src, uint16_t* dst, int width);
 
 TEST_F(LibYUVPlanarTest, TestGaussRow_Opt) {
-  SIMD_ALIGNED(uint32_t orig_pixels[640 + 4]);
-  SIMD_ALIGNED(uint16_t dst_pixels_c[640]);
-  SIMD_ALIGNED(uint16_t dst_pixels_opt[640]);
+  SIMD_ALIGNED(uint32_t orig_pixels[1280 + 8]);
+  SIMD_ALIGNED(uint16_t dst_pixels_c[1280]);
+  SIMD_ALIGNED(uint16_t dst_pixels_opt[1280]);
 
   memset(orig_pixels, 0, sizeof(orig_pixels));
   memset(dst_pixels_c, 1, sizeof(dst_pixels_c));
   memset(dst_pixels_opt, 2, sizeof(dst_pixels_opt));
 
-  for (int i = 0; i < 640 + 4; ++i) {
+  for (int i = 0; i < 1280 + 8; ++i) {
     orig_pixels[i] = i * 256;
   }
-  GaussRow_C(&orig_pixels[0], &dst_pixels_c[0], 640);
-  for (int i = 0; i < benchmark_pixels_div1280_ * 2; ++i) {
+  GaussRow_C(&orig_pixels[0], &dst_pixels_c[0], 1280);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
-      GaussRow_NEON(&orig_pixels[0], &dst_pixels_opt[0], 640);
+      GaussRow_NEON(&orig_pixels[0], &dst_pixels_opt[0], 1280);
     } else {
-      GaussRow_C(&orig_pixels[0], &dst_pixels_opt[0], 640);
+      GaussRow_C(&orig_pixels[0], &dst_pixels_opt[0], 1280);
     }
 #else
-    GaussRow_C(&orig_pixels[0], &dst_pixels_opt[0], 640);
+    GaussRow_C(&orig_pixels[0], &dst_pixels_opt[0], 1280);
 #endif
   }
 
-  for (int i = 0; i < 640; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
 
@@ -3286,48 +3286,127 @@ extern "C" void GaussCol_C(const uint16_t* src0,
                            int width);
 
 TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
-  SIMD_ALIGNED(uint16_t orig_pixels[640 * 5]);
-  SIMD_ALIGNED(uint32_t dst_pixels_c[640]);
-  SIMD_ALIGNED(uint32_t dst_pixels_opt[640]);
+  SIMD_ALIGNED(uint16_t orig_pixels[1280 * 5]);
+  SIMD_ALIGNED(uint32_t dst_pixels_c[1280]);
+  SIMD_ALIGNED(uint32_t dst_pixels_opt[1280]);
 
   memset(orig_pixels, 0, sizeof(orig_pixels));
   memset(dst_pixels_c, 1, sizeof(dst_pixels_c));
   memset(dst_pixels_opt, 2, sizeof(dst_pixels_opt));
 
-  for (int i = 0; i < 640 * 5; ++i) {
-    orig_pixels[i] = i;
+  for (int i = 0; i < 1280 * 5; ++i) {
+    orig_pixels[i] = static_cast<float>(i);
   }
-  GaussCol_C(&orig_pixels[0], &orig_pixels[640], &orig_pixels[640 * 2],
-             &orig_pixels[640 * 3], &orig_pixels[640 * 4], &dst_pixels_c[0],
-             640);
-  for (int i = 0; i < benchmark_pixels_div1280_ * 2; ++i) {
+  GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+             &orig_pixels[1280 * 3], &orig_pixels[1280 * 4], &dst_pixels_c[0],
+             1280);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && \
     (defined(__aarch64__) || defined(__ARM_NEON__) || defined(LIBYUV_NEON))
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
-      GaussCol_NEON(&orig_pixels[0], &orig_pixels[640], &orig_pixels[640 * 2],
-                    &orig_pixels[640 * 3], &orig_pixels[640 * 4],
-                    &dst_pixels_opt[0], 640);
+      GaussCol_NEON(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+                    &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+                    &dst_pixels_opt[0], 1280);
     } else {
-      GaussCol_C(&orig_pixels[0], &orig_pixels[640], &orig_pixels[640 * 2],
-                 &orig_pixels[640 * 3], &orig_pixels[640 * 4],
-                 &dst_pixels_opt[0], 640);
+      GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+                 &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+                 &dst_pixels_opt[0], 1280);
     }
 #else
-    GaussCol_C(&orig_pixels[0], &orig_pixels[640], &orig_pixels[640 * 2],
-               &orig_pixels[640 * 3], &orig_pixels[640 * 4], &dst_pixels_opt[0],
-               640);
+    GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+               &orig_pixels[1280 * 3], &orig_pixels[1280 * 4], &dst_pixels_opt[0],
+               1280);
 #endif
   }
 
-  for (int i = 0; i < 640; ++i) {
+  for (int i = 0; i < 1280; ++i) {
     EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
   }
+}
 
-  EXPECT_EQ(dst_pixels_c[0],
-            static_cast<uint32_t>(0 * 1 + 640 * 4 + 640 * 2 * 6 + 640 * 3 * 4 +
-                                  640 * 4 * 1));
-  EXPECT_EQ(dst_pixels_c[639], static_cast<uint32_t>(30704));
+TEST_F(LibYUVPlanarTest, TestGaussRow_F32_Opt) {
+  SIMD_ALIGNED(float orig_pixels[1280 + 4]);
+  SIMD_ALIGNED(float dst_pixels_c[1280]);
+  SIMD_ALIGNED(float dst_pixels_opt[1280]);
+
+  memset(orig_pixels, 0, sizeof(orig_pixels));
+  memset(dst_pixels_c, 1, sizeof(dst_pixels_c));
+  memset(dst_pixels_opt, 2, sizeof(dst_pixels_opt));
+
+  for (int i = 0; i < 1280 + 4; ++i) {
+    orig_pixels[i] = static_cast<float>(i);
+  }
+  GaussRow_F32_C(&orig_pixels[0], &dst_pixels_c[0], 1280);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+    int has_neon = TestCpuFlag(kCpuHasNEON);
+    if (has_neon) {
+      GaussRow_F32_NEON(&orig_pixels[0], &dst_pixels_opt[0], 1280);
+    } else {
+      GaussRow_F32_C(&orig_pixels[0], &dst_pixels_opt[0], 1280);
+    }
+#else
+    GaussRow_F32_C(&orig_pixels[0], &dst_pixels_opt[0], 1280);
+#endif
+  }
+
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+}
+
+TEST_F(LibYUVPlanarTest, TestGaussCol_F32_Opt) {
+  SIMD_ALIGNED(float dst_pixels_c[1280]);
+  SIMD_ALIGNED(float dst_pixels_opt[1280]);
+  align_buffer_page_end(orig_pixels_buf, 1280 * 5 * 4);  // 5 rows
+  float* orig_pixels = reinterpret_cast<float*>(orig_pixels_buf);
+
+  memset(orig_pixels, 0, 1280 * 5 * 4);
+  memset(dst_pixels_c, 1, sizeof(dst_pixels_c));
+  memset(dst_pixels_opt, 2, sizeof(dst_pixels_opt));
+
+  for (int i = 0; i < 1280 * 5; ++i) {
+    orig_pixels[i] = static_cast<float>(i);
+  }
+   GaussCol_F32_C(&orig_pixels[0],
+                  &orig_pixels[1280],
+                  &orig_pixels[1280 * 2],
+                  &orig_pixels[1280 * 3],
+                  &orig_pixels[1280 * 4],
+                  &dst_pixels_c[0], 1280);
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+#if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
+    int has_neon = TestCpuFlag(kCpuHasNEON);
+    if (has_neon) {
+      GaussCol_F32_NEON(&orig_pixels[0],
+                        &orig_pixels[1280],
+                        &orig_pixels[1280 * 2],
+                        &orig_pixels[1280 * 3],
+                        &orig_pixels[1280 * 4],
+                        &dst_pixels_opt[0], 1280);
+    } else {
+      GaussCol_F32_C(&orig_pixels[0],
+                     &orig_pixels[1280],
+                     &orig_pixels[1280 * 2],
+                     &orig_pixels[1280 * 3],
+                     &orig_pixels[1280 * 4],
+                     &dst_pixels_opt[0], 1280);
+    }
+#else
+    GaussCol_F32_C(&orig_pixels[0],
+                   &orig_pixels[1280],
+                   &orig_pixels[1280 * 2],
+                   &orig_pixels[1280 * 3],
+                   &orig_pixels[1280 * 4],
+                   &dst_pixels_opt[0], 1280);
+#endif
+  }
+
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(dst_pixels_c[i], dst_pixels_opt[i]);
+  }
+  free_aligned_buffer_page_end(orig_pixels_buf);
 }
 
 TEST_F(LibYUVPlanarTest, SwapUVRow) {
@@ -3360,6 +3439,39 @@ TEST_F(LibYUVPlanarTest, SwapUVRow) {
   free_aligned_buffer_page_end(src_pixels_vu);
   free_aligned_buffer_page_end(dst_pixels_uv);
 }
-#endif
+#endif  // ENABLE_ROW_TESTS
+
+TEST_F(LibYUVPlanarTest, TestGaussPlane_F32) {
+  const int kSize = benchmark_width_ * benchmark_height_ * 4;
+  align_buffer_page_end(orig_pixels, kSize);
+  align_buffer_page_end(dst_pixels_opt, kSize);
+  align_buffer_page_end(dst_pixels_c, kSize);
+
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    ((float*)(orig_pixels))[i] = (i & 1023) * 3.14f;
+  }
+  memset(dst_pixels_opt, 1, kSize);
+  memset(dst_pixels_c, 2, kSize);
+
+  MaskCpuFlags(disable_cpu_flags_);
+  GaussPlane_F32((const float*)(orig_pixels), benchmark_width_,
+                 (float*)(dst_pixels_c), benchmark_width_,
+                 benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    GaussPlane_F32((const float*)(orig_pixels), benchmark_width_,
+                   (float*)(dst_pixels_opt), benchmark_width_,
+                   benchmark_width_, benchmark_height_);
+  }
+  for (int i = 0; i < benchmark_width_ * benchmark_height_ ; ++i) {
+    EXPECT_NEAR(((float*)(dst_pixels_c))  [i],
+                ((float*)(dst_pixels_opt))[i], 1.f) << i;
+  }
+
+  free_aligned_buffer_page_end(dst_pixels_c);
+  free_aligned_buffer_page_end(dst_pixels_opt);
+  free_aligned_buffer_page_end(orig_pixels);
+}
 
 }  // namespace libyuv

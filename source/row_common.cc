@@ -3358,6 +3358,29 @@ void GaussCol_C(const uint16_t* src0,
   }
 }
 
+void GaussRow_F32_C(const float* src, float* dst, int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    *dst++ =
+        (src[0] + src[1] * 4 + src[2] * 6 + src[3] * 4 + src[4]) * (1.0f / 256.0f);
+    ++src;
+  }
+}
+
+// filter 5 rows with 1, 4, 6, 4, 1 coefficients to produce 1 row.
+void GaussCol_F32_C(const float* src0,
+                    const float* src1,
+                    const float* src2,
+                    const float* src3,
+                    const float* src4,
+                    float* dst,
+                    int width) {
+  int i;
+  for (i = 0; i < width; ++i) {
+    *dst++ = *src0++ + *src1++ * 4 + *src2++ * 6 + *src3++ * 4 + *src4++;
+  }
+}
+
 // Convert biplanar NV21 to packed YUV24
 void NV21ToYUV24Row_C(const uint8_t* src_y,
                       const uint8_t* src_vu,
