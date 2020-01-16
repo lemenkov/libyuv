@@ -418,6 +418,15 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
                 int width,
                 int height);
 
+// RGB big endian (rgb in memory) to J400.
+LIBYUV_API
+int RAWToJ400(const uint8_t* src_raw,
+              int src_stride_raw,
+              uint8_t* dst_yj,
+              int dst_stride_yj,
+              int width,
+              int height);
+
 #ifdef HAVE_JPEG
 // src_width/height provided by capture.
 // dst_width/height for clipping determine final size.

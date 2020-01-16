@@ -2065,6 +2065,49 @@ void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
       : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
 }
 
+
+void RGB24ToYJRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
+  asm volatile(
+      "vmov.u8    d4, #29                        \n"  // B * 0.1140 coefficient
+      "vmov.u8    d5, #150                       \n"  // G * 0.5870 coefficient
+      "vmov.u8    d6, #77                        \n"  // R * 0.2990 coefficient
+      "1:                                        \n"
+      "vld3.8     {d0, d1, d2}, [%0]!            \n"  // load 8 pixels of RGB24.
+      "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+      "vmull.u8   q4, d0, d4                     \n"  // B
+      "vmlal.u8   q4, d1, d5                     \n"  // G
+      "vmlal.u8   q4, d2, d6                     \n"  // R
+      "vqrshrn.u16 d0, q4, #8                    \n"  // 16 bit to 8 bit Y
+      "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+      "bgt        1b                             \n"
+      : "+r"(src_rgb24),  // %0
+        "+r"(dst_yj),     // %1
+        "+r"(width)       // %2
+      :
+      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "q4");
+}
+
+void RAWToYJRow_NEON(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
+  asm volatile(
+      "vmov.u8    d6, #29                        \n"  // B * 0.1140 coefficient
+      "vmov.u8    d5, #150                       \n"  // G * 0.5870 coefficient
+      "vmov.u8    d4, #77                        \n"  // R * 0.2990 coefficient
+      "1:                                        \n"
+      "vld3.8     {d0, d1, d2}, [%0]!            \n"  // load 8 pixels of RAW.
+      "subs       %2, %2, #8                     \n"  // 8 processed per loop.
+      "vmull.u8   q4, d0, d4                     \n"  // B
+      "vmlal.u8   q4, d1, d5                     \n"  // G
+      "vmlal.u8   q4, d2, d6                     \n"  // R
+      "vqrshrn.u16 d0, q4, #8                    \n"  // 16 bit to 8 bit Y
+      "vst1.8     {d0}, [%1]!                    \n"  // store 8 pixels Y.
+      "bgt        1b                             \n"
+      : "+r"(src_raw),  // %0
+        "+r"(dst_yj),   // %1
+        "+r"(width)     // %2
+      :
+      : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "q4");
+}
+
 // Bilinear filter 16x2 -> 16x1
 void InterpolateRow_NEON(uint8_t* dst_ptr,
                          const uint8_t* src_ptr,

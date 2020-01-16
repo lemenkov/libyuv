@@ -565,6 +565,8 @@ static __inline int RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
 
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
 MAKEROWYJ(RGBA, 3, 2, 1, 4)
+MAKEROWYJ(RGB24, 2, 1, 0, 3)
+MAKEROWYJ(RAW, 0, 1, 2, 3)
 #undef MAKEROWYJ
 
 void RGB565ToYRow_C(const uint8_t* src_rgb565, uint8_t* dst_y, int width) {
