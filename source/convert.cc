@@ -2380,27 +2380,38 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
                 int width,
                 int height) {
   int y;
-#if (defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_MSA) || \
-     defined(HAS_RGB24TOYJROW_MMI))
   void (*RGB24ToYJRow)(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) =
       RGB24ToYJRow_C;
-#else
-  void (*RGB24ToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
-      RGB24ToARGBRow_C;
-  void (*ARGBToYJRow)(const uint8_t* src_argb, uint8_t* dst_yj, int width) =
-      ARGBToYJRow_C;
-#endif
   if (!src_rgb24 || !dst_yj || width <= 0 || height == 0) {
     return -1;
   }
-  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_rgb24 = src_rgb24 + (height - 1) * src_stride_rgb24;
     src_stride_rgb24 = -src_stride_rgb24;
   }
-
-// Neon version does direct RGB24 to YJ.
+  // Coalesce rows.
+  if (src_stride_rgb24 == width * 3 && dst_stride_yj == width) {
+    width *= height;
+    height = 1;
+    src_stride_rgb24 = dst_stride_yj = 0;
+  }
+#if defined(HAS_RGB24TOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    RGB24ToYJRow = RGB24ToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RGB24ToYJRow = RGB24ToYJRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RGB24TOYJROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RGB24ToYJRow = RGB24ToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RGB24ToYJRow = RGB24ToYJRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_RGB24TOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RGB24ToYJRow = RGB24ToYJRow_Any_NEON;
@@ -2408,83 +2419,28 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
       RGB24ToYJRow = RGB24ToYJRow_NEON;
     }
   }
-#elif defined(HAS_RGB24TOYJROW_MSA)
+#endif
+#if defined(HAS_RGB24TOYJROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB24ToYJRow = RGB24ToYJRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       RGB24ToYJRow = RGB24ToYJRow_MSA;
     }
   }
-#elif defined(HAS_RGB24TOYJROW_MMI)
+#endif
+#if defined(HAS_RGB24TOYJROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RGB24ToYJRow = RGB24ToYJRow_Any_MMI;
     if (IS_ALIGNED(width, 8)) {
       RGB24ToYJRow = RGB24ToYJRow_MMI;
     }
   }
-// Other platforms do intermediate conversion from RGB24 to ARGB.
-#else
-#if defined(HAS_RGB24TOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    RGB24ToARGBRow = RGB24ToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      RGB24ToARGBRow = RGB24ToARGBRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYJROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToYJRow = ARGBToYJRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYJROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBToYJRow = ARGBToYJRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBToYJRow = ARGBToYJRow_AVX2;
-    }
-  }
-#endif
 #endif
 
-  {
-#if !(defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_MSA) || \
-      defined(HAS_RGB24TOYJROW_MMI))
-    // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 31) & ~31;
-    align_buffer_64(row, kRowSize * 2);
-#endif
-
-    for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_MSA) || \
-     defined(HAS_RGB24TOYJROW_MMI))
-      RGB24ToYJRow(src_rgb24, dst_yj, width);
-      RGB24ToYJRow(src_rgb24 + src_stride_rgb24, dst_yj + dst_stride_yj, width);
-#else
-      RGB24ToARGBRow(src_rgb24, row, width);
-      RGB24ToARGBRow(src_rgb24 + src_stride_rgb24, row + kRowSize, width);
-      ARGBToYJRow(row, dst_yj, width);
-      ARGBToYJRow(row + kRowSize, dst_yj + dst_stride_yj, width);
-#endif
-      src_rgb24 += src_stride_rgb24 * 2;
-      dst_yj += dst_stride_yj * 2;
-    }
-    if (height & 1) {
-#if (defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_MSA) || \
-     defined(HAS_RGB24TOYJROW_MMI))
-      RGB24ToYJRow(src_rgb24, dst_yj, width);
-#else
-      RGB24ToARGBRow(src_rgb24, row, width);
-      ARGBToYJRow(row, dst_yj, width);
-#endif
-    }
-#if !(defined(HAS_RGB24TOYJROW_NEON) || defined(HAS_RGB24TOYJROW_MSA) || \
-      defined(HAS_RGB24TOYJROW_MMI))
-    free_aligned_buffer_64(row);
-#endif
+  for (y = 0; y < height; ++y) {
+    RGB24ToYJRow(src_rgb24, dst_yj, width);
+    src_rgb24 += src_stride_rgb24;
+    dst_yj += dst_stride_yj;
   }
   return 0;
 }
@@ -2498,27 +2454,38 @@ int RAWToJ400(const uint8_t* src_raw,
                 int width,
                 int height) {
   int y;
-#if (defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
-     defined(HAS_RAWTOYJROW_MMI))
   void (*RAWToYJRow)(const uint8_t* src_raw, uint8_t* dst_yj, int width) =
       RAWToYJRow_C;
-#else
-  void (*RAWToARGBRow)(const uint8_t* src_rgb, uint8_t* dst_argb, int width) =
-      RAWToARGBRow_C;
-  void (*ARGBToYJRow)(const uint8_t* src_argb, uint8_t* dst_yj, int width) =
-      ARGBToYJRow_C;
-#endif
   if (!src_raw || !dst_yj || width <= 0 || height == 0) {
     return -1;
   }
-  // Negative height means invert the image.
   if (height < 0) {
     height = -height;
     src_raw = src_raw + (height - 1) * src_stride_raw;
     src_stride_raw = -src_stride_raw;
   }
-
-// Neon version does direct RAW to YJ.
+  // Coalesce rows.
+  if (src_stride_raw == width * 3 && dst_stride_yj == width) {
+    width *= height;
+    height = 1;
+    src_stride_raw = dst_stride_yj = 0;
+  }
+#if defined(HAS_RAWTOYJROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    RAWToYJRow = RAWToYJRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      RAWToYJRow = RAWToYJRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_RAWTOYJROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    RAWToYJRow = RAWToYJRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      RAWToYJRow = RAWToYJRow_AVX2;
+    }
+  }
+#endif
 #if defined(HAS_RAWTOYJROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     RAWToYJRow = RAWToYJRow_Any_NEON;
@@ -2526,83 +2493,28 @@ int RAWToJ400(const uint8_t* src_raw,
       RAWToYJRow = RAWToYJRow_NEON;
     }
   }
-#elif defined(HAS_RAWTOYJROW_MSA)
+#endif
+#if defined(HAS_RAWTOYJROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RAWToYJRow = RAWToYJRow_Any_MSA;
     if (IS_ALIGNED(width, 16)) {
       RAWToYJRow = RAWToYJRow_MSA;
     }
   }
-#elif defined(HAS_RAWTOYJROW_MMI)
+#endif
+#if defined(HAS_RAWTOYJROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RAWToYJRow = RAWToYJRow_Any_MMI;
     if (IS_ALIGNED(width, 8)) {
       RAWToYJRow = RAWToYJRow_MMI;
     }
   }
-// Other platforms do intermediate conversion from RAW to ARGB.
-#else
-#if defined(HAS_RAWTOARGBROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    RAWToARGBRow = RAWToARGBRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      RAWToARGBRow = RAWToARGBRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYJROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    ARGBToYJRow = ARGBToYJRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      ARGBToYJRow = ARGBToYJRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_ARGBTOYJROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    ARGBToYJRow = ARGBToYJRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      ARGBToYJRow = ARGBToYJRow_AVX2;
-    }
-  }
-#endif
 #endif
 
-  {
-#if !(defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
-      defined(HAS_RAWTOYJROW_MMI))
-    // Allocate 2 rows of ARGB.
-    const int kRowSize = (width * 4 + 31) & ~31;
-    align_buffer_64(row, kRowSize * 2);
-#endif
-
-    for (y = 0; y < height - 1; y += 2) {
-#if (defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
-     defined(HAS_RAWTOYJROW_MMI))
-      RAWToYJRow(src_raw, dst_yj, width);
-      RAWToYJRow(src_raw + src_stride_raw, dst_yj + dst_stride_yj, width);
-#else
-      RAWToARGBRow(src_raw, row, width);
-      RAWToARGBRow(src_raw + src_stride_raw, row + kRowSize, width);
-      ARGBToYJRow(row, dst_yj, width);
-      ARGBToYJRow(row + kRowSize, dst_yj + dst_stride_yj, width);
-#endif
-      src_raw += src_stride_raw * 2;
-      dst_yj += dst_stride_yj * 2;
-    }
-    if (height & 1) {
-#if (defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
-     defined(HAS_RAWTOYJROW_MMI))
-      RAWToYJRow(src_raw, dst_yj, width);
-#else
-      RAWToARGBRow(src_raw, row, width);
-      ARGBToYJRow(row, dst_yj, width);
-#endif
-    }
-#if !(defined(HAS_RAWTOYJROW_NEON) || defined(HAS_RAWTOYJROW_MSA) || \
-      defined(HAS_RAWTOYJROW_MMI))
-    free_aligned_buffer_64(row);
-#endif
+  for (y = 0; y < height; ++y) {
+    RAWToYJRow(src_raw, dst_yj, width);
+    src_raw += src_stride_raw;
+    dst_yj += dst_stride_yj;
   }
   return 0;
 }

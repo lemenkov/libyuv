@@ -3307,6 +3307,70 @@ void NV12ToRGB565Row_AVX2(const uint8_t* src_y,
 }
 #endif
 
+#ifdef HAS_RGB24TOYJROW_AVX2
+// Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
+void RGB24ToYJRow_AVX2(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    RGB24ToARGBRow_SSSE3(src_rgb24, row, twidth);
+    ARGBToYJRow_AVX2(row, dst_yj, twidth);
+    src_rgb24 += twidth * 3;
+    dst_yj += twidth;
+    width -= twidth;
+  }
+}
+#endif  //HAS_RGB24TOYJROW_AVX2
+
+#ifdef HAS_RAWTOYJROW_AVX2
+// Convert 16 RAW pixels (64 bytes) to 16 YJ values.
+void RAWToYJRow_AVX2(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    RAWToARGBRow_SSSE3(src_raw, row, twidth);
+    ARGBToYJRow_AVX2(row, dst_yj, twidth);
+    src_raw += twidth * 3;
+    dst_yj += twidth;
+    width -= twidth;
+  }
+}
+#endif  //HAS_RAWTOYJROW_AVX2
+
+#ifdef HAS_RGB24TOYJROW_SSSE3
+// Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
+void RGB24ToYJRow_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    RGB24ToARGBRow_SSSE3(src_rgb24, row, twidth);
+    ARGBToYJRow_SSSE3(row, dst_yj, twidth);
+    src_rgb24 += twidth * 3;
+    dst_yj += twidth;
+    width -= twidth;
+  }
+}
+#endif  //HAS_RGB24TOYJROW_SSSE3
+
+#ifdef HAS_RAWTOYJROW_SSSE3
+// Convert 16 RAW pixels (64 bytes) to 16 YJ values.
+void RAWToYJRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
+  // Row buffer for intermediate ARGB pixels.
+  SIMD_ALIGNED(uint8_t row[MAXTWIDTH * 4]);
+  while (width > 0) {
+    int twidth = width > MAXTWIDTH ? MAXTWIDTH : width;
+    RAWToARGBRow_SSSE3(src_raw, row, twidth);
+    ARGBToYJRow_SSSE3(row, dst_yj, twidth);
+    src_raw += twidth * 3;
+    dst_yj += twidth;
+    width -= twidth;
+  }
+}
+#endif  //HAS_RAWTOYJROW_SSSE3
+
 float ScaleSumSamples_C(const float* src, float* dst, float scale, int width) {
   float fsum = 0.f;
   int i;
