@@ -33,8 +33,10 @@ uint32_t HammingDistance_NEON(const uint8_t* src_a,
       "ld1        {v0.16b, v1.16b}, [%0], #32    \n"
       "ld1        {v2.16b, v3.16b}, [%1], #32    \n"
       "eor        v0.16b, v0.16b, v2.16b         \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "eor        v1.16b, v1.16b, v3.16b         \n"
       "cnt        v0.16b, v0.16b                 \n"
+      "prfm       pldl1keep, [%1, 448]           \n"
       "cnt        v1.16b, v1.16b                 \n"
       "subs       %w2, %w2, #32                  \n"
       "add        v0.16b, v0.16b, v1.16b         \n"
@@ -65,8 +67,10 @@ uint32_t SumSquareError_NEON(const uint8_t* src_a,
       "subs       %w2, %w2, #16                  \n"
       "usubl      v2.8h, v0.8b, v1.8b            \n"
       "usubl2     v3.8h, v0.16b, v1.16b          \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "smlal      v16.4s, v2.4h, v2.4h           \n"
       "smlal      v17.4s, v3.4h, v3.4h           \n"
+      "prfm       pldl1keep, [%1, 448]           \n"
       "smlal2     v18.4s, v2.8h, v2.8h           \n"
       "smlal2     v19.4s, v3.8h, v3.8h           \n"
       "b.gt       1b                             \n"

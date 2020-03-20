@@ -804,6 +804,23 @@ TEST_F(LibYUVPlanarTest, TestARGBMirror) {
   }
 }
 
+TEST_F(LibYUVPlanarTest, TestMirrorPlane) {
+  SIMD_ALIGNED(uint8_t orig_pixels[1280]);
+  SIMD_ALIGNED(uint8_t dst_pixels[1280]);
+
+  for (int i = 0; i < 1280; ++i) {
+    orig_pixels[i] = i;
+  }
+  MirrorPlane(&orig_pixels[0], 0, &dst_pixels[0], 0, 1280, 1);
+
+  for (int i = 0; i < 1280; ++i) {
+    EXPECT_EQ(i & 255, dst_pixels[1280 - 1 - i]);
+  }
+  for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
+    MirrorPlane(&orig_pixels[0], 0, &dst_pixels[0], 0, 1280, 1);
+  }
+}
+
 TEST_F(LibYUVPlanarTest, TestShade) {
   SIMD_ALIGNED(uint8_t orig_pixels[1280][4]);
   SIMD_ALIGNED(uint8_t shade_pixels[1280][4]);
@@ -3315,8 +3332,8 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_Opt) {
     }
 #else
     GaussCol_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
-               &orig_pixels[1280 * 3], &orig_pixels[1280 * 4], &dst_pixels_opt[0],
-               1280);
+               &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+               &dst_pixels_opt[0], 1280);
 #endif
   }
 
@@ -3369,36 +3386,24 @@ TEST_F(LibYUVPlanarTest, TestGaussCol_F32_Opt) {
   for (int i = 0; i < 1280 * 5; ++i) {
     orig_pixels[i] = static_cast<float>(i);
   }
-   GaussCol_F32_C(&orig_pixels[0],
-                  &orig_pixels[1280],
-                  &orig_pixels[1280 * 2],
-                  &orig_pixels[1280 * 3],
-                  &orig_pixels[1280 * 4],
-                  &dst_pixels_c[0], 1280);
+  GaussCol_F32_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+                 &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
+                 &dst_pixels_c[0], 1280);
   for (int i = 0; i < benchmark_pixels_div1280_; ++i) {
 #if !defined(LIBYUV_DISABLE_NEON) && defined(__aarch64__)
     int has_neon = TestCpuFlag(kCpuHasNEON);
     if (has_neon) {
-      GaussCol_F32_NEON(&orig_pixels[0],
-                        &orig_pixels[1280],
-                        &orig_pixels[1280 * 2],
-                        &orig_pixels[1280 * 3],
-                        &orig_pixels[1280 * 4],
-                        &dst_pixels_opt[0], 1280);
+      GaussCol_F32_NEON(&orig_pixels[0], &orig_pixels[1280],
+                        &orig_pixels[1280 * 2], &orig_pixels[1280 * 3],
+                        &orig_pixels[1280 * 4], &dst_pixels_opt[0], 1280);
     } else {
-      GaussCol_F32_C(&orig_pixels[0],
-                     &orig_pixels[1280],
-                     &orig_pixels[1280 * 2],
-                     &orig_pixels[1280 * 3],
-                     &orig_pixels[1280 * 4],
-                     &dst_pixels_opt[0], 1280);
+      GaussCol_F32_C(&orig_pixels[0], &orig_pixels[1280],
+                     &orig_pixels[1280 * 2], &orig_pixels[1280 * 3],
+                     &orig_pixels[1280 * 4], &dst_pixels_opt[0], 1280);
     }
 #else
-    GaussCol_F32_C(&orig_pixels[0],
-                   &orig_pixels[1280],
-                   &orig_pixels[1280 * 2],
-                   &orig_pixels[1280 * 3],
-                   &orig_pixels[1280 * 4],
+    GaussCol_F32_C(&orig_pixels[0], &orig_pixels[1280], &orig_pixels[1280 * 2],
+                   &orig_pixels[1280 * 3], &orig_pixels[1280 * 4],
                    &dst_pixels_opt[0], 1280);
 #endif
   }
@@ -3455,18 +3460,18 @@ TEST_F(LibYUVPlanarTest, TestGaussPlane_F32) {
 
   MaskCpuFlags(disable_cpu_flags_);
   GaussPlane_F32((const float*)(orig_pixels), benchmark_width_,
-                 (float*)(dst_pixels_c), benchmark_width_,
-                 benchmark_width_, benchmark_height_);
+                 (float*)(dst_pixels_c), benchmark_width_, benchmark_width_,
+                 benchmark_height_);
   MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
     GaussPlane_F32((const float*)(orig_pixels), benchmark_width_,
-                   (float*)(dst_pixels_opt), benchmark_width_,
-                   benchmark_width_, benchmark_height_);
+                   (float*)(dst_pixels_opt), benchmark_width_, benchmark_width_,
+                   benchmark_height_);
   }
-  for (int i = 0; i < benchmark_width_ * benchmark_height_ ; ++i) {
-    EXPECT_NEAR(((float*)(dst_pixels_c))  [i],
-                ((float*)(dst_pixels_opt))[i], 1.f) << i;
+  for (int i = 0; i < benchmark_width_ * benchmark_height_; ++i) {
+    EXPECT_NEAR(((float*)(dst_pixels_c))[i], ((float*)(dst_pixels_opt))[i], 1.f)
+        << i;
   }
 
   free_aligned_buffer_page_end(dst_pixels_c);

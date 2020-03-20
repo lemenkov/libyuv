@@ -31,6 +31,7 @@ void ScaleRowDown2_NEON(const uint8_t* src_ptr,
       // load even pixels into v0, odd into v1
       "ld2        {v0.16b,v1.16b}, [%0], #32     \n"
       "subs       %w2, %w2, #16                  \n"  // 16 processed per loop
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "st1        {v1.16b}, [%1], #16            \n"  // store odd pixels
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
@@ -54,6 +55,7 @@ void ScaleRowDown2Linear_NEON(const uint8_t* src_ptr,
       "subs       %w2, %w2, #16                  \n"  // 16 processed per loop
       "urhadd     v0.16b, v0.16b, v1.16b         \n"  // rounding half add
       "st1        {v0.16b}, [%1], #16            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -82,6 +84,8 @@ void ScaleRowDown2Box_NEON(const uint8_t* src_ptr,
       "rshrn      v0.8b, v0.8h, #2               \n"  // round and pack
       "rshrn2     v0.16b, v1.8h, #2              \n"
       "st1        {v0.16b}, [%2], #16            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%1, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1
@@ -102,6 +106,7 @@ void ScaleRowDown4_NEON(const uint8_t* src_ptr,
       "ld4     {v0.8b,v1.8b,v2.8b,v3.8b}, [%0], #32  \n"  // src line 0
       "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
       "st1     {v2.8b}, [%1], #8                 \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
@@ -131,6 +136,10 @@ void ScaleRowDown4Box_NEON(const uint8_t* src_ptr,
       "addp    v0.8h, v0.8h, v0.8h               \n"
       "rshrn   v0.8b, v0.8h, #4                  \n"  // divide by 16 w/rounding
       "st1    {v0.s}[0], [%1], #4                \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
+      "prfm       pldl1keep, [%3, 448]           \n"
+      "prfm       pldl1keep, [%4, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
@@ -156,7 +165,8 @@ void ScaleRowDown34_NEON(const uint8_t* src_ptr,
       "subs      %w2, %w2, #24                           \n"
       "orr       v2.16b, v3.16b, v3.16b                  \n"  // order v0,v1,v2
       "st3       {v0.8b,v1.8b,v2.8b}, [%1], #24          \n"
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -211,7 +221,9 @@ void ScaleRowDown34_0_Box_NEON(const uint8_t* src_ptr,
 
       "st3       {v0.8b,v1.8b,v2.8b}, [%1], #24          \n"
 
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%3, 448]           \n"
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
         "+r"(dst_width),  // %2
@@ -252,7 +264,9 @@ void ScaleRowDown34_1_Box_NEON(const uint8_t* src_ptr,
       "uqrshrn   v2.8b, v4.8h, #2                        \n"
 
       "st3       {v0.8b,v1.8b,v2.8b}, [%1], #24          \n"
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%3, 448]           \n"
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),    // %0
         "+r"(dst_ptr),    // %1
         "+r"(dst_width),  // %2
@@ -286,7 +300,8 @@ void ScaleRowDown38_NEON(const uint8_t* src_ptr,
       "tbl       v2.16b, {v0.16b,v1.16b}, v3.16b         \n"
       "st1       {v2.8b}, [%1], #8                       \n"
       "st1       {v2.s}[2], [%1], #4                     \n"
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(dst_width)  // %2
@@ -400,7 +415,10 @@ void OMITFP ScaleRowDown38_3_Box_NEON(const uint8_t* src_ptr,
 
       "st1       {v3.8b}, [%1], #8                       \n"
       "st1       {v3.s}[2], [%1], #4                     \n"
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
+      "prfm       pldl1keep, [%3, 448]           \n"
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),         // %0
         "+r"(dst_ptr),         // %1
         "+r"(tmp_src_stride),  // %2
@@ -504,7 +522,9 @@ void ScaleRowDown38_2_Box_NEON(const uint8_t* src_ptr,
 
       "st1       {v3.8b}, [%1], #8                       \n"
       "st1       {v3.s}[2], [%1], #4                     \n"
-      "b.gt      1b                                      \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),         // %0
         "+r"(dst_ptr),         // %1
         "+r"(tmp_src_stride),  // %2
@@ -528,7 +548,8 @@ void ScaleAddRow_NEON(const uint8_t* src_ptr,
       "uaddw    v1.8h, v1.8h, v0.8b              \n"
       "st1      {v1.8h, v2.8h}, [%1], #32        \n"  // store accumulator
       "subs     %w2, %w2, #16                    \n"  // 16 processed per loop
-      "b.gt     1b                               \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst_ptr),   // %1
         "+r"(src_width)  // %2
@@ -599,7 +620,7 @@ void ScaleFilterCols_NEON(uint8_t* dst_ptr,
     "add       v1.4s, v1.4s, v0.4s             \n"
     "add       v2.4s, v2.4s, v0.4s             \n"
     "subs      %w2, %w2, #8                    \n"  // 8 processed per loop
-    "b.gt      1b                              \n"
+      "b.gt       1b                             \n"
   : "+r"(dst_ptr),          // %0
     "+r"(src_ptr),          // %1
     "+r"(dst_width),        // %2
@@ -647,6 +668,8 @@ void ScaleFilterRows_NEON(uint8_t* dst_ptr,
       "rshrn        v0.8b, v6.8h, #8             \n"
       "rshrn2       v0.16b, v7.8h, #8            \n"
       "st1          {v0.16b}, [%0], #16          \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
       "b.gt         1b                           \n"
       "b            99f                          \n"
 
@@ -658,6 +681,8 @@ void ScaleFilterRows_NEON(uint8_t* dst_ptr,
       "urhadd       v0.16b, v0.16b, v1.16b       \n"
       "urhadd       v0.16b, v0.16b, v1.16b       \n"
       "st1          {v0.16b}, [%0], #16          \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
       "b.gt         25b                          \n"
       "b            99f                          \n"
 
@@ -668,6 +693,8 @@ void ScaleFilterRows_NEON(uint8_t* dst_ptr,
       "subs         %w3, %w3, #16                \n"
       "urhadd       v0.16b, v0.16b, v1.16b       \n"
       "st1          {v0.16b}, [%0], #16          \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
       "b.gt         50b                          \n"
       "b            99f                          \n"
 
@@ -679,6 +706,8 @@ void ScaleFilterRows_NEON(uint8_t* dst_ptr,
       "urhadd       v0.16b, v0.16b, v1.16b       \n"
       "urhadd       v0.16b, v0.16b, v1.16b       \n"
       "st1          {v0.16b}, [%0], #16          \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%2, 448]           \n"
       "b.gt         75b                          \n"
       "b            99f                          \n"
 
@@ -687,6 +716,7 @@ void ScaleFilterRows_NEON(uint8_t* dst_ptr,
       "ld1          {v0.16b}, [%1], #16          \n"
       "subs         %w3, %w3, #16                \n"
       "st1          {v0.16b}, [%0], #16          \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
       "b.gt         100b                         \n"
 
       "99:                                       \n"
@@ -713,6 +743,7 @@ void ScaleARGBRowDown2_NEON(const uint8_t* src_ptr,
       "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
       "mov        v2.16b, v3.16b                 \n"
       "st2        {v1.4s,v2.4s}, [%1], #32       \n"  // store 8 odd pixels
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(src_ptr),   // %0
         "+r"(dst),       // %1
@@ -736,6 +767,7 @@ void ScaleARGBRowDown2Linear_NEON(const uint8_t* src_argb,
       "urhadd     v0.16b, v0.16b, v1.16b         \n"  // rounding half add
       "urhadd     v1.16b, v2.16b, v3.16b         \n"
       "st2        {v0.4s,v1.4s}, [%1], #32       \n"  // store 8 pixels
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(src_argb),  // %0
         "+r"(dst_argb),  // %1
@@ -769,6 +801,8 @@ void ScaleARGBRowDown2Box_NEON(const uint8_t* src_ptr,
       "rshrn      v2.8b, v2.8h, #2               \n"
       "rshrn      v3.8b, v3.8h, #2               \n"
       "st4        {v0.8b,v1.8b,v2.8b,v3.8b}, [%2], #32     \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%1, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1
@@ -794,6 +828,7 @@ void ScaleARGBRowDownEven_NEON(const uint8_t* src_argb,
       "ld1        {v0.s}[3], [%0], %3            \n"
       "subs       %w2, %w2, #4                   \n"  // 4 pixels per loop.
       "st1        {v0.16b}, [%1], #16            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(src_argb),                // %0
         "+r"(dst_argb),                // %1
@@ -838,6 +873,8 @@ void ScaleARGBRowDownEvenBox_NEON(const uint8_t* src_argb,
       "rshrn2     v0.16b, v4.8h, #2              \n"  // next 2 pixels.
       "subs       %w3, %w3, #4                   \n"  // 4 pixels per loop.
       "st1     {v0.16b}, [%2], #16               \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%1, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_argb),                // %0
         "+r"(src_stride),              // %1
@@ -878,6 +915,7 @@ void ScaleARGBCols_NEON(uint8_t* dst_argb,
       // clang-format on
       "st1        {v0.4s, v1.4s}, [%0], #32      \n"  // store pixels
       "subs       %w2, %w2, #8                   \n"  // 8 processed per loop
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
       "b.gt       1b                             \n"
       : "+r"(dst_argb),   // %0
         "+r"(src_argb),   // %1
@@ -949,7 +987,8 @@ void ScaleARGBFilterCols_NEON(uint8_t* dst_argb,
     "st1     {v0.4s}, [%0], #16                \n"  // store pixels
     "add     v5.4s, v5.4s, v6.4s               \n"
     "subs    %w2, %w2, #4                      \n"  // 4 processed per loop
-    "b.gt    1b                                \n"
+      "prfm       pldl1keep, [%1, 448]           \n"  // prefetch 7 lines ahead
+      "b.gt       1b                             \n"
   : "+r"(dst_argb),         // %0
     "+r"(src_argb),         // %1
     "+r"(dst_width),        // %2
@@ -984,6 +1023,8 @@ void ScaleRowDown2Box_16_NEON(const uint16_t* src_ptr,
       "rshrn      v0.4h, v0.4s, #2               \n"  // round and pack
       "rshrn2     v0.8h, v1.4s, #2               \n"
       "st1        {v0.8h}, [%2], #16             \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%1, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1
@@ -1032,6 +1073,8 @@ void ScaleRowUp2_16_NEON(const uint16_t* src_ptr,
       "uqrshrn    v17.4h, v18.4s, #4             \n"
       "uqrshrn2   v17.8h, v4.4s, #4              \n"
       "st2        {v16.8h-v17.8h}, [%2], #32     \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "prfm       pldl1keep, [%1, 448]           \n"
       "b.gt       1b                             \n"
       : "+r"(src_ptr),     // %0
         "+r"(src_stride),  // %1

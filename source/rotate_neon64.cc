@@ -37,7 +37,7 @@ void TransposeWx8_NEON(const uint8_t* src,
       "sub         %w3, %w3, #8                     \n"
 
       // handle 8x8 blocks. this should be the majority of the plane
-      "1:                                          \n"
+      "1:                                        \n"
       "mov         %0, %1                        \n"
 
       "ld1        {v0.8b}, [%0], %5              \n"
@@ -48,23 +48,39 @@ void TransposeWx8_NEON(const uint8_t* src,
       "ld1        {v5.8b}, [%0], %5              \n"
       "ld1        {v6.8b}, [%0], %5              \n"
       "ld1        {v7.8b}, [%0]                  \n"
+      "mov         %0, %1                        \n"
 
       "trn2     v16.8b, v0.8b, v1.8b             \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
       "trn1     v17.8b, v0.8b, v1.8b             \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v18.8b, v2.8b, v3.8b             \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 1
       "trn1     v19.8b, v2.8b, v3.8b             \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v20.8b, v4.8b, v5.8b             \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 2
       "trn1     v21.8b, v4.8b, v5.8b             \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v22.8b, v6.8b, v7.8b             \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 3
       "trn1     v23.8b, v6.8b, v7.8b             \n"
+      "add        %0, %0, %5                     \n"
 
       "trn2     v3.4h, v17.4h, v19.4h            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 4
       "trn1     v1.4h, v17.4h, v19.4h            \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v2.4h, v16.4h, v18.4h            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 5
       "trn1     v0.4h, v16.4h, v18.4h            \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v7.4h, v21.4h, v23.4h            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 6
       "trn1     v5.4h, v21.4h, v23.4h            \n"
+      "add        %0, %0, %5                     \n"
       "trn2     v6.4h, v20.4h, v22.4h            \n"
+      "prfm       pldl1keep, [%0, 448]           \n"  // row 7
       "trn1     v4.4h, v20.4h, v22.4h            \n"
 
       "trn2     v21.2s, v1.2s, v5.2s             \n"
@@ -226,6 +242,7 @@ void TransposeUVWx8_NEON(const uint8_t* src,
       "ld1       {v5.16b}, [%0], %5              \n"
       "ld1       {v6.16b}, [%0], %5              \n"
       "ld1       {v7.16b}, [%0]                  \n"
+      "mov       %0, %1                          \n"
 
       "trn1      v16.16b, v0.16b, v1.16b         \n"
       "trn2      v17.16b, v0.16b, v1.16b         \n"

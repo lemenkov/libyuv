@@ -716,70 +716,6 @@ void MergeRGBPlane(const uint8_t* src_r,
   }
 }
 
-// Mirror a plane of data.
-void MirrorPlane(const uint8_t* src_y,
-                 int src_stride_y,
-                 uint8_t* dst_y,
-                 int dst_stride_y,
-                 int width,
-                 int height) {
-  int y;
-  void (*MirrorRow)(const uint8_t* src, uint8_t* dst, int width) = MirrorRow_C;
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_stride_y = -src_stride_y;
-  }
-#if defined(HAS_MIRRORROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON)) {
-    MirrorRow = MirrorRow_Any_NEON;
-    if (IS_ALIGNED(width, 32)) {
-      MirrorRow = MirrorRow_NEON;
-    }
-  }
-#endif
-#if defined(HAS_MIRRORROW_SSSE3)
-  if (TestCpuFlag(kCpuHasSSSE3)) {
-    MirrorRow = MirrorRow_Any_SSSE3;
-    if (IS_ALIGNED(width, 16)) {
-      MirrorRow = MirrorRow_SSSE3;
-    }
-  }
-#endif
-#if defined(HAS_MIRRORROW_AVX2)
-  if (TestCpuFlag(kCpuHasAVX2)) {
-    MirrorRow = MirrorRow_Any_AVX2;
-    if (IS_ALIGNED(width, 32)) {
-      MirrorRow = MirrorRow_AVX2;
-    }
-  }
-#endif
-#if defined(HAS_MIRRORROW_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    MirrorRow = MirrorRow_Any_MSA;
-    if (IS_ALIGNED(width, 64)) {
-      MirrorRow = MirrorRow_MSA;
-    }
-  }
-#endif
-#if defined(HAS_MIRRORROW_MMI)
-  if (TestCpuFlag(kCpuHasMMI)) {
-    MirrorRow = MirrorRow_Any_MMI;
-    if (IS_ALIGNED(width, 8)) {
-      MirrorRow = MirrorRow_MMI;
-    }
-  }
-#endif
-
-  // Mirror plane
-  for (y = 0; y < height; ++y) {
-    MirrorRow(src_y, dst_y, width);
-    src_y += src_stride_y;
-    dst_y += dst_stride_y;
-  }
-}
-
 // Convert YUY2 to I422.
 LIBYUV_API
 int YUY2ToI422(const uint8_t* src_yuy2,
@@ -1045,6 +981,68 @@ int YUY2ToY(const uint8_t* src_yuy2,
     dst_y += dst_stride_y;
   }
   return 0;
+}
+
+// Mirror a plane of data.
+// See Also I400Mirror
+LIBYUV_API
+void MirrorPlane(const uint8_t* src_y, int src_stride_y, uint8_t* dst_y,
+                 int dst_stride_y, int width, int height) {
+  int y;
+  void (*MirrorRow)(const uint8_t* src, uint8_t* dst, int width) = MirrorRow_C;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_stride_y = -src_stride_y;
+  }
+#if defined(HAS_MIRRORROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON)) {
+    MirrorRow = MirrorRow_Any_NEON;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorRow = MirrorRow_NEON;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3)) {
+    MirrorRow = MirrorRow_Any_SSSE3;
+    if (IS_ALIGNED(width, 16)) {
+      MirrorRow = MirrorRow_SSSE3;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORROW_AVX2)
+  if (TestCpuFlag(kCpuHasAVX2)) {
+    MirrorRow = MirrorRow_Any_AVX2;
+    if (IS_ALIGNED(width, 32)) {
+      MirrorRow = MirrorRow_AVX2;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    MirrorRow = MirrorRow_Any_MSA;
+    if (IS_ALIGNED(width, 64)) {
+      MirrorRow = MirrorRow_MSA;
+    }
+  }
+#endif
+#if defined(HAS_MIRRORROW_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    MirrorRow = MirrorRow_Any_MMI;
+    if (IS_ALIGNED(width, 8)) {
+      MirrorRow = MirrorRow_MMI;
+    }
+  }
+#endif
+
+  // Mirror plane
+  for (y = 0; y < height; ++y) {
+    MirrorRow(src_y, dst_y, width);
+    src_y += src_stride_y;
+    dst_y += dst_stride_y;
+  }
 }
 
 // Mirror I400 with optional flipping
