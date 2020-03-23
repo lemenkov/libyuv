@@ -956,7 +956,6 @@ int AR30ToAB30(const uint8_t* src_ar30,
                int width,
                int height);
 
-#ifdef HAVE_JPEG
 // src_width/height provided by capture
 // dst_width/height for clipping determine final size.
 LIBYUV_API
@@ -968,7 +967,6 @@ int MJPGToARGB(const uint8_t* sample,
                int src_height,
                int dst_width,
                int dst_height);
-#endif
 
 // Convert Android420 to ARGB.
 LIBYUV_API

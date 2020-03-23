@@ -427,7 +427,6 @@ int RAWToJ400(const uint8_t* src_raw,
               int width,
               int height);
 
-#ifdef HAVE_JPEG
 // src_width/height provided by capture.
 // dst_width/height for clipping determine final size.
 LIBYUV_API
@@ -463,7 +462,6 @@ int MJPGSize(const uint8_t* sample,
              size_t sample_size,
              int* width,
              int* height);
-#endif
 
 // Convert camera sample to I420 with cropping, rotation and vertical flip.
 // "src_size" is needed to parse MJPG.
