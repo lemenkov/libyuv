@@ -2201,6 +2201,22 @@ void ARGBMirrorRow_C(const uint8_t* src, uint8_t* dst, int width) {
   }
 }
 
+void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24,
+                      int width) {
+  int x;
+  src_rgb24 += width * 3 - 3;
+  for (x = 0; x < width; ++x) {
+    uint8_t b = src_rgb24[0];
+    uint8_t g = src_rgb24[1];
+    uint8_t r = src_rgb24[2];
+    dst_rgb24[0] = b;
+    dst_rgb24[1] = g;
+    dst_rgb24[2] = r;
+    src_rgb24 -= 3;
+    dst_rgb24 += 3;
+  }
+}
+
 void SplitUVRow_C(const uint8_t* src_uv,
                   uint8_t* dst_u,
                   uint8_t* dst_v,
@@ -3321,7 +3337,7 @@ void RGB24ToYJRow_AVX2(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
     width -= twidth;
   }
 }
-#endif  //HAS_RGB24TOYJROW_AVX2
+#endif  // HAS_RGB24TOYJROW_AVX2
 
 #ifdef HAS_RAWTOYJROW_AVX2
 // Convert 16 RAW pixels (64 bytes) to 16 YJ values.
@@ -3337,7 +3353,7 @@ void RAWToYJRow_AVX2(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
     width -= twidth;
   }
 }
-#endif  //HAS_RAWTOYJROW_AVX2
+#endif  // HAS_RAWTOYJROW_AVX2
 
 #ifdef HAS_RGB24TOYJROW_SSSE3
 // Convert 16 RGB24 pixels (64 bytes) to 16 YJ values.
@@ -3353,7 +3369,7 @@ void RGB24ToYJRow_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
     width -= twidth;
   }
 }
-#endif  //HAS_RGB24TOYJROW_SSSE3
+#endif  // HAS_RGB24TOYJROW_SSSE3
 
 #ifdef HAS_RAWTOYJROW_SSSE3
 // Convert 16 RAW pixels (64 bytes) to 16 YJ values.
@@ -3369,7 +3385,7 @@ void RAWToYJRow_SSSE3(const uint8_t* src_raw, uint8_t* dst_yj, int width) {
     width -= twidth;
   }
 }
-#endif  //HAS_RAWTOYJROW_SSSE3
+#endif  // HAS_RAWTOYJROW_SSSE3
 
 float ScaleSumSamples_C(const float* src, float* dst, float scale, int width) {
   float fsum = 0.f;
@@ -3427,8 +3443,8 @@ void GaussCol_C(const uint16_t* src0,
 void GaussRow_F32_C(const float* src, float* dst, int width) {
   int i;
   for (i = 0; i < width; ++i) {
-    *dst++ =
-        (src[0] + src[1] * 4 + src[2] * 6 + src[3] * 4 + src[4]) * (1.0f / 256.0f);
+    *dst++ = (src[0] + src[1] * 4 + src[2] * 6 + src[3] * 4 + src[4]) *
+             (1.0f / 256.0f);
     ++src;
   }
 }

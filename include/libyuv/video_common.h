@@ -86,10 +86,14 @@ enum FourCC {
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
   FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
   FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
-  FOURCC_J420 = FOURCC('J', '4', '2', '0'),  // jpeg (bt.601 full), unofficial fourcc
-  FOURCC_J422 = FOURCC('J', '4', '2', '2'),  // jpeg (bt.601 full), unofficial fourcc
-  FOURCC_J444 = FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
-  FOURCC_J400 = FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J420 =
+      FOURCC('J', '4', '2', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J422 =
+      FOURCC('J', '4', '2', '2'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J444 =
+      FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J400 =
+      FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
   FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // bt.709, unofficial fourcc
   FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // bt.709, unofficial fourcc
   FOURCC_H444 = FOURCC('H', '4', '4', '4'),  // bt.709, unofficial fourcc

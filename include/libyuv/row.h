@@ -279,6 +279,7 @@ extern "C" {
 #define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
 #define HAS_RAWTORGBAROW_SSSE3
+#define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
@@ -408,6 +409,7 @@ extern "C" {
 #define HAS_ARGBCOLORMATRIXROW_NEON
 #define HAS_ARGBGRAYROW_NEON
 #define HAS_ARGBMIRRORROW_NEON
+#define HAS_RGB24MIRRORROW_NEON
 #define HAS_ARGBMULTIPLYROW_NEON
 #define HAS_ARGBQUANTIZEROW_NEON
 #define HAS_ARGBSEPIAROW_NEON
@@ -1196,7 +1198,9 @@ void BGRAToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ABGRToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RGBAToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RGB24ToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
-void RGB24ToYJRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void RGB24ToYJRow_Any_SSSE3(const uint8_t* src_ptr,
+                            uint8_t* dst_ptr,
+                            int width);
 void RAWToYRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RAWToYJRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void RGB24ToYJRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
@@ -1607,6 +1611,16 @@ void ARGBMirrorRow_Any_NEON(const uint8_t* src_ptr,
                             int width);
 void ARGBMirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void ARGBMirrorRow_Any_MMI(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+
+void RGB24MirrorRow_SSSE3(const uint8_t* src, uint8_t* dst, int width);
+void RGB24MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width);
+void RGB24MirrorRow_C(const uint8_t* src, uint8_t* dst, int width);
+void RGB24MirrorRow_Any_SSSE3(const uint8_t* src_ptr,
+                              uint8_t* dst_ptr,
+                              int width);
+void RGB24MirrorRow_Any_NEON(const uint8_t* src_ptr,
+                             uint8_t* dst_ptr,
+                             int width);
 
 void SplitUVRow_C(const uint8_t* src_uv,
                   uint8_t* dst_u,

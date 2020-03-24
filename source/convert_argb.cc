@@ -1270,9 +1270,6 @@ static int I210ToARGBMatrix(const uint16_t* src_y,
   return 0;
 }
 
-
-
-
 // Convert I210 to ARGB.
 LIBYUV_API
 int I210ToARGB(const uint16_t* src_y,

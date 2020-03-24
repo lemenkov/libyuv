@@ -1599,8 +1599,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
                 int height) {
   int y;
 #if (defined(HAS_RGB24TOYJROW_NEON) && defined(HAS_RGB24TOUVJROW_NEON)) || \
-     defined(HAS_RGB24TOYJROW_MSA) || \
-     defined(HAS_RGB24TOYJROW_MMI)
+    defined(HAS_RGB24TOYJROW_MSA) || defined(HAS_RGB24TOYJROW_MMI)
   void (*RGB24ToUVJRow)(const uint8_t* src_rgb24, int src_stride_rgb24,
                         uint8_t* dst_u, uint8_t* dst_v, int width) =
       RGB24ToUVJRow_C;
@@ -1698,8 +1697,8 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
 #endif
 
     for (y = 0; y < height - 1; y += 2) {
-#if ((defined(HAS_RGB24TOYJROW_NEON) &&  defined(HAS_RGB24TOUVJROW_NEON)) || \
-      defined(HAS_RGB24TOYJROW_MSA) || defined(HAS_RGB24TOYJROW_MMI))
+#if ((defined(HAS_RGB24TOYJROW_NEON) && defined(HAS_RGB24TOUVJROW_NEON)) || \
+     defined(HAS_RGB24TOYJROW_MSA) || defined(HAS_RGB24TOYJROW_MMI))
       RGB24ToUVJRow(src_rgb24, src_stride_rgb24, dst_u, dst_v, width);
       RGB24ToYJRow(src_rgb24, dst_y, width);
       RGB24ToYJRow(src_rgb24 + src_stride_rgb24, dst_y + dst_stride_y, width);
@@ -1716,8 +1715,8 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
       dst_v += dst_stride_v;
     }
     if (height & 1) {
-#if ((defined(HAS_RGB24TOYJROW_NEON) &&  defined(HAS_RGB24TOUVJROW_NEON)) || \
-      defined(HAS_RGB24TOYJROW_MSA) || defined(HAS_RGB24TOYJROW_MMI))
+#if ((defined(HAS_RGB24TOYJROW_NEON) && defined(HAS_RGB24TOUVJROW_NEON)) || \
+     defined(HAS_RGB24TOYJROW_MSA) || defined(HAS_RGB24TOYJROW_MMI))
       RGB24ToUVJRow(src_rgb24, 0, dst_u, dst_v, width);
       RGB24ToYJRow(src_rgb24, dst_y, width);
 #else
@@ -1748,8 +1747,7 @@ int RAWToI420(const uint8_t* src_raw,
               int height) {
   int y;
 #if (defined(HAS_RAWTOYROW_NEON) && defined(HAS_RAWTOUVROW_NEON)) || \
-     defined(HAS_RAWTOYROW_MSA) || \
-     defined(HAS_RAWTOYROW_MMI)
+    defined(HAS_RAWTOYROW_MSA) || defined(HAS_RAWTOYROW_MMI)
   void (*RAWToUVRow)(const uint8_t* src_raw, int src_stride_raw, uint8_t* dst_u,
                      uint8_t* dst_v, int width) = RAWToUVRow_C;
   void (*RAWToYRow)(const uint8_t* src_raw, uint8_t* dst_y, int width) =
@@ -2448,11 +2446,11 @@ int RGB24ToJ400(const uint8_t* src_rgb24,
 // Convert RAW to J400.
 LIBYUV_API
 int RAWToJ400(const uint8_t* src_raw,
-                int src_stride_raw,
-                uint8_t* dst_yj,
-                int dst_stride_yj,
-                int width,
-                int height) {
+              int src_stride_raw,
+              uint8_t* dst_yj,
+              int dst_stride_yj,
+              int width,
+              int height) {
   int y;
   void (*RAWToYJRow)(const uint8_t* src_raw, uint8_t* dst_yj, int width) =
       RAWToYJRow_C;

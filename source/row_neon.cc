@@ -727,14 +727,10 @@ void MirrorUVRow_NEON(const uint8_t* src_uv,
 }
 
 void ARGBMirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
+  src += width * 4 - 16;
   asm volatile(
-      // Start at end of source row.
-      "mov        r3, #-16                       \n"
-      "add        %0, %0, %2, lsl #2             \n"
-      "sub        %0, #16                        \n"
-
       "1:                                        \n"
-      "vld1.8     {q0}, [%0], r3                 \n"  // src -= 16
+      "vld1.8     {q0}, [%0], %3                 \n"  // src -= 16
       "subs       %2, #4                         \n"  // 4 pixels per loop.
       "vrev64.32  q0, q0                         \n"
       "vst1.8     {d1}, [%1]!                    \n"  // dst += 16
@@ -743,12 +739,30 @@ void ARGBMirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
       : "+r"(src),   // %0
         "+r"(dst),   // %1
         "+r"(width)  // %2
-      :
-      : "cc", "memory", "r3", "q0");
+      : "r"(-16)     // %3
+      : "cc", "memory", "q0");
 }
 
-void RGB24ToARGBRow_NEON(const uint8_t* src_rgb24,
-                         uint8_t* dst_argb,
+void RGB24MirrorRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_rgb24,
+                         int width) {
+  src_rgb24 += width * 3 - 24;
+  asm volatile(
+      "1:                                        \n"
+      "vld3.8     {d0, d1, d2}, [%0], %3         \n"  // src -= 24
+      "subs       %2, #8                         \n"  // 8 pixels per loop.
+      "vrev64.8   d0, d0                         \n"
+      "vrev64.8   d1, d1                         \n"
+      "vrev64.8   d2, d2                         \n"
+      "vst3.8     {d0, d1, d2}, [%1]!            \n"  // dst += 24
+      "bgt        1b                             \n"
+      : "+r"(src_rgb24),  // %0
+        "+r"(dst_rgb24),  // %1
+        "+r"(width)       // %2
+      : "r"(-24)          // %3
+      : "cc", "memory", "d0", "d1", "d2");
+}
+
+void RGB24ToARGBRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_argb,
                          int width) {
   asm volatile(
       "vmov.u8    d4, #255                       \n"  // Alpha
@@ -2064,7 +2078,6 @@ void RAWToYRow_NEON(const uint8_t* src_raw, uint8_t* dst_y, int width) {
       :
       : "cc", "memory", "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "q8");
 }
-
 
 void RGB24ToYJRow_NEON(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
   asm volatile(

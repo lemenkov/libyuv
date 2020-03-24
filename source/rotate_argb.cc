@@ -126,7 +126,7 @@ static int ARGBRotate180(const uint8_t* src_argb,
 #if defined(HAS_ARGBMIRRORROW_NEON)
   if (TestCpuFlag(kCpuHasNEON)) {
     ARGBMirrorRow = ARGBMirrorRow_Any_NEON;
-    if (IS_ALIGNED(width, 4)) {
+    if (IS_ALIGNED(width, 16)) {
       ARGBMirrorRow = ARGBMirrorRow_NEON;
     }
   }

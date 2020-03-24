@@ -1189,13 +1189,19 @@ ANY11M(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, 4, 7)
 ANY11M(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, 4, 3)
 #endif
 #ifdef HAS_ARGBMIRRORROW_NEON
-ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, 4, 3)
+ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, 4, 15)
 #endif
 #ifdef HAS_ARGBMIRRORROW_MSA
 ANY11M(ARGBMirrorRow_Any_MSA, ARGBMirrorRow_MSA, 4, 15)
 #endif
 #ifdef HAS_ARGBMIRRORROW_MMI
 ANY11M(ARGBMirrorRow_Any_MMI, ARGBMirrorRow_MMI, 4, 1)
+#endif
+#ifdef HAS_RGB24MIRRORROW_SSSE3
+ANY11M(RGB24MirrorRow_Any_SSSE3, RGB24MirrorRow_SSSE3, 3, 15)
+#endif
+#ifdef HAS_RGB24MIRRORROW_NEON
+ANY11M(RGB24MirrorRow_Any_NEON, RGB24MirrorRow_NEON, 3, 15)
 #endif
 #undef ANY11M
 

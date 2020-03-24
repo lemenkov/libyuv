@@ -313,6 +313,18 @@ int ARGBMirror(const uint8_t* src_argb,
                int width,
                int height);
 
+// Alias
+#define RGB24ToRGB24Mirror RGB24Mirror
+
+// RGB24 mirror.
+LIBYUV_API
+int RGB24Mirror(const uint8_t* src_rgb24,
+               int src_stride_rgb24,
+               uint8_t* dst_rgb24,
+               int dst_stride_rgb24,
+               int width,
+               int height);
+
 // Mirror a plane of data.
 LIBYUV_API
 void MirrorPlane(const uint8_t* src_y,

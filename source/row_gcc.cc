@@ -3262,6 +3262,52 @@ void MirrorUVRow_SSSE3(const uint8_t* src,
 }
 #endif  // HAS_MIRRORUVROW_SSSE3
 
+#ifdef HAS_RGB24MIRRORROW_SSSE3
+
+// Shuffle first 5 pixels to last 5 mirrored.  first byte zero
+static const uvec8 kShuffleMirrorRGB0 = {128u, 12u, 13u, 14u, 9u, 10u, 11u, 6u,
+                                         7u, 8u, 3u, 4u, 5u, 0u, 1u, 2u};
+
+// Shuffle last 5 pixels to first 5 mirrored.  last byte zero
+static const uvec8 kShuffleMirrorRGB1 = {13u, 14u, 15u, 10u, 11u, 12u, 7u,
+                                         8u, 9u, 4u, 5u, 6u, 1u, 2u, 3u, 128u};
+
+// Shuffle 5 pixels at a time (15 bytes)
+void RGB24MirrorRow_SSSE3(const uint8_t* src_rgb24, uint8_t* dst_rgb24,
+                          int width) {
+  intptr_t temp_width = (intptr_t)(width);
+  src_rgb24 += width * 3 - 48;
+  asm volatile(
+      "movdqa    %3,%%xmm4                       \n"
+      "movdqa    %4,%%xmm5                       \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu    (%0),%%xmm0                     \n"  // first 5
+      "movdqu    15(%0),%%xmm1                   \n"  // next 5
+      "movdqu    30(%0),%%xmm2                   \n"  // next 5
+      "movdqu    32(%0),%%xmm3                   \n"  // last 1 special
+      "pshufb    %%xmm4,%%xmm0                   \n"
+      "pshufb    %%xmm4,%%xmm1                   \n"
+      "pshufb    %%xmm4,%%xmm2                   \n"
+      "pshufb    %%xmm5,%%xmm3                   \n"
+      "lea       -0x30(%0),%0                    \n"
+      "movdqu    %%xmm0,32(%1)                   \n" // last 5
+      "movdqu    %%xmm1,17(%1)                   \n" // next 5
+      "movdqu    %%xmm2,2(%1)                    \n" // next 5
+      "movlpd    %%xmm3,0(%1)                    \n" // first 1
+      "lea       0x30(%1),%1                     \n"
+      "sub       $0x10,%2                        \n"
+      "jg        1b                              \n"
+      : "+r"(src_rgb24),  // %0
+        "+r"(dst_rgb24),  // %1
+        "+r"(temp_width)  // %2
+      : "m"(kShuffleMirrorRGB0), // %3
+        "m"(kShuffleMirrorRGB1)  // %4
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+#endif   // HAS_RGB24MIRRORROW_SSSE3
+
 #ifdef HAS_ARGBMIRRORROW_SSE2
 
 void ARGBMirrorRow_SSE2(const uint8_t* src, uint8_t* dst, int width) {
