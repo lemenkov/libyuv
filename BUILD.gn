@@ -176,6 +176,9 @@ static_library("libyuv_internal") {
       "-ffp-contract=fast",  # Enable fma vectorization for NEON.
     ]
   }
+  if (!libyuv_use_mmi) {
+    defines += [ "LIBYUV_DISABLE_MMI" ]
+  }
 }
 
 if (libyuv_use_neon) {
