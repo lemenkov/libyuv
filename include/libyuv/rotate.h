@@ -83,20 +83,6 @@ int NV12ToI420Rotate(const uint8_t* src_y,
                      int height,
                      enum RotationMode mode);
 
-// Rotate NV12 input and store in NV12.
-LIBYUV_API
-int NV12Rotate(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_uv,
-               int src_stride_uv,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
-               int width,
-               int height,
-               enum RotationMode mode);
-
 // Rotate a plane by 0, 90, 180, or 270.
 LIBYUV_API
 int RotatePlane(const uint8_t* src,

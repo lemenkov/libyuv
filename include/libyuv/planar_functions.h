@@ -319,11 +319,11 @@ int ARGBMirror(const uint8_t* src_argb,
 // RGB24 mirror.
 LIBYUV_API
 int RGB24Mirror(const uint8_t* src_rgb24,
-               int src_stride_rgb24,
-               uint8_t* dst_rgb24,
-               int dst_stride_rgb24,
-               int width,
-               int height);
+                int src_stride_rgb24,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height);
 
 // Mirror a plane of data.
 LIBYUV_API

@@ -2201,8 +2201,7 @@ void ARGBMirrorRow_C(const uint8_t* src, uint8_t* dst, int width) {
   }
 }
 
-void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24,
-                      int width) {
+void RGB24MirrorRow_C(const uint8_t* src_rgb24, uint8_t* dst_rgb24, int width) {
   int x;
   src_rgb24 += width * 3 - 3;
   for (x = 0; x < width; ++x) {

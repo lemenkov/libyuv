@@ -986,8 +986,12 @@ int YUY2ToY(const uint8_t* src_yuy2,
 // Mirror a plane of data.
 // See Also I400Mirror
 LIBYUV_API
-void MirrorPlane(const uint8_t* src_y, int src_stride_y, uint8_t* dst_y,
-                 int dst_stride_y, int width, int height) {
+void MirrorPlane(const uint8_t* src_y,
+                 int src_stride_y,
+                 uint8_t* dst_y,
+                 int dst_stride_y,
+                 int width,
+                 int height) {
   int y;
   void (*MirrorRow)(const uint8_t* src, uint8_t* dst, int width) = MirrorRow_C;
   // Negative height means invert the image.
@@ -1182,11 +1186,11 @@ int ARGBMirror(const uint8_t* src_argb,
 // RGB24 mirror.
 LIBYUV_API
 int RGB24Mirror(const uint8_t* src_rgb24,
-               int src_stride_rgb24,
-               uint8_t* dst_rgb24,
-               int dst_stride_rgb24,
-               int width,
-               int height) {
+                int src_stride_rgb24,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height) {
   int y;
   void (*RGB24MirrorRow)(const uint8_t* src, uint8_t* dst, int width) =
       RGB24MirrorRow_C;
@@ -3101,14 +3105,11 @@ int GaussPlane_F32(const float* src,
                    int width,
                    int height) {
   int y;
-  void (*GaussCol_F32)(const float* src0,
-                       const float* src1,
-                       const float* src2,
-                       const float* src3,
-                       const float* src4,
-                       float* dst,
+  void (*GaussCol_F32)(const float* src0, const float* src1, const float* src2,
+                       const float* src3, const float* src4, float* dst,
                        int width) = GaussCol_F32_C;
-  void (*GaussRow_F32)(const float* src, float* dst, int width) = GaussRow_F32_C;
+  void (*GaussRow_F32)(const float* src, float* dst, int width) =
+      GaussRow_F32_C;
   if (!src || !dst || width <= 0 || height == 0) {
     return -1;
   }
@@ -3139,10 +3140,9 @@ int GaussPlane_F32(const float* src,
     const float* src1 = src;
     const float* src2 = src;
     const float* src3 = src2 + ((height > 1) ? src_stride : 0);
-    const float* src4 = src3 + ((height > 2) ? src_stride: 0);
+    const float* src4 = src3 + ((height > 2) ? src_stride : 0);
 
     for (y = 0; y < height; ++y) {
-
       GaussCol_F32(src0, src1, src2, src3, src4, row, width);
 
       // Extrude edge by 2 floats
