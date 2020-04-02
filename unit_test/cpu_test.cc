@@ -160,6 +160,23 @@ TEST_F(LibYUVBaseTest, TestLinuxNeon) {
 #endif
 }
 
+TEST_F(LibYUVBaseTest, TestLinuxMipsMsaMmi) {
+  if (FileExists("../../unit_test/testdata/mips.txt")) {
+    printf("Note: testing to load \"../../unit_test/testdata/mips.txt\"\n");
+
+    EXPECT_EQ(0, MipsCpuCaps("../../unit_test/testdata/mips.txt"));
+    EXPECT_EQ(kCpuHasMMI,
+              MipsCpuCaps("../../unit_test/testdata/mips_loongson3.txt"));
+    EXPECT_EQ(kCpuHasMMI,
+              MipsCpuCaps("../../unit_test/testdata/mips_loongson_mmi.txt"));
+    EXPECT_EQ(kCpuHasMSA, MipsCpuCaps("../../unit_test/testdata/mips_msa.txt"));
+    EXPECT_EQ(kCpuHasMMI | kCpuHasMSA,
+              MipsCpuCaps("../../unit_test/testdata/mips_loongson2k.txt"));
+  } else {
+    printf("WARNING: unable to load \"../../unit_test/testdata/mips.txt\"\n");
+  }
+}
+
 // TODO(fbarchard): Fix clangcl test of cpuflags.
 #ifdef _MSC_VER
 TEST_F(LibYUVBaseTest, DISABLED_TestSetCpuFlags) {

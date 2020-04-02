@@ -163,7 +163,6 @@ LIBYUV_API SAFEBUFFERS int ArmCpuCaps(const char* cpuinfo_name) {
 }
 
 // TODO(fbarchard): Consider read_msa_ir().
-// TODO(fbarchard): Add unittest.
 LIBYUV_API SAFEBUFFERS int MipsCpuCaps(const char* cpuinfo_name) {
   char cpuinfo_line[512];
   int flag = 0x0;
