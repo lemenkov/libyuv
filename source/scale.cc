@@ -103,21 +103,6 @@ static void ScalePlaneDown2(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN2_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    ScaleRowDown2 =
-        filtering == kFilterNone
-            ? ScaleRowDown2_Any_MSA
-            : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_MSA
-                                          : ScaleRowDown2Box_Any_MSA);
-    if (IS_ALIGNED(dst_width, 32)) {
-      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_MSA
-                                               : (filtering == kFilterLinear
-                                                      ? ScaleRowDown2Linear_MSA
-                                                      : ScaleRowDown2Box_MSA);
-    }
-  }
-#endif
 #if defined(HAS_SCALEROWDOWN2_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ScaleRowDown2 =
@@ -130,6 +115,21 @@ static void ScalePlaneDown2(int src_width,
                                                : (filtering == kFilterLinear
                                                       ? ScaleRowDown2Linear_MMI
                                                       : ScaleRowDown2Box_MMI);
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN2_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ScaleRowDown2 =
+        filtering == kFilterNone
+            ? ScaleRowDown2_Any_MSA
+            : (filtering == kFilterLinear ? ScaleRowDown2Linear_Any_MSA
+                                          : ScaleRowDown2Box_Any_MSA);
+    if (IS_ALIGNED(dst_width, 32)) {
+      ScaleRowDown2 = filtering == kFilterNone ? ScaleRowDown2_MSA
+                                               : (filtering == kFilterLinear
+                                                      ? ScaleRowDown2Linear_MSA
+                                                      : ScaleRowDown2Box_MSA);
     }
   }
 #endif
@@ -255,21 +255,21 @@ static void ScalePlaneDown4(int src_width,
     }
   }
 #endif
-#if defined(HAS_SCALEROWDOWN4_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    ScaleRowDown4 =
-        filtering ? ScaleRowDown4Box_Any_MSA : ScaleRowDown4_Any_MSA;
-    if (IS_ALIGNED(dst_width, 16)) {
-      ScaleRowDown4 = filtering ? ScaleRowDown4Box_MSA : ScaleRowDown4_MSA;
-    }
-  }
-#endif
 #if defined(HAS_SCALEROWDOWN4_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ScaleRowDown4 =
         filtering ? ScaleRowDown4Box_Any_MMI : ScaleRowDown4_Any_MMI;
     if (IS_ALIGNED(dst_width, 8)) {
       ScaleRowDown4 = filtering ? ScaleRowDown4Box_MMI : ScaleRowDown4_MMI;
+    }
+  }
+#endif
+#if defined(HAS_SCALEROWDOWN4_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    ScaleRowDown4 =
+        filtering ? ScaleRowDown4Box_Any_MSA : ScaleRowDown4_Any_MSA;
+    if (IS_ALIGNED(dst_width, 16)) {
+      ScaleRowDown4 = filtering ? ScaleRowDown4Box_MSA : ScaleRowDown4_MSA;
     }
   }
 #endif
@@ -378,6 +378,18 @@ static void ScalePlaneDown34(int src_width,
     }
   }
 #endif
+#if defined(HAS_SCALEROWDOWN34_MMI)
+  if (TestCpuFlag(kCpuHasMMI)) {
+    if (!filtering) {
+      ScaleRowDown34_0 = ScaleRowDown34_Any_MMI;
+      ScaleRowDown34_1 = ScaleRowDown34_Any_MMI;
+      if (dst_width % 24 == 0) {
+        ScaleRowDown34_0 = ScaleRowDown34_MMI;
+        ScaleRowDown34_1 = ScaleRowDown34_MMI;
+      }
+    }
+  }
+#endif
 #if defined(HAS_SCALEROWDOWN34_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     if (!filtering) {
@@ -394,18 +406,6 @@ static void ScalePlaneDown34(int src_width,
       } else {
         ScaleRowDown34_0 = ScaleRowDown34_0_Box_MSA;
         ScaleRowDown34_1 = ScaleRowDown34_1_Box_MSA;
-      }
-    }
-  }
-#endif
-#if defined(HAS_SCALEROWDOWN34_MMI)
-  if (TestCpuFlag(kCpuHasMMI)) {
-    if (!filtering) {
-      ScaleRowDown34_0 = ScaleRowDown34_Any_MMI;
-      ScaleRowDown34_1 = ScaleRowDown34_Any_MMI;
-      if (dst_width % 24 == 0) {
-        ScaleRowDown34_0 = ScaleRowDown34_MMI;
-        ScaleRowDown34_1 = ScaleRowDown34_MMI;
       }
     }
   }
@@ -890,19 +890,19 @@ static void ScalePlaneBox(int src_width,
       }
     }
 #endif
-#if defined(HAS_SCALEADDROW_MSA)
-    if (TestCpuFlag(kCpuHasMSA)) {
-      ScaleAddRow = ScaleAddRow_Any_MSA;
-      if (IS_ALIGNED(src_width, 16)) {
-        ScaleAddRow = ScaleAddRow_MSA;
-      }
-    }
-#endif
 #if defined(HAS_SCALEADDROW_MMI)
     if (TestCpuFlag(kCpuHasMMI)) {
       ScaleAddRow = ScaleAddRow_Any_MMI;
       if (IS_ALIGNED(src_width, 8)) {
         ScaleAddRow = ScaleAddRow_MMI;
+      }
+    }
+#endif
+#if defined(HAS_SCALEADDROW_MSA)
+    if (TestCpuFlag(kCpuHasMSA)) {
+      ScaleAddRow = ScaleAddRow_Any_MSA;
+      if (IS_ALIGNED(src_width, 16)) {
+        ScaleAddRow = ScaleAddRow_MSA;
       }
     }
 #endif
@@ -1042,19 +1042,19 @@ void ScalePlaneBilinearDown(int src_width,
     }
   }
 #endif
-#if defined(HAS_INTERPOLATEROW_MSA)
-  if (TestCpuFlag(kCpuHasMSA)) {
-    InterpolateRow = InterpolateRow_Any_MSA;
-    if (IS_ALIGNED(src_width, 32)) {
-      InterpolateRow = InterpolateRow_MSA;
-    }
-  }
-#endif
 #if defined(HAS_INTERPOLATEROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     InterpolateRow = InterpolateRow_Any_MMI;
     if (IS_ALIGNED(src_width, 16)) {
       InterpolateRow = InterpolateRow_MMI;
+    }
+  }
+#endif
+#if defined(HAS_INTERPOLATEROW_MSA)
+  if (TestCpuFlag(kCpuHasMSA)) {
+    InterpolateRow = InterpolateRow_Any_MSA;
+    if (IS_ALIGNED(src_width, 32)) {
+      InterpolateRow = InterpolateRow_MSA;
     }
   }
 #endif
