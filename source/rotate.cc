@@ -340,26 +340,26 @@ void RotateUV180(const uint8_t* src,
                  int width,
                  int height) {
   int i;
-  void (*MirrorUVRow)(const uint8_t* src, uint8_t* dst_u, uint8_t* dst_v,
-                      int width) = MirrorUVRow_C;
-#if defined(HAS_MIRRORUVROW_NEON)
+  void (*MirrorSplitUVRow)(const uint8_t* src, uint8_t* dst_u, uint8_t* dst_v,
+                           int width) = MirrorSplitUVRow_C;
+#if defined(HAS_MIRRORSPLITUVROW_NEON)
   if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
-    MirrorUVRow = MirrorUVRow_NEON;
+    MirrorSplitUVRow = MirrorSplitUVRow_NEON;
   }
 #endif
-#if defined(HAS_MIRRORUVROW_SSSE3)
+#if defined(HAS_MIRRORSPLITUVROW_SSSE3)
   if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
-    MirrorUVRow = MirrorUVRow_SSSE3;
+    MirrorSplitUVRow = MirrorSplitUVRow_SSSE3;
   }
 #endif
-#if defined(HAS_MIRRORUVROW_MSA)
+#if defined(HAS_MIRRORSPLITUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA) && IS_ALIGNED(width, 32)) {
-    MirrorUVRow = MirrorUVRow_MSA;
+    MirrorSplitUVRow = MirrorSplitUVRow_MSA;
   }
 #endif
-#if defined(HAS_MIRRORUVROW_MMI)
+#if defined(HAS_MIRRORSPLITUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI) && IS_ALIGNED(width, 8)) {
-    MirrorUVRow = MirrorUVRow_MMI;
+    MirrorSplitUVRow = MirrorSplitUVRow_MMI;
   }
 #endif
 
@@ -367,7 +367,7 @@ void RotateUV180(const uint8_t* src,
   dst_b += dst_stride_b * (height - 1);
 
   for (i = 0; i < height; ++i) {
-    MirrorUVRow(src, dst_a, dst_b, width);
+    MirrorSplitUVRow(src, dst_a, dst_b, width);
     src += src_stride;
     dst_a -= dst_stride_a;
     dst_b -= dst_stride_b;

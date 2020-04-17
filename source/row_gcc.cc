@@ -3229,14 +3229,14 @@ void MirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif  // HAS_MIRRORROW_AVX2
 
-#ifdef HAS_MIRRORUVROW_SSSE3
+#ifdef HAS_MIRRORSPLITUVROW_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
 static const uvec8 kShuffleMirrorUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
                                        15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u};
-void MirrorUVRow_SSSE3(const uint8_t* src,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width) {
+void MirrorSplitUVRow_SSSE3(const uint8_t* src,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width) {
   intptr_t temp_width = (intptr_t)(width);
   asm volatile(
       "movdqa    %4,%%xmm1                       \n"
@@ -3260,7 +3260,7 @@ void MirrorUVRow_SSSE3(const uint8_t* src,
       : "m"(kShuffleMirrorUV)  // %4
       : "memory", "cc", "xmm0", "xmm1");
 }
-#endif  // HAS_MIRRORUVROW_SSSE3
+#endif  // HAS_MIRRORSPLITUVROW_SSSE3
 
 #ifdef HAS_RGB24MIRRORROW_SSSE3
 

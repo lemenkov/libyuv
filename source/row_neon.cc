@@ -701,10 +701,10 @@ void MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
       : "cc", "memory", "q0", "q1", "q2");
 }
 
-void MirrorUVRow_NEON(const uint8_t* src_uv,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width) {
+void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width) {
   asm volatile(
       // Start at end of source row.
       "mov        r12, #-16                      \n"

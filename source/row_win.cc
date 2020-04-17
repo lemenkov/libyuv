@@ -3045,15 +3045,15 @@ __declspec(naked) void MirrorRow_AVX2(const uint8_t* src,
 }
 #endif  // HAS_MIRRORROW_AVX2
 
-#ifdef HAS_MIRRORUVROW_SSSE3
+#ifdef HAS_MIRRORSPLITUVROW_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
 static const uvec8 kShuffleMirrorUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
                                        15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u};
 
-__declspec(naked) void MirrorUVRow_SSSE3(const uint8_t* src,
-                                         uint8_t* dst_u,
-                                         uint8_t* dst_v,
-                                         int width) {
+__declspec(naked) void MirrorSplitUVRow_SSSE3(const uint8_t* src,
+                                              uint8_t* dst_u,
+                                              uint8_t* dst_v,
+                                              int width) {
   __asm {
     push      edi
     mov       eax, [esp + 4 + 4]  // src
@@ -3078,7 +3078,7 @@ __declspec(naked) void MirrorUVRow_SSSE3(const uint8_t* src,
     ret
   }
 }
-#endif  // HAS_MIRRORUVROW_SSSE3
+#endif  // HAS_MIRRORSPLITUVROW_SSSE3
 
 #ifdef HAS_ARGBMIRRORROW_SSE2
 __declspec(naked) void ARGBMirrorRow_SSE2(const uint8_t* src,

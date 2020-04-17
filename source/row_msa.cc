@@ -3315,10 +3315,10 @@ void SetRow_MSA(uint8_t* dst, uint8_t v8, int width) {
   }
 }
 
-void MirrorUVRow_MSA(const uint8_t* src_uv,
-                     uint8_t* dst_u,
-                     uint8_t* dst_v,
-                     int width) {
+void MirrorSplitUVRow_MSA(const uint8_t* src_uv,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
   int x;
   v16u8 src0, src1, src2, src3;
   v16u8 dst0, dst1, dst2, dst3;

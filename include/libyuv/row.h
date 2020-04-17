@@ -112,7 +112,7 @@ extern "C" {
 #define HAS_J422TOARGBROW_SSSE3
 #define HAS_MERGEUVROW_SSE2
 #define HAS_MIRRORROW_SSSE3
-#define HAS_MIRRORUVROW_SSSE3
+#define HAS_MIRRORSPLITUVROW_SSSE3
 #define HAS_NV12TOARGBROW_SSSE3
 #define HAS_NV12TORGB24ROW_SSSE3
 #define HAS_NV12TORGB565ROW_SSSE3
@@ -367,7 +367,7 @@ extern "C" {
 #define HAS_J400TOARGBROW_NEON
 #define HAS_MERGEUVROW_NEON
 #define HAS_MIRRORROW_NEON
-#define HAS_MIRRORUVROW_NEON
+#define HAS_MIRRORSPLITUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB24ROW_NEON
 #define HAS_NV12TORGB565ROW_NEON
@@ -480,7 +480,7 @@ extern "C" {
 #define HAS_J400TOARGBROW_MSA
 #define HAS_MERGEUVROW_MSA
 #define HAS_MIRRORROW_MSA
-#define HAS_MIRRORUVROW_MSA
+#define HAS_MIRRORSPLITUVROW_MSA
 #define HAS_NV12TOARGBROW_MSA
 #define HAS_NV12TORGB565ROW_MSA
 #define HAS_NV21TOARGBROW_MSA
@@ -563,7 +563,7 @@ extern "C" {
 #define HAS_MERGERGBROW_MMI
 #define HAS_MERGEUVROW_MMI
 #define HAS_MIRRORROW_MMI
-#define HAS_MIRRORUVROW_MMI
+#define HAS_MIRRORSPLITUVROW_MMI
 #define HAS_RAWTOARGBROW_MMI
 #define HAS_RAWTORGB24ROW_MMI
 #define HAS_RAWTOUVROW_MMI
@@ -1573,26 +1573,26 @@ void MirrorRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_MMI(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
-void MirrorUVRow_SSSE3(const uint8_t* src,
-                       uint8_t* dst_u,
-                       uint8_t* dst_v,
-                       int width);
-void MirrorUVRow_NEON(const uint8_t* src_uv,
-                      uint8_t* dst_u,
-                      uint8_t* dst_v,
-                      int width);
-void MirrorUVRow_MSA(const uint8_t* src_uv,
-                     uint8_t* dst_u,
-                     uint8_t* dst_v,
-                     int width);
-void MirrorUVRow_MMI(const uint8_t* src_uv,
-                     uint8_t* dst_u,
-                     uint8_t* dst_v,
-                     int width);
-void MirrorUVRow_C(const uint8_t* src_uv,
-                   uint8_t* dst_u,
-                   uint8_t* dst_v,
-                   int width);
+void MirrorSplitUVRow_SSSE3(const uint8_t* src,
+                            uint8_t* dst_u,
+                            uint8_t* dst_v,
+                            int width);
+void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
+                           uint8_t* dst_u,
+                           uint8_t* dst_v,
+                           int width);
+void MirrorSplitUVRow_MSA(const uint8_t* src_uv,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void MirrorSplitUVRow_MMI(const uint8_t* src_uv,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width);
+void MirrorSplitUVRow_C(const uint8_t* src_uv,
+                        uint8_t* dst_u,
+                        uint8_t* dst_v,
+                        int width);
 
 void ARGBMirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width);
 void ARGBMirrorRow_SSE2(const uint8_t* src, uint8_t* dst, int width);

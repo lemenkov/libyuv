@@ -498,6 +498,46 @@ int I400ToI420(const uint8_t* src_y,
   return 0;
 }
 
+// TODO(fbarchard): Implement row conversion.
+LIBYUV_API
+int I444ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  int halfwidth = (width + 1) >> 1;
+  int halfheight = (height + 1) >> 1;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+  // Allocate u and v buffers
+  align_buffer_64(plane_u, halfwidth * halfheight * 2);
+  uint8_t* plane_v = plane_u + halfwidth * halfheight;
+
+  I444ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
+             dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth, width,
+             height);
+  MergeUVPlane(plane_u, halfwidth, plane_v, halfwidth, dst_uv, dst_stride_uv,
+               halfwidth, halfheight);
+  free_aligned_buffer_64(plane_u);
+  return 0;
+}
+
 // I400 is greyscale typically used in MJPG
 LIBYUV_API
 int I400ToNV21(const uint8_t* src_y,

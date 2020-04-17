@@ -4914,10 +4914,10 @@ void MirrorRow_MMI(const uint8_t* src, uint8_t* dst, int width) {
       : "memory");
 }
 
-void MirrorUVRow_MMI(const uint8_t* src_uv,
-                     uint8_t* dst_u,
-                     uint8_t* dst_v,
-                     int width) {
+void MirrorSplitUVRow_MMI(const uint8_t* src_uv,
+                          uint8_t* dst_u,
+                          uint8_t* dst_v,
+                          int width) {
   uint64_t src0, src1, dest0, dest1;
   const uint64_t mask0 = 0x00ff00ff00ff00ffULL;
   const uint64_t mask1 = 0x1b;
