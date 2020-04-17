@@ -3563,6 +3563,30 @@ void SwapUVRow_C(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   }
 }
 
+void HalfMergeUVRow_C(const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_uv,
+                      int width) {
+  int x;
+  for (x = 0; x < width - 1; x += 2) {
+    dst_uv[0] = (src_u[0] + src_u[1] + src_u[src_stride_u] +
+                 src_u[src_stride_u + 1] + 2) >>
+                2;
+    dst_uv[1] = (src_v[0] + src_v[1] + src_v[src_stride_v] +
+                 src_v[src_stride_v + 1] + 2) >>
+                2;
+    src_u += 2;
+    src_v += 2;
+    dst_uv += 2;
+  }
+  if (width & 1) {
+    dst_uv[0] = (src_u[0] + src_u[src_stride_u] + 1) >> 1;
+    dst_uv[1] = (src_v[0] + src_v[src_stride_v] + 1) >> 1;
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

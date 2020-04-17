@@ -4103,6 +4103,52 @@ int UYVYToNV12(const uint8_t* src_uyvy,
   return 0;
 }
 
+// width and height are src size allowing odd size handling.
+LIBYUV_API
+void HalfMergeUVPlane(const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_uv,
+                      int dst_stride_uv,
+                      int width,
+                      int height) {
+  int y;
+  void (*HalfMergeUVRow)(const uint8_t* src_u, int src_stride_u,
+                         const uint8_t* src_v, int src_stride_v,
+                         uint8_t* dst_uv, int width) = HalfMergeUVRow_C;
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+#if defined(HAS_HALFMERGEUVROW_NEON)
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
+    HalfMergeUVRow = HalfMergeUVRow_NEON;
+  }
+#endif
+#if defined(HAS_HALFMERGEUVROW_SSSE3)
+  if (TestCpuFlag(kCpuHasSSSE3) && IS_ALIGNED(width, 16)) {
+    HalfMergeUVRow = HalfMergeUVRow_SSSE3;
+  }
+#endif
+
+  for (y = 0; y < height - 1; y += 2) {
+    // Merge a row of U and V into a row of UV.
+    HalfMergeUVRow(src_u, src_stride_u, src_v, src_stride_v, dst_uv, width);
+    src_u += src_stride_u * 2;
+    src_v += src_stride_v * 2;
+    dst_uv += dst_stride_uv;
+  }
+  if (height & 1) {
+    HalfMergeUVRow(src_u, 0, src_v, 0, dst_uv, width);
+  }
+}
+
 #ifdef __cplusplus
 }  // extern "C"
 }  // namespace libyuv

@@ -488,7 +488,6 @@ int I420ToUYVY(const uint8_t* src_y,
   return 0;
 }
 
-// TODO(fbarchard): test negative height for invert.
 LIBYUV_API
 int I420ToNV12(const uint8_t* src_y,
                int src_stride_y,
@@ -502,12 +501,23 @@ int I420ToNV12(const uint8_t* src_y,
                int dst_stride_uv,
                int width,
                int height) {
+  int halfwidth = (width + 1) / 2;
+  int halfheight = (height + 1) / 2;
   if (!src_y || !src_u || !src_v || !dst_y || !dst_uv || width <= 0 ||
       height == 0) {
     return -1;
   }
-  int halfwidth = (width + 1) / 2;
-  int halfheight = height > 0 ? (height + 1) / 2 : (height - 1) / 2;
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (halfheight - 1) * src_stride_u;
+    src_v = src_v + (halfheight - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }

@@ -105,6 +105,19 @@ void MergeUVPlane(const uint8_t* src_u,
                   int width,
                   int height);
 
+// Scale U and V to half width and height and merge into interleaved UV plane.
+// width and height are source size, allowing odd sizes.
+// Use for converting I444 or I422 to NV12.
+LIBYUV_API
+void HalfMergeUVPlane(const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_uv,
+                      int dst_stride_uv,
+                      int width,
+                      int height);
+
 // Swap U and V channels in interleaved UV plane.
 LIBYUV_API
 void SwapUVPlane(const uint8_t* src_uv,

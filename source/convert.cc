@@ -426,7 +426,41 @@ int I444ToI420(const uint8_t* src_y,
                     dst_v, dst_stride_v, width, height, width, height);
 }
 
-// TODO(fbarchard): Implement row conversion.
+LIBYUV_API
+int I444ToNV12(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_u,
+               int src_stride_u,
+               const uint8_t* src_v,
+               int src_stride_v,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height) {
+  if (!src_y || !src_u || !src_v || !dst_y || !dst_uv || width <= 0 ||
+      height == 0) {
+    return -1;
+  }
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    src_y = src_y + (height - 1) * src_stride_y;
+    src_u = src_u + (height - 1) * src_stride_u;
+    src_v = src_v + (height - 1) * src_stride_v;
+    src_stride_y = -src_stride_y;
+    src_stride_u = -src_stride_u;
+    src_stride_v = -src_stride_v;
+  }
+  if (dst_y) {
+    CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
+  }
+  HalfMergeUVPlane(src_u, src_stride_u, src_v, src_stride_v, dst_uv,
+                   dst_stride_uv, width, height);
+  return 0;
+}
+
 LIBYUV_API
 int I444ToNV21(const uint8_t* src_y,
                int src_stride_y,
@@ -440,30 +474,9 @@ int I444ToNV21(const uint8_t* src_y,
                int dst_stride_vu,
                int width,
                int height) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-  // Allocate u and v buffers
-  align_buffer_64(plane_u, halfwidth * halfheight * 2);
-  uint8_t* plane_v = plane_u + halfwidth * halfheight;
-
-  I444ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
-             dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth, width,
-             height);
-  MergeUVPlane(plane_v, halfwidth, plane_u, halfwidth, dst_vu, dst_stride_vu,
-               halfwidth, halfheight);
-  free_aligned_buffer_64(plane_u);
-  return 0;
+  return I444ToNV12(src_y, src_stride_y, src_v, src_stride_v, src_u,
+                    src_stride_u, dst_y, dst_stride_y, dst_vu, dst_stride_vu,
+                    width, height);
 }
 
 // I400 is greyscale typically used in MJPG
@@ -495,46 +508,6 @@ int I400ToI420(const uint8_t* src_y,
   }
   SetPlane(dst_u, dst_stride_u, halfwidth, halfheight, 128);
   SetPlane(dst_v, dst_stride_v, halfwidth, halfheight, 128);
-  return 0;
-}
-
-// TODO(fbarchard): Implement row conversion.
-LIBYUV_API
-int I444ToNV12(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_y,
-               int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
-               int width,
-               int height) {
-  int halfwidth = (width + 1) >> 1;
-  int halfheight = (height + 1) >> 1;
-  // Negative height means invert the image.
-  if (height < 0) {
-    height = -height;
-    halfheight = (height + 1) >> 1;
-    src_y = src_y + (height - 1) * src_stride_y;
-    src_u = src_u + (height - 1) * src_stride_u;
-    src_v = src_v + (height - 1) * src_stride_v;
-    src_stride_y = -src_stride_y;
-    src_stride_u = -src_stride_u;
-    src_stride_v = -src_stride_v;
-  }
-  // Allocate u and v buffers
-  align_buffer_64(plane_u, halfwidth * halfheight * 2);
-  uint8_t* plane_v = plane_u + halfwidth * halfheight;
-
-  I444ToI420(src_y, src_stride_y, src_u, src_stride_u, src_v, src_stride_v,
-             dst_y, dst_stride_y, plane_u, halfwidth, plane_v, halfwidth, width,
-             height);
-  MergeUVPlane(plane_u, halfwidth, plane_v, halfwidth, dst_uv, dst_stride_uv,
-               halfwidth, halfheight);
-  free_aligned_buffer_64(plane_u);
   return 0;
 }
 

@@ -21,6 +21,7 @@
 #include "libyuv/cpu_id.h"
 #include "libyuv/planar_functions.h"
 #include "libyuv/rotate.h"
+#include "libyuv/scale.h"
 
 #ifdef ENABLE_ROW_TESTS
 // row.h defines SIMD_ALIGNED, overriding unit_test.h
@@ -3477,6 +3478,52 @@ TEST_F(LibYUVPlanarTest, TestGaussPlane_F32) {
   free_aligned_buffer_page_end(dst_pixels_c);
   free_aligned_buffer_page_end(dst_pixels_opt);
   free_aligned_buffer_page_end(orig_pixels);
+}
+
+TEST_F(LibYUVPlanarTest, HalfMergeUVPlane_Opt) {
+  // Round count up to multiple of 16
+  int dst_width = (benchmark_width_ + 1) / 2;
+  int dst_height = (benchmark_height_ + 1) / 2;
+  align_buffer_page_end(src_pixels_u, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(src_pixels_v, benchmark_width_ * benchmark_height_);
+  align_buffer_page_end(tmp_pixels_u, dst_width * dst_height);
+  align_buffer_page_end(tmp_pixels_v, dst_width * dst_height);
+  align_buffer_page_end(dst_pixels_uv_opt, dst_width * 2 * dst_height);
+  align_buffer_page_end(dst_pixels_uv_c, dst_width * 2 * dst_height);
+
+  MemRandomize(src_pixels_u, benchmark_width_ * benchmark_height_);
+  MemRandomize(src_pixels_v, benchmark_width_ * benchmark_height_);
+  MemRandomize(tmp_pixels_u, dst_width * dst_height);
+  MemRandomize(tmp_pixels_v, dst_width * dst_height);
+  MemRandomize(dst_pixels_uv_opt, dst_width * 2 * dst_height);
+  MemRandomize(dst_pixels_uv_c, dst_width * 2 * dst_height);
+
+  ScalePlane(src_pixels_u, benchmark_width_, benchmark_width_,
+             benchmark_height_,
+
+             tmp_pixels_u, dst_width, dst_width, dst_height, kFilterBilinear);
+  ScalePlane(src_pixels_v, benchmark_width_, benchmark_width_,
+             benchmark_height_, tmp_pixels_v, dst_width, dst_width, dst_height,
+             kFilterBilinear);
+  MergeUVPlane(tmp_pixels_u, dst_width, tmp_pixels_v, dst_width,
+               dst_pixels_uv_c, dst_width * 2, dst_width, dst_height);
+
+  for (int i = 0; i < benchmark_iterations_; ++i) {
+    HalfMergeUVPlane(src_pixels_u, benchmark_width_, src_pixels_v,
+                     benchmark_width_, dst_pixels_uv_opt, dst_width * 2,
+                     benchmark_width_, benchmark_height_);
+  }
+
+  for (int i = 0; i < dst_width * 2 * dst_height; ++i) {
+    EXPECT_EQ(dst_pixels_uv_c[i], dst_pixels_uv_opt[i]);
+  }
+
+  free_aligned_buffer_page_end(src_pixels_u);
+  free_aligned_buffer_page_end(src_pixels_v);
+  free_aligned_buffer_page_end(tmp_pixels_u);
+  free_aligned_buffer_page_end(tmp_pixels_v);
+  free_aligned_buffer_page_end(dst_pixels_uv_opt);
+  free_aligned_buffer_page_end(dst_pixels_uv_c);
 }
 
 }  // namespace libyuv
