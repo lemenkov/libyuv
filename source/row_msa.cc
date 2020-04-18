@@ -1412,17 +1412,17 @@ void ARGBGrayRow_MSA(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   int x;
   v16u8 src0, src1, vec0, vec1, dst0, dst1;
   v8u16 reg0;
-  v16u8 const_0x26 = (v16u8)__msa_ldi_h(0x26);
-  v16u8 const_0x4B0F = (v16u8)__msa_fill_h(0x4B0F);
+  v16u8 const_0x4D = (v16u8)__msa_ldi_h(0x4D);
+  v16u8 const_0x961D = (v16u8)__msa_fill_h(0x961D);
 
   for (x = 0; x < width; x += 8) {
     src0 = (v16u8)__msa_ld_b((v16u8*)src_argb, 0);
     src1 = (v16u8)__msa_ld_b((v16u8*)src_argb, 16);
     vec0 = (v16u8)__msa_pckev_h((v8i16)src1, (v8i16)src0);
     vec1 = (v16u8)__msa_pckod_h((v8i16)src1, (v8i16)src0);
-    reg0 = __msa_dotp_u_h(vec0, const_0x4B0F);
-    reg0 = __msa_dpadd_u_h(reg0, vec1, const_0x26);
-    reg0 = (v8u16)__msa_srari_h((v8i16)reg0, 7);
+    reg0 = __msa_dotp_u_h(vec0, const_0x961D);
+    reg0 = __msa_dpadd_u_h(reg0, vec1, const_0x4D);
+    reg0 = (v8u16)__msa_srari_h((v8i16)reg0, 8);
     vec0 = (v16u8)__msa_ilvev_b((v16i8)reg0, (v16i8)reg0);
     vec1 = (v16u8)__msa_ilvod_b((v16i8)vec1, (v16i8)vec0);
     dst0 = (v16u8)__msa_ilvr_b((v16i8)vec1, (v16i8)vec0);
@@ -2419,16 +2419,16 @@ void SobelXYRow_MSA(const uint8_t* src_sobelx,
 void ARGBToYJRow_MSA(const uint8_t* src_argb0, uint8_t* dst_y, int width) {
   int x;
   v16u8 src0, src1, src2, src3, dst0;
-  v16u8 const_0x4B0F = (v16u8)__msa_fill_h(0x4B0F);
-  v16u8 const_0x26 = (v16u8)__msa_fill_h(0x26);
-  v8u16 const_0x40 = (v8u16)__msa_fill_h(0x40);
+  v16u8 const_0x961D = (v16u8)__msa_fill_h(0x961D);
+  v16u8 const_0x4D = (v16u8)__msa_fill_h(0x4D);
+  v8u16 const_0x80 = (v8u16)__msa_fill_h(0x80);
 
   for (x = 0; x < width; x += 16) {
     src0 = (v16u8)__msa_ld_b((void*)src_argb0, 0);
     src1 = (v16u8)__msa_ld_b((void*)src_argb0, 16);
     src2 = (v16u8)__msa_ld_b((void*)src_argb0, 32);
     src3 = (v16u8)__msa_ld_b((void*)src_argb0, 48);
-    ARGBTOY(src0, src1, src2, src3, const_0x4B0F, const_0x26, const_0x40, 7,
+    ARGBTOY(src0, src1, src2, src3, const_0x961D, const_0x4D, const_0x80, 8,
             dst0);
     ST_UB(dst0, dst_y);
     src_argb0 += 64;

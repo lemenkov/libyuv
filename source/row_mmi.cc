@@ -2473,10 +2473,10 @@ void ARGBToYJRow_MMI(const uint8_t* src_argb0, uint8_t* dst_y, int width) {
   uint64_t src, src_hi, src_lo;
   uint64_t dest, dest0, dest1, dest2, dest3;
   uint64_t tmp0, tmp1;
-  const uint64_t shift = 0x07;
-  const uint64_t value = 0x0040;
+  const uint64_t shift = 0x08;
+  const uint64_t value = 0x80;
   const uint64_t mask0 = 0x0;
-  const uint64_t mask1 = 0x00010026004B000FULL;
+  const uint64_t mask1 = 0x0001004D0096001DULL;
 
   __asm__ volatile(
       "1:                                                           \n\t"
@@ -4054,10 +4054,10 @@ void ARGBGrayRow_MMI(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   uint64_t tmp0, tmp1;
   const uint64_t mask0 = 0x0;
   const uint64_t mask1 = 0x01;
-  const uint64_t mask2 = 0x00400026004B000FULL;
+  const uint64_t mask2 = 0x0080004D0096001DULL;
   const uint64_t mask3 = 0xFF000000FF000000ULL;
   const uint64_t mask4 = ~mask3;
-  const uint64_t shift = 0x07;
+  const uint64_t shift = 0x08;
 
   __asm__ volatile(
       "1:                                                           \n\t"

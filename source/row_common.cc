@@ -26,11 +26,6 @@ extern "C" {
     (defined(_M_IX86) || (defined(_M_X64) && !defined(__clang__)))
 #define LIBYUV_RGB7 1
 #endif
-// mips use 7 bit RGBToY
-#if (!defined(LIBYUV_DISABLE_MMI) && defined(_MIPS_ARCH_LOONGSON3A)) || \
-    (!defined(LIBYUV_DISABLE_MSA) && defined(__mips_msa))
-#define LIBYUV_RGB7 1
-#endif
 
 // llvm x86 is poor at ternary operator, so use branchless min/max.
 
