@@ -763,7 +763,7 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_MMI)
+#if defined(HAS_YUY2TOYROW_MMI) && defined(HAS_YUY2TOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     YUY2ToYRow = YUY2ToYRow_Any_MMI;
     YUY2ToUVRow = YUY2ToUVRow_Any_MMI;
@@ -775,7 +775,7 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_MSA)
+#if defined(HAS_YUY2TOYROW_MSA)  && defined(HAS_YUY2TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     YUY2ToYRow = YUY2ToYRow_Any_MSA;
     YUY2ToUVRow = YUY2ToUVRow_Any_MSA;
@@ -856,7 +856,7 @@ int UYVYToI420(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_UYVYTOYROW_MMI)
+#if defined(HAS_UYVYTOYROW_MMI) && defined(HAS_UYVYTOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     UYVYToYRow = UYVYToYRow_Any_MMI;
     UYVYToUVRow = UYVYToUVRow_Any_MMI;
@@ -1102,7 +1102,7 @@ int ARGBToI420(const uint8_t* src_argb,
       ARGBToYRow = ARGBToYRow_MMI;
     }
     if (IS_ALIGNED(width, 16)) {
-      ARGBToYRow = ARGBToYRow_MSA;
+      ARGBToUVRow = ARGBToUVRow_MMI;
     }
   }
 #endif
@@ -1464,7 +1464,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
   }
 // MMI and MSA version does direct RGB24 to YUV.
 #elif (defined(HAS_RGB24TOYROW_MMI) || defined(HAS_RGB24TOYROW_MSA))
-#if defined(HAS_RGB24TOYROW_MMI)
+#if defined(HAS_RGB24TOYROW_MMI) && defined(HAS_RGB24TOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RGB24ToUVRow = RGB24ToUVRow_Any_MMI;
     RGB24ToYRow = RGB24ToYRow_Any_MMI;
@@ -1476,7 +1476,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
     }
   }
 #endif
-#if defined(HAS_RGB24TOYROW_MSA)
+#if defined(HAS_RGB24TOYROW_MSA)  && defined(HAS_RGB24TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB24ToUVRow = RGB24ToUVRow_Any_MSA;
     RGB24ToYRow = RGB24ToYRow_Any_MSA;
@@ -1617,7 +1617,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
   }
 // MMI and MSA version does direct RGB24 to YUV.
 #elif (defined(HAS_RGB24TOYJROW_MMI) || defined(HAS_RGB24TOYJROW_MSA))
-#if defined(HAS_RGB24TOYJROW_MMI)
+#if defined(HAS_RGB24TOYJROW_MMI) && defined(HAS_RGB24TOUVJROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RGB24ToUVJRow = RGB24ToUVJRow_Any_MMI;
     RGB24ToYJRow = RGB24ToYJRow_Any_MMI;
@@ -1629,7 +1629,7 @@ int RGB24ToJ420(const uint8_t* src_rgb24,
     }
   }
 #endif
-#if defined(HAS_RGB24TOYJROW_MSA)
+#if defined(HAS_RGB24TOYJROW_MSA) && defined(HAS_RGB24TOUVJROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB24ToUVJRow = RGB24ToUVJRow_Any_MSA;
     RGB24ToYJRow = RGB24ToYJRow_Any_MSA;
@@ -1767,7 +1767,7 @@ int RAWToI420(const uint8_t* src_raw,
   }
 // MMI and MSA version does direct RAW to YUV.
 #elif (defined(HAS_RAWTOYROW_MMI) || defined(HAS_RAWTOYROW_MSA))
-#if defined(HAS_RAWTOYROW_MMI)
+#if defined(HAS_RAWTOYROW_MMI) && defined(HAS_RAWTOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RAWToUVRow = RAWToUVRow_Any_MMI;
     RAWToYRow = RAWToYRow_Any_MMI;
@@ -1779,7 +1779,7 @@ int RAWToI420(const uint8_t* src_raw,
     }
   }
 #endif
-#if defined(HAS_RAWTOYROW_MSA)
+#if defined(HAS_RAWTOYROW_MSA) && defined(HAS_RAWTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RAWToUVRow = RAWToUVRow_Any_MSA;
     RAWToYRow = RAWToYRow_Any_MSA;
@@ -1919,7 +1919,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
   }
 // MMI and MSA version does direct RGB565 to YUV.
 #elif (defined(HAS_RGB565TOYROW_MMI) || defined(HAS_RGB565TOYROW_MSA))
-#if defined(HAS_RGB565TOYROW_MMI)
+#if defined(HAS_RGB565TOYROW_MMI) && defined(HAS_RGB565TOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     RGB565ToUVRow = RGB565ToUVRow_Any_MMI;
     RGB565ToYRow = RGB565ToYRow_Any_MMI;
@@ -1931,7 +1931,7 @@ int RGB565ToI420(const uint8_t* src_rgb565,
     }
   }
 #endif
-#if defined(HAS_RGB565TOYROW_MSA)
+#if defined(HAS_RGB565TOYROW_MSA) && defined(HAS_RGB565TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB565ToUVRow = RGB565ToUVRow_Any_MSA;
     RGB565ToYRow = RGB565ToYRow_Any_MSA;
@@ -2078,7 +2078,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
   }
 // MMI and MSA version does direct ARGB1555 to YUV.
 #elif (defined(HAS_ARGB1555TOYROW_MMI) || defined(HAS_ARGB1555TOYROW_MSA))
-#if defined(HAS_ARGB1555TOYROW_MMI)
+#if defined(HAS_ARGB1555TOYROW_MMI) && defined(HAS_ARGB1555TOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ARGB1555ToUVRow = ARGB1555ToUVRow_Any_MMI;
     ARGB1555ToYRow = ARGB1555ToYRow_Any_MMI;
@@ -2090,7 +2090,7 @@ int ARGB1555ToI420(const uint8_t* src_argb1555,
     }
   }
 #endif
-#if defined(HAS_ARGB1555TOYROW_MSA)
+#if defined(HAS_ARGB1555TOYROW_MSA) && defined(HAS_ARGB1555TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGB1555ToUVRow = ARGB1555ToUVRow_Any_MSA;
     ARGB1555ToYRow = ARGB1555ToYRow_Any_MSA;
@@ -2237,7 +2237,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
       }
     }
   }
-#elif defined(HAS_ARGB4444TOYROW_MMI)
+#elif defined(HAS_ARGB4444TOYROW_MMI) && defined(HAS_ARGB4444TOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ARGB4444ToUVRow = ARGB4444ToUVRow_Any_MMI;
     ARGB4444ToYRow = ARGB4444ToYRow_Any_MMI;
@@ -2294,7 +2294,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_MMI)
+#if defined(HAS_ARGBTOYROW_MMI) && defined(HAS_ARGBTOUVROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     ARGBToUVRow = ARGBToUVRow_Any_MMI;
     ARGBToYRow = ARGBToYRow_Any_MMI;
@@ -2306,7 +2306,7 @@ int ARGB4444ToI420(const uint8_t* src_argb4444,
     }
   }
 #endif
-#if defined(HAS_ARGBTOYROW_MSA)
+#if defined(HAS_ARGBTOYROW_MSA) && defined(HAS_ARGBTOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     ARGBToUVRow = ARGBToUVRow_Any_MSA;
     ARGBToYRow = ARGBToYRow_Any_MSA;

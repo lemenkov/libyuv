@@ -780,7 +780,7 @@ int YUY2ToI422(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_MMI)
+#if defined(HAS_YUY2TOYROW_MMI) && defined(HAS_YUY2TOUV422ROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     YUY2ToYRow = YUY2ToYRow_Any_MMI;
     YUY2ToUV422Row = YUY2ToUV422Row_Any_MMI;
@@ -790,7 +790,7 @@ int YUY2ToI422(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_MSA)
+#if defined(HAS_YUY2TOYROW_MSA) && defined(HAS_YUY2TOUV422ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     YUY2ToYRow = YUY2ToYRow_Any_MSA;
     YUY2ToUV422Row = YUY2ToUV422Row_Any_MSA;
@@ -876,7 +876,7 @@ int UYVYToI422(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_UYVYTOYROW_MMI)
+#if defined(HAS_UYVYTOYROW_MMI) && defined(HAS_UYVYTOUV422ROW_MMI)
   if (TestCpuFlag(kCpuHasMMI)) {
     UYVYToYRow = UYVYToYRow_Any_MMI;
     UYVYToUV422Row = UYVYToUV422Row_Any_MMI;
@@ -886,7 +886,7 @@ int UYVYToI422(const uint8_t* src_uyvy,
     }
   }
 #endif
-#if defined(HAS_UYVYTOYROW_MSA)
+#if defined(HAS_UYVYTOYROW_MSA) && defined(HAS_UYVYTOUV422ROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     UYVYToYRow = UYVYToYRow_Any_MSA;
     UYVYToUV422Row = UYVYToUV422Row_Any_MSA;
