@@ -65,7 +65,7 @@ LOCAL_OBJ_FILES := \
 .c.o:
 	$(CC) -c $(CFLAGS) $*.c -o $*.o
 
-all: libyuv.a yuvconvert cpuid psnr
+all: libyuv.a i444tonv12_eg yuvconvert cpuid psnr
 
 libyuv.a: $(LOCAL_OBJ_FILES)
 	$(AR) $(ARFLAGS) $@ $(LOCAL_OBJ_FILES)
@@ -78,6 +78,10 @@ yuvconvert: util/yuvconvert.cc libyuv.a
 psnr: util/psnr.cc
 	$(CXX) $(CXXFLAGS) -Iutil/ -o $@ util/psnr.cc util/psnr_main.cc util/ssim.cc
 
+# A simple conversion example.
+i444tonv12_eg: util/i444tonv12_eg.cc libyuv.a
+	$(CC) $(CFLAGS) -o $@ util/i444tonv12_eg.cc libyuv.a
+
 # A C test utility that uses libyuv conversion from C.
 # gcc 4.4 and older require -fno-exceptions to avoid link error on __gxx_personality_v0
 # CC=gcc-4.4 CXXFLAGS=-fno-exceptions CXX=g++-4.4 make -f linux.mk
@@ -85,4 +89,4 @@ cpuid: util/cpuid.c libyuv.a
 	$(CC) $(CFLAGS) -o $@ util/cpuid.c libyuv.a
 
 clean:
-	/bin/rm -f source/*.o *.ii *.s libyuv.a yuvconvert cpuid psnr
+	/bin/rm -f source/*.o *.ii *.s libyuv.a i444tonv12_eg yuvconvert cpuid psnr

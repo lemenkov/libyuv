@@ -39,6 +39,7 @@ group("default") {
     deps += [
       ":compare",
       ":cpuid",
+      ":i444tonv12_eg",
       ":libyuv_unittest",
       ":psnr",
       ":yuvconvert",
@@ -387,6 +388,16 @@ if (libyuv_include_tests) {
     if (!is_ios && !libyuv_disable_jpeg) {
       defines = [ "HAVE_JPEG" ]
     }
+  }
+
+  executable("i444tonv12_eg") {
+    sources = [
+      # sources
+      "util/i444tonv12_eg.cc",
+    ]
+    deps = [
+      ":libyuv",
+    ]
   }
 
   executable("cpuid") {

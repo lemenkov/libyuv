@@ -106,6 +106,15 @@ cc_test {
 }
 
 cc_test {
+    name: "i444tonv12_eg",
+    gtest: false,
+    srcs: [
+        "util/i444tonv12_eg.cc",
+    ],
+    static_libs: ["libyuv"],
+}
+
+cc_test {
     name: "cpuid",
     gtest: false,
     srcs: [
