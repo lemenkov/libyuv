@@ -274,16 +274,18 @@ extern "C" {
 #define HAS_CONVERT16TO8ROW_SSSE3
 #define HAS_CONVERT8TO16ROW_SSE2
 #define HAS_HALFMERGEUVROW_SSSE3
-// I210 is for H010.  2 = 422.  I for 601 vs H for 709.
 #define HAS_I210TOAR30ROW_SSSE3
 #define HAS_I210TOARGBROW_SSSE3
 #define HAS_I422TOAR30ROW_SSSE3
 #define HAS_MERGERGBROW_SSSE3
+#define HAS_MIRRORUVROW_AVX2
+#define HAS_MIRRORUVROW_SSSE3
 #define HAS_RAWTORGBAROW_SSSE3
 #define HAS_RGB24MIRRORROW_SSSE3
 #define HAS_RGBATOYJROW_SSSE3
 #define HAS_SPLITRGBROW_SSSE3
 #define HAS_SWAPUVROW_SSSE3
+
 #endif
 
 // The following are available for AVX2 gcc/clang x86 platforms:
@@ -299,6 +301,7 @@ extern "C" {
 #define HAS_ARGBTORGB24ROW_AVX2
 #define HAS_CONVERT16TO8ROW_AVX2
 #define HAS_CONVERT8TO16ROW_AVX2
+#define HAS_HALFMERGEUVROW_AVX2
 #define HAS_I210TOAR30ROW_AVX2
 #define HAS_I210TOARGBROW_AVX2
 #define HAS_I422TOAR30ROW_AVX2
@@ -368,6 +371,7 @@ extern "C" {
 #define HAS_J400TOARGBROW_NEON
 #define HAS_MERGEUVROW_NEON
 #define HAS_MIRRORROW_NEON
+#define HAS_MIRRORUVROW_NEON
 #define HAS_MIRRORSPLITUVROW_NEON
 #define HAS_NV12TOARGBROW_NEON
 #define HAS_NV12TORGB24ROW_NEON
@@ -1574,6 +1578,13 @@ void MirrorRow_Any_SSE2(const uint8_t* src, uint8_t* dst, int width);
 void MirrorRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_MSA(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 void MirrorRow_Any_MMI(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width);
+void MirrorUVRow_Any_AVX2(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_Any_SSSE3(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
+void MirrorUVRow_Any_NEON(const uint8_t* src_ptr, uint8_t* dst_ptr, int width);
 
 void MirrorSplitUVRow_SSSE3(const uint8_t* src,
                             uint8_t* dst_u,
@@ -1734,6 +1745,13 @@ void HalfMergeUVRow_SSSE3(const uint8_t* src_u,
                           int src_stride_v,
                           uint8_t* dst_uv,
                           int width);
+
+void HalfMergeUVRow_AVX2(const uint8_t* src_u,
+                         int src_stride_u,
+                         const uint8_t* src_v,
+                         int src_stride_v,
+                         uint8_t* dst_uv,
+                         int width);
 
 void SplitRGBRow_C(const uint8_t* src_rgb,
                    uint8_t* dst_r,

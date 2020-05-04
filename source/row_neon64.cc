@@ -747,22 +747,47 @@ static const uvec8 kShuffleMirror = {15u, 14u, 13u, 12u, 11u, 10u, 9u, 8u,
 void MirrorRow_NEON(const uint8_t* src, uint8_t* dst, int width) {
   asm volatile(
       // Start at end of source row.
-      "ld1        {v3.16b}, [%4]                 \n"  // shuffler
+      "ld1        {v3.16b}, [%3]                 \n"  // shuffler
       "add        %0, %0, %w2, sxtw              \n"
       "sub        %0, %0, #32                    \n"
       "1:                                        \n"
-      "ld1        {v1.16b,v2.16b}, [%0], %3      \n"  // src -= 32
+      "ldr        q2, [%0, 16]                   \n"
+      "ldr        q1, [%0], -32                  \n"  // src -= 32
       "subs       %w2, %w2, #32                  \n"  // 32 pixels per loop.
-      "tbl        v1.16b, {v1.16b}, v3.16b       \n"
       "tbl        v0.16b, {v2.16b}, v3.16b       \n"
+      "tbl        v1.16b, {v1.16b}, v3.16b       \n"
       "st1        {v0.16b, v1.16b}, [%1], #32    \n"  // store 32 pixels
       "b.gt       1b                             \n"
       : "+r"(src),            // %0
         "+r"(dst),            // %1
         "+r"(width)           // %2
-      : "r"((ptrdiff_t)-32),  // %3
-        "r"(&kShuffleMirror)  // %4
+      : "r"(&kShuffleMirror)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3");
+}
+
+// Shuffle table for reversing the UV.
+static const uvec8 kShuffleMirrorUV = {14u, 15u, 12u, 13u, 10u, 11u, 8u, 9u,
+                                       6u,  7u,  4u,  5u,  2u,  3u,  0u, 1u};
+
+void MirrorUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  asm volatile(
+      // Start at end of source row.
+      "ld1        {v4.16b}, [%3]                 \n"  // shuffler
+      "add        %0, %0, %w2, sxtw #1           \n"
+      "sub        %0, %0, #32                    \n"
+      "1:                                        \n"
+      "ldr        q1, [%0, 16]                   \n"
+      "ldr        q0, [%0], -32                  \n"  // src -= 32
+      "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop.
+      "tbl        v2.16b, {v1.16b}, v4.16b       \n"
+      "tbl        v3.16b, {v0.16b}, v4.16b       \n"
+      "st1        {v2.16b, v3.16b}, [%1], #32    \n"  // dst += 32
+      "b.gt       1b                             \n"
+      : "+r"(src_uv),           // %0
+        "+r"(dst_uv),           // %1
+        "+r"(width)             // %2
+      : "r"(&kShuffleMirrorUV)  // %3
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
 void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
@@ -771,43 +796,50 @@ void MirrorSplitUVRow_NEON(const uint8_t* src_uv,
                            int width) {
   asm volatile(
       // Start at end of source row.
+      "ld1        {v4.16b}, [%4]                 \n"  // shuffler
       "add        %0, %0, %w3, sxtw #1           \n"
-      "sub        %0, %0, #16                    \n"
+      "sub        %0, %0, #32                    \n"
       "1:                                        \n"
-      "ld2        {v0.8b, v1.8b}, [%0], %4       \n"  // src -= 16
-      "subs       %w3, %w3, #8                   \n"  // 8 pixels per loop.
-      "rev64      v0.8b, v0.8b                   \n"
-      "rev64      v1.8b, v1.8b                   \n"
-      "st1        {v0.8b}, [%1], #8              \n"  // dst += 8
-      "st1        {v1.8b}, [%2], #8              \n"
+      "ldr        q1, [%0, 16]                   \n"
+      "ldr        q0, [%0], -32                  \n"  // src -= 32
+      "subs       %w3, %w3, #16                  \n"  // 16 pixels per loop.
+      "tbl        v2.16b, {v1.16b}, v4.16b       \n"
+      "tbl        v3.16b, {v0.16b}, v4.16b       \n"
+      "uzp1       v0.16b, v2.16b, v3.16b         \n"  // U
+      "uzp2       v1.16b, v2.16b, v3.16b         \n"  // V
+      "st1        {v0.16b}, [%1], #16            \n"  // dst += 16
+      "st1        {v1.16b}, [%2], #16            \n"
       "b.gt       1b                             \n"
-      : "+r"(src_uv),        // %0
-        "+r"(dst_u),         // %1
-        "+r"(dst_v),         // %2
-        "+r"(width)          // %3
-      : "r"((ptrdiff_t)-16)  // %4
-      : "cc", "memory", "v0", "v1");
+      : "+r"(src_uv),           // %0
+        "+r"(dst_u),            // %1
+        "+r"(dst_v),            // %2
+        "+r"(width)             // %3
+      : "r"(&kShuffleMirrorUV)  // %4
+      : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
+
+// Shuffle table for reversing the ARGB.
+static const uvec8 kShuffleMirrorARGB = {12u, 13u, 14u, 15u, 8u, 9u, 10u, 11u,
+                                         4u,  5u,  6u,  7u,  0u, 1u, 2u,  3u};
 
 void ARGBMirrorRow_NEON(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   asm volatile(
-      "ld1        {v4.16b}, [%4]                 \n"  // shuffler
-      "add        %0, %0, %w2, sxtw #2           \n"  // Start at end of row.
-      "sub        %0, %0, #64                    \n"
+      // Start at end of source row.
+      "ld1        {v4.16b}, [%3]                 \n"  // shuffler
+      "add        %0, %0, %w2, sxtw #2           \n"
+      "sub        %0, %0, #32                    \n"
       "1:                                        \n"
-      "ld4        {v0.16b, v1.16b, v2.16b, v3.16b}, [%0], %3\n"  // src -= 64
-      "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop.
-      "tbl        v0.16b, {v0.16b}, v4.16b       \n"
-      "tbl        v1.16b, {v1.16b}, v4.16b       \n"
-      "tbl        v2.16b, {v2.16b}, v4.16b       \n"
-      "tbl        v3.16b, {v3.16b}, v4.16b       \n"
-      "st4        {v0.16b, v1.16b, v2.16b, v3.16b}, [%1], #64 \n"  // dst += 64
+      "ldr        q1, [%0, 16]                   \n"
+      "ldr        q0, [%0], -32                  \n"  // src -= 32
+      "subs       %w2, %w2, #8                   \n"  // 8 pixels per loop.
+      "tbl        v2.16b, {v1.16b}, v4.16b       \n"
+      "tbl        v3.16b, {v0.16b}, v4.16b       \n"
+      "st1        {v2.16b, v3.16b}, [%1], #32    \n"  // dst += 32
       "b.gt       1b                             \n"
-      : "+r"(src_argb),       // %0
-        "+r"(dst_argb),       // %1
-        "+r"(width)           // %2
-      : "r"((ptrdiff_t)-64),  // %3
-        "r"(&kShuffleMirror)  // %4
+      : "+r"(src_argb),           // %0
+        "+r"(dst_argb),           // %1
+        "+r"(width)               // %2
+      : "r"(&kShuffleMirrorARGB)  // %3
       : "cc", "memory", "v0", "v1", "v2", "v3", "v4");
 }
 
@@ -3249,20 +3281,27 @@ void AYUVToYRow_NEON(const uint8_t* src_ayuv, uint8_t* dst_y, int width) {
       : "cc", "memory", "v0", "v1", "v2", "v3");
 }
 
+// Shuffle table for swapping UV bytes.
+static const uvec8 kShuffleSwapUV = {1u, 0u, 3u,  2u,  5u,  4u,  7u,  6u,
+                                     9u, 8u, 11u, 10u, 13u, 12u, 15u, 14u};
+
 // Convert UV plane of NV12 to VU of NV21.
 void SwapUVRow_NEON(const uint8_t* src_uv, uint8_t* dst_vu, int width) {
   asm volatile(
+      "ld1        {v2.16b}, [%3]                 \n"  // shuffler
       "1:                                        \n"
-      "ld2        {v0.16b, v1.16b}, [%0], #32    \n"  // load 16 UV values
-      "orr        v2.16b, v0.16b, v0.16b         \n"  // move U after V
+      "ld1        {v0.16b}, [%0], 16             \n"  // load 16 UV values
+      "ld1        {v1.16b}, [%0], 16             \n"
       "subs       %w2, %w2, #16                  \n"  // 16 pixels per loop
-      "st2        {v1.16b, v2.16b}, [%1], #32    \n"  // store 16 VU pixels
+      "tbl        v0.16b, {v0.16b}, v2.16b       \n"
+      "tbl        v1.16b, {v1.16b}, v2.16b       \n"
       "prfm       pldl1keep, [%0, 448]           \n"  // prefetch 7 lines ahead
+      "stp        q0, q1, [%1], 32               \n"  // store 16 VU pixels
       "b.gt       1b                             \n"
-      : "+r"(src_uv),  // %0
-        "+r"(dst_vu),  // %1
-        "+r"(width)    // %2
-      :
+      : "+r"(src_uv),         // %0
+        "+r"(dst_vu),         // %1
+        "+r"(width)           // %2
+      : "r"(&kShuffleSwapUV)  // %3
       : "cc", "memory", "v0", "v1", "v2");
 }
 

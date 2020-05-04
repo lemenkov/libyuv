@@ -1182,6 +1182,15 @@ ANY11M(MirrorRow_Any_MSA, MirrorRow_MSA, 1, 63)
 #ifdef HAS_MIRRORROW_MMI
 ANY11M(MirrorRow_Any_MMI, MirrorRow_MMI, 1, 7)
 #endif
+#ifdef HAS_MIRRORUVROW_AVX2
+ANY11M(MirrorUVRow_Any_AVX2, MirrorUVRow_AVX2, 2, 15)
+#endif
+#ifdef HAS_MIRRORUVROW_SSSE3
+ANY11M(MirrorUVRow_Any_SSSE3, MirrorUVRow_SSSE3, 2, 7)
+#endif
+#ifdef HAS_MIRRORUVROW_NEON
+ANY11M(MirrorUVRow_Any_NEON, MirrorUVRow_NEON, 2, 31)
+#endif
 #ifdef HAS_ARGBMIRRORROW_AVX2
 ANY11M(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, 4, 7)
 #endif
@@ -1189,7 +1198,7 @@ ANY11M(ARGBMirrorRow_Any_AVX2, ARGBMirrorRow_AVX2, 4, 7)
 ANY11M(ARGBMirrorRow_Any_SSE2, ARGBMirrorRow_SSE2, 4, 3)
 #endif
 #ifdef HAS_ARGBMIRRORROW_NEON
-ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, 4, 15)
+ANY11M(ARGBMirrorRow_Any_NEON, ARGBMirrorRow_NEON, 4, 7)
 #endif
 #ifdef HAS_ARGBMIRRORROW_MSA
 ANY11M(ARGBMirrorRow_Any_MSA, ARGBMirrorRow_MSA, 4, 15)

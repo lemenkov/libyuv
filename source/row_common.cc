@@ -2162,6 +2162,17 @@ void MirrorRow_C(const uint8_t* src, uint8_t* dst, int width) {
   }
 }
 
+void MirrorUVRow_C(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  int x;
+  src_uv += (width - 1) << 1;
+  for (x = 0; x < width; ++x) {
+    dst_uv[0] = src_uv[0];
+    dst_uv[1] = src_uv[1];
+    src_uv -= 2;
+    dst_uv += 2;
+  }
+}
+
 void MirrorSplitUVRow_C(const uint8_t* src_uv,
                         uint8_t* dst_u,
                         uint8_t* dst_v,

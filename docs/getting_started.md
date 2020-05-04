@@ -190,7 +190,7 @@ mips
 
     make V=1 -f linux.mk
     make V=1 -f linux.mk clean
-    make V=1 -f linux.mk CXX=clang++
+    make V=1 -f linux.mk CXX=clang++ CC=clang
 
 ## Building the library with cmake
 

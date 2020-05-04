@@ -166,3 +166,4 @@ The 12 in NV12 refers to 12 bits per pixel.  NV12 has a half width and half
 height chroma channel, and therefore is a 420 subsampling.
 NV16 is 16 bits per pixel, with half width and full height.  aka 422.
 NV24 is 24 bits per pixel with full sized chroma channel. aka 444.
+Most NV12 functions allow the destination Y pointer to be NULL.

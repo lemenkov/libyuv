@@ -775,7 +775,7 @@ int YUY2ToI420(const uint8_t* src_yuy2,
     }
   }
 #endif
-#if defined(HAS_YUY2TOYROW_MSA)  && defined(HAS_YUY2TOUVROW_MSA)
+#if defined(HAS_YUY2TOYROW_MSA) && defined(HAS_YUY2TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     YUY2ToYRow = YUY2ToYRow_Any_MSA;
     YUY2ToUVRow = YUY2ToUVRow_Any_MSA;
@@ -1476,7 +1476,7 @@ int RGB24ToI420(const uint8_t* src_rgb24,
     }
   }
 #endif
-#if defined(HAS_RGB24TOYROW_MSA)  && defined(HAS_RGB24TOUVROW_MSA)
+#if defined(HAS_RGB24TOYROW_MSA) && defined(HAS_RGB24TOUVROW_MSA)
   if (TestCpuFlag(kCpuHasMSA)) {
     RGB24ToUVRow = RGB24ToUVRow_Any_MSA;
     RGB24ToYRow = RGB24ToYRow_Any_MSA;

@@ -347,7 +347,7 @@ void RotateUV180(const uint8_t* src,
   void (*MirrorSplitUVRow)(const uint8_t* src, uint8_t* dst_u, uint8_t* dst_v,
                            int width) = MirrorSplitUVRow_C;
 #if defined(HAS_MIRRORSPLITUVROW_NEON)
-  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 8)) {
+  if (TestCpuFlag(kCpuHasNEON) && IS_ALIGNED(width, 16)) {
     MirrorSplitUVRow = MirrorSplitUVRow_NEON;
   }
 #endif

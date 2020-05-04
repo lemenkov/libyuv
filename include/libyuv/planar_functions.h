@@ -315,6 +315,22 @@ int I400Mirror(const uint8_t* src_y,
                int height);
 
 // Alias
+#define NV12ToNV12Mirror NV12Mirror
+
+// NV12 mirror.
+LIBYUV_API
+int NV12Mirror(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Alias
 #define ARGBToARGBMirror ARGBMirror
 
 // ARGB mirror.
@@ -346,6 +362,15 @@ void MirrorPlane(const uint8_t* src_y,
                  int dst_stride_y,
                  int width,
                  int height);
+
+// Mirror a plane of UV data.
+LIBYUV_API
+void MirrorUVPlane(const uint8_t* src_uv,
+                   int src_stride_uv,
+                   uint8_t* dst_uv,
+                   int dst_stride_uv,
+                   int width,
+                   int height);
 
 // Convert NV12 to RGB565.
 LIBYUV_API

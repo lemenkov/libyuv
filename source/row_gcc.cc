@@ -3229,10 +3229,62 @@ void MirrorRow_AVX2(const uint8_t* src, uint8_t* dst, int width) {
 }
 #endif  // HAS_MIRRORROW_AVX2
 
+#ifdef HAS_MIRRORUVROW_SSSE3
+// Shuffle table for reversing the UV.
+static const uvec8 kShuffleMirrorUV = {14u, 15u, 12u, 13u, 10u, 11u, 8u, 9u,
+                                       6u,  7u,  4u,  5u,  2u,  3u,  0u, 1u};
+
+void MirrorUVRow_SSSE3(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  intptr_t temp_width = (intptr_t)(width);
+  asm volatile(
+
+      "movdqa    %3,%%xmm5                       \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "movdqu    -0x10(%0,%2,2),%%xmm0           \n"
+      "pshufb    %%xmm5,%%xmm0                   \n"
+      "movdqu    %%xmm0,(%1)                     \n"
+      "lea       0x10(%1),%1                     \n"
+      "sub       $0x8,%2                         \n"
+      "jg        1b                              \n"
+      : "+r"(src_uv),          // %0
+        "+r"(dst_uv),          // %1
+        "+r"(temp_width)       // %2
+      : "m"(kShuffleMirrorUV)  // %3
+      : "memory", "cc", "xmm0", "xmm5");
+}
+#endif  // HAS_MIRRORUVROW_SSSE3
+
+#ifdef HAS_MIRRORUVROW_AVX2
+void MirrorUVRow_AVX2(const uint8_t* src_uv, uint8_t* dst_uv, int width) {
+  intptr_t temp_width = (intptr_t)(width);
+  asm volatile(
+
+      "vbroadcastf128 %3,%%ymm5                  \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    -0x20(%0,%2,2),%%ymm0          \n"
+      "vpshufb    %%ymm5,%%ymm0,%%ymm0           \n"
+      "vpermq     $0x4e,%%ymm0,%%ymm0            \n"
+      "vmovdqu    %%ymm0,(%1)                    \n"
+      "lea       0x20(%1),%1                     \n"
+      "sub       $0x10,%2                        \n"
+      "jg        1b                              \n"
+      "vzeroupper                                \n"
+      : "+r"(src_uv),          // %0
+        "+r"(dst_uv),          // %1
+        "+r"(temp_width)       // %2
+      : "m"(kShuffleMirrorUV)  // %3
+      : "memory", "cc", "xmm0", "xmm5");
+}
+#endif  // HAS_MIRRORUVROW_AVX2
+
 #ifdef HAS_MIRRORSPLITUVROW_SSSE3
 // Shuffle table for reversing the bytes of UV channels.
-static const uvec8 kShuffleMirrorUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
-                                       15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u};
+static const uvec8 kShuffleMirrorSplitUV = {14u, 12u, 10u, 8u, 6u, 4u, 2u, 0u,
+                                            15u, 13u, 11u, 9u, 7u, 5u, 3u, 1u};
 void MirrorSplitUVRow_SSSE3(const uint8_t* src,
                             uint8_t* dst_u,
                             uint8_t* dst_v,
@@ -3253,11 +3305,11 @@ void MirrorSplitUVRow_SSSE3(const uint8_t* src,
       "lea       0x8(%1),%1                      \n"
       "sub       $8,%3                           \n"
       "jg        1b                              \n"
-      : "+r"(src),             // %0
-        "+r"(dst_u),           // %1
-        "+r"(dst_v),           // %2
-        "+r"(temp_width)       // %3
-      : "m"(kShuffleMirrorUV)  // %4
+      : "+r"(src),                  // %0
+        "+r"(dst_u),                // %1
+        "+r"(dst_v),                // %2
+        "+r"(temp_width)            // %3
+      : "m"(kShuffleMirrorSplitUV)  // %4
       : "memory", "cc", "xmm0", "xmm1");
 }
 #endif  // HAS_MIRRORSPLITUVROW_SSSE3
@@ -7043,6 +7095,54 @@ void HalfMergeUVRow_SSSE3(const uint8_t* src_u,
       "lea       0x10(%2),%2                     \n"
       "sub       $0x10,%3                        \n"  // 16 src pixels per loop
       "jg        1b                              \n"
+      : "+r"(src_u),                    // %0
+        "+r"(src_v),                    // %1
+        "+r"(dst_uv),                   // %2
+        "+r"(width)                     // %3
+      : "r"((intptr_t)(src_stride_u)),  // %4
+        "r"((intptr_t)(src_stride_v))   // %5
+      : "memory", "cc", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5");
+}
+
+void HalfMergeUVRow_AVX2(const uint8_t* src_u,
+                         int src_stride_u,
+                         const uint8_t* src_v,
+                         int src_stride_v,
+                         uint8_t* dst_uv,
+                         int width) {
+  asm volatile(
+      "vpcmpeqb    %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpsrlw      $0xf,%%ymm4,%%ymm4            \n"
+      "vpackuswb   %%ymm4,%%ymm4,%%ymm4          \n"
+      "vpxor       %%ymm5,%%ymm5,%%ymm5          \n"
+      "1:                                        \n"
+
+      LABELALIGN
+      "1:                                        \n"
+      "vmovdqu    (%0),%%ymm0                    \n"  // load 32 U values
+      "vmovdqu    (%1),%%ymm1                    \n"  // load 32 V values
+      "vmovdqu    0(%0,%4,1),%%ymm2              \n"  // 32 from next row
+      "vmovdqu    0(%1,%5,1),%%ymm3              \n"
+      "lea        0x20(%0),%0                    \n"
+      "vpmaddubsw %%ymm4,%%ymm0,%%ymm0           \n"  // half size
+      "vpmaddubsw %%ymm4,%%ymm1,%%ymm1           \n"
+      "vpmaddubsw %%ymm4,%%ymm2,%%ymm2           \n"
+      "vpmaddubsw %%ymm4,%%ymm3,%%ymm3           \n"
+      "lea        0x20(%1),%1                    \n"
+      "vpaddw     %%ymm2,%%ymm0,%%ymm0           \n"
+      "vpaddw     %%ymm3,%%ymm1,%%ymm1           \n"
+      "vpsrlw     $0x1,%%ymm0,%%ymm0             \n"
+      "vpsrlw     $0x1,%%ymm1,%%ymm1             \n"
+      "vpavgw     %%ymm5,%%ymm0,%%ymm0           \n"
+      "vpavgw     %%ymm5,%%ymm1,%%ymm1           \n"
+      "vpackuswb  %%ymm0,%%ymm0,%%ymm0           \n"
+      "vpackuswb  %%ymm1,%%ymm1,%%ymm1           \n"
+      "vpunpcklbw %%ymm1,%%ymm0,%%ymm0           \n"
+      "vmovdqu    %%ymm0,(%2)                    \n"  // store 16 UV pixels
+      "lea        0x20(%2),%2                    \n"
+      "sub        $0x20,%3                       \n"  // 32 src pixels per loop
+      "jg         1b                             \n"
+      "vzeroupper                                \n"
       : "+r"(src_u),                    // %0
         "+r"(src_v),                    // %1
         "+r"(dst_uv),                   // %2
