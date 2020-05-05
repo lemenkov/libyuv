@@ -3512,7 +3512,6 @@ TEST_F(LibYUVPlanarTest, TestGaussPlane_F32) {
 }
 
 TEST_F(LibYUVPlanarTest, HalfMergeUVPlane_Opt) {
-  // Round count up to multiple of 16
   int dst_width = (benchmark_width_ + 1) / 2;
   int dst_height = (benchmark_height_ + 1) / 2;
   align_buffer_page_end(src_pixels_u, benchmark_width_ * benchmark_height_);
@@ -3529,15 +3528,11 @@ TEST_F(LibYUVPlanarTest, HalfMergeUVPlane_Opt) {
   MemRandomize(dst_pixels_uv_opt, dst_width * 2 * dst_height);
   MemRandomize(dst_pixels_uv_c, dst_width * 2 * dst_height);
 
-  ScalePlane(src_pixels_u, benchmark_width_, benchmark_width_,
-             benchmark_height_,
-
-             tmp_pixels_u, dst_width, dst_width, dst_height, kFilterBilinear);
-  ScalePlane(src_pixels_v, benchmark_width_, benchmark_width_,
-             benchmark_height_, tmp_pixels_v, dst_width, dst_width, dst_height,
-             kFilterBilinear);
-  MergeUVPlane(tmp_pixels_u, dst_width, tmp_pixels_v, dst_width,
-               dst_pixels_uv_c, dst_width * 2, dst_width, dst_height);
+  MaskCpuFlags(disable_cpu_flags_);
+  HalfMergeUVPlane(src_pixels_u, benchmark_width_, src_pixels_v,
+                   benchmark_width_, dst_pixels_uv_c, dst_width * 2,
+                   benchmark_width_, benchmark_height_);
+  MaskCpuFlags(benchmark_cpu_info_);
 
   for (int i = 0; i < benchmark_iterations_; ++i) {
     HalfMergeUVPlane(src_pixels_u, benchmark_width_, src_pixels_v,

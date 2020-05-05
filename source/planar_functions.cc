@@ -579,6 +579,15 @@ int NV21ToNV12(const uint8_t* src_y,
   if (dst_y) {
     CopyPlane(src_y, src_stride_y, dst_y, dst_stride_y, width, height);
   }
+
+  // Negative height means invert the image.
+  if (height < 0) {
+    height = -height;
+    halfheight = (height + 1) >> 1;
+    src_vu = src_vu + (halfheight - 1) * src_stride_vu;
+    src_stride_vu = -src_stride_vu;
+  }
+
   SwapUVPlane(src_vu, src_stride_vu, dst_uv, dst_stride_uv, halfwidth,
               halfheight);
   return 0;

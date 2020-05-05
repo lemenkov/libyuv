@@ -32,8 +32,9 @@
 #endif
 
 #if defined(__arm__) || defined(__aarch64__)
-// arm version subsamples by summing 4 pixels then multiplying by matrix with
-// 4x smaller coefficients which are rounded to nearest integer.
+// arm version subsamples by summing 4 pixels, rounding divide by 2, then
+// multiplying by matrix with 2x smaller coefficients which are rounded
+// to nearest integer.
 #define ARM_YUV_ERROR 4
 #else
 #define ARM_YUV_ERROR 0
@@ -246,7 +247,7 @@ TESTPLANARTOP(H420, uint8_t, 1, 2, 2, H010, uint16_t, 2, 2, 2)
         }                                                                     \
       }                                                                       \
     }                                                                         \
-    EXPECT_LE(max_diff, 3);                                                   \
+    EXPECT_LE(max_diff, 0);                                                   \
     for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                 \
       for (int j = 0; j < SUBSAMPLE(kWidth, SUBSAMP_X); ++j) {                \
         int abs_diff = abs(                                                   \
@@ -1008,30 +1009,28 @@ TESTBIPLANARTOB(NV21, 2, 2, YUV24, RAW, 3, 2)
   TESTATOPLANARI(FMT_A, BPP_A, YALIGN, FMT_PLANAR, SUBSAMP_X, SUBSAMP_Y,      \
                  benchmark_width_, DIFF, _Opt, +, 0)
 
-TESTATOPLANAR(ABGR, 4, 1, I420, 2, 2, 4)
-TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 4)
-TESTATOPLANAR(ARGB, 4, 1, I422, 2, 1, 2)
-TESTATOPLANAR(ARGB, 4, 1, I444, 1, 1, 2)
+TESTATOPLANAR(ABGR, 4, 1, I420, 2, 2, 0)
+TESTATOPLANAR(ARGB, 4, 1, I420, 2, 2, 0)
+TESTATOPLANAR(ARGB, 4, 1, I422, 2, 1, 0)
+TESTATOPLANAR(ARGB, 4, 1, I444, 1, 1, 0)
 TESTATOPLANAR(ARGB, 4, 1, J420, 2, 2, ARM_YUV_ERROR)
 TESTATOPLANAR(ARGB, 4, 1, J422, 2, 1, ARM_YUV_ERROR)
 #ifdef INTEL_TEST
 TESTATOPLANAR(ARGB1555, 2, 1, I420, 2, 2, 15)
 TESTATOPLANAR(ARGB4444, 2, 1, I420, 2, 2, 17)
-#endif
-TESTATOPLANAR(BGRA, 4, 1, I420, 2, 2, 4)
-TESTATOPLANAR(I400, 1, 1, I420, 2, 2, 2)
-TESTATOPLANAR(J400, 1, 1, J420, 2, 2, 2)
-TESTATOPLANAR(RAW, 3, 1, I420, 2, 2, 4)
-TESTATOPLANAR(RGB24, 3, 1, I420, 2, 2, 4)
-TESTATOPLANAR(RGB24, 3, 1, J420, 2, 2, ARM_YUV_ERROR)
-#ifdef INTEL_TEST
 TESTATOPLANAR(RGB565, 2, 1, I420, 2, 2, 5)
 #endif
-TESTATOPLANAR(RGBA, 4, 1, I420, 2, 2, 4)
-TESTATOPLANAR(UYVY, 2, 1, I420, 2, 2, 2)
-TESTATOPLANAR(UYVY, 2, 1, I422, 2, 1, 2)
-TESTATOPLANAR(YUY2, 2, 1, I420, 2, 2, 2)
-TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1, 2)
+TESTATOPLANAR(BGRA, 4, 1, I420, 2, 2, 0)
+TESTATOPLANAR(I400, 1, 1, I420, 2, 2, 0)
+TESTATOPLANAR(J400, 1, 1, J420, 2, 2, 0)
+TESTATOPLANAR(RAW, 3, 1, I420, 2, 2, 0)
+TESTATOPLANAR(RGB24, 3, 1, I420, 2, 2, 0)
+TESTATOPLANAR(RGB24, 3, 1, J420, 2, 2, ARM_YUV_ERROR)
+TESTATOPLANAR(RGBA, 4, 1, I420, 2, 2, 0)
+TESTATOPLANAR(UYVY, 2, 1, I420, 2, 2, 0)
+TESTATOPLANAR(UYVY, 2, 1, I422, 2, 1, 0)
+TESTATOPLANAR(YUY2, 2, 1, I420, 2, 2, 0)
+TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1, 0)
 
 #define TESTATOBIPLANARI(FMT_A, SUB_A, BPP_A, FMT_PLANAR, SUBSAMP_X,          \
                          SUBSAMP_Y, W1280, N, NEG, OFF)                       \
@@ -1072,7 +1071,7 @@ TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1, 2)
         }                                                                     \
       }                                                                       \
     }                                                                         \
-    EXPECT_LE(max_diff, 4);                                                   \
+    EXPECT_LE(max_diff, 0);                                                   \
     for (int i = 0; i < SUBSAMPLE(kHeight, SUBSAMP_Y); ++i) {                 \
       for (int j = 0; j < kStrideUV * 2; ++j) {                               \
         int abs_diff =                                                        \
@@ -1083,7 +1082,7 @@ TESTATOPLANAR(YUY2, 2, 1, I422, 2, 1, 2)
         }                                                                     \
       }                                                                       \
     }                                                                         \
-    EXPECT_LE(max_diff, 4);                                                   \
+    EXPECT_LE(max_diff, 0);                                                   \
     free_aligned_buffer_page_end(dst_y_c);                                    \
     free_aligned_buffer_page_end(dst_uv_c);                                   \
     free_aligned_buffer_page_end(dst_y_opt);                                  \

@@ -27,6 +27,12 @@ extern "C" {
 #define LIBYUV_RGB7 1
 #endif
 
+#if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+    defined(_M_IX86)
+#define LIBYUV_ARGBTOUV_PAVGB 1
+#define LIBYUV_RGBTOU_TRUNCATE 1
+#endif
+
 // llvm x86 is poor at ternary operator, so use branchless min/max.
 
 #define USE_BRANCHLESS 1
@@ -420,14 +426,36 @@ static __inline int RGBToY(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
+#ifdef LIBYUV_RGBTOU_TRUNCATE
+static __inline int RGBToU(uint8_t r, uint8_t g, uint8_t b) {
+  return (112 * b - 74 * g - 38 * r + 0x8000) >> 8;
+}
+static __inline int RGBToV(uint8_t r, uint8_t g, uint8_t b) {
+  return (112 * r - 94 * g - 18 * b + 0x8000) >> 8;
+}
+#else
 static __inline int RGBToU(uint8_t r, uint8_t g, uint8_t b) {
   return (112 * b - 74 * g - 38 * r + 0x8080) >> 8;
 }
 static __inline int RGBToV(uint8_t r, uint8_t g, uint8_t b) {
   return (112 * r - 94 * g - 18 * b + 0x8080) >> 8;
 }
+#endif
+
+#if !defined(LIBYUV_ARGBTOUV_PAVGB)
+static __inline int RGB2xToU(uint16_t r, uint16_t g, uint16_t b) {
+  return ((112 / 2) * b - (74 / 2) * g - (38 / 2) * r + 0x8080) >> 8;
+}
+static __inline int RGB2xToV(uint16_t r, uint16_t g, uint16_t b) {
+  return ((112 / 2) * r - (94 / 2) * g - (18 / 2) * b + 0x8080) >> 8;
+}
+#endif
+
+#define AVGB(a, b) (((a) + (b) + 1) >> 1)
 
 // ARGBToY_C and ARGBToUV_C
+// Intel version mimic SSE/AVX which does 2 pavgb
+#if LIBYUV_ARGBTOUV_PAVGB
 #define MAKEROWY(NAME, R, G, B, BPP)                                         \
   void NAME##ToYRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width) { \
     int x;                                                                   \
@@ -442,15 +470,12 @@ static __inline int RGBToV(uint8_t r, uint8_t g, uint8_t b) {
     const uint8_t* src_rgb1 = src_rgb0 + src_stride_rgb;                     \
     int x;                                                                   \
     for (x = 0; x < width - 1; x += 2) {                                     \
-      uint8_t ab = (src_rgb0[B] + src_rgb0[B + BPP] + src_rgb1[B] +          \
-                    src_rgb1[B + BPP]) >>                                    \
-                   2;                                                        \
-      uint8_t ag = (src_rgb0[G] + src_rgb0[G + BPP] + src_rgb1[G] +          \
-                    src_rgb1[G + BPP]) >>                                    \
-                   2;                                                        \
-      uint8_t ar = (src_rgb0[R] + src_rgb0[R + BPP] + src_rgb1[R] +          \
-                    src_rgb1[R + BPP]) >>                                    \
-                   2;                                                        \
+      uint8_t ab = AVGB(AVGB(src_rgb0[B], src_rgb1[B]),                      \
+                        AVGB(src_rgb0[B + BPP], src_rgb1[B + BPP]));         \
+      uint8_t ag = AVGB(AVGB(src_rgb0[G], src_rgb1[G]),                      \
+                        AVGB(src_rgb0[G + BPP], src_rgb1[G + BPP]));         \
+      uint8_t ar = AVGB(AVGB(src_rgb0[R], src_rgb1[R]),                      \
+                        AVGB(src_rgb0[R + BPP], src_rgb1[R + BPP]));         \
       dst_u[0] = RGBToU(ar, ag, ab);                                         \
       dst_v[0] = RGBToV(ar, ag, ab);                                         \
       src_rgb0 += BPP * 2;                                                   \
@@ -459,13 +484,54 @@ static __inline int RGBToV(uint8_t r, uint8_t g, uint8_t b) {
       dst_v += 1;                                                            \
     }                                                                        \
     if (width & 1) {                                                         \
-      uint8_t ab = (src_rgb0[B] + src_rgb1[B]) >> 1;                         \
-      uint8_t ag = (src_rgb0[G] + src_rgb1[G]) >> 1;                         \
-      uint8_t ar = (src_rgb0[R] + src_rgb1[R]) >> 1;                         \
+      uint8_t ab = AVGB(src_rgb0[B], src_rgb1[B]);                           \
+      uint8_t ag = AVGB(src_rgb0[G], src_rgb1[G]);                           \
+      uint8_t ar = AVGB(src_rgb0[R], src_rgb1[R]);                           \
       dst_u[0] = RGBToU(ar, ag, ab);                                         \
       dst_v[0] = RGBToV(ar, ag, ab);                                         \
     }                                                                        \
   }
+#else
+// ARM version does sum / 2 then multiply by 2x smaller coefficients
+#define MAKEROWY(NAME, R, G, B, BPP)                                         \
+  void NAME##ToYRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width) { \
+    int x;                                                                   \
+    for (x = 0; x < width; ++x) {                                            \
+      dst_y[0] = RGBToY(src_argb0[R], src_argb0[G], src_argb0[B]);           \
+      src_argb0 += BPP;                                                      \
+      dst_y += 1;                                                            \
+    }                                                                        \
+  }                                                                          \
+  void NAME##ToUVRow_C(const uint8_t* src_rgb0, int src_stride_rgb,          \
+                       uint8_t* dst_u, uint8_t* dst_v, int width) {          \
+    const uint8_t* src_rgb1 = src_rgb0 + src_stride_rgb;                     \
+    int x;                                                                   \
+    for (x = 0; x < width - 1; x += 2) {                                     \
+      uint16_t ab = (src_rgb0[B] + src_rgb0[B + BPP] + src_rgb1[B] +         \
+                     src_rgb1[B + BPP] + 1) >>                               \
+                    1;                                                       \
+      uint16_t ag = (src_rgb0[G] + src_rgb0[G + BPP] + src_rgb1[G] +         \
+                     src_rgb1[G + BPP] + 1) >>                               \
+                    1;                                                       \
+      uint16_t ar = (src_rgb0[R] + src_rgb0[R + BPP] + src_rgb1[R] +         \
+                     src_rgb1[R + BPP] + 1) >>                               \
+                    1;                                                       \
+      dst_u[0] = RGB2xToU(ar, ag, ab);                                       \
+      dst_v[0] = RGB2xToV(ar, ag, ab);                                       \
+      src_rgb0 += BPP * 2;                                                   \
+      src_rgb1 += BPP * 2;                                                   \
+      dst_u += 1;                                                            \
+      dst_v += 1;                                                            \
+    }                                                                        \
+    if (width & 1) {                                                         \
+      uint16_t ab = (src_rgb0[B] + src_rgb1[B]);                             \
+      uint16_t ag = (src_rgb0[G] + src_rgb1[G]);                             \
+      uint16_t ar = (src_rgb0[R] + src_rgb1[R]);                             \
+      dst_u[0] = RGB2xToU(ar, ag, ab);                                       \
+      dst_v[0] = RGB2xToV(ar, ag, ab);                                       \
+    }                                                                        \
+  }
+#endif
 
 MAKEROWY(ARGB, 2, 1, 0, 4)
 MAKEROWY(BGRA, 1, 2, 3, 4)
@@ -518,8 +584,6 @@ static __inline int RGBToUJ(uint8_t r, uint8_t g, uint8_t b) {
 static __inline int RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
   return (127 * r - 107 * g - 20 * b + 0x8080) >> 8;
 }
-
-#define AVGB(a, b) (((a) + (b) + 1) >> 1)
 
 // ARGBToYJ_C and ARGBToUVJ_C
 #define MAKEROWYJ(NAME, R, G, B, BPP)                                         \
