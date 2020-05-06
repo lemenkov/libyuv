@@ -426,6 +426,8 @@ static __inline int RGBToY(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
+#define AVGB(a, b) (((a) + (b) + 1) >> 1)
+
 #ifdef LIBYUV_RGBTOU_TRUNCATE
 static __inline int RGBToU(uint8_t r, uint8_t g, uint8_t b) {
   return (112 * b - 74 * g - 38 * r + 0x8000) >> 8;
@@ -434,6 +436,7 @@ static __inline int RGBToV(uint8_t r, uint8_t g, uint8_t b) {
   return (112 * r - 94 * g - 18 * b + 0x8000) >> 8;
 }
 #else
+// TODO(fbarchard): Add rounding to SIMD and use this
 static __inline int RGBToU(uint8_t r, uint8_t g, uint8_t b) {
   return (112 * b - 74 * g - 38 * r + 0x8080) >> 8;
 }
@@ -451,11 +454,10 @@ static __inline int RGB2xToV(uint16_t r, uint16_t g, uint16_t b) {
 }
 #endif
 
-#define AVGB(a, b) (((a) + (b) + 1) >> 1)
-
 // ARGBToY_C and ARGBToUV_C
 // Intel version mimic SSE/AVX which does 2 pavgb
 #if LIBYUV_ARGBTOUV_PAVGB
+
 #define MAKEROWY(NAME, R, G, B, BPP)                                         \
   void NAME##ToYRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width) { \
     int x;                                                                   \
@@ -578,14 +580,25 @@ static __inline int RGBToYJ(uint8_t r, uint8_t g, uint8_t b) {
 }
 #endif
 
+#if defined(LIBYUV_ARGBTOUV_PAVGB)
 static __inline int RGBToUJ(uint8_t r, uint8_t g, uint8_t b) {
   return (127 * b - 84 * g - 43 * r + 0x8080) >> 8;
 }
 static __inline int RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
   return (127 * r - 107 * g - 20 * b + 0x8080) >> 8;
 }
+#else
+static __inline int RGB2xToUJ(uint16_t r, uint16_t g, uint16_t b) {
+  return ((127 / 2) * b - (84 / 2) * g - (43 / 2) * r + 0x8080) >> 8;
+}
+static __inline int RGB2xToVJ(uint16_t r, uint16_t g, uint16_t b) {
+  return ((127 / 2) * r - (107 / 2) * g - (20 / 2) * b + 0x8080) >> 8;
+}
+#endif
 
 // ARGBToYJ_C and ARGBToUVJ_C
+// Intel version mimic SSE/AVX which does 2 pavgb
+#if LIBYUV_ARGBTOUV_PAVGB
 #define MAKEROWYJ(NAME, R, G, B, BPP)                                         \
   void NAME##ToYJRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width) { \
     int x;                                                                    \
@@ -621,6 +634,48 @@ static __inline int RGBToVJ(uint8_t r, uint8_t g, uint8_t b) {
       dst_v[0] = RGBToVJ(ar, ag, ab);                                         \
     }                                                                         \
   }
+#else
+// ARM version does sum / 2 then multiply by 2x smaller coefficients
+#define MAKEROWYJ(NAME, R, G, B, BPP)                                         \
+  void NAME##ToYJRow_C(const uint8_t* src_argb0, uint8_t* dst_y, int width) { \
+    int x;                                                                    \
+    for (x = 0; x < width; ++x) {                                             \
+      dst_y[0] = RGBToYJ(src_argb0[R], src_argb0[G], src_argb0[B]);           \
+      src_argb0 += BPP;                                                       \
+      dst_y += 1;                                                             \
+    }                                                                         \
+  }                                                                           \
+  void NAME##ToUVJRow_C(const uint8_t* src_rgb0, int src_stride_rgb,          \
+                        uint8_t* dst_u, uint8_t* dst_v, int width) {          \
+    const uint8_t* src_rgb1 = src_rgb0 + src_stride_rgb;                      \
+    int x;                                                                    \
+    for (x = 0; x < width - 1; x += 2) {                                      \
+      uint16_t ab = (src_rgb0[B] + src_rgb0[B + BPP] + src_rgb1[B] +          \
+                     src_rgb1[B + BPP] + 1) >>                                \
+                    1;                                                        \
+      uint16_t ag = (src_rgb0[G] + src_rgb0[G + BPP] + src_rgb1[G] +          \
+                     src_rgb1[G + BPP] + 1) >>                                \
+                    1;                                                        \
+      uint16_t ar = (src_rgb0[R] + src_rgb0[R + BPP] + src_rgb1[R] +          \
+                     src_rgb1[R + BPP] + 1) >>                                \
+                    1;                                                        \
+      dst_u[0] = RGB2xToUJ(ar, ag, ab);                                       \
+      dst_v[0] = RGB2xToVJ(ar, ag, ab);                                       \
+      src_rgb0 += BPP * 2;                                                    \
+      src_rgb1 += BPP * 2;                                                    \
+      dst_u += 1;                                                             \
+      dst_v += 1;                                                             \
+    }                                                                         \
+    if (width & 1) {                                                          \
+      uint16_t ab = (src_rgb0[B] + src_rgb1[B]);                              \
+      uint16_t ag = (src_rgb0[G] + src_rgb1[G]);                              \
+      uint16_t ar = (src_rgb0[R] + src_rgb1[R]);                              \
+      dst_u[0] = RGB2xToUJ(ar, ag, ab);                                       \
+      dst_v[0] = RGB2xToVJ(ar, ag, ab);                                       \
+    }                                                                         \
+  }
+
+#endif
 
 MAKEROWYJ(ARGB, 2, 1, 0, 4)
 MAKEROWYJ(RGBA, 3, 2, 1, 4)
@@ -2602,10 +2657,14 @@ void BlendPlaneRow_C(const uint8_t* src0,
 }
 #undef UBLEND
 
+#if defined(__aarch64__) || defined(__arm__)
+#define ATTENUATE(f, a) (f * a + 128) >> 8
+#else
+// This code mimics the SSSE3 version for better testability.
 #define ATTENUATE(f, a) (a | (a << 8)) * (f | (f << 8)) >> 24
+#endif
 
 // Multiply source RGB by alpha and store to destination.
-// This code mimics the SSSE3 version for better testability.
 void ARGBAttenuateRow_C(const uint8_t* src_argb, uint8_t* dst_argb, int width) {
   int i;
   for (i = 0; i < width - 1; i += 2) {
