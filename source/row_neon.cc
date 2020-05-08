@@ -1429,7 +1429,7 @@ void ARGBToUVRow_NEON(const uint8_t* src_argb,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1475,7 +1475,7 @@ void ARGBToUVJRow_NEON(const uint8_t* src_argb,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1520,7 +1520,7 @@ void BGRAToUVRow_NEON(const uint8_t* src_bgra,
     "vrshr.u16  q2, q2, #1                     \n"
     "vrshr.u16  q3, q3, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q3, q2, q1)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1565,7 +1565,7 @@ void ABGRToUVRow_NEON(const uint8_t* src_abgr,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q2, q1, q0)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1610,7 +1610,7 @@ void RGBAToUVRow_NEON(const uint8_t* src_rgba,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1655,7 +1655,7 @@ void RGB24ToUVRow_NEON(const uint8_t* src_rgb24,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q0, q1, q2)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1700,7 +1700,7 @@ void RAWToUVRow_NEON(const uint8_t* src_raw,
     "vrshr.u16  q1, q1, #1                     \n"
     "vrshr.u16  q2, q2, #1                     \n"
 
-    "subs       %4, %4, #16                    \n"  // 32 processed per loop.
+    "subs       %4, %4, #16                    \n"  // 16 processed per loop.
     RGBTOUV(q2, q1, q0)
     "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
     "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
@@ -1886,21 +1886,12 @@ void ARGB4444ToUVRow_NEON(const uint8_t* src_argb4444,
       "vpadal.u8  d11, d1                        \n"  // G 8 bytes -> 4 shorts.
       "vpadal.u8  d13, d2                        \n"  // R 8 bytes -> 4 shorts.
 
-      "vrshr.u16  q4, q4, #1                     \n"  // 2x average
-      "vrshr.u16  q5, q5, #1                     \n"
-      "vrshr.u16  q6, q6, #1                     \n"
+      "vrshr.u16  q0, q4, #1                     \n"  // 2x average
+      "vrshr.u16  q1, q5, #1                     \n"
+      "vrshr.u16  q2, q6, #1                     \n"
 
       "subs       %4, %4, #16                    \n"  // 16 processed per loop.
-      "vmul.s16   q8, q4, q10                    \n"  // B
-      "vmls.s16   q8, q5, q11                    \n"  // G
-      "vmls.s16   q8, q6, q12                    \n"  // R
-      "vadd.u16   q8, q8, q15                    \n"  // +128 -> unsigned
-      "vmul.s16   q9, q6, q10                    \n"  // R
-      "vmls.s16   q9, q5, q14                    \n"  // G
-      "vmls.s16   q9, q4, q13                    \n"  // B
-      "vadd.u16   q9, q9, q15                    \n"  // +128 -> unsigned
-      "vqshrn.u16  d0, q8, #8                    \n"  // 16 bit to 8 bit U
-      "vqshrn.u16  d1, q9, #8                    \n"  // 16 bit to 8 bit V
+      RGBTOUV(q0, q1, q2)
       "vst1.8     {d0}, [%2]!                    \n"  // store 8 pixels U.
       "vst1.8     {d1}, [%3]!                    \n"  // store 8 pixels V.
       "bgt        1b                             \n"
